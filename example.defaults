@@ -5,7 +5,7 @@ auth/options/server-id              string      node47
 
 auth/zones/tjeb.nl/type             string      master
 auth/zones/tjeb.nl/file             string      /var/bind10/zones/tjeb.nl
-auth/zones/tjeb.nl/notify           bool        true
+auth/zones/tjeb.nl/notify           boolean     true
 auth/zones/tjeb.nl/notify-source    string      192.168.8.8
 auth/zones/tjeb.nl/transfer-source  string      192.168.8.8
 
