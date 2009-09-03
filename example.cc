@@ -149,6 +149,8 @@ main(int argc, char **argv)
             cout << "\tprints a message when the entry is changed" << endl;
             cout << "lock <entry>" << endl;
             cout << "\tlocks the entry for this session" << endl;
+            cout << "quit" << endl;
+            cout << "\tsave the data and exit" << endl;
         } else {
             cout << "Unknown command, try 'help'" << endl;
         }
@@ -156,5 +158,7 @@ main(int argc, char **argv)
     }
 
     writeConfig(config, "example.conf");
+
+    delete config;
     return 0;
 }
