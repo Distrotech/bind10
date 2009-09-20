@@ -1,16 +1,14 @@
-all: example test_config
 
-util.o: util.hh util.cc
-	g++ -Wall -Werror -c -o util.o util.cc
+all:	config_manager
 
-nsconfig.o: nsconfig.hh nsconfig.cc util.o
-	g++ -Wall -Werror -c -o nsconfig.o nsconfig.cc
+config_manager:	config_manager.cc config_obj.o
+	g++ -g -lxerces-c -o config_manager config_obj.o config_manager.cc
 
-test_config: nsconfig.o test_config.cc
-	g++ -Wall -Werror -g nsconfig.o util.o test_config.cc -o test_config
-
-example: nsconfig.o util.o example.cc
-	g++ -Wall -Werror -g nsconfig.o util.o example.cc -o example
+config_obj.o:	config_obj.cc config_obj.hh
+	g++ -g -c -o config_obj.o config_obj.cc
 
 clean:
-	rm -f example test_config *.o config.hh.gch
+	rm -f config_manager *.o myconf_new.conf
+
+run:
+	./config_manager
