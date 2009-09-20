@@ -367,12 +367,12 @@ namespace ISC { namespace Config {
         if (!n) {
             throw ConfigError("null element");
         }
+        /* check whether this node has a gettable value */
         if (n->getNodeType() == n->ATTRIBUTE_NODE ||
              (n->getNodeType() == n->ELEMENT_NODE &&
-              !n->hasChildNodes() ||
-              (n->getFirstChild() == n->getLastChild() &&
-               n->getFirstChild()->getNodeType() == n->TEXT_NODE
-              )
+              n->hasChildNodes() &&
+              n->getFirstChild() == n->getLastChild() &&
+              n->getFirstChild()->getNodeType() == n->TEXT_NODE
              )
             ) {
             return XMLStringToString(n->getTextContent());
@@ -390,8 +390,8 @@ namespace ISC { namespace Config {
         if (!n) {
             throw ConfigError("null element");
         }
-        /* fail if this is not an attribute or an
-         * element with only one text child */
+        /* fail if this is not an attribute or an empty
+         * element, or one with only one text child */
         if (n->getNodeType() == n->ATTRIBUTE_NODE ||
              (n->getNodeType() == n->ELEMENT_NODE &&
               !n->hasChildNodes() ||
