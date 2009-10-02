@@ -1,0 +1,33 @@
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ([2.64])
+AC_INIT([FULL-PACKAGE-NAME], [VERSION], [BUG-REPORT-ADDRESS])
+AC_CONFIG_SRCDIR([config_manager.cc])
+AC_CONFIG_HEADERS([config.h])
+
+# Checks for programs.
+AC_PROG_CXX
+
+# Checks for libraries.
+
+# Checks for header files.
+AC_CHECK_HEADERS([stdlib.h string.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_HEADER_STDBOOL
+
+# Checks for library functions.
+
+AC_CONFIG_FILES([Makefile])
+
+AC_ARG_WITH(xercesc,
+[  --with-xercesc=PATH       specify a path to the xerces-c if it's not automatically found],
+    xercesc_path="$withval", xercesc_path="no")
+if test "$xercesc_path" != "no"
+then
+	CFLAGS="$CFLAGS -I${xercesc_path}/include"
+	LDFLAGS="$LDFLAGS -L${xercesc_path}/lib"
+fi
+
+AC_OUTPUT
