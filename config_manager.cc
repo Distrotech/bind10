@@ -19,6 +19,7 @@ using namespace ISC::Config;
 
 ConfigManager::ConfigManager()
 {
+    config = NULL;
     ISC::Config::config_init();
 }
 

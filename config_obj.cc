@@ -102,12 +102,14 @@ namespace ISC { namespace Config {
 
     Config::Config(std::string filename)
     {
+        node = NULL;
         parser = new XercesDOMParser();
         read_file(filename);
     }
 
     Config::Config(std::istream &in)
     {
+        node = NULL;
         parser = new XercesDOMParser();
         read_stream(in);
     }
