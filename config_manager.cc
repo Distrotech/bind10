@@ -33,7 +33,7 @@ ConfigManager::load_configuration(std::string filename)
 {
     try {
         config = new Config(filename);
-    } catch (ConfigError e) {
+    } catch (ConfigError& e) {
         delete config;
         std::string err;
         err = "Error reading " + filename + ": " + e.what();
@@ -46,7 +46,7 @@ ConfigManager::save_configuration(std::string filename)
 {
     try {
         config->write_file(filename);
-    } catch (ConfigError e) {
+    } catch (ConfigError& e) {
         std::string err;
         err = "Error writing " + filename + ": " + e.what();
         throw ConfigManagerError(err);
@@ -100,7 +100,7 @@ ConfigManager::run()
             //config_part->set_value("@name", "asdf.com");
             cout << "Selected zone: " << endl;
             config_part->write_stream(std::cout);
-        } catch (ConfigError ce) {
+        } catch (ConfigError& ce) {
             cout << "Caught ConfigError: " << ce.what() << endl;
         }
 
@@ -133,7 +133,7 @@ ConfigManager::run()
             config->set_config_part("/module[@name=recursive]/zones/zone[@name=theo.com]", config_part);
 
             delete config_part;
-        } catch (ConfigError ce) {
+        } catch (ConfigError& ce) {
             cout << "Caught ConfigError: " << ce.what() << endl;
         }
 

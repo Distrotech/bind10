@@ -251,7 +251,7 @@ namespace ISC { namespace Config {
         try {
             config_part->node = find_sub_node(node, identifier)->cloneNode(true);
             return config_part;
-        } catch (ConfigError ce) {
+        } catch (ConfigError& ce) {
             delete config_part;
             throw ce;
         }
