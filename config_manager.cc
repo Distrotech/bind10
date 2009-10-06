@@ -29,7 +29,7 @@ ConfigManager::~ConfigManager()
 }
 
 void
-ConfigManager::loadConfiguration(std::string filename)
+ConfigManager::load_configuration(std::string filename)
 {
     try {
         config = new Config(filename);
@@ -42,10 +42,10 @@ ConfigManager::loadConfiguration(std::string filename)
 }
 
 void
-ConfigManager::saveConfiguration(std::string filename)
+ConfigManager::save_configuration(std::string filename)
 {
     try {
-        config->writeFile(filename);
+        config->write_file(filename);
     } catch (ConfigError e) {
         std::string err;
         err = "Error writing " + filename + ": " + e.what();
@@ -54,7 +54,7 @@ ConfigManager::saveConfiguration(std::string filename)
 }
 
 void
-ConfigManager::initConfigManager()
+ConfigManager::init_config_manager()
 {
     /* set up communication channel */
     return;
@@ -67,17 +67,17 @@ ConfigManager::run()
     while (1) {
         /* listen for commands, on read-type command
          * (GET identifier?) do something like
-         * Config *subconfig = config->getConfigPart(identifier);
-         * subconfig->writeStream(outstream);
+         * Config *subconfig = config->get_config_part(identifier);
+         * subconfig->write_stream(outstream);
          * delete subconfig;
          *
          * on set do something like
          * PUT identifier
          * <xmlblob>
          * 
-         * Config *subconfig = config->readStream(intstream);
+         * Config *subconfig = config->read_stream(intstream);
          * config->check_subconfig(identifier, subconfig);
-         * config->setConfigPart(identifier, subconfig);
+         * config->set_config_part(identifier, subconfig);
          * delete subconfig;
          * write_ok_to_outstream;
          * notify_registered_clients
@@ -86,20 +86,20 @@ ConfigManager::run()
 #endif
     /* just some random actions the manager can do on the config */
     if (config) {
-        std::string a = config->getValue("/module[@name=authoritative]@name");
+        std::string a = config->get_value("/module[@name=authoritative]@name");
         cout << "module name: " << a << endl;
-        config->setValue("/module@name", "recursive");
-        std::string b = config->getValue("/module@name");
+        config->set_value("/module@name", "recursive");
+        std::string b = config->get_value("/module@name");
         cout << "module name now: " << b << endl;
         cout << endl;
 
         cout << "Trying to get zone theo.com from the module named authoritative" << endl;
         try {
             Config *config_part;
-            config_part = config->getConfigPart("/module[@name=authoritative]/zones/zone[@name=theo.com]");
-            //config_part->setValue("@name", "asdf.com");
+            config_part = config->get_config_part("/module[@name=authoritative]/zones/zone[@name=theo.com]");
+            //config_part->set_value("@name", "asdf.com");
             cout << "Selected zone: " << endl;
-            config_part->writeStream(std::cout);
+            config_part->write_stream(std::cout);
         } catch (ConfigError ce) {
             cout << "Caught ConfigError: " << ce.what() << endl;
         }
@@ -111,26 +111,26 @@ ConfigManager::run()
         cout << "Trying to get zone theo.com from the module named recursive" << endl;
         try {
             Config *config_part;
-            config_part = config->getConfigPart("/module[@name=recursive]/zones/zone[@name=theo.com]");
+            config_part = config->get_config_part("/module[@name=recursive]/zones/zone[@name=theo.com]");
             cout << "Selected zone configuration: " << endl;
-            config_part->writeStream(std::cout);
+            config_part->write_stream(std::cout);
 
             cout << "Changing file to /tmp/myfile" << endl;
-            config_part->setValue("/file", "/tmp/myfile");
+            config_part->set_value("/file", "/tmp/myfile");
 
             cout << "Add a new element, 'auto-notify'" << endl;
-            config_part->addChild("auto-notify");
+            config_part->add_child("auto-notify");
             cout << "Set value of 'auto-notify' to false" << endl;
-            config_part->setValue("/auto-notify", "false");
+            config_part->set_value("/auto-notify", "false");
             
             cout << "Selected zone configuration now: " << endl;
-            config_part->writeStream(std::cout);
+            config_part->write_stream(std::cout);
 
             cout << endl;
 
             cout << "Putting the updated configuration part back in the main config." << endl;
             /* make sure this is the exact same as the getconfig part above, no checking is done atm! */
-            config->setConfigPart("/module[@name=recursive]/zones/zone[@name=theo.com]", config_part);
+            config->set_config_part("/module[@name=recursive]/zones/zone[@name=theo.com]", config_part);
 
             delete config_part;
         } catch (ConfigError ce) {
@@ -146,12 +146,12 @@ int
 main(int argc, char **argv)
 {
     ConfigManager cm;
-    cm.loadConfiguration("./myconf.conf");
-    cm.initConfigManager();
+    cm.load_configuration("./myconf.conf");
+    cm.init_config_manager();
     cm.run();
 
     cout << "Storing the main config" << endl;
-    cm.saveConfiguration("./myconf_new.conf");
+    cm.save_configuration("./myconf_new.conf");
     cout << "New configuration stored in ./myconf_new.conf" << endl;
 
 }

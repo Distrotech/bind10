@@ -100,37 +100,37 @@ namespace ISC { namespace Config {
          */
         Config(std::istream &in);
         
-        ~Config() { if (parser) { delete parser; } }
+        ~Config() { delete parser; }
 
         /* returns the name of the base node */
-        std::string getName();
+        std::string get_name();
         /* returns the value of the base node.
          * If the base node is not an attribute node or an
          * element node with only one text node child, a
          * ConfigError is thrown */
-        std::string getValue();
+        std::string get_value();
         /* returns the value of a specific part of the configuration
          * See IDENTIFIER STRINGS above.
          * If not found, or if the node does not have a gettable value,
          * a ConfigError exception is thrown
          */
-        std::string getValue(std::string identifier);
+        std::string get_value(std::string identifier);
 
         /* sets the value of the base node.
          * If the base node is not an attribute node or an
          * element node with only one text node child, a
          * ConfigError is thrown */
-        void setValue(std::string const &value);
+        void set_value(std::string const &value);
         /* sets the value of a specific part of the configuration
          * See IDENTIFIER STRINGS above.
          * If not found, a ConfigError exception is thrown
          */
-        void setValue(std::string identifier, std::string const &value);
+        void set_value(std::string identifier, std::string const &value);
 
         /*
          * Adds an empty element to the children of the current node
          */
-        void addChild(std::string name);
+        void add_child(std::string name);
         
         /*
          * Adds an empty element to the children of the node specified
@@ -138,63 +138,64 @@ namespace ISC { namespace Config {
          * See IDENTIFIER STRINGS above.
          * If not found, a ConfigError exception is thrown
          */
-        void addChild(std::string identifier, std::string name);
+        void add_child(std::string identifier, std::string name);
 
         /* returns a clone of a specific subtree of this configuration
          * part.
          * See IDENTIFIER STRINGS above.
          * If not found, a ConfigError exception is thrown
          */
-        Config *getConfigPart(std::string const &identifier);
+        Config *get_config_part(std::string const &identifier);
+        
         /* replaces a specific subtree of this configuration
          * part by a clone of the given config part.
          * See IDENTIFIER STRINGS above.
          * If not found, a ConfigError exception is thrown
          */
-        void setConfigPart(std::string const &identifier, Config *config);
+        void set_config_part(std::string const &identifier, Config *config);
 
         /* Read in an XML file
          * Throws a ConfigError if there is a problem reading or parsing
          * the file */
-        void readFile(const std::string &filename);
+        void read_file(const std::string &filename);
         /* Write out this configuration (part) to an XML file
          * Throws a ConfigError if the file cannot be opened for
          * writing */
-        void writeFile(const std::string &filename);
+        void write_file(const std::string &filename);
 
         /* Read in an XML stream
          * Throws a ConfigError if there is a problem reading or parsing
          * the file */
-        void readStream(std::istream &in);
+        void read_stream(std::istream &in);
         /* Write out this configuration (part) to the given output
          * stream */
-        void writeStream(std::ostream &out);
+        void write_stream(std::ostream &out);
 
     private:
         /* serialize a specific DOMNode to the given stream with
          * the given prefix. Children of the node are also serialized
          * with a \t character added to the prefix */
-        void serializeDOMNode(std::ostream &out, DOMNode *n, std::string prefix);
+        void serialize_dom_node(std::ostream &out, DOMNode *n, std::string prefix);
         /* Serialize the complete config part to the given stream,
          * prepended with <?xml version="1.0"?> */
         void serialize(std::ostream &out);
 
         /* Helper function to clear out empty text nodes which are
          * the result from parsing a file without a DTD */
-        void removeEmptyTextNodes(DOMNode *n);
+        void remove_empty_text_nodes(DOMNode *n);
 
         /* Returns the name of a specific DOMNode */
-        std::string getNodeName(const DOMNode *n);
+        std::string get_node_name(const DOMNode *n);
         /* Returns the value of a specific DOMNode */
-        std::string getNodeValue(const DOMNode *n);
+        std::string get_node_value(const DOMNode *n);
         /* Sets the value of a specific DOMNode */
-        void setNodeValue(DOMNode *n, std::string const &value);
+        void set_node_value(DOMNode *n, std::string const &value);
 
         /* Add an empty element node to the children of the given node*/
-        void addNodeChild(DOMNode *n, std::string const &name);
+        void add_node_child(DOMNode *n, std::string const &name);
         
         /* Returns a DOMNode identifier by the given identifier */
-        DOMNode *findSubNode(DOMNode *n, std::string const &identifier);
+        DOMNode *find_sub_node(DOMNode *n, std::string const &identifier);
     };
 
 }}

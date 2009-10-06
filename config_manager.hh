@@ -26,12 +26,12 @@ namespace ISC { namespace Config {
         ~ConfigManager();
 
         /* Load a specific configuration from the given file */
-        void loadConfiguration(std::string file);
+        void load_configuration(std::string file);
         /* Save the configuration to the given file */
-        void saveConfiguration(std::string file);
+        void save_configuration(std::string file);
 
         /* Initialize configuration manager, set up environment etc. */
-        void initConfigManager();
+        void init_config_manager();
 
         /* Run the configuration manager */
         void run();

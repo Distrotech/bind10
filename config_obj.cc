@@ -18,7 +18,7 @@ using namespace xercesc;
 /* we could perhaps use the MemoryManager functionality
  * instead of going through these hoops */
 static std::string
-XMLStringToString(const XMLCh *xml_str)
+xmlstring_to_string(const XMLCh *xml_str)
 {
     char *str_c;
     std::string str;
@@ -29,7 +29,7 @@ XMLStringToString(const XMLCh *xml_str)
 }
 
 static MemBufInputSource *
-getMemBufInputSource(std::istream &in) {
+get_membuf_inputsource(std::istream &in) {
     XMLCh *buf_id = XMLString::transcode("in_source");
     XMLByte *bytes;
     XMLSize_t size;
@@ -103,60 +103,60 @@ namespace ISC { namespace Config {
     Config::Config(std::string filename)
     {
         parser = new XercesDOMParser();
-        readFile(filename);
+        read_file(filename);
     }
 
     Config::Config(std::istream &in)
     {
         parser = new XercesDOMParser();
-        readStream(in);
+        read_stream(in);
     }
 
     /*
      * some simple accessors
      */
     std::string
-    Config::getName() {
-        return getNodeName(node);
+    Config::get_name() {
+        return get_node_name(node);
     }
 
     std::string
-    Config::getValue() {
-        return getNodeValue(node);
+    Config::get_value() {
+        return get_node_value(node);
     }
 
     std::string
-    Config::getValue(std::string identifier) {
-        DOMNode *n = findSubNode(node, identifier);
-        return getNodeValue(n);
+    Config::get_value(std::string identifier) {
+        DOMNode *n = find_sub_node(node, identifier);
+        return get_node_value(n);
     }
 
     void
-    Config::setValue(std::string const &value) {
-        setNodeValue(node, value);
+    Config::set_value(std::string const &value) {
+        set_node_value(node, value);
     }
 
     void
-    Config::setValue(std::string identifier, std::string const &value) {
-        DOMNode *n = findSubNode(node, identifier);
-        setNodeValue(n, value);
+    Config::set_value(std::string identifier, std::string const &value) {
+        DOMNode *n = find_sub_node(node, identifier);
+        set_node_value(n, value);
     }
 
     void
-    Config::addChild(std::string name)
+    Config::add_child(std::string name)
     {
-        addNodeChild(node, name);
+        add_node_child(node, name);
     }
 
     void
-    Config::addChild(std::string identifier, std::string name)
+    Config::add_child(std::string identifier, std::string name)
     {
-        DOMNode *n = findSubNode(node, identifier);
-        addNodeChild(n, name);
+        DOMNode *n = find_sub_node(node, identifier);
+        add_node_child(n, name);
     }
 
     void
-    Config::readFile(const std::string &filename)
+    Config::read_file(const std::string &filename)
     {
         if (node) {
             throw ConfigError("Configuration already read");
@@ -172,24 +172,24 @@ namespace ISC { namespace Config {
         try {
             parser->parse(filename.c_str());
         } catch (const XMLException& toCatch) {
-            throw ConfigError(XMLStringToString(toCatch.getMessage()));
+            throw ConfigError(xmlstring_to_string(toCatch.getMessage()));
         } catch (const DOMException& toCatch) {
-            throw ConfigError(XMLStringToString(toCatch.getMessage()));
+            throw ConfigError(xmlstring_to_string(toCatch.getMessage()));
         } catch (const SAXParseException& toCatch) {
-            throw ConfigError(XMLStringToString(toCatch.getMessage()));
+            throw ConfigError(xmlstring_to_string(toCatch.getMessage()));
         }
 
         node = parser->getDocument()->getDocumentElement();
 
         /* if we have a DTD that shows what whitespace is ignorable
          * we can omit this step */
-        removeEmptyTextNodes(node);
+        remove_empty_text_nodes(node);
 
         delete errHandler;
     }
 
     void
-    Config::writeFile(const std::string &filename)
+    Config::write_file(const std::string &filename)
     {
         std::ofstream ofile;
         ofile.open(filename.c_str());
@@ -203,13 +203,13 @@ namespace ISC { namespace Config {
     }
 
     void
-    Config::readStream(std::istream &in)
+    Config::read_stream(std::istream &in)
     {
         if (node) {
             throw ConfigError("Configuration already read");
         }
         /* read the stream into an inputsource */
-        MemBufInputSource *in_source = getMemBufInputSource(in);
+        MemBufInputSource *in_source = get_membuf_inputsource(in);
         
         /* we could set validation scheme and/or namespaces here */
         parser->setValidationScheme(XercesDOMParser::Val_Always);
@@ -222,34 +222,34 @@ namespace ISC { namespace Config {
         try {
             parser->parse(*in_source);
         } catch (const XMLException& toCatch) {
-            throw ConfigError(XMLStringToString(toCatch.getMessage()));
+            throw ConfigError(xmlstring_to_string(toCatch.getMessage()));
         } catch (const DOMException& toCatch) {
-            throw ConfigError(XMLStringToString(toCatch.getMessage()));
+            throw ConfigError(xmlstring_to_string(toCatch.getMessage()));
         } catch (const SAXParseException& toCatch) {
-            throw ConfigError(XMLStringToString(toCatch.getMessage()));
+            throw ConfigError(xmlstring_to_string(toCatch.getMessage()));
         }
 
         node = parser->getDocument()->getDocumentElement();
 
         /* if we have a DTD that shows what whitespace is ignorable
          * we can omit this step */
-        removeEmptyTextNodes(node);
+        remove_empty_text_nodes(node);
         delete in_source;
 
         delete errHandler;
     }
 
     void
-    Config::writeStream(std::ostream &out)
+    Config::write_stream(std::ostream &out)
     {
         serialize(out);
     }
 
     Config *
-    Config::getConfigPart(std::string const &identifier) {
+    Config::get_config_part(std::string const &identifier) {
         Config *config_part = new Config();
         try {
-            config_part->node = findSubNode(node, identifier)->cloneNode(true);
+            config_part->node = find_sub_node(node, identifier)->cloneNode(true);
             return config_part;
         } catch (ConfigError ce) {
             delete config_part;
@@ -258,11 +258,11 @@ namespace ISC { namespace Config {
     }
 
     void
-    Config::setConfigPart(std::string const &identifier, Config *config_part)
+    Config::set_config_part(std::string const &identifier, Config *config_part)
     {
         /* should throw exception if node not found, so check
          * not necessary */
-        DOMNode *part_node = findSubNode(node, identifier);
+        DOMNode *part_node = find_sub_node(node, identifier);
         DOMNode *parent_node = part_node->getParentNode();
         parent_node->removeChild(part_node);
         parent_node->appendChild(config_part->node->cloneNode(true));
@@ -278,27 +278,27 @@ namespace ISC { namespace Config {
     /* if we use a newer version or a lib that does have direct
      * serialization support, please replace this */
     void
-    Config::serializeDOMNode(std::ostream &out, DOMNode *n, std::string prefix="")
+    Config::serialize_dom_node(std::ostream &out, DOMNode *n, std::string prefix="")
     {
         if (n->getNodeType() == n->TEXT_NODE) {
             out << prefix
-                << XMLStringToString(n->getNodeValue())
+                << xmlstring_to_string(n->getNodeValue())
                 << std::endl;
         } else if (n->getNodeType() == n->ATTRIBUTE_NODE) {
             out << " "
-                << XMLStringToString(n->getNodeName())
+                << xmlstring_to_string(n->getNodeName())
                 << "=\""
-                << XMLStringToString(n->getNodeValue())
+                << xmlstring_to_string(n->getNodeValue())
                 << "\"";
         } else {
             /* 'normal' node */
             /* name of this node */
-            out << prefix << "<" << XMLStringToString(n->getNodeName());
+            out << prefix << "<" << xmlstring_to_string(n->getNodeName());
             /* attributes */
             DOMNamedNodeMap *attrs = n->getAttributes();
             if (attrs) {
                 for (XMLSize_t i = 0; i < attrs->getLength(); i++) {
-                    serializeDOMNode(out, attrs->item(i), prefix);
+                    serialize_dom_node(out, attrs->item(i), prefix);
                 }
             }
             /* do we have children? */
@@ -307,9 +307,9 @@ namespace ISC { namespace Config {
                 out << ">" << std::endl;
                 DOMNodeList *children = n->getChildNodes();
                 for (XMLSize_t i = 0; i < children->getLength(); i++) {
-                    serializeDOMNode(out, children->item(i), new_prefix);
+                    serialize_dom_node(out, children->item(i), new_prefix);
                 }
-                out << prefix << "</" << XMLStringToString(n->getNodeName());
+                out << prefix << "</" << xmlstring_to_string(n->getNodeName());
             } else {
                 out << "/";
             }
@@ -321,11 +321,11 @@ namespace ISC { namespace Config {
     Config::serialize(std::ostream &out)
     {
         out << "<?xml version=\"1.0\"?>" << std::endl;
-        serializeDOMNode(out, node, "");
+        serialize_dom_node(out, node, "");
     }
 
     void
-    Config::removeEmptyTextNodes(DOMNode *n)
+    Config::remove_empty_text_nodes(DOMNode *n)
     {
         /* iterate over all children and their children,
          * if a child is a text-node containing only whitespace
@@ -338,31 +338,31 @@ namespace ISC { namespace Config {
             for (XMLSize_t i = 0; i < children->getLength(); i++) {
                 c = children->item(i);
                 if (c->getNodeType() == c->TEXT_NODE) {
-                    std::string str = XMLStringToString(c->getNodeValue());
+                    std::string str = xmlstring_to_string(c->getNodeValue());
                     if (str.find_first_not_of("\t\n\r ") == str.npos) {
                         /* ok only whitespace, remove this child */
                         n->removeChild(c);
                         i--;
                     }
                 } else {
-                    removeEmptyTextNodes(children->item(i));
+                    remove_empty_text_nodes(children->item(i));
                 }
             }
         }
     }
 
     std::string
-    Config::getNodeName(const DOMNode *n)
+    Config::get_node_name(const DOMNode *n)
     {
         if (n) {
-            return XMLStringToString(n->getNodeName());
+            return xmlstring_to_string(n->getNodeName());
         } else {
             return std::string("<empty/>");
         }
     }
     
     std::string
-    Config::getNodeValue(const DOMNode *n)
+    Config::get_node_value(const DOMNode *n)
     {
         if (!n) {
             throw ConfigError("null element");
@@ -375,14 +375,14 @@ namespace ISC { namespace Config {
               n->getFirstChild()->getNodeType() == n->TEXT_NODE
              )
             ) {
-            return XMLStringToString(n->getTextContent());
+            return xmlstring_to_string(n->getTextContent());
         } else {
-            throw ConfigError("Not a value leaf or attribute " + getNodeName(n));
+            throw ConfigError("Not a value leaf or attribute " + get_node_name(n));
         }
     }
 
     void
-    Config::setNodeValue(DOMNode *n, std::string const &value)
+    Config::set_node_value(DOMNode *n, std::string const &value)
     {
         DOMNode *c;
         XMLCh *xml_str;
@@ -404,12 +404,12 @@ namespace ISC { namespace Config {
             n->setTextContent(xml_str);
             XMLString::release(&xml_str);
         } else {
-            throw ConfigError("Not a value leaf or attribute " + getNodeName(n));
+            throw ConfigError("Not a value leaf or attribute " + get_node_name(n));
         }
     }
 
     void
-    Config::addNodeChild(DOMNode *n, std::string const &name)
+    Config::add_node_child(DOMNode *n, std::string const &name)
     {
         XMLCh *xml_str = XMLString::transcode(name.c_str());
         n->appendChild(n->getOwnerDocument()->createElement(xml_str));
@@ -417,7 +417,7 @@ namespace ISC { namespace Config {
     }
 
     DOMNode *
-    Config::findSubNode(DOMNode *n, std::string const &identifier)
+    Config::find_sub_node(DOMNode *n, std::string const &identifier)
     {
         /* some subset of xpath like stuff */
         /* only / and @ are supported */
@@ -437,7 +437,7 @@ namespace ISC { namespace Config {
             XMLString::release(&xml_str);
             if (!result_n) {
                 throw ConfigError("Unknown attribute " + attribute
-                                  + " in element " + getNodeName(n));
+                                  + " in element " + get_node_name(n));
             }
             return result_n;
         } else if (new_identifier.length() > 0) {
@@ -445,12 +445,12 @@ namespace ISC { namespace Config {
                 DOMNodeList *children = n->getChildNodes();
                 for (XMLSize_t i = 0; i < children->getLength(); i++) {
                     /* name of the node must match */
-                    if (new_identifier.compare(getNodeName(children->item(i))) == 0) {
+                    if (new_identifier.compare(get_node_name(children->item(i))) == 0) {
                         /* if a selector is present, so
                          * must the value of the selector */
                         if (selector_name.length() > 0) {
-                            DOMNode *sel_node = findSubNode(children->item(i), selector_name);
-                            if (selector_value.compare(getNodeValue(sel_node)) == 0) {
+                            DOMNode *sel_node = find_sub_node(children->item(i), selector_name);
+                            if (selector_value.compare(get_node_value(sel_node)) == 0) {
                                 result_n = children->item(i);
                             }
                         } else {
@@ -460,7 +460,7 @@ namespace ISC { namespace Config {
                     /* found one, continue down the tree */
                     if (result_n) {
                         if (rest.length() > 0) {
-                            result_n = findSubNode(result_n, rest);
+                            result_n = find_sub_node(result_n, rest);
                         }
                         i = children->getLength();
                     }
@@ -486,7 +486,7 @@ namespace ISC { namespace Config {
         try {
             XMLPlatformUtils::Initialize();
         } catch (const XMLException& toCatch) {
-            throw ConfigError(XMLStringToString(toCatch.getMessage()));
+            throw ConfigError(xmlstring_to_string(toCatch.getMessage()));
         }
     }
 
