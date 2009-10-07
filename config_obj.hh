@@ -61,8 +61,6 @@
 #include <xercesc/dom/DOM.hpp>
 #include <xercesc/parsers/XercesDOMParser.hpp>
 
-using namespace xercesc;
-
 namespace ISC { namespace Config {
 
     /* current xml module requires an init and terminate*/
@@ -82,15 +80,15 @@ namespace ISC { namespace Config {
 
     class Config {
         /* base node for this configuration of configuration part */;
-        DOMNode *node;
+        xercesc::DOMNode *node;
 
         /* the parser needs to be retained outside of the parse
          * function */
-        XercesDOMParser *parser;
+        xercesc::XercesDOMParser *parser;
 
     public:
         /* constructs an empty config element */
-        Config() : node(NULL) { parser = new XercesDOMParser(); }
+        Config() : node(NULL) { parser = new xercesc::XercesDOMParser(); }
         /* constructs a config element with the xml data found in
          * the given file, throws ConfigError on error */
         Config(std::string filename);
@@ -130,7 +128,7 @@ namespace ISC { namespace Config {
         /*
          * Adds an empty element to the children of the current node
          */
-        void add_child(std::string name);
+        void add_element(std::string name);
         
         /*
          * Adds an empty element to the children of the node specified
@@ -138,8 +136,16 @@ namespace ISC { namespace Config {
          * See IDENTIFIER STRINGS above.
          * If not found, a ConfigError exception is thrown
          */
-        void add_child(std::string identifier, std::string name);
+        void add_element(std::string identifier, std::string name);
 
+        /*
+         * Completely remove the configuration part or element
+         * speficied by the identifier.
+         * See IDENTIFIER STRINGS above.
+         * If not found, a ConfigError exception is thrown
+         */
+        void remove_element(std::string identifier);
+        
         /* returns a clone of a specific subtree of this configuration
          * part.
          * See IDENTIFIER STRINGS above.
@@ -175,27 +181,27 @@ namespace ISC { namespace Config {
         /* serialize a specific DOMNode to the given stream with
          * the given prefix. Children of the node are also serialized
          * with a \t character added to the prefix */
-        void serialize_dom_node(std::ostream &out, DOMNode *n, std::string prefix);
+        void serialize_dom_node(std::ostream &out, xercesc::DOMNode *n, std::string prefix);
         /* Serialize the complete config part to the given stream,
          * prepended with <?xml version="1.0"?> */
         void serialize(std::ostream &out);
 
         /* Helper function to clear out empty text nodes which are
          * the result from parsing a file without a DTD */
-        void remove_empty_text_nodes(DOMNode *n);
+        void remove_empty_text_nodes(xercesc::DOMNode *n);
 
         /* Returns the name of a specific DOMNode */
-        std::string get_node_name(const DOMNode *n);
+        std::string get_node_name(const xercesc::DOMNode *n);
         /* Returns the value of a specific DOMNode */
-        std::string get_node_value(const DOMNode *n);
+        std::string get_node_value(const xercesc::DOMNode *n);
         /* Sets the value of a specific DOMNode */
-        void set_node_value(DOMNode *n, std::string const &value);
+        void set_node_value(xercesc::DOMNode *n, std::string const &value);
 
         /* Add an empty element node to the children of the given node*/
-        void add_node_child(DOMNode *n, std::string const &name);
+        void add_node_child(xercesc::DOMNode *n, std::string const &name);
         
         /* Returns a DOMNode identifier by the given identifier */
-        DOMNode *find_sub_node(DOMNode *n, std::string const &identifier);
+        xercesc::DOMNode *find_sub_node(xercesc::DOMNode *n, std::string const &identifier);
     };
 
 }}

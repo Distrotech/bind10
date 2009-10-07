@@ -145,16 +145,26 @@ namespace ISC { namespace Config {
     }
 
     void
-    Config::add_child(std::string name)
+    Config::add_element(std::string name)
     {
         add_node_child(node, name);
     }
 
     void
-    Config::add_child(std::string identifier, std::string name)
+    Config::add_element(std::string identifier, std::string name)
     {
         DOMNode *n = find_sub_node(node, identifier);
         add_node_child(n, name);
+    }
+
+    void
+    Config::remove_element(std::string identifier)
+    {
+        DOMNode *n = find_sub_node(node, identifier);
+        DOMNode *p = n->getParentNode();
+        if (p) {
+            p->removeChild(n);
+        }
     }
 
     void

@@ -120,9 +120,12 @@ ConfigManager::run()
             config_part->set_value("/file", "/tmp/myfile");
 
             cout << "Add a new element, 'auto-notify'" << endl;
-            config_part->add_child("auto-notify");
+            config_part->add_element("auto-notify");
             cout << "Set value of 'auto-notify' to false" << endl;
             config_part->set_value("/auto-notify", "false");
+
+            cout << "Remove the 'foo' element" << endl;
+            config_part->remove_element("/foo");
             
             cout << "Selected zone configuration now: " << endl;
             config_part->write_stream(std::cout);
