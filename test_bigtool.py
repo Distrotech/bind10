@@ -1,6 +1,6 @@
 from lib import *
 
-def _prepare_fake_date(bigtool):
+def _prepare_fake_data(bigtool):
     #module zone, has two command : 
     #   zone load, zone_name = "" 
     #   zone set, zone_name = "", attr_name = "", attr_value = ""
@@ -47,6 +47,6 @@ def _prepare_fake_date(bigtool):
 
 if __name__ == '__main__':
     tool = bigtool.BigTool()
-    _prepare_fake_date(tool)   
+    _prepare_fake_data(tool)   
     tool.cmdloop()
 
