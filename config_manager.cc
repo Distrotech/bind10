@@ -111,32 +111,53 @@ ConfigManager::run()
         
         cout << "Trying to get zone theo.com from the module named recursive" << endl;
         try {
+            // There are three methods to change values;
+
+            //
+            // 1) Setting directly, with set_value(identifier, value)
+            //
+
+            config->set_value("/module[@name=recursive]/zones/zone[@name=tjeb.nl]/file", "/var/zones/tjeb.nl.signed");
+
+            //
+            // 2) Get a clone config part, which has to be set back
+            //
             Config *config_part;
             config_part = config->get_config_part("/module[@name=recursive]/zones/zone[@name=theo.com]");
+            
             cout << "Selected zone configuration: " << endl;
             config_part->write_stream(std::cout);
 
             cout << "Changing file to /tmp/myfile" << endl;
             config_part->set_value("/file", "/tmp/myfile");
 
-            cout << "Add a new element, 'auto-notify'" << endl;
-            config_part->add_element("auto-notify");
-            cout << "Set value of 'auto-notify' to false" << endl;
-            config_part->set_value("/auto-notify", "false");
-
-            cout << "Remove the 'foo' element" << endl;
-            config_part->remove_element("/foo");
-            
-            cout << "Selected zone configuration now: " << endl;
-            config_part->write_stream(std::cout);
-
-            cout << endl;
-
             cout << "Putting the updated configuration part back in the main config." << endl;
             /* make sure this is the exact same as the getconfig part above, no checking is done atm! */
             config->set_config_part("/module[@name=recursive]/zones/zone[@name=theo.com]", config_part);
-
+            
             delete config_part;
+
+            //
+            // 3) Get a reference to a part. Since this is a reference,
+            //    the original structure is modified directly, and we
+            //    do not have to set the part back
+            //
+            Config *config_part2 = new Config(config->get_reference("/module[@name=recursive]/zones/zone[@name=theo.com]"));
+            //config_part = config->get_config_part("/module[@name=recursive]/zones/zone[@name=theo.com]");
+            cout << "Add a new element, 'auto-notify'" << endl;
+            config_part2->add_element("auto-notify");
+            cout << "Set value of 'auto-notify' to false" << endl;
+            config_part2->set_value("/auto-notify", "false");
+
+            cout << "Remove the 'foo' element" << endl;
+            config_part2->remove_element("/foo");
+            
+            cout << "Selected zone configuration now: " << endl;
+            config_part2->write_stream(std::cout);
+
+            cout << endl;
+
+            delete config_part2;
         } catch (ConfigError& ce) {
             cout << "Caught ConfigError: " << ce.what() << endl;
         }

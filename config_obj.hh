@@ -89,9 +89,16 @@ namespace ISC { namespace Config {
     public:
         /* constructs an empty config element */
         Config() : node(NULL) { parser = new xercesc::XercesDOMParser(); }
+
+        /* constructs a Config element from a reference (which is returned
+         * by get_reference(). Please refrain from using a DOMNode directly
+         * as an argument for this constructor, as the type may change */
+        Config(xercesc::DOMNode *n) { node = n; parser = new xercesc::XercesDOMParser(); }
+
         /* constructs a config element with the xml data found in
          * the given file, throws ConfigError on error */
         Config(std::string filename);
+
         /* constructs a config element with the xml data found in
          * the given input stream. Throws ConfigError on error.
          * Stream functionality is not completely implemented yet
@@ -176,6 +183,19 @@ namespace ISC { namespace Config {
         /* Write out this configuration (part) to the given output
          * stream */
         void write_stream(std::ostream &out);
+
+        /* Returns a DOMNode reference to the current root node */
+        xercesc::DOMNode *get_reference() { return node; }
+
+        /* returns a (DOMNode) reference to the node specified by the
+         * given identifier. See IDENTIFIER STRINGS above.
+         * The result value of this method can be used to select
+         * a specific part of the base Config without cloning the
+         * whole structure.
+         * Please refrain from using the DOMNode return value for
+         * anything else than the Config constructor, as the type may
+         * change */
+        xercesc::DOMNode *get_reference(std::string identifier) { return find_sub_node(node, identifier); }
 
     private:
         /* serialize a specific DOMNode to the given stream with
