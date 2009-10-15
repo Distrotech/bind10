@@ -125,8 +125,8 @@ ConfigManager::run()
             Config *config_part;
             config_part = config->get_config_part("/module[@name=recursive]/zones/zone[@name=theo.com]");
             
-            cout << "Selected zone configuration: " << endl;
-            config_part->write_stream(std::cout);
+            //cout << "Selected zone configuration: " << endl;
+            //config_part->write_stream(std::cout);
 
             cout << "Changing file to /tmp/myfile" << endl;
             config_part->set_value("/file", "/tmp/myfile");
@@ -152,8 +152,8 @@ ConfigManager::run()
             cout << "Remove the 'foo' element" << endl;
             config_part2->remove_element("/foo");
             
-            cout << "Selected zone configuration now: " << endl;
-            config_part2->write_stream(std::cout);
+            //cout << "Selected zone configuration now: " << endl;
+            //config_part2->write_stream(std::cout);
 
             cout << endl;
 

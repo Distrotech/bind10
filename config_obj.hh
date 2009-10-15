@@ -60,6 +60,7 @@
 
 #include <xercesc/dom/DOM.hpp>
 #include <xercesc/parsers/XercesDOMParser.hpp>
+#include <xercesc/sax/HandlerBase.hpp>
 
 namespace ISC { namespace Config {
 
@@ -77,6 +78,14 @@ namespace ISC { namespace Config {
     private:
         std::string msg;
     };
+
+    class MyErrorHandler : public xercesc::HandlerBase {
+    public:
+        void error(const xercesc::SAXParseException& exc);
+        void warning(const xercesc::SAXParseException& exc);
+    };
+
+
 
     class Config {
         /* base node for this configuration of configuration part */;
@@ -109,6 +118,7 @@ namespace ISC { namespace Config {
 
         /* returns the name of the base node */
         std::string get_name();
+
         /* returns the value of the base node.
          * If the base node is not an attribute node or an
          * element node with only one text node child, a
@@ -120,6 +130,15 @@ namespace ISC { namespace Config {
          * a ConfigError exception is thrown
          */
         std::string get_value(std::string identifier);
+
+        /* returns the int value of the base node.
+         * If the value cannot be converted to an int, 0 is returned
+         */
+        int get_int_value();
+        int get_int_value(std::string identifier);
+
+        bool get_bool_value();
+        bool get_bool_value(std::string identifier);
 
         /* sets the value of the base node.
          * If the base node is not an attribute node or an
@@ -214,6 +233,9 @@ namespace ISC { namespace Config {
         std::string get_node_name(const xercesc::DOMNode *n);
         /* Returns the value of a specific DOMNode */
         std::string get_node_value(const xercesc::DOMNode *n);
+        int get_node_int_value(const xercesc::DOMNode *n);
+        bool get_node_bool_value(const xercesc::DOMNode *n);
+        
         /* Sets the value of a specific DOMNode */
         void set_node_value(xercesc::DOMNode *n, std::string const &value);
 

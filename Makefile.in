@@ -14,17 +14,23 @@
 
 # $Id$
 
-CFLAGS = @CFLAGS@
+CFLAGS = @CFLAGS@ -Wall -Werror
 LDFLAGS = @LDFLAGS@
 
-all:	config_manager
+all:	config_manager config_module.o example_module
 
 config_manager:	config_manager.cc config_obj.o
-	$(CXX) -g $(CFLAGS) $(LDFLAGS) -lxerces-c -o config_manager \
+	$(CXX) $(CFLAGS) $(LDFLAGS) -lxerces-c -o config_manager \
 	config_obj.o config_manager.cc
 
 config_obj.o:	config_obj.cc config_obj.hh
-	$(CXX) -g $(CFLAGS) -c -o config_obj.o config_obj.cc
+	$(CXX) $(CFLAGS) -c -o config_obj.o config_obj.cc
+
+config_module.o:	config_obj.o config_module.cc config_module.hh
+	$(CXX) $(CFLAGS) -c -o config_module.o config_module.cc
+
+example_module:	config_module.o example_module.hh example_module.cc
+	$(CXX) $(CFLAGS) -o example_module -l xerces-c config_module.o config_obj.o example_module.cc
 
 clean:
 	rm -f config_manager *.o myconf_new.conf

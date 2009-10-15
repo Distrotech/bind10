@@ -9,6 +9,8 @@
 #include <xercesc/sax/HandlerBase.hpp>
 #include <xercesc/framework/MemBufInputSource.hpp>
 
+#include <boost/algorithm/string.hpp>
+
 using namespace xercesc;
 
 /*
@@ -35,7 +37,8 @@ get_membuf_inputsource(std::istream &in) {
     XMLSize_t size;
 
     /* code to read stream into the source goes here */
-    
+    bytes = NULL;
+    size = 0;
     MemBufInputSource *in_source = new MemBufInputSource(bytes, size, buf_id);
     return in_source;
 }
@@ -70,7 +73,7 @@ read_identifier_part(std::string identifier,
         return false;
     }
     if (identifier.at(0) == '/') {
-        int end_pos = identifier.find_first_of("/@[", 1);
+        size_t end_pos = identifier.find_first_of("/@[", 1);
         if (end_pos == std::string::npos) {
             new_identifier = identifier.substr(1);
         } else {
@@ -78,8 +81,8 @@ read_identifier_part(std::string identifier,
 
             if (identifier.length() > end_pos) {
                 if (identifier.at(end_pos) == '[') {
-                    int sel_eq_pos = identifier.find_first_of('=', end_pos);
-                    int sel_end_pos = identifier.find_first_of(']', end_pos);
+                    size_t sel_eq_pos = identifier.find_first_of('=', end_pos);
+                    size_t sel_end_pos = identifier.find_first_of(']', end_pos);
                     // selector is name=value pair, name can be another identifier
                     // or an attribute of the current.
                     if (sel_eq_pos == std::string::npos || sel_end_pos == std::string::npos) {
@@ -96,9 +99,22 @@ read_identifier_part(std::string identifier,
     } else if (identifier.at(0) == '@') {
         attribute = identifier.substr(1);
     }
+    return true;
 }
 
 namespace ISC { namespace Config {
+
+    void
+    MyErrorHandler::error(const SAXParseException &exc) {
+        // for now this is just a placeholder
+        std::cout << "error on line " << exc.getLineNumber() << ": "
+                  << xmlstring_to_string(exc.getMessage()) << std::endl;
+    }
+    void
+    MyErrorHandler::warning(const SAXParseException &exc) {
+        // for now this is just a placeholder
+        std::cout << "warning!" << std::endl;
+    }
 
     Config::Config(std::string filename)
     {
@@ -131,6 +147,28 @@ namespace ISC { namespace Config {
     Config::get_value(std::string identifier) {
         DOMNode *n = find_sub_node(node, identifier);
         return get_node_value(n);
+    }
+
+    int
+    Config::get_int_value() {
+        return get_node_int_value(node);
+    }
+
+    int
+    Config::get_int_value(std::string identifier) {
+        DOMNode *n = find_sub_node(node, identifier);
+        return get_node_int_value(n);
+    }
+
+    bool
+    Config::get_bool_value() {
+        return get_node_bool_value(node);
+    }
+
+    bool
+    Config::get_bool_value(std::string identifier) {
+        DOMNode *n = find_sub_node(node, identifier);
+        return get_node_bool_value(n);
     }
 
     void
@@ -176,10 +214,10 @@ namespace ISC { namespace Config {
         /* we could set validation scheme and/or namespaces here */
         parser->setValidationScheme(XercesDOMParser::Val_Always);
 
-        ErrorHandler* errHandler = (ErrorHandler*) new HandlerBase();
+        ErrorHandler* errHandler = (ErrorHandler*) new MyErrorHandler();
         parser->setErrorHandler(errHandler);
         /* this will probably not work until we have a dtd */
-        parser->setIncludeIgnorableWhitespace(false);
+        parser->setIncludeIgnorableWhitespace(true);
 
         try {
             parser->parse(filename.c_str());
@@ -393,10 +431,21 @@ namespace ISC { namespace Config {
         }
     }
 
+    int
+    Config::get_node_int_value(const DOMNode *n)
+    {
+        return atoi(get_node_value(n).c_str());
+    }
+
+    bool
+    Config::get_node_bool_value(const DOMNode *n)
+    {
+        return (boost::iequals(get_node_value(n), "true"));
+    }
+
     void
     Config::set_node_value(DOMNode *n, std::string const &value)
     {
-        DOMNode *c;
         XMLCh *xml_str;
         
         if (!n) {
@@ -406,9 +455,10 @@ namespace ISC { namespace Config {
          * element, or one with only one text child */
         if (n->getNodeType() == n->ATTRIBUTE_NODE ||
              (n->getNodeType() == n->ELEMENT_NODE &&
-              !n->hasChildNodes() ||
-              (n->getFirstChild() == n->getLastChild() &&
-               n->getFirstChild()->getNodeType() == n->TEXT_NODE
+              (!n->hasChildNodes() ||
+               (n->getFirstChild() == n->getLastChild() &&
+                n->getFirstChild()->getNodeType() == n->TEXT_NODE
+               )
               )
              )
             ) {
