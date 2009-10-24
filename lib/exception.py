@@ -2,82 +2,102 @@ class BigToolException(Exception):
     """Abstract base class shared by all bigtool exceptions"""
     def __str__(self):
         return "Big tool has problem"
-    pass
 
+# Begin define Format exception
 
 class CmdFormatError(BigToolException):
     """Command is malformed"""
     def __str__(self):
         return "Command is malformed"
 
-class CmdWithoutModuleName(CmdFormatError):
-    """Command is malformed which doesn't have module name"""
-    def __str__(self):
-        return "Command doesn't have module name"
-
-class CmdWithoutCommandName(CmdFormatError):
-    """Command is malformed which donesn't have command name"""
-    def __init__(self, module_name):
-        super(CmdWithoutCommandName, self).__init__(self)
-        self.module_name = module_name
+        
+class CmdModuleNameFormatError(CmdFormatError):
+    """module name format error"""
 
     def __str__(self):
-        return "No command name is speicfied for module "\
-                + "\"" + self.module_name + "\""
+        return "Module name format error: the charater of name can only be '0-9a-zA-Z_'" 
+                      
+                
+class CmdCommandNameFormatError(CmdFormatError):
+    """command name format error"""
+    
+    def __init__(self, module):
+        self.module = module        
+        
+    def __str__(self):
+        return "Command name format error: the charater of name can only be '0-9a-zA-Z_'"      
+        
+        
+class CmdMissCommandNameFormatError(CmdFormatError):
+    """Module name isn't finished"""
+    
+    def __init__(self, module):
+        self.module = module
+        
+    def __str__(self):
+        return "command name is missed"   
 
-class CmdParameterFormatError(CmdFormatError):
+
+class CmdParamFormatError(CmdFormatError):
     """Command is malformed which parameter isn't key value pair"""
-    def __init__(self, module_name, command_name, error_reason):
-        super(CmdParameterFormatError, self).__init__(self)
-        self.module_name = module_name
-        self.command_name = command_name
-        self.error_reason = error_reason
+    
+    def __init__(self, module, command):        
+        self.module = module
+        self.command = command        
 
     def __str__(self):
-        return "Parameter belongs to command " + "\"" + self.command_name + "\""\
-                + " in module " + "\"" + self.module_name + "\""\
-                + " has error : " + "\"" + self.error_reason + "\""
+        return  "Parameter format error, it should like 'key = value'"         
+        
+# Begin define the exception for syntax
 
-class UnknownModule(BigToolException):
+class CmdSyntaxError(BigToolException):
+    """Command line has syntax error"""
+    
+    def __str__(self):
+        return "Command line has syntax error"
+
+
+class CmdUnknownModuleSyntaxError(CmdSyntaxError):
     """Command is unknown"""
-    def __init__(self, module_name):
-        self.module_name = module_name
+    def __init__(self, module):
+        self.module = module
 
     def __str__(self):
-        return "Module " + "\"" + self.module_name + "\"" + " is unknown"
+        return str("Unknown module '%s'" % self.module)
+        
 
-class UnknownCmd(BigToolException):
+class CmdUnknownCmdSyntaxError(CmdSyntaxError):
     """Command is unknown"""
-    def __init__(self, module_name, command_name):
-        self.module_name = module_name
-        self.command_name = command_name
+    def __init__(self, module, command):
+        self.module = module
+        self.command = command
 
     def __str__(self):
-        return "Module " + "\"" + self.module_name + "\""\
-                + " doesn't has command " + "\"" + self.command_name + "\""
+        return str("Unknown command '%s' to module '%s'" % 
+                    (self.command, self.module))
+                    
 
-class UnknownParameter(BigToolException):
+class CmdUnknownParamSyntaxError(CmdSyntaxError):
     """The parameter of command is unknown"""
-    def __init__(self, module_name, command_name, parameter_name):
-        self.module_name = module_name
-        self.command_name = command_name
-        self.parameter_name = parameter_name
+    def __init__(self, module, command, param):
+        self.module = module
+        self.command = command
+        self.param = param
 
     def __str__(self):
-        return "Command " + "\"" + self.command_name + "\""\
-                + " in module " + "\"" + self.module_name + "\"" \
-                + " doesn't has parameter " + "\"" + self.parameter_name + "\""
+        return str("Unknown parameter '%s' to command '%s' of module '%s'" %
+                   (self.param, self.command, self.module))
+                   
 
-
-class MissingParameter(BigToolException):
+class CmdMissParamSyntaxError(CmdSyntaxError):
     """The parameter of one command is missed"""
-    def __init__(self, module_name, command_name, parameter_name):
-        self.module_name = module_name
-        self.command_name = command_name
-        self.parameter_name = parameter_name
+    def __init__(self, module, command, param):
+        self.module = module
+        self.command = command
+        self.param = param
 
     def __str__(self):
-        return "Command " + "\"" + self.command_name + "\"" + \
-               " in module " + "\"" + self.module_name + "\"" + \
-               " is missing parameter " + "\"" + self.parameter_name + "\""
-
+        return str("Parameter '%s' is missed for command '%s' of moudule '%s'" % 
+                   (self.param, self.command, self.module))
+                   
+   
