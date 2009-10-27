@@ -17,27 +17,13 @@
 CFLAGS = @CFLAGS@ -Wall -Werror
 LDFLAGS = @LDFLAGS@
 
-all:	config_manager config_module.o example_module data.o
+all:	test
 
-config_manager:	config_manager.cc config_obj.o
-	$(CXX) $(CFLAGS) $(LDFLAGS) -lxerces-c -o config_manager \
-	config_obj.o config_manager.cc
-
-config_obj.o:	config_obj.cc config_obj.hh
-	$(CXX) $(CFLAGS) -c -o config_obj.o config_obj.cc
-
-config_module.o:	config_obj.o config_module.cc config_module.hh
-	$(CXX) $(CFLAGS) -c -o config_module.o config_module.cc
-
-data.o:	data.cc data.h
-	#$(CXX) $(CFLAGS) -c -o data.o data.cc
+test:	data.cc data.h
 	$(CXX) $(CFLAGS) -o test data.cc
 
-example_module:	config_module.o example_module.hh example_module.cc
-	$(CXX) $(CFLAGS) -o example_module -l xerces-c config_module.o config_obj.o example_module.cc
-
 clean:
-	rm -f config_manager *.o myconf_new.conf
+	rm -f *.o test
 
 run:
-	./config_manager
+	./test
