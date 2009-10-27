@@ -10,6 +10,16 @@
 
 namespace ISC { namespace Data {
 
+    // todo: include types and called function in the exception
+    class TypeError : public std::exception {
+    public:
+        TypeError(std::string m="Attempt to use function on wrong Element type") : msg(m) {}
+        ~TypeError() throw() {}
+        const char* what() const throw() { return msg.c_str(); }
+    private:
+        std::string msg;
+    };
+    
     class Element;
     typedef boost::shared_ptr<Element> ElementPtr;
 
@@ -42,28 +52,28 @@ namespace ISC { namespace Data {
         // These should probably throw an exception
         // These could also be removed if we want to force the user
         // to use get_value()
-        virtual int int_value() { return 0; }; // perhaps here we should throw exception?
-        virtual double double_value() { return 0.0; }; // "
-        virtual std::string string_value() { return "null"; }; // "
-        virtual const std::vector<boost::shared_ptr<Element> >& list_value() { throw 0; }; // replace with real exception or empty vector?
-        virtual const std::map<std::string, boost::shared_ptr<Element> >& map_value() { throw 0; }; // replace with real exception or empty map?
+        virtual int int_value() { throw TypeError(); };
+        virtual double double_value() { throw TypeError(); };
+        virtual std::string string_value() { throw TypeError(); };
+        virtual const std::vector<boost::shared_ptr<Element> >& list_value() { throw TypeError(); }; // replace with real exception or empty vector?
+        virtual const std::map<std::string, boost::shared_ptr<Element> >& map_value() { throw TypeError(); }; // replace with real exception or empty map?
 
         // hmm, these are only for specific subtypes, but we would
         // like to call them on the ElementPtr...
 
         // for lists
         // TODO: what to do as default implementation (ie. when element of wrong type)?
-        virtual ElementPtr get(const int i) { throw 0; };
-        virtual void set(const int i, ElementPtr element) { throw 0; };
-        virtual void add(ElementPtr element) { throw 0; };
-        virtual void remove(ElementPtr element) { throw 0; };
+        virtual ElementPtr get(const int i) { throw TypeError(); };
+        virtual void set(const int i, ElementPtr element) { throw TypeError(); };
+        virtual void add(ElementPtr element) { throw TypeError(); };
+        virtual void remove(ElementPtr element) { throw TypeError(); };
 
         // for maps
         // TODO: what to do as default implementation (ie. when element of wrong type)?
-        virtual ElementPtr get(const std::string& name) { throw 0;} ;
-        virtual void set(const std::string& name, ElementPtr element) { throw 0; };
-        virtual void remove(const std::string& name) { throw 0; };
-        virtual ElementPtr find(const std::string& identifier) { throw 0; };
+        virtual ElementPtr get(const std::string& name) { throw TypeError(); } ;
+        virtual void set(const std::string& name, ElementPtr element) { throw TypeError(); };
+        virtual void remove(const std::string& name) { throw TypeError(); };
+        virtual ElementPtr find(const std::string& identifier) { throw TypeError(); };
 
         //
         // the _value() functions return false if the given reference

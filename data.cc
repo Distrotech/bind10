@@ -413,7 +413,7 @@ ElementPtr
 MapElement::find(const std::string& id)
 {
     if (get_type() != map) {
-        throw 0;
+        throw TypeError();
     }
     size_t sep = id.find('/');
     if (sep == std::string::npos) {
@@ -447,7 +447,7 @@ int main(int argc, char **argv)
     BOOST_FOREACH(ElementPtr e, ve->list_value()) {
         cout << "\t" << e->str() << endl;
     }
-    cout << "Vector element direct: " << ve->string_value() << endl;
+    //cout << "Vector element direct: " << ve->string_value() << endl;
 
     //std::string s = "[ 1, 2, 3, 4]";
     std::string s = "{ \"test\": [ 47806, 42, 12.23, 1, \"1asdf\"], \"foo\": \"bar\", \"aaa\": { \"bbb\": { \"ccc\": 1234, \"ddd\": \"blup\" } } }";
@@ -465,7 +465,6 @@ int main(int argc, char **argv)
     }
     cout << "find aaa/bbb/ccc: " << e->find("aaa/bbb/ccc") << endl;
     //cout << "part: " << e->get("test")->str() << endl;
-
 /*
     int i;
     ie->get_value(i);
