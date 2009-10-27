@@ -74,6 +74,7 @@ namespace ISC { namespace Data {
         virtual void set(const std::string& name, ElementPtr element) { throw TypeError(); };
         virtual void remove(const std::string& name) { throw TypeError(); };
         virtual ElementPtr find(const std::string& identifier) { throw TypeError(); };
+        virtual bool find(const std::string& id, ElementPtr& t) { return false; };
 
         //
         // the _value() functions return false if the given reference
@@ -179,7 +180,17 @@ namespace ISC { namespace Data {
         void set(const std::string& s, ElementPtr p) { m[s] = p; };
         std::string str();
         std::string str_xml(size_t prefix = 0);
+        // we should name the two finds better...
+        // find the element at id; raises TypeError if one of the
+        // elements at path except the one we're looking for is not a
+        // mapelement.
+        // returns an empty element if the item could not be found
         ElementPtr find(const std::string& id);
+        // find the Element at 'id', and store the element pointer in t
+        // returns true if found, or false if not found (either because
+        // it doesnt exist or one of the elements in the path is not
+        // a MapElement)
+        bool find(const std::string& id, ElementPtr& t);
     };
 
 } }

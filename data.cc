@@ -428,6 +428,21 @@ MapElement::find(const std::string& id)
     }
 }
 
+bool
+MapElement::find(const std::string& id, ElementPtr& t) {
+    ElementPtr p;
+    try {
+        p = find(id);
+        if (p) {
+            t = p;
+            return true;
+        }
+    } catch (TypeError e) {
+        // ignore
+    }
+    return false;
+}
+
 int main(int argc, char **argv)
 {
     
@@ -464,6 +479,18 @@ int main(int argc, char **argv)
         exit(0);
     }
     cout << "find aaa/bbb/ccc: " << e->find("aaa/bbb/ccc") << endl;
+
+    ElementPtr founde;
+    if (e->find("aaa/bbb", founde)) {
+        cout << "found aaa/bbb: " << founde << endl;
+    } else {
+        cout << "aaa/bbb not found" << endl;
+    }
+    if (e->find("aaa/ccc", founde)) {
+        cout << "found aaa/ccc: " << founde << endl;
+    } else {
+        cout << "aaa/ccc not found" << endl;
+    }
     //cout << "part: " << e->get("test")->str() << endl;
 /*
     int i;
