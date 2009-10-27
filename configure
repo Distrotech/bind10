@@ -648,6 +648,7 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 with_xercesc
+with_boost
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1272,6 +1273,7 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-xercesc=PATH       specify a path to the xerces-c if it's not automatically found
+  --with-boost=PATH       specify a path to the boost libraries
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -3622,6 +3624,20 @@ if test "$xercesc_path" != "no"
 then
 	CFLAGS="$CFLAGS -I${xercesc_path}/include"
 	LDFLAGS="$LDFLAGS -L${xercesc_path}/lib"
+fi
+
+
+# Check whether --with-boost was given.
+if test "${with_boost+set}" = set; then :
+  withval=$with_boost; boost_path="$withval"
+else
+  boost_path="no"
+fi
+
+if test "$boost_path" != "no"
+then
+	CFLAGS="$CFLAGS -I${boost_path}/include"
+	LDFLAGS="$LDFLAGS -L${boost_path}/lib"
 fi
 
 cat >confcache <<\_ACEOF

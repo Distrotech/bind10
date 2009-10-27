@@ -29,4 +29,13 @@ then
 	LDFLAGS="$LDFLAGS -L${xercesc_path}/lib"
 fi
 
+AC_ARG_WITH(boost,
+[  --with-boost=PATH       specify a path to the boost libraries],
+    boost_path="$withval", boost_path="no")
+if test "$boost_path" != "no"
+then
+	CFLAGS="$CFLAGS -I${boost_path}/include"
+	LDFLAGS="$LDFLAGS -L${boost_path}/lib"
+fi
+
 AC_OUTPUT
