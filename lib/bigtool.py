@@ -8,7 +8,7 @@ from lib.command import BigToolCmd
 
 CONST_BIGTOOL_HELP = """Bigtool, verstion 0.1
 usage: <module name> <command name> [param1 = value1 [, param2 = value2]]
-Type Tab character to get the hint of module/command/paramters.
+Type Tab character to get the hint of module/command/parameters.
 Type \"help(? h)\" for help on bigtool.
 Type \"<module_name> help\" for help on the specific module.
 Type \"<module_name> <command_name> help\" for help on the specific command.
@@ -42,7 +42,7 @@ class BigTool(Cmd):
                 manda_params.append(inst_name)
                 all_params.append(inst_name)
         
-        # If help is inputed, don't do further paramters validation.
+        # If help is inputed, don't do further parameters validation.
         for val in cmd.params.keys():
             if val == "help":
                 return
@@ -208,7 +208,7 @@ class BigTool(Cmd):
     
     def _temp_print_parse_result(self, cmd):
         print("command line is parsed:\nmodule_name: %s\ncommand_name: %s\n"\
-              "paramters:" % (cmd.module, cmd.command))
+              "parameters:" % (cmd.module, cmd.command))
               
         for name in cmd.params.keys():            
             print("\t%s \t%s" % (name, cmd.params[name]))
