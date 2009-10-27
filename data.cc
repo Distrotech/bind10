@@ -405,6 +405,29 @@ MapElement::str_xml(size_t prefix)
     return ss.str();
 }
 
+// currently throws when one of the types in the path (except the one
+// we're looking for) is not a MapElement
+// returns 0 if it could simply not be found
+// should that also be an exception?
+ElementPtr
+MapElement::find(const std::string& id)
+{
+    if (get_type() != map) {
+        throw 0;
+    }
+    size_t sep = id.find('/');
+    if (sep == std::string::npos) {
+        return get(id);
+    } else {
+        ElementPtr ce = get(id.substr(0, sep));
+        if (ce) {
+            return ce->find(id.substr(sep+1));
+        } else {
+            return ElementPtr();
+        }
+    }
+}
+
 int main(int argc, char **argv)
 {
     
@@ -427,7 +450,7 @@ int main(int argc, char **argv)
     cout << "Vector element direct: " << ve->string_value() << endl;
 
     //std::string s = "[ 1, 2, 3, 4]";
-    std::string s = "{ \"test\": [ 47806, 42, 12.23, 1, \"1asdf\"], \"foo\": \"bar\" }";
+    std::string s = "{ \"test\": [ 47806, 42, 12.23, 1, \"1asdf\"], \"foo\": \"bar\", \"aaa\": { \"bbb\": { \"ccc\": 1234, \"ddd\": \"blup\" } } }";
     //std::string s = "{ \"test\": 1 }";
     //std::string s = "[ 1, 2 ,3\" ]";
     std::stringstream ss;
@@ -440,6 +463,7 @@ int main(int argc, char **argv)
         cout << "could not read element" << endl;
         exit(0);
     }
+    cout << "find aaa/bbb/ccc: " << e->find("aaa/bbb/ccc") << endl;
     //cout << "part: " << e->get("test")->str() << endl;
 
 /*

@@ -63,6 +63,7 @@ namespace ISC { namespace Data {
         virtual ElementPtr get(const std::string& name) { throw 0;} ;
         virtual void set(const std::string& name, ElementPtr element) { throw 0; };
         virtual void remove(const std::string& name) { throw 0; };
+        virtual ElementPtr find(const std::string& identifier) { throw 0; };
 
         //
         // the _value() functions return false if the given reference
@@ -168,6 +169,7 @@ namespace ISC { namespace Data {
         void set(const std::string& s, ElementPtr p) { m[s] = p; };
         std::string str();
         std::string str_xml(size_t prefix = 0);
+        ElementPtr find(const std::string& id);
     };
 
 } }
