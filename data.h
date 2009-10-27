@@ -191,6 +191,11 @@ namespace ISC { namespace Data {
         // it doesnt exist or one of the elements in the path is not
         // a MapElement)
         bool find(const std::string& id, ElementPtr& t);
+
+        //
+        // Encode into the CC wire format.
+        //
+	void to_wire(std::ostream &ss);
     };
 
 } }

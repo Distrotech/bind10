@@ -428,6 +428,14 @@ MapElement::find(const std::string& id)
     }
 }
 
+//
+// Encode into wire format.
+//
+void
+to_wire(std::ostream &ss)
+{
+}
+
 bool
 MapElement::find(const std::string& id, ElementPtr& t) {
     ElementPtr p;
