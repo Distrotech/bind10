@@ -491,12 +491,26 @@ MapElement::find(const std::string& id)
     }
 }
 
+const unsigned int PROTOCOL_VERSION = 0x536b616e;
+
+const unsigned char ITEM_DATA = 0x01;
+const unsigned char ITEM_HASH = 0x02;
+const unsigned char ITEM_LIST = 0x03;
+const unsigned char ITEM_NULL = 0x04;
+const unsigned char ITEM_MASK = 0x0f;
+
+const unsigned char ITEM_LENGTH_32   = 0x00;
+const unsigned char ITEM_LENGTH_16   = 0x10;
+const unsigned char ITEM_LENGTH_8    = 0x20;
+const unsigned char ITEM_LENGTH_MASK = 0x30;
+
 //
 // Encode into wire format.
 //
 void
-to_wire(std::ostream &ss)
+MapElement::to_wire(std::ostream& ss)
 {
+    std::stringstream ss;
 }
 
 bool

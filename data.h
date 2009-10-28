@@ -213,7 +213,7 @@ namespace ISC { namespace Data {
         //
         // Encode into the CC wire format.
         //
-	void to_wire(std::ostream &ss);
+	void to_wire(std::ostream& ss);
     };
 
 } }
