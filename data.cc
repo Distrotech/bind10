@@ -1,6 +1,7 @@
 
 #include "data.h"
 
+#include <cstdio>
 #include <iostream>
 #include <sstream>
 #include <boost/foreach.hpp>
