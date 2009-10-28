@@ -5,7 +5,7 @@
 #include <iostream>
 #include <sstream>
 #include <boost/foreach.hpp>
-
+#include <boost/algorithm/string.hpp>
 
 using namespace std;
 using namespace ISC::Data;
@@ -38,6 +38,17 @@ Element::create(const std::string& s)
 {
     try {
         return ElementPtr(new StringElement(s));
+    } catch (std::bad_alloc) {
+        return ElementPtr();
+    }
+}
+
+ElementPtr
+Element::create(const bool b)
+{
+    try {
+        cout << "creating boolelement" << endl;
+        return ElementPtr(new BoolElement(b));
     } catch (std::bad_alloc) {
         return ElementPtr();
     }
@@ -142,6 +153,17 @@ str_from_stringstream(std::stringstream &in)
     return ss.str();
 }
 
+static std::string
+word_from_stringstream(std::stringstream &in)
+{
+    std::stringstream ss;
+    while (isalpha(in.peek())) {
+        ss << (char) in.get();
+    }
+    return ss.str();
+}
+
+
 static ElementPtr
 from_stringstream_int_or_double(std::stringstream &in)
 {
@@ -154,6 +176,19 @@ from_stringstream_int_or_double(std::stringstream &in)
         return Element::create(d);
     } else {
         return Element::create(i);
+    }
+}
+
+static ElementPtr
+from_stringstream_bool(std::stringstream &in)
+{
+    std::string word = word_from_stringstream(in);
+    if (boost::iequals(word, "true")) {
+        return Element::create(true);
+    } else if (boost::iequals(word, "false")) {
+        return Element::create(false);
+    } else {
+        return ElementPtr();
     }
 }
 
@@ -232,13 +267,21 @@ Element::create_from_string(std::stringstream &in)
                 element = from_stringstream_int_or_double(in);
                 el_read = true;
                 break;
-            case '[':
-                element = from_stringstream_list(in);
+            case 't':
+            case 'T':
+            case 'f':
+            case 'F':
+                in.putback(c);
+                element = from_stringstream_bool(in);
                 el_read = true;
                 break;
             case '"':
                 in.putback('"');
                 element = from_stringstream_string(in);
+                el_read = true;
+                break;
+            case '[':
+                element = from_stringstream_list(in);
                 el_read = true;
                 break;
             case '{':
@@ -278,6 +321,16 @@ DoubleElement::str()
     std::stringstream ss;
     ss << double_value();
     return ss.str();
+}
+
+std::string
+BoolElement::str()
+{
+    if (b) {
+        return "true";
+    } else {
+        return "false";
+    }
 }
 
 std::string
@@ -349,6 +402,15 @@ IntElement::str_xml(size_t prefix)
 
 std::string
 DoubleElement::str_xml(size_t prefix)
+{
+    std::stringstream ss;
+    pre(ss, prefix);
+    ss << str();
+    return ss.str();
+}
+
+std::string
+BoolElement::str_xml(size_t prefix)
 {
     std::stringstream ss;
     pre(ss, prefix);
@@ -459,7 +521,8 @@ int main(int argc, char **argv)
     cout << "ie value: " << ie->int_value() << endl;
     ElementPtr de = Element::create(12.0);
     cout << "de value: " << de->double_value() << endl;
-    ElementPtr se = Element::create("hello, world");
+    ElementPtr se = Element::create(std::string("hello, world").c_str());
+    cout << "se type " << se->get_type() << endl;
     cout << "se value: " << se->string_value() << endl;
     std::vector<ElementPtr> v;
     v.push_back(Element::create(12));
@@ -474,7 +537,7 @@ int main(int argc, char **argv)
     //cout << "Vector element direct: " << ve->string_value() << endl;
 
     //std::string s = "[ 1, 2, 3, 4]";
-    std::string s = "{ \"test\": [ 47806, 42, 12.23, 1, \"1asdf\"], \"foo\": \"bar\", \"aaa\": { \"bbb\": { \"ccc\": 1234, \"ddd\": \"blup\" } } }";
+    std::string s = "{ \"test\": [ 47806, true, 42, 12.23, 1, \"1asdf\"], \"foo\": \"bar\", \"aaa\": { \"bbb\": { \"ccc\": 1234, \"ddd\": \"blup\" } } }";
     //std::string s = "{ \"test\": 1 }";
     //std::string s = "[ 1, 2 ,3\" ]";
     std::stringstream ss;
@@ -515,5 +578,8 @@ int main(int argc, char **argv)
 
     cout << "test: " << e << endl;
 */
+    ElementPtr be = Element::create(true);
+    cout << "boolelement: " << be << endl;
+
     return 0;
 }

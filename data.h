@@ -35,8 +35,7 @@ namespace ISC { namespace Data {
         Element(int t) { type = t; }
 
     public:
-
-        enum types { integer, real, string, list, map };
+        enum types { integer, real, boolean, string, list, map };
         // base class; make dtor virtual
         virtual ~Element() {};
 
@@ -54,6 +53,7 @@ namespace ISC { namespace Data {
         // to use get_value()
         virtual int int_value() { throw TypeError(); };
         virtual double double_value() { throw TypeError(); };
+        virtual bool bool_value() { throw TypeError(); };
         virtual std::string string_value() { throw TypeError(); };
         virtual const std::vector<boost::shared_ptr<Element> >& list_value() { throw TypeError(); }; // replace with real exception or empty vector?
         virtual const std::map<std::string, boost::shared_ptr<Element> >& map_value() { throw TypeError(); }; // replace with real exception or empty map?
@@ -85,12 +85,14 @@ namespace ISC { namespace Data {
         //
         virtual bool get_value(int& t) { return false; };
         virtual bool get_value(double& t) { return false; };
+        virtual bool get_value(bool& t) { return false; };
         virtual bool get_value(std::string& t) { return false; };
         virtual bool get_value(std::vector<ElementPtr>& t) { return false; };
         virtual bool get_value(std::map<std::string, ElementPtr>& t) { return false; };
 
         virtual bool set_value(const int v) { return false; };
         virtual bool set_value(const double v) { return false; };
+        virtual bool set_value(const bool t) { return false; };
         virtual bool set_value(const std::string& v) { return false; };
         virtual bool set_value(const std::vector<ElementPtr>& v) { return false; };
         virtual bool set_value(const std::map<std::string, ElementPtr>& v) { return false; };
@@ -105,7 +107,11 @@ namespace ISC { namespace Data {
         // allocated
         static ElementPtr create(const int i);
         static ElementPtr create(const double d);
+        static ElementPtr create(const bool b);
         static ElementPtr create(const std::string& s);
+        // need both std:string and char *, since c++ will match
+        // bool before std::string when you pass it a char *
+        static ElementPtr create(const char *s) { return create(std::string(s)); }; 
         static ElementPtr create(const std::vector<ElementPtr>& v);
         static ElementPtr create(const std::map<std::string, ElementPtr>& m);
 
@@ -141,12 +147,24 @@ namespace ISC { namespace Data {
         std::string str_xml(size_t prefix = 0);
     };
 
+	class BoolElement : public Element {
+		bool b;
+		
+		public:
+		BoolElement(const bool v) : Element(boolean), b(v) {};
+		bool bool_value() { return b; }
+		bool get_value(bool& t) { t = b; return true; };
+		bool set_value(const bool v) { b = v; return true; };
+		std::string str();
+		std::string str_xml(size_t prefix = 0);
+	};
+	
     class StringElement : public Element {
         std::string s;
 
         public:
         StringElement(std::string v) : Element(string), s(v) {};
-        std::string string_value() { return s; }
+        std::string string_value() { return s; };
         bool get_value(std::string& t) { t = s; return true; };
         bool set_value(const std::string& v) { s = v; return true; };
         std::string str();
