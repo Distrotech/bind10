@@ -13,7 +13,6 @@ using namespace ISC::Data;
 static void
 hexdump(std::string s)
 {
-    
     const unsigned char *c = (const unsigned char *)s.c_str();
     int len = s.length();
 
