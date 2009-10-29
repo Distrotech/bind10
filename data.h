@@ -1,5 +1,5 @@
-#ifndef _DATA_H
-#define _DATA_H 1
+#ifndef _ISC_DATA_H
+#define _ISC_DATA_H 1
 
 #include <string>
 #include <vector>
@@ -242,4 +242,4 @@ namespace ISC { namespace Data {
 // cout << "Element: " << foo;
 std::ostream& operator <<(std::ostream &out, const ISC::Data::ElementPtr& e);
 
-#endif // _DATA_H
+#endif // _ISC_DATA_H
