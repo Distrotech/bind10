@@ -13,8 +13,17 @@ namespace ISC { namespace Data {
     // todo: include types and called function in the exception
     class TypeError : public std::exception {
     public:
-        TypeError(std::string m="Attempt to use function on wrong Element type") : msg(m) {}
+        TypeError(std::string m = "Attempt to use function on wrong Element type") : msg(m) {}
         ~TypeError() throw() {}
+        const char* what() const throw() { return msg.c_str(); }
+    private:
+        std::string msg;
+    };
+
+    class DecodeError : public std::exception {
+    public:
+        DecodeError(std::string m = "Wire-format data is invalid") : msg(m) {}
+        ~DecodeError() throw() {}
         const char* what() const throw() { return msg.c_str(); }
     private:
         std::string msg;
@@ -121,6 +130,8 @@ namespace ISC { namespace Data {
         // the memory could not be allocated
         static ElementPtr create_from_string(std::stringstream &in);
         //static ElementPtr create_from_xml(std::stringstream &in);
+
+        static ElementPtr from_wire(std::stringstream &in, int length);
     };
 
     class IntElement : public Element {
@@ -203,6 +214,7 @@ namespace ISC { namespace Data {
         void set(const std::string& s, ElementPtr p) { m[s] = p; };
         std::string str();
         std::string str_xml(size_t prefix = 0);
+
         std::string to_wire(int omit_length = 0);
         
         //

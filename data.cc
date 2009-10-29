@@ -506,6 +506,156 @@ MapElement::find(const std::string& id)
 }
 
 //
+// Decode from wire format.
+//
+
+ElementPtr decode_element(std::stringstream& in, int& in_length);
+
+static unsigned char
+get_byte(std::stringstream& in)
+{
+    int c = in.get();
+    if (c == EOF) {
+        throw DecodeError("End of data while decoding wire format message");
+    }
+
+    return c;
+}
+
+std::string
+decode_tag(std::stringstream& in, int& item_length)
+{
+    char buf[256];
+
+    int len = get_byte(in);
+    item_length--;
+
+    in.read(buf, len);
+    if (in.fail()) {
+        throw DecodeError();
+    }
+    buf[len] = 0;
+    item_length -= len;
+
+    return std::string(buf);
+}
+
+ElementPtr
+decode_data(std::stringstream& in, int& item_length)
+{
+    char *buf = new char[item_length + 1];
+
+    in.read(buf, item_length);
+    if (in.fail()) {
+        throw DecodeError();
+    }
+    buf[item_length] = 0;
+    item_length -= item_length;
+
+    std::string s = std::string(buf);
+    delete [] buf;
+    return Element::create(s);
+}
+
+ElementPtr
+decode_hash(std::stringstream& in, int& item_length)
+{
+    std::map<std::string, ElementPtr> m;
+    std::pair<std::string, ElementPtr> p;
+
+    while (item_length > 0) {
+        p.first = decode_tag(in, item_length);
+        p.second = decode_element(in, item_length);
+        m.insert(p);
+    }
+
+    return Element::create(m);
+}
+
+ElementPtr
+decode_list(std::stringstream& in, int& item_length)
+{
+    std::vector<ElementPtr> v;
+
+    while (item_length > 0) {
+        v.push_back(decode_element(in, item_length));
+    }
+    return Element::create(v);
+}
+
+ElementPtr
+decode_null(std::stringstream& in, int& item_length)
+{
+    return Element::create("NULL");
+}
+
+ElementPtr
+decode_element(std::stringstream& in, int& in_length)
+{
+    ElementPtr element;
+
+    unsigned char type_and_length = get_byte(in);
+    unsigned char type = type_and_length & ITEM_MASK;
+    unsigned char lenbytes = type_and_length & ITEM_LENGTH_MASK;
+    in_length--;
+
+    int item_length = 0;
+    switch (lenbytes) {
+    case ITEM_LENGTH_32:
+        item_length |= get_byte(in);
+        item_length <<= 8;
+        item_length |= get_byte(in);
+        item_length <<= 8;
+        in_length -= 2;  // only 2 here, we will get more later
+    case ITEM_LENGTH_16:
+        item_length |= get_byte(in);
+        item_length <<= 8;
+        in_length--;  // only 1 here
+    case ITEM_LENGTH_8:
+        item_length |= get_byte(in);
+        in_length--;
+    }
+
+    in_length -= item_length;
+
+    switch (type) {
+    case ITEM_DATA:
+        element = decode_data(in, item_length);
+        break;
+    case ITEM_HASH:
+        element = decode_hash(in, item_length);
+        break;
+    case ITEM_LIST:
+        element = decode_list(in, item_length);
+        break;
+    case ITEM_NULL:
+        element = decode_null(in, item_length);
+        break;
+    }
+
+    return (element);
+}
+
+ElementPtr
+Element::from_wire(std::stringstream& in, int length)
+{
+    //
+    // Check protocol version
+    //
+    for (int i = 0 ; i < 4 ; i++) {
+        unsigned char version_byte = get_byte(in);
+        if (PROTOCOL_VERSION[i] != version_byte) {
+            throw DecodeError("Protocol version incorrect");
+        }
+    }
+    length -= 4;
+
+    ElementPtr element;
+    element = decode_hash(in, length);
+    return (element);
+}
+
+//
 // Encode into wire format.
 //
 
@@ -767,10 +917,8 @@ int main(int argc, char **argv)
     ss_skan << e_skan->to_wire(1);
     hexdump(std::string(ss_skan.str()));
 
-    int counter = 100000;
-    while (counter--) {
-        (void)e_skan->to_wire(1);
-    }
+    ElementPtr decoded = Element::from_wire(ss_skan, ss_skan.str().length());
+    cout << decoded << endl;
 
     return 0;
 }
