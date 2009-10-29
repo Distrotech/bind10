@@ -10,6 +10,8 @@
 using namespace std;
 using namespace ISC::Data;
 
+double ITEM_DATA = 1234.3;
+
 static void
 hexdump(std::string s)
 {
