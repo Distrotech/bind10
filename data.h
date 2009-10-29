@@ -43,6 +43,7 @@ namespace ISC { namespace Data {
         // pure virtuals, every derived class must implement these
         virtual std::string str() = 0;
         virtual std::string str_xml(size_t prefix = 0) = 0;
+        virtual std::string to_wire(int omit_length = 0) = 0;
 
         // virtual function templates must match, so we
         // need separate getters for all subclassed types
@@ -120,61 +121,64 @@ namespace ISC { namespace Data {
         // the memory could not be allocated
         static ElementPtr create_from_string(std::stringstream &in);
         //static ElementPtr create_from_xml(std::stringstream &in);
-        
     };
 
     class IntElement : public Element {
         int i;
 
-        public:
+    public:
         IntElement(int v) : Element(integer), i(v) { };
         int int_value() { return i; }
         bool get_value(int& t) { t = i; return true; };
         bool set_value(const int v) { i = v; return true; };
         std::string str();
         std::string str_xml(size_t prefix = 0);
+        std::string to_wire(int omit_length = 0);
     };
 
     class DoubleElement : public Element {
         double d;
 
-        public:
+    public:
         DoubleElement(double v) : Element(real), d(v) {};
         double double_value() { return d; }
         bool get_value(double& t) { t = d; return true; };
         bool set_value(const double v) { d = v; return true; };
         std::string str();
         std::string str_xml(size_t prefix = 0);
+        std::string to_wire(int omit_length = 0);
     };
 
-	class BoolElement : public Element {
-		bool b;
+    class BoolElement : public Element {
+        bool b;
 		
-		public:
-		BoolElement(const bool v) : Element(boolean), b(v) {};
-		bool bool_value() { return b; }
-		bool get_value(bool& t) { t = b; return true; };
-		bool set_value(const bool v) { b = v; return true; };
-		std::string str();
-		std::string str_xml(size_t prefix = 0);
-	};
+    public:
+        BoolElement(const bool v) : Element(boolean), b(v) {};
+        bool bool_value() { return b; }
+        bool get_value(bool& t) { t = b; return true; };
+        bool set_value(const bool v) { b = v; return true; };
+        std::string str();
+        std::string str_xml(size_t prefix = 0);
+        std::string to_wire(int omit_length = 0);
+    };
 	
     class StringElement : public Element {
         std::string s;
 
-        public:
+    public:
         StringElement(std::string v) : Element(string), s(v) {};
         std::string string_value() { return s; };
         bool get_value(std::string& t) { t = s; return true; };
         bool set_value(const std::string& v) { s = v; return true; };
         std::string str();
         std::string str_xml(size_t prefix = 0);
+        std::string to_wire(int omit_length = 0);
     };
 
     class ListElement : public Element {
         std::vector<ElementPtr> l;
 
-        public:
+    public:
         ListElement(std::vector<ElementPtr> v) : Element(list), l(v) {};
         const std::vector<ElementPtr>& list_value() { return l; }
         bool get_value(std::vector<ElementPtr>& t) { t = l; return true; };
@@ -184,12 +188,13 @@ namespace ISC { namespace Data {
         void add(ElementPtr e) { l.push_back(e); };
         std::string str();
         std::string str_xml(size_t prefix = 0);
+        std::string to_wire(int omit_length = 0);
     };
 
     class MapElement : public Element {
         std::map<std::string, ElementPtr> m;
 
-        public:
+    public:
         MapElement(std::map<std::string, ElementPtr> v) : Element(map), m(v) {};
         const std::map<std::string, ElementPtr>& map_value() { return m; }
         bool get_value(std::map<std::string, ElementPtr>& t) { t = m; return true; };
@@ -198,22 +203,25 @@ namespace ISC { namespace Data {
         void set(const std::string& s, ElementPtr p) { m[s] = p; };
         std::string str();
         std::string str_xml(size_t prefix = 0);
+        std::string to_wire(int omit_length = 0);
+        
+        //
+        // Encode into the CC wire format.
+        //
+	void to_wire(std::ostream& ss);
+
         // we should name the two finds better...
         // find the element at id; raises TypeError if one of the
         // elements at path except the one we're looking for is not a
         // mapelement.
         // returns an empty element if the item could not be found
         ElementPtr find(const std::string& id);
+
         // find the Element at 'id', and store the element pointer in t
         // returns true if found, or false if not found (either because
         // it doesnt exist or one of the elements in the path is not
         // a MapElement)
         bool find(const std::string& id, ElementPtr& t);
-
-        //
-        // Encode into the CC wire format.
-        //
-	void to_wire(std::ostream& ss);
     };
 
 } }

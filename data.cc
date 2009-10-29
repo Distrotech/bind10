@@ -4,11 +4,25 @@
 #include <cstdio>
 #include <iostream>
 #include <sstream>
+
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string.hpp>
 
 using namespace std;
 using namespace ISC::Data;
+
+const unsigned char PROTOCOL_VERSION[4] = { 0x53, 0x6b, 0x61, 0x6e };
+
+const unsigned char ITEM_DATA = 0x01;
+const unsigned char ITEM_HASH = 0x02;
+const unsigned char ITEM_LIST = 0x03;
+const unsigned char ITEM_NULL = 0x04;
+const unsigned char ITEM_MASK = 0x0f;
+
+const unsigned char ITEM_LENGTH_32   = 0x00;
+const unsigned char ITEM_LENGTH_16   = 0x10;
+const unsigned char ITEM_LENGTH_8    = 0x20;
+const unsigned char ITEM_LENGTH_MASK = 0x30;
 
 //
 // factory functions
@@ -491,26 +505,152 @@ MapElement::find(const std::string& id)
     }
 }
 
-const unsigned int PROTOCOL_VERSION = 0x536b616e;
-
-const unsigned char ITEM_DATA = 0x01;
-const unsigned char ITEM_HASH = 0x02;
-const unsigned char ITEM_LIST = 0x03;
-const unsigned char ITEM_NULL = 0x04;
-const unsigned char ITEM_MASK = 0x0f;
-
-const unsigned char ITEM_LENGTH_32   = 0x00;
-const unsigned char ITEM_LENGTH_16   = 0x10;
-const unsigned char ITEM_LENGTH_8    = 0x20;
-const unsigned char ITEM_LENGTH_MASK = 0x30;
-
 //
 // Encode into wire format.
 //
-void
-MapElement::to_wire(std::ostream& ss)
+
+std::string
+encode_length(unsigned int length, unsigned char type)
 {
     std::stringstream ss;
+
+    if (length <= 0x000000ff) {
+        unsigned char val = (length & 0x000000ff);
+        type |= ITEM_LENGTH_8;
+        ss << type << val;
+    } else if (length <= 0x0000ffff) {
+        unsigned char val[2];
+        val[0] = (length & 0x0000ff00) >> 8;
+        val[1] = (length & 0x000000ff);
+        type |= ITEM_LENGTH_16;
+        ss << type << val;
+    } else {
+        unsigned char val[4];
+        val[0] = (length & 0xff000000) >> 24;
+        val[1] = (length & 0x00ff0000) >> 16;
+        val[2] = (length & 0x0000ff00) >> 8;
+        val[3] = (length & 0x000000ff);
+        type |= ITEM_LENGTH_32;
+        ss << type << val;
+    }
+    return ss.str();
+}
+
+std::string
+StringElement::to_wire(int omit_length)
+{
+    std::stringstream ss;
+
+    int length = string_value().length();
+    ss << encode_length(length, ITEM_DATA) << string_value();
+
+    return ss.str();
+}
+
+std::string
+IntElement::to_wire(int omit_length)
+{
+    std::stringstream ss;
+    std::stringstream text;
+
+    text << str();
+    int length = text.str().length();
+    ss << encode_length(length, ITEM_DATA) << text.str();
+
+    return ss.str();
+}
+
+std::string
+BoolElement::to_wire(int omit_length)
+{
+    std::stringstream ss;
+    std::stringstream text;
+
+    text << str();
+    int length = text.str().length();
+    ss << encode_length(length, ITEM_DATA) << text.str();
+
+    return ss.str();
+}
+
+std::string
+DoubleElement::to_wire(int omit_length)
+{
+    std::stringstream ss;
+    std::stringstream text;
+
+    text << str();
+    int length = text.str().length();
+    ss << encode_length(length, ITEM_DATA) << text.str();
+
+    return ss.str();
+}
+
+std::string
+ListElement::to_wire(int omit_length)
+{
+    std::stringstream ss;
+    std::vector<ElementPtr> v;
+    v = list_value();
+    for (std::vector<ElementPtr>::iterator it = v.begin() ;
+         it != v.end() ; ++it) {
+        ss << (*it)->to_wire();
+    }
+
+    if (omit_length) {
+        return ss.str();
+    } else {
+        std::stringstream ss_len;
+        ss_len << encode_length(ss.str().length(), ITEM_LIST);
+        ss_len << ss.str();
+        return ss_len.str();
+    }
+}
+
+std::string
+encode_tag(const std::string &s)
+{
+    std::stringstream ss;
+    int length = s.length();
+    unsigned char val = length & 0x000000ff;
+
+    ss << val << s;
+
+    return ss.str();
+}
+
+std::string
+MapElement::to_wire(int omit_length)
+{
+    std::stringstream ss;
+    std::map<std::string, ElementPtr> m;
+
+    //
+    // If we don't want the length, we will want the protocol header
+    //
+    if (omit_length) {
+        ss << PROTOCOL_VERSION[0] << PROTOCOL_VERSION[1];
+        ss << PROTOCOL_VERSION[2] << PROTOCOL_VERSION[3];
+    }
+
+    m = map_value();
+    for (std::map<std::string, ElementPtr>::iterator it = m.begin() ;
+         it != m.end() ; ++it) {
+        ss << encode_tag((*it).first);
+        ss << (*it).second->to_wire();
+    }
+
+    //
+    // add length if needed
+    //
+    if (omit_length) {
+        return ss.str();
+    } else {
+        std::stringstream ss_len;
+        ss_len << encode_length(ss.str().length(), ITEM_HASH);
+        ss_len << ss.str();
+        return ss_len.str();
+    }
 }
 
 bool
@@ -526,6 +666,30 @@ MapElement::find(const std::string& id, ElementPtr& t) {
         // ignore
     }
     return false;
+}
+
+static void
+hexdump(std::string s)
+{
+    
+    const unsigned char *c = (const unsigned char *)s.c_str();
+    int len = s.length();
+
+    int count = 0;
+
+    printf("%4d: ", 0);
+    while (len) {
+        printf("%02x %c ", (*c & 0xff),
+               (isprint((*c & 0xff)) ? (*c & 0xff) : '.'));
+        count++;
+        c++;
+        len--;
+        if (count % 16 == 0)
+            printf("\n%4d: ", count);
+        else if (count % 8 == 0)
+            printf(" | ");
+    }
+    printf("\n");
 }
 
 int main(int argc, char **argv)
@@ -594,6 +758,14 @@ int main(int argc, char **argv)
 */
     ElementPtr be = Element::create(true);
     cout << "boolelement: " << be << endl;
+
+    std::string s_skan = "{ \"test\": \"testval\", \"xxx\": \"that\", \"int\": 123456, \"list\": [ 1, 2, 3 ], \"map\": { \"one\": \"ONE\" }, \"double\": 5.4, \"boolean\": true }";
+    std::stringstream in_ss_skan;
+    in_ss_skan.str(s_skan);
+    ElementPtr e_skan = Element::create_from_string(in_ss_skan);
+    std::stringstream ss_skan;
+    ss_skan << e_skan->to_wire(1);
+    hexdump(std::string(ss_skan.str()));
 
     return 0;
 }
