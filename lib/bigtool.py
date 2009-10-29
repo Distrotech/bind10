@@ -1,18 +1,27 @@
 import sys
 import readline
-import collections
 from cmd import Cmd
 from lib.exception import *
 from lib.moduleinfo import ModuleInfo
+from lib.moduleinfo import ParamInfo
 from lib.command import BigToolCmd
+from xml.dom import minidom
+
+try:
+    from collections import OrderedDict
+except ImportError:
+    from lib.mycollections import OrderedDict
+
 
 CONST_BIGTOOL_HELP = """Bigtool, verstion 0.1
 usage: <module name> <command name> [param1 = value1 [, param2 = value2]]
-Type Tab character to get the hint of module/command/parameters.
+Type Tab character to get the hint of module/command/paramters.
 Type \"help(? h)\" for help on bigtool.
 Type \"<module_name> help\" for help on the specific module.
 Type \"<module_name> <command_name> help\" for help on the specific command.
 \nAvailable module names: """
+
+CONST_COMMAND_NODE = "command"
 
 class BigTool(Cmd):
     """simple bigtool command example."""    
@@ -21,7 +30,7 @@ class BigTool(Cmd):
         Cmd.__init__(self)
         self.prompt = '> '
         self.ruler = '-'
-        self.modules = collections.OrderedDict()
+        self.modules = OrderedDict()
         self.add_module_info(ModuleInfo("help", desc = "Get help for bigtool"))
                     
 
@@ -36,13 +45,8 @@ class BigTool(Cmd):
         command_info = module_info.get_command_with_name(cmd.command)
         manda_params = command_info.get_mandatory_param_names()
         all_params = command_info.get_param_names()
-        if command_info.need_instance_param():
-            inst_name = module_info.get_instance_param_name()
-            if inst_name:
-                manda_params.append(inst_name)
-                all_params.append(inst_name)
         
-        # If help is inputed, don't do further parameters validation.
+        # If help is inputed, don't do further paramters validation.
         for val in cmd.params.keys():
             if val == "help":
                 return
@@ -67,7 +71,7 @@ class BigTool(Cmd):
         if cmd.command == "help" or ("help" in cmd.params.keys()):
             self._handle_help(cmd)
         else:
-            self._temp_print_parse_result(cmd)
+            self._write_xml(cmd)
 
     def add_module_info(self, module_info):        
         self.modules[module_info.name] = module_info
@@ -165,11 +169,6 @@ class BigTool(Cmd):
             if command in module_info.get_command_names():                
                 cmd_info = module_info.get_command_with_name(command)
                 params = cmd_info.get_param_names() 
-                if cmd_info.need_instance_param():
-                    inst_name = module_info.get_instance_param_name()
-                    if inst_name:
-                        params.append(inst_name)
-                
                 hint = []
                 if text:    
                     hint = [val for val in params if val.startswith(text)]
@@ -205,14 +204,6 @@ class BigTool(Cmd):
              isinstance(ept, CmdUnknownParamSyntaxError):
              self.modules[ept.module].command_help(ept.command)
                  
-    
-    def _temp_print_parse_result(self, cmd):
-        print("command line is parsed:\nmodule_name: %s\ncommand_name: %s\n"\
-              "parameters:" % (cmd.module, cmd.command))
-              
-        for name in cmd.params.keys():            
-            print("\t%s \t%s" % (name, cmd.params[name]))
-            
                 
     def _append_space_to_hint(self):
         """Append one space at the end of complete hint."""
@@ -225,9 +216,29 @@ class BigTool(Cmd):
             self.modules[cmd.module].module_help()
         else:
             self.modules[cmd.module].command_help(cmd.command)
+
             
-            
+    def _write_xml(self, cmd):
+        '''The format of the xml message is:
+        <command name = ''>
+            <module name = ''>
+                <param name = '' value = ''>
+                <param name = '' value = ''>
+                <param name = '' value = ''>
+            </module>
+        </command>              
+        '''    
+        xmldoc = minidom.Document()
+        module_node = self.modules[cmd.module].write_xml(xmldoc, cmd.module)
         
-            
-            
-            
+        command_info = self.modules[cmd.module].get_command_with_name(cmd.command)
+        command_node = command_info.write_xml(xmldoc, cmd.command)
+        for param_name,param_value in cmd.params.items():
+            param_node = ParamInfo.write_xml(xmldoc, param_name, param_value)
+            module_node.appendChild(param_node)
+
+        command_node.appendChild(module_node)
+        xmldoc.appendChild(command_node)
+        print(xmldoc.toxml())                                
+
+

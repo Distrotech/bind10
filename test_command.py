@@ -2,12 +2,14 @@ import unittest
 from lib import command
 from lib import bigtool
 from lib import exception
-
 from lib.moduleinfo import *
-from lib.exception import *
-    
+from lib.exception import *    
+try:
+    from collections import OrderedDict
+except ImportError:
+    from lib.mycollections import OrderedDict
 
-class TestBigToolCmd(unittest.TestCase):
+class TestCmdLex(unittest.TestCase):
     
     def my_assert_raise(self, exception_type, cmd_line):
         self.assertRaises(exception_type, command.BigToolCmd, cmd_line)
@@ -79,7 +81,7 @@ class TestBigToolCmd(unittest.TestCase):
         self.my_assert_raise(CmdParamFormatError, "zone zdd \"")
         
 
-class TestValidateCmd(unittest.TestCase):
+class TestCmdSyntax(unittest.TestCase):
     
     def _create_bigtool(self):
         """Create one bigtool"""

@@ -1,7 +1,9 @@
 import re
-import collections
 from lib.exception import *
-
+try:
+    from collections import OrderedDict
+except ImportError:
+    from lib.mycollections import OrderedDict
 
 param_name_str = "^\s*(?P<param_name>[\w]+)\s*=\s*"
 param_value_str = "(?P<param_value>[\w\.]+)"
@@ -14,7 +16,7 @@ PARAM_WITH_QUOTA_PATTERN = re.compile(param_name_str +
 PARAM_PATTERN = re.compile(param_name_str + param_value_str + next_params_str)
                            
 # Used for module and command name
-MODULE_CMD_NAME_PATTERN = re.compile("^\s*(?P<name>[\w]+)(?P<blank>\s*)(?P<others>.*)$")
+NAME_PATTERN = re.compile("^\s*(?P<name>[\w]+)(?P<blank>\s*)(?P<others>.*)$")
 
 class BigToolCmd:
     """ This class will parse the command line usr input into three part
@@ -29,14 +31,14 @@ class BigToolCmd:
     """
     
     def __init__(self, cmd):
-        self.params = collections.OrderedDict()
+        self.params = OrderedDict()
         self.module = ''
         self.command = ''
         self._parse_cmd(cmd)
 
     def _parse_cmd(self, text_str):    
         # Get module name
-        groups = MODULE_CMD_NAME_PATTERN.match(text_str)
+        groups = NAME_PATTERN.match(text_str)
         if not groups:
             raise CmdModuleNameFormatError
         
@@ -49,7 +51,7 @@ class BigToolCmd:
             raise CmdMissCommandNameFormatError(self.module)
             
         # Get command name
-        groups = MODULE_CMD_NAME_PATTERN.match(cmd_str)
+        groups = NAME_PATTERN.match(cmd_str)
         if (not groups):
             raise CmdCommandNameFormatError(self.module)
         
@@ -66,7 +68,7 @@ class BigToolCmd:
         """convert a=b,c=d into one hash """
         
         # Check parameter name "help"
-        param = MODULE_CMD_NAME_PATTERN.match(param_text)
+        param = NAME_PATTERN.match(param_text)
         if param and param.group('name') == "help":
             self.params["help"] = "help"
             return
@@ -80,8 +82,8 @@ class BigToolCmd:
             
             if not groups:                
                 raise CmdParamFormatError(self.module, self.command)
-            else:
-                self.params[groups.group('param_name')] = groups.group('param_value')                
+            else:                
+                self.params[groups.group('param_name')] = groups.group('param_value')
                 param_text = groups.group('next_params')
                 if not param_text or (not param_text.strip()):
                     break
