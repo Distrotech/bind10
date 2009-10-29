@@ -197,9 +197,9 @@ static ElementPtr
 from_stringstream_bool(std::stringstream &in)
 {
     std::string word = word_from_stringstream(in);
-    if (boost::iequals(word, "true")) {
+    if (boost::iequals(word, "True")) {
         return Element::create(true);
-    } else if (boost::iequals(word, "false")) {
+    } else if (boost::iequals(word, "False")) {
         return Element::create(false);
     } else {
         return ElementPtr();
@@ -341,9 +341,9 @@ std::string
 BoolElement::str()
 {
     if (b) {
-        return "true";
+        return "True";
     } else {
-        return "false";
+        return "False";
     }
 }
 
@@ -715,7 +715,7 @@ int main(int argc, char **argv)
     //cout << "Vector element direct: " << ve->string_value() << endl;
 
     //std::string s = "[ 1, 2, 3, 4]";
-    std::string s = "{ \"test\": [ 47806, true, 42, 12.23, 1, \"1asdf\"], \"foo\": \"bar\", \"aaa\": { \"bbb\": { \"ccc\": 1234, \"ddd\": \"blup\" } } }";
+    std::string s = "{ \"test\": [ 47806, True, 42, 12.23, 1, \"1asdf\"], \"foo\": \"bar\", \"aaa\": { \"bbb\": { \"ccc\": 1234, \"ddd\": \"blup\" } } }";
     //std::string s = "{ \"test\": 1 }";
     //std::string s = "[ 1, 2 ,3\" ]";
     std::stringstream ss;
@@ -759,13 +759,18 @@ int main(int argc, char **argv)
     ElementPtr be = Element::create(true);
     cout << "boolelement: " << be << endl;
 
-    std::string s_skan = "{ \"test\": \"testval\", \"xxx\": \"that\", \"int\": 123456, \"list\": [ 1, 2, 3 ], \"map\": { \"one\": \"ONE\" }, \"double\": 5.4, \"boolean\": true }";
+    std::string s_skan = "{ \"test\": \"testval\", \"xxx\": \"that\", \"int\": 123456, \"list\": [ 1, 2, 3 ], \"map\": { \"one\": \"ONE\" }, \"double\": 5.4, \"boolean\": True }";
     std::stringstream in_ss_skan;
     in_ss_skan.str(s_skan);
     ElementPtr e_skan = Element::create_from_string(in_ss_skan);
     std::stringstream ss_skan;
     ss_skan << e_skan->to_wire(1);
     hexdump(std::string(ss_skan.str()));
+
+    int counter = 100000;
+    while (counter--) {
+        (void)e_skan->to_wire(1);
+    }
 
     return 0;
 }
