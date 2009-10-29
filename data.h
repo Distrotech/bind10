@@ -52,7 +52,7 @@ namespace ISC { namespace Data {
         // pure virtuals, every derived class must implement these
         virtual std::string str() = 0;
         virtual std::string str_xml(size_t prefix = 0) = 0;
-        virtual std::string to_wire(int omit_length = 0) = 0;
+        virtual std::string to_wire(int omit_length = 1) = 0;
 
         // virtual function templates must match, so we
         // need separate getters for all subclassed types
@@ -144,7 +144,7 @@ namespace ISC { namespace Data {
         bool set_value(const int v) { i = v; return true; };
         std::string str();
         std::string str_xml(size_t prefix = 0);
-        std::string to_wire(int omit_length = 0);
+        std::string to_wire(int omit_length = 1);
     };
 
     class DoubleElement : public Element {
@@ -157,7 +157,7 @@ namespace ISC { namespace Data {
         bool set_value(const double v) { d = v; return true; };
         std::string str();
         std::string str_xml(size_t prefix = 0);
-        std::string to_wire(int omit_length = 0);
+        std::string to_wire(int omit_length = 1);
     };
 
     class BoolElement : public Element {
@@ -170,7 +170,7 @@ namespace ISC { namespace Data {
         bool set_value(const bool v) { b = v; return true; };
         std::string str();
         std::string str_xml(size_t prefix = 0);
-        std::string to_wire(int omit_length = 0);
+        std::string to_wire(int omit_length = 1);
     };
 	
     class StringElement : public Element {
@@ -183,7 +183,7 @@ namespace ISC { namespace Data {
         bool set_value(const std::string& v) { s = v; return true; };
         std::string str();
         std::string str_xml(size_t prefix = 0);
-        std::string to_wire(int omit_length = 0);
+        std::string to_wire(int omit_length = 1);
     };
 
     class ListElement : public Element {
@@ -199,7 +199,7 @@ namespace ISC { namespace Data {
         void add(ElementPtr e) { l.push_back(e); };
         std::string str();
         std::string str_xml(size_t prefix = 0);
-        std::string to_wire(int omit_length = 0);
+        std::string to_wire(int omit_length = 1);
     };
 
     class MapElement : public Element {
@@ -214,8 +214,7 @@ namespace ISC { namespace Data {
         void set(const std::string& s, ElementPtr p) { m[s] = p; };
         std::string str();
         std::string str_xml(size_t prefix = 0);
-
-        std::string to_wire(int omit_length = 0);
+        std::string to_wire(int omit_length = 1);
         
         //
         // Encode into the CC wire format.

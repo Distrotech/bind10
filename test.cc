@@ -105,7 +105,7 @@ int main(int argc, char **argv)
     in_ss_skan.str(s_skan);
     ElementPtr e_skan = Element::create_from_string(in_ss_skan);
     std::stringstream ss_skan;
-    ss_skan << e_skan->to_wire(1);
+    ss_skan << e_skan->to_wire();
     hexdump(std::string(ss_skan.str()));
 
     ElementPtr decoded = Element::from_wire(ss_skan, ss_skan.str().length());

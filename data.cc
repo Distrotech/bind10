@@ -747,7 +747,7 @@ ListElement::to_wire(int omit_length)
     v = list_value();
     for (std::vector<ElementPtr>::iterator it = v.begin() ;
          it != v.end() ; ++it) {
-        ss << (*it)->to_wire();
+        ss << (*it)->to_wire(0);
     }
 
     if (omit_length) {
@@ -790,7 +790,7 @@ MapElement::to_wire(int omit_length)
     for (std::map<std::string, ElementPtr>::iterator it = m.begin() ;
          it != m.end() ; ++it) {
         ss << encode_tag((*it).first);
-        ss << (*it).second->to_wire();
+        ss << (*it).second->to_wire(0);
     }
 
     //
