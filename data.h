@@ -241,7 +241,6 @@ namespace ISC { namespace Data {
 // add a << operator for output streams so we can do
 // ElementPtr foo = ...
 // cout << "Element: " << foo;
-std::ostream& operator <<(std::ostream &out, const ISC::Data::ElementPtr& e) {
-    return out << e->str();
-}
+std::ostream& operator <<(std::ostream &out, const ISC::Data::ElementPtr& e);
+
 #endif // _DATA_H

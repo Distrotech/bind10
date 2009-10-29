@@ -19,8 +19,8 @@ LDFLAGS = @LDFLAGS@
 
 all:	test
 
-test:	data.cc data.h
-	$(CXX) $(CFLAGS) -o test data.cc
+test:	test.o data.o data.h
+	$(CXX) $(CFLAGS) -o test test.o data.o
 
 clean:
 	rm -f *.o test
