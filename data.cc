@@ -640,6 +640,14 @@ decode_element(std::stringstream& in, int& in_length)
 }
 
 ElementPtr
+Element::from_wire(const std::string& s)
+{
+    std::stringstream ss;
+    ss << s;
+    return from_wire(ss, s.length());
+}
+
+ElementPtr
 Element::from_wire(std::stringstream& in, int length)
 {
     //

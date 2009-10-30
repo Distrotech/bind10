@@ -22,6 +22,10 @@ all:	test
 test:	test.o data.o session.o data.h
 	$(CXX) $(CFLAGS) -o test test.o data.o session.o
 
+data.o: data.cc data.h
+session.o: session.cc session.h data.h
+test.o: test.cc data.h
+
 clean:
 	rm -f *.o test
 

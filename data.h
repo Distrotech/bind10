@@ -128,10 +128,11 @@ namespace ISC { namespace Data {
         // compound factory functions
         // return a NULL ElementPtr if there is a parse error or
         // the memory could not be allocated
-        static ElementPtr create_from_string(std::stringstream &in);
-        //static ElementPtr create_from_xml(std::stringstream &in);
+        static ElementPtr create_from_string(std::stringstream& in);
+        //static ElementPtr create_from_xml(std::stringstream& in);
 
-        static ElementPtr from_wire(std::stringstream &in, int length);
+        static ElementPtr from_wire(std::stringstream& in, int length);
+        static ElementPtr from_wire(const std::string& s);
     };
 
     class IntElement : public Element {

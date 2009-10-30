@@ -1,4 +1,5 @@
 #include "data.h"
+#include "session.h"
 
 #include <cstdio>
 #include <iostream>
@@ -110,6 +111,14 @@ int main(int argc, char **argv)
 
     ElementPtr decoded = Element::from_wire(ss_skan, ss_skan.str().length());
     cout << decoded << endl;
+
+
+    //
+    // Test the session stuff
+    //
+
+    ISC::CC::Session session;
+    session.establish();
 
     return 0;
 }
