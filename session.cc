@@ -160,6 +160,7 @@ Session::group_recvmsg(ElementPtr& envelope, ElementPtr& msg, bool nonblock)
     }
 
     msg = Element::from_wire(envelope->get("msg")->string_value());
+    envelope->remove("msg");
 
     return (true);
 }

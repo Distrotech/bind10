@@ -127,14 +127,15 @@ int main(int argc, char **argv)
     ElementPtr env = Element::create(std::map<std::string, ElementPtr>());
     env->set("counter", Element::create(counter++));
 
+    ElementPtr routing, data;
+
     while (true) {
         env->set("counter", Element::create(counter++));
 
         session.group_sendmsg(env, "test", "foo");
 
-        ElementPtr routing, data;
         session.group_recvmsg(routing, data, false);
-        cout << "routing: " << routing << endl;
+        //cout << "routing: " << routing->get("from")->string_value() << endl;
         cout << "data: " << data << endl;
     }
 
