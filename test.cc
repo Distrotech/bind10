@@ -139,7 +139,7 @@ int main(int argc, char **argv)
         //cout << "data: " << data << endl;
 
         if ((counter & 0xffff) == 0)
-            cout << "Send/received " << counter << " messages";
+            cout << "Send/received " << counter << " messages" << endl;
     }
 
     return 0;
