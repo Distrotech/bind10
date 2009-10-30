@@ -103,6 +103,7 @@ Session::recvmsg(ElementPtr& msg, bool nonblock)
     wire_stream <<wire;
 
     msg = Element::from_wire(wire_stream, length);
+
     return (true);
     // XXXMLG handle non-block here, and return false for short reads
 }
@@ -110,7 +111,8 @@ Session::recvmsg(ElementPtr& msg, bool nonblock)
 void
 Session::subscribe(std::string group, std::string instance, std::string subtype)
 {
-    ElementPtr env;
+    ElementPtr env = Element::create(std::map<std::string, ElementPtr>());
+
     env->set("type", Element::create("subscribe"));
     env->set("group", Element::create(group));
     env->set("instance", Element::create(instance));
@@ -122,7 +124,8 @@ Session::subscribe(std::string group, std::string instance, std::string subtype)
 void
 Session::unsubscribe(std::string group, std::string instance)
 {
-    ElementPtr env;
+    ElementPtr env = Element::create(std::map<std::string, ElementPtr>());
+
     env->set("type", Element::create("unsubscribe"));
     env->set("group", Element::create(group));
     env->set("instance", Element::create(instance));
@@ -133,7 +136,8 @@ Session::unsubscribe(std::string group, std::string instance)
 unsigned int
 Session::group_sendmsg(ElementPtr& msg, std::string group, std::string instance, std::string to)
 {
-    ElementPtr env;
+    ElementPtr env = Element::create(std::map<std::string, ElementPtr>());
+
     env->set("type", Element::create("send"));
     env->set("from", Element::create(lname));
     env->set("to", Element::create(to));
@@ -141,6 +145,7 @@ Session::group_sendmsg(ElementPtr& msg, std::string group, std::string instance,
     env->set("instance", Element::create(instance));
     env->set("seq", Element::create(sequence));
     env->set("msg", Element::create(msg->to_wire()));
+
     sendmsg(env);
 
     return (sequence++);
@@ -155,13 +160,15 @@ Session::group_recvmsg(ElementPtr& envelope, ElementPtr& msg, bool nonblock)
     }
 
     msg = Element::from_wire(envelope->get("msg")->string_value());
+
     return (true);
 }
 
 unsigned int
 Session::reply(ElementPtr& envelope, ElementPtr& newmsg)
 {
-    ElementPtr env;
+    ElementPtr env = Element::create(std::map<std::string, ElementPtr>());
+
     env->set("type", Element::create("send"));
     env->set("from", Element::create(lname));
     env->set("to", Element::create(envelope->get("from")->string_value()));
@@ -170,6 +177,7 @@ Session::reply(ElementPtr& envelope, ElementPtr& newmsg)
     env->set("seq", Element::create(sequence));
     env->set("msg", Element::create(newmsg->to_wire()));
     env->set("reply", Element::create(envelope->get("seq")->string_value()));
+
     sendmsg(env);
 
     return (sequence++);

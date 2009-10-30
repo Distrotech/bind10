@@ -120,5 +120,23 @@ int main(int argc, char **argv)
     ISC::CC::Session session;
     session.establish();
 
+    session.subscribe("test");
+
+    int counter = 0;
+
+    ElementPtr env = Element::create(std::map<std::string, ElementPtr>());
+    env->set("counter", Element::create(counter++));
+
+    while (true) {
+        env->set("counter", Element::create(counter++));
+
+        session.group_sendmsg(env, "test", "foo");
+
+        ElementPtr routing, data;
+        session.group_recvmsg(routing, data, false);
+        cout << "routing: " << routing << endl;
+        cout << "data: " << data << endl;
+    }
+
     return 0;
 }

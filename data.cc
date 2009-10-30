@@ -540,7 +540,7 @@ decode_tag(std::stringstream& in, int& item_length)
     buf[len] = 0;
     item_length -= len;
 
-    return std::string(buf);
+    return std::string(buf, len);
 }
 
 ElementPtr
@@ -553,9 +553,10 @@ decode_data(std::stringstream& in, int& item_length)
         throw DecodeError();
     }
     buf[item_length] = 0;
+
+    std::string s = std::string(buf, item_length);
     item_length -= item_length;
 
-    std::string s = std::string(buf);
     delete [] buf;
     return Element::create(s);
 }
