@@ -136,7 +136,10 @@ int main(int argc, char **argv)
 
         session.group_recvmsg(routing, data, false);
         //cout << "routing: " << routing->get("from")->string_value() << endl;
-        cout << "data: " << data << endl;
+        //cout << "data: " << data << endl;
+
+        if ((counter & 0xffff) == 0)
+            cout << "Send/received " << counter << " messages";
     }
 
     return 0;
