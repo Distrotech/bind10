@@ -213,6 +213,7 @@ namespace ISC { namespace Data {
         bool set_value(std::map<std::string, ElementPtr>& v) { m = v; return true; };
         ElementPtr get(const std::string& s) { return m[s]; };
         void set(const std::string& s, ElementPtr p) { m[s] = p; };
+        void remove(const std::string& s) { m.erase(s); }
         std::string str();
         std::string str_xml(size_t prefix = 0);
         std::string to_wire(int omit_length = 1);
