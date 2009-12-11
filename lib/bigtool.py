@@ -1,16 +1,19 @@
 import sys
 import readline
 from cmd import Cmd
-from lib.exception import *
-from lib.moduleinfo import ModuleInfo
-from lib.moduleinfo import ParamInfo
-from lib.command import BigToolCmd
-from xml.dom import minidom
+from exception import *
+from moduleinfo import ModuleInfo
+from moduleinfo import CommandInfo
+from moduleinfo import ParamInfo
+from command import BigToolCmd
+import http.client
+import json
+
 
 try:
     from collections import OrderedDict
 except ImportError:
-    from lib.mycollections import OrderedDict
+    from mycollections import OrderedDict
 
 
 CONST_BIGTOOL_HELP = """Bigtool, verstion 0.1
@@ -24,15 +27,40 @@ Type \"<module_name> <command_name> help\" for help on the specific command.
 CONST_COMMAND_NODE = "command"
 
 class BigTool(Cmd):
-    """simple bigtool command example."""    
+    """simple bigtool example."""    
 
-    def __init__(self):
+    def __init__(self, server_port = 'localhost:8080'):
         Cmd.__init__(self)
         self.prompt = '> '
         self.ruler = '-'
         self.modules = OrderedDict()
-        self.add_module_info(ModuleInfo("help", desc = "Get help for bigtool"))
-                    
+        self.add_module_info(ModuleInfo("help", desc = "Get help for bigtool"))       
+        self.server_port = server_port
+        self.get_module_info()
+
+
+    def get_module_info(self):
+        try:
+            conn = http.client.HTTPConnection(self.server_port)
+            conn.request("GET", '/help')
+            res = conn.getresponse()
+            data = res.read().decode()
+            modules = json.loads(data)
+            for mod in modules:
+                mod_info = ModuleInfo(name = mod[0]['name'],
+                                      desc = mod[0]['desc'],
+                                      inst_name = mod[0]['inst'])
+                for cmd in mod[1:]:
+                    cmd_info = CommandInfo(name = cmd['name'],
+                                           desc = cmd['desc'])
+                    mod_info.add_command(cmd_info)
+
+                self.add_module_info(mod_info)
+
+            conn.close()
+        except:
+            print("can't connect to %s, please make sure control/command is running" % self.server_port)
+
 
     def validate_cmd(self, cmd):
         if not cmd.module in self.modules:
@@ -71,7 +99,7 @@ class BigTool(Cmd):
         if cmd.command == "help" or ("help" in cmd.params.keys()):
             self._handle_help(cmd)
         else:
-            self._write_xml(cmd)
+            self.apply_cmd(cmd)
 
     def add_module_info(self, module_info):        
         self.modules[module_info.name] = module_info
@@ -217,28 +245,22 @@ class BigTool(Cmd):
         else:
             self.modules[cmd.module].command_help(cmd.command)
 
-            
-    def _write_xml(self, cmd):
-        '''The format of the xml message is:
-        <command name = ''>
-            <module name = ''>
-                <param name = '' value = ''>
-                <param name = '' value = ''>
-                <param name = '' value = ''>
-            </module>
-        </command>              
-        '''    
-        xmldoc = minidom.Document()
-        module_node = self.modules[cmd.module].write_xml(xmldoc, cmd.module)
-        
-        command_info = self.modules[cmd.module].get_command_with_name(cmd.command)
-        command_node = command_info.write_xml(xmldoc, cmd.command)
-        for param_name,param_value in cmd.params.items():
-            param_node = ParamInfo.write_xml(xmldoc, param_name, param_value)
-            module_node.appendChild(param_node)
 
-        command_node.appendChild(module_node)
-        xmldoc.appendChild(command_node)
-        print(xmldoc.toxml())                                
+    def apply_cmd(self, cmd):
+        url = '/' + cmd.module + '/' + cmd.command        
+        post_data = []
+        for para in cmd.params.keys():
+            post_data.append({para : cmd.params[para]})
+        
+        try:
+            conn = http.client.HTTPConnection(self.server_port)                 
+            conn.request('POST', url, json.dumps(post_data) + '\n')
+            res = conn.getresponse()
+            print(res.read())
+            conn.close()
+        except:
+            print("Fail send command to control/command module")
+        
+
 
 

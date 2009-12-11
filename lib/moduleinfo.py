@@ -1,7 +1,7 @@
 try:
     from collections import OrderedDict
 except ImportError:
-    from lib.mycollections import OrderedDict
+    from mycollections import OrderedDict
 
 # Define value type
 STRING_TYPE = "string"

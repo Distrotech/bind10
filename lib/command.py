@@ -1,9 +1,9 @@
 import re
-from lib.exception import *
+from exception import *
 try:
     from collections import OrderedDict
 except ImportError:
-    from lib.mycollections import OrderedDict
+    from mycollections import OrderedDict
 
 param_name_str = "^\s*(?P<param_name>[\w]+)\s*=\s*"
 param_value_str = "(?P<param_value>[\w\.]+)"
