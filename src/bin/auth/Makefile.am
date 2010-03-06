@@ -13,7 +13,7 @@ b10_auth_LDADD +=  $(top_builddir)/src/lib/dns/.libs/libdns.a
 b10_auth_LDADD += $(top_builddir)/src/lib/config/libcfgclient.a
 b10_auth_LDADD += $(top_builddir)/src/lib/cc/libcc.a
 b10_auth_LDADD += $(top_builddir)/src/lib/exceptions/.libs/libexceptions.a
-b10_auth_LDADD += $(SQLITE_LIBS)
+b10_auth_LDADD += -lsqlite3
 
 # TODO: config.h.in is wrong because doesn't honor pkgdatadir
 # and can't use @datadir@ because doesn't expand default ${prefix}
