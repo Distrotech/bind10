@@ -69,12 +69,17 @@ class XfrinConnection(asyncore.dispatcher):
         conn.finish_xfrin()              # finsih the xfrin
     '''
         
-    def __init__(self, zone_name, master_addr, port = 53, check_soa = True, idle_timeout = 60):
+    def __init__(self, zone_name, db_file, master_addr, 
+                 port = 53, 
+                 check_soa = True, 
+                 idle_timeout = 60):
         ''' idle_timeout: max idle time for read data from socket.
         '''
         asyncore.dispatcher.__init__(self)
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self._zone_name = zone_name
+        self._db_file = db_file
+        self._records = []
         self._idle_timeout = idle_timeout
         self.setblocking(1)
         self.connect((master_addr, port))
@@ -182,11 +187,15 @@ class XfrinConnection(asyncore.dispatcher):
                 if ret == XFRIN_OK:
                     ret = self._handle_xfrin_response()
 
-            print('[xfrin] AXFR is started!')
+            self._insert_record_to_sqlite3(self._records)
+            print('[xfrin] AXFR finished!')
+ 
         except XfrinException as e:
             print(e)
+            print('[xfrin] Error happened during xfrin!')
         finally:
-            self.close()
+           self.close()
+
         return ret
     
     def _check_response_status(self, msg):
@@ -200,6 +209,32 @@ class XfrinConnection(asyncore.dispatcher):
             raise XfrinException('answer section is empty')
 
 
+    def _handle_answer_section(self, rrset_iter):
+        soa_count = 0
+        while not rrset_iter.is_last():
+            rrset = rrset_iter.get_rrset()
+            rrset_iter.next()
+            rrset_name = rrset.get_name().to_text()
+            rrset_ttl = int(rrset.get_ttl().to_text())
+            rrset_class = rrset.get_class().to_text()
+            rrset_type = rrset.get_type().to_text()
+
+            rdata_iter = rrset.get_rdata_iterator()
+            rdata_iter.first()
+            while not rdata_iter.is_last():
+                # Count the soa record count
+                if rrset.get_type() == rr_type.SOA():
+                    soa_count += 1
+
+                rdata_text = rdata_iter.get_current().to_text()
+                rr_data = (rrset_name, rrset_ttl, rrset_class, rrset_type, rdata_text)
+                self._records.append(rr_data)
+                #self._insert_record_to_sqlite3(rr_data) 
+                rdata_iter.next()
+        
+        return soa_count 
+
+
     def _handle_xfrin_response(self):
         soa_count = 0
         while True:
@@ -211,33 +246,16 @@ class XfrinConnection(asyncore.dispatcher):
             self._check_response_status(msg)
             
             rrset_iter = section_iter(msg, section.ANSWER())
-            while not rrset_iter.is_last():
-                rrset = rrset_iter.get_rrset()
-                rrset_iter.next()
-
-                rrset_name = rrset.get_name().to_text()
-                rrset_ttl = int(rrset.get_ttl().to_text())
-                rrset_class = rrset.get_class().to_text()
-                rrset_type = rrset.get_type().to_text()
-                if rrset_type == rr_type.SOA():
-                    soa_count += 1
-
-                if soa_count == 2:
-                    return XFRIN_OK
-
-                rdata_iter = rrset.get_rdata_iterator()
-                rdata_iter.first()
-                while not rdata_iter.is_last():
-                    rdata_text = rdata_iter.get_current().to_text()
-                    rr_data = [(rrset_name, rrset_ttl, rrset_class, rrset_type, rdata_text)]
-                    self._insert_record_to_sqlite3(rr_data) 
-                    rdata_iter.next()
+            soa_count += self._handle_answer_section(rrset_iter)
+            if soa_count == 2:
+                return XFRIN_OK
 
         return XFRIN_OK
 
-    def _insert_record_to_sqlite3(self, rr):
-        print(rr)
-        isc.auth.sqlite3_ds.load('sqlite3.db', self._zone_name, rr)
+    def _insert_record_to_sqlite3(self, rrs):
+        ''' The interface provided by sqlite3_ds only support insert all the records
+        at the end of AXFR'''
+        isc.auth.sqlite3_ds.load(self._db_file, self._zone_name, rrs)
 
     def handle_timeout(self):
         pass
@@ -250,10 +268,10 @@ class XfrinConnection(asyncore.dispatcher):
         # Overwrite the log function, log nothing
         pass
 
-def process_xfrin(xfrin_recorder, zone_name, master_addr, port, check_soa):
+def process_xfrin(xfrin_recorder, zone_name, db_file, master_addr, port, check_soa):
     xfrin_recorder.increment(name)
     print(zone_name, master_addr, port, check_soa)
-    conn = XfrinConnection(zone_name, master_addr, int(port), check_soa)
+    conn = XfrinConnection(zone_name, db_file, master_addr, int(port), check_soa)
     conn.do_xfrin(False)
     xfrin_recorder.decrement(zone_name)
 
@@ -300,6 +318,10 @@ class Xfrin():
         full_config = self._cc.get_full_config()
         for item in full_config:
             print(item + ":" + str(full_config[item]))
+
+
+    def shutdown(self):
+        pass
 
 
     def command_handler(self, command, args):
@@ -362,16 +384,16 @@ class Xfrin():
             return (1, 'zone xfrin is in progress')
 
         xfrin_thread = threading.Thread(target = process_xfrin, 
-                         args = (self.recorder, zone_name, master_addr, port, check_soa))
+                         args = (self.recorder, zone_name, db_file, master_addr, port, check_soa))
         xfrin_thread.start()
         return (0, 'zone xfrin is started')
 
 
-httpd = None
+xfrind = None
 
 def signal_handler(signal, frame):
-    if httpd:
-        httpd.shutdown()
+    if xfrind:
+        xfrind.shutdown()
     sys.exit(0)
 
 def set_signal_handler():
@@ -396,15 +418,15 @@ def check_addr(ipstr):
 if __name__ == '__main__':
     try:
         set_signal_handler()
-        obj = Xfrin()
-        obj.startup()
+        xfrind = Xfrin()
+        xfrind.startup()
     except KeyboardInterrupt:
         print("exit http server")
     except Exception as e:
         print(e)
 
-    if httpd:
-        httpd.shutdown()
+    if xfrind:
+        xfrind.shutdown()
 
 
 

@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-// $Id: exceptions.cc 476 2010-01-19 00:29:28Z jinmei $
+// $Id: message_python.cc 2010-03-08 18:44:00 feng $
 
 #include <string>
 #include <boost/python.hpp>
@@ -24,7 +24,7 @@
 #include <boost/python/copy_const_reference.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <exceptions/exceptions.h>
+#include "exceptions.h"
 #include "buffer.h"
 #include "name.h"
 #include "messagerenderer.h"
@@ -152,7 +152,8 @@ namespace
             RRsetList_iterator_wrapper(const RRsetList& list) : cur_(list.begin()), end_(list.end()){}
             RRsetPtr Next()
             {
-                if(cur_ == end_) {
+                if(cur_ == end_) 
+                {
                     PyErr_SetObject(PyExc_StopIteration, Py_None);
                     throw_error_already_set();
                 }
@@ -171,13 +172,13 @@ namespace
             RRsetList::const_iterator cur_;
             RRsetList::const_iterator end_;
     };
-    
+
     class Question_iterator_wrapper
     {
         public:
             Question_iterator_wrapper(const Message &message) : cur_(message.beginQuestion()), end_(message.endQuestion()){}
             QuestionPtr getQuestion() const { return *cur_;}
-            bool hasNext() {return cur_ != end_;}
+            bool isLast() {return cur_ == end_;}
             void next(){ ++cur_;}
         private:
             QuestionIterator cur_;
@@ -189,7 +190,7 @@ namespace
         public:
             Section_iterator_wrapper(const Message &message, const Section &section) : cur_(message.beginSection(section)), end_(message.endSection(section)){}
             RRsetPtr getRRset() const { return *cur_;}
-            bool hasNext() {return cur_ != end_;}
+            bool isLast() {return cur_ == end_;}
             void next(){ ++cur_;}
 
         private:
@@ -481,17 +482,17 @@ BOOST_PYTHON_MODULE(bind10_message)
         .def("get_bit", &MessageFlag::getBit)
         .def("QR", &MessageFlag::QR, return_value_policy<copy_const_reference>())
         .staticmethod("QR")
-        .def("AA", &MessageFlag::QR, return_value_policy<copy_const_reference>())
+        .def("AA", &MessageFlag::AA, return_value_policy<copy_const_reference>())
         .staticmethod("AA")
-        .def("TC", &MessageFlag::QR, return_value_policy<copy_const_reference>())
+        .def("TC", &MessageFlag::TC, return_value_policy<copy_const_reference>())
         .staticmethod("TC")
-        .def("RD", &MessageFlag::QR, return_value_policy<copy_const_reference>())
+        .def("RD", &MessageFlag::RD, return_value_policy<copy_const_reference>())
         .staticmethod("RD")
-        .def("RA", &MessageFlag::QR, return_value_policy<copy_const_reference>())
+        .def("RA", &MessageFlag::RA, return_value_policy<copy_const_reference>())
         .staticmethod("RA")
-        .def("AD", &MessageFlag::QR, return_value_policy<copy_const_reference>())
+        .def("AD", &MessageFlag::AD, return_value_policy<copy_const_reference>())
         .staticmethod("AD")
-        .def("CD", &MessageFlag::QR, return_value_policy<copy_const_reference>())
+        .def("CD", &MessageFlag::CD, return_value_policy<copy_const_reference>())
         .staticmethod("CD");
       
        class_<Opcode>("op_code", no_init)
@@ -612,15 +613,15 @@ BOOST_PYTHON_MODULE(bind10_message)
         .def("make_response", &Message::makeResponse)
         .def("to_wire", &Message::toWire)
         .def("from_wire", &Message::fromWire);
-    
+
     class_<Question_iterator_wrapper>("question_iter", init<const Message &>())
         .def("get_question", &Question_iterator_wrapper::getQuestion)
-        .def("has_next", &Question_iterator_wrapper::hasNext)
+        .def("is_last", &Question_iterator_wrapper::isLast)
         .def("next", &Question_iterator_wrapper::next);
 
     class_<Section_iterator_wrapper>("section_iter", init<const Message &, const Section &>())
         .def("get_rrset", &Section_iterator_wrapper::getRRset)
-        .def("has_next", &Section_iterator_wrapper::hasNext)
+        .def("is_last", &Section_iterator_wrapper::isLast)
         .def("next", &Section_iterator_wrapper::next);
 }
  
