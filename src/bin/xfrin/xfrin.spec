@@ -45,6 +45,12 @@
             "item_type": "integer",
             "item_optional": True,
             "item_default": 53
+          },
+          {
+            "item_name": "db_file",
+            "item_type": "string",
+            "item_optional": True,
+            "item_default": '/tmp/zone.sqlite3'
           }
         ]
       },
@@ -68,6 +74,12 @@
             "item_type": "integer",
             "item_optional": True,
             "item_default": 53
+          },
+          {
+            "item_name": "db_file",
+            "item_type": "string",
+            "item_optional": True,
+            "item_default": '/tmp/zone.sqlite3'
           }
         ]
       },

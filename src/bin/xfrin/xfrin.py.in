@@ -93,15 +93,12 @@ class XfrinConnection(asyncore.dispatcher):
             raise XfrinException('send query failed')
 
     def _send_axfr_query(self):
-        '''
         msg = message(message_mode.RENDER)
-        #msg.set_qid(random.randint(1, 0xFFFF))
-        msg.set_qid(int("0x1035", 16))
+        msg.set_qid(random.randint(1, 0xFFFF))
         msg.set_opcode(op_code.QUERY())
         msg.set_rcode(rcode.NOERROR())
         query_question = question(name(self._zone_name), rr_class.IN(), rr_type.AXFR())
         msg.add_question(query_question)
-
 
         obuf = output_buffer(0)
         render = message_render(obuf)
@@ -126,7 +123,7 @@ class XfrinConnection(asyncore.dispatcher):
         self.send(header_len)
         self.send(byte_data)
         #TODO, check error
-
+        '''
 
     def _get_request_response(self, size):
         recv_size = 0
@@ -214,15 +211,12 @@ class XfrinConnection(asyncore.dispatcher):
             self._check_response_status(msg)
             
             rrset_iter = section_iter(msg, section.ANSWER())
-            while True:
-                if not rrset_iter.has_next():
-                    break
-
+            while not rrset_iter.is_last():
                 rrset = rrset_iter.get_rrset()
                 rrset_iter.next()
 
                 rrset_name = rrset.get_name().to_text()
-                rrset_ttl = rrset.get_ttl().to_text()
+                rrset_ttl = int(rrset.get_ttl().to_text())
                 rrset_class = rrset.get_class().to_text()
                 rrset_type = rrset.get_type().to_text()
                 if rrset_type == rr_type.SOA():
@@ -235,7 +229,7 @@ class XfrinConnection(asyncore.dispatcher):
                 rdata_iter.first()
                 while not rdata_iter.is_last():
                     rdata_text = rdata_iter.get_current().to_text()
-                    rr_data = [(rrset_name, rrset_ttl, rrset_class, rrset_ttl, rdata_text)]
+                    rr_data = [(rrset_name, rrset_ttl, rrset_class, rrset_type, rdata_text)]
                     self._insert_record_to_sqlite3(rr_data) 
                     rdata_iter.next()
 
@@ -311,25 +305,55 @@ class Xfrin():
     def command_handler(self, command, args):
         answer = create_answer(0, 'ok')
         cmd = command
-        if cmd == 'print_message':
-            answer = create_answer(0, args)
-        elif cmd == 'print_settings':
-            self._print_settings()  
-        elif cmd == 'shutdown':
-            answer = create_answer(1, 'not support now')
-        elif cmd == 'retransfer':
-            ret = self.xfrin_start(args['zone_name'], args['master'], args['port'], False)
-            answer = create_answer(ret[0], ret[1])
-        elif cmd == 'refresh':
-            ret = self.xfrin_start(args['zone_name'], args['master'], args['port'])
-            answer = create_answer(ret[0], ret[1])
+        try:
+            if cmd == 'print_message':
+                answer = create_answer(0, args)
 
+            elif cmd == 'print_settings':
+                self._print_settings()  
+
+            elif cmd == 'shutdown':
+                answer = create_answer(1, 'not support now')
+
+            elif cmd == 'retransfer':
+                zone_name, master, port, db_file = self._parse_cmd_params(args)
+                ret = self.xfrin_start(zone_name, db_file, master, port, False)
+                answer = create_answer(ret[0], ret[1])
+
+            elif cmd == 'refresh':
+                zone_name, master, port, db_file = self._parse_cmd_params(args)
+                ret = self.xfrin_start(zone_name, db_file, master, port)
+                answer = create_answer(ret[0], ret[1])
+
+        except XfrinException as err:
+            answer = create_answer(1, str(err))
+        print(answer)
         return answer
+
+    def _parse_cmd_params(self, args):
+        zone_name = args['zone_name']
+        master = args['master']
+        check_addr(master)
+        port = int(args.get('port'))
+        if port:
+            check_port(port)
+        else:
+            port = 53
+
+        db_file = args.get('db_file')
+        if not db_file:
+            #TODO, the db file path should be got in auth server's configuration
+            db_file = '/tmp/zone.sqlite3'
+
+        return (zone_name, master, port, db_file)
+            
 
     def startup(self):
         self._cc.check_command()
 
-    def xfrin_start(self, zone_name, master_addr, port = 53, check_soa = True):
+    def xfrin_start(self, zone_name, db_file, master_addr, 
+                    port = 53, 
+                    check_soa = True):
             # check max_transfer_in, else return quota error
         if self.recorder.count() >= self._max_transfers_in:
             return (1, 'xfrin quota error')
@@ -354,13 +378,11 @@ def set_signal_handler():
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
 
-def check_port(option, opt_str, value, parser):
+def check_port(value):
     if (value < 0) or (value > 65535):
-        raise OptionValueError('%s requires a port number (0-65535)' % opt_str)
-    parser.values.port = value
+        raise XfrinException('requires a port number (0-65535)')
 
-def check_addr(option, opt_str, value, parser):
-    ipstr = value
+def check_addr(ipstr):
     ip_family = socket.AF_INET
     if (ipstr.find(':') != -1):
         ip_family = socket.AF_INET6
@@ -368,9 +390,7 @@ def check_addr(option, opt_str, value, parser):
     try:
         socket.inet_pton(ip_family, ipstr)
     except:
-        raise OptionValueError("%s invalid ip address" % ipstr)
-
-    parser.values.addr = value
+        raise XfrinException("%s invalid ip address" % ipstr)
 
 
 if __name__ == '__main__':

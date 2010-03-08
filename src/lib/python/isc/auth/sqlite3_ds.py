@@ -123,6 +123,12 @@ def load(dbfile, zone, zonedata):
     new_zone_id = cur.lastrowid
 
     for name, ttl, rdclass, rdtype, rdata in zonedata:
+        print('name type: %s', type(name))
+        print('ttl type: %s', type(ttl))
+        print('rdclass type: %s', type(rdclass))
+        print('rdtype type: %s', type(rdtype))
+        print('rdata type: %s', type(rdata))
+        print(name, ttl, rdclass, rdtype, rdata)
         sigtype = ''
         if rdtype.lower() == 'rrsig':
             sigtype = rdata.split()[0]
