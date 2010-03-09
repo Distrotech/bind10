@@ -55,35 +55,6 @@
         ]
       },
       {
-        'command_name': 'refresh',
-        'command_description': "Schedule immediate maintenance fo a zone", 
-        "command_args": [ {
-            "item_name": "zone_name",
-            "item_type": "string",
-            "item_optional": False,
-            "item_default": ""
-          },
-          {
-            "item_name": "master",
-            "item_type": "string",
-            "item_optional": False,
-            "item_default": ""
-          },
-          {
-            "item_name": "port",
-            "item_type": "integer",
-            "item_optional": True,
-            "item_default": 53
-          },
-          {
-            "item_name": "db_file",
-            "item_type": "string",
-            "item_optional": True,
-            "item_default": '/tmp/zone.sqlite3'
-          }
-        ]
-      },
-      {
         "command_name": "shutdown",
         "command_description": "Shut down BIND 10",
         "command_args": []

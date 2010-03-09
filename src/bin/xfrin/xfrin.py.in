@@ -60,11 +60,15 @@ class XfrinException(Exception):
 class XfrinConnection(asyncore.dispatcher):
     '''Do xfrin in this class. '''    
 
-    def __init__(self, zone_name, db_file, master_addr, 
+    def __init__(self, zone_name, db_file, 
+                 shutdown_event,
+                 master_addr, 
                  port = 53, 
                  check_soa = True, 
                  idle_timeout = 60):
         ''' idle_timeout: max idle time for read data from socket.
+            db_file: specify the data source file.
+            check_soa: when it's true, check soa first before sending xfr query
         '''
         asyncore.dispatcher.__init__(self)
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -74,11 +78,15 @@ class XfrinConnection(asyncore.dispatcher):
         self._idle_timeout = idle_timeout
         self.setblocking(1)
         self.connect((master_addr, port))
+        self._shutdown_event = shutdown_event
 
 
     def _create_query(self, query_type):
+        '''Create dns query message. '''
         msg = message(message_mode.RENDER)
-        msg.set_qid(random.randint(1, 0xFFFF))
+        query_id = random.randint(1, 0xFFFF)
+        self._query_id = query_id
+        msg.set_qid(query_id)
         msg.set_opcode(op_code.QUERY())
         msg.set_rcode(rcode.NOERROR())
         query_question = question(name(self._zone_name), rr_class.IN(), query_type)
@@ -94,6 +102,7 @@ class XfrinConnection(asyncore.dispatcher):
 
 
     def _send_query(self, query_type):
+        '''Send query message over TCP. '''
         msg = self._create_query(query_type)
         obuf = output_buffer(0)
         render = message_render(obuf)
@@ -121,8 +130,7 @@ class XfrinConnection(asyncore.dispatcher):
 
 
     def handle_read(self):
-        '''Read xfrin request response
-        '''
+        '''Read query's response from socket. '''
         self._recvd_data = self.recv(self._need_recv_size)
         self._recvd_size = len(self._recvd_data)
         self._recv_time_out = False
@@ -137,13 +145,8 @@ class XfrinConnection(asyncore.dispatcher):
         self._send_query(rr_type.SOA())
         data_size = self._get_request_response(2)
         soa_reply = self._get_request_response(int(data_size))
-        return soa_reply 
-        #master_soa = 
-
-        return True
-
-    def _send_xfrin_request(self, ixfr_first = False):
-        self._send_query(rr_type.AXFR())
+        #TODO, need select soa record from data source then compare the two 
+        #serial 
         return XFRIN_OK
 
 
@@ -155,13 +158,11 @@ class XfrinConnection(asyncore.dispatcher):
 
             print('[xfrin] transfer of \'%s\': AXFR started' % self._zone_name)
             if ret == XFRIN_OK:    
-                ret = self._send_xfrin_request(ixfr_first)
-                if ret == XFRIN_OK:
-                    ret = self._handle_xfrin_response()
+                self._send_query(rr_type.AXFR())
+                ret = self._handle_xfrin_response()
 
             self._insert_record_to_sqlite3(self._records)
             print('[xfrin] transfer of \'%s\' AXFR ended' % self._zone_name)
- 
         except XfrinException as e:
             print(e)
             print('[xfrin] Error happened during xfrin!')
@@ -172,14 +173,21 @@ class XfrinConnection(asyncore.dispatcher):
         return ret
     
     def _check_response_status(self, msg):
+        #TODO, check more?
         if msg.get_rcode() != rcode.NOERROR():
             raise XfrinException('error response: ')
 
-        #if msg.get_qid() != op_code.QUERY():
-        #    raise XfrinException('bad query id')
+        if not msg.get_header_flag(message_flag.QR()):
+            raise XfrinException('response is not a response ')
+
+        if msg.get_qid() != self._query_id:
+            raise XfrinException('bad query id')
 
         if msg.get_rr_count(section.ANSWER()) == 0:
             raise XfrinException('answer section is empty')
+
+        if msg.get_rr_count(section.QUESTION()) > 1:
+            raise XfrinException('query section count greater than 1')
 
 
     def _handle_answer_section(self, rrset_iter):
@@ -222,6 +230,11 @@ class XfrinConnection(asyncore.dispatcher):
             soa_count += self._handle_answer_section(rrset_iter)
             if soa_count == 2:
                 return XFRIN_OK
+            
+            if self._shutdown_event.is_set():
+                #Check if xfrin process is shutdown.
+                #TODO, xfrin may be blocked in one loop. 
+                raise XfrinException('xfrin is forced to stop')
 
         return XFRIN_OK
 
@@ -235,14 +248,22 @@ class XfrinConnection(asyncore.dispatcher):
         '''Ignore the writable socket. '''
         return False
 
+
     def log_info(self, msg, type = ''):
         # Overwrite the log function, log nothing
         pass
 
-def process_xfrin(xfrin_recorder, zone_name, db_file, master_addr, port, check_soa):
+
+def process_xfrin(xfrin_recorder, zone_name, db_file, 
+                  shutdown_event, master_addr, port, check_soa):
     xfrin_recorder.increment(name)
-    conn = XfrinConnection(zone_name, db_file, master_addr, int(port), check_soa)
-    conn.do_xfrin(False)
+    try:
+        conn = XfrinConnection(zone_name, db_file, shutdown_event, 
+                           master_addr, int(port), check_soa)
+        conn.do_xfrin(False)
+    except Exception as e:
+        print('[xfrin] Error happened:', e)
+
     xfrin_recorder.decrement(zone_name)
 
 
@@ -280,7 +301,8 @@ class Xfrin():
         self._cc.start()
         self._max_transfers_in = 10
         self.recorder = XfrinRecorder()
-        self._serving = True
+        self._shutdown_event = threading.Event()
+
 
     def config_handler(self, new_config):
         answer = create_answer(0, 'ok')
@@ -296,7 +318,7 @@ class Xfrin():
         ''' shutdown the xfrin process. the thread which is doing xfrin should be 
         terminated.
         '''
-        self._serving = False
+        self._shutdown_event.set()
         main_thread = threading.currentThread()
         for th in threading.enumerate():
             if th is main_thread:
@@ -315,7 +337,7 @@ class Xfrin():
                 self._print_settings()  
 
             elif cmd == 'shutdown':
-                self._serving = False
+                self._shutdown_event.set()
 
             elif cmd == 'retransfer':
                 zone_name, master, port, db_file = self._parse_cmd_params(args)
@@ -351,7 +373,7 @@ class Xfrin():
             
 
     def startup(self):
-        while self._serving:
+        while not self._shutdown_event.is_set():
             self._cc.check_command()
 
 
@@ -367,7 +389,10 @@ class Xfrin():
 
         xfrin_thread = threading.Thread(target = process_xfrin, 
                                         args = (self.recorder, 
-                                                zone_name, db_file, master_addr, 
+                                                zone_name, 
+                                                db_file, 
+                                                self._shutdown_event,
+                                                master_addr, 
                                                 port, check_soa))
         xfrin_thread.start()
         return (0, 'zone xfrin is started')
