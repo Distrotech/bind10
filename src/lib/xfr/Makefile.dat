@@ -1,0 +1,10 @@
+SRC = fd_share.cc 
+
+CFLAGS = -I/usr/local/include -I/usr/local/include/python3.1 -I/root/trunk/src/lib/
+all : bind10_xfr.so xfr_python.cc
+
+bind10_xfr.so : xfr_python.o $(SRC)
+	g++ -shared -o bind10_xfr.so xfr_python.o $(CFLAGS) $(SRC) -L/usr/local/lib -lboost_python3
+
+xfr_python.o : xfr_python.cc
+	g++ -c -fPIC $(CFLAGS) xfr_python.cc -L/usr/local/lib -lboost_python3

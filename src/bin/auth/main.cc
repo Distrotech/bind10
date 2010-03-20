@@ -42,12 +42,15 @@
 #include <cc/session.h>
 #include <cc/data.h>
 #include <config/ccsession.h>
+#include <xfr/xfrout_client.h>
 
 #include "spec_config.h"
 #include "common.h"
 #include "auth_srv.h"
 
 using namespace std;
+using namespace isc::xfr;
+
 
 #ifdef HAVE_BOOSTLIB
 using namespace boost::asio;
@@ -103,6 +106,20 @@ my_command_handler(const string& command, const ElementPtr args) {
     return answer;
 }
 
+// The sample way for checking axfr query.
+static bool
+check_axfr_query(char *msg_data, uint16_t msg_len)
+{
+    if (msg_len < 15)
+        return false;
+
+    uint16_t query_type = *(uint16_t *)(msg_data + (msg_len - 4));
+    if ( query_type == 0xFC00)
+        return true;
+    
+    return false;
+}
+
 #ifdef HAVE_BOOSTLIB
 //
 // Helper classes for asynchronous I/O using boost::asio
@@ -148,17 +165,31 @@ public:
     {
         if (!error) {
             InputBuffer dnsbuffer(data_, bytes_transferred);
-            if (auth_server->processMessage(dnsbuffer, dns_message_,
-                                            response_renderer_, false)) {
-                responselen_buffer_.writeUint16(response_buffer_.getLength());
-                async_write(socket_,
-                            boost::asio::buffer(
-                                responselen_buffer_.getData(),
-                                responselen_buffer_.getLength()),
-                            boost::bind(&TCPClient::responseWrite, this,
-                                        placeholders::error));
-            } else {
-                delete this;
+            if (check_axfr_query(data_, bytes_transferred)) {
+                printf("===========================");
+                std::string path = "/tmp/auth_xfrout_conn";
+                XfroutClient xfr_client(path);
+                xfr_client.connect();
+                xfr_client.sendXfroutRequestInfo(socket_.native(), (uint8_t *)data_, bytes_transferred);
+                xfr_client.disconnect();
+                printf("===========================");
+                
+                // start to get new query ?
+                start();
+            }
+            else {          
+                if (auth_server->processMessage(dnsbuffer, dns_message_,
+                                                response_renderer_, false)) {
+                    responselen_buffer_.writeUint16(response_buffer_.getLength());
+                    async_write(socket_,
+                                boost::asio::buffer(
+                                    responselen_buffer_.getData(),
+                                    responselen_buffer_.getLength()),
+                                boost::bind(&TCPClient::responseWrite, this,
+                                            placeholders::error));
+                } else {
+                    delete this;
+                }
             }
         } else {
             delete this;
@@ -537,25 +568,37 @@ processMessageTCP(const int fd, Message& dns_message,
         cc += cc0;
     }
 
-    InputBuffer buffer(&message_buffer[0], size);
-    dns_message.clear(Message::PARSE);
-    response_renderer.clear();
-    if (auth_server->processMessage(buffer, dns_message, response_renderer,
-                                    false)) {
-        size = response_renderer.getLength();
-        size_n = htons(size);
-        if (send(ts, &size_n, 2, 0) == 2) {
-            cc = send(ts, response_renderer.getData(),
-                      response_renderer.getLength(), 0);
-            if (cc == -1) {
-                if (verbose_mode) {
-                    cerr << "[AuthSrv] error in sending TCP response message" <<
-                        endl;
-                }
-            } else {
-                if (verbose_mode) {
-                    cerr << "[XX] sent TCP response: " << cc << " bytes"
-                         << endl;
+    printf("begin to check---------------------\n");
+    if (check_axfr_query(message_buffer, size)) {
+        printf("===========================");
+        std::string path = "/tmp/auth_xfrout_conn";
+        XfroutClient xfr_client(path);
+        xfr_client.connect();
+        xfr_client.sendXfroutRequestInfo(ts, message_buffer, size);
+        xfr_client.disconnect();
+        printf("===========================");
+    }
+    else {          
+        InputBuffer buffer(&message_buffer[0], size);
+        dns_message.clear(Message::PARSE);
+        response_renderer.clear();
+        if (auth_server->processMessage(buffer, dns_message, response_renderer,
+                                        false)) {
+            size = response_renderer.getLength();
+            size_n = htons(size);
+            if (send(ts, &size_n, 2, 0) == 2) {
+                cc = send(ts, response_renderer.getData(),
+                          response_renderer.getLength(), 0);
+                if (cc == -1) {
+                    if (verbose_mode) {
+                        cerr << "[AuthSrv] error in sending TCP response message" <<
+                            endl;
+                    }
+                } else {
+                    if (verbose_mode) {
+                        cerr << "[XX] sent TCP response: " << cc << " bytes"
+                             << endl;
+                    }
                 }
             }
         } else {
@@ -563,10 +606,11 @@ processMessageTCP(const int fd, Message& dns_message,
                 cerr << "TCP send error" << endl;
             }
         }
+
+        // TODO: we don't check for more queries on the stream atm
+        close(ts);
     }
- 
-   // TODO: we don't check for more queries on the stream atm
-    close(ts);
+     
 }
 
 void
@@ -651,7 +695,7 @@ int
 main(int argc, char* argv[]) {
     int ch;
     const char* port = DNSPORT;
-    bool use_ipv4 = true, use_ipv6 = true;
+    bool use_ipv4 = true, use_ipv6 = false;
 
     while ((ch = getopt(argc, argv, "46p:v")) != -1) {
         switch (ch) {

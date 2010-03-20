@@ -205,7 +205,7 @@ public:
     }
     //@}
 
-private:
+public:
     size_t position_;
     const uint8_t* data_;
     size_t len_;

@@ -209,7 +209,6 @@ ModuleCCSession::ModuleCCSession(
     session_(io_service)
 {
     init(spec_file_name, config_handler, command_handler);
-
     // register callback for asynchronous read
     session_.startRead(boost::bind(&ModuleCCSession::startCheck, this));
 }
