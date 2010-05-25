@@ -144,6 +144,47 @@ dispatch_axfr_query(int tcp_sock, char axfr_query[], uint16_t query_len)
 }
 #endif
 
+bool isNotifyMessage(const uint8_t *data)
+{
+    int opcode = (*(data + 2) & 0x78) >> 3;
+    return opcode == 4;
+}
+
+void handleNotify(udp::endpoint &sender, uint8_t *data, size_t data_len)
+{
+#define MIN_NOTIFY_HEAD_LEN 12
+    if (data_len < MIN_NOTIFY_HEAD_LEN)
+        return;
+    //get updated zone name and remote master's ip address and send to xfrin module
+    InputBuffer name_buffer(data + MIN_NOTIFY_HEAD_LEN, data_len - MIN_NOTIFY_HEAD_LEN);
+    Name name(name_buffer);
+    Session tmp_session_with_xfr;
+    tmp_session_with_xfr.establish();
+    tmp_session_with_xfr.subscribe("Ben", "*");
+    const string remote_ip_address = sender.address().to_string();
+    ElementPtr notify_command = Element::createFromString("{\"command\": [\"notify\", {\"zone_name\" : \""
+                                                            + name.toText() 
+                                                            + "\", \"master_ip\" : \""
+                                                            + remote_ip_address
+                                                            + "\"}]}");
+    tmp_session_with_xfr.group_sendmsg(notify_command, "Xfrin");
+    ElementPtr env, answer;
+    tmp_session_with_xfr.group_recvmsg(env, answer, false);
+    cerr << "before parse answer \n";
+    int rcode;
+    ElementPtr err = parseAnswer(rcode, answer);
+    if (rcode != 0) 
+    {
+        std::cerr << "notify send failed" << std::endl;
+    }
+    cerr << "after parse answer \n";
+    tmp_session_with_xfr.disconnect();
+    //set the qr bit
+    uint8_t *qr_start_byte = data + 2;
+    *qr_start_byte |= 0x80;
+}
+
+
 #ifdef HAVE_BOOST_SYSTEM
 //
 // Helper classes for asynchronous I/O using boost::asio
@@ -318,20 +359,36 @@ public:
         if (!error && bytes_recvd > 0) {
             InputBuffer request_buffer(data_, bytes_recvd);
 
-            dns_message_.clear(Message::PARSE);
-            response_renderer_.clear();
-            if (auth_server->processMessage(request_buffer, dns_message_,
-                                            response_renderer_, true)) {
+            if (isNotifyMessage((const uint8_t *)data_))
+            {
+                handleNotify(sender_endpoint_, (uint8_t *)data_, bytes_recvd);
                 socket_.async_send_to(
-                    boost::asio::buffer(response_buffer_.getData(),
-                                        response_buffer_.getLength()),
-                    sender_endpoint_,
-                    boost::bind(&UDPServer::sendCompleted,
+                        boost::asio::buffer(data_, bytes_recvd),
+                        sender_endpoint_,
+                        boost::bind(&UDPServer::sendCompleted,
+                            this,
+                            placeholders::error,
+                            placeholders::bytes_transferred));
+
+            }
+            else
+            {
+
+                dns_message_.clear(Message::PARSE);
+                response_renderer_.clear();
+                if (auth_server->processMessage(request_buffer, dns_message_,
+                            response_renderer_, true)) {
+                    socket_.async_send_to(
+                            boost::asio::buffer(response_buffer_.getData(),
+                                response_buffer_.getLength()),
+                            sender_endpoint_,
+                            boost::bind(&UDPServer::sendCompleted,
                                 this,
                                 placeholders::error,
                                 placeholders::bytes_transferred));
-            } else {
-                startReceive();
+                } else {
+                    startReceive();
+                }
             }
         } else {
             startReceive();
