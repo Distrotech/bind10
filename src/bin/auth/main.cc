@@ -171,12 +171,13 @@ void handleNotify(udp::endpoint &sender, uint8_t *data, size_t data_len)
     ElementPtr env, answer;
     tmp_session_with_xfr.group_recvmsg(env, answer, false, seq);
     int rcode;
+    cerr << "++++++++before parese answer\n";
     ElementPtr err = parseAnswer(rcode, answer);
     if (rcode != 0) 
     {
         std::cerr << "notify send failed" << std::endl;
     }
-    tmp_session_with_xfr.disconnect();
+    cerr << "++++++++after parese answer\n";
     //set the qr bit
     uint8_t *qr_start_byte = data + 2;
     *qr_start_byte |= 0x80;
