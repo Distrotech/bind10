@@ -160,16 +160,16 @@ void handleNotify(udp::endpoint &sender, uint8_t *data, size_t data_len)
     Name name(name_buffer);
     Session tmp_session_with_xfr;
     tmp_session_with_xfr.establish();
-    tmp_session_with_xfr.subscribe("Ben", "*");
+    tmp_session_with_xfr.subscribe("Ben");
     const string remote_ip_address = sender.address().to_string();
     ElementPtr notify_command = Element::createFromString("{\"command\": [\"notify\", {\"zone_name\" : \""
                                                             + name.toText() 
                                                             + "\", \"master_ip\" : \""
                                                             + remote_ip_address
                                                             + "\"}]}");
-    tmp_session_with_xfr.group_sendmsg(notify_command, "Xfrin");
+    unsigned int seq = tmp_session_with_xfr.group_sendmsg(notify_command, "Xfrin");
     ElementPtr env, answer;
-    tmp_session_with_xfr.group_recvmsg(env, answer, false);
+    tmp_session_with_xfr.group_recvmsg(env, answer, false, seq);
     cerr << "before parse answer \n";
     int rcode;
     ElementPtr err = parseAnswer(rcode, answer);
