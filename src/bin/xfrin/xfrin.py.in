@@ -378,6 +378,14 @@ this method we can test most of this class without requiring a command channel.
                 ret = self.xfrin_start(zone_name, db_file, master, port)
                 answer = create_answer(ret[0], ret[1])
 
+            elif cmd == 'notify':
+                # This is the temp implementation for notify
+                # actually the notfiy command should be sent to 
+                # Zone Manager module.
+                db_file = '@@LOCALSTATEDIR@@/@PACKAGE@/zone.sqlite3'
+                ret = self.xfrin_start(args['zone_name'], db_file, args['master_ip'], port = 53)
+                answer = create_answer(ret[0], ret[1])
+
         except XfrinException as err:
             answer = create_answer(1, str(err))
 
