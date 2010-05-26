@@ -158,9 +158,9 @@ void handleNotify(udp::endpoint &sender, uint8_t *data, size_t data_len)
     //get updated zone name and remote master's ip address and send to xfrin module
     InputBuffer name_buffer(data + MIN_NOTIFY_HEAD_LEN, data_len - MIN_NOTIFY_HEAD_LEN);
     Name name(name_buffer);
+    //TODO check with the conf-mgr whether current server is the auth of the zone
     Session tmp_session_with_xfr;
     tmp_session_with_xfr.establish();
-    tmp_session_with_xfr.subscribe("Ben");
     const string remote_ip_address = sender.address().to_string();
     ElementPtr notify_command = Element::createFromString("{\"command\": [\"notify\", {\"zone_name\" : \""
                                                             + name.toText() 
@@ -170,14 +170,12 @@ void handleNotify(udp::endpoint &sender, uint8_t *data, size_t data_len)
     unsigned int seq = tmp_session_with_xfr.group_sendmsg(notify_command, "Xfrin");
     ElementPtr env, answer;
     tmp_session_with_xfr.group_recvmsg(env, answer, false, seq);
-    cerr << "before parse answer \n";
     int rcode;
     ElementPtr err = parseAnswer(rcode, answer);
     if (rcode != 0) 
     {
         std::cerr << "notify send failed" << std::endl;
     }
-    cerr << "after parse answer \n";
     tmp_session_with_xfr.disconnect();
     //set the qr bit
     uint8_t *qr_start_byte = data + 2;
