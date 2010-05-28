@@ -1,0 +1,27 @@
+#
+# A common style of SOA RR stored in a buffer
+#
+# Valid compressed RDATA for "(ns.example.com. root.example.com.
+# 2010012601 3600 300 3600000 1200)"
+# RDLENGHT=32 bytes
+
+#(7) e  x  a  m  p  l  e (3) c  o  m  .
+ 07 65 78 61 6d 70 6c 65 03 63 6f 6d 00
+# type/class: A = 6, IN = 1
+00 06 00 01
+# TTL: 3600
+00 00 0e 10
+# 0  1 RDLEN: 
+ 00 20
+# MNAME: compressed
+# 0  1  2  3  4
+#(2) n  s ptr=0
+ 02 6e 73 c0 00
+# RNAME: compressed
+# 5   6  7  8  9 10 11
+#(4)  r  o  o  t ptr=5
+  04 72 6f 6f 74 c0 00
+# other numeric parameters
+#      28      32        36        40       44
+# serial, refresh,    retry,  expire,  minimum
+ 77ce5bb9 00000e10 0000012c  0036ee80 000004b0
