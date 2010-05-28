@@ -603,4 +603,104 @@ TEST_F(NameTest, LeftShiftOperator) {
     oss << example_name;
     EXPECT_EQ(example_name.toText(), oss.str());
 }
+
+TEST_F(NameTest, LabelSequenceFromName) {
+    LabelSequence sequence;
+    example_name.setLabelSequence(sequence);
+    EXPECT_EQ(example_name.getLength(), sequence.getDataLength());
+    EXPECT_EQ(example_name.getLabelCount(), sequence.getOffsetLength());
+}
+
+TEST_F(NameTest, LabelSequenceSplit) {
+    LabelSequence sequence;
+    example_name.setLabelSequence(sequence);
+    sequence.split(1);
+    EXPECT_EQ("example.com.", sequence.toText());
+    example_name.setLabelSequence(sequence);
+    sequence.split(2);
+    EXPECT_EQ("com.", sequence.toText());
+    example_name.setLabelSequence(sequence);
+    sequence.split(3);
+    EXPECT_EQ(".", sequence.toText());
+    example_name.setLabelSequence(sequence);
+    sequence.split(-1);
+    EXPECT_EQ("www.example.com", sequence.toText());
+    example_name.setLabelSequence(sequence);
+    sequence.split(-2);
+    EXPECT_EQ("www.example", sequence.toText());
+    example_name.setLabelSequence(sequence);
+    sequence.split(-3);
+    EXPECT_EQ("www", sequence.toText());
+}
+
+TEST_F(NameTest, LabelSequenceSplitToTwo) {
+    LabelSequence sequence, prefix, suffix;
+    example_name.setLabelSequence(sequence);
+
+    sequence.split(prefix, suffix, 1);
+    EXPECT_EQ("www", prefix.toText());
+    EXPECT_EQ("example.com.", suffix.toText());
+
+    sequence.split(prefix, suffix, 2);
+    EXPECT_EQ("www.example", prefix.toText());
+    EXPECT_EQ("com.", suffix.toText());
+
+    sequence.split(prefix, suffix, 3);
+    EXPECT_EQ("www.example.com", prefix.toText());
+    EXPECT_EQ(".", suffix.toText());
+
+    sequence.split(prefix, suffix, -1);
+    EXPECT_EQ("www.example.com", prefix.toText());
+    EXPECT_EQ(".", suffix.toText());
+
+    sequence.split(prefix, suffix, -2);
+    EXPECT_EQ("www.example", prefix.toText());
+    EXPECT_EQ("com.", suffix.toText());
+
+    sequence.split(prefix, suffix, -3);
+    EXPECT_EQ("www", prefix.toText());
+    EXPECT_EQ("example.com.", suffix.toText());
+}
+
+TEST_F(NameTest, LabelSequenceToWire) {
+    const uint8_t wiredata1[] = {
+        17,                                             // data length
+        0x03, 0x77, 0x77, 0x77,                         // www
+        0x07, 0x65, 0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, // example
+        0x03, 0x63, 0x6f, 0x6d, 0x00,                   // com.
+        4, 0, 4, 12, 16 };                              // offsetlen, offsets
+
+    LabelSequence sequence;
+    example_name.setLabelSequence(sequence);
+    sequence.toWire(buffer_actual);
+    EXPECT_PRED_FORMAT4(UnitTestUtil::matchWireData, buffer_actual.getData(),
+                        buffer_actual.getLength(),
+                        wiredata1, sizeof(wiredata1));
+
+    buffer_actual.clear();
+    const uint8_t wiredata2[] = {
+        13,                                             // data length
+        0x07, 0x65, 0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, // example
+        0x03, 0x63, 0x6f, 0x6d, 0x00,                   // com.
+        3, 0, 8, 12 };          // offsetlen, offsets
+    example_name.setLabelSequence(sequence);
+    sequence.split(1);
+    sequence.toWire(buffer_actual);
+    EXPECT_PRED_FORMAT4(UnitTestUtil::matchWireData, buffer_actual.getData(),
+                        buffer_actual.getLength(),
+                        wiredata2, sizeof(wiredata2));
+
+    buffer_actual.clear();
+    const uint8_t wiredata3[] = {
+        12,                                             // data length
+        0x03, 0x77, 0x77, 0x77,                         // www
+        0x07, 0x65, 0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, // example
+        2, 0, 4 };          // offsetlen, offsets
+    example_name.setLabelSequence(sequence);
+    sequence.split(-2);
+    sequence.toWire(buffer_actual);
+    EXPECT_PRED_FORMAT4(UnitTestUtil::matchWireData, buffer_actual.getData(),
+                        buffer_actual.getLength(),
+                        wiredata3, sizeof(wiredata3));
+}
 }

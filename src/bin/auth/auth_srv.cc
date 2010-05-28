@@ -42,7 +42,10 @@
 
 #include "common.h"
 #include "auth_srv.h"
+#include "rbt_datasrc.h"
+#include "root_datasrc.h"
 
+#include <boost/shared_ptr.hpp>
 #include <boost/lexical_cast.hpp>
 
 using namespace std;
@@ -54,6 +57,8 @@ using namespace isc::dns::rdata;
 using namespace isc::data;
 using namespace isc::config;
 
+typedef boost::shared_ptr<RbtRRset> RbtRRsetPtr; 
+
 class AuthSrvImpl {
 private:
     // prohibit copy
@@ -61,6 +66,19 @@ private:
     AuthSrvImpl& operator=(const AuthSrvImpl& source);
 public:
     AuthSrvImpl();
+    RbtRRsetPtr getRbtRRset() {
+        assert(rrset_counter_ < MAXRRS_IN_MESSAGE); // XXX
+        return (rrsets_[rrset_counter_++]);
+    }
+    void clearRbtRRsets() {
+        for (int i = 0; i < rrset_counter_; ++i) {
+            rrsets_[i]->clear();
+        }
+        rrset_counter_ = 0;
+    }
+    void processRootQuery(Message& message);
+    void addAdditional(Message& message, RbtRRsetPtr rrset,
+                       const RRType& rrtype);
 
     isc::data::ElementPtr setDbFile(const isc::data::ElementPtr config);
 
@@ -74,11 +92,17 @@ public:
 
     bool verbose_mode_;
 
+    const RbtDataSrc* mem_datasrc_;
+    static const unsigned int MAXRRS_IN_MESSAGE = 256; // XXX
+    RbtRRsetPtr rrsets_[MAXRRS_IN_MESSAGE];
+    unsigned int rrset_counter_;
+
     /// Currently non-configurable, but will be.
     static const uint16_t DEFAULT_LOCAL_UDPSIZE = 4096;
 };
 
-AuthSrvImpl::AuthSrvImpl() : cs_(NULL), verbose_mode_(false)
+AuthSrvImpl::AuthSrvImpl() : cs_(NULL), verbose_mode_(false),
+                             mem_datasrc_(NULL), rrset_counter_(0)
 {
     // cur_datasrc_ is automatically initialized by the default constructor,
     // effectively being an empty (sqlite) data source.  once ccsession is up
@@ -86,6 +110,123 @@ AuthSrvImpl::AuthSrvImpl() : cs_(NULL), verbose_mode_(false)
 
     // add static data source
     data_sources_.addDataSrc(ConstDataSrcPtr(new StaticDataSrc));
+
+    if (getenv("ROOTSERVER") != NULL) {
+        cerr << "[AuthSrv] generating root zone data source" << endl; 
+        mem_datasrc_ = createRootRbtDataSrc();
+    } else {
+        const char* dbfile = getenv("DBFILE");
+        const char* dborigin = getenv("DBORIGIN");
+        if (dbfile != NULL && dborigin != NULL) {
+            cerr << "[AuthSrv] generating " << dborigin << " zone data from "
+                 << dbfile << endl;
+            mem_datasrc_ = new RbtDataSrc(Name(dborigin), *dbfile,
+                                          RbtDataSrc::SERVE);
+        }
+    }
+
+    if (mem_datasrc_ != NULL) {
+        for (int i = 0; i < MAXRRS_IN_MESSAGE; ++i) {
+            rrsets_[i] = RbtRRsetPtr(new RbtRRset);
+        }
+    }
+}
+
+void
+AuthSrvImpl::addAdditional(Message& message, RbtRRsetPtr rrset,
+                           const RRType& rrtype)
+{
+    if (rrtype != RRType::NS()) {
+        return;
+    }
+
+    RbtDataSrcResult result; 
+    RbtRdataHandle rdata;
+    for (result = rrset->getFirstRdata(rdata);
+         result == RbtDataSrcSuccess;
+         result = rdata.moveToNext()) {
+        RbtRdataFieldHandle field;
+        result = rdata.getFirstField(field);
+        if (result == RbtDataSrcSuccess) {
+            RbtNode node;
+            field.convertToRbtNode(&node);
+
+            rrset = getRbtRRset();
+            result = node.findRRset(RRType::A(), *rrset);
+            if (result == RbtDataSrcSuccess) {
+                message.addRRset(Section::ADDITIONAL(), rrset);
+            }
+
+            rrset = getRbtRRset();
+            result = node.findRRset(RRType::AAAA(), *rrset);
+            if (result == RbtDataSrcSuccess) {
+                message.addRRset(Section::ADDITIONAL(), rrset);
+            }
+        }
+    }
+}
+
+inline void
+AuthSrvImpl::processRootQuery(Message& message) {
+    QuestionPtr question = *message.beginQuestion();
+    RbtNode node;
+    RbtDataSrcResult result =
+        mem_datasrc_->findNode(question->getName(), &node);
+    RbtRRsetPtr rrset;
+
+    switch (result) {
+    case RbtDataSrcSuccess:
+        rrset = getRbtRRset();
+        result = node.findRRset(question->getType(), *rrset);
+        if (result == RbtDataSrcSuccess) {
+            message.addRRset(Section::ANSWER(), rrset);
+
+            result = mem_datasrc_->getApexNode(&node);
+            if (result == RbtDataSrcSuccess) {
+                rrset = getRbtRRset();
+                result = node.findRRset(RRType::NS(), *rrset);
+                if (result == RbtDataSrcSuccess) {
+                    message.addRRset(Section::AUTHORITY(), rrset);
+                    addAdditional(message, rrset, RRType::NS());
+                }
+            }
+        } else {
+            result = mem_datasrc_->getApexNode(&node);
+            if (result == RbtDataSrcSuccess) {
+                rrset = getRbtRRset();
+                result = node.findRRset(RRType::SOA(), *rrset);
+            }
+            if (result == RbtDataSrcSuccess) {
+                message.addRRset(Section::AUTHORITY(), rrset);
+            }
+        }
+        break;
+    case RbtDataSrcPartialMatch:
+        // reset AA, add NS, add glues
+        message.clearHeaderFlag(MessageFlag::AA());
+        rrset = getRbtRRset();
+        result = node.findRRset(RRType::NS(), *rrset);
+        if (result == RbtDataSrcSuccess) {
+            message.addRRset(Section::AUTHORITY(), rrset);
+            addAdditional(message, rrset, RRType::NS());
+        }
+        break;
+    case RbtDataSrcNotFound:
+        // reset AA, add SOA in auth, set NXDOMAIN
+        message.clearHeaderFlag(MessageFlag::AA());
+        message.setRcode(Rcode::NXDOMAIN());
+        result = mem_datasrc_->getApexNode(&node);
+        if (result == RbtDataSrcSuccess) {
+            rrset = getRbtRRset();
+            result = node.findRRset(RRType::SOA(), *rrset);
+        }
+        if (result == RbtDataSrcSuccess) {
+            message.addRRset(Section::AUTHORITY(), rrset);
+        }
+        break;
+    default:
+        assert(0);          // XXX
+    }
 }
 
 AuthSrv::AuthSrv() : impl_(new AuthSrvImpl) {
@@ -207,7 +348,7 @@ AuthSrv::processMessage(InputBuffer& request_buffer, Message& message,
         return (true);
     } // other exceptions will be handled at a higher layer.
 
-    if (impl_->verbose_mode_) {
+    if (0 && impl_->verbose_mode_) {
         cerr << "[AuthSrv] received a message:\n" << message.toText() << endl;
     }
 
@@ -238,24 +379,38 @@ AuthSrv::processMessage(InputBuffer& request_buffer, Message& message,
     message.setDNSSECSupported(dnssec_ok);
     message.setUDPSize(AuthSrvImpl::DEFAULT_LOCAL_UDPSIZE);
 
-    try {
-        Query query(message, dnssec_ok);
-        impl_->data_sources_.doQuery(query);
-    } catch (const Exception& ex) {
-        if (impl_->verbose_mode_) {
-            cerr << "Internal error, returning SERVFAIL: " << ex.what() << endl;
+    if (impl_->mem_datasrc_ != NULL) {
+        impl_->processRootQuery(message);
+        CompressOffset* offsets = // XXX bad cast
+            reinterpret_cast<CompressOffset*>(response_renderer.getArg());
+        if (offsets != NULL) {
+            memset(offsets, 0xff, sizeof(*offsets));
         }
-        makeErrorMessage(message, response_renderer, Rcode::SERVFAIL(),
-                         impl_->verbose_mode_);
-        return (true);
+    } else {
+        try {
+            Query query(message, dnssec_ok);
+            impl_->data_sources_.doQuery(query);
+        } catch (const Exception& ex) {
+            if (impl_->verbose_mode_) {
+                cerr << "Internal error, returning SERVFAIL: " << ex.what()
+                     << endl;
+            }
+            makeErrorMessage(message, response_renderer, Rcode::SERVFAIL(),
+                             impl_->verbose_mode_);
+            return (true);
+        }
     }
 
     response_renderer.setLengthLimit(udp_buffer ? remote_bufsize : 65535);
     message.toWire(response_renderer);
-    if (impl_->verbose_mode_) {
+    if (0 && impl_->verbose_mode_) {
         cerr << "sending a response (" <<
             boost::lexical_cast<string>(response_renderer.getLength())
              << " bytes):\n" << message.toText() << endl;
+    }
+
+    if (impl_->mem_datasrc_ != NULL) {
+        impl_->clearRbtRRsets();
     }
 
     return (true);

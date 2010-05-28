@@ -374,10 +374,13 @@ Message::addRRset(const Section& section, RRsetPtr rrset, const bool sign) {
     impl_->rrsets_[sectionCodeToId(section)].push_back(rrset);
     impl_->counts_[section.getCode()] += rrset->getRdataCount();
 
-    RRsetPtr sp = rrset->getRRsig();
-    if (sign && sp != NULL) {
-        impl_->rrsets_[sectionCodeToId(section)].push_back(sp);
-        impl_->counts_[section.getCode()] += sp->getRdataCount();
+    
+    if (sign) {
+        RRsetPtr sp = rrset->getRRsig();
+        if (sp != NULL) {
+            impl_->rrsets_[sectionCodeToId(section)].push_back(sp);
+            impl_->counts_[section.getCode()] += sp->getRdataCount();
+        }
     }
 }
 

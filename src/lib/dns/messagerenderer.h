@@ -104,6 +104,8 @@ public:
     /// \param buffer An \c OutputBuffer object to which wire format data is
     /// written.
     MessageRenderer(OutputBuffer& buffer);
+    MessageRenderer(OutputBuffer& buffer, void* arg); // ad hoc extension
+    void* getArg() { return (arg_); }
     /// \brief The destructor.
     ///
     /// The destructor does nothing on the given \c buffer on construction;
@@ -261,6 +263,7 @@ public:
 private:
     struct MessageRendererImpl;
     MessageRendererImpl* impl_;
+    void* arg_;                 // for ad hoc extension
 };
 }
 }

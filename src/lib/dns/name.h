@@ -129,10 +129,11 @@ public:
     /// If, on the other hand, we finally decide we really don't need that
     /// notion, we'll probably reconsider the design here, too. 
     enum NameRelation {
-        SUPERDOMAIN = 0,
-        SUBDOMAIN = 1,
-        EQUAL = 2,
-        COMMONANCESTOR = 3
+        NONE = 0,               // describe it.
+        SUPERDOMAIN = 1,
+        SUBDOMAIN = 2,
+        EQUAL = 3,
+        COMMONANCESTOR = 4
     };
 
     ///
@@ -163,6 +164,32 @@ private:
     int order_;
     unsigned int nlabels_;
     NameRelation relation_;
+};
+
+class LabelSequence {
+public:
+    LabelSequence() : nbeg_(0), nlen_(0), ndata_(NULL),
+                      obeg_(0), offsetlen_(0), offsets_(NULL) {}
+    void set(unsigned char nlen, const unsigned char* ndata,
+             unsigned char offsetlen, const unsigned char* offsets);
+    void set(const unsigned char* data);
+    NameComparisonResult compare(const LabelSequence& other) const;
+    void toWire(OutputBuffer& buffer) const;
+    unsigned int getDataLength() const { return (nlen_); }
+    const unsigned char* getData() const { return (ndata_); }
+    // the following two may not be necessary.
+    unsigned int getOffsetLength() const { return (offsetlen_); }
+    const unsigned char* getOffsets() const { return (offsets_); }
+    std::string toText() const;
+    void split(int labels);
+    void split(LabelSequence& prefix, LabelSequence& suffix, int labels) const;
+private:
+    unsigned int nbeg_;
+    unsigned int nlen_;
+    const unsigned char* ndata_;
+    unsigned int obeg_;
+    unsigned int offsetlen_;
+    const unsigned char* offsets_;
 };
 
 ///
@@ -626,6 +653,9 @@ public:
     bool isWildcard() const;
     //@}
 
+    // experimental extension
+    void setLabelSequence(LabelSequence& sequence) const;
+
     ///
     /// \name Protocol constants
     ///
@@ -691,6 +721,9 @@ Name::ROOT_NAME() {
 /// parameter \c os after the insertion operation.
 std::ostream&
 operator<<(std::ostream& os, const Name& name);
+
+std::ostream&
+operator<<(std::ostream& os, const LabelSequence& sequence);
 }
 }
 #endif // __NAME_H

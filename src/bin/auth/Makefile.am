@@ -27,10 +27,15 @@ spec_config.h: spec_config.h.pre
 	$(SED) -e "s|@@LOCALSTATEDIR@@|$(localstatedir)|" spec_config.h.pre >$@
 
 BUILT_SOURCES = spec_config.h 
-pkglibexec_PROGRAMS = b10-auth
+pkglibexec_PROGRAMS = b10-auth b10-compilezone
 b10_auth_SOURCES = auth_srv.cc auth_srv.h
 b10_auth_SOURCES += common.h
 b10_auth_SOURCES += main.cc
+
+b10_auth_SOURCES += offsetptr.h
+b10_auth_SOURCES += rbt_datasrc.h rbt_datasrc.cc
+b10_auth_SOURCES += root_datasrc.h root_datasrc.cc
+
 b10_auth_LDADD =  $(top_builddir)/src/lib/datasrc/.libs/libdatasrc.a
 b10_auth_LDADD += $(top_builddir)/src/lib/dns/.libs/libdns.a
 b10_auth_LDADD += $(top_builddir)/src/lib/config/.libs/libcfgclient.a
@@ -44,6 +49,11 @@ endif
 b10_auth_LDFLAGS = $(AM_LDFLAGS) $(BOOST_LDFLAGS)
 b10_auth_LDADD += $(BOOST_SYSTEM_LIB)
 endif
+
+b10_compilezone_SOURCES = compilezone.cc
+b10_compilezone_SOURCES += rbt_datasrc.h rbt_datasrc.cc
+b10_compilezone_LDADD = $(top_builddir)/src/lib/exceptions/.libs/libexceptions.a
+b10_compilezone_LDADD += $(top_builddir)/src/lib/dns/.libs/libdns.a
 
 # TODO: config.h.in is wrong because doesn't honor pkgdatadir
 # and can't use @datadir@ because doesn't expand default ${prefix}

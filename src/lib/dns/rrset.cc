@@ -14,6 +14,8 @@
 
 // $Id$
 
+#include <config.h>
+
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -260,5 +262,26 @@ BasicRRset::getRdataIterator() const
 {
     return (RdataIteratorPtr(new BasicRdataIterator(impl_->rdatalist_)));
 }
+
+void
+AbstractRRset::addRRsig(AbstractRRset& sigs UNUSED_PARAM)
+{
+}
+
+void
+AbstractRRset::addRRsig(RRsetPtr sigs UNUSED_PARAM)
+{
+}
+
+void
+AbstractRRset::removeRRsig()
+{
+}
+
+RRsetPtr
+AbstractRRset::getRRsig() {     // XXX
+    return (RRsetPtr());
+}
+
 }
 }

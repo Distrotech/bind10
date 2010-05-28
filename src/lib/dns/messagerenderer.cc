@@ -176,7 +176,11 @@ struct MessageRenderer::MessageRendererImpl {
 };
 
 MessageRenderer::MessageRenderer(OutputBuffer& buffer) :
-    impl_(new MessageRendererImpl(buffer))
+    impl_(new MessageRendererImpl(buffer)), arg_(NULL)
+{}
+
+MessageRenderer::MessageRenderer(OutputBuffer& buffer, void* arg) :
+    impl_(new MessageRendererImpl(buffer)), arg_(arg)
 {}
 
 MessageRenderer::~MessageRenderer() {

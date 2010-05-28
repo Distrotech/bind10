@@ -51,6 +51,7 @@
 #include "spec_config.h"
 #include "common.h"
 #include "auth_srv.h"
+#include "rbt_datasrc.h"
 
 using namespace std;
 #ifdef USE_XFROUT
@@ -154,7 +155,7 @@ public:
         socket_(io_service),
         response_buffer_(0),
         responselen_buffer_(TCP_MESSAGE_LENGTHSIZE),
-        response_renderer_(response_buffer_),
+        response_renderer_(response_buffer_, &offsets_),
         dns_message_(Message::PARSE)
     {}
 
@@ -245,6 +246,7 @@ private:
     enum { MAX_LENGTH = 65535 };
     static const size_t TCP_MESSAGE_LENGTHSIZE = 2;
     char data_[MAX_LENGTH];
+    struct CompressOffset offsets_;
 };
 
 class TCPServer {
@@ -298,7 +300,7 @@ public:
         io_service_(io_service),
         socket_(io_service, af == AF_INET6 ? udp::v6() : udp::v4()),
         response_buffer_(0),
-        response_renderer_(response_buffer_),
+        response_renderer_(response_buffer_, &offsets_),
         dns_message_(Message::PARSE)
     {
         // Set v6-only (we use a different instantiation for v4,
@@ -363,6 +365,7 @@ private:
     udp::endpoint sender_endpoint_;
     enum { MAX_LENGTH = 4096 };
     char data_[MAX_LENGTH];
+    struct CompressOffset offsets_;
 };
 
 struct ServerSet {
@@ -655,14 +658,15 @@ run_server(const char* port, const bool use_ipv4, const bool use_ipv6,
 
     int ss = srv->configSession()->getSocket();
     Message dns_message(Message::PARSE);
+    struct CompressOffset offsets;
     OutputBuffer resonse_buffer(0);
-    MessageRenderer response_renderer(resonse_buffer);
+    MessageRenderer response_renderer(resonse_buffer, &offsets);
+    ++nfds;
 
     running = true;
     while (running) {
         fd_set fds = fds_base;
         FD_SET(ss, &fds);
-        ++nfds;
 
         if (srv->configSession()->hasQueuedMsgs()) {
             srv->configSession()->checkCommand();
@@ -670,7 +674,7 @@ run_server(const char* port, const bool use_ipv4, const bool use_ipv6,
         int n = select(nfds, &fds, NULL, NULL, NULL);
         if (n < 0) {
             if (errno != EINTR) {
-                isc_throw(FatalError, "select error");
+                isc_throw(FatalError, "select error: " << strerror(errno));
             }
             continue;
         }
