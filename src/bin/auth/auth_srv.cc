@@ -380,11 +380,21 @@ AuthSrv::processMessage(InputBuffer& request_buffer, Message& message,
     message.setUDPSize(AuthSrvImpl::DEFAULT_LOCAL_UDPSIZE);
 
     if (impl_->mem_datasrc_ != NULL) {
-        impl_->processRootQuery(message);
-        CompressOffset* offsets = // XXX bad cast
-            reinterpret_cast<CompressOffset*>(response_renderer.getArg());
-        if (offsets != NULL) {
-            memset(offsets, 0xff, sizeof(*offsets));
+        try {
+            impl_->processRootQuery(message);
+            CompressOffset* offsets = // XXX bad cast
+                reinterpret_cast<CompressOffset*>(response_renderer.getArg());
+            if (offsets != NULL) {
+                memset(offsets, 0xff, sizeof(*offsets));
+            }
+        } catch (const Exception& ex) {
+            if (impl_->verbose_mode_) {
+                cerr << "Internal error, returning SERVFAIL: " << ex.what()
+                     << endl;
+            }
+            makeErrorMessage(message, response_renderer, Rcode::SERVFAIL(),
+                             impl_->verbose_mode_);
+            return (true);
         }
     } else {
         try {

@@ -93,6 +93,16 @@ usage() {
     cout << "Usage: b10-compilezone -f output_file -o origin zone_file" << endl;
     exit(1);
 }
+
+void
+dumpDB(const Name& origin, const char& zone_file, const char& output_file) {
+    // Phase 3: re-load the zone into the DB file.
+    RbtDataSrc* datasrc = new RbtDataSrc(origin, output_file, RbtDataSrc::LOAD);
+    loadZoneFile(&zone_file, datasrc);
+    cout << "Write load completed, data size: "
+         << datasrc->getAllocatedMemorySize() << " bytes" << endl;
+    delete datasrc;
+}
 }
 
 int
@@ -100,11 +110,27 @@ main(int argc, char* argv[]) {
     const char* output_file = NULL;
     const char* origin_name = NULL;
     int ch;
+    bool estimation_only = false;
+    bool dump_only = false;
+    bool check_db = false;
+    int margin = 50;            // percentage of the minimal DB size to add
 
-    while ((ch = getopt(argc, argv, "f:o:")) != -1) {
+    while ((ch = getopt(argc, argv, "cdef:m:o:")) != -1) {
         switch (ch) {
+        case 'c':
+            check_db = true;
+            break;
+        case 'e':
+            estimation_only = true;
+            break;
+        case 'd':
+            dump_only = true;
+            break;
         case 'f':
             output_file = optarg;
+            break;
+        case 'm':
+            margin = atoi(optarg);
             break;
         case 'o':
             origin_name = optarg;
@@ -121,20 +147,36 @@ main(int argc, char* argv[]) {
     argv += optind;
 
     const char* const zone_file = argv[0];
+    const Name origin(origin_name);
+
+    if (dump_only) {
+        dumpDB(origin, *zone_file, *output_file);
+        return (0);
+    }
 
     // Phase 1: load the text based zone file to estimate necessary memory
-    const Name origin(origin_name);
+
     RbtDataSrc* datasrc = new RbtDataSrc(origin);
     loadZoneFile(zone_file, datasrc);
     size_t db_memory_size = datasrc->getAllocatedMemorySize(); 
     cout << "Zone load completed, allocated memory: " << db_memory_size
          << " bytes" << endl;
+    // Check the origin node exists:
+    RbtNode rbtnode;
+    if (datasrc->findNode(origin, &rbtnode) != RbtDataSrcSuccess) {
+        isc_throw(Exception, "Can't find the apex node. "
+                  "Possibly the DB is broken.");
+    }
     delete datasrc;
+
+    if (estimation_only) {
+        return (0);
+    }
 
     // Phase 2: open the DB file, make room for the data if necessary.
     // We reserve 50% larger than the estimated size with rounding it up to
     // a multiple of "page size".
-    db_memory_size += db_memory_size/2;
+    db_memory_size += (db_memory_size * margin) / 100;
     db_memory_size = ((db_memory_size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1))); 
     fstream dbfile(output_file, ios::out|ios::binary|ios::ate);
     if (dbfile.is_open()) {
@@ -159,11 +201,19 @@ main(int argc, char* argv[]) {
     }
 
     // Phase 3: re-load the zone into the DB file.
-    datasrc = new RbtDataSrc(origin, *output_file, RbtDataSrc::LOAD);
-    loadZoneFile(zone_file, datasrc);
-    cout << "Write load completed, data size: "
-         << datasrc->getAllocatedMemorySize() << " bytes" << endl;
-    delete datasrc;
+    dumpDB(origin, *zone_file, *output_file);
+
+    // Phase 4 (optional): as a minimal check confirm the apex node exists.
+    if (check_db) {
+        datasrc = new RbtDataSrc(origin, *output_file, RbtDataSrc::SERVE);
+        if (datasrc->findNode(origin, &rbtnode) != RbtDataSrcSuccess) {
+            isc_throw(Exception, "Can't find the apex node. "
+                      "Possibly the DB is broken");
+        }
+        cout << "Looks good: successfully found the apex node in the "
+            "generated DB" << endl;
+        delete datasrc;
+    }
 
     return (0);
 }

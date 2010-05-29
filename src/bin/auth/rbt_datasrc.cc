@@ -108,7 +108,7 @@ struct RbtNodeImpl {
 
 struct RbtDBImpl {
     static const size_t ALIGNMENT_SIZE = sizeof(void*);
-    enum DBType { MEMORY, FILE };
+    enum DBType { MEMORY, FILE_LOAD, FILE_SERVE };
 
     RbtDataSrcResult addNode(const Name& name, RbtNodeImpl** nodep);
     RbtNodeImplPtr createNode(const LabelSequence& sequence);
@@ -127,12 +127,18 @@ struct RbtDBImpl {
     DBType dbtype_;
     size_t allocated_;
     void* base_;
-    void* current_;             // effective for the FILE mode only
-    size_t dbsize_;             // effective for the FILE mode only
+    void* current_;             // effective for the FILE_LOAD mode only
+    size_t dbsize_;             // effective for the FILE_xxx mode only
     RbtNodeImplPtr root_;
     unsigned int nodecount_;
     RbtNodeImpl* apexnode_;
 };
+
+inline size_t
+alignUp(size_t size) {
+    return ((size + RbtDBImpl::ALIGNMENT_SIZE - 1) &
+            (~(RbtDBImpl::ALIGNMENT_SIZE - 1)));
+}
 
 class RbtNodeChain {
 public:
@@ -245,7 +251,7 @@ RbtDataSrc::RbtDataSrc(const Name& origin, const char& dbfile,
 
     impl_->nodecount_ = 0;      // meaningless for the SERVE mode
     impl_->allocated_ = 0;      // ditto
-    impl_->dbtype_ = RbtDBImpl::FILE;
+    impl_->dbtype_ = mode == LOAD ? RbtDBImpl::FILE_LOAD : RbtDBImpl::FILE_SERVE;
 
     int fd = open(&dbfile, O_RDWR);
     if (fd < 0) {
@@ -256,20 +262,29 @@ RbtDataSrc::RbtDataSrc(const Name& origin, const char& dbfile,
     read(fd, &dbsize, sizeof(dbsize));
     impl_->dbsize_ = (size_t)dbsize;
     if (mode == LOAD) {
-        impl_->base_ = mmap(NULL, impl_->dbsize_,
-                            PROT_WRITE, MAP_FILE | MAP_SHARED, fd, 0);
+        
+        impl_->base_ = mmap(NULL, impl_->dbsize_, PROT_READ | PROT_WRITE,
+                            MAP_FILE | MAP_SHARED, fd, 0);
         if (impl_->base_ == MAP_FAILED) {
             close(dbfile);
             isc_throw(Exception, "mmap for write failed: " <<
                       string(strerror(errno)));
         }
         close(dbfile);
+
+        // In this very simple implementation, "header" is the 64-bit DB size
+        // field followed by an offset pointer to the root node.
+        size_t header_size = sizeof(dbsize) + alignUp(sizeof(impl_->root_));
+        
         uintptr_t headptr = reinterpret_cast<uintptr_t>(impl_->base_);
-        impl_->current_ = reinterpret_cast<void*>(headptr + sizeof(dbsize));
+        impl_->current_ = reinterpret_cast<void*>(headptr + header_size);
         impl_->root_ = RbtNodeImplPtr();
         impl_->apexnode_ = NULL;
         RbtDataSrcResult result = impl_->addNode(origin, &impl_->apexnode_);
-        assert(result == RbtDataSrcSuccess); // XXX assert is a bad choice here.
+        if (result != RbtDataSrcSuccess) {
+            munmap(impl_->base_, impl_->dbsize_);
+            isc_throw(Exception, "Failed to add the apexnode: " << result);
+        }
     } else {
         impl_->base_ = mmap(NULL, impl_->dbsize_,
                             PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);
@@ -281,18 +296,29 @@ RbtDataSrc::RbtDataSrc(const Name& origin, const char& dbfile,
         close(dbfile);
         impl_->current_ = impl_->base_; // unused
         uintptr_t headptr = reinterpret_cast<uintptr_t>(impl_->base_);
-        impl_->root_ = RbtNodeImplPtr(
-            reinterpret_cast<RbtNodeImpl*>(headptr + sizeof(dbsize)),
-            impl_->base_);
+        memcpy(&impl_->root_,
+               reinterpret_cast<const void*>(headptr + sizeof(dbsize)),
+               sizeof(impl_->root_));
         impl_->apexnode_ = NULL;
         RbtDataSrcResult result = impl_->findNode(origin, &impl_->apexnode_);
-        assert(result == RbtDataSrcSuccess);
+        if (result != RbtDataSrcSuccess) {
+            munmap(impl_->base_, impl_->dbsize_);
+            isc_throw(Exception, "Unexpected result for apexnode: " << result);
+        }
     }
-   
 }
 
 RbtDataSrc::~RbtDataSrc() {
-    if (impl_->dbtype_ == RbtDBImpl::FILE) {
+    if (impl_->dbtype_ == RbtDBImpl::FILE_LOAD) {
+        // copy the offset pointer to the root node into the "header".
+        memcpy(reinterpret_cast<char*>(impl_->base_) + sizeof(uint64_t),
+               &impl_->root_, sizeof(impl_->root_));
+
+        // XXX: should check the return values of the following
+        msync(impl_->base_, impl_->dbsize_, MS_SYNC);
+    }
+    if (impl_->dbtype_ == RbtDBImpl::FILE_LOAD ||
+        impl_->dbtype_ == RbtDBImpl::FILE_SERVE) {
         munmap(impl_->base_, impl_->dbsize_);
     }
     delete impl_;
@@ -322,17 +348,18 @@ RbtDataSrc::addNode(const Name& name, RbtNode* retnode) {
 void *
 RbtDBImpl::allocateRegion(const size_t size) {
     void* ret;
-    const size_t alloc_size = ((size + ALIGNMENT_SIZE - 1) &
-                               (~(ALIGNMENT_SIZE - 1)));
-    if (dbtype_ == FILE) {
+    const size_t alloc_size = alignUp(size);
+    if (dbtype_ == FILE_LOAD) {
         uintptr_t curptr = reinterpret_cast<uintptr_t>(current_);
         uintptr_t baseptr = reinterpret_cast<uintptr_t>(base_);
         assert(curptr - baseptr + alloc_size <= dbsize_); // XXX
         ret = current_;
         current_ = reinterpret_cast<void*>(
             reinterpret_cast<uintptr_t>(current_) + alloc_size);
-    } else {
+    } else if (dbtype_ == MEMORY) {
         ret = new char[size];
+    } else {
+        isc_throw(Exception, "memory allocation required for read-only DB");
     }
 
     allocated_ += alloc_size;
@@ -1098,20 +1125,23 @@ renderName(MessageRenderer& renderer, const RbtNodeImpl* node,
         return;
     }
 
-    uint16_t offset;
+    uint16_t offset = 0xffff;
     assert(node->getIndex() < CompressOffset::MAXNODES); // XXX
     while (!node->isAbsolute() &&
            (offset = offsets->offsets[node->getIndex()]) == 0xffff) {
         offsets->offsets[node->getIndex()] = renderer.getLength();
-        renderer.writeData(node->getNameData(base) + 1,
-                           node->getNameLen()); // exclude the end dot
+        renderer.writeData(node->getNameData(base) + 1, node->getNameLen());
         node = node->findUp(base);
     }
     if (node->isAbsolute()) {
         offsets->offsets[node->getIndex()] = renderer.getLength();
         renderer.writeData(node->getNameData(base) + 1, node->getNameLen());
     } else {
-        assert(offset != 0xffff);
+        if (offset == 0xffff || offset < 12) {
+            isc_throw(Exception, "invalid offset found in renderName: "
+                      << offset << " node index: " << node->getIndex()
+                      << " name: " << node->nodeNameToText(base));
+        }
         renderer.writeUint16(Name::COMPRESS_POINTER_MARK16 | offset);
     }
 }
