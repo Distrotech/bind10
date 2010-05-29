@@ -19,7 +19,7 @@
  02 6e 73 c0 00
 # RNAME: compressed
 # 5   6  7  8  9 10 11
-#(4)  r  o  o  t ptr=5
+#(4)  r  o  o  t ptr=0
   04 72 6f 6f 74 c0 00
 # other numeric parameters
 #      28      32        36        40       44

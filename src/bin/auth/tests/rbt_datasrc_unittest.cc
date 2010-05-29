@@ -38,7 +38,7 @@ namespace {
 class RBTDataSrcTest : public ::testing::Test {
 protected:
     RBTDataSrcTest() : datasrc(Name::ROOT_NAME()), buffer(0),
-                       renderer(buffer, &compress_offsets)
+                       renderer(buffer, &offset_table)
     {
         datasrc.addNode(Name("a"), &rbtnode);
         datasrc.addNode(Name("b"), &rbtnode);
@@ -55,7 +55,7 @@ protected:
     MessageRenderer renderer;
     vector<unsigned char> data;
     RbtNode rbtnode;
-    CompressOffset compress_offsets;
+    CompressOffsetTable offset_table;
 };
 
 TEST_F(RBTDataSrcTest, addNames) {
@@ -134,7 +134,10 @@ TEST_F(RBTDataSrcTest, addRRset) {
                                                   &rbtnode));
     EXPECT_EQ(RbtDataSrcSuccess, rbtnode.findRRset(RRType::NS(), rbtrrset));
     renderer.clear();
-    memset(&compress_offsets, 0xff, sizeof(compress_offsets));
+    
+    offset_table.clear();
+    const char dummy_header[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+    renderer.writeData(dummy_header, sizeof(dummy_header));
     rbtrrset.toWire(renderer);
     data.clear();
     UnitTestUtil::readWireData("rr_ns_toWire", data);
@@ -158,7 +161,7 @@ TEST_F(RBTDataSrcTest, addRRset) {
                                                   &rbtnode));
     EXPECT_EQ(RbtDataSrcSuccess, rbtnode.findRRset(RRType::SOA(), rbtrrset));
     renderer.clear();
-    memset(&compress_offsets, 0xff, sizeof(compress_offsets));
+    offset_table.clear();
     rbtrrset.toWire(renderer);
 
     data.clear();

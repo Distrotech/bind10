@@ -1117,27 +1117,27 @@ void
 renderName(MessageRenderer& renderer, const RbtNodeImpl* node,
            const void* base)
 {
-    CompressOffset* offsets =
-        reinterpret_cast<CompressOffset*>(renderer.getArg());
-    if (offsets == NULL) {
+    CompressOffsetTable* offset_table =
+        reinterpret_cast<CompressOffsetTable*>(renderer.getArg());
+    if (offset_table == NULL) {
         // this is slow.
         renderer.writeName(node->getFullNodeName(base));
         return;
     }
 
-    uint16_t offset = 0xffff;
-    assert(node->getIndex() < CompressOffset::MAXNODES); // XXX
+    uint16_t offset = CompressOffsetTable::OFFSET_NOTFOUND;
     while (!node->isAbsolute() &&
-           (offset = offsets->offsets[node->getIndex()]) == 0xffff) {
-        offsets->offsets[node->getIndex()] = renderer.getLength();
+           (offset = offset_table->find(node->getIndex())) ==
+            CompressOffsetTable::OFFSET_NOTFOUND) {
+        offset_table->insert(node->getIndex(), renderer.getLength());
         renderer.writeData(node->getNameData(base) + 1, node->getNameLen());
         node = node->findUp(base);
     }
     if (node->isAbsolute()) {
-        offsets->offsets[node->getIndex()] = renderer.getLength();
+        offset_table->insert(node->getIndex(), renderer.getLength());
         renderer.writeData(node->getNameData(base) + 1, node->getNameLen());
     } else {
-        if (offset == 0xffff || offset < 12) {
+        if (offset >= Name::COMPRESS_POINTER_MARK16) {
             isc_throw(Exception, "invalid offset found in renderName: "
                       << offset << " node index: " << node->getIndex()
                       << " name: " << node->nodeNameToText(base));

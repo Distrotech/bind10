@@ -382,10 +382,11 @@ AuthSrv::processMessage(InputBuffer& request_buffer, Message& message,
     if (impl_->mem_datasrc_ != NULL) {
         try {
             impl_->processRootQuery(message);
-            CompressOffset* offsets = // XXX bad cast
-                reinterpret_cast<CompressOffset*>(response_renderer.getArg());
-            if (offsets != NULL) {
-                memset(offsets, 0xff, sizeof(*offsets));
+            CompressOffsetTable* offset_table = // XXX bad cast
+                reinterpret_cast<CompressOffsetTable*>(
+                    response_renderer.getArg());
+            if (offset_table != NULL) {
+                offset_table->clear();
             }
         } catch (const Exception& ex) {
             if (impl_->verbose_mode_) {

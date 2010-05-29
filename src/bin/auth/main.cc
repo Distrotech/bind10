@@ -155,7 +155,7 @@ public:
         socket_(io_service),
         response_buffer_(0),
         responselen_buffer_(TCP_MESSAGE_LENGTHSIZE),
-        response_renderer_(response_buffer_, &offsets_),
+        response_renderer_(response_buffer_, &offset_table_),
         dns_message_(Message::PARSE)
     {}
 
@@ -246,7 +246,7 @@ private:
     enum { MAX_LENGTH = 65535 };
     static const size_t TCP_MESSAGE_LENGTHSIZE = 2;
     char data_[MAX_LENGTH];
-    struct CompressOffset offsets_;
+    CompressOffsetTable offset_table_;
 };
 
 class TCPServer {
@@ -300,7 +300,7 @@ public:
         io_service_(io_service),
         socket_(io_service, af == AF_INET6 ? udp::v6() : udp::v4()),
         response_buffer_(0),
-        response_renderer_(response_buffer_, &offsets_),
+        response_renderer_(response_buffer_, &offset_table_),
         dns_message_(Message::PARSE)
     {
         // Set v6-only (we use a different instantiation for v4,
@@ -365,7 +365,7 @@ private:
     udp::endpoint sender_endpoint_;
     enum { MAX_LENGTH = 4096 };
     char data_[MAX_LENGTH];
-    struct CompressOffset offsets_;
+    CompressOffsetTable offset_table_;
 };
 
 struct ServerSet {
@@ -658,9 +658,9 @@ run_server(const char* port, const bool use_ipv4, const bool use_ipv6,
 
     int ss = srv->configSession()->getSocket();
     Message dns_message(Message::PARSE);
-    struct CompressOffset offsets;
+    CompressOffsetTable offset_table;
     OutputBuffer resonse_buffer(0);
-    MessageRenderer response_renderer(resonse_buffer, &offsets);
+    MessageRenderer response_renderer(resonse_buffer, &offset_table);
     ++nfds;
 
     running = true;
