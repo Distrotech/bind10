@@ -14,7 +14,7 @@ run_unittests_SOURCES += auth_srv_unittest.cc
 run_unittests_SOURCES += run_unittests.cc
 
 run_unittests_SOURCES += ../rbt_datasrc.h ../rbt_datasrc.cc
-run_unittests_SOURCES += ../root_datasrc.h ../root_datasrc.cc
+run_unittests_SOURCES += ../loadzone.h ../loadzone.cc
 run_unittests_SOURCES += rbt_datasrc_unittest.cc
 
 run_unittests_CPPFLAGS = $(AM_CPPFLAGS) $(GTEST_INCLUDES)

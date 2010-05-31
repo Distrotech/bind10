@@ -16,7 +16,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <fstream>
 #include <iostream>
 #include <vector>
 
@@ -43,8 +42,8 @@
 
 #include "common.h"
 #include "auth_srv.h"
+#include "loadzone.h"
 #include "rbt_datasrc.h"
-#include "root_datasrc.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/lexical_cast.hpp>
@@ -77,7 +76,10 @@ public:
         }
         rrset_counter_ = 0;
     }
-    void processRootQuery(Message& message);
+    void processNormalQuery(InputBuffer& request_buffer, Message& message,
+                            MessageRenderer& response_renderer,
+                            const bool udp_buffer);
+    void lookupAndMakeResponse(Message& message);
     void addAdditional(Message& message, RbtRRsetPtr rrset,
                        const RRType& rrtype);
 
@@ -102,53 +104,6 @@ public:
     static const uint16_t DEFAULT_LOCAL_UDPSIZE = 4096;
 };
 
-void
-loadZoneFile(const char* const zone_file, RbtDataSrc* datasrc) {
-    ifstream ifs;
-
-    ifs.open(zone_file, ios_base::in);
-    if ((ifs.rdstate() & istream::failbit) != 0) {
-        isc_throw(Exception, "failed to open zone file: " + string(zone_file));
-    }
-
-    string line;
-    RRsetPtr rrset;
-    const Name* prev_owner = NULL;
-    const RRType* prev_rrtype = NULL;
-    while (getline(ifs, line), !ifs.eof()) {
-        if (ifs.bad() || ifs.fail()) {
-            isc_throw(Exception, "Unexpected line in zone file");
-        }
-        if (line.empty() || line[0] == ';') {
-            continue;           // skip comment and blank lines
-        }
-
-        istringstream iss(line);
-        string owner, ttl, rrclass, rrtype;
-        stringbuf rdatabuf;
-        iss >> owner >> ttl >> rrclass >> rrtype >> &rdatabuf;
-        if (iss.bad() || iss.fail()) {
-            isc_throw(Exception, "Invalid/unrecognized RR: " << line);
-        }
-        if (prev_owner == NULL || *prev_owner != Name(owner) ||
-            *prev_rrtype != RRType(rrtype)) {
-            if (rrset) {
-                datasrc->addRRset(*rrset);
-            }
-            rrset = RRsetPtr(new RRset(Name(owner), RRClass(rrclass),
-                                       RRType(rrtype), RRTTL(ttl)));
-        }
-        rrset->addRdata(rdata::createRdata(RRType(rrtype), RRClass(rrclass),
-                                           rdatabuf.str()));
-        prev_owner = &rrset->getName();
-        prev_rrtype = &rrset->getType();
-    }
-    if (rrset) {
-        datasrc->addRRset(*rrset);
-    }
-}
-
-
 AuthSrvImpl::AuthSrvImpl() : cs_(NULL), verbose_mode_(false),
                              mem_datasrc_(NULL), rrset_counter_(0)
 {
@@ -159,26 +114,21 @@ AuthSrvImpl::AuthSrvImpl() : cs_(NULL), verbose_mode_(false),
     // add static data source
     data_sources_.addDataSrc(ConstDataSrcPtr(new StaticDataSrc));
 
-    if (getenv("ROOTSERVER") != NULL) {
-        cerr << "[AuthSrv] generating root zone data source" << endl; 
-        mem_datasrc_ = createRootRbtDataSrc();
-    } else {
-        const char* dbfile = getenv("DBFILE");
-        const char* dborigin = getenv("DBORIGIN");
-        const char* zonefile = getenv("ZONEFILE");
-        if (dbfile != NULL && dborigin != NULL) {
-            cerr << "[AuthSrv] generating " << dborigin << " zone data from "
-                 << dbfile << endl;
-            mem_datasrc_ = new RbtDataSrc(Name(dborigin), *dbfile,
-                                          RbtDataSrc::SERVE);
-        } else if (zonefile != NULL && dborigin != NULL) {
-            cerr << "[AuthSrv] loading " << dborigin << " zone data from "
-                 << zonefile << "...";
-            RbtDataSrc* datasrc = new RbtDataSrc(Name(dborigin));
-            loadZoneFile(zonefile, datasrc);
-            cerr << "end" << endl;
-            mem_datasrc_ = datasrc;
-        }
+    const char* const dbfile = getenv("DBFILE");
+    const char* const dborigin = getenv("DBORIGIN");
+    const char* const zonefile = getenv("ZONEFILE");
+    if (dbfile != NULL && dborigin != NULL) {
+        cerr << "[AuthSrv] generating " << dborigin << " zone data from "
+             << dbfile << endl;
+        mem_datasrc_ = new RbtDataSrc(Name(dborigin), *dbfile,
+                                      RbtDataSrc::SERVE);
+    } else if (zonefile != NULL && dborigin != NULL) {
+        cerr << "[AuthSrv] loading " << dborigin << " zone data from "
+             << zonefile << "...";
+        RbtDataSrc* datasrc = new RbtDataSrc(Name(dborigin));
+        loadZoneFile(zonefile, datasrc);
+        cerr << "end" << endl;
+        mem_datasrc_ = datasrc;
     }
 
     if (mem_datasrc_ != NULL) {
@@ -223,7 +173,7 @@ AuthSrvImpl::addAdditional(Message& message, RbtRRsetPtr rrset,
 }
 
 inline void
-AuthSrvImpl::processRootQuery(Message& message) {
+AuthSrvImpl::lookupAndMakeResponse(Message& message) {
     QuestionPtr question = *message.beginQuestion();
     RbtNode node;
     RbtDataSrcResult result =
@@ -363,6 +313,50 @@ AuthSrv::configSession() const {
     return (impl_->cs_);
 }
 
+inline void
+AuthSrvImpl::processNormalQuery(InputBuffer& request_buffer, Message& message,
+                                MessageRenderer& response_renderer,
+                                const bool udp_buffer)
+{
+    try {
+        message.fromWire(request_buffer);
+
+        const bool dnssec_ok = message.isDNSSECSupported();
+        const uint16_t remote_bufsize = message.getUDPSize();
+
+        message.makeResponse();
+        message.setHeaderFlag(MessageFlag::AA());
+        message.setRcode(Rcode::NOERROR());
+        message.setDNSSECSupported(dnssec_ok);
+        message.setUDPSize(AuthSrvImpl::DEFAULT_LOCAL_UDPSIZE);
+
+        clearRbtRRsets();
+        lookupAndMakeResponse(message);
+        CompressOffsetTable* offset_table = // XXX bad cast
+            reinterpret_cast<CompressOffsetTable*>(response_renderer.getArg());
+        if (offset_table != NULL) {
+            offset_table->clear();
+        }
+
+        response_renderer.setLengthLimit(udp_buffer ? remote_bufsize : 65535);
+        message.toWire(response_renderer);
+    } catch (const DNSProtocolError& error) {
+        makeErrorMessage(message, response_renderer, error.getRcode(),
+                         verbose_mode_);
+        return;
+    } catch (const Exception& ex) {
+        if (verbose_mode_) {
+            cerr << "Internal error, returning SERVFAIL: " << ex.what()
+                 << endl;
+        }
+        makeErrorMessage(message, response_renderer, Rcode::SERVFAIL(),
+                         verbose_mode_);
+        return;
+    }
+
+    return;
+}
+
 bool
 AuthSrv::processMessage(InputBuffer& request_buffer, Message& message,
                         MessageRenderer& response_renderer,
@@ -382,6 +376,14 @@ AuthSrv::processMessage(InputBuffer& request_buffer, Message& message,
         }
     } catch (const Exception& ex) {
         return (false);
+    }
+
+    if (impl_->mem_datasrc_ != NULL && message.getOpcode() == Opcode::QUERY() &&
+        message.getRRCount(Section::QUESTION()) == 1) {
+        // fast path for the most common case.
+        impl_->processNormalQuery(request_buffer, message, response_renderer,
+                                  udp_buffer);
+        return (true);          // XXX: should be do so selectively
     }
 
     // Parse the message.  On failure, return an appropriate error.
@@ -435,38 +437,17 @@ AuthSrv::processMessage(InputBuffer& request_buffer, Message& message,
     message.setDNSSECSupported(dnssec_ok);
     message.setUDPSize(AuthSrvImpl::DEFAULT_LOCAL_UDPSIZE);
 
-    if (impl_->mem_datasrc_ != NULL) {
-        try {
-            impl_->clearRbtRRsets();
-            impl_->processRootQuery(message);
-            CompressOffsetTable* offset_table = // XXX bad cast
-                reinterpret_cast<CompressOffsetTable*>(
-                    response_renderer.getArg());
-            if (offset_table != NULL) {
-                offset_table->clear();
-            }
-        } catch (const Exception& ex) {
-            if (impl_->verbose_mode_) {
-                cerr << "Internal error, returning SERVFAIL: " << ex.what()
-                     << endl;
-            }
-            makeErrorMessage(message, response_renderer, Rcode::SERVFAIL(),
-                             impl_->verbose_mode_);
-            return (true);
+    try {
+        Query query(message, dnssec_ok);
+        impl_->data_sources_.doQuery(query);
+    } catch (const Exception& ex) {
+        if (impl_->verbose_mode_) {
+            cerr << "Internal error, returning SERVFAIL: " << ex.what()
+                 << endl;
         }
-    } else {
-        try {
-            Query query(message, dnssec_ok);
-            impl_->data_sources_.doQuery(query);
-        } catch (const Exception& ex) {
-            if (impl_->verbose_mode_) {
-                cerr << "Internal error, returning SERVFAIL: " << ex.what()
-                     << endl;
-            }
-            makeErrorMessage(message, response_renderer, Rcode::SERVFAIL(),
-                             impl_->verbose_mode_);
-            return (true);
-        }
+        makeErrorMessage(message, response_renderer, Rcode::SERVFAIL(),
+                         impl_->verbose_mode_);
+        return (true);
     }
 
     response_renderer.setLengthLimit(udp_buffer ? remote_bufsize : 65535);

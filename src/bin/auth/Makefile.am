@@ -34,7 +34,7 @@ b10_auth_SOURCES += main.cc
 
 b10_auth_SOURCES += offsetptr.h
 b10_auth_SOURCES += rbt_datasrc.h rbt_datasrc.cc
-b10_auth_SOURCES += root_datasrc.h root_datasrc.cc
+b10_auth_SOURCES += loadzone.h loadzone.cc
 
 b10_auth_LDADD =  $(top_builddir)/src/lib/datasrc/.libs/libdatasrc.a
 b10_auth_LDADD += $(top_builddir)/src/lib/dns/.libs/libdns.a
@@ -52,6 +52,7 @@ endif
 
 b10_compilezone_SOURCES = compilezone.cc
 b10_compilezone_SOURCES += rbt_datasrc.h rbt_datasrc.cc
+b10_compilezone_SOURCES += loadzone.h loadzone.cc
 b10_compilezone_LDADD = $(top_builddir)/src/lib/exceptions/.libs/libexceptions.a
 b10_compilezone_LDADD += $(top_builddir)/src/lib/dns/.libs/libdns.a
 

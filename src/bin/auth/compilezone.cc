@@ -34,6 +34,7 @@
 #include <dns/rrset.h>
 
 #include "rbt_datasrc.h"
+#include "loadzone.h"
 
 using namespace std;
 using namespace isc;
@@ -41,52 +42,6 @@ using namespace isc::dns;
 
 namespace {
 static const size_t PAGE_SIZE = 4096; // XXX not always true
-
-void
-loadZoneFile(const char* const zone_file, RbtDataSrc* datasrc) {
-    ifstream ifs;
-
-    ifs.open(zone_file, ios_base::in);
-    if ((ifs.rdstate() & istream::failbit) != 0) {
-        isc_throw(Exception, "failed to open zone file: " + string(zone_file));
-    }
-
-    string line;
-    RRsetPtr rrset;
-    const Name* prev_owner = NULL;
-    const RRType* prev_rrtype = NULL;
-    while (getline(ifs, line), !ifs.eof()) {
-        if (ifs.bad() || ifs.fail()) {
-            isc_throw(Exception, "Unexpected line in zone file");
-        }
-        if (line.empty() || line[0] == ';') {
-            continue;           // skip comment and blank lines
-        }
-
-        istringstream iss(line);
-        string owner, ttl, rrclass, rrtype;
-        stringbuf rdatabuf;
-        iss >> owner >> ttl >> rrclass >> rrtype >> &rdatabuf;
-        if (iss.bad() || iss.fail()) {
-            isc_throw(Exception, "Invalid/unrecognized RR: " << line);
-        }
-        if (prev_owner == NULL || *prev_owner != Name(owner) ||
-            *prev_rrtype != RRType(rrtype)) {
-            if (rrset) {
-                datasrc->addRRset(*rrset);
-            }
-            rrset = RRsetPtr(new RRset(Name(owner), RRClass(rrclass),
-                                       RRType(rrtype), RRTTL(ttl)));
-        }
-        rrset->addRdata(rdata::createRdata(RRType(rrtype), RRClass(rrclass),
-                                           rdatabuf.str()));
-        prev_owner = &rrset->getName();
-        prev_rrtype = &rrset->getType();
-    }
-    if (rrset) {
-        datasrc->addRRset(*rrset);
-    }
-}
 
 void
 usage() {

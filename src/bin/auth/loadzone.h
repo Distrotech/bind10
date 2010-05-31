@@ -16,13 +16,12 @@
 
 /* $Id$ */
 
-#ifndef __ROOT_DATASRC_H
-#define __ROOT_DATASRC_H 1
+#ifndef __LOADZONE_H
+#define __LOADZONE_H 1
 
 class RbtDataSrc;
-const RbtDataSrc* createRootRbtDataSrc();
-
-#endif  // __ROOT_DATASRC_H
+void loadZoneFile(const char* zone_file, RbtDataSrc* datasrc);
+ #endif // __LOADZONE_H
 
 // Local Variables:
 // mode: c++
