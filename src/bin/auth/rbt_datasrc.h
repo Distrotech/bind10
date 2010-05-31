@@ -66,6 +66,8 @@ public:
     RbtDataSrcResult addNode(const isc::dns::Name& name, RbtNode* node);
     void addRRset(const isc::dns::AbstractRRset& rrset); // an ad hoc interface
     RbtDataSrcResult findNode(const isc::dns::Name& name, RbtNode* node) const;
+    RbtDataSrcResult findNode(const isc::dns::LabelSequence& sequence,
+                              RbtNode* node) const;
     RbtDataSrcResult getApexNode(RbtNode* node) const;
     std::string toText() const;
     std::string nodeToText(const RbtNode& node) const;

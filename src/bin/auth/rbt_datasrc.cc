@@ -112,7 +112,8 @@ struct RbtDBImpl {
 
     RbtDataSrcResult addNode(const Name& name, RbtNodeImpl** nodep);
     RbtNodeImplPtr createNode(const LabelSequence& sequence);
-    RbtDataSrcResult findNode(const Name& name, RbtNodeImpl** nodep) const;
+    RbtDataSrcResult findNode(const LabelSequence& sequence,
+                              RbtNodeImpl** nodep) const;
     void addOnLevel(RbtNodeImplPtr& node, RbtNodeImpl* current, int order,
                     RbtNodeImplPtr* root);
     void rotateLeft(RbtNodeImpl* node, RbtNodeImplPtr* rootp);
@@ -300,7 +301,9 @@ RbtDataSrc::RbtDataSrc(const Name& origin, const char& dbfile,
                reinterpret_cast<const void*>(headptr + sizeof(dbsize)),
                sizeof(impl_->root_));
         impl_->apexnode_ = NULL;
-        RbtDataSrcResult result = impl_->findNode(origin, &impl_->apexnode_);
+        LabelSequence sequence;
+        origin.setLabelSequence(sequence);
+        RbtDataSrcResult result = impl_->findNode(sequence, &impl_->apexnode_);
         if (result != RbtDataSrcSuccess) {
             munmap(impl_->base_, impl_->dbsize_);
             isc_throw(Exception, "Unexpected result for apexnode: " << result);
@@ -549,13 +552,20 @@ RbtDataSrc::getApexNode(RbtNode* node) const {
 }
 
 RbtDataSrcResult
-RbtDataSrc::findNode(const Name& name, RbtNode* node) const {
+RbtDataSrc::findNode(const LabelSequence& sequence, RbtNode* node) const {
     RbtNodeImpl* implnode = NULL;
-    RbtDataSrcResult result = impl_->findNode(name, &implnode);
+    RbtDataSrcResult result = impl_->findNode(sequence, &implnode);
     if (result == RbtDataSrcSuccess || result == RbtDataSrcPartialMatch) {
         node->set(implnode, impl_->base_);
     }
     return (result);
+}
+
+RbtDataSrcResult
+RbtDataSrc::findNode(const Name& name, RbtNode* node) const {
+    LabelSequence sequence;
+    name.setLabelSequence(sequence);
+    return (findNode(sequence, node));
 }
 
 void
@@ -824,7 +834,7 @@ RbtDBImpl::nodeChainPrev(RbtNodeChain* chain UNUSED_PARAM) const {
 }
 
 RbtDataSrcResult
-RbtDBImpl::findNode(const Name& name, RbtNodeImpl** nodep) const {
+RbtDBImpl::findNode(const LabelSequence& sequence, RbtNodeImpl** nodep) const {
     const bool empty_ok = true; // should eventually be configurable.
     const bool noexact = false; // ditto.
     const bool no_predecessor = false; // ditto
@@ -841,8 +851,7 @@ RbtDBImpl::findNode(const Name& name, RbtNodeImpl** nodep) const {
 
     // search_sequence is a dname label sequence being sought in each tree
     // level.
-    LabelSequence search_sequence;
-    name.setLabelSequence(search_sequence);
+    LabelSequence search_sequence = sequence;
 
     RbtNodeImpl* current = root_.getPtr(base_);
     RbtNodeImpl* last_compared = NULL;

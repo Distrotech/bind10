@@ -43,6 +43,7 @@
 #include "common.h"
 #include "auth_srv.h"
 #include "loadzone.h"
+#include "normalquestion.h"
 #include "rbt_datasrc.h"
 
 #include <boost/shared_ptr.hpp>
@@ -58,6 +59,7 @@ using namespace isc::data;
 using namespace isc::config;
 
 typedef boost::shared_ptr<RbtRRset> RbtRRsetPtr; 
+typedef boost::shared_ptr<NormalQuestion> NormalQuestionPtr; 
 
 class AuthSrvImpl {
 private:
@@ -79,7 +81,8 @@ public:
     void processNormalQuery(InputBuffer& request_buffer, Message& message,
                             MessageRenderer& response_renderer,
                             const bool udp_buffer);
-    void lookupAndMakeResponse(Message& message);
+    void lookupAndMakeResponse(Message& message,
+                               const NormalQuestion& question);
     void addAdditional(Message& message, RbtRRsetPtr rrset,
                        const RRType& rrtype);
 
@@ -96,9 +99,10 @@ public:
     bool verbose_mode_;
 
     const RbtDataSrc* mem_datasrc_;
-    static const unsigned int MAXRRS_IN_MESSAGE = 256; // XXX
+    static const unsigned int MAXRRS_IN_MESSAGE = 256; // XXX: hardode limit
     RbtRRsetPtr rrsets_[MAXRRS_IN_MESSAGE];
     unsigned int rrset_counter_;
+    NormalQuestionPtr normal_question_;
 
     /// Currently non-configurable, but will be.
     static const uint16_t DEFAULT_LOCAL_UDPSIZE = 4096;
@@ -136,6 +140,8 @@ AuthSrvImpl::AuthSrvImpl() : cs_(NULL), verbose_mode_(false),
             rrsets_[i] = RbtRRsetPtr(new RbtRRset);
         }
     }
+
+    normal_question_ = NormalQuestionPtr(new NormalQuestion);
 }
 
 void
@@ -173,17 +179,19 @@ AuthSrvImpl::addAdditional(Message& message, RbtRRsetPtr rrset,
 }
 
 inline void
-AuthSrvImpl::lookupAndMakeResponse(Message& message) {
-    QuestionPtr question = *message.beginQuestion();
+AuthSrvImpl::lookupAndMakeResponse(Message& message,
+                                   const NormalQuestion& question)
+{
+    LabelSequence sequence;
+    question.setLabelSequenceToQName(sequence);
     RbtNode node;
-    RbtDataSrcResult result =
-        mem_datasrc_->findNode(question->getName(), &node);
+    RbtDataSrcResult result = mem_datasrc_->findNode(sequence, &node);
     RbtRRsetPtr rrset;
 
     switch (result) {
     case RbtDataSrcSuccess:
         rrset = getRbtRRset();
-        result = node.findRRset(question->getType(), *rrset);
+        result = node.findRRset(question.getType(), *rrset);
         if (result == RbtDataSrcSuccess) {
             message.addRRset(Section::ANSWER(), rrset);
 
@@ -319,19 +327,24 @@ AuthSrvImpl::processNormalQuery(InputBuffer& request_buffer, Message& message,
                                 const bool udp_buffer)
 {
     try {
-        message.fromWire(request_buffer);
+        // Optimization: since we know this is a normal query, we can use
+        // the NormalQuestion class to avoid all the overhead of the generic
+        // parse.
+        normal_question_->clear();
+        normal_question_->fromWire(request_buffer);
 
         const bool dnssec_ok = message.isDNSSECSupported();
         const uint16_t remote_bufsize = message.getUDPSize();
 
         message.makeResponse();
+        message.addQuestion(normal_question_);
         message.setHeaderFlag(MessageFlag::AA());
         message.setRcode(Rcode::NOERROR());
         message.setDNSSECSupported(dnssec_ok);
         message.setUDPSize(AuthSrvImpl::DEFAULT_LOCAL_UDPSIZE);
 
         clearRbtRRsets();
-        lookupAndMakeResponse(message);
+        lookupAndMakeResponse(message, *normal_question_);
         CompressOffsetTable* offset_table = // XXX bad cast
             reinterpret_cast<CompressOffsetTable*>(response_renderer.getArg());
         if (offset_table != NULL) {

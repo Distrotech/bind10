@@ -31,13 +31,27 @@ namespace dns {
 
 class InputBuffer;
 class MessageRenderer;
+class AbstractQuestion;
 class Question;
 
 /// \brief A pointer-like type pointing to an \c Question object.
-typedef boost::shared_ptr<Question> QuestionPtr;
+typedef boost::shared_ptr<AbstractQuestion> QuestionPtr;
 
 /// \brief A pointer-like type pointing to an (immutable) \c Question object.
 typedef boost::shared_ptr<const Question> ConstQuestionPtr;
+
+class AbstractQuestion {
+protected:
+    AbstractQuestion() {}
+public:
+    virtual ~AbstractQuestion() {}
+    virtual const Name& getName() const = 0;
+    virtual const RRType& getType() const = 0;
+    virtual const RRClass& getClass() const = 0;
+    virtual std::string toText() const = 0;
+    virtual unsigned int toWire(MessageRenderer& renderer) const = 0;
+    virtual unsigned int toWire(OutputBuffer& buffer) const = 0;
+};
 
 /// \brief The \c Question class encapsulates the common search key of DNS
 /// lookup, consisting of owner name, RR type and RR class.
@@ -98,7 +112,7 @@ typedef boost::shared_ptr<const Question> ConstQuestionPtr;
 /// \c AbstractRRset such as \c %getName() or \c %toWire().
 /// So the user class may use a template function that is applicable to both
 /// \c Question and \c RRset to avoid writing duplicate code logic.
-class Question {
+class Question : public AbstractQuestion {
     ///
     /// \name Constructors and Destructor
     ///
@@ -146,7 +160,7 @@ public:
     ///
     /// \return A reference to a \c Name class object corresponding to the
     /// \c Question owner name.
-    const Name& getName() const { return (name_); }
+    virtual const Name& getName() const { return (name_); }
 
     /// \brief Returns the RR Class of the \c Question.
     ///
@@ -162,7 +176,7 @@ public:
     ///
     /// \return A reference to a \c RRType class object corresponding to the
     /// RR type of the \c Question.
-    const RRClass& getClass() const { return (rrclass_); }
+    virtual const RRClass& getClass() const { return (rrclass_); }
     //@}
 
     ///
@@ -182,7 +196,7 @@ public:
     /// exception will be thrown.
     ///
     /// \return A string representation of the \c Question.
-    std::string toText() const;
+    virtual std::string toText() const;
 
     /// \brief Render the Question in the wire format with name compression.
     ///
@@ -216,7 +230,7 @@ public:
     /// \param renderer DNS message rendering context that encapsulates the
     /// output buffer and name compression information.
     /// \return 1
-    unsigned int toWire(MessageRenderer& renderer) const;
+    virtual unsigned int toWire(MessageRenderer& renderer) const;
 
     /// \brief Render the Question in the wire format without name compression.
     ///
@@ -226,7 +240,7 @@ public:
     ///
     /// \param buffer An output buffer to store the wire data.
     /// \return 1
-    unsigned int toWire(OutputBuffer& buffer) const;
+    virtual unsigned int toWire(OutputBuffer& buffer) const;
     //@}
 
 private:

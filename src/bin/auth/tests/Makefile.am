@@ -15,7 +15,9 @@ run_unittests_SOURCES += run_unittests.cc
 
 run_unittests_SOURCES += ../rbt_datasrc.h ../rbt_datasrc.cc
 run_unittests_SOURCES += ../loadzone.h ../loadzone.cc
+run_unittests_SOURCES += ../normalquestion.h ../normalquestion.cc
 run_unittests_SOURCES += rbt_datasrc_unittest.cc
+run_unittests_SOURCES += normalquestion_unittest.cc
 
 run_unittests_CPPFLAGS = $(AM_CPPFLAGS) $(GTEST_INCLUDES)
 run_unittests_LDFLAGS = $(AM_LDFLAGS) $(GTEST_LDFLAGS)
