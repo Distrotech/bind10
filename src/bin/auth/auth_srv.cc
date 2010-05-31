@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <fstream>
 #include <iostream>
 #include <vector>
 
@@ -101,6 +102,53 @@ public:
     static const uint16_t DEFAULT_LOCAL_UDPSIZE = 4096;
 };
 
+void
+loadZoneFile(const char* const zone_file, RbtDataSrc* datasrc) {
+    ifstream ifs;
+
+    ifs.open(zone_file, ios_base::in);
+    if ((ifs.rdstate() & istream::failbit) != 0) {
+        isc_throw(Exception, "failed to open zone file: " + string(zone_file));
+    }
+
+    string line;
+    RRsetPtr rrset;
+    const Name* prev_owner = NULL;
+    const RRType* prev_rrtype = NULL;
+    while (getline(ifs, line), !ifs.eof()) {
+        if (ifs.bad() || ifs.fail()) {
+            isc_throw(Exception, "Unexpected line in zone file");
+        }
+        if (line.empty() || line[0] == ';') {
+            continue;           // skip comment and blank lines
+        }
+
+        istringstream iss(line);
+        string owner, ttl, rrclass, rrtype;
+        stringbuf rdatabuf;
+        iss >> owner >> ttl >> rrclass >> rrtype >> &rdatabuf;
+        if (iss.bad() || iss.fail()) {
+            isc_throw(Exception, "Invalid/unrecognized RR: " << line);
+        }
+        if (prev_owner == NULL || *prev_owner != Name(owner) ||
+            *prev_rrtype != RRType(rrtype)) {
+            if (rrset) {
+                datasrc->addRRset(*rrset);
+            }
+            rrset = RRsetPtr(new RRset(Name(owner), RRClass(rrclass),
+                                       RRType(rrtype), RRTTL(ttl)));
+        }
+        rrset->addRdata(rdata::createRdata(RRType(rrtype), RRClass(rrclass),
+                                           rdatabuf.str()));
+        prev_owner = &rrset->getName();
+        prev_rrtype = &rrset->getType();
+    }
+    if (rrset) {
+        datasrc->addRRset(*rrset);
+    }
+}
+
+
 AuthSrvImpl::AuthSrvImpl() : cs_(NULL), verbose_mode_(false),
                              mem_datasrc_(NULL), rrset_counter_(0)
 {
@@ -117,11 +165,19 @@ AuthSrvImpl::AuthSrvImpl() : cs_(NULL), verbose_mode_(false),
     } else {
         const char* dbfile = getenv("DBFILE");
         const char* dborigin = getenv("DBORIGIN");
+        const char* zonefile = getenv("ZONEFILE");
         if (dbfile != NULL && dborigin != NULL) {
             cerr << "[AuthSrv] generating " << dborigin << " zone data from "
                  << dbfile << endl;
             mem_datasrc_ = new RbtDataSrc(Name(dborigin), *dbfile,
                                           RbtDataSrc::SERVE);
+        } else if (zonefile != NULL && dborigin != NULL) {
+            cerr << "[AuthSrv] loading " << dborigin << " zone data from "
+                 << zonefile << "...";
+            RbtDataSrc* datasrc = new RbtDataSrc(Name(dborigin));
+            loadZoneFile(zonefile, datasrc);
+            cerr << "end" << endl;
+            mem_datasrc_ = datasrc;
         }
     }
 
@@ -381,6 +437,7 @@ AuthSrv::processMessage(InputBuffer& request_buffer, Message& message,
 
     if (impl_->mem_datasrc_ != NULL) {
         try {
+            impl_->clearRbtRRsets();
             impl_->processRootQuery(message);
             CompressOffsetTable* offset_table = // XXX bad cast
                 reinterpret_cast<CompressOffsetTable*>(
@@ -418,10 +475,6 @@ AuthSrv::processMessage(InputBuffer& request_buffer, Message& message,
         cerr << "sending a response (" <<
             boost::lexical_cast<string>(response_renderer.getLength())
              << " bytes):\n" << message.toText() << endl;
-    }
-
-    if (impl_->mem_datasrc_ != NULL) {
-        impl_->clearRbtRRsets();
     }
 
     return (true);
