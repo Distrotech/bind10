@@ -98,6 +98,10 @@ public:
     virtual void addRdata(const isc::dns::rdata::Rdata& rdata);
     virtual isc::dns::RdataIteratorPtr getRdataIterator() const;
     RbtDataSrcResult getFirstRdata(RbtRdataHandle& rdata) const;
+    bool operator==(const RbtRRset& other) const;
+    bool operator!=(const RbtRRset& other) const {
+        return (!(*this == other));
+    }
     void clear();
 
     RbtRRsetImpl* impl_; // intentionally public, but hide details using pimpl

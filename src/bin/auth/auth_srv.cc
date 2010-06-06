@@ -197,11 +197,16 @@ AuthSrvImpl::lookupAndMakeResponse(Message& message,
 
             result = mem_datasrc_->getApexNode(&node);
             if (result == RbtDataSrcSuccess) {
-                rrset = getRbtRRset();
-                result = node.findRRset(RRType::NS(), *rrset);
+                // Add NS records to the authority section (if we haven't
+                // already added them to the answer section).
+                // Note: case of qtype=ANY should also be considered.
+                RbtRRsetPtr nsrrset = getRbtRRset();
+                result = node.findRRset(RRType::NS(), *nsrrset);
                 if (result == RbtDataSrcSuccess) {
-                    message.addRRset(Section::AUTHORITY(), rrset);
-                    addAdditional(message, rrset, RRType::NS());
+                    if (*nsrrset != *rrset) {
+                        message.addRRset(Section::AUTHORITY(), nsrrset);
+                    }
+                    addAdditional(message, nsrrset, RRType::NS());
                 }
             }
         } else {

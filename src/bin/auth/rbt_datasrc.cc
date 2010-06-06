@@ -1246,6 +1246,11 @@ RbtRRset::getRdataIterator() const {
     return (RdataIteratorPtr(new RbtRdataIterator()));
 }
 
+bool
+RbtRRset::operator==(const RbtRRset& other) const {
+    return (impl_->rdataset_ == other.impl_->rdataset_);
+}
+
 void
 RbtRRset::clear() {
     impl_->rbtnode_ = NULL;
