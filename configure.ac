@@ -382,6 +382,7 @@ AC_CONFIG_FILES([Makefile
                  src/bin/msgq/tests/Makefile
                  src/bin/auth/Makefile
                  src/bin/auth/tests/Makefile
+                 src/bin/auth/benchmarks/Makefile
                  src/bin/xfrin/Makefile
                  src/bin/xfrin/tests/Makefile
                  src/bin/xfrout/Makefile
@@ -398,8 +399,10 @@ AC_CONFIG_FILES([Makefile
                  src/lib/python/isc/config/tests/Makefile
                  src/lib/config/Makefile
                  src/lib/config/tests/Makefile
+                 src/lib/bench/Makefile
                  src/lib/dns/Makefile
                  src/lib/dns/tests/Makefile
+                 src/lib/dns/benchmarks/Makefile
                  src/lib/exceptions/Makefile
                  src/lib/datasrc/Makefile
                  src/lib/datasrc/tests/Makefile
