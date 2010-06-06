@@ -87,7 +87,7 @@ NormalQuestion::fromWire(InputBuffer& buffer) {
         for (int i = 0; i < label_len; ++i) {
             impl_->qname_data_.push_back(buffer.readUint8());
         }
-        if (impl_->qname_data_.size() > Name::MAX_LABELLEN) {
+        if (impl_->qname_data_.size() > Name::MAX_WIRE) {
             isc_throw(DNSMessageFORMERR, "Invalid qname (too long): " <<
                       impl_->qname_data_.size());
         }
