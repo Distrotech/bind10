@@ -43,12 +43,10 @@ using namespace isc::bench;
 namespace {
 class QueryBenchMark {
 public:
-    QueryBenchMark(AuthSrv& server, const BenchQueries& queries) :
+    QueryBenchMark(AuthSrv& server, const BenchQueries& queries,
+                   MessageRenderer* renderer, const bool need_to_write) :
         server_(server), queries_(queries), query_message_(Message::PARSE),
-        obuffer_(4096)
-        //, renderer_(obuffer_)
-        , renderer_(obuffer_, &offset_table_)
-        , null_fd_(-1)
+        renderer_(renderer), null_fd_(-1), need_to_write_(need_to_write)
     {
         null_fd_ = open("/dev/null", O_RDWR);
         if (null_fd_ < 0) {
@@ -66,9 +64,11 @@ public:
         for (query = queries_.begin(); query != query_end; ++query) {
             InputBuffer buffer(&(*query)[0], (*query).size());
             query_message_.clear(Message::PARSE);
-            renderer_.clear();
-            server_.processMessage(buffer, query_message_, renderer_, true);
-            //write(null_fd_, obuffer_.getData(), obuffer_.getLength());
+            renderer_->clear();
+            server_.processMessage(buffer, query_message_, *renderer_, true);
+            if (need_to_write_) {
+                write(null_fd_, renderer_->getData(), renderer_->getLength());
+            }
         }
 
         return (queries_.size());
@@ -77,10 +77,9 @@ private:
     AuthSrv& server_;
     const BenchQueries& queries_;
     Message query_message_;
-    OutputBuffer obuffer_;
-    MessageRenderer renderer_;
-    CompressOffsetTable offset_table_;
+    MessageRenderer* renderer_;
     int null_fd_;
+    const bool need_to_write_;
 };
 }
 
@@ -145,10 +144,40 @@ main(int argc, char* argv[]) {
     setenv("DBORIGIN", origin, 1);
     AuthSrv* auth_server = new AuthSrv;
 
+    // Create different types of message renderer
+    CompressOffsetTable offset_table_;
+    OutputBuffer buffer(4096);
+    MessageRenderer standard_renderer(buffer, &offset_table_);
+    MessageRenderer optimized_renderer(4096, &offset_table_);
+
     // Perform benchmark test and dump the result
-    QueryBenchMark query_bench(*auth_server, queries);
-    BenchMark<QueryBenchMark> bench(iteration, query_bench);
-    bench.run();
+    cout << "Query processing benchmark with standard renderer, "
+        "no write to device " << endl;
+    QueryBenchMark query_bench1(*auth_server, queries, &standard_renderer,
+                                false);
+    BenchMark<QueryBenchMark> bench1(iteration, query_bench1);
+    bench1.run();
+
+    cout << "Query processing benchmark with standard renderer, "
+        "write to device " << endl;
+    QueryBenchMark query_bench2(*auth_server, queries, &standard_renderer,
+                                true);
+    BenchMark<QueryBenchMark> bench2(iteration, query_bench2);
+    bench2.run();
+
+    cout << "Query processing benchmark with optimized renderer, "
+        "no write to device " << endl;
+    QueryBenchMark query_bench3(*auth_server, queries, &optimized_renderer,
+                                false);
+    BenchMark<QueryBenchMark> bench3(iteration, query_bench3);
+    bench3.run();
+
+    cout << "Query processing benchmark with optimized renderer, "
+        "write to device " << endl;
+    QueryBenchMark query_bench4(*auth_server, queries, &optimized_renderer,
+                                true);
+    BenchMark<QueryBenchMark> bench4(iteration, query_bench4);
+    bench4.run();
 
     delete auth_server;
 

@@ -68,7 +68,7 @@ public:
         memcpy(&data_[index_], net_data, 4);
         index_ += 4;
     }
-    void writeData(const void *data, size_t len) {
+    void writeData(const void *data, const size_t len) {
         if (len > limit_ || index_ > (limit_ - len)) {
             isc_throw(InvalidBufferPosition, "write beyond the end of buffer");
         }

@@ -35,7 +35,7 @@ namespace {     // hide internal-only names from the public namespaces
 /// (ancestor) name against each new name to be rendered into the buffer.
 struct NameCompressNode {
     NameCompressNode(const MessageRenderer& renderer,
-                     const OutputBuffer& buffer, const size_t pos,
+                     const OutputBuffer* buffer, const size_t pos,
                      const size_t len) :
         renderer_(renderer), buffer_(buffer), pos_(pos), len_(len) {}
     /// The renderer that performs name compression using the node.
@@ -43,7 +43,7 @@ struct NameCompressNode {
     /// (case-sensitive or not) in the comparison functor (\c NameCompare).
     const MessageRenderer& renderer_;
     /// The buffer in which the corresponding name is rendered.
-    const OutputBuffer& buffer_;
+    const OutputBuffer* buffer_;
     /// The position (offset from the beginning) in the buffer where the
     /// name starts.
     uint16_t pos_;
@@ -94,16 +94,16 @@ struct NameCompare : public std::binary_function<NameCompressNode,
             pos1 = nextPosition(n1.buffer_, pos1, l1);
             pos2 = nextPosition(n2.buffer_, pos2, l2);
             if (case_sensitive) {
-                if (n1.buffer_[pos1] < n2.buffer_[pos2]) {
+                if ((*n1.buffer_)[pos1] < (*n2.buffer_)[pos2]) {
                     return (true);
-                } else if (n1.buffer_[pos1] > n2.buffer_[pos2]) {
+                } else if ((*n1.buffer_)[pos1] > (*n2.buffer_)[pos2]) {
                     return (false);
                 }
             } else {
-                if (tolower(n1.buffer_[pos1]) < tolower(n2.buffer_[pos2])) {
+                if (tolower((*n1.buffer_)[pos1]) < tolower((*n2.buffer_)[pos2])) {
                     return (true);
-                } else if (tolower(n1.buffer_[pos1]) >
-                           tolower(n2.buffer_[pos2])) {
+                } else if (tolower((*n1.buffer_)[pos1]) >
+                           tolower((*n2.buffer_)[pos2])) {
                     return (false);
                 }
             }
@@ -113,16 +113,16 @@ struct NameCompare : public std::binary_function<NameCompressNode,
     }
 
 private:
-    uint16_t nextPosition(const OutputBuffer& buffer,
+    uint16_t nextPosition(const OutputBuffer* buffer,
                           uint16_t pos, uint16_t& llen) const
     {
         if (llen == 0) {
             int i = 0;
 
-            while ((buffer[pos] & Name::COMPRESS_POINTER_MARK8) ==
+            while (((*buffer)[pos] & Name::COMPRESS_POINTER_MARK8) ==
                    Name::COMPRESS_POINTER_MARK8) {
-                pos = (buffer[pos] & ~Name::COMPRESS_POINTER_MARK8) *
-                    256 + buffer[pos + 1];
+                pos = ((*buffer)[pos] & ~Name::COMPRESS_POINTER_MARK8) *
+                    256 + (*buffer)[pos + 1];
 
                 // This loop should stop as long as the buffer has been
                 // constructed validly and the search/insert argument is based
@@ -131,7 +131,7 @@ private:
                 i += 2;
                 assert(i < Name::MAX_WIRE);
             }
-            llen = buffer[pos];
+            llen = (*buffer)[pos];
         } else {
             --llen;
         }
@@ -152,12 +152,12 @@ struct MessageRenderer::MessageRendererImpl {
     ///
     /// \param buffer An \c OutputBuffer object to which wire format data is
     /// written.
-    MessageRendererImpl(OutputBuffer& buffer) :
+    MessageRendererImpl(OutputBuffer* buffer) :
         buffer_(buffer), nbuffer_(Name::MAX_WIRE), msglength_limit_(512),
         truncated_(false), compress_mode_(MessageRenderer::CASE_INSENSITIVE)
     {}
     /// The buffer that holds the entire DNS message.
-    OutputBuffer& buffer_;
+    OutputBuffer* buffer_;
     /// A local working buffer to convert each given name into wire format.
     /// This could be a local variable of the \c writeName() method, but
     /// we keep it in the class so that we can reuse it and avoid construction
@@ -176,70 +176,85 @@ struct MessageRenderer::MessageRendererImpl {
 };
 
 MessageRenderer::MessageRenderer(OutputBuffer& buffer) :
-    impl_(new MessageRendererImpl(buffer)), arg_(NULL)
+    limit_(0), index_(0), data_(NULL),
+    impl_(new MessageRendererImpl(&buffer)), arg_(NULL)
 {}
 
 MessageRenderer::MessageRenderer(OutputBuffer& buffer, void* arg) :
-    impl_(new MessageRendererImpl(buffer)), arg_(arg)
+    limit_(0), index_(0), data_(NULL),
+    impl_(new MessageRendererImpl(&buffer)), arg_(arg)
 {}
+
+MessageRenderer::MessageRenderer(const size_t buflen, void* arg) :
+    limit_(buflen), index_(0), data_(NULL), arg_(arg)
+{
+    // XXX: this code is not exception safe.
+    impl_ = new MessageRendererImpl(NULL);
+    data_ = new uint8_t[buflen];
+}
 
 MessageRenderer::~MessageRenderer() {
     delete impl_;
 }
 
 void
-MessageRenderer::skip(const size_t len) {
-    impl_->buffer_.skip(len);
+MessageRenderer::skip2(const size_t len) {
+    impl_->buffer_->skip(len);
 }
 
 void
-MessageRenderer::trim(const size_t len) {
-    impl_->buffer_.trim(len);
+MessageRenderer::trim2(const size_t len) {
+    impl_->buffer_->trim(len);
 }
 
 void
 MessageRenderer::clear() {
-    impl_->buffer_.clear();
+    if (impl_->buffer_ != NULL) {
+        impl_->buffer_->clear();
+    }
     impl_->nbuffer_.clear();
     impl_->nodeset_.clear();
     impl_->msglength_limit_ = 512;
     impl_->truncated_ = false;
     impl_->compress_mode_ = CASE_INSENSITIVE;
+
+    // for ad hoc extension
+    index_ = 0;
 }
 
 void
-MessageRenderer::writeUint8(const uint8_t data) {
-    impl_->buffer_.writeUint8(data);
+MessageRenderer::writeUint8_2(const uint8_t data) {
+    impl_->buffer_->writeUint8(data);
 }
 
 void
-MessageRenderer::writeUint16(const uint16_t data) {
-    impl_->buffer_.writeUint16(data);
+MessageRenderer::writeUint16_2(const uint16_t data) {
+    impl_->buffer_->writeUint16(data);
 }
 
 void
-MessageRenderer::writeUint16At(const uint16_t data, const size_t pos) {
-    impl_->buffer_.writeUint16At(data, pos);
+MessageRenderer::writeUint16At_2(const uint16_t data, const size_t pos) {
+    impl_->buffer_->writeUint16At(data, pos);
 }
 
 void
-MessageRenderer::writeUint32(const uint32_t data) {
-    impl_->buffer_.writeUint32(data);
+MessageRenderer::writeUint32_2(const uint32_t data) {
+    impl_->buffer_->writeUint32(data);
 }
 
 void
-MessageRenderer::writeData(const void* const data, const size_t len) {
-    impl_->buffer_.writeData(data, len);
+MessageRenderer::writeData_2(const void* const data, const size_t len) {
+    impl_->buffer_->writeData(data, len);
 }
 
 const void*
-MessageRenderer::getData() const {
-    return (impl_->buffer_.getData());
+MessageRenderer::getData2() const {
+    return (impl_->buffer_->getData());
 }
 
 size_t
-MessageRenderer::getLength() const {
-    return (impl_->buffer_.getLength());
+MessageRenderer::getLength2() const {
+    return (impl_->buffer_->getLength());
 }
 
 size_t
@@ -288,7 +303,7 @@ MessageRenderer::writeName(const Name& name, const bool compress) {
         if (impl_->nbuffer_[i] == 0) {
             continue;
         }
-        n = impl_->nodeset_.find(NameCompressNode(*this, impl_->nbuffer_, i,
+        n = impl_->nodeset_.find(NameCompressNode(*this, &impl_->nbuffer_, i,
                                                   impl_->nbuffer_.getLength() -
                                                   i));
         if (n != notfound) {
@@ -297,15 +312,15 @@ MessageRenderer::writeName(const Name& name, const bool compress) {
     }
 
     // Record the current offset before extending the buffer.
-    const size_t offset = impl_->buffer_.getLength();
+    const size_t offset = impl_->buffer_->getLength();
     // Write uncompress part...
-    impl_->buffer_.writeData(impl_->nbuffer_.getData(),
+    impl_->buffer_->writeData(impl_->nbuffer_.getData(),
                              compress ? i : impl_->nbuffer_.getLength());
     if (compress && n != notfound) {
         // ...and compression pointer if available.
         uint16_t pointer = (*n).pos_;
         pointer |= Name::COMPRESS_POINTER_MARK16;
-        impl_->buffer_.writeUint16(pointer);
+        impl_->buffer_->writeUint16(pointer);
     }
 
     // Finally, add to the set the newly rendered name and its ancestors that

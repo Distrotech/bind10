@@ -95,6 +95,10 @@ public:
         CASE_INSENSITIVE,  //!< Compress names case-insensitive manner (default)
         CASE_SENSITIVE     //!< Compress names case-sensitive manner
     };
+private:
+    const size_t limit_;
+    size_t index_;
+    uint8_t* data_;
 public:
     ///
     /// \name Constructors and Destructor
@@ -105,6 +109,7 @@ public:
     /// written.
     MessageRenderer(OutputBuffer& buffer);
     MessageRenderer(OutputBuffer& buffer, void* arg); // ad hoc extension
+    MessageRenderer(size_t buflen, void* arg); // ditto, using internal buffer
     void* getArg() { return (arg_); }
     /// \brief The destructor.
     ///
@@ -116,6 +121,103 @@ public:
     ~MessageRenderer();
     //@}
 
+    // ad hoc extensions
+    const void* getData() const {
+        if (data_ != NULL) {
+            return (data_);
+        } else {
+            return (getData2());
+        }
+    }
+    size_t getLength() const {
+        if (data_ != NULL) {
+            return (index_);
+        } else {
+            return (getLength2());
+        }
+    }
+    void skip(const size_t len) {
+        if (data_ != NULL) {
+            if (len > limit_ || index_ > (limit_ - len)) {
+                isc_throw(InvalidBufferPosition, "skip beyond the end of buffer");
+            }
+            index_ += len;
+        } else {
+            skip2(len);
+        }
+    }
+    void trim(const size_t len) {
+        if (data_ != NULL) {
+            if (len > index_) {
+                isc_throw(InvalidBufferPosition,
+                          "trying to trim more than the data");
+            }
+            index_ -= len;
+        } else {
+            trim2(len);
+        }
+    }
+    void writeUint8(const uint8_t data) {
+        if (data_ != NULL) {
+            if (index_ + 1 > limit_) {
+                isc_throw(InvalidBufferPosition, "write beyond the end of buffer");
+            }
+            data_[index_] = data;
+            ++index_;
+        } else {
+            writeUint8_2(data);
+        }
+    }
+    void writeUint16(const uint16_t data) {
+        if (data_ != NULL) {
+            if (index_ + 2 > limit_) {
+                isc_throw(InvalidBufferPosition, "write beyond the end of buffer");
+            }
+            const uint8_t net_data[2] = { (data & 0xff00U) >> 8, data & 0x00ffU };
+            memcpy(&data_[index_], net_data, 2);
+            index_ += 2;
+        } else {
+            writeUint16_2(data);
+        }
+    }
+    void writeUint32(const uint32_t data) {
+        if (data_ != NULL) {
+            if (index_ + 4 > limit_) {
+                isc_throw(InvalidBufferPosition, "write beyond the end of buffer");
+            }
+            const uint8_t net_data[4] = { (data & 0xff000000) >> 24,
+                                          (data & 0x00ff0000) >> 16,
+                                          (data & 0x0000ff00) >> 8,
+                                          data & 0x000000ff };
+            memcpy(&data_[index_], net_data, 4);
+            index_ += 4;
+        } else {
+            writeUint32_2(data);
+        }
+    }
+    void writeData(const void *data, const size_t len) {
+        if (data_ != NULL) {
+            if (len > limit_ || index_ > (limit_ - len)) {
+                isc_throw(InvalidBufferPosition, "write beyond the end of buffer");
+            }
+            memcpy(&data_[index_], data, len);
+            index_ += len;
+        } else {
+            writeData_2(data, len);
+        }
+    }
+    void writeUint16At(const uint16_t data, const size_t pos) {
+        if (data_ != NULL) {
+            if (pos + sizeof(data) > index_) {
+                isc_throw(InvalidBufferPosition, "write at invalid position");
+            }
+            const uint8_t net_data[2] = { (data & 0xff00U) >> 8, data & 0x00ffU };
+            memcpy(&data_[pos], net_data, 2);
+        } else {
+            writeUint16At_2(data, pos);
+        }
+    }
+
     ///
     /// \name Getter Methods
     ///
@@ -125,9 +227,9 @@ public:
     ///
     /// This method works exactly same as the same method of the \c OutputBuffer
     /// class; all notes for \c OutputBuffer apply.
-    const void* getData() const;
+    const void* getData2() const;
     /// \brief Return the length of data written in the internal buffer.
-    size_t getLength() const;
+    size_t getLength2() const;
     /// \brief Return whether truncation has occurred while rendering.
     ///
     /// Once the return value of this method is \c true, it doesn't make sense
@@ -188,7 +290,7 @@ public:
     /// that is to be filled in later, e.g, by \ref writeUint16At().
     ///
     /// \param len The length of the gap to be inserted in bytes.
-    void skip(size_t len);
+    void skip2(size_t len);
     /// \brief Trim the specified length of data from the end of the internal
     /// buffer.
     ///
@@ -199,7 +301,7 @@ public:
     /// be thrown.
     ///
     /// \param len The length of data that should be trimmed.
-    void trim(size_t len);
+    void trim2(size_t len);
     /// \brief Clear the internal buffer and other internal resources.
     ///
     /// This method can be used to re-initialize and reuse the renderer
@@ -208,12 +310,12 @@ public:
     /// \brief Write an unsigned 8-bit integer into the internal buffer.
     ///
     /// \param data The 8-bit integer to be written into the internal buffer.
-    void writeUint8(uint8_t data);
+    void writeUint8_2(uint8_t data);
     /// \brief Write an unsigned 16-bit integer in host byte order into the
     /// internal buffer in network byte order.
     ///
     /// \param data The 16-bit integer to be written into the buffer.
-    void writeUint16(uint16_t data);
+    void writeUint16_2(uint16_t data);
     /// \brief Write an unsigned 16-bit integer in host byte order at the
     /// specified position of the internal buffer in network byte order.
     ///
@@ -225,12 +327,12 @@ public:
     ///
     /// \param data The 16-bit integer to be written into the internal buffer.
     /// \param pos The beginning position in the buffer to write the data.
-    void writeUint16At(uint16_t data, size_t pos);
+    void writeUint16At_2(uint16_t data, size_t pos);
     /// \brief Write an unsigned 32-bit integer in host byte order into the
     /// internal buffer in network byte order.
     ///
     /// \param data The 32-bit integer to be written into the buffer.
-    void writeUint32(uint32_t data);
+    void writeUint32_2(uint32_t data);
     /// \brief Copy an arbitrary length of data into the internal buffer
     /// of the \c MessageRenderer.
     ///
@@ -238,7 +340,7 @@ public:
     ///
     /// \param data A pointer to the data to be copied into the internal buffer.
     /// \param len The length of the data in bytes.
-    void writeData(const void *data, size_t len);
+    void writeData_2(const void *data, size_t len);
     //@}
 
     ///
