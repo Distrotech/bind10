@@ -4,6 +4,9 @@ AM_CPPFLAGS += -I$(top_srcdir)/src/bin -I$(top_builddir)/src/bin
 CLEANFILES = *.gcno *.gcda
 
 noinst_PROGRAMS = query_bench
+if HAVE_BOOST_SYSTEM
+noinst_PROGRAMS += netio_bench
+endif
 query_bench_SOURCES = query_bench.cc
 query_bench_SOURCES += ../auth_srv.h ../auth_srv.cc
 query_bench_SOURCES += ../normalquestion.h ../normalquestion.cc
@@ -20,4 +23,11 @@ query_bench_LDADD += $(SQLITE_LIBS)
 if HAVE_BOOST_SYSTEM
 query_bench_LDFLAGS = $(AM_LDFLAGS) $(BOOST_LDFLAGS)
 query_bench_LDADD += $(BOOST_SYSTEM_LIB)
+endif
+
+if HAVE_BOOST_SYSTEM
+netio_bench_SOURCES = netio_bench.cc
+netio_bench_LDFLAGS = $(AM_LDFLAGS) $(BOOST_LDFLAGS)
+netio_bench_LDADD = $(top_builddir)/src/lib/exceptions/.libs/libexceptions.a
+netio_bench_LDADD += $(BOOST_SYSTEM_LIB)
 endif
