@@ -220,8 +220,8 @@ public:
     void responseWrite(const boost::system::error_code& error) {
         if (!error) {
                 async_write(socket_,
-                            boost::asio::buffer(response_buffer_.getData(),
-                                                response_buffer_.getLength()),
+                            boost::asio::buffer(response_renderer_.getData(),
+                                                response_renderer_.getLength()),
                         boost::bind(&TCPClient::handleWrite, this,
                                     placeholders::error));
         } else {
@@ -300,7 +300,8 @@ public:
         io_service_(io_service),
         socket_(io_service, af == AF_INET6 ? udp::v6() : udp::v4()),
         response_buffer_(0),
-        response_renderer_(response_buffer_, &offset_table_),
+        //response_renderer_(response_buffer_, &offset_table_),
+        response_renderer_(4096, &offset_table_),
         dns_message_(Message::PARSE)
     {
         // Set v6-only (we use a different instantiation for v4,
@@ -324,20 +325,14 @@ public:
             response_renderer_.clear();
             if (auth_server->processMessage(request_buffer, dns_message_,
                                             response_renderer_, true)) {
-                socket_.async_send_to(
-                    boost::asio::buffer(response_buffer_.getData(),
-                                        response_buffer_.getLength()),
-                    sender_endpoint_,
-                    boost::bind(&UDPServer::sendCompleted,
-                                this,
-                                placeholders::error,
-                                placeholders::bytes_transferred));
-            } else {
-                startReceive();
+                socket_.send_to(
+                    boost::asio::buffer(response_renderer_.getData(),
+                                        response_renderer_.getLength()),
+                    sender_endpoint_, 0, serror_);
+                // ignore the error right now...
             }
-        } else {
-            startReceive();
         }
+        startReceive();
     }
 
     void sendCompleted(const boost::system::error_code& error UNUSED_PARAM,
@@ -366,6 +361,7 @@ private:
     enum { MAX_LENGTH = 4096 };
     char data_[MAX_LENGTH];
     CompressOffsetTable offset_table_;
+    boost::system::error_code serror_;
 };
 
 struct ServerSet {
@@ -660,7 +656,8 @@ run_server(const char* port, const bool use_ipv4, const bool use_ipv6,
     Message dns_message(Message::PARSE);
     CompressOffsetTable offset_table;
     OutputBuffer resonse_buffer(0);
-    MessageRenderer response_renderer(resonse_buffer, &offset_table);
+    //MessageRenderer response_renderer(resonse_buffer, &offset_table);
+    MessageRenderer response_renderer(4096, &offset_table);
     ++nfds;
 
     running = true;
