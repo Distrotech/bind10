@@ -399,6 +399,7 @@ AC_CONFIG_FILES([Makefile
                  src/bin/xfrout/Makefile
                  src/bin/xfrout/tests/Makefile
                  src/bin/usermgr/Makefile
+                 src/bin/stats/Makefile
                  src/lib/Makefile
                  src/lib/cc/Makefile
                  src/lib/python/Makefile
@@ -432,6 +433,7 @@ AC_OUTPUT([src/bin/cfgmgr/b10-cfgmgr.py
            src/bin/bind10/bind10.py
            src/bin/bind10/tests/bind10_test
            src/bin/bind10/run_bind10.sh
+           src/bin/stats/run_statsd.sh
            src/bin/bindctl/run_bindctl.sh
            src/bin/bindctl/bindctl-source.py
            src/bin/bindctl/tests/bindctl_test
@@ -444,6 +446,7 @@ AC_OUTPUT([src/bin/cfgmgr/b10-cfgmgr.py
            src/bin/msgq/run_msgq.sh
            src/bin/auth/auth.spec.pre
            src/bin/auth/spec_config.h.pre
+           src/bin/stats/statsd.py
            src/lib/config/tests/data_def_unittests_config.h
            src/lib/python/isc/config/tests/config_test
            src/lib/python/isc/cc/tests/cc_test
@@ -456,6 +459,7 @@ AC_OUTPUT([src/bin/cfgmgr/b10-cfgmgr.py
            chmod +x src/bin/xfrin/run_b10-xfrin.sh
            chmod +x src/bin/xfrout/run_b10-xfrout.sh
            chmod +x src/bin/bind10/run_bind10.sh
+           chmod +x src/bin/stats/run_statsd.sh
            chmod +x src/bin/cmdctl/tests/cmdctl_test
            chmod +x src/bin/xfrin/tests/xfrin_test
            chmod +x src/bin/xfrout/tests/xfrout_test

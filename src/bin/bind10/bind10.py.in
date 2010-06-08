@@ -326,6 +326,25 @@ class BoB:
         if self.verbose:
             sys.stdout.write("[bind10] Started b10-xfrin (PID %d)\n" % xfrind.pid)
 
+        # start b10-statsd
+        statsd_args = ['b10-statsd']
+        if self.verbose:
+            sys.stdout.write("Starting b10-statsd\n")
+            statsd_args += ['-v']
+        try:
+            statsd = ProcessInfo("b10-statsd", statsd_args,
+                                 c_channel_env)
+        except Exception as e:
+            c_channel.process.kill()
+            bind_cfgd.process.kill()
+            xfrout.process.kill()
+            xfrind.process.kill()
+            auth.process.kill()
+            return "Unable to start b10-statsd; " + str(e)
+        self.processes[statsd.pid] = statsd
+        if self.verbose:
+            sys.stdout.write("Started b10-statsd (PID %d)\n" % statsd.pid)
+
         # start the b10-cmdctl
         # XXX: we hardcode port 8080
         cmdctl_args = ['b10-cmdctl']
@@ -341,6 +360,7 @@ class BoB:
             xfrout.process.kill()
             auth.process.kill()
             xfrind.process.kill()
+            statsd.process.kill()
             return "Unable to start b10-cmdctl; " + str(e)
         self.processes[cmd_ctrld.pid] = cmd_ctrld
         if self.verbose:

@@ -1,0 +1,64 @@
+#!@PYTHON@
+
+# This program acts statistics agent.
+# It has pseudo counters which is incremented each 10 second and
+# sends data to "statistics" channel periodically.
+# One command is available
+#   "Boss"       group: "shutdown"
+
+import isc
+import time
+import select
+import random
+
+step_time = 3
+statgroup = "statsd"
+
+cc = isc.cc.Session()
+print (cc.lname)
+#cc.group_subscribe(statgroup)
+cc.group_subscribe("Boss")
+
+# counters
+
+NSSTATDESC={}
+NSSTATDESC["counterid"] = 0
+NSSTATDESC["requestv4"] = 0
+NSSTATDESC["requestv6"] = 0
+RESSTATDESC={}
+RESSTATDESC["counterid"] = 0
+RESSTATDESC["queryv4"] = 0
+RESSTATDESC["queryv6"] = 0
+SOCKSTATDESC={}
+SOCKSTATDESC["counterid"] = 0
+SOCKSTATDESC["udp4open"] = 0
+SYSSTATDESC={}
+SYSSTATDESC['sockets'] = 0
+SYSSTATDESC['memory'] = 0
+
+sent = -1
+last_sent = -1
+loop = 0
+
+while 1:
+    NSSTATDESC["requestv4"] += random.randint(1,1000)
+    wait = sent + step_time - time.time()
+    if wait <= 0:
+        last_sent = sent;
+        sent = time.time();
+        msg = {'component':'auth', 'from':cc.lname, 'version':1, 'timestamp':time.time(),'stats':{'NSSTATDESC':NSSTATDESC,'RESSTATDESC':RESSTATDESC,'SOCKSTATDESC':SOCKSTATDESC,'SYSSTATDESC':SYSSTATDESC}}
+        print (cc.group_sendmsg({'command':['stats_update', msg]}, "statsd"))
+        wait = last_sent + step_time - time.time()
+        if wait < 0:
+            wait = step_time
+        loop += 1
+    r,w,e = select.select([cc._socket],[],[], wait)
+    for sock in r:
+        if sock == cc._socket:
+            data, env = cc.group_recvmsg(True)
+            print ("received: ", env, data)
+            if (env != None and "group" in env and env["group"] == "Boss"):
+                if ("shutdown" in data):
+                    exit()
+            else:
+                print ("Unknown data: ", env,data)
