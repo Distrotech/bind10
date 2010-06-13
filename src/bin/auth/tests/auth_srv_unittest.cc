@@ -26,8 +26,9 @@
 #include <cc/data.h>
 
 #include <auth/auth_srv.h>
-
+#include <auth/asio_link.h>
 #include <dns/tests/unittest_util.h>
+#include <iostream>
 
 using isc::UnitTestUtil;
 using namespace std;
@@ -44,27 +45,19 @@ const char* BADCONFIG_TESTDB =
 
 class AuthSrvTest : public ::testing::Test {
 protected:
-    AuthSrvTest() : request_message(Message::RENDER),
-                    parse_message(Message::PARSE), default_qid(0x1035),
+    AuthSrvTest() : default_qid(0x1035),
                     opcode(Opcode(Opcode::QUERY())), qname("www.example.com"),
-                    qclass(RRClass::IN()), qtype(RRType::A()), ibuffer(NULL),
-                    request_obuffer(0), request_renderer(request_obuffer),
-                    response_obuffer(0), response_renderer(response_obuffer)
+                    qclass(RRClass::IN()), qtype(RRType::A()), 
+                    userInfo(asio_link::UserInfo::QueryThroughUDP)
     {}
     AuthSrv server;
-    Message request_message;
-    Message parse_message;
     const qid_t default_qid;
     const Opcode opcode;
     const Name qname;
     const RRClass qclass;
     const RRType qtype;
-    InputBuffer* ibuffer;
-    OutputBuffer request_obuffer;
-    MessageRenderer request_renderer;
-    OutputBuffer response_obuffer;
-    MessageRenderer response_renderer;
     vector<uint8_t> data;
+    asio_link::UserInfo userInfo;
 
     void createDataFromFile(const char* const datafile);
 };
@@ -82,20 +75,20 @@ const unsigned int CD_FLAG = 0x40;
 
 void
 AuthSrvTest::createDataFromFile(const char* const datafile) {
-    delete ibuffer;
     data.clear();
 
     UnitTestUtil::readWireData(datafile, data);
-    ibuffer = new InputBuffer(&data[0], data.size());
+    userInfo.setQueryRawData((char *)&data[0], data.size());
 }
 
 void
-headerCheck(const Message& message, const qid_t qid, const Rcode& rcode,
+responseHeaderCheck(const asio_link::UserInfo &userInfo, const qid_t qid, const Rcode& rcode,
             const uint16_t opcodeval, const unsigned int flags,
             const unsigned int qdcount,
             const unsigned int ancount, const unsigned int nscount,
             const unsigned int arcount)
 {
+    const Message &message = userInfo.getMessage();
     EXPECT_EQ(qid, message.getQid());
     EXPECT_EQ(rcode, message.getRcode());
     EXPECT_EQ(opcodeval, message.getOpcode().getCode());
@@ -118,13 +111,15 @@ TEST_F(AuthSrvTest, unsupportedRequest) {
     for (unsigned int i = 1; i < 16; ++i) {
         // set Opcode to 'i', which iterators over all possible codes except
         // the standard query (0)
+        if (i == 4 || i == 5)
+            continue;
         createDataFromFile("simplequery_fromWire");
         data[2] = ((i << 3) & 0xff);
+        userInfo.setQueryRawData((char *)&data[0], data.size());
 
-        parse_message.clear(Message::PARSE);
-        EXPECT_EQ(true, server.processMessage(*ibuffer, parse_message,
-                                              response_renderer, true));
-        headerCheck(parse_message, default_qid, Rcode::NOTIMP(), i, QR_FLAG,
+        EXPECT_EQ(true, userInfo.isMessageValid());
+        server.processQuery(userInfo);
+        responseHeaderCheck(userInfo, default_qid, Rcode::NOTIMP(), i, QR_FLAG,
                     0, 0, 0, 0);
     }
 }
@@ -141,11 +136,13 @@ TEST_F(AuthSrvTest, verbose) {
 // Multiple questions.  Should result in FORMERR.
 TEST_F(AuthSrvTest, multiQuestion) {
     createDataFromFile("multiquestion_fromWire");
-    EXPECT_EQ(true, server.processMessage(*ibuffer, parse_message,
-                                          response_renderer, true));
-    headerCheck(parse_message, default_qid, Rcode::FORMERR(), opcode.getCode(),
+    EXPECT_EQ(true, userInfo.isMessageValid());
+    EXPECT_EQ(true, userInfo.needsReply());
+    server.processQuery(userInfo);
+    responseHeaderCheck(userInfo, default_qid, Rcode::FORMERR(), opcode.getCode(),
                 QR_FLAG, 2, 0, 0, 0);
 
+    Message &parse_message = userInfo.getMessage();
     QuestionIterator qit = parse_message.beginQuestion();
     EXPECT_EQ(Name("example.com"), (*qit)->getName());
     EXPECT_EQ(RRClass::IN(), (*qit)->getClass());
@@ -162,8 +159,8 @@ TEST_F(AuthSrvTest, multiQuestion) {
 // dropped.
 TEST_F(AuthSrvTest, shortMessage) {
     createDataFromFile("shortmessage_fromWire");
-    EXPECT_EQ(false, server.processMessage(*ibuffer, parse_message,
-                                           response_renderer, true));
+    EXPECT_EQ(false, userInfo.isMessageValid());
+    EXPECT_EQ(false, userInfo.needsReply());
 }
 
 // Response messages.  Must be silently dropped, whether it's a valid response
@@ -171,43 +168,41 @@ TEST_F(AuthSrvTest, shortMessage) {
 TEST_F(AuthSrvTest, response) {
     // A valid (although unusual) response
     createDataFromFile("simpleresponse_fromWire");
-    EXPECT_EQ(false, server.processMessage(*ibuffer, parse_message,
-                                           response_renderer, true));
+    EXPECT_EQ(false, userInfo.isMessageValid());
+    EXPECT_EQ(false, userInfo.needsReply());
 
     // A response with a broken question section.  must be dropped rather than
     // returning FORMERR.
     createDataFromFile("shortresponse_fromWire");
-    EXPECT_EQ(false, server.processMessage(*ibuffer, parse_message,
-                                           response_renderer, true));
+    EXPECT_EQ(false, userInfo.isMessageValid());
+    EXPECT_EQ(false, userInfo.needsReply());
 
     // A response to iquery.  must be dropped rather than returning NOTIMP.
     createDataFromFile("iqueryresponse_fromWire");
-    EXPECT_EQ(false, server.processMessage(*ibuffer, parse_message,
-                                           response_renderer, true));
+    EXPECT_EQ(false, userInfo.isMessageValid());
+    EXPECT_EQ(false, userInfo.needsReply());
 }
 
 // Query with a broken question
 TEST_F(AuthSrvTest, shortQuestion) {
     createDataFromFile("shortquestion_fromWire");
-    EXPECT_EQ(true, server.processMessage(*ibuffer, parse_message,
-                                          response_renderer, true));
-    // Since the query's question is broken, the question section of the
-    // response should be empty.
-    headerCheck(parse_message, default_qid, Rcode::FORMERR(), opcode.getCode(),
-                QR_FLAG, 0, 0, 0, 0);
+    EXPECT_EQ(false, userInfo.isMessageValid());
+    EXPECT_EQ(true, userInfo.needsReply());
+
+    responseHeaderCheck(userInfo, default_qid, Rcode::FORMERR(), opcode.getCode(),
+            QR_FLAG, 0, 0, 0, 0);
 }
 
 // Query with a broken answer section
 TEST_F(AuthSrvTest, shortAnswer) {
     createDataFromFile("shortanswer_fromWire");
-    EXPECT_EQ(true, server.processMessage(*ibuffer, parse_message,
-                                          response_renderer, true));
+    EXPECT_EQ(false, userInfo.isMessageValid());
+    EXPECT_EQ(true, userInfo.needsReply());
 
-    // This is a bogus query, but question section is valid.  So the response
-    // should copy the question section.
-    headerCheck(parse_message, default_qid, Rcode::FORMERR(), opcode.getCode(),
-                QR_FLAG, 1, 0, 0, 0);
-
+    responseHeaderCheck(userInfo, default_qid, Rcode::FORMERR(), opcode.getCode(),
+            QR_FLAG, 1, 0, 0, 0);
+    
+    Message &parse_message = userInfo.getMessage();
     QuestionIterator qit = parse_message.beginQuestion();
     EXPECT_EQ(Name("example.com"), (*qit)->getName());
     EXPECT_EQ(RRClass::IN(), (*qit)->getClass());
@@ -216,17 +211,21 @@ TEST_F(AuthSrvTest, shortAnswer) {
     EXPECT_TRUE(qit == parse_message.endQuestion());
 }
 
+
+
 // Query with unsupported version of EDNS.
 TEST_F(AuthSrvTest, ednsBadVers) {
     createDataFromFile("queryBadEDNS_fromWire");
-    EXPECT_EQ(true, server.processMessage(*ibuffer, parse_message,
-                                          response_renderer, true));
+    EXPECT_EQ(false, userInfo.isMessageValid());
+    EXPECT_EQ(true, userInfo.needsReply());
 
     // The response must have an EDNS OPT RR in the additional section.
     // Note that the DNSSEC DO bit is cleared even if this bit in the query
     // is set.  This is a limitation of the current implementation.
-    headerCheck(parse_message, default_qid, Rcode::BADVERS(), opcode.getCode(),
+    responseHeaderCheck(userInfo, default_qid, Rcode::BADVERS(), opcode.getCode(),
                 QR_FLAG, 1, 0, 0, 1);
+
+    Message &parse_message = userInfo.getMessage();
     EXPECT_EQ(4096, parse_message.getUDPSize());
     EXPECT_FALSE(parse_message.isDNSSECSupported());
 }
@@ -253,9 +252,9 @@ TEST_F(AuthSrvTest, updateConfig) {
     // response should have the AA flag on, and have an RR in each answer
     // and authority section.
     createDataFromFile("examplequery_fromWire");
-    EXPECT_EQ(true, server.processMessage(*ibuffer, parse_message,
-                                          response_renderer, true));
-    headerCheck(parse_message, default_qid, Rcode::NOERROR(), opcode.getCode(),
+    EXPECT_EQ(true, userInfo.isMessageValid());
+    server.processQuery(userInfo);
+    responseHeaderCheck(userInfo, default_qid, Rcode::NOERROR(), opcode.getCode(),
                 QR_FLAG | AA_FLAG, 1, 1, 1, 0);
 }
 
@@ -267,9 +266,9 @@ TEST_F(AuthSrvTest, datasourceFail) {
     // in a SERVFAIL response, and the answer and authority sections should
     // be empty.
     createDataFromFile("badExampleQuery_fromWire");
-    EXPECT_EQ(true, server.processMessage(*ibuffer, parse_message,
-                                          response_renderer, true));
-    headerCheck(parse_message, default_qid, Rcode::SERVFAIL(), opcode.getCode(),
+    EXPECT_EQ(true, userInfo.isMessageValid());
+    server.processQuery(userInfo);
+    responseHeaderCheck(userInfo, default_qid, Rcode::SERVFAIL(), opcode.getCode(),
                 QR_FLAG, 1, 0, 0, 0);
 }
 
@@ -282,9 +281,9 @@ TEST_F(AuthSrvTest, updateConfigFail) {
 
     // The original data source should still exist.
     createDataFromFile("examplequery_fromWire");
-    EXPECT_EQ(true, server.processMessage(*ibuffer, parse_message,
-                                          response_renderer, true));
-    headerCheck(parse_message, default_qid, Rcode::NOERROR(), opcode.getCode(),
+    EXPECT_EQ(true, userInfo.isMessageValid());
+    server.processQuery(userInfo);
+    responseHeaderCheck(userInfo, default_qid, Rcode::NOERROR(), opcode.getCode(),
                 QR_FLAG | AA_FLAG, 1, 1, 1, 0);
 }
 }

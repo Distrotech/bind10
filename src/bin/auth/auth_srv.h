@@ -21,45 +21,35 @@
 
 #include <cc/data.h>
 #include <config/ccsession.h>
+#include <boost/utility.hpp>
 
-namespace isc {
-namespace dns {
-class InputBuffer;
-class Message;
-class MessageRenderer;
-}
-}
 
 class AuthSrvImpl;
+namespace asio_link
+{
+    class UserInfo;
+}
 
-class AuthSrv {
+class AuthSrv : private boost::noncopyable{
     ///
     /// \name Constructors, Assignment Operator and Destructor.
     ///
     /// Note: The copy constructor and the assignment operator are intentionally
     /// defined as private.
     //@{
-private:
-    AuthSrv(const AuthSrv& source);
-    AuthSrv& operator=(const AuthSrv& source);
 public:
-    explicit AuthSrv();
+    AuthSrv();
     ~AuthSrv();
-    //@}
-    /// \return \c true if the \message contains a response to be returned;
-    /// otherwise \c false.
-    bool processMessage(isc::dns::InputBuffer& request_buffer,
-                        isc::dns::Message& message,
-                        isc::dns::MessageRenderer& response_renderer,
-                        bool udp_buffer);
+    void processQuery(asio_link::UserInfo &userInfo);
     void setVerbose(bool on);
     bool getVerbose() const;
     void serve(std::string zone_name);
     isc::data::ElementPtr updateConfig(isc::data::ElementPtr config);
     isc::config::ModuleCCSession* configSession() const;
     void setConfigSession(isc::config::ModuleCCSession* cs);
+
 private:
-    AuthSrvImpl* impl_;
+   AuthSrvImpl* impl_;
 };
 
 #endif // __AUTH_SRV_H

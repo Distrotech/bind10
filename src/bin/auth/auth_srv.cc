@@ -18,6 +18,7 @@
 #include <cassert>
 #include <iostream>
 #include <vector>
+#include <boost/utility.hpp>
 
 #include <exceptions/exceptions.h>
 
@@ -32,6 +33,7 @@
 #include <config/ccsession.h>
 #include <cc/data.h>
 #include <exceptions/exceptions.h>
+#include <xfr/xfrout_client.h>
 
 #include <datasrc/query.h>
 #include <datasrc/data_source.h>
@@ -42,6 +44,9 @@
 
 #include "common.h"
 #include "auth_srv.h"
+#include "asio_link.h"
+#include "auth_util.h"
+#include "spec_config.h"
 
 #include <boost/lexical_cast.hpp>
 
@@ -53,16 +58,28 @@ using namespace isc::dns;
 using namespace isc::dns::rdata;
 using namespace isc::data;
 using namespace isc::config;
+using namespace isc::xfr;
 
-class AuthSrvImpl {
-private:
-    // prohibit copy
-    AuthSrvImpl(const AuthSrvImpl& source);
-    AuthSrvImpl& operator=(const AuthSrvImpl& source);
+class AuthSrvImpl : private boost::noncopyable{
 public:
+    enum {DEFAULT_LOCAL_UDPSIZE = 4096};
     AuthSrvImpl();
 
     isc::data::ElementPtr setDbFile(const isc::data::ElementPtr config);
+    void setVerbose(bool on) { verbose_mode_ = on;}
+    bool getVerbose()const { return verbose_mode_;}
+    void setConfigSession(ModuleCCSession *cs) { cs_ = cs;}
+    ModuleCCSession *getConfigSession() { return cs_;}
+    void nag(const string &info){
+        if (verbose_mode_)
+            cerr << info;
+    }
+    void processQuery(asio_link::UserInfo &userInfo);
+
+private:
+    void processNormalQuery(asio_link::UserInfo &userInfo);
+    void processAxfrQuery(asio_link::UserInfo &uerInfo);
+    void processIxfrQuery(asio_link::UserInfo &userInfo, const std::string &queryZoneName);
 
     std::string db_file_;
     ModuleCCSession* cs_;
@@ -71,11 +88,7 @@ public:
     /// so that we can specifically remove that one should the database
     /// file change
     ConstDataSrcPtr cur_datasrc_;
-
     bool verbose_mode_;
-
-    /// Currently non-configurable, but will be.
-    static const uint16_t DEFAULT_LOCAL_UDPSIZE = 4096;
 };
 
 AuthSrvImpl::AuthSrvImpl() : cs_(NULL), verbose_mode_(false)
@@ -83,183 +96,107 @@ AuthSrvImpl::AuthSrvImpl() : cs_(NULL), verbose_mode_(false)
     // cur_datasrc_ is automatically initialized by the default constructor,
     // effectively being an empty (sqlite) data source.  once ccsession is up
     // the datasource will be set by the configuration setting
-
     // add static data source
     data_sources_.addDataSrc(ConstDataSrcPtr(new StaticDataSrc));
 }
 
-AuthSrv::AuthSrv() : impl_(new AuthSrvImpl) {
-}
-
-AuthSrv::~AuthSrv() {
-    delete impl_;
-}
-
-namespace {
-class QuestionInserter {
-public:
-    QuestionInserter(Message* message) : message_(message) {}
-    void operator()(const QuestionPtr question) {
-        message_->addQuestion(question);
-    }
-    Message* message_;
-};
 
 void
-makeErrorMessage(Message& message, MessageRenderer& renderer,
-                 const Rcode& rcode, const bool verbose_mode)
+AuthSrvImpl::processQuery(asio_link::UserInfo &userInfo)
 {
-    // extract the parameters that should be kept.
-    // XXX: with the current implementation, it's not easy to set EDNS0
-    // depending on whether the query had it.  So we'll simply omit it.
-    const qid_t qid = message.getQid();
-    const bool rd = message.getHeaderFlag(MessageFlag::RD());
-    const bool cd = message.getHeaderFlag(MessageFlag::CD());
-    const Opcode& opcode = message.getOpcode();
-    vector<QuestionPtr> questions;
-
-    // If this is an error to a query, we should also copy the question section.
-    if (opcode == Opcode::QUERY()) {
-        questions.assign(message.beginQuestion(), message.endQuestion());
-    }
-
-    message.clear(Message::RENDER);
-    message.setQid(qid);
-    message.setOpcode(opcode);
-    message.setHeaderFlag(MessageFlag::QR());
-    message.setUDPSize(AuthSrvImpl::DEFAULT_LOCAL_UDPSIZE);
-    if (rd) {
-        message.setHeaderFlag(MessageFlag::RD());
-    }
-    if (cd) {
-        message.setHeaderFlag(MessageFlag::CD());
-    }
-    for_each(questions.begin(), questions.end(), QuestionInserter(&message));
-    message.setRcode(rcode);
-    message.toWire(renderer);
-
-    if (verbose_mode) {
-        cerr << "sending an error response (" <<
-            boost::lexical_cast<string>(renderer.getLength())
-             << " bytes):\n" << message.toText() << endl;
+    assert(userInfo.isMessageValid());
+    Message &message = userInfo.getMessage();
+    nag("[AuthSrv] received a message :\n" + message.toText() + "\n");
+    const Opcode &opcode = message.getOpcode();
+    if (opcode == Opcode::QUERY()){
+        QuestionPtr question = *message.beginQuestion();
+        const RRType &qtype = question->getType();
+        if (qtype == RRType::AXFR())
+            processAxfrQuery(userInfo);
+        else if (qtype == RRType::IXFR())
+            processIxfrQuery(userInfo, question->getName().toText());
+        else 
+            processNormalQuery(userInfo);
+    }else{
+        nag("unsupported opcode\n");
+        auth_util::makeErrorMessage(message, Rcode::NOTIMP());
     }
 }
-}
+
+
 
 void
-AuthSrv::setVerbose(const bool on) {
-    impl_->verbose_mode_ = on;
-}
-
-bool
-AuthSrv::getVerbose() const {
-    return (impl_->verbose_mode_);
-}
-
-void
-AuthSrv::setConfigSession(ModuleCCSession* cs) {
-    impl_->cs_ = cs;
-}
-
-ModuleCCSession*
-AuthSrv::configSession() const {
-    return (impl_->cs_);
-}
-
-bool
-AuthSrv::processMessage(InputBuffer& request_buffer, Message& message,
-                        MessageRenderer& response_renderer,
-                        const bool udp_buffer)
+AuthSrvImpl::processNormalQuery(asio_link::UserInfo &userInfo)
 {
-    // First, check the header part.  If we fail even for the base header,
-    // just drop the message.
-    try {
-        message.parseHeader(request_buffer);
-
-        // Ignore all responses.
-        if (message.getHeaderFlag(MessageFlag::QR())) {
-            if (impl_->verbose_mode_) {
-                cerr << "received unexpected response, ignoring" << endl;
-            }
-            return (false);
-        }
-    } catch (const Exception& ex) {
-        return (false);
-    }
-
-    // Parse the message.  On failure, return an appropriate error.
-    try {
-        message.fromWire(request_buffer);
-    } catch (const DNSProtocolError& error) {
-        if (impl_->verbose_mode_) {
-            cerr << "returning " <<  error.getRcode().toText() << ": "
-                 << error.what() << endl;
-        }
-        makeErrorMessage(message, response_renderer, error.getRcode(),
-                         impl_->verbose_mode_);
-        return (true);
-    } catch (const Exception& ex) {
-        if (impl_->verbose_mode_) {
-            cerr << "returning SERVFAIL: " << ex.what() << endl;
-        }
-        makeErrorMessage(message, response_renderer, Rcode::SERVFAIL(),
-                         impl_->verbose_mode_);
-        return (true);
-    } // other exceptions will be handled at a higher layer.
-
-    if (impl_->verbose_mode_) {
-        cerr << "[AuthSrv] received a message:\n" << message.toText() << endl;
-    }
-
-    // Perform further protocol-level validation.
-
-    // In this implementation, we only support normal queries
-    if (message.getOpcode() != Opcode::QUERY()) {
-        if (impl_->verbose_mode_) {
-            cerr << "unsupported opcode" << endl;
-        }
-        makeErrorMessage(message, response_renderer, Rcode::NOTIMP(),
-                         impl_->verbose_mode_);
-        return (true);
-    }
-
+    Message &message = userInfo.getMessage();
     if (message.getRRCount(Section::QUESTION()) != 1) {
-        makeErrorMessage(message, response_renderer, Rcode::FORMERR(),
-                         impl_->verbose_mode_);
-        return (true);
+        auth_util::makeErrorMessage(message, Rcode::FORMERR());
     }
+    else{
+        const bool dnssec_ok = message.isDNSSECSupported();
+        //const uint16_t remote_bufsize = message.getUDPSize();
 
-    const bool dnssec_ok = message.isDNSSECSupported();
-    const uint16_t remote_bufsize = message.getUDPSize();
+        message.makeResponse();
+        message.setHeaderFlag(MessageFlag::AA());
+        message.setRcode(Rcode::NOERROR());
+        message.setDNSSECSupported(dnssec_ok);
+        message.setUDPSize(AuthSrvImpl::DEFAULT_LOCAL_UDPSIZE);
 
-    message.makeResponse();
-    message.setHeaderFlag(MessageFlag::AA());
-    message.setRcode(Rcode::NOERROR());
-    message.setDNSSECSupported(dnssec_ok);
-    message.setUDPSize(AuthSrvImpl::DEFAULT_LOCAL_UDPSIZE);
-
-    try {
-        Query query(message, dnssec_ok);
-        impl_->data_sources_.doQuery(query);
-    } catch (const Exception& ex) {
-        if (impl_->verbose_mode_) {
-            cerr << "Internal error, returning SERVFAIL: " << ex.what() << endl;
+        try {
+            Query query(message, dnssec_ok);
+            data_sources_.doQuery(query);
+        } catch (const Exception& ex) {
+            nag(std::string("Internal error, returning SERVFAIL: ") + ex.what() + "\n");
+            auth_util::makeErrorMessage(message, Rcode::SERVFAIL());
         }
-        makeErrorMessage(message, response_renderer, Rcode::SERVFAIL(),
-                         impl_->verbose_mode_);
-        return (true);
+        //response_renderer.setLengthLimit(userInfo.getProtocolType() == asio_link::UserInfo::QueryThroughUDP ? remote_bufsize : 65535);
     }
 
-    response_renderer.setLengthLimit(udp_buffer ? remote_bufsize : 65535);
-    message.toWire(response_renderer);
-    if (impl_->verbose_mode_) {
-        cerr << "sending a response (" <<
-            boost::lexical_cast<string>(response_renderer.getLength())
-             << " bytes):\n" << message.toText() << endl;
-    }
-
-    return (true);
+    //message.toWire(response_renderer);
+    //nag(std::string("sending a response (") + boost::lexical_cast<string>(response_renderer.getLength()) 
+    //        + " bytes):\n" + message.toText() + "\n");
 }
+
+void 
+AuthSrvImpl::processAxfrQuery(asio_link::UserInfo &userInfo)
+{
+    string path(UNIX_SOCKET_FILE);
+    XfroutClient xfr_client(path);
+    try {
+        xfr_client.connect();
+        OutputBuffer rawData(0);
+        auth_util::messageToWire(userInfo.getMessage(), rawData);
+        xfr_client.sendXfroutRequestInfo(userInfo.getSocket(), (uint8_t *)rawData.getData(),
+                rawData.getLength());
+        xfr_client.disconnect();
+    }   
+    catch (const exception & err) {
+        nag(std::string("error handle xfr query:") + err.what() + "\n");
+    }
+}
+
+void 
+AuthSrvImpl::processIxfrQuery(asio_link::UserInfo &userInfo, const std::string &queryZoneName)
+{
+    //TODO check with the conf-mgr whether current server is the auth of the zone
+    isc::cc::Session tmp_session_with_xfr;
+    tmp_session_with_xfr.establish();
+    const string remote_ip_address = userInfo.getIPAddress();
+    ElementPtr notify_command = Element::createFromString("{\"command\": [\"notify\", {\"zone_name\" : \""
+                                                            + queryZoneName 
+                                                            + "\", \"master_ip\" : \""
+                                                            + remote_ip_address
+                                                            + "\"}]}");
+    unsigned int seq = tmp_session_with_xfr.group_sendmsg(notify_command, "Xfrin");
+    ElementPtr env, answer;
+    tmp_session_with_xfr.group_recvmsg(env, answer, false, seq);
+    int rcode;
+    ElementPtr err = parseAnswer(rcode, answer);
+    if (rcode != 0) 
+        nag("notify send failed\n");
+    
+}
+
 
 ElementPtr
 AuthSrvImpl::setDbFile(const isc::data::ElementPtr config) {
@@ -289,7 +226,7 @@ AuthSrvImpl::setDbFile(const isc::data::ElementPtr config) {
     // exception guarantee: We first need to perform all operations that can
     // fail, while acquiring resources in the RAII manner.  We then perform
     // delete and swap operations which should not fail.
-    DataSrcPtr datasrc_ptr(DataSrcPtr(new Sqlite3DataSrc));
+    DataSrcPtr datasrc_ptr(new Sqlite3DataSrc);
     datasrc_ptr->init(final);
     data_sources_.addDataSrc(datasrc_ptr);
 
@@ -302,6 +239,42 @@ AuthSrvImpl::setDbFile(const isc::data::ElementPtr config) {
     return (answer);
 }
 
+
+AuthSrv::AuthSrv() : impl_(new AuthSrvImpl) {
+}
+
+AuthSrv::~AuthSrv() {
+    delete impl_;
+}
+
+
+void
+AuthSrv::setVerbose(const bool on) {
+    impl_->setVerbose(on);
+}
+
+bool
+AuthSrv::getVerbose() const {
+    return (impl_->getVerbose());
+}
+
+void
+AuthSrv::setConfigSession(ModuleCCSession* cs) {
+    impl_->setConfigSession(cs);
+}
+
+ModuleCCSession*
+AuthSrv::configSession() const {
+    return (impl_->getConfigSession());
+}
+    
+void
+AuthSrv::processQuery(asio_link::UserInfo &userInfo)
+{
+    impl_->processQuery(userInfo);
+}
+
+    
 ElementPtr
 AuthSrv::updateConfig(isc::data::ElementPtr new_config) {
     try {
@@ -312,9 +285,7 @@ AuthSrv::updateConfig(isc::data::ElementPtr new_config) {
 
         return answer;
     } catch (const isc::Exception& error) {
-        if (impl_->verbose_mode_) {
-            cerr << "[AuthSrv] error: " << error.what() << endl;
-        }
+        impl_->nag(std::string("[AuthSrv] error: ") + error.what() + "\n");
         return isc::config::createAnswer(1, error.what());
     }
 }
