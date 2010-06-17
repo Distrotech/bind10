@@ -49,7 +49,7 @@ public:
     void setConfigSession(isc::config::ModuleCCSession* cs);
 
 private:
-   AuthSrvImpl* impl_;
+    AuthSrvImpl* impl_;
 };
 
 #endif // __AUTH_SRV_H

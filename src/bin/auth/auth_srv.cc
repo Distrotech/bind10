@@ -72,7 +72,7 @@ public:
     ModuleCCSession *getConfigSession() { return cs_;}
     void nag(const string &info){
         if (verbose_mode_)
-            cerr << info;
+            cerr << "[AuthSrv] " << info;
     }
     void processQuery(asio_link::UserInfo &userInfo);
 

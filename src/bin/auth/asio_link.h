@@ -53,7 +53,6 @@ class UserInfo
         bool                        isMessageValid() const { return is_message_valid_;}
         isc::dns::Message &         getMessage() { return message_;}
         const isc::dns::Message &   getMessage() const{ return message_;}
-        bool                        parseMessage();
 
     private:
         std::string ipaddr_;
