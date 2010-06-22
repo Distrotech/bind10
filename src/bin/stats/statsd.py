@@ -41,6 +41,8 @@ import signal
 import re
 
 import isc.cc
+from isc.cc import Session
+
 __version__ = "v20100602"
 
 ##############################################################
@@ -59,20 +61,20 @@ class Statistics:
         self.output_interval = 10
         self.output_path = '/tmp/stats.xml'
         self.output_generation = 100
-        self.myname = 'statistics'
+        self.myname = 'statsd'
         self.verbose = verbose
         self.shutdown = 0
         self.wrote_time = 0
 
-    def stats_update(self, arg):
+    def stats_update(self, msg, env):
         if self.debug:
-            print ("[statsd] stats_update: "+str(arg))
-        if (not ('component' in arg and 'from' in arg)):
+            print ("[statsd] stats_update: "+str(msg))
+        if (not ('component' in msg and 'from' in msg)):
             return 1
-        self.stats[arg['component']] = arg
+        self.stats[msg['component']] = msg
         if self.debug:
-            print ("received from=",arg['from'], "   component=", arg['component'])
-            print (str(arg))
+            print ("received from=",msg['from'], "   component=", msg['component'])
+            print (str(msg))
         return 0
         #if last_recvd_time > wrote_time:
         #    if debug:
@@ -95,12 +97,7 @@ class Statistics:
             answer = isc.config.ccsession.create_answer(1, "bad command")
         else:
             cmd = command
-            if cmd == "stats_update":
-                result = self.stats_update(args)
-                if self.debug:
-                    print ("self.stats_update returned "+str(result))
-                answer = isc.config.ccsession.create_answer(result)
-            elif cmd == "shutdown":
+            if cmd == "shutdown":
                 if self.debug:
                     print ("[statsd] shutdown")
                 self.shutdown = 1
@@ -120,6 +117,8 @@ class Statistics:
                         print (item + ": " + str(full_config[item]))
                 answer = isc.config.ccsession.create_answer(0)
             else:
+                if self.debug:
+                    print ("[statsd:command] unknown command: "+str(command))
                 answer = isc.config.ccsession.create_answer(1, "Unknown command")
             if self.debug:
                 print ("answer="+str(answer))
@@ -131,12 +130,24 @@ class Statistics:
             print  ("statsd: Statistics.main()")
         self.ccs = isc.config.ModuleCCSession(SPECFILE_LOCATION, self.config_handler, self.command_handler)
         self.ccs.start()
+        print ("config lname=",self.ccs._session.lname)
         if self.debug:
             print ("[statsd] ccsession started")
+        self.session = Session()
+        print ("another lname=",self.session.lname)
+        self.session.group_subscribe("statistics", "*")
+        wait = None
         while not self.shutdown:
             if self.debug:
                 print ("loop")
-            self.ccs.check_command()
+            r,w,e = select.select([self.session._socket, self.ccs._session._socket],[],[], wait)
+            for sock in r:
+                if sock == self.session._socket:
+                    data,envelope = self.session.group_recvmsg(True)
+                    self.stats_update(data,envelope)
+                elif sock == self.ccs._session._socket:
+                    self.ccs.check_command(True)
+
         exit (1)
 
 def main():

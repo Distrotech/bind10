@@ -6,13 +6,21 @@
 # One command is available
 #   "Boss"       group: "shutdown"
 
+import os
 import isc
 import time
 import select
 import random
 
 step_time = 3
-statgroup = "statsd"
+statgroup = "statistics"
+
+if "B10_FROM_SOURCE" in os.environ:
+    SPECFILE_LOCATION = os.environ["B10_FROM_SOURCE"] + "/src/bin/stats/statsd.s pec"
+else:
+    PREFIX = "@prefix@"
+    DATAROOTDIR = "@datarootdir@"
+    SPECFILE_LOCATION = "@datadir@/@PACKAGE@/statsd.spec".replace("${datarootdir}",  DATAROOTDIR).replace("${prefix}", PREFIX)
 
 cc = isc.cc.Session()
 print (cc.lname)
@@ -47,7 +55,7 @@ while 1:
         last_sent = sent;
         sent = time.time();
         msg = {'component':'auth', 'from':cc.lname, 'version':1, 'timestamp':time.time(),'stats':{'NSSTATDESC':NSSTATDESC,'RESSTATDESC':RESSTATDESC,'SOCKSTATDESC':SOCKSTATDESC,'SYSSTATDESC':SYSSTATDESC}}
-        print (cc.group_sendmsg({'command':['stats_update', msg]}, "statsd"))
+        print (cc.group_sendmsg(msg, statgroup))
         wait = last_sent + step_time - time.time()
         if wait < 0:
             wait = step_time

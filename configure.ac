@@ -434,6 +434,7 @@ AC_OUTPUT([src/bin/cfgmgr/b10-cfgmgr.py
            src/bin/bind10/tests/bind10_test
            src/bin/bind10/run_bind10.sh
            src/bin/stats/run_statsd.sh
+           src/bin/stats/test/run_example_agent.sh
            src/bin/bindctl/run_bindctl.sh
            src/bin/bindctl/bindctl-source.py
            src/bin/bindctl/tests/bindctl_test
@@ -460,6 +461,7 @@ AC_OUTPUT([src/bin/cfgmgr/b10-cfgmgr.py
            chmod +x src/bin/xfrout/run_b10-xfrout.sh
            chmod +x src/bin/bind10/run_bind10.sh
            chmod +x src/bin/stats/run_statsd.sh
+           chmod +x src/bin/stats/test/run_example_agent.sh
            chmod +x src/bin/cmdctl/tests/cmdctl_test
            chmod +x src/bin/xfrin/tests/xfrin_test
            chmod +x src/bin/xfrout/tests/xfrout_test
