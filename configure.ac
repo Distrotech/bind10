@@ -400,6 +400,7 @@ AC_CONFIG_FILES([Makefile
                  src/lib/config/Makefile
                  src/lib/config/tests/Makefile
                  src/lib/bench/Makefile
+                 src/lib/bench/benchmarks/Makefile
                  src/lib/dns/Makefile
                  src/lib/dns/tests/Makefile
                  src/lib/dns/benchmarks/Makefile
