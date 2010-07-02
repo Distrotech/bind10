@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.1
+#!@PYTHON@
 
 # Copyright (C) 2010  Internet Systems Consortium.
 #
@@ -30,9 +30,9 @@ import os
 if "B10_FROM_SOURCE" in os.environ:
     SPECFILE_LOCATION = os.environ["B10_FROM_SOURCE"] + "/src/bin/stats/statsd.spec"
 else:
-    PREFIX = "/usr/local/bind10"
-    DATAROOTDIR = "${prefix}/share"
-    SPECFILE_LOCATION = "${datarootdir}/bind10-devel/statsd.spec".replace("${datarootdir}",  DATAROOTDIR).replace("${prefix}", PREFIX)
+    PREFIX = "@prefix@"
+    DATAROOTDIR = "@datarootdir@"
+    SPECFILE_LOCATION = "@datadir@/@PACKAGE@/statsd.spec".replace("${datarootdir}",  DATAROOTDIR).replace("${prefix}", PREFIX)
 
 import time
 import select
@@ -56,7 +56,7 @@ class Statistics:
     """Statistics Class."""
 
     def __init__(self, verbose = True):
-        self.debug = 1
+        self.debug = 0
         self.stats = {}
         self.output_interval = 10
         self.output_path = '/tmp/stats.xml'
