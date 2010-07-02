@@ -448,6 +448,7 @@ AC_OUTPUT([src/bin/cfgmgr/b10-cfgmgr.py
            src/bin/auth/auth.spec.pre
            src/bin/auth/spec_config.h.pre
            src/bin/stats/statsd.py
+           src/bin/stats/statsd_1session.py
            src/lib/config/tests/data_def_unittests_config.h
            src/lib/python/isc/config/tests/config_test
            src/lib/python/isc/cc/tests/cc_test

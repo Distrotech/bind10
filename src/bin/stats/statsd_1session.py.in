@@ -128,25 +128,25 @@ class Statistics:
     def main(self):
         if self.debug:
             print  ("statsd: Statistics.main()")
-        self.ccs = isc.config.ModuleCCSession(SPECFILE_LOCATION, self.config_handler, self.command_handler)
+        self.session = Session()
+        self.session.group_subscribe("statistics", "*")
+        self.ccs = isc.config.ModuleCCSession(SPECFILE_LOCATION, self.config_handler, self.command_handler, self.session)
         self.ccs.start()
-        print ("config lname=",self.ccs._session.lname)
         if self.debug:
             print ("[statsd] ccsession started")
-        self.session = Session()
-        print ("another lname=",self.session.lname)
-        self.session.group_subscribe("statistics", "*")
+        print ("config lname=",self.ccs._session.lname)
         wait = None
         while not self.shutdown:
             if self.debug:
                 print ("loop")
-            r,w,e = select.select([self.session._socket, self.ccs._session._socket],[],[], wait)
+            r,w,e = select.select([self.session._socket],[],[], wait)
             for sock in r:
                 if sock == self.session._socket:
                     data,envelope = self.session.group_recvmsg(True)
-                    self.stats_update(data,envelope)
-                elif sock == self.ccs._session._socket:
-                    self.ccs.check_command(True)
+                    if envelope.group == "statistics":
+                        self.stats_update(data,envelope)
+                    else:
+                        self.ccs.check_command_without_recvmsg(data, envelope)
 
         exit (1)
 
