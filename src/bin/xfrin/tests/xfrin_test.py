@@ -62,17 +62,17 @@ class MockXfrin(Xfrin):
     check_command_hook = None
 
     def _cc_setup(self):
-        pass
+        self._max_transfers_in = 10
     
     def _cc_check_command(self):
-        self._shutdown_event.set()
+        self._shutdown_flag = 1
         if MockXfrin.check_command_hook:
             MockXfrin.check_command_hook()
 
 class MockXfrinConnection(XfrinConnection):
-    def __init__(self, sock_map, zone_name, rrclass, db_file, shutdown_event,
+    def __init__(self, conn_socket, zone_name, rrclass, db_file, shutdown_flag,
                  master_addr):
-        super().__init__(sock_map, zone_name, rrclass, db_file, shutdown_event,
+        super().__init__(conn_socket, zone_name, rrclass, db_file, shutdown_flag,
                          master_addr)
         self.query_data = b''
         self.reply_data = b''
@@ -82,14 +82,15 @@ class MockXfrinConnection(XfrinConnection):
         self.qid = None
         self.response_generator = None
 
-    def _asyncore_loop(self):
-        if self.force_close:
-            self.handle_close()
-        elif not self.force_time_out:
-            self.handle_read()
-
     def connect_to_master(self):
         return True
+
+    def _loop(self):
+        if self.force_close:
+            self.close()
+            self._conn_socket.close()
+        elif not self.force_time_out:
+            self.handle_read()
 
     def recv(self, size):
         data = self.reply_data[:size]
@@ -145,13 +146,12 @@ class MockXfrinConnection(XfrinConnection):
 
 class TestXfrinConnection(unittest.TestCase):
     def setUp(self):
+        conn_socket = socket.socketpair()
         if os.path.exists(TEST_DB_FILE):
             os.remove(TEST_DB_FILE)
-        self.sock_map = {}
-        self.conn = MockXfrinConnection(self.sock_map, 'example.com.',
+        self.conn = MockXfrinConnection(conn_socket[1], 'example.com.',
                                         TEST_RRCLASS, TEST_DB_FILE,
-                                        threading.Event(),
-                                        TEST_MASTER_IPV4_ADDRINFO)
+                                        0, TEST_MASTER_IPV4_ADDRINFO)
         self.axfr_after_soa = False
         self.soa_response_params = {
             'questions': [example_soa_question],
@@ -166,14 +166,9 @@ class TestXfrinConnection(unittest.TestCase):
         if os.path.exists(TEST_DB_FILE):
             os.remove(TEST_DB_FILE)
 
-    def test_close(self):
-        # we shouldn't be using the global asyncore map.
-        self.assertEqual(len(asyncore.socket_map), 0)
-        # there should be exactly one entry in our local map
-        self.assertEqual(len(self.sock_map), 1)
-        # once closing the dispatch the map should become empty
-        self.conn.close()
-        self.assertEqual(len(self.sock_map), 0)
+    def test_connect(self):
+        #self.assertEqual(, "")
+        self.assertRaises(Exception, self.conn.connect, (TEST_MASTER_IPV4_ADDRESS,53))
 
     def test_init_ip6(self):
         # This test simply creates a new XfrinConnection object with an
@@ -182,14 +177,13 @@ class TestXfrinConnection(unittest.TestCase):
         # tends to assume it's IPv4 only and hardcode AF_INET.  This test
         # uncovers such a bug.
         c = MockXfrinConnection({}, 'example.com.', TEST_RRCLASS, TEST_DB_FILE,
-                                threading.Event(),
-                                TEST_MASTER_IPV6_ADDRINFO)
-        c.bind(('::', 0))
+                                0, TEST_MASTER_IPV6_ADDRINFO)
+        c._socket.bind(('::', 0))
         c.close()
 
     def test_init_chclass(self):
         c = XfrinConnection({}, 'example.com.', RRClass.CH(), TEST_DB_FILE,
-                            threading.Event(), TEST_MASTER_IPV4_ADDRINFO)
+                            0, TEST_MASTER_IPV4_ADDRINFO)
         axfrmsg = c._create_query(RRType.AXFR())
         self.assertEqual(axfrmsg.get_question()[0].get_class(),
                          RRClass.CH())
@@ -265,7 +259,7 @@ class TestXfrinConnection(unittest.TestCase):
 
     def test_response_shutdown(self):
         self.conn.response_generator = self._create_normal_response_data
-        self.conn._shutdown_event.set()
+        self.conn._shutdown_flag = 1
         self.conn._send_query(RRType.AXFR())
         self.assertRaises(XfrinException, self._handle_xfrin_response)
 
@@ -363,38 +357,9 @@ class TestXfrinConnection(unittest.TestCase):
         bogus_data = b'xxxx'
         self.conn.reply_data = struct.pack('H', socket.htons(len(bogus_data)))
         self.conn.reply_data += bogus_data
-
-class TestXfrinRecorder(unittest.TestCase):
-    def setUp(self):
-        self.recorder = XfrinRecorder()
-
-    def test_increment(self):
-        self.assertEqual(self.recorder.count(), 0)
-        self.recorder.increment(TEST_ZONE_NAME)
-        self.assertEqual(self.recorder.count(), 1)
-        # duplicate "increment" should probably be rejected.  but it's not
-        # checked at this moment
-        self.recorder.increment(TEST_ZONE_NAME)
-        self.assertEqual(self.recorder.count(), 2)
-
-    def test_decrement(self):
-        self.assertEqual(self.recorder.count(), 0)
-        self.recorder.increment(TEST_ZONE_NAME)
-        self.assertEqual(self.recorder.count(), 1)
-        self.recorder.decrement(TEST_ZONE_NAME)
-        self.assertEqual(self.recorder.count(), 0)
-
-    def test_decrement_from_empty(self):
-        self.assertEqual(self.recorder.count(), 0)
-        self.recorder.decrement(TEST_ZONE_NAME)
-        self.assertEqual(self.recorder.count(), 0)
-
-    def test_inprogress(self):
-        self.assertEqual(self.recorder.count(), 0)
-        self.recorder.increment(TEST_ZONE_NAME)
-        self.assertEqual(self.recorder.xfrin_in_progress(TEST_ZONE_NAME), True)
-        self.recorder.decrement(TEST_ZONE_NAME)
-        self.assertEqual(self.recorder.xfrin_in_progress(TEST_ZONE_NAME), False)
+class MockThread:
+    def is_alive(self):
+        return True
 
 class TestXfrin(unittest.TestCase):
     def setUp(self):
@@ -474,18 +439,18 @@ class TestXfrin(unittest.TestCase):
 
     def test_command_handler_retransfer_quota(self):
         for i in range(self.xfr._max_transfers_in - 1):
-            self.xfr.recorder.increment(str(i) + TEST_ZONE_NAME)
+            self.xfr._zones[str(i) + TEST_ZONE_NAME] = MockThread()
         # there can be one more outstanding transfer.
         self.assertEqual(self.xfr.command_handler("retransfer",
                                                   self.args)['result'][0], 0)
         # make sure the # xfrs would excceed the quota
-        self.xfr.recorder.increment(str(self.xfr._max_transfers_in) + TEST_ZONE_NAME)
+        self.xfr._zones[str(self.xfr._max_transfers_in) + TEST_ZONE_NAME] = MockThread()
         # this one should fail
         self.assertEqual(self.xfr.command_handler("retransfer",
                                                   self.args)['result'][0], 1)
 
     def test_command_handler_retransfer_inprogress(self):
-        self.xfr.recorder.increment(TEST_ZONE_NAME)
+        self.xfr._zones[TEST_ZONE_NAME] = MockThread()
         self.assertEqual(self.xfr.command_handler("retransfer",
                                                   self.args)['result'][0], 1)
 
