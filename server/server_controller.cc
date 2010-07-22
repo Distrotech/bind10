@@ -19,39 +19,40 @@
 #include <list>
 #include <utility>
 
-#include "defaults.h"
-#include "utilities.h"
 #include "communicator.h"
+#include "debug.h"
+#include "packet_counter.h"
 #include "server_controller.h"
 #include "udp_buffer.h"
+#include "utilities.h"
 
 
 // Starts the server task.  Never returns.
 void
 ServerController::run(Communicator& downstream_communicator,
-    Communicator& upstream_communicator) {
+    Communicator& upstream_communicator)
+{
+    PacketCounter counter;
 
-    int num = 0;
-    for (;;) {  // Forever
+    while (true) {  // Forever
 
         // Receive the burst of packets and put them onto the queue
         for (int i = 0; i < burst_; ++i) {
+            Debug::log(counter.incrementReceive(), "Calling receive");
             UdpBuffer buffer = downstream_communicator.receive();
             queue_.push_back(buffer);
         }
 
-        // Calculate the checksums.
+        // Calculate the CRC and put in the packet.
         std::list<UdpBuffer>::iterator li;
         for (li = queue_.begin(); li != queue_.end(); ++li) {
-            if ((li->capacity - li->size) >= 4) {
-                Utilities::Crc((li->data).get(), li->size);
-                li->size += 4;
-            }
+            uint32_t crc = Utilities::Crc(li->data(), li->dataSize());
+            li->setCrc(crc);
         }
 
-        // Now return the packets back to the sender after appending a
-        // checksum to each.
+        // Now return the packets back to the sender
         for (li = queue_.begin(); li != queue_.end(); ++li) {
+            Debug::log(counter.incrementSend(), "Calling send");
             downstream_communicator.send(*li);
         }
         queue_.clear();

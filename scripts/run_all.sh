@@ -15,20 +15,16 @@
 
 # $Id$
 
-# \brief Run Series of Tests on Client-Intermediary-Contractor Model
-#
-# Runs a series of tests with varying parameters on the client-intermediary-
-# contractor model.  The output is written to the file given as the only
-# parameter.
-#
-# \param -a If specified, run asynchronously
-# \param logfile Name of the logfile to which to write the results
+# Run all the tests and route the output to suitable files in the curren
+# directory.
 
 progdir=`dirname $0`
 
-if [ $# -lt 1 -o $# -gt 2 ]; then
-    echo "Usage: client-contractor [-a] logfile"
-    exit 1;
-fi
+# Asynchronous
 
-$progdir/common.sh $* intermediary contractor
+$progdir/client-server.sh -a server64_async.csv
+$progdir/client-worker.sh -a worker64_async.csv
+$progdir/client-contractor.sh -a contractor64_async.csv
+$progdir/client-server.sh server64_sync.csv
+$progdir/client-worker.sh worker64_sync.csv
+$progdir/client-contractor.sh contractor64_sync.csv

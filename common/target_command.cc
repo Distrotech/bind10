@@ -23,6 +23,7 @@
 
 #include "target_command.h"
 #include "defaults.h"
+#include "debug.h"
 
 namespace po = boost::program_options;
 
@@ -55,10 +56,12 @@ TargetCommand::usage(std::ostream& output) const {
 
 
 // Parse the command line and return a variable map with all the options set.
-// The method does not validate the string arguments (--address and --logfile)
+// The module automatically sets the debug level - there is no need for the
+// caller to worry about that.
 
 void
 TargetCommand::parseCommandLine(int argc, char** argv)  {
+    uint32_t    debug;      // Debug level
 
     // Set up the command-line options
 
@@ -67,6 +70,9 @@ TargetCommand::parseCommandLine(int argc, char** argv)  {
         ("burst,b",
             po::value<uint32_t>(&burst_)->default_value(CL_DEF_BURST),
             "Burst size: number of packets processed at one time")
+        ("debug,d",
+            po::value<uint32_t>(&debug)->default_value(CL_DEF_DEBUG),
+            "Debug level: a value of 0 disables debug messages")
         ("port,p",
             po::value<uint16_t>(&port_)->default_value(CL_DEF_PORT),
             "Port on which to listen");
@@ -75,6 +81,10 @@ TargetCommand::parseCommandLine(int argc, char** argv)  {
 
     po::store(po::command_line_parser(argc, argv).options(desc_).run(), vm_);
     po::notify(vm_);
+
+    // ... and handle options that we can cope with internally.
+
+    Debug::setLevel(debug);
 
     return;
 }

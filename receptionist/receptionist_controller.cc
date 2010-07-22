@@ -20,25 +20,39 @@
 #include <utility>
 
 #include "communicator.h"
-#include "defaults.h"
+#include "debug.h"
+#include "packet_counter.h"
 #include "receptionist_controller.h"
 #include "udp_buffer.h"
 #include "utilities.h"
 
 
-// Starts the receptionist task.  Never returns.
+// Starts the receptionist task.  This receives packets and holds them
+// until it has "burst" packets, then sends them on.
 
 void
 ReceptionistController::run(Communicator& client_communicator,
         Communicator& processor_communicator) {
 
-    // Just loop, forwarding packets to the worker.
+    PacketCounter counter;
 
-    for (;;) {  // Forever
+    std::list<UdpBuffer> queue;
+    while (true) {  // Forever
 
-        UdpBuffer data = client_communicator.receive();
-        Utilities::AppendEndpoint(data);
-        processor_communicator.send(data);
+        // Receive the packets.
+        for (int i = 0; i < burst_; ++i) {
+            Debug::log(counter.incrementReceive(), "Calling receive");
+            UdpBuffer data = client_communicator.receive();
+            queue.push_back(data);
+        }
+
+        // Send the packets onwards.
+        for (std::list<UdpBuffer>::iterator li = queue.begin();
+            li != queue.end(); ++li) {
+            Debug::log(counter.incrementSend(), "Calling send");
+            processor_communicator.send(*li);
+        }
+        queue.clear();
     }
 
     return;

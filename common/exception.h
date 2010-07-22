@@ -32,7 +32,7 @@ class Exception {
 public:
 
     /// \brief Constructs an exception with no reason.
-    Exception() : reason_("") {}
+    Exception(const char* why = "") : reason_(why) {}
 
     /// \brief Constructs an exception giving a reason.
     /// \param why Reason for the exception.
@@ -70,8 +70,20 @@ private:
 
 class Timeout : public Exception {
 public:
-    Timeout() : Exception("Timeout has expired") {}
-    Timeout(const char* why) : Exception(why) {}
+    Timeout(const char* why = "Timeout has expired") : Exception(why)
+    {}
+};
+
+/// \brief Exception thrown if a data packet is too large
+///
+/// Thrown when a data packet is constructed if the size requested is above
+/// the maximum.
+
+class PacketTooLarge : public Exception {
+public:
+    PacketTooLarge(const char* why = "Requested packet size is too large") :
+        Exception(why)
+    {}
 };
 
 #endif // __EXCEPTION_H

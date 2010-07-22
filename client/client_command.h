@@ -25,7 +25,6 @@
 /// boost::program_options library.
 
 #include <stdint.h>
-
 #include <string>
 #include <iostream>
 
@@ -69,21 +68,30 @@ public:
     bool getHelp() const {
         return vm_.count("help");
     }
-        
 
     /// \return The name of the log file.
     std::string getLogfile() const {
         return logfile_;
     }
 
+    /// \return Number of packets an asynchronous test can have outstanding
+    uint32_t getMargin() const {
+        return margin_;
+    }
+
     /// \return The size of the packets to send.
-    uint16_t getPktsize() const {
-        return pktsize_;
+    uint16_t getSize() const {
+        return size_;
     }
 
     /// \return The port on the server to which to connect.
     uint16_t getPort() const {
         return port_;
+    }
+
+    /// Return whether the test is synchronour or asynchronous
+    bool isAsynchronous() const {
+        return vm_.count("asynchronous");
     }
 
 private:
@@ -93,17 +101,18 @@ private:
     ///
     /// \param argc Size of the command-line argument array.
     /// \param argv Command-line argument array.
-    /// \param vm BOOST program options variable map.  On exit this will hold
-    /// information from the parsed command line.
     void parseCommandLine(int argc, char** argv);
 
 private:
     std::string     address_;   //< IP address of the server
-    uint32_t        burst_;     //< Burst size (for record only)
-    uint32_t        count_;     //< Total number of packets to send
+    bool            asynchronous_; //< true if asynchronous mode
+    long            burst_;     //< Burst size.
+    long            count_;     //< Total number of packets to send
     std::string     logfile_;   //< Name of the log file
-    uint16_t        pktsize_;   //< Maximum size of each packet
+    long            margin_;    //< Max allowed lost packets (async only)
+    uint16_t        size_;      //< Maximum size of each packet
     uint16_t        port_;      //< Port number on server to which to connect
+
     boost::program_options::options_description desc_; //< Options description structure
     boost::program_options::variables_map vm_;         //< Maps variables to values
 };

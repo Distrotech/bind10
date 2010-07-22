@@ -7,4 +7,3 @@ AM_LDFLAGS  = -lboost_program_options -lboost_system -lboost_thread
 server_LDADD = $(top_srcdir)/common/libcommon.a
 
 server_SOURCES  = server.cc
-server_SOURCES += server_controller.cc

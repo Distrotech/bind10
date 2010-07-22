@@ -30,7 +30,9 @@
 static const std::string CL_DEF_ADDRESS = "127.0.0.1";
 static const uint32_t CL_DEF_BURST = 1;
 static const uint32_t CL_DEF_COUNT = 256;
+static const uint32_t CL_DEF_DEBUG = 0;
 static const std::string CL_DEF_LOGFILE = "";
+static const uint32_t CL_DEF_LOST = 4;
 static const uint32_t CL_DEF_OUTSTANDING = 8;
 static const uint32_t CL_DEF_PERCENT = 100;
 static const uint16_t CL_DEF_PKTSIZE = 8192;
@@ -43,7 +45,7 @@ static const int SCKT_MAX_RCV_SIZE = 1024 * 256;
 
 /// \brief Miscellaneous
 
-static const size_t UDP_BUFFER_SIZE = 65536;
+static const size_t UDP_BUFFER_SIZE = 65536 - 64;   // Allows for UDP overhead
 
 /// \brief Message Queue Names
 

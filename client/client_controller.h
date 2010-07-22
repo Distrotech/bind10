@@ -21,17 +21,14 @@
 
 #include "client_communicator.h"
 #include "logger.h"
+#include "udp_buffer.h"
 
 
 /// \brief Runs the Tests
 ///
-/// The ClientController class in the client is the module that actually carries out
-/// the tests.  It creates a buffer of the specified size and fills it with
-/// random data.  It then enters a loop, sending and receiving data.  On
-/// every packet received, the following checks are done:
-/// - Data is 4 bytes longer than sent
-/// - Data received is same as data sent (except those four bytes)
-/// - Last 4-byte word is the correct checksum
+/// The ClientController is the base for the synchronous and asynchronous
+/// controller classes that run the tests.  It merely handles the storing of
+/// parameters and the setup of data.
 
 class ClientController : private boost::noncopyable {
 public:
@@ -41,55 +38,45 @@ public:
     /// Stores the parameters of the test.
     /// \param count Number of packets to send in the test.
     /// \patam burst Burst size of the communication
-    /// \param pktsize Size of each packet.
-    ClientController(uint32_t count, uint32_t burst, uint16_t pktsize) :
-        count_(count), burst_(burst), pktsize_(pktsize)
+    /// \param size Size of each packet.
+    /// \param margin Margin to allow for asynchronous loss
+    ClientController(long count, long burst, uint16_t size, long margin) :
+        count_(count), burst_(burst), size_(size), margin_(margin),
+        snd_buffer_(), rcv_buffer_()
     {}
+    virtual ~ClientController() {}
 
-    /// \brief Runs the test
+    /// \brief Runs the Test
     ///
-    /// Runs the test by constructing the data arrays, then looping, sending
-    /// and receiving data.  Data is sent in bursts (the size of each burst
-    /// being specified in the constructor). After each burst, the client waits
-    /// for the packets to be returned before sending the next set of packets.
-    /// At the end of the test, information is appended to the logfile.
+    /// Handles the initialization of the data and the logging.  The clock is
+    /// started, runTest() called and, when it returns, the clock is stopped.
+    /// \param communicator Communicator to be used for the test.
+    /// \param logger Logger used to start and stop the clock
+    virtual void run(ClientCommunicator& communicator, Logger& logger);
+
+    /// \brief Runs the Class-Specific test
+    ///
+    /// Pure virtual method that must be overridden by each subclass controller.
     /// \param communicator Communicator to be used for the test.
     /// \param logger Logger object to be used for the test.
-    void run(ClientCommunicator& communicator, Logger& logger);
+    virtual void runTest(ClientCommunicator& communicator, Logger& logger) = 0;
 
-    /// \brief Sending task
-    ///
-    /// This sends the given number of packets to the server.
-    /// \param communicator Interface to the I/O system
-    /// \param npacket Number of packets to send
-    void sendTask(ClientCommunicator& communicator, int npacket);
-
-    /// \brief Receiving task
-    ///
-    /// Receives the specified number of packets from the server and compares
-    /// the contents with the packets sent.
-    /// \param communicator Interface to the I/O system
-    /// \param Number of packets expected
-    void receiveTask(ClientCommunicator& communicator, int npacket);
-
-
-private:
     /// \brief Sets up for the test
     ///
     /// Allocates the buffers and initialises the data.
-    void setUp();
+    virtual void setUp();
 
-    /// \brief Runs the test
-    ///
-    /// Actually performs the testing and logging of the result.
-    void runTest(ClientCommunicator& communicator);
+protected:
+    uint16_t    size_;              //< Size of each packet (max 64K)
 
-private:
-    uint16_t    pktsize_;           //< Size of each packet
-    uint32_t    burst_;             //< Burst size of the test
-    uint32_t    count_;             //< Total number of packets to send
-    boost::shared_array<uint8_t> snd_buffer_;   //< Data being sent
-    boost::shared_array<uint8_t> rcv_buffer_;   //< Data being received
+    // The following three elements are "long" (rather than unsigned long)
+    // as they may be used in calculations involving a signed number.
+
+    long        burst_;             //< Burst size of the test
+    long        count_;             //< Total number of packets to send
+    long        margin_;            //< Margin packets (asynch mode only)
+    UdpBuffer   snd_buffer_;        //< Data being sent
+    UdpBuffer   rcv_buffer_;        //< Data being received
 };
 
 #endif // __CLIENT_CONTROLLER_H

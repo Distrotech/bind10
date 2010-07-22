@@ -52,30 +52,27 @@ Logger::log() {
 void
 Logger::logInfo(std::ostream& output)
 {
-    output <<
-        boost::posix_time::to_iso_extended_string(tstart_) << "," <<
-        boost::posix_time::to_iso_extended_string(tend_) << "," <<
-        count_ << "," << pktsize_ << "," << burst_;
+    output << boost::posix_time::to_iso_extended_string(tstart_)
+        << "," << boost::posix_time::to_iso_extended_string(tend_)
+        << "," << count_ << "," << size_
+        << "," << burst_ << "," << margin_ << "," << lost_;
 
     // Calculate the difference in time and print interval and time per
-    // packet.
+    // packet.  (Note that as used, this is the time to receive count_ packets;
+    // if "lost" is greater than zero, more that count_ packets will have been
+    // sent to get to this figure.)
     boost::posix_time::time_duration interval = tend_ - tstart_;
     double dinterval = interval.total_seconds() +
         (interval.total_microseconds() / 1.0e6);
 
-    output << "," << dinterval << "," << (dinterval / count_);
-
-    // See if there is a comment and if so, log that
-    if (comment_.length() != 0) {
-
-        // Replace embedded quotes with double quotes
-        std::string modified_comment =
-            boost::algorithm::replace_all_copy(comment_, "\"", "\"\"");
-
-        // ... and output surrounded by quotes
-        output << ",\"" << modified_comment << "\"";
-    }
-    output << "\n";
+    output << "," << dinterval << "," << (dinterval / count_) << "\n";
 
     return;
+}
+
+// Stream output for the logger
+
+std::ostream& operator<<(std::ostream& output, Logger& logger) {
+    logger.logInfo(output);
+    return output;
 }

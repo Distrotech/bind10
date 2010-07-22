@@ -25,6 +25,7 @@ AC_TYPE_UINT32_T
 
 AC_CONFIG_FILES([Makefile
                  common/Makefile
+                 common/test/Makefile
                  client/Makefile
                  contractor/Makefile
                  intermediary/Makefile

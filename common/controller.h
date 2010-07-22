@@ -21,8 +21,7 @@
 
 /// \brief Basic Controller Class
 ///
-/// This class is the base for all the controller classes, and controls the
-/// action of the processes that send and receive packets synchronously.
+/// This class is the base for all the controller classes.
 
 class Controller {
 public:

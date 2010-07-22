@@ -36,7 +36,7 @@
 #include <iomanip>
 
 #include "target_command.h"
-#include "server_controller.h"
+#include "burst_server_controller.h"
 #include "udp_communicator.h"
 #include "exception.h"
 
@@ -57,7 +57,7 @@ int main(int argc, char**argv)
         communicator.open();
 
         // Create the task controller.
-        ServerController controller(command.getBurst());
+        BurstServerController controller(command.getBurst());
 
         // ... and enter the run loop.
 

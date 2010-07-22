@@ -16,47 +16,49 @@
 
 #include <algorithm>
 #include <iostream>
+#include <iomanip>
 #include <list>
 #include <utility>
 
 #include "communicator.h"
-#include "contractor_controller.h"
 #include "debug.h"
-#include "defaults.h"
 #include "packet_counter.h"
+#include "burst_server_controller.h"
 #include "udp_buffer.h"
 #include "utilities.h"
 
 
-// Starts the contractor.  Never returns.
+// Starts the server task.  Never returns.
 void
-ContractorController::run(Communicator& downstream_communicator,
-    Communicator& upstream_communicator)
+BurstServerController::run(Communicator& receive_communicator,
+    Communicator& send_communicator)
 {
+    // Initialize the packet count (outputs info on SIGTERM).
     PacketCounter counter;
 
+    std::list<UdpBuffer> queue;        //< Send/receive queue
     while (true) {  // Forever
 
         // Receive the burst of packets and put them onto the queue
         for (int i = 0; i < burst_; ++i) {
             Debug::log(counter.incrementReceive(), "Calling receive");
-            UdpBuffer buffer = downstream_communicator.receive();
-            queue_.push_back(buffer);
+            UdpBuffer buffer = receive_communicator.receive();
+            queue.push_back(buffer);
         }
 
-        // Calculate the CRCs
+        // Calculate the CRC and put in the packet.
         std::list<UdpBuffer>::iterator li;
-        for (li = queue_.begin(); li != queue_.end(); ++li) {
+        for (li = queue.begin(); li != queue.end(); ++li) {
             uint32_t crc = Utilities::Crc(li->data(), li->dataSize());
             li->setCrc(crc);
         }
 
-        // Now return the packets back to the sender.
-        for (li = queue_.begin(); li != queue_.end(); ++li) {
+        // Now return the packets back to the sender
+        for (li = queue.begin(); li != queue.end(); ++li) {
             Debug::log(counter.incrementSend(), "Calling send");
-            downstream_communicator.send(*li);
+            send_communicator.send(*li);
         }
-        queue_.clear();
+        queue.clear();
     }
 
     return;

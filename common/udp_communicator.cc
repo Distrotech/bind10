@@ -15,6 +15,7 @@
 // $Id$
 
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 
 #include <boost/system/error_code.hpp>
@@ -25,6 +26,8 @@
 
 namespace ip = boost::asio::ip;
 
+#include "debug.h"
+#include "debug_flags.h"
 #include "defaults.h"
 #include "exception.h"
 #include "udp_buffer.h"
@@ -66,11 +69,18 @@ UdpCommunicator::open() {
 void
 UdpCommunicator::send(UdpBuffer& buffer) {
     try {
+        if (Debug::flagSet(DebugFlags::PRINT_IP)) {
+            std::cout << "Sending to IP address "
+                << std::hex << buffer.getAddress()
+                << ", port " << std::hex << buffer.getPort()
+                << std::endl;
+        }
+
         // Send the data.
         size_t sent = socket_ptr_->send_to(
-            boost::asio::buffer(buffer.data.get(), buffer.size),
-            buffer.endpoint);
-        if (sent != buffer.size) {
+            boost::asio::buffer(buffer.data(), buffer.size()),
+            buffer.getAddressInfo());
+        if (sent != buffer.size()) {
             throw Exception("Not all data passed to send() was sent");
         }
     } catch (boost::system::system_error& e) {
@@ -89,18 +99,29 @@ UdpCommunicator::receive() {
         throw Exception("Attempt to read from unbound socket");
     }
 
-    size_t received = 0;                    // Bytes received
-    boost::shared_array<uint8_t> data =     // Buffer to receive data
-        boost::shared_array<uint8_t>(new uint8_t[UDP_BUFFER_SIZE]);
-    ip::udp::endpoint sender_endpoint;      // Where the packet came from
+    UdpBuffer buffer;                       // Buffer to receive data
 
     try {
-        received = socket_ptr_->receive_from(
-            boost::asio::buffer(data.get(), UDP_BUFFER_SIZE), sender_endpoint);
+        ip::udp::endpoint sender_endpoint;  // Where the packet came from
+
+        // Receive the data and encode where the data came from into the
+        // data packet.
+        size_t received = socket_ptr_->receive_from(
+            boost::asio::buffer(buffer.data(), buffer.capacity()),
+            sender_endpoint);
+        buffer.setSize(received);
+        buffer.setAddressInfo(sender_endpoint);
+
+        if (Debug::flagSet(DebugFlags::PRINT_IP)) {
+            std::cout << "Received from IP address "
+                << std::hex << buffer.getAddress()
+                << ", port " << std::hex << buffer.getPort()
+                << std::endl;
+        }
     } catch (boost::system::system_error& e) {
         throw Exception("Error on socket receive", e.what());
     }
-    return (UdpBuffer(sender_endpoint, received, UDP_BUFFER_SIZE, data));
+    return (buffer);
 }
 
 // Closes down the socket

@@ -14,14 +14,12 @@
 
 // $Id$
 
-#ifndef __COMMUNICATOR_H
-#define __COMMUNICATOR_H
+#ifndef __CLIENT_COMMUNICATOR_H
+#define __CLIENT_COMMUNICATOR_H
 
 #include <string>
 
 #include <boost/asio.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/thread.hpp>
 #include <boost/utility.hpp>
 
 /// \brief Communcates with the server
@@ -90,4 +88,4 @@ private:
     boost::asio::ip::udp::endpoint  endpoint_;  // Target endpoint for comms
 };
 
-#endif // __COMMUNICATOR_H
+#endif // __CLIENT_COMMUNICATOR_H

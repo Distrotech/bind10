@@ -19,29 +19,15 @@
 #
 # Runs a series of tests with varying parameters on the client-receptionist-
 # worker model.  The output is written to the file given as the only parameter.
+#
+# \param -a If specified, run asynchronously
+# \param logfile Name of the logfile to which to write the results
 
 progdir=`dirname $0`
 
-if [ $# != 1 ]; then
-    echo "Usage: client-worker logfile"
+if [ $# -lt 1 -o $# -gt 2 ]; then
+    echo "Usage: client-worker [-a] logfile"
     exit 1;
 fi
 
-for burst in 1 2 4 8 16 32 64 96 128 160 192 224 256
-do
-    echo "Setting burst to $burst"
-    $progdir/worker --burst $burst &
-    $progdir/receptionist --burst $burst &
-    sleep 3     # Allow worker to start
-
-    for rpt in {1..64}
-    do
-        a="$progdir/client --count 4096 --burst $burst --pktsize 256 --logfile $1"
-        echo $a
-        $a
-    done
-
-    kill %?receptionist
-    kill %?worker
-    sleep 3
-done
+$progdir/common.sh $* receptionist worker

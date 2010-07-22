@@ -18,6 +18,7 @@
 #define __UTILITIES_H
 
 #include <stdint.h>
+#include <string.h>
 
 #include "udp_buffer.h"
 
@@ -28,38 +29,13 @@
 class Utilities {
 public:
 
-    /// \brief Calculates CRC and appends to end of buffer
+    /// \brief Calculates CRC
     ///
     /// Calculates the CRC32 checksum of an array of data and appends the result
     /// (in network byte order) to the end of the data.
-    /// \param buffer Data buffer.  It is assumed to be sized to (size+4)
-    /// \param size Amount of data in the buffer.  The buffer is assumed to be
-    /// four bytes longer to contain the CRC checksum.
-    static void Crc(uint8_t* buffer, size_t size);
-
-    /// \brief Append Endpoint
-    ///
-    /// Many of the programs require that both the data and the location to
-    /// which the data should be sent to be transferred as a string of bytes.
-    ///
-    /// This method takes a UdpBuffer elements, extracts the UDP address and
-    /// port number, and appends it (in network byte order) to the data.
-    /// The address is assumed to be IPV4, so six bytes (address and port) are
-    /// appended to the data and the data count adjusted accordingly.
-    ///
-    /// \exception Exception Thrown if there is not enough space to append the
-    /// endpoint.
-    static void AppendEndpoint(UdpBuffer& buffer);
-
-    /// \brief Extract Endpoint
-    ///
-    /// Does the reverse of AppendEndpoint.  The last six bytes of the buffer
-    /// are assumed to contain the IP address and port number of the endpoint
-    /// (in network byte order).  The data is extracted and put into the
-    /// endpoint structure in the buffer.
-    ///
-    /// \exception Exception Thrown if there is no enough data in the buffer.
-    static void ExtractEndpoint(UdpBuffer& buffer);
+    /// \param buffer Data buffer. 
+    /// \param size Amount of data in the buffer. 
+    static uint32_t Crc(uint8_t* buffer, size_t size);
 
     /// \brief Prints endpoint information
     ///
@@ -69,6 +45,24 @@ public:
     /// \param endpoint Endpoint for which information is required.
     static void PrintEndpoint(std::ostream& output,
         boost::asio::ip::udp::endpoint endpoint);
+
+    /// \brief Converts from byte array
+    ///
+    /// Copies a sequence of bytes into a larger data type.
+    /// \param from Byte array to copy
+    /// \param to Larger data type into which to copy array
+    template <typename T> static void CopyBytes(const uint8_t* from, T& to) {
+        memmove(static_cast<void*>(&to), static_cast<const void*>(from), sizeof(T));
+    }
+
+    /// \brief Converts to byte array
+    ///
+    /// Copies the contents of a large data type into a sequence of bytes
+    /// \param from Data to copy,
+    /// \param to Byte array into which to copy the data
+    template <typename T> static void CopyBytes(const T& from, uint8_t* to) {
+        memmove(static_cast<void*>(to), static_cast<const void*>(&from), sizeof(T));
+    }
 };
 
 #endif // __UTILITIES_H

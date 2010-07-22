@@ -52,9 +52,10 @@
 
 #include "client_command.h"
 #include "client_communicator.h"
+#include "client_controller_asynchronous.h"
+#include "client_controller_synchronous.h"
 #include "exception.h"
 #include "logger.h"
-#include "client_controller.h"
 
 
 int main(int argc, char**argv)
@@ -74,13 +75,19 @@ int main(int argc, char**argv)
 
         // Initialize the logging module
         Logger logger(command.getLogfile(),
-            command.getCount(), command.getPktsize(),
-            command.getBurst());
+            command.getCount(), command.getSize(),
+            command.getBurst(), command.getMargin());
 
         // Run the tests
-        ClientController controller(command.getCount(), command.getBurst(),
-            command.getPktsize());
-        controller.run(communicator, logger);
+        if (command.isAsynchronous()) {
+            ClientControllerAsynchronous controller(command.getCount(),
+                command.getBurst(), command.getSize(), command.getMargin());
+            controller.run(communicator, logger);
+        } else {
+            ClientControllerSynchronous controller(command.getCount(),
+                command.getBurst(), command.getSize());
+            controller.run(communicator, logger);
+        }
 
         // Print the results 
         logger.log();

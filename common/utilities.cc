@@ -14,12 +14,12 @@
 
 // $Id$
 
+#include <algorithm>
 #include <iostream>
 
 #include <arpa/inet.h>
 #include <boost/asio.hpp>
 #include <boost/crc.hpp>
-#include <boost/foreach.hpp>
 
 #include "exception.h"
 #include "utilities.h"
@@ -28,113 +28,18 @@
 namespace ip = boost::asio::ip;
 
 // Calculates CRC and appends to end of the buffer
-void
+uint32_t
 Utilities::Crc(uint8_t* buffer, size_t size) {
 
-    union {
-        uint8_t  bytes[4];  // Byte representation of the CRC
-        uint32_t integer;   // 32-bit word representation of the CRC
-    } result;
+    uint32_t crc;           // CRC check
 
     // Calculate the CRC
     boost::crc_32_type calculator;
     calculator.reset();
     calculator.process_bytes(buffer, size);
-    result.integer = calculator.checksum();
+    crc = calculator.checksum();
 
-    // Ensure result is in network byte order and copy to the buffer.
-    result.integer = htonl(result.integer);
-
-    for (int i = 0; i < 4; ++i) {
-        buffer[size + i] = result.bytes[i];
-    }
-
-    return;
-}
-
-// Extracts UDP endpoint data and appends to the buffer.
-void
-Utilities::AppendEndpoint(UdpBuffer& buffer) {
-
-    union {
-        uint8_t     bytes[4];
-        uint32_t    ulong;
-    } address;
-    union {
-        uint8_t     bytes[2];
-        uint16_t    ushort;
-    } port;
-
-    // Check we have enough space for the information.
-    if ((buffer.capacity - buffer.size) < (4 + 2)) {
-        throw Exception("Not enough space in UdpBuffer for endpoint information");
-    }
-
-    // Get the address asssociated with the endpoint and convert to network
-    // byte order.
-    ip::address ep_address = buffer.endpoint.address();
-    if (! ep_address.is_v4()) {
-        throw Exception("Endpoint address is not IP V4 address");
-    }
-    address.ulong = htonl(ep_address.to_v4().to_ulong());
-
-    // Do the same for the port.
-    port.ushort = htons(buffer.endpoint.port());
-
-    // Copy to the end of the buffer.
-    for (int i = 0; i < 4; ++i) {
-        buffer.data[buffer.size + i] = address.bytes[i];
-    }
-
-    for (int i = 0; i < 2; ++i) {
-        buffer.data[buffer.size + 4 + i] = port.bytes[i];
-    }
-
-    // Update the buffer size
-    buffer.size += 6;
-
-    return;
-}
-
-// Extracts UDP endpoint data and puts in the endpoint structure
-void
-Utilities::ExtractEndpoint(UdpBuffer& buffer) {
-
-    union {
-        uint8_t     bytes[4];
-        uint32_t    ulong;
-    } address;
-    union {
-        uint8_t     bytes[2];
-        uint16_t    ushort;
-    } port;
-
-    // Check there is enough information
-    if (buffer.size < (4 + 2)) {
-        throw Exception("Not enough data in UdpBuffer for endpoint information");
-    }
-
-    // Extract the address information and convert to host byte order.
-    for (int i = 0; i < 4; ++i) {
-        address.bytes[i] = buffer.data[buffer.size - 6 + i];
-    }
-    address.ulong = ntohl(address.ulong);
-
-    // ... and the port
-    for (int i = 0; i < 2; ++i) {
-        port.bytes[i] = buffer.data[buffer.size - 2 + i];
-    }
-    port.ushort = ntohs(port.ushort);
-
-    // Update the buffer size to reflect less information.
-    buffer.size -= 6;
-
-    // Construct the endpoint with the information given and put in the
-    // UdpBuffer object.
-    buffer.endpoint = ip::udp::endpoint(ip::address_v4(address.ulong),
-        port.ushort);
-
-    return;
+    return crc;
 }
 
 // Prints endpoint data to the specified stream
@@ -149,3 +54,45 @@ Utilities::PrintEndpoint(std::ostream& output,
         << "\n";
 }
 
+/*
+// Conversion between a larger data type and a byte array
+
+template<typename T> void
+Utilities::Convert(T from, uint8_t* to) {
+    union {
+        T           word;
+        uint8_t     byte[sizeof(T)];
+    } cvt;
+
+    cvt.word = from;
+    std::copy(cvt.byte, cvt.byte + sizeof(T), to);
+
+    return;
+}
+
+// ... and instantiate for uint16_t and uint32_t.
+
+template void Utilities::Convert(const uint32_t from, uint8_t* to);
+template void Utilities::Convert(const uint16_t from, uint8_t* to);
+
+
+// Conversion between a byte array and a larger type.
+
+template<typename T> void
+Utilities::Convert(const uint8_t* from, T& to) {
+    union {
+        T           word;
+        uint8_t     byte[sizeof(T)];
+    } cvt;
+
+    std::copy(from, from + sizeof(T), cvt.byte);
+    to = cvt.word;
+
+    return;
+}
+
+// ... and instantiate for uint16_t and uint32_t.
+
+template void Utilities::Convert(const uint8_t* from, uint32_t& to);
+template void Utilities::Convert(const uint8_t* from, uint16_t& to);
+*/

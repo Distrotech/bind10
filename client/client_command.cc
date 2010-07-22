@@ -22,6 +22,7 @@
 
 #include "client_command.h"
 #include "defaults.h"
+#include "debug.h"
 
 namespace po = boost::program_options;
 
@@ -34,8 +35,8 @@ namespace po = boost::program_options;
 // parsed, hence the initialization to zero values here.
 
 ClientCommand::ClientCommand(int argc, char** argv) :
-    address_(""), count_(0), logfile_(""), pktsize_(0), port_(0),
-    desc_("Usage: client [options...]"), vm_(), burst_(0)
+    address_(""), count_(0), logfile_(""), size_(0), port_(0),
+    desc_("Usage: client [options...]"), vm_(), burst_(0), margin_(0)
 {
     // Parse the command line
 
@@ -62,31 +63,47 @@ ClientCommand::parseCommandLine(int argc, char** argv)  {
 
     // Set up the command-line options
 
+    uint32_t dbglevel;  // Debug level
+
     desc_.add_options()
         ("help", "produce help message")
         ("address,a",
             po::value<std::string>(&address_)->default_value(CL_DEF_ADDRESS),
             "IP address (V4 or V6) of the server system")
+        ("asynchronous,y",
+            "Specify for asynchronous tests; the default is synchronous")
         ("burst,b",
-            po::value<uint32_t>(&burst_)->default_value(CL_DEF_BURST),
-            "Burst size used on the server (this is logged, not used)")
+            po::value<long>(&burst_)->default_value(CL_DEF_BURST),
+            "Burst size: for asynchronous runs, this is logged but not used")
         ("count,c",
-            po::value<uint32_t>(&count_)->default_value(CL_DEF_COUNT),
+            po::value<long>(&count_)->default_value(CL_DEF_COUNT),
             "Count of packets to send")
+        ("debug,d",
+            po::value<uint32_t>(&dbglevel)->default_value(CL_DEF_DEBUG),
+            "Debug level")
         ("logfile,l",
             po::value<std::string>(&logfile_)->default_value(CL_DEF_LOGFILE),
             "File to which statistics are logged")
-        ("pktsize,s",
-            po::value<uint16_t>(&pktsize_)->default_value(CL_DEF_PKTSIZE),
+        ("margin,m",
+            po::value<long>(&margin_)->default_value(CL_DEF_LOST),
+            "Maximum allowed lost packets in asynchronous tests")
+        ("size,k",
+            po::value<uint16_t>(&size_)->default_value(CL_DEF_PKTSIZE),
             "Size of each packet (max = 65,536)")
         ("port,p",
             po::value<uint16_t>(&port_)->default_value(CL_DEF_PORT),
-            "Port on server to which packets are sent");
+            "Port on server to which packets are sent")
+        ("synchronous,s",
+            "Specify for synchronous tests; the default is asynchronous");
 
     // Parse
 
     po::store(po::command_line_parser(argc, argv).options(desc_).run(), vm_);
     po::notify(vm_);
+
+    // Set the debug level.
+
+    Debug::setLevel(dbglevel);
 
     return;
 }

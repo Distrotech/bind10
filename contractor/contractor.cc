@@ -34,7 +34,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include "contractor_controller.h"
+#include "burst_server_controller.h"
 #include "defaults.h"
 #include "exception.h"
 #include "msgq_communicator.h"
@@ -58,7 +58,7 @@ int main(int argc, char**argv)
         communicator.open();
 
         // Create the task controller.
-        ContractorController controller(command.getBurst());
+        BurstServerController controller(command.getBurst());
 
         // ... and enter the run loop.
 

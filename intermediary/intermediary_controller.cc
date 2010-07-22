@@ -20,7 +20,9 @@
 #include <utility>
 
 #include "communicator.h"
+#include "debug.h"
 #include "intermediary_controller.h"
+#include "packet_counter.h"
 #include "udp_buffer.h"
 #include "utilities.h"
 
@@ -28,25 +30,44 @@
 // Starts the intermediary task.  Never returns.
 void
 IntermediaryController::run(Communicator& client_communicator,
-        Communicator& contractor_communicator) {
+   Communicator& contractor_communicator)
+{
+    PacketCounter counter;
 
-    for (;;) {  // Forever
+    std::list<UdpBuffer> queue;         // Packet queue...
+    std::list<UdpBuffer>::iterator li;  // and its iterator
 
-        // Receive the burst of packets, append the UDP information and
-        // put them onto the message queue to the processor.
+    while (true) {  // Forever
+
+        // Receive the burst of packets from the client and put them
+        // into a local queue.
         for (int i = 0; i < burst_; ++i) {
-            UdpBuffer data = client_communicator.receive();
-            Utilities::AppendEndpoint(data);
-            contractor_communicator.send(data);
+            Debug::log(counter.incrementReceive(), "Receiving data from client");
+            UdpBuffer buffer = client_communicator.receive();
+            queue.push_back(buffer);
         }
 
-        // Now read the packets off the incoming queue, extract the
-        // endpoint information, and pass them back to the client.
-        for (int i = 0; i < burst_; ++i) {
-            UdpBuffer data = contractor_communicator.receive();
-            Utilities::ExtractEndpoint(data);
-            client_communicator.send(data);
+        // Forward them to the contractor via the message queue.
+        for (li = queue.begin(); li != queue.end(); ++li) {
+            Debug::log(counter.incrementSend(), "Sending data to contractor");
+            contractor_communicator.send(*li);
         }
+        queue.clear();
+
+        // Now read the packets from the contractor and store in the queue.
+        for (int i = 0; i < burst_; ++i) {
+            Debug::log(counter.incrementReceive2(),
+                "Receiving data from contractor");
+            UdpBuffer buffer = contractor_communicator.receive();
+            queue.push_back(buffer);
+        }
+
+        // ... and forward them back to the client.
+        for (li = queue.begin(); li != queue.end(); ++li) {
+            Debug::log(counter.incrementSend2(), "Sending data to client");
+            client_communicator.send(*li);
+        }
+        queue.clear();
     }
 
     return;

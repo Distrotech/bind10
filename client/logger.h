@@ -31,7 +31,7 @@
 ///
 /// The format of this file is:
 ///
-/// Start, End, Size, Count, Burst, Elapsed, Average [, "Comment"]
+/// Start, End, Size, Count, Burst, Margin, Lost, Elapsed, Average
 ///
 /// Where
 /// - Start is the date/time at which the first packet was sent, in the format
@@ -39,19 +39,32 @@
 /// - End is the date/time the last packet was received, in the same format.
 /// - Size is the size of each data packet sent in bytes.
 /// - Count is the total number of packets sent.
+///
+/// Then come three fields that indicate how the test was conducted.
 /// - Burst is the number of packets the server must receive before
 ///   processing them (i.e. the server processes the packets in blocks of
-///   "burst").
+///   "burst").  In the synchronous test, the client sends "burst" packets,
+///   then waits to receive the same number before sending the next set.  The
+///   use of this parameter in asynchronous tests is described in "Margin"
+///   below.
+/// - Margin is ignored in synchronous tests (and is output as zero).  In
+///   asynchronous tests, up to "burst" packets are sent to the server before
+///   the client *must* stop sending and await a packet in return.  This causes
+///   problems if a packet is lost, e.g. if "burst" is set to 4, and the fourth
+///   packet doesn't reach the server, the server will not do anything until
+///   it receives another packet and the client will not send any more packets
+///   until it receives one from the server.  "margin" is the number of packets
+///   to account for this - the client may have up to "burst" + "margin"
+///   packets outstanding before it must stop and await a reply from the server.
+/// - Lost is the number of lost packets reported by the client.  Each packet
+///   is numbered and sent in sequence; the client receive thread detects
+///   missing sequence numbers and counts the number of lost packets.
+///
 ///
 /// The next two fields are derived fields:
 /// - Elapsed is the difference between start and end times (in seconds).
 /// - Average is the average elapsed time per packet, given by the total
 ///   elapsed time divided by the number of packets.
-///
-/// Finally there is an optional field:
-/// - Comment is a comment associated with the entry.  The comment is written
-///   surrounted by double-quate characters, with any embedded double-quote
-///   characters doubled. (e.g. the string abc"def is written as "abc""def".)
 
 class Logger {
 public:
@@ -62,13 +75,13 @@ public:
     /// \param logfile Name of the file to which the log is written.  If null,
     /// the output is written to stdout.
     /// \param count Number of packets sent in the test (default = 0).
-    /// \param pktsize Size of each packet (default = 0).
+    /// \param size Size of each packet (default = 0).
     /// \param burst Burst size of the packet (default = 0)
     /// \param comment Optional comment (default = no comment).
-    Logger(const std::string& logfile = "", int count = 0, int pktsize = 0,
-        int burst = 0, const std::string& comment = "") :
-        logfile_(logfile), count_(count), pktsize_(pktsize),
-        burst_(burst), comment_(comment), tstart_(), tend_()
+    Logger(const std::string& logfile = "", int count = 0, int size = 0,
+        int burst = 0, int margin = 0) :
+        logfile_(logfile), count_(count), size_(size), burst_(burst),
+        margin_(margin), lost_(0), tstart_(), tend_()
     {}
 
     // Access methods.
@@ -100,14 +113,14 @@ public:
 
     /// \brief Sets the packet size
     ///
-    /// \param pktsize Size of packets to be sent.
-    void setPktsize(int pktsize) {
-        pktsize_ = pktsize;
+    /// \param size Size of packets to be sent.
+    void setSize(int size) {
+        size_ = size;
     }
 
     /// \return Current record of packet size
-    int getPktsize() const {
-        return (pktsize_);
+    int getSize() const {
+        return (size_);
     }
 
     /// \brief Sets the burst size
@@ -123,20 +136,30 @@ public:
         return burst_;
     }
 
-    /// \brief Set comment associated with the test
+    /// \brief Sets the lost packet margin
     ///
-    /// \param comment Comment to be associated with the text.  Any embedded
-    /// quotes are doubled, and the comment will be written with surrounding
-    /// quotes.  Set to the empty string ("") to disable commenting.
-    void setComment(const std::string& comment) {
-        comment_ = comment;
+    /// \param margin Number of packets in addition to "burst" that can be
+    /// outstanding in asynchronous tests.
+    void setMargin(int margin) {
+        margin_ = margin;
     }
 
-    /// \return Current comment to be associated with the test
-    std::string getComment() const {
-        return (comment_);
+    /// \return Current record of margin
+    int getMargin() const {
+        return margin_;
     }
 
+    /// \brief Sets the count of lost packets
+    ///
+    /// \param lost Number of packets lost in the test
+    void setLost(int lost) {
+        lost_ = lost;
+    }
+
+    /// \return Current vound of lost packets
+    int getLost() const {
+        return lost_;
+    }
     /// \brief Logs the start time.
     void start() {
         tstart_ = boost::posix_time::microsec_clock::universal_time();
@@ -150,8 +173,6 @@ public:
     /// \brief Writes the log entry
     void log();
 
-private:
-
     /// \brief formats and writes the log entry
     ///
     /// log() opens the log file and calls this method to format and write
@@ -162,11 +183,14 @@ private:
 private:
     std::string logfile_;                   //< Current log file
     int count_;                             //< Count of packets in this test
-    int pktsize_;                           //< Packet size
+    int size_;                              //< Packet size
     int burst_;                             //< Burst size
-    std::string comment_;                   //< Optional comment
+    int margin_;                            //< Margin for lost packets
+    int lost_;                              //< Count of lost packets
     boost::posix_time::ptime    tstart_;    //< Start time of test
     boost::posix_time::ptime    tend_;      //< End time of test
 };
+
+std::ostream& operator<<(std::ostream& output, Logger& logger);
 
 #endif // __LOGGER_H

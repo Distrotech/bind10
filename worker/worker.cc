@@ -43,7 +43,7 @@
 #include "target_command.h"
 #include "msgq_communicator.h"
 #include "udp_communicator.h"
-#include "worker_controller.h"
+#include "burst_server_controller.h"
 #include "exception.h"
 
 #include <string.h>
@@ -69,7 +69,7 @@ int main(int argc, char**argv)
         client_communicator.open();
 
         // Create the task controller.
-        WorkerController controller(command.getBurst());
+        BurstServerController controller(command.getBurst());
 
         // ... and enter the run loop.
 

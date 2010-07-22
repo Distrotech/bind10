@@ -20,7 +20,9 @@
 #include <utility>
 
 #include "communicator.h"
+#include "debug.h"
 #include "defaults.h"
+#include "packet_counter.h"
 #include "udp_buffer.h"
 #include "utilities.h"
 #include "worker_controller.h"
@@ -32,30 +34,27 @@ void
 WorkerController::run(Communicator& receptionist_communicator,
     Communicator& client_communicator)
 {
-    int num = 0;
+    PacketCounter counter;
+
     for (;;) {  // Forever
 
         // Receive the burst of packets and put them onto the queue
         for (int i = 0; i < burst_; ++i) {
+            Debug::log(counter.incrementReceive(), "Calling receive");
             UdpBuffer buffer = receptionist_communicator.receive();
             queue_.push_back(buffer);
         }
 
-        // Calculate the CRCs.  Since the packets include UDP endpoint
-        // information, we extract it before doing the calculation.
+        // Calculate the CRCs.
         std::list<UdpBuffer>::iterator li;
         for (li = queue_.begin(); li != queue_.end(); ++li) {
-
-            // Remove UDP endpoint information and store in buffer
-            Utilities::ExtractEndpoint(*li);
-
-            // Calculate CRC
-            Utilities::Crc((li->data).get(), li->size);
-            li->size += 4;
+            uint32_t crc = Utilities::Crc(li->data(), li->dataSize());
+            li->setCrc(crc);
         }
 
         // Now return the packets back to the client.
         for (li = queue_.begin(); li != queue_.end(); ++li) {
+            Debug::log(counter.incrementSend(), "Calling send");
             client_communicator.send(*li);
         }
         queue_.clear();

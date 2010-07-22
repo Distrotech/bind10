@@ -14,8 +14,8 @@
 
 // $Id$
 
-#ifndef __SERVER_CONTROLLER_H
-#define __SERVER_CONTROLLER_H
+#ifndef __BURST_SERVER_CONTROLLER_H
+#define __BURST_SERVER_CONTROLLER_H
 
 #include <stdint.h>
 #include <list>
@@ -25,45 +25,41 @@
 #include "communicator.h"
 #include "udp_buffer.h"
 
-/// \brief Server Controller
+/// \brief Burst Server Controller
 ///
-/// This is a controller for the server process.  The run() method (which never
-/// returns) loops, reading a set of packets from the input stream, processing
-/// them, and writing them to the output stream.  The size of the packet is set
-/// by the "burst" parameter, passed to the constructor.
-///
-/// The processing of packets in this instance involves appending a checksum
-/// to the data.
+/// This is a controller for the server processes.  The run() method (which
+/// never returns) loops, reading a set of packets from the input stream and
+/// adding them to a queue.  When the requisite number of packets have been
+/// reached (the burst parameter), it calculates the CRCs and adds that to
+/// the packet, then it sends all the packets to the outpur stream.
 
-class ServerController : public Controller {
+class BurstServerController : public Controller {
 public:
 
     /// \brief Constructor
     ///
     /// \param burst Burst value.  The server will read this number of packets
     /// before passing them to the sender.
-    ServerController(uint32_t burst) : Controller(), burst_(burst), queue_()
+    BurstServerController(uint32_t burst) : Controller(), burst_(burst)
         {}
-    virtual ~ServerController() {}
+    virtual ~BurstServerController() {}
 
     /// \brief Runs the controller
     ///
     /// Loops reading burst_ packets, appending a checksum, then sending
     // them back.  It never returns.
-    /// \param downstream_communicator Communicator used to communicate
-    /// with the downstream process (in this case the client).
-    /// \param upstream_communicator Communicator used to communicate with
-    /// the upstream process.  In this case there is no upstream process and
-    /// it is unsed.  The caller should pass in the same communicator as
-    /// the downstream process one.
-    virtual void run(Communicator& downstream_communicator,
-         Communicator& upstream_communicator);
+    /// \param receive_communicator Communicator used to communicate
+    /// with the process sending this server packets.
+    /// \param send_communicator Communicator used to communicate with
+    /// the upstream process (to when packets are sent after processing).
+    /// This may be the same as the receive communicator.
+    virtual void run(Communicator& receive_communicator,
+         Communicator& send_communicator);
 
 private:
     uint32_t        burst_;             //< Burst limit
-    std::list<UdpBuffer> queue_;        //< Send/receive queue
 };
 
 
 
-#endif // __SERVER_CONTROLLER_H
+#endif // __BURST_SERVER_CONTROLLER_H
