@@ -19,6 +19,8 @@
 #include <list>
 #include <utility>
 
+#include <boost/thread.hpp>
+
 #include "communicator.h"
 #include "debug.h"
 #include "intermediary_controller.h"
@@ -26,14 +28,23 @@
 #include "udp_buffer.h"
 #include "utilities.h"
 
+// Forward task wrapper.  It is only specified to simplify the starting of
+// the wrd ask in a separate thread.
+static void forwardTaskWrapper(IntermediaryController& controller,
+    Communicator& client_communicator, Communicator& contractor_communicator)
+{
+    controller.forwardTask(client_communicator, contractor_communicator);
 
-// Starts the intermediary task.  Never returns.
+    return;
+}
+
+// Forwarded task - forward packets from client to contractor in bursts
+
 void
-IntermediaryController::run(Communicator& client_communicator,
+IntermediaryController::forwardTask(Communicator& client_communicator,
    Communicator& contractor_communicator)
 {
-    PacketCounter counter;
-
+    PacketCounter counter;              // Access global counters
     std::list<UdpBuffer> queue;         // Packet queue...
     std::list<UdpBuffer>::iterator li;  // and its iterator
 
@@ -53,8 +64,20 @@ IntermediaryController::run(Communicator& client_communicator,
             contractor_communicator.send(*li);
         }
         queue.clear();
+    }
+}
 
-        // Now read the packets from the contractor and store in the queue.
+void
+IntermediaryController::returnTask(Communicator& client_communicator,
+   Communicator& contractor_communicator)
+{
+    PacketCounter counter;              // Access global counters
+    std::list<UdpBuffer> queue;         // Packet queue...
+    std::list<UdpBuffer>::iterator li;  // and its iterator
+
+    while (true) {
+
+        // Read the packets from the contractor and store in the queue.
         for (int i = 0; i < burst_; ++i) {
             Debug::log(counter.incrementReceive2(),
                 "Receiving data from contractor");
@@ -70,5 +93,24 @@ IntermediaryController::run(Communicator& client_communicator,
         queue.clear();
     }
 
+    return;
+}
+
+
+// Starts the intermediary task.  Never returns.
+void
+IntermediaryController::run(Communicator& client_communicator,
+   Communicator& contractor_communicator)
+{
+ 
+    // Start the forwarding task in a separate thread.
+    boost::thread forward_thread(forwardTaskWrapper,
+        boost::ref(*this), boost::ref(client_communicator),
+        boost::ref(contractor_communicator));
+
+    // ... and start the return task in this thread.
+    returnTask(client_communicator, contractor_communicator);
+
+    // Should never terminate!
     return;
 }

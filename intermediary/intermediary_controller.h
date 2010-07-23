@@ -48,11 +48,28 @@ public:
 
     /// \brief Runs the controller
     ///
-    /// Loops reading burst_ packets, appending a checksum, then sending
-    // them back.  It never returns.
+    /// Just starts the forward and return tasks; never returns.
     /// \param communicator Communicator to use for I/O to the client
     /// \param communicator Communicator to use for I/O to the processor
     virtual void run(Communicator& client_communicator,
+        Communicator& processor_communicator);
+
+    /// \brief Forward packets from client to contractor
+    ///
+    /// Simple loop, reading "burst_" packets at a time from the client before
+    /// forwarding them to the contractor.
+    /// \param communicator Communicator to use for I/O to the client
+    /// \param communicator Communicator to use for I/O to the processor
+    virtual void forwardTask(Communicator& client_communicator,
+        Communicator& processor_communicator);
+
+    /// \brief Return packets from contractor to client
+    ///
+    /// Simple loop, reading "burst_" packets at a time from the contractor
+    /// before returning them to the client.
+    /// \param communicator Communicator to use for I/O to the client
+    /// \param communicator Communicator to use for I/O to the processor
+    virtual void returnTask(Communicator& client_communicator,
         Communicator& processor_communicator);
 
 private:

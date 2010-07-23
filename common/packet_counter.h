@@ -21,7 +21,7 @@
 
 #include <csignal>
 #include <iostream>
-#include <vector>
+#include <iomanip>
 
 /// \brief Counts Packets
 ///
@@ -40,6 +40,7 @@ public:
 
             // Register the exit handler and SIGTERM handler.
             signal(SIGTERM, sigtermHandler);
+            signal(SIGHUP,  sighupHandler);
             handler_registered_ = true;
         }
         send_count_ = receive_count_ = 0;
@@ -79,16 +80,30 @@ public:
     /// This is the SIGTERM handler which prints out the statistics and
     /// then exits the program.
     static void sigtermHandler(int sig) {
+        printCounters();
+        exit(0);
+    }
+
+    /// \brief SIGHUP Handler
+    ///
+    /// Prints the counters on receipt of a SIGHUP.
+    static void sighupHandler(int sign) {
+        printCounters();
+    }
+
+    /// \brief Prints the send and receive counters
+    static void printCounters() {
         std::cout << "send() calls:        " << send_count_ << "\n"
-                  << "receive() calls:     " << receive_count_ << "\n";
+                  << "receive() calls:     " << receive_count_
+                  << std::endl;
 
         // Print out additional counters only if either is greater than
         // zero (simplifies output for programs that don't use them).
         if (send2_count_ or receive2_count_) {
             std::cout << "send() calls (2):    " << send2_count_ << "\n"
-                      << "receive() calls (2): " << receive2_count_ << "\n";
+                      << "receive() calls (2): " << receive2_count_
+                      << std::endl;
         }
-        exit(0);
     }
 
 private:
