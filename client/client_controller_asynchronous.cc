@@ -28,6 +28,7 @@
 #include "client_communicator.h"
 #include "client_controller_asynchronous.h"
 #include "debug.h"
+#include "debug_flags.h"
 #include "defaults.h"
 #include "logger.h"
 #include "packet_counter.h"
@@ -102,13 +103,17 @@ ClientControllerAsynchronous::receiveTask(ClientCommunicator& communicator,
 
         uint32_t missing = 0;
         uint32_t this_packet = rcv_buffer_.getPacketNumber();
-        if (this_packet < last_packet) {
-            std::cout << "ERROR: packets received out of sequence\n";
-        }
-        else {
+        if (this_packet > last_packet) {
             missing = this_packet - last_packet - 1;
+            if ((missing > 0) && Debug::flagSet(DebugFlags::LOST_PACKETS)) {
+                std::ostringstream s;
+                s << missing << " missing packets detected";
+                Debug::log(s.str().c_str(), DebugFlags::LOST_PACKETS);
+            }
             lost_ += missing;
             last_packet = this_packet;
+        } else {
+            std::cout << "ERROR: packets received out of sequence\n";
         }
 
 

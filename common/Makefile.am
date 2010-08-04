@@ -9,7 +9,8 @@ libcommon_a_SOURCES += udp_buffer.cc udp_buffer.h
 libcommon_a_SOURCES += udp_communicator.cc udp_communiator.h
 libcommon_a_SOURCES += utilities.cc utilities.h
 
-AM_LDFLAGS  = -lboost_system
+AM_CPPFLAGS = $(BOOSTLOCINC)
+AM_LDFLAGS  = $(BOOSTLOCLIB) -lboost_system-mt
 
 bin_PROGRAMS = queue_clear
 queue_clear_SOURCES  = queue_clear.cc

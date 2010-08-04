@@ -28,7 +28,8 @@ class DebugFlags {
 public:
     enum {
         LOG_OPERATION = 0x0001,     ///< Log each send/receive operation
-        PRINT_IP = 0x0002           ///< Print IP information
+        PRINT_IP = 0x0002,          ///< Print IP information
+        LOST_PACKETS = 0x0004       ///< Log lost packets
     };
 };
 

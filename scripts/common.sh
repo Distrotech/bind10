@@ -29,12 +29,12 @@
 progdir=`dirname $0`
 
 if [ $# -lt 2 -o $# -gt 4 ]; then
-    echo "Usage: common [-a] logfile [middle-program] server-program"
+    echo "Usage: common [-a] logfile first-program [second-program]"
     exit 1;
 fi
 
 if [ $1 = "-a" ]; then
-    async_flags=" --margin 2 --asynchronous"
+    async_flags=" --margin 4 --asynchronous"
     shift
 else
     async_flags=""
@@ -43,15 +43,14 @@ fi
 # set the remaining parameters
 
 logfile=$1;
+first=$2
 if [ $# = 2 ]; then
-    middle=""
-    server=$2
+    second=""
 else
-    middle=$2
-    server=$3
+    second=$3
 fi
 
-for burst in 1 2 4 8 16 32 64 96 128 160 192 224 256
+for burst in 1 2 4 8 16 32 64 128 256
 do
     echo "Setting burst to $burst"
 
@@ -59,18 +58,15 @@ do
     # queues has been deleted before any run starts.
     $progdir/queue_clear
 
-    # If an intermediary/receptionist program was specified, start
-    # it.
-    if [ "$middle" != "" ]; then
-        $progdir/$middle --burst $burst &
-    fi;
+    # Start the first of the server program(s) (the client or intermediary
+    # if two programs are specified, or the server if just one is being used)
+    # with the specified burst level.
+    $progdir/$first --burst $burst &
 
-    # Start the server.  If running asynchronously, we want the server
-    # to process packets as soon as they arrive.
-    if [ "$async_flags" = "" ]; then
-        $progdir/$server --burst $burst &
-    else
-        $progdir/$server --burst 1 &
+    # If this is a chain of three programs, start the second program.  We want
+    # this program to process packets as soon as they arrive.
+    if [ "$second" != "" ]; then
+        $progdir/$second --burst 1 &
     fi
 
     # Allow server programs to start.
@@ -85,7 +81,7 @@ do
 
     # Kill the server programs and wait to stop before doing the next loop.
     kill -9 %1
-    if [ "$middle" != "" ]; then
+    if [ "$second" != "" ]; then
         kill -9 %2
     fi;
 
