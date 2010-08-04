@@ -373,14 +373,15 @@ def process_xfrin(zone_name, rrclass, db_file,
 
 class Xfrin:
     def __init__(self, verbose = False):
+        self._max_transfers_in = 10
         self._cc_setup()
         self._shutdown_flag = 0
         self._verbose = verbose
 
-        #the item in self._zones: zone name and xfr communication thread. 
+        #the item in self._threads_zones: zone name and xfr communication thread. 
         #The item in self._conn_sockets: a socket and xfr communication thread, the main thread uses 
         #the socket to communicate with this xfr communication thread.
-        self._zones = {}
+        self._threads_zones = {}
         self._conn_sockets = {}
 
     def _cc_setup(self):
@@ -392,7 +393,6 @@ this method we can test most of this class without requiring a command channel.
         self._cc = isc.config.ModuleCCSession(SPECFILE_LOCATION,
                                               self.config_handler,
                                               self.command_handler)
-        
         self._cc.start()
         config_data = self._cc.get_full_config()
         self._max_transfers_in = config_data.get("transfers_in")
@@ -483,7 +483,7 @@ a separate method for the convenience of unit tests.
             self._cc_check_command()
 
     def _filter_hash(self, hash):
-        '''delete zone_name in self._zones or a socket in self._conn_sockets.'''
+        '''delete zone_name in self._threads_zones or a socket in self._conn_sockets.'''
         keys = []
         for key in hash.keys():
             keys.append(key)
@@ -498,16 +498,16 @@ a separate method for the convenience of unit tests.
             return (1, "xfrin failed, can't load dns message python library: 'libdns_python'")
 
         # check max_transfer_in, else return quota error
-        if len(self._zones) >= self._max_transfers_in:
-            self._filter_hash(self._zones)
+        if len(self._threads_zones) >= self._max_transfers_in:
+            self._filter_hash(self._threads_zones)
             self._filter_hash(self._conn_sockets)
-            if len(self._zones) >= self._max_transfers_in:
+            if len(self._threads_zones) >= self._max_transfers_in:
                 return (1, 'xfrin quota error')
 
         # check whether the zone xfrin is in progress.
-        if zone_name in self._zones.keys():
-            if not (self._zones[zone_name]).is_alive():
-                del self._zones[zone_name]
+        if zone_name in self._threads_zones.keys():
+            if not (self._threads_zones[zone_name]).is_alive():
+                del self._threads_zones[zone_name]
             else:
                 return (1, 'zone xfrin is in progress')
         conn_socket = socket.socketpair()
@@ -519,7 +519,7 @@ a separate method for the convenience of unit tests.
                                                 self._verbose))
 
         # recored the zone name which zone xfrin is in process
-        self._zones[zone_name] = xfrin_thread
+        self._threads_zones[zone_name] = xfrin_thread
         self._conn_sockets[conn_socket[0]] = xfrin_thread
         xfrin_thread.start()
         return (0, 'zone xfrin is started')
