@@ -1,11 +1,10 @@
   77.   [func]      shentingting
-    Add config_handler function to make new config data to be applied.
-    Using socket pair communication mechanism to achieve quickly terminate
-	on shutdown command, and still using a global flag. Deal with
-	connection exception(the master closes connection etc.) during
-	transmission.
+	Add config_handler function to make new config data to be applied.
+	Using socket pair communication mechanism to achieve quickly
+	terminate on shutdown command, and still using a global flag. Deal
+	with connection exception(the master closes connection etc.)
+	during transmission.
 	(Trac #216, rTDB)
-
 
   76.	[bug]		jelte
 	Fixed a bug in the handling of 'remote' config modules (i.e.
