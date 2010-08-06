@@ -439,18 +439,18 @@ class TestXfrin(unittest.TestCase):
 
     def test_command_handler_retransfer_quota(self):
         for i in range(self.xfr._max_transfers_in - 1):
-            self.xfr._zones[str(i) + TEST_ZONE_NAME] = MockThread()
+            self.xfr._threads_zones[str(i) + TEST_ZONE_NAME] = MockThread()
         # there can be one more outstanding transfer.
         self.assertEqual(self.xfr.command_handler("retransfer",
                                                   self.args)['result'][0], 0)
         # make sure the # xfrs would excceed the quota
-        self.xfr._zones[str(self.xfr._max_transfers_in) + TEST_ZONE_NAME] = MockThread()
+        self.xfr._threads_zones[str(self.xfr._max_transfers_in) + TEST_ZONE_NAME] = MockThread()
         # this one should fail
         self.assertEqual(self.xfr.command_handler("retransfer",
                                                   self.args)['result'][0], 1)
 
     def test_command_handler_retransfer_inprogress(self):
-        self.xfr._zones[TEST_ZONE_NAME] = MockThread()
+        self.xfr._threads_zones[TEST_ZONE_NAME] = MockThread()
         self.assertEqual(self.xfr.command_handler("retransfer",
                                                   self.args)['result'][0], 1)
 
