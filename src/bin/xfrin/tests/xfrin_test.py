@@ -53,6 +53,19 @@ default_answers = [soa_rrset]
 class XfrinTestException(Exception):
     pass
 
+class MockModuleCCSession:
+    def __init__(self, spec_file_name, config_handler, command_handler, cc_session = None):
+        pass
+
+    def start(self):
+        pass
+
+    def get_full_config(self):
+        return ({"transfers_in":10})
+
+    def check_command(self):
+        return True
+
 class MockXfrin(Xfrin):
     # This is a class attribute of a callable object that specifies a non
     # default behavior triggered in _cc_check_command().  Specific test methods
@@ -62,12 +75,37 @@ class MockXfrin(Xfrin):
     check_command_hook = None
 
     def _cc_setup(self):
-        self._max_transfers_in = 10
+        isc.config.ModuleCCSession = MockModuleCCSession
+        super()._cc_setup()
+        #self._max_transfers_in = 10
     
     def _cc_check_command(self):
         self._shutdown_flag = 1
         if MockXfrin.check_command_hook:
             MockXfrin.check_command_hook()
+
+class MockSocket():
+    def __init__(self):
+        self.sendqueue = bytearray()
+
+    def recv(self, size):
+        if size < 0:
+            raise socket.error("error bufsize")
+        if len(self.sendqueue) < size:
+            size = len(self.sendqueue)
+        result = self.sendqueue[:size]
+        del self.sendqueue[:size]
+        return result
+
+    def send(self, data):
+        try:
+            self.sendqueue.extend(data)
+        except TypeError as e:
+            raise socket.error(e)
+        return len(data)
+
+    def close(self):
+        return True
 
 class MockXfrinConnection(XfrinConnection):
     def __init__(self, conn_socket, zone_name, rrclass, db_file, shutdown_flag,
@@ -83,7 +121,7 @@ class MockXfrinConnection(XfrinConnection):
         self.response_generator = None
 
     def connect_to_master(self):
-        return True
+        return self._socket
 
     def _loop(self):
         if self.force_close:
@@ -91,6 +129,9 @@ class MockXfrinConnection(XfrinConnection):
             self._conn_socket.close()
         elif not self.force_time_out:
             self.handle_read()
+
+    def mock_handle_read(self):
+        return True
 
     def recv(self, size):
         data = self.reply_data[:size]
@@ -169,6 +210,40 @@ class TestXfrinConnection(unittest.TestCase):
     def test_connect(self):
         #self.assertEqual(, "")
         self.assertRaises(Exception, self.conn.connect, (TEST_MASTER_IPV4_ADDRESS,53))
+
+    def test_send(self):
+        self.conn._socket.close()
+        self.conn._socket = MockSocket()
+        self.assertEqual(len(b"hello bind10"), super(MockXfrinConnection, self.conn).send(b"hello bind10"))
+
+    def test_send_exception(self):
+        self.conn._socket.close()
+        self.conn._socket = MockSocket()
+        self.assertRaises(socket.error, super(MockXfrinConnection, self.conn).send, "hello bind10")
+
+    def test_recv(self):
+        self.conn._socket.close()
+        self.conn._socket = MockSocket()
+        super(MockXfrinConnection, self.conn).send(b"hello bind10")
+        self.assertEqual(b"hello bind10", super(MockXfrinConnection, self.conn).recv(20))
+
+    def test_recv_nodata(self):
+        self.conn._socket.close()
+        self.conn._socket = MockSocket()
+        self.assertEqual(b"", super(MockXfrinConnection, self.conn).recv(20))
+
+    def test_recv_exception(self):
+        self.conn._socket.close()
+        self.conn._socket = MockSocket()
+        super(MockXfrinConnection, self.conn).send(b"hello bind10")
+        self.assertRaises(socket.error, super(MockXfrinConnection, self.conn).recv, -1)
+
+    def test_loop(self):
+        self.conn._idle_timeout = 0.1
+
+        self.conn.handle_read = self.conn.mock_handle_read
+        self.assertRaises(XfrinException, super(MockXfrinConnection, self.conn)._loop)
+
 
     def test_init_ip6(self):
         # This test simply creates a new XfrinConnection object with an
@@ -375,6 +450,10 @@ class TestXfrin(unittest.TestCase):
 
     def _do_parse(self):
         return self.xfr._parse_cmd_params(self.args)
+
+    def test_cc_check_command(self):
+        self.assertEqual(None, self.xfr._cc_check_command())
+
 
     def test_parse_cmd_params(self):
         name, master_addrinfo, db_file = self._do_parse()
