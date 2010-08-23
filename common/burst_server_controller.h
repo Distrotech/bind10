@@ -40,7 +40,8 @@ public:
     ///
     /// \param burst Burst value.  The server will read this number of packets
     /// before passing them to the sender.
-    BurstServerController(uint32_t burst) : Controller(), burst_(burst)
+    BurstServerController(uint32_t burst, uint32_t memsize) : Controller(),
+        burst_(burst), memsize_(memsize)
         {}
     virtual ~BurstServerController() {}
 
@@ -58,6 +59,21 @@ public:
 
 private:
     uint32_t        burst_;             //< Burst limit
+    uint32_t        memsize_;           //< Memory size
+
+    /// \brief Touches Memory
+    ///
+    /// Runs over the memory specified and modifes every 1024th location.  In
+    /// this way all memory is pulled into the working set (and hence cache).
+    /// This is a way of checking how memory size affects the scheduling
+    /// performance.
+    ///
+    /// The action is put into an external function to ensure that it is not
+    /// optimised away.
+    ///
+    /// \param memory Pointer to allocated memory
+    /// \param size Amount of memory allocated in kB.
+    void touchMemory(char* memory, uint32_t size);
 };
 
 

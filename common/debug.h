@@ -65,7 +65,7 @@ public:
     /// \param message Text to output
     static void log(int number, const char* message, uint32_t flag = 0x01) {
         if (flagSet(flag)) {
-            std::cout << number << ") " << message << std::endl;
+            std::cout << std::dec << number << ") " << message << std::endl;
         }
     }
 

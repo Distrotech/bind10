@@ -9,3 +9,4 @@ dist_bin_SCRIPTS += scripts/client-server.sh
 dist_bin_SCRIPTS += scripts/client-worker.sh
 dist_bin_SCRIPTS += scripts/common.sh
 dist_bin_SCRIPTS += scripts/run_all.sh
+dist_bin_SCRIPTS += scripts/run_test.sh

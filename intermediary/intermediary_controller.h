@@ -42,7 +42,9 @@ public:
     ///
     /// \param burst Burst value.  The intermediary will read this number of
     /// packets before passing them to the sender.
-    IntermediaryController(uint32_t burst) : Controller(), burst_(burst)
+    /// \param nworker Number of contractor processes.
+    IntermediaryController(uint32_t burst, uint32_t ncontractor) :
+        Controller(), burst_(burst), ncontractor_(ncontractor)
         {}
     virtual ~IntermediaryController() {}
 
@@ -74,6 +76,7 @@ public:
 
 private:
     uint32_t        burst_;             //< Burst limit
+    uint32_t        ncontractor_;       //< Number of contractors
 };
 
 

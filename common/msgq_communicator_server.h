@@ -14,8 +14,8 @@
 
 // $Id$
 
-#ifndef __MSGQ_COMMUNICATOR_H
-#define __MSGQ_COMMUNICATOR_H
+#ifndef __MSGQ_COMMUNICATOR_SERVER_H
+#define __MSGQ_COMMUNICATOR_SERVER_H
 
 #include <string>
 
@@ -37,7 +37,7 @@
 ///
 /// For simplicity of implementation, this class is non-copyable.
 
-class MsgqCommunicator : public Communicator {
+class MsgqCommunicatorServer : public Communicator {
 public:
 
     /// \brief Pointer to Message Queue
@@ -45,13 +45,11 @@ public:
 
     /// \brief Store parameters
     ///
-    /// \param snd_name Name of queue on which this process sends data
-    /// \param rcv_name Name of queue on which this process receives data
-    /// addressed
-    MsgqCommunicator(const std::string& snd_name, const std::string& rcv_name) :
-        Communicator(), snd_name_(snd_name), rcv_name_(rcv_name)
+    /// \param number Number of the message queue on which to receive data
+    MsgqCommunicatorServer(uint32_t number) : number_(number)
        {}
-    virtual ~MsgqCommunicator() {}
+
+    virtual ~MsgqCommunicatorServer() {}
 
     /// \brief Open Link
     ///
@@ -63,22 +61,22 @@ public:
     /// \brief Send data
     ///
     /// Places a packet of data on the outgoing message queue, waiting if
+    /// there is no space available.
+    ///
+    /// \param buffer Data to be sent to the server.
+    virtual void send(UdpBuffer& buffer);
+
+    /// \brief Send data
+    ///
+    /// Places a packet of data on the outgoing message queue, waiting if
     /// there is no space available.  As there is only one channel, this
-    /// just maps to the other send.
+    /// is a no-op.
     ///
     /// \param channel Channel on which to send data
     /// \param buffer Data to be sent to the server.
     virtual void send(uint32_t channel, UdpBuffer& buffer) {
         send(buffer);
     }
-
-    /// \brief Send data
-    ///
-    /// Places a pqacket of data on the outgoing message queue, waiting if
-    /// there is no space available.
-    ///
-    /// \param buffer Data to be sent to the server.
-    virtual void send(UdpBuffer& buffer);
 
     /// \brief Receive data
     ///
@@ -94,15 +92,13 @@ public:
     virtual void close();
 
 private:
-    std::string     snd_name_;  // Outgoing
-    std::string     rcv_name_;  // Incoming
-
     // Both message queues are stored in shared pointer objects to allow
     // creation to be deferred until the "open" method.
 
-    mq_ptr snd_queue_;          //< Outgoing
-    mq_ptr rcv_queue_;          //< Incoming
+    uint32_t   number_;         ///< Number of incoming message queue
+    mq_ptr snd_queue_;          ///< Outgoing
+    mq_ptr rcv_queue_;          ///< Incoming
 
 };
 
-#endif // __MSGQ_COMMUNICATOR_H
+#endif // __MSGQ_COMMUNICATOR_SERVER_H

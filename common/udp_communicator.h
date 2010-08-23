@@ -68,6 +68,17 @@ public:
 
     /// \brief Send data to udp
     ///
+    /// Sends data to the udp without waiting.  As there is only one channel,
+    /// this just maps to the other send function.
+    ///
+    /// \param channel Channel on which to send data
+    /// \param buffer Data to be sent to the udp.
+    virtual void send(uint32_t channel, UdpBuffer& buffer) {
+        send(buffer);
+    }
+
+    /// \brief Send data to udp
+    ///
     /// Sends data to the udp without waiting.
     ///
     /// \param buffer Data to be sent to the udp.

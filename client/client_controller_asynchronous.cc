@@ -113,7 +113,7 @@ ClientControllerAsynchronous::receiveTask(ClientCommunicator& communicator,
             lost_ += missing;
             last_packet = this_packet;
         } else {
-            std::cout << "ERROR: packets received out of sequence\n";
+            Debug::log("Packet received out of sequence", DebugFlags::LOST_PACKETS);
         }
 
 

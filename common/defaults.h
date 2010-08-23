@@ -33,10 +33,12 @@ static const uint32_t CL_DEF_COUNT = 256;
 static const uint32_t CL_DEF_DEBUG = 0;
 static const std::string CL_DEF_LOGFILE = "";
 static const uint32_t CL_DEF_LOST = 4;
+static const uint32_t CL_DEF_MEMSIZE = 0;
 static const uint32_t CL_DEF_OUTSTANDING = 8;
 static const uint32_t CL_DEF_PERCENT = 100;
 static const uint16_t CL_DEF_PKTSIZE = 8192;
 static const uint16_t CL_DEF_PORT = 5400;
+static const uint16_t CL_DEF_QUEUE = 1;
 
 /// \brief UDP/IP defaults.
 

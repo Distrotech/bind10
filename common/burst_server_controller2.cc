@@ -14,28 +14,15 @@
 
 // $Id$
 
-/// \brief Deletes message queues
-///
-/// Stand-alone utility to deletes the created message queues.
+#include "burst_server_controller.h"
 
-#include <iostream>
-#include <string>
+// Touches the memory.  This function is put into a separate file to ensure
+// that there is no intra-module optimization which removes this code.
 
-#include <boost/lexical_cast.hpp>
-#include <boost/interprocess/ipc/message_queue.hpp>
-
-int main(int argc, char** argv) {
-
-    if (argc != 2) {
-        std::cout << "Usage: queue_clear number_of_queues\n";
-    }
-    else {
-        for (int i = 0; i < boost::lexical_cast<int>(argv[1]); ++i) {
-            std::string queue = std::string("ISC_QUEUE_") +
-                boost::lexical_cast<std::string>(i);
-            (void) boost::interprocess::message_queue::remove(queue.c_str());
+void BurstServerController::touchMemory(char* memory, uint32_t size) {
+    if (size > 0) {
+        for (uint32_t i = 0; i < (size * 1024); i += 1024) {
+            memory[i] = 1;
         }
     }
-
-    return 0;
 }

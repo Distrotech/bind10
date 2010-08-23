@@ -41,8 +41,11 @@ public:
     /// \brief Constructor
     ///
     /// \param burst Burst value.  The receptionist will read this number of
-    /// packets before passing them to the sender.
-    ReceptionistController(uint32_t burst) : Controller(), burst_(burst)
+    /// packets before passing them to the worker.
+    /// \param nworker Number of workers to which messages are sent in a round-
+    /// robin fashion.
+    ReceptionistController(uint32_t burst, uint32_t nworker) :
+        Controller(), burst_(burst), nworker_(nworker)
         {}
     virtual ~ReceptionistController() {}
 
@@ -57,8 +60,7 @@ public:
 
 private:
     uint32_t        burst_;             //< Burst limit
+    uint32_t        nworker_;           //< Number of workers
 };
-
-
 
 #endif // __RECEPTIONIST_CONTROLLER_H

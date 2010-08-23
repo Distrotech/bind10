@@ -86,4 +86,13 @@ public:
     {}
 };
 
+/// \brief Exception thrown is a queue does not exist
+
+class QueueNotExist : public Exception {
+    public:
+        QueueNotExist(const char* why = "Queue does not exist") :
+            Exception(why)
+    {}
+};
+
 #endif // __EXCEPTION_H

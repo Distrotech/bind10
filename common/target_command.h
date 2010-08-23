@@ -64,6 +64,27 @@ public:
         return burst_;
     }
 
+    /// \return Current setting of debug flag
+    uint32_t getDebug() const {
+        return debug_;
+    }
+
+    /// \return Memory size (in kB)
+    uint32_t getMemorySize() const {
+        return memsize_;
+    }
+
+    /// \return The queue number for receiving information from the client
+    uint32_t getQueue() const {
+        return queue_;
+    }
+
+    /// \return File spec of the worker to run. A number of worker
+    /// processes equal to the queue count are started
+    std::string getWorker() const {
+        return worker_;
+    }
+
 private:
     /// \brief Parse command line.
     /// Sets up all the command-line options (and their defaults) and parses
@@ -76,8 +97,12 @@ private:
     void parseCommandLine(int argc, char** argv);
 
 private:
+    uint32_t        debug_;     //< Debug value
     uint16_t        port_;      //< Port number on target to which to connect
+    uint32_t        queue_;     //< Queue number on which to receive data
     uint32_t        burst_;     //< Burst size (for processing)
+    uint32_t        memsize_;   //< Memory size (in kB)
+    std::string     worker_;    //< Worker process
     boost::program_options::options_description desc_; //< Options description structure
     boost::program_options::variables_map vm_;         //< Maps variables to values
 };

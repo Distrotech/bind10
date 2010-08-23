@@ -35,6 +35,7 @@ ReceptionistController::run(Communicator& client_communicator,
         Communicator& processor_communicator) {
 
     PacketCounter counter;
+    uint32_t      pktnum = 0;
 
     std::list<UdpBuffer> queue;
     while (true) {  // Forever
@@ -46,11 +47,13 @@ ReceptionistController::run(Communicator& client_communicator,
             queue.push_back(data);
         }
 
-        // Send the packets onwards.
+        // Send the packets onwards, choosing a queue in a round-robin
+        // fashion.
         for (std::list<UdpBuffer>::iterator li = queue.begin();
             li != queue.end(); ++li) {
             Debug::log(counter.incrementSend(), "Calling send");
-            processor_communicator.send(*li);
+
+            processor_communicator.send(((pktnum++ % nworker_) + 1), *li);
         }
         queue.clear();
     }

@@ -47,6 +47,7 @@ IntermediaryController::forwardTask(Communicator& client_communicator,
     PacketCounter counter;              // Access global counters
     std::list<UdpBuffer> queue;         // Packet queue...
     std::list<UdpBuffer>::iterator li;  // and its iterator
+    uint32_t pktnum;                    // Packet number
 
     while (true) {  // Forever
 
@@ -61,7 +62,7 @@ IntermediaryController::forwardTask(Communicator& client_communicator,
         // Forward them to the contractor via the message queue.
         for (li = queue.begin(); li != queue.end(); ++li) {
             Debug::log(counter.incrementSend(), "Sending data to contractor");
-            contractor_communicator.send(*li);
+            contractor_communicator.send(((pktnum++ % ncontractor_) + 1), *li);
         }
         queue.clear();
     }

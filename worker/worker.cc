@@ -41,7 +41,7 @@
 
 #include "defaults.h"
 #include "target_command.h"
-#include "msgq_communicator.h"
+#include "msgq_communicator_server.h"
 #include "udp_communicator.h"
 #include "burst_server_controller.h"
 #include "exception.h"
@@ -60,8 +60,7 @@ int main(int argc, char**argv)
 
         // Create the communicator module for communicating with the
         // receptionist.
-        MsgqCommunicator receptionist_communicator(QUEUE_PROCESSED_NAME,
-            QUEUE_UNPROCESSED_NAME);
+        MsgqCommunicatorServer receptionist_communicator(command.getQueue());
         receptionist_communicator.open();
 
         // Create the communicator for sending data back to the client.
@@ -69,7 +68,8 @@ int main(int argc, char**argv)
         client_communicator.open();
 
         // Create the task controller.
-        BurstServerController controller(command.getBurst());
+        BurstServerController controller(command.getBurst(),
+            command.getMemorySize());
 
         // ... and enter the run loop.
 

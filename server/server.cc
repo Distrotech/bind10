@@ -57,7 +57,8 @@ int main(int argc, char**argv)
         communicator.open();
 
         // Create the task controller.
-        BurstServerController controller(command.getBurst());
+        BurstServerController controller(command.getBurst(),
+            command.getMemorySize());
 
         // ... and enter the run loop.
 

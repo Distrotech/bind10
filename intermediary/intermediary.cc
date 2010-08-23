@@ -35,9 +35,10 @@
 #include <iostream>
 #include <iomanip>
 
+#include "children.h"
 #include "defaults.h"
 #include "target_command.h"
-#include "msgq_communicator.h"
+#include "msgq_communicator_client.h"
 #include "udp_communicator.h"
 #include "intermediary_controller.h"
 #include "exception.h"
@@ -52,16 +53,23 @@ int main(int argc, char**argv)
             return (0);
         }
 
+        // Create the child processes if asked.
+        std::string worker = command.getWorker();
+        if (! worker.empty()) {
+            Children::spawnChildren(worker, command.getQueue(),
+                command.getMemorySize(), command.getDebug());
+        }
+
         // Create the I/O modules and initialize.
         UdpCommunicator client_communicator(command.getPort());
         client_communicator.open();
 
-        MsgqCommunicator contractor_communicator(QUEUE_UNPROCESSED_NAME,
-            QUEUE_PROCESSED_NAME);
+        MsgqCommunicatorClient contractor_communicator(command.getQueue());
         contractor_communicator.open();
 
         // Create the task controller.
-        IntermediaryController controller(command.getBurst());
+        IntermediaryController controller(command.getBurst(),
+            command.getQueue());
 
         // ... and enter the run loop.
         controller.run(client_communicator, contractor_communicator);

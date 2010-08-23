@@ -34,10 +34,19 @@
 
 #include <iostream>
 #include <iomanip>
+#include <vector>
+#include <boost/lexical_cast.hpp>
 
+#include <sys/types.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include "children.h"
 #include "defaults.h"
+#include "string.h"
 #include "target_command.h"
-#include "msgq_communicator.h"
+#include "msgq_communicator_client.h"
 #include "udp_communicator.h"
 #include "receptionist_controller.h"
 #include "exception.h"
@@ -52,16 +61,26 @@ int main(int argc, char**argv)
             return (0);
         }
 
+        // Create the child processes if asked.
+        std::string worker = command.getWorker();
+        if (! worker.empty()) {
+            Children::spawnChildren(worker, command.getQueue(),
+                command.getMemorySize(), command.getDebug());
+        }
+
         // Create the I/O modules and initialize.
         UdpCommunicator client_communicator(command.getPort());
         client_communicator.open();
 
-        MsgqCommunicator worker_communicator(QUEUE_UNPROCESSED_NAME,
-            QUEUE_PROCESSED_NAME);
+        // TODO: improve terminology
+        // Create a client message queue object (as the receptionist
+        // is client to the worker server).  The --queue on the command
+        // line specifies the number of queues to create.
+        MsgqCommunicatorClient worker_communicator(command.getQueue());
         worker_communicator.open();
 
         // Create the task controller.
-        ReceptionistController controller(command.getBurst());
+        ReceptionistController controller(command.getBurst(), command.getQueue());
 
         // ... and enter the run loop.
 

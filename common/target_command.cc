@@ -61,21 +61,28 @@ TargetCommand::usage(std::ostream& output) const {
 
 void
 TargetCommand::parseCommandLine(int argc, char** argv)  {
-    uint32_t    debug;      // Debug level
 
     // Set up the command-line options
 
     desc_.add_options()
-        ("help", "produce help message")
+        ("help,h", "produce help message")
         ("burst,b",
             po::value<uint32_t>(&burst_)->default_value(CL_DEF_BURST),
             "Burst size: number of packets processed at one time")
         ("debug,d",
-            po::value<uint32_t>(&debug)->default_value(CL_DEF_DEBUG),
+            po::value<uint32_t>(&debug_)->default_value(CL_DEF_DEBUG),
             "Debug level: a value of 0 disables debug messages")
+        ("memsize,m",
+            po::value<uint32_t>(&memsize_)->default_value(CL_DEF_MEMSIZE),
+            "Memory size (in kB) to represent true size of a process")
         ("port,p",
             po::value<uint16_t>(&port_)->default_value(CL_DEF_PORT),
-            "Port on which to listen");
+            "Port on which to listen")
+        ("queue,q",
+            po::value<uint32_t>(&queue_)->default_value(CL_DEF_QUEUE),
+            "Message queue on which to listen")
+        ("worker,w",
+            po::value<std::string>(&worker_), "Worker image name");
 
     // Parse
 
@@ -84,7 +91,7 @@ TargetCommand::parseCommandLine(int argc, char** argv)  {
 
     // ... and handle options that we can cope with internally.
 
-    Debug::setLevel(debug);
+    Debug::setLevel(debug_);
 
     return;
 }

@@ -59,6 +59,14 @@ public:
     /// \param buffer Data to be sent to the server.
     virtual void send(UdpBuffer& buffer) = 0;
 
+    /// \brief Send data to server
+    ///
+    /// Sends data to the server on particular channel without waiting.
+    ///
+    /// \param channel Channel on which data is to be sent
+    /// \param buffer Data to be sent to the server.
+    virtual void send(uint32_t channel, UdpBuffer& buffer) = 0;
+
     /// \brief Receive data from the server
     ///
     /// Receives data from the server.  This call blocks until data is received

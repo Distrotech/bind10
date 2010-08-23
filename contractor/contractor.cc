@@ -14,7 +14,7 @@
 
 // $Id$
 
-/// \brief Worker process for intermediary
+/// \brief Contractor process for intermediary
 ///
 /// This process (the contractor) receives data packets from the intermediary,
 /// processes them (by adding a four-byte CRC) then returns them to the original
@@ -22,7 +22,7 @@
 ///
 /// The program is invoked with the command:
 ///
-/// worker [--burst <burst>]
+/// contractor [--burst <burst>]
 ///
 /// where...
 ///
@@ -37,7 +37,7 @@
 #include "burst_server_controller.h"
 #include "defaults.h"
 #include "exception.h"
-#include "msgq_communicator.h"
+#include "msgq_communicator_server.h"
 #include "target_command.h"
 
 #include <string.h>
@@ -53,12 +53,12 @@ int main(int argc, char**argv)
         }
 
         // Create the I/O module and initialize.
-        MsgqCommunicator communicator(QUEUE_PROCESSED_NAME,
-            QUEUE_UNPROCESSED_NAME);
+        MsgqCommunicatorServer communicator(command.getQueue());
         communicator.open();
 
         // Create the task controller.
-        BurstServerController controller(command.getBurst());
+        BurstServerController controller(command.getBurst(),
+            command.getMemorySize());
 
         // ... and enter the run loop.
 

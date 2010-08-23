@@ -14,8 +14,8 @@
 
 // $Id$
 
-#ifndef __MSGQ_COMMUNICATOR_H
-#define __MSGQ_COMMUNICATOR_H
+#ifndef __MSGQ_COMMUNICATOR_CLIENT_H
+#define __MSGQ_COMMUNICATOR_CLIENT_H
 
 #include <string>
 
@@ -26,18 +26,17 @@
 #include "communicator.h"
 #include "udp_buffer.h"
 
-/// \brief Communcates with the server
+/// \brief Client Message Communicator
 ///
-/// The communicator encapsulates all the I/O needed between the client and the
-/// server.  After construction, the interface is really the following calls:
-/// - open: open link to the server
-/// - send: send the data to the server and return immediately
-/// - receive: receive data and block
-/// - close: close link to the server
-///
-/// For simplicity of implementation, this class is non-copyable.
+/// This will instantiate a number of different message queues for communicating
+/// with multiple clients, and one message queue for receiving messages.
+/// The interface is basically:
+/// open - create/open message queues
+/// send - send data on appropriate channel
+/// receive - receive data
+/// close - close all queues
 
-class MsgqCommunicator : public Communicator {
+class MsgqCommunicatorClient : public Communicator {
 public:
 
     /// \brief Pointer to Message Queue
@@ -45,13 +44,11 @@ public:
 
     /// \brief Store parameters
     ///
-    /// \param snd_name Name of queue on which this process sends data
-    /// \param rcv_name Name of queue on which this process receives data
-    /// addressed
-    MsgqCommunicator(const std::string& snd_name, const std::string& rcv_name) :
-        Communicator(), snd_name_(snd_name), rcv_name_(rcv_name)
-       {}
-    virtual ~MsgqCommunicator() {}
+    /// \param count Number of send message queues to create.
+    MsgqCommunicatorClient(uint32_t count = 1) : count_(count) {}
+
+    /// \brief Destructor
+    virtual ~MsgqCommunicatorClient() {}
 
     /// \brief Open Link
     ///
@@ -62,23 +59,22 @@ public:
 
     /// \brief Send data
     ///
-    /// Places a packet of data on the outgoing message queue, waiting if
-    /// there is no space available.  As there is only one channel, this
-    /// just maps to the other send.
-    ///
-    /// \param channel Channel on which to send data
-    /// \param buffer Data to be sent to the server.
-    virtual void send(uint32_t channel, UdpBuffer& buffer) {
-        send(buffer);
-    }
-
-    /// \brief Send data
-    ///
     /// Places a pqacket of data on the outgoing message queue, waiting if
     /// there is no space available.
     ///
+    /// \param queue Queue number on which to send data.  If the queue does
+    /// not exist, an exception is thrown.  The queue number must be in the
+    /// range 1..count (where count is the value given in the constructor).
     /// \param buffer Data to be sent to the server.
-    virtual void send(UdpBuffer& buffer);
+    virtual void send(uint32_t queue, UdpBuffer& buffer);
+
+    /// \brief Send Data
+    ///
+    /// Sends data on the first outgoing queue.
+    /// \param buffer Data to be sent to the server.
+    virtual void send(UdpBuffer& buffer) {
+        send(1, buffer);
+    }
 
     /// \brief Receive data
     ///
@@ -94,15 +90,9 @@ public:
     virtual void close();
 
 private:
-    std::string     snd_name_;  // Outgoing
-    std::string     rcv_name_;  // Incoming
-
-    // Both message queues are stored in shared pointer objects to allow
-    // creation to be deferred until the "open" method.
-
-    mq_ptr snd_queue_;          //< Outgoing
-    mq_ptr rcv_queue_;          //< Incoming
-
+    uint32_t    count_;             ///< Count of outgoing message queues
+    mq_ptr  rcv_queue_;             ///< Incoming queue
+    std::vector<mq_ptr> snd_queue_; ///< Outgoing queues
 };
-
-#endif // __MSGQ_COMMUNICATOR_H
+    
+#endif // __MSGQ_COMMUNICATOR_CLIENT_H

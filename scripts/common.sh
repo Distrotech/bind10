@@ -29,7 +29,7 @@
 progdir=`dirname $0`
 
 if [ $# -lt 2 -o $# -gt 4 ]; then
-    echo "Usage: common [-a] logfile first-program [second-program]"
+    echo "Usage: common [-a] memsize logfile first-program [second-program]"
     exit 1;
 fi
 
@@ -42,12 +42,13 @@ fi
 
 # set the remaining parameters
 
-logfile=$1;
-first=$2
+memsize=$1
+logfile=$2
+first=$3
 if [ $# = 2 ]; then
     second=""
 else
-    second=$3
+    second=$4
 fi
 
 for burst in 1 2 4 8 16 32 64 128 256
