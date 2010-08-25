@@ -209,23 +209,29 @@ class TestXfrinConnection(unittest.TestCase):
 
     def test_connect(self):
         #self.assertEqual(, "")
-        self.assertRaises(Exception, self.conn.connect, (TEST_MASTER_IPV4_ADDRESS,53))
+        self.assertRaises(Exception, self.conn.connect,
+                          (TEST_MASTER_IPV4_ADDRESS,53))
 
     def test_send(self):
         self.conn._socket.close()
         self.conn._socket = MockSocket()
-        self.assertEqual(len(b"hello bind10"), super(MockXfrinConnection, self.conn).send(b"hello bind10"))
+        self.assertEqual(len(b"hello bind10"),
+                         super(MockXfrinConnection,
+                               self.conn).send(b"hello bind10"))
 
     def test_send_exception(self):
         self.conn._socket.close()
         self.conn._socket = MockSocket()
-        self.assertRaises(socket.error, super(MockXfrinConnection, self.conn).send, "hello bind10")
+        self.assertRaises(socket.error,
+                          super(MockXfrinConnection, self.conn).send,
+                          "hello bind10")
 
     def test_recv(self):
         self.conn._socket.close()
         self.conn._socket = MockSocket()
         super(MockXfrinConnection, self.conn).send(b"hello bind10")
-        self.assertEqual(b"hello bind10", super(MockXfrinConnection, self.conn).recv(20))
+        self.assertEqual(b"hello bind10",
+                         super(MockXfrinConnection, self.conn).recv(20))
 
     def test_recv_nodata(self):
         self.conn._socket.close()
@@ -236,13 +242,15 @@ class TestXfrinConnection(unittest.TestCase):
         self.conn._socket.close()
         self.conn._socket = MockSocket()
         super(MockXfrinConnection, self.conn).send(b"hello bind10")
-        self.assertRaises(socket.error, super(MockXfrinConnection, self.conn).recv, -1)
+        self.assertRaises(socket.error,
+                          super(MockXfrinConnection, self.conn).recv, -1)
 
     def test_loop(self):
         self.conn._idle_timeout = 0.1
 
         self.conn.handle_read = self.conn.mock_handle_read
-        self.assertRaises(XfrinException, super(MockXfrinConnection, self.conn)._loop)
+        self.assertRaises(XfrinException,
+                          super(MockXfrinConnection, self.conn)._loop)
 
 
     def test_init_ip6(self):
