@@ -105,7 +105,7 @@ class MockSocket():
         return len(data)
 
     def close(self):
-        return True
+        pass
 
 class MockXfrinConnection(XfrinConnection):
     def __init__(self, conn_socket, zone_name, rrclass, db_file, shutdown_flag,
@@ -114,31 +114,37 @@ class MockXfrinConnection(XfrinConnection):
                          master_addr)
         self.query_data = b''
         self.reply_data = b''
+        self.mock_test_data = b"hello bind10"
         self.force_time_out = False
         self.force_close = False
         self.qlen = None
         self.qid = None
         self.response_generator = None
+        self.closed = False
 
     def connect_to_master(self):
         return self._socket
 
-    def _loop(self):
+    def _select(self):
+        if self.force_time_out:
+            return 0
         if self.force_close:
             self.close()
             self._conn_socket.close()
-        elif not self.force_time_out:
-            self.handle_read()
-
-    def mock_handle_read(self):
-        return True
+        return 1
 
     def recv(self, size):
+        if self.closed:
+            raise socket.error('recv attempt on a closed socket')
         data = self.reply_data[:size]
         self.reply_data = self.reply_data[size:]
         if len(data) < size:
             raise XfrinTestException('cannot get reply data')
         return data
+
+    def close(self):
+        self.closed = True
+        super().close()
 
     def send(self, data):
         if self.qlen != None and len(self.query_data) >= self.qlen:
@@ -187,12 +193,15 @@ class MockXfrinConnection(XfrinConnection):
 
 class TestXfrinConnection(unittest.TestCase):
     def setUp(self):
-        conn_socket = socket.socketpair()
+        self.conn_sockets = socket.socketpair()
+        self.mock_xfrsockets = socket.socketpair()
         if os.path.exists(TEST_DB_FILE):
             os.remove(TEST_DB_FILE)
-        self.conn = MockXfrinConnection(conn_socket[1], 'example.com.',
+        self.conn = MockXfrinConnection(self.conn_sockets[1], 'example.com.',
                                         TEST_RRCLASS, TEST_DB_FILE,
                                         0, TEST_MASTER_IPV4_ADDRINFO)
+        # replace the XFR socket with our local mock
+        self.conn._socket = self.mock_xfrsockets[1]
         self.axfr_after_soa = False
         self.soa_response_params = {
             'questions': [example_soa_question],
@@ -204,6 +213,10 @@ class TestXfrinConnection(unittest.TestCase):
 
     def tearDown(self):
         self.conn.close()
+        self.conn_sockets[0].close()
+        self.conn_sockets[1].close()
+        self.mock_xfrsockets[0].close()
+        self.mock_xfrsockets[1].close()
         if os.path.exists(TEST_DB_FILE):
             os.remove(TEST_DB_FILE)
 
@@ -215,23 +228,24 @@ class TestXfrinConnection(unittest.TestCase):
     def test_send(self):
         self.conn._socket.close()
         self.conn._socket = MockSocket()
-        self.assertEqual(len(b"hello bind10"),
+        self.assertEqual(len(self.conn.mock_test_data),
                          super(MockXfrinConnection,
-                               self.conn).send(b"hello bind10"))
+                               self.conn).send(self.conn.mock_test_data))
 
     def test_send_exception(self):
         self.conn._socket.close()
         self.conn._socket = MockSocket()
         self.assertRaises(socket.error,
                           super(MockXfrinConnection, self.conn).send,
-                          "hello bind10")
+                          "not binary data")
 
     def test_recv(self):
         self.conn._socket.close()
         self.conn._socket = MockSocket()
-        super(MockXfrinConnection, self.conn).send(b"hello bind10")
-        self.assertEqual(b"hello bind10",
-                         super(MockXfrinConnection, self.conn).recv(20))
+        super(MockXfrinConnection, self.conn).send(self.conn.mock_test_data)
+        self.assertEqual(self.conn.mock_test_data,
+                         super(MockXfrinConnection,
+                               self.conn).recv(len(self.conn.mock_test_data)))
 
     def test_recv_nodata(self):
         self.conn._socket.close()
@@ -241,17 +255,26 @@ class TestXfrinConnection(unittest.TestCase):
     def test_recv_exception(self):
         self.conn._socket.close()
         self.conn._socket = MockSocket()
-        super(MockXfrinConnection, self.conn).send(b"hello bind10")
+        super(MockXfrinConnection, self.conn).send(self.conn.mock_test_data)
         self.assertRaises(socket.error,
                           super(MockXfrinConnection, self.conn).recv, -1)
 
-    def test_loop(self):
+    def test_select_readok(self):
+        self.mock_xfrsockets[0].send(self.conn.mock_test_data)
+        self.conn._idle_timeout = 3 # timeout shouldn't occur
+        self.assertEqual(1, super(MockXfrinConnection, self.conn)._select())
+        self.assertEqual(self.conn.mock_test_data,
+                         self.conn._socket.recv(len(self.conn.mock_test_data)))
+
+    def test_select_timeout(self):
         self.conn._idle_timeout = 0.1
+        self.assertEqual(0, super(MockXfrinConnection, self.conn)._select())
 
-        self.conn.handle_read = self.conn.mock_handle_read
-        self.assertRaises(XfrinException,
-                          super(MockXfrinConnection, self.conn)._loop)
-
+    def test_select_shutdown(self):
+        self.conn._idle_timeout = 3 # timeout shouldn't occur
+        self.conn_sockets[0].send(b"shutdown")
+        self.assertRaises(XfrinException, super(MockXfrinConnection,
+                                                self.conn)._select)
 
     def test_init_ip6(self):
         # This test simply creates a new XfrinConnection object with an
@@ -354,7 +377,7 @@ class TestXfrinConnection(unittest.TestCase):
     def test_response_remote_close(self):
         self.conn.response_generator = self._create_normal_response_data
         self.conn.force_close = True
-        self.assertRaises(XfrinException, self._handle_xfrin_response)
+        self.assertRaises(socket.error, self._handle_xfrin_response)
 
     def test_response_bad_message(self):
         self.conn.response_generator = self._create_broken_response_data
@@ -440,6 +463,7 @@ class TestXfrinConnection(unittest.TestCase):
         bogus_data = b'xxxx'
         self.conn.reply_data = struct.pack('H', socket.htons(len(bogus_data)))
         self.conn.reply_data += bogus_data
+
 class MockThread:
     def is_alive(self):
         return True

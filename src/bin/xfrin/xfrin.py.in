@@ -175,33 +175,39 @@ class XfrinConnection:
         self._send_data(header_len)
         self._send_data(render.get_data())
 
-    def _loop(self):
-        try:
-            rlist, wlist, elist = select.select([self._socket, self._conn_socket], \
-                    [], [], self._idle_timeout)
-        except select.error as err:
-            if err.args[0] != EINTR:
-                raise
-            else:
-                return
-        for s in rlist:
-            if s == self._conn_socket:
+    def _select(self):
+        '''
+        This method is a trivial asynchronous I/O routine using select.
+        It's extracted from _get_request_response so that we can test the
+        rest of the code without involving actual communication with a remote
+        server.'''
+        while True:
+            try:
+                rlist, wlist, elist = select.select([self._socket,
+                                                     self._conn_socket],
+                                                    [], [], self._idle_timeout)
+            except select.error as err:
+                if err.args[0] != EINTR:
+                    raise
+                else:
+                    continue
+            if self._conn_socket in rlist:
                 raise XfrinException("shutdown xfrin!")
-            self.handle_read()
-            
+            return len(rlist)
     
     def _get_request_response(self, size):
         recv_size = 0
         data = b''
         while recv_size < size:
-            self._recv_time_out = True
             self._need_recv_size = size - recv_size
-            self._loop()
-            if self._recv_time_out:
+            if self._select() == 0:
                 raise XfrinException('receive data from socket time out.')
-
-            recv_size += self._recvd_size
-            data += self._recvd_data
+            recvd_data = self.recv(self._need_recv_size)
+            recvd_size = len(recvd_data)
+            if recvd_size == 0:
+                raise XfrinException("receive data from socket error!")
+            recv_size += recvd_size
+            data += recvd_data
 
         return data
 
@@ -346,14 +352,6 @@ class XfrinConnection:
             
             if self._shutdown_flag:
                 raise XfrinException('xfrin is forced to stop')
-
-    def handle_read(self):
-        '''Read query's response from socket. '''
-        self._recvd_data = self.recv(self._need_recv_size)
-        if(len(self._recvd_data)==0):
-            raise XfrinException("receive data from socket error!")
-        self._recvd_size = len(self._recvd_data)
-        self._recv_time_out = False
 
     def log_info(self, msg, type='info'):
         # Overwrite the log function, log nothing
