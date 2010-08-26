@@ -57,12 +57,13 @@ BurstServerController::run(Communicator& receive_communicator,
         for (li = queue.begin(); li != queue.end(); ++li) {
             uint32_t crc = Utilities::Crc(li->data(), li->dataSize());
             li->setCrc(crc);
-        }
 
-        // If a memory size was specified, run over the memory and touch
-        // each page (assumed to be 1kB pages to cope with most architectures)
-        if (memsize_ > 0) {
-            touchMemory(memory, memsize_);
+            // If a memory size was specified, run over the memory and touch
+            // each page (assumed to be 1kB pages to cope with most
+            // architectures).
+            if (memsize_ > 0) {
+                touchMemory(memory, memsize_);
+            }
         }
 
         // Now return the packets back to the sender

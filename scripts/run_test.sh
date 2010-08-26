@@ -19,7 +19,7 @@
 #
 # Runs a series of tests with varying parameters.  The script starts up the
 # server program(s) with a given set of parameters then kicks off the client.
-# Each run is done 64 times.
+# Each run is done 32 times.
 #
 # The parameters are:
 #
@@ -67,7 +67,7 @@ for memsize in 0 4096 8192
         else
             subprog=""
         fi
-        $progdir/$program --memsize $memsize --burst $burst $subprog $* &
+        $progdir/$program --queue 4 --memsize $memsize --burst $burst $subprog $* &
 
         # Allow server programs to start.
         sleep 1
