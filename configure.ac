@@ -439,6 +439,7 @@ AC_CONFIG_FILES([Makefile
                  src/lib/python/Makefile
                  src/lib/python/isc/Makefile
                  src/lib/python/isc/datasrc/Makefile
+                 src/lib/python/isc/datasrc/tests/Makefile
                  src/lib/python/isc/cc/Makefile
                  src/lib/python/isc/cc/tests/Makefile
                  src/lib/python/isc/config/Makefile
@@ -498,6 +499,7 @@ AC_OUTPUT([src/bin/cfgmgr/b10-cfgmgr.py
            src/lib/config/tests/data_def_unittests_config.h
            src/lib/python/isc/config/tests/config_test
            src/lib/python/isc/cc/tests/cc_test
+           src/lib/python/isc/datasrc/tests/datasrc_test
            src/lib/python/isc/log/tests/log_test
            src/lib/python/isc/notify/tests/notify_out_test
            src/lib/dns/gen-rdatacode.py

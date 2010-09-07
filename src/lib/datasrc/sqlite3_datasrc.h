@@ -97,6 +97,7 @@ public:
     Result init() { return (init(isc::data::ElementPtr())); }
     Result init(const isc::data::ConstElementPtr config);
     Result close();
+    int getSchemaVersion();
 
 private:
     enum Mode {
@@ -114,6 +115,7 @@ private:
 
 private:
     Sqlite3Parameters* dbparameters;
+    int schema_version_;
 };
 
 }

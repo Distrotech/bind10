@@ -14,6 +14,7 @@
 
 // $Id$
 
+#include <fstream>
 #include <stdint.h>
 
 #include <algorithm>
@@ -96,6 +97,21 @@ typedef enum {
     ADDRESS,
     REFERRAL
 } FindMode;
+
+namespace {
+void
+restoreFile(isc::data::ConstElementPtr config) {
+    if (!config || !config->contains("database_file")) {
+        isc_throw(DataSourceError, "No SQLite database file specified");
+    }
+
+    string name = config->get("database_file")->stringValue();
+    string orig = name + ".in";
+    ifstream f1(orig.c_str(), fstream::binary);
+    ofstream f2(name.c_str(), fstream::trunc|fstream::binary);
+    f2 << f1.rdbuf(); 
+}
+}
 
 class Sqlite3DataSourceTest : public ::testing::Test {
 protected:
@@ -362,6 +378,20 @@ checkFind(FindMode mode, const Sqlite3DataSrc& data_source,
     checkFind(mode, data_source, expected_name, zone_name, qclass,
               expected_class, expected_type, ttls, expected_flags, types,
               answers, signatures);
+}
+
+// This is a mock "test" whose sole purpose is to set up the database
+// file before any other test is run.  It must be listed before any other
+// test, and must use a different test case name from the ones below it.
+TEST(Sqlite3Setup, restoreDB) {
+    restoreFile(SQLITE_DBFILE_EXAMPLE);
+}
+
+// This checks that the schema for the test database file has been
+// updated to version 2.  This should always be the first test in
+// Sqlite3DatasrcTest.
+TEST_F(Sqlite3DataSourceTest, schemaVersion) {
+    EXPECT_EQ(2, data_source.getSchemaVersion());
 }
 
 TEST_F(Sqlite3DataSourceTest, close) {

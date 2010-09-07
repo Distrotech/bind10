@@ -37,7 +37,7 @@ class Sqlite3DSError(Exception):
 def create(cur):
     """Create new zone database"""
     cur.execute("CREATE TABLE schema_version (version INTEGER NOT NULL)")
-    cur.execute("INSERT INTO schema_version VALUES (1)")
+    cur.execute("INSERT INTO schema_version VALUES (2)")
     cur.execute("""CREATE TABLE zones (id INTEGER PRIMARY KEY, 
                    name STRING NOT NULL COLLATE NOCASE,
                    rdclass STRING NOT NULL COLLATE NOCASE DEFAULT 'IN', 
@@ -51,8 +51,10 @@ def create(cur):
                    rdtype STRING NOT NULL COLLATE NOCASE,
                    sigtype STRING COLLATE NOCASE,
                    rdata STRING NOT NULL)""")
-    cur.execute("CREATE INDEX records_byname ON records (name)")
-    cur.execute("CREATE INDEX records_byrname ON records (rname)")
+    cur.execute("""CREATE INDEX records_byname ON records (zone_id, name,
+                   rdtype, sigtype, id, ttl, rdata)""")
+    cur.execute("""CREATE INDEX records_byrname ON records (zone_id, rname,
+                   rdtype, name)""")
     cur.execute("""CREATE TABLE nsec3 (id INTEGER PRIMARY KEY, 
                    zone_id INTEGER NOT NULL,
                    hash STRING NOT NULL COLLATE NOCASE,
@@ -60,7 +62,34 @@ def create(cur):
                    ttl INTEGER NOT NULL,
                    rdtype STRING NOT NULL COLLATE NOCASE,
                    rdata STRING NOT NULL)""")
-    cur.execute("CREATE INDEX nsec3_byhash ON nsec3 (hash)")
+    cur.execute("""CREATE INDEX nsec3_byhash ON nsec3 (zone_id, hash,
+                   rdtype, id, ttl, rdata)""")
+
+#########################################################################
+# check_version: check database schema; if it is an old version, update
+#                to the current one
+# input: cur - database cursor
+#        version - the current version number
+# returns: the new version
+#########################################################################
+def check_version(cur, version):
+    if version == 1:
+        # XXX: replace this with a logging call
+        print ("[sqlite3] Old database version detected, " +
+               "updating to schema version 2", file=sys.stderr)
+        cur.execute("DROP INDEX records_byname")
+        cur.execute("""CREATE INDEX records_byname ON records (zone_id, name,
+                       rdtype, sigtype, id, ttl, rdata)""")
+        cur.execute("DROP INDEX records_byrname")
+        cur.execute("""CREATE INDEX records_byrname ON records (zone_id, rname,
+                       rdtype, name)""")
+        cur.execute("DROP INDEX nsec3_byhash")
+        cur.execute("""CREATE INDEX nsec3_byhash ON nsec3 (zone_id, hash,
+                       rdtype, id, ttl, rdata)""")
+        cur.execute("UPDATE schema_version SET version = 2")
+    elif version != 2:
+        raise Sqlite3DSError("Unknown database schema version " + version)
+    
 
 #########################################################################
 # open: open a database.  if the database is not yet set up, 
@@ -88,8 +117,10 @@ def open(dbfile):
         conn.commit()
         row = [1]
 
-    if row == None or row[0] != 1:
-        raise Sqlite3DSError("Bad database schema version")
+    if row == None:
+        raise Sqlite3DSError("Database schema version not found")
+    else:
+        check_version(cur, row[0]);
 
     return conn, cur
 

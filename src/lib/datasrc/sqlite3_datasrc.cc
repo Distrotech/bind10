@@ -54,9 +54,10 @@ struct Sqlite3Parameters {
 };
 
 namespace {
+// SQL statements to create a database file. schema version 2.
 const char* const SCHEMA_LIST[] = {
     "CREATE TABLE schema_version (version INTEGER NOT NULL)",
-    "INSERT INTO schema_version VALUES (1)",
+    "INSERT INTO schema_version VALUES (2)",
     "CREATE TABLE zones (id INTEGER PRIMARY KEY, "
     "name STRING NOT NULL COLLATE NOCASE, "
     "rdclass STRING NOT NULL COLLATE NOCASE DEFAULT 'IN', "
@@ -67,14 +68,30 @@ const char* const SCHEMA_LIST[] = {
     "rname STRING NOT NULL COLLATE NOCASE, ttl INTEGER NOT NULL, "
     "rdtype STRING NOT NULL COLLATE NOCASE, sigtype STRING COLLATE NOCASE, "
     "rdata STRING NOT NULL)",
-    "CREATE INDEX records_byname ON records (name)",
-    "CREATE INDEX records_byrname ON records (rname)",
+    "CREATE INDEX records_byname ON records (zone_id, name, rdtype, "
+    "sigtype, id, ttl, rdata)",
+    "CREATE INDEX records_byrname ON records (zone_id, rname, rdtype, name)",
     "CREATE TABLE nsec3 (id INTEGER PRIMARY KEY, zone_id INTEGER NOT NULL, "
     "hash STRING NOT NULL COLLATE NOCASE, "
     "owner STRING NOT NULL COLLATE NOCASE, "
     "ttl INTEGER NOT NULL, rdtype STRING NOT NULL COLLATE NOCASE, "
     "rdata STRING NOT NULL)",
-    "CREATE INDEX nsec3_byhash ON nsec3 (hash)",
+    "CREATE INDEX nsec3_byhash ON nsec3 (zone_id, hash, rdtype, "
+    "id, ttl, rdata)",
+    NULL
+};
+
+// SQL statements to convert schema version 1 to schema version 2
+const char* const V1_TO_V2[] = {
+    "DROP INDEX records_byname",
+    "CREATE INDEX records_byname ON records (zone_id, name, rdtype, "
+    "sigtype, id, ttl, rdata)",
+    "DROP INDEX records_byrname",
+    "CREATE INDEX records_byrname ON records (zone_id, rname, rdtype, name)",
+    "DROP INDEX nsec3_byhash",
+    "CREATE INDEX nsec3_byhash ON nsec3 (zone_id, hash, rdtype, "
+    "id, ttl, rdata)",
+    "UPDATE schema_version SET version = 2",
     NULL
 };
 
@@ -98,7 +115,7 @@ const char* const q_referral_str = "SELECT rdtype, ttl, sigtype, rdata FROM "
 const char* const q_any_str = "SELECT rdtype, ttl, sigtype, rdata "
     "FROM records WHERE zone_id=?1 AND name=?2";
 
-const char* const q_count_str = "SELECT COUNT(*) FROM records "
+const char* const q_count_str = "SELECT COUNT(rname) FROM records "
     "WHERE zone_id=?1 AND rname LIKE (?2 || '%');";
 
 const char* const q_previous_str = "SELECT name FROM records "
@@ -547,7 +564,7 @@ Sqlite3DataSrc::findReferral(const Name& qname,
 }
 
 Sqlite3DataSrc::Sqlite3DataSrc() :
-    dbparameters(new Sqlite3Parameters)
+    dbparameters(new Sqlite3Parameters), schema_version_(-1)
 {}
 
 Sqlite3DataSrc::~Sqlite3DataSrc() {
@@ -627,6 +644,33 @@ prepare(sqlite3* const db, const char* const statement) {
 }
 
 void
+checkVersion(Sqlite3Initializer* initializer) {
+    sqlite3* const db = initializer->params_.db_;
+    int version = initializer->params_.version_;
+    switch (version) {
+        case 1:
+            // XXX: replace this with a logging call
+            cerr << "[sqlite3] Old database version detected, "
+                 << "updating to schema version 2" << endl;
+            for (int i = 0; V1_TO_V2[i] != NULL; ++i) {
+                if (sqlite3_exec(db, V1_TO_V2[i],
+                                 NULL, NULL, NULL) != SQLITE_OK)
+                {
+                    isc_throw(Sqlite3Error, "Unable to update schema: '"
+                                            << V1_TO_V2[i] << "' failed");
+                }
+            }
+            initializer->params_.version_ = 2;
+            break;
+        case 2:
+            // Current version, no action necessary
+            break;
+        default:
+            isc_throw(Sqlite3Error, "Unknown schema version: " << version);
+    }
+}
+
+void
 checkAndSetupSchema(Sqlite3Initializer* initializer) {
     sqlite3* const db = initializer->params_.db_;
 
@@ -636,15 +680,17 @@ checkAndSetupSchema(Sqlite3Initializer* initializer) {
         sqlite3_step(prepared) == SQLITE_ROW) {
         initializer->params_.version_ = sqlite3_column_int(prepared, 0);
         sqlite3_finalize(prepared);
+        checkVersion(initializer);
     } else {
         if (prepared != NULL) {
             sqlite3_finalize(prepared);
         }
         for (int i = 0; SCHEMA_LIST[i] != NULL; ++i) {
-            if (sqlite3_exec(db, SCHEMA_LIST[i], NULL, NULL, NULL) !=
-                SQLITE_OK) {
-                isc_throw(Sqlite3Error,
-                          "Failed to set up schema " << SCHEMA_LIST[i]);
+            if (sqlite3_exec(db, SCHEMA_LIST[i],
+                             NULL, NULL, NULL) != SQLITE_OK)
+            {
+                isc_throw(Sqlite3Error, "Failed to set up schema: '"
+                                        << SCHEMA_LIST[i] << "' failed");
             }
         }
     }
@@ -677,6 +723,7 @@ Sqlite3DataSrc::open(const string& name) {
     }
 
     checkAndSetupSchema(&initializer);
+    schema_version_ = initializer.params_.version_;
     initializer.move(dbparameters);
 }
 
@@ -722,6 +769,11 @@ Sqlite3DataSrc::close(void) {
     dbparameters->db_ = NULL;
 
     return (SUCCESS);
+}
+
+int
+Sqlite3DataSrc::getSchemaVersion() {
+    return (schema_version_);
 }
 
 }
