@@ -56,6 +56,7 @@ struct Sqlite3Parameters {
 namespace {
 // SQL statements to create a database file. schema version 2.
 const char* const SCHEMA_LIST[] = {
+    "BEGIN EXCLUSIVE TRANSACTION",
     "CREATE TABLE schema_version (version INTEGER NOT NULL)",
     "INSERT INTO schema_version VALUES (2)",
     "CREATE TABLE zones (id INTEGER PRIMARY KEY, "
@@ -78,6 +79,7 @@ const char* const SCHEMA_LIST[] = {
     "rdata STRING NOT NULL)",
     "CREATE INDEX nsec3_byhash ON nsec3 (zone_id, hash, rdtype, "
     "id, ttl, rdata)",
+    "COMMIT",
     NULL
 };
 
@@ -92,6 +94,7 @@ const char* const V1_TO_V2[] = {
     "CREATE INDEX nsec3_byhash ON nsec3 (zone_id, hash, rdtype, "
     "id, ttl, rdata)",
     "UPDATE schema_version SET version = 2",
+    "COMMIT",
     NULL
 };
 
@@ -647,11 +650,33 @@ void
 checkVersion(Sqlite3Initializer* initializer) {
     sqlite3* const db = initializer->params_.db_;
     int version = initializer->params_.version_;
+    sqlite3_stmt* prepared = NULL;
+
     switch (version) {
         case 1:
+            // First we must confirm, within an exclusive transaction, that
+            // the database schema has not been changed under us by another
+            // process
+            sqlite3_exec(db, "BEGIN EXCLUSIVE TRANSACTION", NULL, NULL, NULL);
+            if (sqlite3_prepare_v2(db, "SELECT version FROM schema_version", -1,
+                                   &prepared, NULL) == SQLITE_OK &&
+                sqlite3_step(prepared) == SQLITE_ROW)
+            {
+                int current = sqlite3_column_int(prepared, 0);
+                sqlite3_finalize(prepared);
+                if (current != version) {
+                    sqlite3_exec(db, "COMMIT", NULL, NULL, NULL);
+                    return;
+                }
+            } else {
+                sqlite3_exec(db, "COMMIT", NULL, NULL, NULL);
+                return;
+            }
+
             // XXX: replace this with a logging call
             cerr << "[sqlite3] Old database version detected, "
                  << "updating to schema version 2" << endl;
+
             for (int i = 0; V1_TO_V2[i] != NULL; ++i) {
                 if (sqlite3_exec(db, V1_TO_V2[i],
                                  NULL, NULL, NULL) != SQLITE_OK)
@@ -662,6 +687,7 @@ checkVersion(Sqlite3Initializer* initializer) {
             }
             initializer->params_.version_ = 2;
             break;
+
         case 2:
             // Current version, no action necessary
             break;

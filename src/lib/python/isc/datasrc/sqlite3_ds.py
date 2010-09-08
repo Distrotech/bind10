@@ -15,7 +15,7 @@
 
 # $Id$
 
-import sqlite3, re, random
+import sqlite3, re, random, sys
 import isc
 
 
@@ -36,6 +36,7 @@ class Sqlite3DSError(Exception):
 #########################################################################
 def create(cur):
     """Create new zone database"""
+    cur.execute("BEGIN EXCLUSIVE TRANSACTION")
     cur.execute("CREATE TABLE schema_version (version INTEGER NOT NULL)")
     cur.execute("INSERT INTO schema_version VALUES (2)")
     cur.execute("""CREATE TABLE zones (id INTEGER PRIMARY KEY, 
@@ -70,13 +71,21 @@ def create(cur):
 #                to the current one
 # input: cur - database cursor
 #        version - the current version number
-# returns: the new version
 #########################################################################
-def check_version(cur, version):
+def check_version(conn, cur, version):
     if version == 1:
+        # Double-check that the version hasn't been changed under us
+        cur.execute("BEGIN EXCLUSIVE TRANSACTION")
+        cur.execute("SELECT version FROM schema_version")
+        row = cur.fetchone()
+        if not row or row[0] != version:
+            conn.commit()
+            return
+
         # XXX: replace this with a logging call
         print ("[sqlite3] Old database version detected, " +
                "updating to schema version 2", file=sys.stderr)
+
         cur.execute("DROP INDEX records_byname")
         cur.execute("""CREATE INDEX records_byname ON records (zone_id, name,
                        rdtype, sigtype, id, ttl, rdata)""")
@@ -87,6 +96,7 @@ def check_version(cur, version):
         cur.execute("""CREATE INDEX nsec3_byhash ON nsec3 (zone_id, hash,
                        rdtype, id, ttl, rdata)""")
         cur.execute("UPDATE schema_version SET version = 2")
+        conn.commit()
     elif version != 2:
         raise Sqlite3DSError("Unknown database schema version " + version)
     
@@ -116,12 +126,13 @@ def open(dbfile):
         create(cur)
         conn.commit()
         row = [1]
+        return conn, cur
 
     if row == None:
         raise Sqlite3DSError("Database schema version not found")
-    else:
-        check_version(cur, row[0]);
 
+    check_version(conn, cur, row[0]);
+    conn.commit()
     return conn, cur
 
 #########################################################################
