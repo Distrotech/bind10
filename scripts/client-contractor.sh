@@ -31,4 +31,8 @@ if [ $# -lt 1 -o $# -gt 2 ]; then
     exit 1;
 fi
 
-$progdir/common.sh $* intermediary contractor
+if [ "$1" = "-a" ]; then
+    $progdir/common.sh -a 0 $2 intermediary contractor
+else
+    $progdir/common.sh 0 $1 intermediary contractor
+fi

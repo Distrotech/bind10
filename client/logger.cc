@@ -62,8 +62,7 @@ Logger::logInfo(std::ostream& output)
     // if "lost" is greater than zero, more that count_ packets will have been
     // sent to get to this figure.)
     boost::posix_time::time_duration interval = tend_ - tstart_;
-    double dinterval = interval.total_seconds() +
-        (interval.total_microseconds() / 1.0e6);
+    double dinterval = interval.total_microseconds() / 1.0e6;
 
     output << "," << dinterval << "," << (dinterval / count_) << "\n";
 

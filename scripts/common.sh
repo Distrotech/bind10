@@ -28,7 +28,7 @@
 
 progdir=`dirname $0`
 
-if [ $# -lt 2 -o $# -gt 4 ]; then
+if [ $# -lt 2 -o $# -gt 5 ]; then
     echo "Usage: common [-a] memsize logfile first-program [second-program]"
     exit 1;
 fi
@@ -51,13 +51,20 @@ else
     second=$4
 fi
 
+echo "Running common.sh"
+echo "Memsize = $memsize"
+echo "Logfile = $logfile"
+echo "First   = $first"
+echo "Second  = $second"
+echo ""
+
 for burst in 1 2 4 8 16 32 64 128 256
 do
     echo "Setting burst to $burst"
 
     # Start the server programs.  First make sure that the message
     # queues has been deleted before any run starts.
-    $progdir/queue_clear
+    $progdir/queue_clear 32
 
     # Start the first of the server program(s) (the client or intermediary
     # if two programs are specified, or the server if just one is being used)
@@ -73,7 +80,7 @@ do
     # Allow server programs to start.
     sleep 3
 
-    for rpt in {1..64}
+    for rpt in {1..32}
     do
         cmd="$progdir/client --count 4096 --burst $burst --size 256 --logfile $logfile $async_flags"
         echo "$rpt) $cmd"

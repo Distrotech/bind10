@@ -1,0 +1,101 @@
+#!/bin/bash
+# Copyright (C) 2010  Internet Systems Consortium, Inc. ("ISC")
+#
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND ISC DISCLAIMS ALL WARRANTIES WITH
+# REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+# AND FITNESS.  IN NO EVENT SHALL ISC BE LIABLE FOR ANY SPECIAL, DIRECT,
+# INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+# LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+# OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+# PERFORMANCE OF THIS SOFTWARE.
+
+# $Id$
+
+
+# \brief Run Series of Tests
+#
+# Runs a series of tests with varying parameters.  The script starts up the
+# server program(s) with a given set of parameters then kicks off the client.
+# Each run is done 32 times.
+#
+# The parameters are:
+#
+# 4 Subprocesses
+# Memory - set to 0, 4MB, 8MB
+#    Burst size 1, 2, 4, .. 256
+#
+# \param $1 Program to run
+# \param $2 Name of the logfile
+# \param $* Other parameters passed directly to the program
+
+
+progdir=`dirname $0`
+
+run_test() {
+
+    if [ $# -lt 2 ]; then
+        echo "Usage: common program logfile [parameters passed to program]"
+        exit 1;
+    fi
+
+    # Set the remaining parameters
+
+    program=$1
+    shift
+    logfile=$1
+    shift
+
+    for memsize in 0 4096 8192
+        do
+        echo "Memory size = $memsize" | tee -a $logfile
+
+        for burst in 1 2 4 8 16 32 64 128 256
+        do
+            echo "Setting burst to $burst"
+
+            # First make sure that the message queues has been deleted before
+            # any run starts.
+            $progdir/queue_clear 32
+
+            # Start the server program.  This starts the appropriate subprogram
+            # as well
+            if [ "$program" = "receptionist" ];
+            then
+                subprog="--worker worker"
+            elif [ "$program" = "intermediary" ];
+            then
+                subprog="--worker contractor"
+            else
+                subprog=""
+            fi
+            $progdir/$program --memsize $memsize --burst $burst $subprog $* &
+
+            # Allow server programs to start.
+            sleep 1
+
+            # Run the client
+            for rpt in {1..32}
+            do
+                cmd="$progdir/client --count 4096 --burst $burst --size 256 --logfile $logfile --asynchronous --margin 4"
+                echo "$rpt) $cmd"
+                $cmd
+            done
+
+            # Kill the server programs and wait to stop before doing the next
+            # loop.
+            echo "Killing job"
+            jobs
+            kill %
+            sleep 1
+            kill -9 %
+        done
+    done
+}
+
+run_test server server.csv
+run_test receptionist receptionist.csv
+run_test intermediary intermediary.csv
