@@ -15,7 +15,7 @@ libcommon_a_SOURCES += utilities.cc utilities.h
 libcommon_a_SOURCES += throughput_measure.cc throughput_measure.h
 
 AM_CPPFLAGS = $(BOOSTLOCINC)
-AM_LDFLAGS  = $(BOOSTLOCLIB) -lboost_system-mt
+AM_LDFLAGS  = $(BOOSTLOCLIB) -lboost_system
 
 bin_PROGRAMS = queue_clear
 queue_clear_SOURCES  = queue_clear.cc
