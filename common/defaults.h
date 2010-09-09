@@ -39,6 +39,7 @@ static const uint32_t CL_DEF_PERCENT = 100;
 static const uint16_t CL_DEF_PKTSIZE = 8192;
 static const uint16_t CL_DEF_PORT = 5400;
 static const uint16_t CL_DEF_QUEUE = 1;
+static const uint32_t CL_DEF_THROUGHPUT = 0;
 
 /// \brief UDP/IP defaults.
 

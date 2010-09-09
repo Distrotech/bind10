@@ -81,6 +81,9 @@ TargetCommand::parseCommandLine(int argc, char** argv)  {
         ("queue,q",
             po::value<uint32_t>(&queue_)->default_value(CL_DEF_QUEUE),
             "Message queue on which to listen")
+        ("throughput,t",
+            po::value<uint32_t>(&throughput_)->default_value(CL_DEF_THROUGHPUT),
+            "Interval (seconds) for output of throughput information")
         ("worker,w",
             po::value<std::string>(&worker_), "Worker image name");
 

@@ -47,6 +47,7 @@
 #include "string.h"
 #include "target_command.h"
 #include "msgq_communicator_client.h"
+#include "throughput_measure.h"
 #include "udp_communicator.h"
 #include "receptionist_controller.h"
 #include "exception.h"
@@ -81,6 +82,9 @@ int main(int argc, char**argv)
 
         // Create the task controller.
         ReceptionistController controller(command.getBurst(), command.getQueue());
+
+        // Instantiate the background thread to measure throughput.
+        ThroughputMeasure measure(command.getThroughput());
 
         // ... and enter the run loop.
 

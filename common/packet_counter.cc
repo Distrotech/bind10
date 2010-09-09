@@ -18,8 +18,8 @@
 
 // Holds the static variables for the PacketCounter class.
 
-int PacketCounter::send_count_ = 0;
-int PacketCounter::receive_count_ = 0;
-int PacketCounter::send2_count_ = 0;
-int PacketCounter::receive2_count_ = 0;
+volatile int PacketCounter::send_count_ = 0;
+volatile int PacketCounter::receive_count_ = 0;
+volatile int PacketCounter::send2_count_ = 0;
+volatile int PacketCounter::receive2_count_ = 0;
 bool PacketCounter::handler_registered_ = false;

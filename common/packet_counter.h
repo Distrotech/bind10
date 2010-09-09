@@ -91,6 +91,12 @@ public:
         printCounters();
     }
 
+    /// \brief Returns the receive count
+    /// (Only needed for the throughput measure class)
+    static int getReceiveCount() {
+        return receive_count_;
+    }
+
     /// \brief Prints the send and receive counters
     static void printCounters() {
         std::cout << "send() calls:        " << send_count_ << "\n"
@@ -107,10 +113,10 @@ public:
     }
 
 private:
-    static int  send_count_;        //< Count of packets sent
-    static int  receive_count_;     //< Count of packets received
-    static int  send2_count_;       //< Second count of packets sent
-    static int  receive2_count_;    //< Second count of packets received
+    static volatile int  send_count_;    //< Count of packets sent
+    static volatile int  receive_count_; //< Count of packets received
+    static volatile int  send2_count_;   //< Second count of packets sent
+    static volatile int  receive2_count_;//< Second count of packets received
     static bool handler_registered_;//< Set true when handlers are registered
 };
 

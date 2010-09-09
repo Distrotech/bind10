@@ -37,6 +37,7 @@
 
 #include "target_command.h"
 #include "burst_server_controller.h"
+#include "throughput_measure.h"
 #include "udp_communicator.h"
 #include "exception.h"
 
@@ -59,6 +60,9 @@ int main(int argc, char**argv)
         // Create the task controller.
         BurstServerController controller(command.getBurst(),
             command.getMemorySize());
+
+        // Instantiate the throughput measure.
+        ThroughputMeasure measure(command.getThroughput());
 
         // ... and enter the run loop.
 

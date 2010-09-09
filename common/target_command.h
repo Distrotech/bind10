@@ -79,6 +79,11 @@ public:
         return queue_;
     }
 
+    /// \return Throughput interval
+    uint32_t getThroughput() const {
+        return throughput_;
+    }
+
     /// \return File spec of the worker to run. A number of worker
     /// processes equal to the queue count are started
     std::string getWorker() const {
@@ -102,6 +107,7 @@ private:
     uint32_t        queue_;     //< Queue number on which to receive data
     uint32_t        burst_;     //< Burst size (for processing)
     uint32_t        memsize_;   //< Memory size (in kB)
+    uint32_t        throughput_;//< Throughput measure output interval
     std::string     worker_;    //< Worker process
     boost::program_options::options_description desc_; //< Options description structure
     boost::program_options::variables_map vm_;         //< Maps variables to values

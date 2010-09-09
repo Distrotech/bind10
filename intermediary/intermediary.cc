@@ -39,6 +39,7 @@
 #include "defaults.h"
 #include "target_command.h"
 #include "msgq_communicator_client.h"
+#include "throughput_measure.h"
 #include "udp_communicator.h"
 #include "intermediary_controller.h"
 #include "exception.h"
@@ -70,6 +71,9 @@ int main(int argc, char**argv)
         // Create the task controller.
         IntermediaryController controller(command.getBurst(),
             command.getQueue());
+
+        // Instantiate the thread to output throughput information
+        ThroughputMeasure measure(command.getThroughput());
 
         // ... and enter the run loop.
         controller.run(client_communicator, contractor_communicator);

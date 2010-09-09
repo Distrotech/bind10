@@ -12,6 +12,7 @@ libcommon_a_SOURCES += target_command.cc target_command.h
 libcommon_a_SOURCES += udp_buffer.cc udp_buffer.h
 libcommon_a_SOURCES += udp_communicator.cc udp_communiator.h
 libcommon_a_SOURCES += utilities.cc utilities.h
+libcommon_a_SOURCES += throughput_measure.cc throughput_measure.h
 
 AM_CPPFLAGS = $(BOOSTLOCINC)
 AM_LDFLAGS  = $(BOOSTLOCLIB) -lboost_system-mt
