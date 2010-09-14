@@ -22,24 +22,26 @@
 import unittest
 import os
 from isc.config.cfgmgr import *
+from isc.config import config_data
 from unittest_fakesession import FakeModuleCCSession
 
 class TestConfigManagerData(unittest.TestCase):
     def setUp(self):
         self.data_path = os.environ['CONFIG_TESTDATA_PATH']
-        self.config_manager_data = ConfigManagerData(self.data_path)
+        self.writable_data_path = os.environ['CONFIG_WR_TESTDATA_PATH']
+        self.config_manager_data = ConfigManagerData(self.writable_data_path)
         self.assert_(self.config_manager_data)
 
     def test_init(self):
         self.assertEqual(self.config_manager_data.data['version'],
-                         ConfigManagerData.CONFIG_VERSION)
+                         config_data.BIND10_CONFIG_DATA_VERSION)
         self.assertEqual(self.config_manager_data.data_path,
-                         self.data_path)
+                         self.writable_data_path)
         self.assertEqual(self.config_manager_data.db_filename,
-                         self.data_path + os.sep + "b10-config.db")
+                         self.writable_data_path + os.sep + "b10-config.db")
 
     def test_read_from_file(self):
-        ConfigManagerData.read_from_file(self.data_path)
+        ConfigManagerData.read_from_file(self.writable_data_path)
         self.assertRaises(ConfigManagerDataEmpty,
                           ConfigManagerData.read_from_file,
                           "doesnotexist")
@@ -52,12 +54,16 @@ class TestConfigManagerData(unittest.TestCase):
         self.assertRaises(ConfigManagerDataReadError,
                           ConfigManagerData.read_from_file,
                           self.data_path, "b10-config-bad3.db")
+        self.assertRaises(ConfigManagerDataReadError,
+                          ConfigManagerData.read_from_file,
+                          self.data_path, "b10-config-bad4.db")
 
     def test_write_to_file(self):
-        output_file_name = "b10-config-write-test";
+        output_file_name = "b10-config-write-test"
         self.config_manager_data.write_to_file(output_file_name)
         new_config = ConfigManagerData(self.data_path, output_file_name)
         self.assertEqual(self.config_manager_data, new_config)
+        os.remove(output_file_name)
 
     def test_equality(self):
         # tests the __eq__ function. Equality is only defined
@@ -79,14 +85,15 @@ class TestConfigManager(unittest.TestCase):
 
     def setUp(self):
         self.data_path = os.environ['CONFIG_TESTDATA_PATH']
+        self.writable_data_path = os.environ['CONFIG_WR_TESTDATA_PATH']
         self.fake_session = FakeModuleCCSession()
-        self.cm = ConfigManager(self.data_path, self.fake_session)
+        self.cm = ConfigManager(self.writable_data_path, self.fake_session)
         self.name = "TestModule"
         self.spec = isc.config.module_spec_from_file(self.data_path + os.sep + "/spec2.spec")
     
     def test_init(self):
         self.assert_(self.cm.module_specs == {})
-        self.assert_(self.cm.data_path == self.data_path)
+        self.assert_(self.cm.data_path == self.writable_data_path)
         self.assert_(self.cm.config != None)
         self.assert_(self.fake_session.has_subscription("ConfigManager"))
         self.assert_(self.fake_session.has_subscription("Boss", "ConfigManager"))
@@ -161,13 +168,13 @@ class TestConfigManager(unittest.TestCase):
         self.assertEqual(commands_spec['Spec2'], module_spec.get_commands_spec())
 
     def test_read_config(self):
-        self.assertEqual(self.cm.config.data, {'version': 1})
+        self.assertEqual(self.cm.config.data, {'version': config_data.BIND10_CONFIG_DATA_VERSION})
         self.cm.read_config()
         # due to what get written, the value here is what the last set_config command in test_handle_msg does
-        self.assertEqual(self.cm.config.data, {'TestModule': {'test': 125}, 'version': 1})
+        self.assertEqual(self.cm.config.data, {'TestModule': {'test': 125}, 'version': config_data.BIND10_CONFIG_DATA_VERSION})
         self.cm.data_path = "/no_such_path"
         self.cm.read_config()
-        self.assertEqual(self.cm.config.data, {'version': 1})
+        self.assertEqual(self.cm.config.data, {'version': config_data.BIND10_CONFIG_DATA_VERSION})
 
     def test_write_config(self):
         # tested in ConfigManagerData tests
@@ -190,9 +197,9 @@ class TestConfigManager(unittest.TestCase):
                                 {'result': [1, 'Bad get_module_spec command, argument not a dict']})
         self._handle_msg_helper({ "command": [ "get_module_spec", { } ] },
                                 {'result': [1, 'Bad module_name in get_module_spec command']})
-        self._handle_msg_helper({ "command": [ "get_config" ] }, { 'result': [ 0, { 'version': 1} ]})
+        self._handle_msg_helper({ "command": [ "get_config" ] }, { 'result': [ 0, { 'version': config_data.BIND10_CONFIG_DATA_VERSION } ]})
         self._handle_msg_helper({ "command": [ "get_config", { "module_name": "nosuchmodule" } ] },
-                                {'result': [0, { 'version': 1 }]})
+                                {'result': [0, { 'version': config_data.BIND10_CONFIG_DATA_VERSION }]})
         self._handle_msg_helper({ "command": [ "get_config", 1 ] },
                                 {'result': [1, 'Bad get_config command, argument not a dict']})
         self._handle_msg_helper({ "command": [ "get_config", { } ] },
@@ -282,13 +289,14 @@ class TestConfigManager(unittest.TestCase):
 
     def test_run(self):
         self.fake_session.group_sendmsg({ "command": [ "get_commands_spec" ] }, "ConfigManager")
+        self.fake_session.group_sendmsg({ "command": [ "shutdown" ] }, "ConfigManager")
         self.cm.run()
         pass
 
 
 if __name__ == '__main__':
-    if not 'CONFIG_TESTDATA_PATH' in os.environ:
-        print("You need to set the environment variable CONFIG_TESTDATA_PATH to point to the directory containing the test data files")
+    if not 'CONFIG_TESTDATA_PATH' in os.environ or not 'CONFIG_WR_TESTDATA_PATH' in os.environ:
+        print("You need to set the environment variable CONFIG_TESTDATA_PATH and CONFIG_WR_TESTDATA_PATH to point to the directory containing the test data files")
         exit(1)
     unittest.main()
 

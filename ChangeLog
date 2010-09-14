@@ -1,10 +1,116 @@
-  77.   [func]      shentingting
+  93.   [func]      shentingting
 	Add config_handler function to make new config data to be applied.
 	Using socket pair communication mechanism to achieve quickly
 	terminate on shutdown command, and still using a global flag. Deal
 	with connection exception(the master closes connection etc.)
 	during transmission.
 	(Trac #216, rTDB)
+
+  92.	[func]*		jelte
+	libdns_python (the python wrappers for libdns++) has been renamed
+	to pydnspp (Python DNS++). Programs and libraries that used
+	'import libdns_python' now need to use 'import pydnspp'.
+	(Trac #314, r2902)
+
+  91.	[func]*		jinmei
+	lib/cc: Use const pointers and const member functions for the API
+	as much as possible for safer operations.  Basically this does
+	change the observable behavior, but some of the API were changed
+	in a backward incompatible manner.  This change also involves more
+	copies, but at this moment the overhead is deemed acceptable.
+	(Trac #310, r2803)
+
+  90.	[build]		jinmei
+	(Darwin/Mac OS X specific) Specify DYLD_LIBRARY_PATH for tests and
+	experimental run under the source tree.  Without this loadable
+	python modules refer to installation paths, which may confuse the
+	operation due to version mismatch or even trigger run time errors
+	due to missing libraries. (Trac #313, r2782)
+
+  89.	[build]		jinmei
+	Generate b10-config.db for tests at build time so that the source
+	tree does not have to be writable. (Trac #315, r2776)
+
+  88.   [func]		jelte
+	Blocking reads on the msgq command channel now have a timeout
+	(defaults to 4 seconds, modifiable as needed by modules).
+	Because of this, modules will no longer block indefinitely
+	if they are waiting for a message that is not sent for whatever
+	reason. (Trac #296, r2761)
+
+  87.   [func]		zhanglikun
+	lib/python/isc/notifyout: Add the feature of notify-out, when 
+	zone axfr/ixfr finishing, the server will notify its slaves.
+	(Trac #289, svn r2737)
+
+  86.   [func]		jerry
+    	bin/zonemgr: Added zone manager module. The zone manager is one 
+	of the co-operating processes of BIND10, which keeps track of 
+	timers and other information necessary for BIND10 to act as a 
+	slave. (Trac #215, svn r2737)
+
+  85.	[build]*	jinmei
+	Build programs using dynamic link by default.  A new configure
+	option --enable-static-link is provided to force static link for
+	executable programs.  Statically linked programs can be run on a
+	debugger more easily and would be convenient for developers.
+	(Trac #309, svn r2723)
+
+bind10-devel-20100812 released on August 12, 2010
+
+  84.	[bug]		jinmei, jerry
+	This is a quick fix patch for the issue: AXFR fails half the 
+	time because of connection problems. xfrout client will make
+	a new connection every time. (Trac #299, svn r2697)
+
+  83.	[build]*	jreed
+	The configure --with-boost-lib option is removed. It was not
+	used since the build included ASIO. (svn r2684)
+
+  82.	[func]		jinmei
+	bin/auth: Added -u option to change the effective process user
+	of the authoritative server after invocation.  The same option to
+	the boss process will be propagated to b10-auth, too.
+	(Trac #268, svn r2675)
+
+  81.	[func]		jinmei
+	Added a C++ framework for micro benchmark tests.  A supplemental
+	library functions to build query data for the tests were also
+	provided. (Trac #241, svn r2664)
+
+  80.	[bug]		jelte
+	bindctl no longer accepts configuration changes for unknown or
+	non-running modules (for the latter, this is until we have a
+	way to verify those options, at which point it'll be allowed
+	again).
+	(Trac #99, r2657)
+
+  79.	[func]		feng, jinmei
+	Refactored the ASIO link interfaces to move incoming XFR and
+	NOTIFY processing to the auth server class.  Wrapper classes for
+	ASIO specific concepts were also provided, so that other BIND 10
+	modules can (eventually) use the interface without including the
+	ASIO header file directly.  On top of these changes, AXFR and
+	NOTIFY processing was massively improved in terms of message
+	validation and protocol conformance.  Detailed tests were provided
+	to confirm the behavior.
+	Note: Right now, NOTIFY doesn't actually trigger subsequent zone
+	transfer due to security reasons. (Trac #221, r2565)
+
+  78.	[bug]		jinmei
+	lib/dns: Fixed miscellaneous bugs in the base32 (hex) and hex
+	(base16) implementation, including incorrect padding handling,
+	parser failure in decoding with a SunStudio build, missing
+	validation on the length of encoded hex string.  Test cases were
+	more detailed to identify these bugs and confirm the fix.  Also
+	renamed the incorrect term of "base32" to "base32hex".  This
+	changed the API, but they are not intended to be used outside
+	libdns++, so we don't consider it a backward incompatible change.
+	(Trac #256, r2549)
+
+  77.	[func]		zhanglikun
+	Make error message be more friendly when running cmdctl and it's 
+	already running(listening on same port)(Trac #277, r2540)
 
   76.	[bug]		jelte
 	Fixed a bug in the handling of 'remote' config modules (i.e.
@@ -177,7 +283,11 @@ bind10-devel-20100602 released on June 2, 2010
 	a remote server. (Trac #218, svn r2038)
 
   49.	[func]*		jelte
-	Use unix domain sockets for msgq. (Trac #183, svn r2009)
+	Use unix domain sockets for msgq. For b10-msgq, the command
+	line options --msgq-port and -m were removed. For bind10,
+	the -msgq-port option was removed, and the -m command line
+	option was changed to be a filename (instead of port number).
+	(Trac #183, svn r2009)
 
   48.	[func]		jelte
 	bin/auth: Use asio's io_service for the msgq handling.

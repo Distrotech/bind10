@@ -50,7 +50,7 @@
  *      without express or implied warranty of any kind.
  *      
  */
-#include <dns/sha1.h>
+#include <dns/util/sha1.h>
 
 /* Local Function Prototyptes */
 static void SHA1Finalize(SHA1Context *, uint8_t Pad_Byte);
@@ -85,9 +85,9 @@ SHA1AddLength(SHA1Context *context, uint32_t length) {
     uint32_t addTemp = context->Length_Low;
     context->Length_Low += length;
     if (context->Length_Low < addTemp && ++context->Length_High == 0) {
-        return true;
+        return (true);
     } else {
-        return false;
+        return (false);
     }
 }
 

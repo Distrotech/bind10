@@ -49,7 +49,7 @@ using namespace isc::datasrc;
 using namespace isc::data;
 
 namespace {
-const ElementPtr SQLITE_DBFILE_EXAMPLE = Element::fromJSON(
+ConstElementPtr SQLITE_DBFILE_EXAMPLE = Element::fromJSON(
     "{ \"database_file\": \"" TEST_DATA_DIR "/example.org.sqlite3\"}");
 
 class DataSrcTest : public ::testing::Test {
@@ -1056,7 +1056,6 @@ TEST_F(DataSrcMatchTest, updateWithNoMatch) {
     EXPECT_EQ(&datasrc1, match.getDataSource());
 }
 
-// This test currently fails.
 TEST_F(DataSrcMatchTest, initialUpdateWithNoMatch) {
     DataSrcMatch match(Name("www.example.com"), RRClass::IN());
 

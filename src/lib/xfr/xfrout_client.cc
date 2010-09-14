@@ -54,24 +54,36 @@ XfroutClient::~XfroutClient()
 
 void
 XfroutClient::connect() {
-    impl_->socket_.connect(stream_protocol::endpoint(impl_->file_path_));
+    asio::error_code err;
+    impl_->socket_.connect(stream_protocol::endpoint(impl_->file_path_), err);
+    if (err) {
+        isc_throw(XfroutError, "socket connect failed: " << err.message());
+    }
 }
 
 void
 XfroutClient::disconnect() {
-    impl_->socket_.close();
+    asio::error_code err;
+    impl_->socket_.close(err);
+    if (err) {
+        isc_throw(XfroutError, "close socket failed: " << err.message());
+    }
 }
 
 int 
-XfroutClient::sendXfroutRequestInfo(const int tcp_sock, uint8_t* msg_data,
+XfroutClient::sendXfroutRequestInfo(const int tcp_sock,
+                                    const void* const msg_data,
                                     const uint16_t msg_len)
 {
     if (-1 == send_fd(impl_->socket_.native(), tcp_sock)) {
         isc_throw(XfroutError,
-                  "Fail to send the socket file descriptor to xfrout module");
+                  "Failed to send the socket file descriptor "
+                  "to xfrout module");
     }
 
-    // XXX: this shouldn't be blocking send, even though it's unlikely to block.
+    // TODO: this shouldn't be blocking send, even though it's unlikely to
+    // block.
+    // converting the 16-bit word to network byte order.
     const uint8_t lenbuf[2] = { msg_len >> 8, msg_len & 0xff };
     if (send(impl_->socket_.native(), lenbuf, sizeof(lenbuf), 0) !=
         sizeof(lenbuf)) {
@@ -89,7 +101,7 @@ XfroutClient::sendXfroutRequestInfo(const int tcp_sock, uint8_t* msg_data,
                   "xfr query hasn't been processed properly by xfrout module");
     }
 
-    return 0;
+    return (0);
 }
 
 } // End for xfr

@@ -70,6 +70,7 @@ StaticDataSrcImpl::StaticDataSrcImpl() :
 {
     authors = RRsetPtr(new RRset(authors_name, RRClass::CH(),
                                  RRType::TXT(), RRTTL(0)));
+    authors->addRdata(generic::TXT("Chen Zhengzhang")); // Jerry
     authors->addRdata(generic::TXT("Evan Hunt"));
     authors->addRdata(generic::TXT("Han Feng"));
     authors->addRdata(generic::TXT("Jelte Jansen"));
@@ -80,6 +81,8 @@ StaticDataSrcImpl::StaticDataSrcImpl() :
     authors->addRdata(generic::TXT("Michael Graff"));
     authors->addRdata(generic::TXT("Naoki Kambe"));
     authors->addRdata(generic::TXT("Shane Kerr"));
+    authors->addRdata(generic::TXT("Shen Tingting"));
+    authors->addRdata(generic::TXT("Stephen Morris"));
     authors->addRdata(generic::TXT("Zhang Likun"));
 
     authors_ns = RRsetPtr(new RRset(authors_name, RRClass::CH(),
@@ -257,8 +260,8 @@ StaticDataSrc::init() {
 // Static data source is "configuration less", so the \c config parameter
 // is intentionally ignored.
 DataSrc::Result
-StaticDataSrc::init(const isc::data::ElementPtr config UNUSED_PARAM) {
-    return init();
+StaticDataSrc::init(isc::data::ConstElementPtr config UNUSED_PARAM) {
+    return (init());
 }
 
 DataSrc::Result
