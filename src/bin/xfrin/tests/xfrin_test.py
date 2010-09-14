@@ -77,7 +77,6 @@ class MockXfrin(Xfrin):
     def _cc_setup(self):
         isc.config.ModuleCCSession = MockModuleCCSession
         super()._cc_setup()
-        #self._max_transfers_in = 10
     
     def _cc_check_command(self):
         self._shutdown_flag = 1
@@ -108,9 +107,9 @@ class MockSocket():
         pass
 
 class MockXfrinConnection(XfrinConnection):
-    def __init__(self, conn_socket, zone_name, rrclass, db_file, shutdown_flag,
+    def __init__(self, conn_socket, zone_name, rrclass, db_file, 
                  master_addr):
-        super().__init__(conn_socket, zone_name, rrclass, db_file, shutdown_flag,
+        super().__init__(conn_socket, zone_name, rrclass, db_file,
                          master_addr)
         self.query_data = b''
         self.reply_data = b''
@@ -199,7 +198,7 @@ class TestXfrinConnection(unittest.TestCase):
             os.remove(TEST_DB_FILE)
         self.conn = MockXfrinConnection(self.conn_sockets[1], 'example.com.',
                                         TEST_RRCLASS, TEST_DB_FILE,
-                                        0, TEST_MASTER_IPV4_ADDRINFO)
+                                        TEST_MASTER_IPV4_ADDRINFO)
         # replace the XFR socket with our local mock
         self.conn._socket = self.mock_xfrsockets[1]
         self.axfr_after_soa = False
@@ -221,7 +220,6 @@ class TestXfrinConnection(unittest.TestCase):
             os.remove(TEST_DB_FILE)
 
     def test_connect(self):
-        #self.assertEqual(, "")
         self.assertRaises(Exception, self.conn.connect,
                           (TEST_MASTER_IPV4_ADDRESS,53))
 
@@ -275,7 +273,6 @@ class TestXfrinConnection(unittest.TestCase):
         self.conn_sockets[0].send(b"shutdown")
         self.assertRaises(XfrinException, super(MockXfrinConnection,
                                                 self.conn)._select)
-
     def test_init_ip6(self):
         # This test simply creates a new XfrinConnection object with an
         # IPv6 address, tries to bind it to an IPv6 wildcard address/port
@@ -283,13 +280,13 @@ class TestXfrinConnection(unittest.TestCase):
         # tends to assume it's IPv4 only and hardcode AF_INET.  This test
         # uncovers such a bug.
         c = MockXfrinConnection({}, 'example.com.', TEST_RRCLASS, TEST_DB_FILE,
-                                0, TEST_MASTER_IPV6_ADDRINFO)
+                                 TEST_MASTER_IPV6_ADDRINFO)
         c._socket.bind(('::', 0))
         c.close()
 
     def test_init_chclass(self):
         c = XfrinConnection({}, 'example.com.', RRClass.CH(), TEST_DB_FILE,
-                            0, TEST_MASTER_IPV4_ADDRINFO)
+                             TEST_MASTER_IPV4_ADDRINFO)
         axfrmsg = c._create_query(RRType.AXFR())
         self.assertEqual(axfrmsg.get_question()[0].get_class(),
                          RRClass.CH())
@@ -362,12 +359,6 @@ class TestXfrinConnection(unittest.TestCase):
         self.soa_response_params['rcode'] = Rcode.SERVFAIL()
         self.conn.response_generator = self._create_soa_response_data
         self.assertRaises(XfrinException, self.conn._check_soa_serial)
-
-    def test_response_shutdown(self):
-        self.conn.response_generator = self._create_normal_response_data
-        self.conn._shutdown_flag = 1
-        self.conn._send_query(RRType.AXFR())
-        self.assertRaises(XfrinException, self._handle_xfrin_response)
 
     def test_response_timeout(self):
         self.conn.response_generator = self._create_normal_response_data
@@ -531,6 +522,15 @@ class TestXfrin(unittest.TestCase):
 
         self.args['port'] = 'http'
         self.assertRaises(XfrinException, self._do_parse)
+     
+    def test_config_handler_noupdate(self):
+        old_value = self.xfr._max_transfers_in
+        self.xfr.config_handler({})
+        self.assertEqual(old_value, self.xfr._max_transfers_in)
+
+    def test_config_handler(self):
+        self.xfr.config_handler({"transfers_in":5})
+        self.assertEqual(5, self.xfr._max_transfers_in)
 
     def test_command_handler_shutdown(self):
         self.assertEqual(self.xfr.command_handler("shutdown",
@@ -550,18 +550,18 @@ class TestXfrin(unittest.TestCase):
 
     def test_command_handler_retransfer_quota(self):
         for i in range(self.xfr._max_transfers_in - 1):
-            self.xfr._threads_zones[str(i) + TEST_ZONE_NAME] = MockThread()
+            self.xfr._zones_to_threads[str(i) + TEST_ZONE_NAME] = MockThread()
         # there can be one more outstanding transfer.
         self.assertEqual(self.xfr.command_handler("retransfer",
                                                   self.args)['result'][0], 0)
         # make sure the # xfrs would excceed the quota
-        self.xfr._threads_zones[str(self.xfr._max_transfers_in) + TEST_ZONE_NAME] = MockThread()
+        self.xfr._zones_to_threads[str(self.xfr._max_transfers_in) + TEST_ZONE_NAME] = MockThread()
         # this one should fail
         self.assertEqual(self.xfr.command_handler("retransfer",
                                                   self.args)['result'][0], 1)
 
     def test_command_handler_retransfer_inprogress(self):
-        self.xfr._threads_zones[TEST_ZONE_NAME] = MockThread()
+        self.xfr._zones_to_threads[TEST_ZONE_NAME] = MockThread()
         self.assertEqual(self.xfr.command_handler("retransfer",
                                                   self.args)['result'][0], 1)
 

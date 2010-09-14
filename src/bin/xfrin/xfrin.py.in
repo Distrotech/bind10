@@ -71,30 +71,30 @@ class XfrinConnection:
     '''Do xfrin in this class. '''    
 
     def __init__(self,
-                 conn_socket, zone_name, rrclass, db_file, shutdown_flag,
+                 conn_socket, zone_name, rrclass, db_file, 
                  master_addrinfo, verbose = False, idle_timeout = 60): 
         ''' idle_timeout: max idle time for read data from socket.
             db_file: specify the data source file.
             check_soa: when it's true, check soa first before sending xfr query
         '''
         self._socket = socket.socket(master_addrinfo[0], master_addrinfo[1])
-        self._socket.setblocking(1)
         self._conn_socket = conn_socket
         self._zone_name = zone_name
         self._rrclass = rrclass
         self._db_file = db_file
         self._soa_rr_count = 0
         self._idle_timeout = idle_timeout
-        self._shutdown_flag = shutdown_flag
         self._verbose = verbose
         self._master_address = master_addrinfo[4]
     
     def connect(self, address):
-        err = self._socket.connect_ex(address)
-        if err in (EINPROGRESS, EALREADY, EWOULDBLOCK):
-            return 
-        if err not in (0, EISCONN):
-            raise socket.error(err, errorcode[err])
+        try:
+            self._socket.connect(address)
+        except socket.error as why:
+            if why.args[0] in (EINPROGRESS, EALREADY, EWOULDBLOCK):
+                return 
+            if why.args[0] not in (0, EISCONN):
+                raise
 
     def send(self, data):
         try:
@@ -192,7 +192,11 @@ class XfrinConnection:
                 else:
                     continue
             if self._conn_socket in rlist:
-                raise XfrinException("shutdown xfrin!")
+                data = self._conn_socket.recv(len(b'shutdown'))
+                if data == b'shutdown':
+                    raise XfrinException("shutdown xfrin!")
+                else:
+                    return
             return len(rlist)
     
     def _get_request_response(self, size):
@@ -349,9 +353,6 @@ class XfrinConnection:
 
             if self._soa_rr_count == 2:
                 break
-            
-            if self._shutdown_flag:
-                raise XfrinException('xfrin is forced to stop')
 
     def log_info(self, msg, type='info'):
         # Overwrite the log function, log nothing
@@ -363,9 +364,9 @@ class XfrinConnection:
 
 
 def process_xfrin(zone_name, rrclass, db_file, 
-                  shutdown_flag, master_addrinfo, check_soa, conn_socket, verbose):
+                   master_addrinfo, check_soa, conn_socket, verbose):
     conn = XfrinConnection(conn_socket, zone_name, rrclass, db_file,
-                           shutdown_flag, master_addrinfo, verbose)
+                            master_addrinfo, verbose)
     if conn.connect_to_master():
         conn.do_xfrin(check_soa)
 
@@ -375,12 +376,8 @@ class Xfrin:
         self._cc_setup()
         self._shutdown_flag = 0
         self._verbose = verbose
-
-        #the item in self._threads_zones: zone name and xfr communication thread. 
-        #The item in self._conn_sockets: a socket and xfr communication thread, the main thread uses 
-        #the socket to communicate with this xfr communication thread.
-        self._threads_zones = {}
-        self._conn_sockets = {}
+        self._zones_to_threads = {}
+        self._conn_sockets_to_threads = {}
 
     def _cc_setup(self):
         '''
@@ -411,9 +408,9 @@ a separate method for the convenience of unit tests.
         ''' shutdown the xfrin process. the thread which is doing xfrin will be 
         terminated.
         '''
-        self._filter_hash(self._conn_sockets)
-        for fd in self._conn_sockets.keys():
-            fd.send(b"shutdown")
+        self._filter_hash(self._conn_sockets_to_threads)
+        for socket in self._conn_sockets_to_threads.keys():
+            socket.send(b"shutdown")
 
         self._shutdown_flag = 1
         main_thread = threading.currentThread()
@@ -481,12 +478,8 @@ a separate method for the convenience of unit tests.
             self._cc_check_command()
 
     def _filter_hash(self, hash):
-        '''delete zone_name in self._threads_zones or a socket in self._conn_sockets.'''
-        keys = []
-        for key in hash.keys():
-            keys.append(key)
-
-        for key in keys:
+        '''delete zone_name in self._zones_to_threads or a socket in self._conn_sockets_to_threads.'''
+        for key in [k for k in hash.keys()]:
             if not (hash[key]).is_alive():
                 del hash[key]
 
@@ -496,29 +489,28 @@ a separate method for the convenience of unit tests.
             return (1, "xfrin failed, can't load dns message python library: 'libdns_python'")
 
         # check max_transfer_in, else return quota error
-        if len(self._threads_zones) >= self._max_transfers_in:
-            self._filter_hash(self._threads_zones)
-            self._filter_hash(self._conn_sockets)
-            if len(self._threads_zones) >= self._max_transfers_in:
+        if len(self._zones_to_threads) >= self._max_transfers_in:
+            self._filter_hash(self._zones_to_threads)
+            self._filter_hash(self._conn_sockets_to_threads)
+            if len(self._zones_to_threads) >= self._max_transfers_in:
                 return (1, 'xfrin quota error')
 
         # check whether the zone xfrin is in progress.
-        if zone_name in self._threads_zones.keys():
-            if not (self._threads_zones[zone_name]).is_alive():
-                del self._threads_zones[zone_name]
+        if zone_name in self._zones_to_threads.keys():
+            if not (self._zones_to_threads[zone_name]).is_alive():
+                del self._zones_to_threads[zone_name]
             else:
                 return (1, 'zone xfrin is in progress')
         conn_socket = socket.socketpair()
         xfrin_thread = threading.Thread(target = process_xfrin,
                                         args = (zone_name, rrclass,
                                                 db_file,
-                                                self._shutdown_flag,
                                                 master_addrinfo, check_soa, conn_socket[1],
                                                 self._verbose))
 
         # recored the zone name which zone xfrin is in process
-        self._threads_zones[zone_name] = xfrin_thread
-        self._conn_sockets[conn_socket[0]] = xfrin_thread
+        self._zones_to_threads[zone_name] = xfrin_thread
+        self._conn_sockets_to_threads[conn_socket[0]] = xfrin_thread
         xfrin_thread.start()
         return (0, 'zone xfrin is started')
 
