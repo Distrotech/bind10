@@ -435,7 +435,6 @@ class Xfrin:
         for socket in self._conn_sockets_to_threads.keys():
             socket.send(b"shutdown")
 
-        self._shutdown_flag = 1
         main_thread = threading.currentThread()
         for th in threading.enumerate():
             if th is main_thread:
