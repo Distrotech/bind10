@@ -1,11 +1,15 @@
 SUBDIRS = . tests
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/lib -I$(top_builddir)/src/lib
+AM_CPPFLAGS += -I$(top_srcdir)/src/bin -I$(top_builddir)/src/bin
 AM_CPPFLAGS += -I$(top_srcdir)/src/lib/dns -I$(top_builddir)/src/lib/dns
 AM_CPPFLAGS += -I$(top_builddir)/src/lib/cc
 AM_CPPFLAGS += -I$(top_srcdir)/src/bin -I$(top_builddir)/src/bin
 
 AM_CXXFLAGS = $(B10_CXXFLAGS)
+if USE_STATIC_LINK
+AM_LDFLAGS = -static
+endif
 
 pkglibexecdir = $(libexecdir)/@PACKAGE@
 
@@ -46,16 +50,17 @@ libasio_link_a_CPPFLAGS = $(AM_CPPFLAGS)
 BUILT_SOURCES = spec_config.h 
 pkglibexec_PROGRAMS = b10-auth
 b10_auth_SOURCES = auth_srv.cc auth_srv.h
+b10_auth_SOURCES += change_user.cc change_user.h
 b10_auth_SOURCES += common.h
 b10_auth_SOURCES += main.cc
-b10_auth_LDADD =  $(top_builddir)/src/lib/datasrc/.libs/libdatasrc.a
-b10_auth_LDADD += $(top_builddir)/src/lib/dns/.libs/libdns++.a
-b10_auth_LDADD += $(top_builddir)/src/lib/config/.libs/libcfgclient.a
-b10_auth_LDADD += $(top_builddir)/src/lib/cc/.libs/libcc.a
-b10_auth_LDADD += $(top_builddir)/src/lib/exceptions/.libs/libexceptions.a
-b10_auth_LDADD += $(top_builddir)/src/bin/auth/libasio_link.a
+b10_auth_LDADD =  $(top_builddir)/src/lib/datasrc/libdatasrc.la
+b10_auth_LDADD += $(top_builddir)/src/lib/dns/libdns++.la
+b10_auth_LDADD += $(top_builddir)/src/lib/config/libcfgclient.la
+b10_auth_LDADD += $(top_builddir)/src/lib/cc/libcc.la
+b10_auth_LDADD += $(top_builddir)/src/lib/exceptions/libexceptions.la
+b10_auth_LDADD += libasio_link.a
+b10_auth_LDADD += $(top_builddir)/src/lib/xfr/libxfr.la
 b10_auth_LDADD += $(SQLITE_LIBS)
-b10_auth_LDADD += $(top_builddir)/src/lib/xfr/.libs/libxfr.a
 
 # TODO: config.h.in is wrong because doesn't honor pkgdatadir
 # and can't use @datadir@ because doesn't expand default ${prefix}
