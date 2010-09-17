@@ -61,10 +61,11 @@ class MockModuleCCSession:
         pass
 
     def get_full_config(self):
-        return ({"transfers_in":10})
+        return ({"transfers_in":10, 'master_addr':'127.0.0.1', 'master_port':'53'})
 
     def check_command(self):
         return True
+class MockSession: pass
 
 class MockXfrin(Xfrin):
     # This is a class attribute of a callable object that specifies a non
@@ -76,6 +77,7 @@ class MockXfrin(Xfrin):
 
     def _cc_setup(self):
         isc.config.ModuleCCSession = MockModuleCCSession
+        isc.cc.Session = MockSession
         super()._cc_setup()
 
     def _get_db_file(self):
