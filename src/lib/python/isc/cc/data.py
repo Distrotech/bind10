@@ -68,7 +68,7 @@ def find(element, identifier):
         if type(cur_el) == dict and id in cur_el.keys():
             cur_el = cur_el[id]
         else:
-            raise DataNotFoundError(identifier + " in " + str(element))
+            raise DataNotFoundError(identifier + " in " + str(element) + ' not found')
     return cur_el
 
 def set(element, identifier, value):

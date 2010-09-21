@@ -116,7 +116,7 @@ def find_spec_part(element, identifier):
                     cur_el = cur_el_item
                     found = True
             if not found:
-                raise isc.cc.data.DataNotFoundError(id + " in " + str(cur_el))
+                raise isc.cc.data.DataNotFoundError(id + " in " + str(cur_el) + ' not found')
         elif type(cur_el) == list:
             found = False
             for cur_el_item in cur_el:
@@ -124,7 +124,7 @@ def find_spec_part(element, identifier):
                     cur_el = cur_el_item
                     found = True
             if not found:
-                raise isc.cc.data.DataNotFoundError(id + " in " + str(cur_el))
+                raise isc.cc.data.DataNotFoundError(id + " in " + str(cur_el) + ' not found')
         else:
             raise isc.cc.data.DataNotFoundError("Not a correct config specification")
     return cur_el

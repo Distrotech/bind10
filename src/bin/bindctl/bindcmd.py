@@ -53,6 +53,7 @@ except ImportError:
 CSV_FILE_NAME = 'default_user.csv'
 FAIL_TO_CONNECT_WITH_CMDCTL = "Fail to connect with b10-cmdctl module, is it running?"
 CONFIG_MODULE_NAME = 'config'
+DEFAULT_LOCATION = ''
 CONST_BINDCTL_HELP = """
 usage: <module name> <command name> [param1 = value1 [, param2 = value2]]
 Type Tab character to get the hint of module/command/parameters.
@@ -90,7 +91,7 @@ class BindCmdInterpreter(Cmd):
 
     def __init__(self, server_port = 'localhost:8080', pem_file = None):
         Cmd.__init__(self)
-        self.location = ""
+        self.location = DEFAULT_LOCATION 
         self.prompt_end = '> '
         self.prompt = self.prompt_end
         self.ruler = '-'
@@ -345,11 +346,9 @@ class BindCmdInterpreter(Cmd):
                 elif not name in all_params:
                     raise CmdUnknownParamSyntaxError(cmd.module, cmd.command, name)
 
-            param_nr = 0
             for name in manda_params:
-                if not name in params and not param_nr in params:
+                if not name in cmd.params:
                     raise CmdMissParamSyntaxError(cmd.module, cmd.command, name)
-                param_nr += 1
         
         # Convert parameter value according parameter spec file.
         # Ignore check for commands belongs to module 'config'
@@ -550,6 +549,9 @@ class BindCmdInterpreter(Cmd):
                    not self.config_data.have_specification(module_name):
                     print("Error: Module '" + module_name + "' unknown or not running")
                     return
+            elif identifier == DEFAULT_LOCATION:
+                print("Error: Please set proper identifier for config command")
+                return
 
             if cmd.command == "show":
                 values = self.config_data.get_value_maps(identifier)
@@ -594,7 +596,7 @@ class BindCmdInterpreter(Cmd):
         except isc.cc.data.DataTypeError as dte:
             print("Error: " + str(dte))
         except isc.cc.data.DataNotFoundError as dnfe:
-            print("Error: " + identifier + " not found")
+            print("Error: " + str(dnfe))
         except KeyError as ke:
             print("Error: missing " + str(ke))
             raise ke
