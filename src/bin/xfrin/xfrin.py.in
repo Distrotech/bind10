@@ -58,6 +58,7 @@ XFROUT_MODULE_NAME = 'Xfrout'
 ZONE_MANAGER_MODULE_NAME = 'Zonemgr'
 REFRESH_FROM_ZONEMGR = 'refresh_from_zonemgr'
 ZONE_XFRIN_FAILED = 'zone_xfrin_failed'
+DEFAULT_TRANSFERS_IN = 10
 __version__ = 'BIND10'
 # define xfrin rcode
 XFRIN_OK = 0
@@ -377,7 +378,7 @@ def process_xfrin(server, zone_name, rrclass, db_file,
 
 class Xfrin:
     def __init__(self, verbose = False):
-        self._max_transfers_in = 10
+        self._max_transfers_in = DEFAULT_TRANSFERS_IN
         self._master_addr = DEFAULT_MASTER
         self._master_port = DEFAULT_MASTER_PORT
         self._cc_setup()
