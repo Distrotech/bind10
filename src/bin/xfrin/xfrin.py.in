@@ -27,7 +27,7 @@ import socket
 import select
 import random
 import time
-from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, \
+from errno import EWOULDBLOCK, ECONNRESET, \
         ENOTCONN, ESHUTDOWN, EINTR, EISCONN, EBADF, ECONNABORTED, errorcode
 
 from optparse import OptionParser, OptionValueError
@@ -92,15 +92,6 @@ class XfrinConnection:
         self._idle_timeout = idle_timeout
         self._verbose = verbose
         self._master_address = master_addrinfo[4]
-    
-    def connect(self, address):
-        try:
-            self._socket.connect(address)
-        except socket.error as why:
-            if why.args[0] in (EINPROGRESS, EALREADY, EWOULDBLOCK):
-                return 
-            if why.args[0] not in (0, EISCONN):
-                raise
 
     def send(self, data):
         try:
@@ -142,7 +133,7 @@ class XfrinConnection:
         '''Connect to master in TCP.'''
 
         try:
-            self.connect(self._master_address)
+            self._socket.connect(self._master_address)
             return True
         except socket.error as e:
             self.log_msg('Failed to connect:(%s), %s' % (self._master_address,
@@ -384,6 +375,10 @@ class Xfrin:
         self._cc_setup()
         self._shutdown_flag = 0
         self._verbose = verbose
+        #self._zones_to_threads: the key is zone name, the value is a thread
+        #which doing tranfer for this zone.
+        #self._conn_sockets_to_threads:the key is socket, the value is a xfr 
+        #thread. The mian thread uses this socket to communicate to this thread.
         self._zones_to_threads = {}
         self._conn_sockets_to_threads = {}
 
