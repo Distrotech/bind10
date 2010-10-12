@@ -224,10 +224,6 @@ class TestXfrinConnection(unittest.TestCase):
         if os.path.exists(TEST_DB_FILE):
             os.remove(TEST_DB_FILE)
 
-    def test_connect(self):
-        self.assertRaises(Exception, self.conn.connect,
-                          (TEST_MASTER_IPV4_ADDRESS,53))
-
     def test_send(self):
         self.conn._socket.close()
         self.conn._socket = MockSocket()

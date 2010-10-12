@@ -399,7 +399,7 @@ class Xfrin:
                                               self.command_handler)
         self._module_cc.start()
         config_data = self._module_cc.get_full_config()
-        self._max_transfers_in = config_data.get("transfers_in")
+        self._max_transfers_in = config_data.get("transfers_in") or self._max_transfers_in
         self._master_addr = config_data.get('master_addr') or self._master_addr
         self._master_port = config_data.get('master_port') or self._master_port
 
