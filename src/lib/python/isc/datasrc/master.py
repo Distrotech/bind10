@@ -94,7 +94,7 @@ def isclass(s):
 name_regex = re.compile('[-\w\$\d\/*]+(?:\.[-\w\$\d\/]+)*\.?')
 def isname(s):
     global name_regex
-    if s == '.' or name_regex.match(s):
+    if s == '.' or s == '@' or name_regex.match(s):
         return True
     else:
         return False
@@ -240,9 +240,11 @@ class MasterFile:
     # yes , sets the relative domain name to the stated name
     #######################################################################
     def __statedname(self, name, record):
-        if name[-1] != '.':
+        if name[-1] != '.' or name == '@':
             if not self.__origin:
                 raise MasterFileError("Cannot parse RR, No $ORIGIN: " + record)
+            elif name == '@':
+                name = self.__origin
             elif self.__origin == '.':
                 name += '.'
             else:
