@@ -65,8 +65,7 @@ class MockModuleCCSession:
 
     def check_command(self):
         return True
-class MockSession():
-    def group_sendmsg(self, arg1, arg2):pass 
+class MockSession: pass
 
 class MockXfrin(Xfrin):
     # This is a class attribute of a callable object that specifies a non
@@ -128,9 +127,9 @@ class MockXfrinConnection(XfrinConnection):
         self.closed = False
 
     def connect_to_master(self):
-        return self._socket
+        return True
 
-    def _select(self, rl, wl, el):
+    def _select(self):
         if self.force_time_out:
             return 0
         if self.force_close:
@@ -225,10 +224,6 @@ class TestXfrinConnection(unittest.TestCase):
         if os.path.exists(TEST_DB_FILE):
             os.remove(TEST_DB_FILE)
 
-    def test_connect(self):
-        self.assertRaises(Exception, self.conn.connect,
-                (TEST_MASTER_IPV4_ADDRESS,53))
-
     def test_send(self):
         self.conn._socket.close()
         self.conn._socket = MockSocket()
@@ -266,20 +261,19 @@ class TestXfrinConnection(unittest.TestCase):
     def test_select_readok(self):
         self.mock_xfrsockets[0].send(self.conn.mock_test_data)
         self.conn._idle_timeout = 3 # timeout shouldn't occur
-        self.assertEqual(1, super(MockXfrinConnection, self.conn)._select(\
-                [self.conn._socket, self.conn._conn_socket], [], [] ))
+        self.assertEqual(1, super(MockXfrinConnection, self.conn)._select())
         self.assertEqual(self.conn.mock_test_data,
                          self.conn._socket.recv(len(self.conn.mock_test_data)))
 
     def test_select_timeout(self):
         self.conn._idle_timeout = 0.1
-        self.assertEqual(0, super(MockXfrinConnection, self.conn)._select([], [], []))
+        self.assertEqual(0, super(MockXfrinConnection, self.conn)._select())
 
     def test_select_shutdown(self):
         self.conn._idle_timeout = 3 # timeout shouldn't occur
         self.conn_sockets[0].send(b"shutdown")
         self.assertRaises(XfrinException, super(MockXfrinConnection,
-                            self.conn)._select, [self.conn._conn_socket], [], [])
+                                                self.conn)._select)
     def test_init_ip6(self):
         # This test simply creates a new XfrinConnection object with an
         # IPv6 address, tries to bind it to an IPv6 wildcard address/port

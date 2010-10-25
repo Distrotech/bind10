@@ -27,7 +27,7 @@ import socket
 import select
 import random
 import time
-from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, \
+from errno import EINPROGRESS, EWOULDBLOCK, ECONNRESET, \
         ENOTCONN, ESHUTDOWN, EINTR, EISCONN, EBADF, ECONNABORTED, errorcode
 
 from optparse import OptionParser, OptionValueError
@@ -84,7 +84,6 @@ class XfrinConnection:
             check_soa: when it's true, check soa first before sending xfr query
         '''
         self._socket = socket.socket(master_addrinfo[0], master_addrinfo[1])
-        self._socket.setblocking(0)
         self._conn_socket = conn_socket
         self._zone_name = zone_name
         self._rrclass = rrclass
@@ -93,12 +92,12 @@ class XfrinConnection:
         self._idle_timeout = idle_timeout
         self._verbose = verbose
         self._master_address = master_addrinfo[4]
-
-    def connect(self,address): 
+    
+    def connect(self, address):
         try:
             self._socket.connect(address)
         except socket.error as why:
-            if why.args[0] in (EINPROGRESS, EALREADY, EWOULDBLOCK):
+            if why.args[0] in (EINPROGRESS, EWOULDBLOCK):
                 return 
             else:
                 raise
@@ -179,23 +178,20 @@ class XfrinConnection:
         msg.to_wire(render)
         header_len = struct.pack('H', socket.htons(render.get_length()))
 
-        if self._select([], [self._socket], []) == 0:
-            raise XfrinException('socket is not writable!')
-        ret = self._socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
-        if ret!=0:
-            raise XfrinException("error when writing:" + str(os.strerror(ret)))
-
         self._send_data(header_len)
         self._send_data(render.get_data())
 
-    def _select(self, rl, wl, el):
+    def _select(self):
         '''
         This method is a trivial asynchronous I/O routine using select.
-        It checks which socket is writable or readable.'''
+        It's extracted from _get_request_response so that we can test the
+        rest of the code without involving actual communication with a remote
+        server.'''
         while True:
             try:
-                (rlist, wlist, elist) = select.select(rl, wl,\
-                        el, self._idle_timeout)
+                rlist, wlist, elist = select.select([self._socket,
+                                                     self._conn_socket],
+                                                    [], [], self._idle_timeout)
             except select.error as err:
                 if err.args[0] != EINTR:
                     raise
@@ -207,20 +203,15 @@ class XfrinConnection:
                     raise XfrinException("shutdown xfrin!")
                 else:
                     return
-            if len(rl):
-                return len(rlist)
-            return len(wlist)
+            return len(rlist)
     
     def _get_request_response(self, size):
         recv_size = 0
         data = b''
         while recv_size < size:
             self._need_recv_size = size - recv_size
-            if self._select([self._socket, self._conn_socket], [],[]) == 0:
+            if self._select() == 0:
                 raise XfrinException('receive data from socket time out.')
-            ret = self._socket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
-            if ret!=0:
-                raise XfrinException("error when reading:" + str(os.strerror(ret)))
             recvd_data = self.recv(self._need_recv_size)
             recvd_size = len(recvd_data)
             if recvd_size == 0:
@@ -393,9 +384,9 @@ class Xfrin:
         self._cc_setup()
         self._shutdown_flag = 0
         self._verbose = verbose
-        #self._zones_to_threads: the key is zone name, the value is a thread
+        #self._zones_to_threads:the key is zone name, the value is a thread
         #which doing tranfer for this zone.
-        #self._conn_sockets_to_threads:the key is socket, the value is a xfr 
+        #self._conn_sockets_to_threads:the key is socket, the value is a xfr
         #thread. The mian thread uses this socket to communicate to this thread.
         self._zones_to_threads = {}
         self._conn_sockets_to_threads = {}
