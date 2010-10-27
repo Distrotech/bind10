@@ -27,7 +27,7 @@ import socket
 import select
 import random
 import time
-from errno import EINPROGRESS, EWOULDBLOCK, ECONNRESET, \
+from errno import ECONNRESET,\
         ENOTCONN, ESHUTDOWN, EINTR, EISCONN, EBADF, ECONNABORTED, errorcode
 
 from optparse import OptionParser, OptionValueError
@@ -93,23 +93,12 @@ class XfrinConnection:
         self._verbose = verbose
         self._master_address = master_addrinfo[4]
     
-    def connect(self, address):
-        try:
-            self._socket.connect(address)
-        except socket.error as why:
-            if why.args[0] in (EINPROGRESS, EWOULDBLOCK):
-                return 
-            else:
-                raise
-
     def send(self, data):
         try:
             result = self._socket.send(data)
             return result
         except socket.error as why:
-            if why.args[0] == EWOULDBLOCK:
-                return 0
-            elif why.args[0] in (ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED):
+            if why.args[0] in (ECONNRESET, ENOTCONN, ESHUTDOWN, ECONNABORTED):
                 self.close()
                 return 0
             else:
@@ -142,7 +131,7 @@ class XfrinConnection:
         '''Connect to master in TCP.'''
 
         try:
-            self.connect(self._master_address)
+            self._socket.connect(self._master_address)
             return True
         except socket.error as e:
             self.log_msg('Failed to connect:(%s), %s' % (self._master_address,
@@ -162,12 +151,13 @@ class XfrinConnection:
         msg.add_question(query_question)
         return msg
 
-
     def _send_data(self, data):
         size = len(data)
         total_count = 0
         while total_count < size:
             count = self.send(data[total_count:])
+            if count == 0:
+                raise XfrinException("send data failed!")
             total_count += count
 
     def _send_query(self, query_type):

@@ -172,6 +172,9 @@ class MockXfrinConnection(XfrinConnection):
                 self.response_generator()
         return len(data)
 
+    def mock_send(self, data):
+        return 0
+
     def create_response_data(self, response = True, bad_qid = False,
                              rcode = Rcode.NOERROR(),
                              questions = default_questions,
@@ -274,6 +277,12 @@ class TestXfrinConnection(unittest.TestCase):
         self.conn_sockets[0].send(b"shutdown")
         self.assertRaises(XfrinException, super(MockXfrinConnection,
                                                 self.conn)._select)
+    def test_send_data_nodate(self):
+        self.conn._socket.close()
+        self.conn._socket = MockSocket()
+        self.conn.send = self.conn.mock_send
+        self.assertRaises(XfrinException, self.conn._send_data, b"test no data")
+
     def test_init_ip6(self):
         # This test simply creates a new XfrinConnection object with an
         # IPv6 address, tries to bind it to an IPv6 wildcard address/port
