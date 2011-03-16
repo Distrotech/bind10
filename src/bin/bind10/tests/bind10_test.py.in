@@ -13,7 +13,12 @@
 # NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
 # WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-from bind10 import ProcessInfo, BoB, parse_args, dump_pid, unlink_pid_file
+from bind10 import ProcessInfo, BoB, parse_args, dump_pid, unlink_pid_file, \
+                   setup 
+
+# we need to import the bind10 namespace so that we can override
+# some of the behavior
+import bind10
 
 # XXX: environment tests are currently disabled, due to the preprocessor
 #      setup that we have now complicating the environment
@@ -132,7 +137,9 @@ class TestBoB(unittest.TestCase):
 # that the right processes are started depending on the configuration
 # options.
 class MockBob(BoB):
-    def __init__(self):
+    def __init__(self, msgq_socket_file=None, data_path=None,
+                 config_filename=None, nocache=False, verbose=False, 
+                 setuid=None, username=None, cmdctl_port=None):
         BoB.__init__(self)
 
         # Set flags as to which of the overridden methods has been run.
@@ -596,6 +603,79 @@ class TestPIDFile(unittest.TestCase):
         # the attempt to open file will fail, which should result in exception.
         self.assertRaises(IOError, dump_pid,
                           'nonexistent_dir' + os.sep + 'bind10.pid')
+
+class TestSignalHandling(unittest.TestCase):
+    # In these tests, we swap out the BoB in the bind10 class with our own. 
+    # This allows us to run our setup code without actually starting 
+    # the whole system.
+    def setUp(self):
+        self.save_bob_class = bind10.BoB
+        bind10.BoB = MockBob
+        self.wakeup_pipe = os.pipe()
+
+    def tearDown(self):
+        os.close(self.wakeup_pipe[0])
+        os.close(self.wakeup_pipe[1])
+        bind10.BoB = self.save_bob_class
+
+    def test_sighup(self):
+        bind10.setup(self.wakeup_pipe)
+        self.assertTrue(bind10.boss_of_bind.runnable)
+        os.kill(os.getpid(), signal.SIGHUP)
+        self.assertFalse(bind10.boss_of_bind.runnable)
+
+    def test_sighup_nohup(self):
+        # simulate the behavior of the "nohup" command
+        signal.signal(signal.SIGHUP, signal.SIG_IGN)
+        bind10.setup(self.wakeup_pipe)
+        self.assertTrue(bind10.boss_of_bind.runnable)
+        os.kill(os.getpid(), signal.SIGHUP)
+        self.assertTrue(bind10.boss_of_bind.runnable)
+
+    def test_sigint(self):
+        bind10.setup(self.wakeup_pipe)
+        self.assertTrue(bind10.boss_of_bind.runnable)
+        os.kill(os.getpid(), signal.SIGINT)
+        self.assertFalse(bind10.boss_of_bind.runnable)
+
+    def test_sigterm(self):
+        bind10.setup(self.wakeup_pipe)
+        self.assertTrue(bind10.boss_of_bind.runnable)
+        os.kill(os.getpid(), signal.SIGTERM)
+        self.assertFalse(bind10.boss_of_bind.runnable)
+
+    def test_sigpipe(self):
+        # SIGPIPE gets ignored
+        bind10.setup(self.wakeup_pipe)
+        self.assertTrue(bind10.boss_of_bind.runnable)
+        os.kill(os.getpid(), signal.SIGPIPE)
+        self.assertTrue(bind10.boss_of_bind.runnable)
+
+    def test_sigusr1(self):
+        bind10.setup(self.wakeup_pipe)
+        self.assertTrue(bind10.boss_of_bind.runnable)
+        os.kill(os.getpid(), signal.SIGUSR1)
+        self.assertFalse(bind10.boss_of_bind.runnable)
+
+    def test_sigusr2(self):
+        bind10.setup(self.wakeup_pipe)
+        self.assertTrue(bind10.boss_of_bind.runnable)
+        os.kill(os.getpid(), signal.SIGUSR2)
+        self.assertFalse(bind10.boss_of_bind.runnable)
+
+    @unittest.skipUnless(hasattr(signal, 'SIGXCPU'), "no SIGXCPU on this OS")
+    def test_sigxcpu(self):
+        bind10.setup(self.wakeup_pipe)
+        self.assertTrue(bind10.boss_of_bind.runnable)
+        os.kill(os.getpid(), signal.SIGXCPU)
+        self.assertFalse(bind10.boss_of_bind.runnable)
+
+    @unittest.skipUnless(hasattr(signal, 'SIGXFSZ'), "no SIGXFSZ on this OS")
+    def test_sigxfsz(self):
+        bind10.setup(self.wakeup_pipe)
+        self.assertTrue(bind10.boss_of_bind.runnable)
+        os.kill(os.getpid(), signal.SIGXFSZ)
+        self.assertFalse(bind10.boss_of_bind.runnable)
 
 if __name__ == '__main__':
     unittest.main()

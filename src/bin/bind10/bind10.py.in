@@ -900,10 +900,10 @@ def unlink_pid_file(pid_file):
         if error.errno is not errno.ENOENT:
             raise
 
-
-def main():
+def setup(wakeup_pipe):
     global options
     global boss_of_bind
+
     # Enforce line buffering on stdout, even when not a TTY
     sys.stdout = io.TextIOWrapper(sys.stdout.detach(), line_buffering=True)
 
@@ -943,18 +943,28 @@ def main():
         sys.stdout.write("%s\n" % VERSION)
 
     # Create wakeup pipe for signal handlers
-    wakeup_pipe = os.pipe()
     signal.set_wakeup_fd(wakeup_pipe[1])
 
-    # Set signal handlers for catching child termination, as well
-    # as our own demise.
+    # Set signal handlers for catching child termination.
     signal.signal(signal.SIGCHLD, reaper)
     signal.siginterrupt(signal.SIGCHLD, False)
+
+    # Catch fatal signals so we can shutdown gracefully.
     signal.signal(signal.SIGINT, fatal_signal)
     signal.signal(signal.SIGTERM, fatal_signal)
+    signal.signal(signal.SIGUSR1, fatal_signal)
+    signal.signal(signal.SIGUSR2, fatal_signal)
+    if hasattr(signal, 'SIGXCPU'):
+        signal.signal(signal.SIGXCPU, fatal_signal)
+    if hasattr(signal, 'SIGXFSZ'):
+        signal.signal(signal.SIGXFSZ, fatal_signal)
 
-    # Block SIGPIPE, as we don't want it to end this process
+    # Ignore SIGPIPE, as we don't want it to end this process
     signal.signal(signal.SIGPIPE, signal.SIG_IGN)
+
+    # If we are ignoring SIGHUP, then let it be, otherwise catch it
+    if signal.getsignal(signal.SIGHUP) is not signal.SIG_IGN:
+        signal.signal(signal.SIGHUP, fatal_signal)
 
     # Go bob!
     boss_of_bind = BoB(options.msgq_socket_file, options.data_path,
@@ -964,8 +974,11 @@ def main():
     if startup_result:
         sys.stderr.write("[bind10] Error on startup: %s\n" % startup_result)
         sys.exit(1)
-    sys.stdout.write("[bind10] BIND 10 started\n")
     dump_pid(options.pid_file)
+
+def report_boot_time(wakeup_pipe):
+    global options
+    global boss_of_bind
 
     # send "bind10.boot_time" to b10-stats
     time.sleep(1) # wait a second
@@ -977,6 +990,10 @@ def main():
               }
             })
     boss_of_bind.cc_session.group_sendmsg(cmd, 'Stats')
+
+def main_loop(wakeup_pipe):
+    global options
+    global boss_of_bind
 
     # In our main loop, we check for dead processes or messages 
     # on the c-channel.
@@ -1015,12 +1032,21 @@ def main():
             elif fd == wakeup_fd:
                 os.read(wakeup_fd, 32)
 
-    # shutdown
+def shutdown():
+    global boss_of_bind
     signal.signal(signal.SIGCHLD, signal.SIG_DFL)
     boss_of_bind.shutdown()
-    sys.stdout.write("[bind10] BIND 10 exiting\n");
     unlink_pid_file(options.pid_file)
     sys.exit(0)
+
+def main():
+    wakeup_pipe = os.pipe()
+    setup(wakeup_pipe)
+    sys.stdout.write("[bind10] BIND 10 started\n")
+    report_boot_time()
+    main_loop(wakeup_pipe)
+    sys.stdout.write("[bind10] BIND 10 exiting\n");
+    shutdown()
 
 if __name__ == "__main__":
     main()
