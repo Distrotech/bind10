@@ -976,7 +976,7 @@ def setup(wakeup_pipe):
         sys.exit(1)
     dump_pid(options.pid_file)
 
-def report_boot_time(wakeup_pipe):
+def report_boot_time():
     global options
     global boss_of_bind
 
