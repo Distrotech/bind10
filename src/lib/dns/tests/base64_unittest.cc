@@ -52,7 +52,11 @@ decodeCheck(const string& input_string, vector<uint8_t>& output,
             const string& expected)
 {
     decodeBase64(input_string, output);
-    EXPECT_EQ(expected, string(&output[0], &output[0] + output.size()));
+    if (output.size() == ) {
+        EXPECT_EQ(expected, string());
+    } else {
+        EXPECT_EQ(expected, string(&output[0], &output[0] + output.size()));
+    }
 }
 
 TEST_F(Base64Test, decode) {
