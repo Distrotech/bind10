@@ -608,74 +608,53 @@ class TestSignalHandling(unittest.TestCase):
     # In these tests, we swap out the BoB in the bind10 class with our own. 
     # This allows us to run our setup code without actually starting 
     # the whole system.
-    def setUp(self):
+    def bossSetUp(self):
         self.save_bob_class = bind10.BoB
         bind10.BoB = MockBob
         self.wakeup_pipe = os.pipe()
 
-    def tearDown(self):
+    def bossTearDown(self):
         os.close(self.wakeup_pipe[0])
         os.close(self.wakeup_pipe[1])
         bind10.BoB = self.save_bob_class
 
-    def test_sighup(self):
-        bind10.setup(self.wakeup_pipe)
-        self.assertTrue(bind10.boss_of_bind.runnable)
-        os.kill(os.getpid(), signal.SIGHUP)
-        self.assertFalse(bind10.boss_of_bind.runnable)
+    def test_fatal_signals(self):
+        signals = [signal.SIGHUP, 
+                   signal.SIGINT, 
+                   signal.SIGTERM, 
+                   signal.SIGUSR1, 
+                   signal.SIGUSR2,]
+        if hasattr(signal, 'SIGXCPU'):
+            signals.append(signal.SIGXCPU)
+        if hasattr(signal, 'SIGXFSZ'):
+            signals.append(signal.SIGXFSZ)
+        print(signals)
+        for sig in signals:
+            self.bossSetUp()
+            bind10.setup(self.wakeup_pipe)
+            self.assertTrue(bind10.boss_of_bind.runnable)
+            os.kill(os.getpid(), sig)
+            self.assertFalse(bind10.boss_of_bind.runnable)
+            self.bossTearDown()
 
     def test_sighup_nohup(self):
         # simulate the behavior of the "nohup" command
+        self.bossSetUp()
         signal.signal(signal.SIGHUP, signal.SIG_IGN)
         bind10.setup(self.wakeup_pipe)
         self.assertTrue(bind10.boss_of_bind.runnable)
         os.kill(os.getpid(), signal.SIGHUP)
         self.assertTrue(bind10.boss_of_bind.runnable)
-
-    def test_sigint(self):
-        bind10.setup(self.wakeup_pipe)
-        self.assertTrue(bind10.boss_of_bind.runnable)
-        os.kill(os.getpid(), signal.SIGINT)
-        self.assertFalse(bind10.boss_of_bind.runnable)
-
-    def test_sigterm(self):
-        bind10.setup(self.wakeup_pipe)
-        self.assertTrue(bind10.boss_of_bind.runnable)
-        os.kill(os.getpid(), signal.SIGTERM)
-        self.assertFalse(bind10.boss_of_bind.runnable)
+        self.bossTearDown()
 
     def test_sigpipe(self):
-        # SIGPIPE gets ignored
+        # verify that SIGPIPE gets ignored
+        self.bossSetUp()
         bind10.setup(self.wakeup_pipe)
         self.assertTrue(bind10.boss_of_bind.runnable)
         os.kill(os.getpid(), signal.SIGPIPE)
         self.assertTrue(bind10.boss_of_bind.runnable)
-
-    def test_sigusr1(self):
-        bind10.setup(self.wakeup_pipe)
-        self.assertTrue(bind10.boss_of_bind.runnable)
-        os.kill(os.getpid(), signal.SIGUSR1)
-        self.assertFalse(bind10.boss_of_bind.runnable)
-
-    def test_sigusr2(self):
-        bind10.setup(self.wakeup_pipe)
-        self.assertTrue(bind10.boss_of_bind.runnable)
-        os.kill(os.getpid(), signal.SIGUSR2)
-        self.assertFalse(bind10.boss_of_bind.runnable)
-
-    @unittest.skipUnless(hasattr(signal, 'SIGXCPU'), "no SIGXCPU on this OS")
-    def test_sigxcpu(self):
-        bind10.setup(self.wakeup_pipe)
-        self.assertTrue(bind10.boss_of_bind.runnable)
-        os.kill(os.getpid(), signal.SIGXCPU)
-        self.assertFalse(bind10.boss_of_bind.runnable)
-
-    @unittest.skipUnless(hasattr(signal, 'SIGXFSZ'), "no SIGXFSZ on this OS")
-    def test_sigxfsz(self):
-        bind10.setup(self.wakeup_pipe)
-        self.assertTrue(bind10.boss_of_bind.runnable)
-        os.kill(os.getpid(), signal.SIGXFSZ)
-        self.assertFalse(bind10.boss_of_bind.runnable)
+        self.bossTearDown()
 
 if __name__ == '__main__':
     unittest.main()
