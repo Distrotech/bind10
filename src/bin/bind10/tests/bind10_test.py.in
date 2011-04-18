@@ -128,6 +128,15 @@ class TestBoB(unittest.TestCase):
         self.assertEqual(bob.cfg_start_auth, True)
         self.assertEqual(bob.cfg_start_resolver, False)
 
+# Mock-up of the ccs class, as used by the bind10 main program.
+class MockCCS:
+    def __init__(self):
+        self.sock = open("/dev/null", "r+")
+    def get_socket(self):
+        return self.sock
+    def check_command(self):
+        pass
+
 # Class for testing the BoB without actually starting processes.
 # This is used for testing the start/stop components routines and
 # the BoB commands.
@@ -155,6 +164,7 @@ class MockBob(BoB):
         self.cmdctl = False
         self.c_channel_env = {}
         self.processes = { }
+        self.ccs = MockCCS()
 
     def read_bind10_config(self):
         # Configuration options are set directly
@@ -628,7 +638,6 @@ class TestSignalHandling(unittest.TestCase):
             signals.append(signal.SIGXCPU)
         if hasattr(signal, 'SIGXFSZ'):
             signals.append(signal.SIGXFSZ)
-        print(signals)
         for sig in signals:
             self.bossSetUp()
             bind10.setup(self.wakeup_pipe)
@@ -655,6 +664,33 @@ class TestSignalHandling(unittest.TestCase):
         os.kill(os.getpid(), signal.SIGPIPE)
         self.assertTrue(bind10.boss_of_bind.runnable)
         self.bossTearDown()
+
+class TestTTYDisconnect(unittest.TestCase):
+    # Here we check what happens if the TTY we are outputting go goes 
+    # away. 
+    def test_tty_disconnect(self):
+        self.save_bob_class = bind10.BoB
+        self.save_stdout = sys.stdout
+        self.save_stderr = sys.stderr
+
+        bind10.BoB = MockBob
+        sys.stdout = open("/dev/null", "w")
+        self.wakeup_pipe = os.pipe()
+        bind10.setup(self.wakeup_pipe)
+
+        sys.stdout.close()
+        sys.stderr = open("/dev/null", "w")
+        bind10.main_loop(self.wakeup_pipe)
+
+        sys.stderr = self.save_stderr
+        sys.stdout = self.save_stdout
+        os.close(self.wakeup_pipe[0])
+        os.close(self.wakeup_pipe[1])
+
+        self.assertFalse(bind10.boss_of_bind.runnable)
+
+        bind10.BoB = self.save_bob_class
+        
 
 if __name__ == '__main__':
     unittest.main()

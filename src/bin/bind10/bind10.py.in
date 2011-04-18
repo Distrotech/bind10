@@ -991,47 +991,56 @@ def report_boot_time():
             })
     boss_of_bind.cc_session.group_sendmsg(cmd, 'Stats')
 
+import traceback
+
+# In our main loop, we check for dead processes or messages 
+# on the c-channel.
 def main_loop(wakeup_pipe):
     global options
     global boss_of_bind
 
-    # In our main loop, we check for dead processes or messages 
-    # on the c-channel.
-    wakeup_fd = wakeup_pipe[0]
-    ccs_fd = boss_of_bind.ccs.get_socket().fileno()
-    while boss_of_bind.runnable:
-        # clean up any processes that exited
-        boss_of_bind.reap_children()
-        next_restart = boss_of_bind.restart_processes()
-        if next_restart is None:
-            wait_time = None
-        else:
-            wait_time = max(next_restart - time.time(), 0)
-
-        # select() can raise EINTR when a signal arrives, 
-        # even if they are resumable, so we have to catch
-        # the exception
-        try:
-            (rlist, wlist, xlist) = select.select([wakeup_fd, ccs_fd], [], [], 
-                                                  wait_time)
-        except select.error as err:
-            if err.args[0] == errno.EINTR:
-                (rlist, wlist, xlist) = ([], [], [])
+    try:
+        wakeup_fd = wakeup_pipe[0]
+        ccs_fd = boss_of_bind.ccs.get_socket().fileno()
+        while boss_of_bind.runnable:
+            # clean up any processes that exited
+            boss_of_bind.reap_children()
+            next_restart = boss_of_bind.restart_processes()
+            if next_restart is None:
+                wait_time = None
             else:
-                sys.stderr.write("[bind10] Error with select(); %s\n" % err)
-                break
-
-        for fd in rlist + xlist:
-            if fd == ccs_fd:
-                try:
-                    boss_of_bind.ccs.check_command()
-                except isc.cc.session.ProtocolError:
-                    if options.verbose:
-                        sys.stderr.write("[bind10] msgq channel disappeared.\n")
+                wait_time = max(next_restart - time.time(), 0)
+    
+            # select() can raise EINTR when a signal arrives, 
+            # even if they are resumable, so we have to catch
+            # the exception
+            try:
+                (rlist, wlist, xlist) = select.select([wakeup_fd, ccs_fd], 
+                                                      [], [], wait_time)
+            except select.error as err:
+                if err.args[0] == errno.EINTR:
+                    (rlist, wlist, xlist) = ([], [], [])
+                else:
+                    sys.stderr.write("[bind10] Error with select(); %s\n" % err)
                     break
-            elif fd == wakeup_fd:
-                os.read(wakeup_fd, 32)
-
+    
+            for fd in rlist + xlist:
+                if fd == ccs_fd:
+                    try:
+                        boss_of_bind.ccs.check_command()
+                    except isc.cc.session.ProtocolError:
+                        if options.verbose:
+                            sys.stderr.write("[bind10] msgq channel disappeared.\n")
+                        break
+                elif fd == wakeup_fd:
+                    os.read(wakeup_fd, 32)
+    except Exception as ex:
+        if hasattr(boss_of_bind, 'runnable'):
+            boss_of_bind.runnable = False
+        traceback.print_exc()
+        sys.stderr.write("[bind10] Exception in main loop: " + str(ex))
+        
+    
 def shutdown():
     global boss_of_bind
     signal.signal(signal.SIGCHLD, signal.SIG_DFL)
