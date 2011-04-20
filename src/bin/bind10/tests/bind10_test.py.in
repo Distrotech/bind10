@@ -28,6 +28,7 @@ import sys
 import os
 import signal
 import socket
+import errno
 from isc.net.addr import IPAddr
 from isc.testutils.parse_args import TestOptParser, OptsError
 
@@ -262,6 +263,13 @@ class MockBob(BoB):
         if self.cmdctl:
             del self.processes[11]
         self.cmdctl = False
+
+    def wait_on_child(self):
+        if self.processes:
+            pid = list(self.processes.keys())[0]
+            return (pid, 0)
+        else:
+            raise OSError(errno.ECHILD, 'No child processes')
 
 class TestStartStopProcessesBob(unittest.TestCase):
     """
@@ -669,6 +677,7 @@ class TestTTYDisconnect(unittest.TestCase):
     # Here we check what happens if the TTY we are outputting go goes 
     # away. 
     def test_tty_disconnect(self):
+        # some setup for the test, putting our test harness in place
         self.save_bob_class = bind10.BoB
         self.save_stdout = sys.stdout
         self.save_stderr = sys.stderr
@@ -676,18 +685,33 @@ class TestTTYDisconnect(unittest.TestCase):
         bind10.BoB = MockBob
         sys.stdout = open("/dev/null", "w")
         self.wakeup_pipe = os.pipe()
+
+        # now set up
         bind10.setup(self.wakeup_pipe)
 
+        # close the output and see what happens
         sys.stdout.close()
         sys.stderr = open("/dev/null", "w")
         bind10.main_loop(self.wakeup_pipe)
 
+        # restore our file descriptors so we can see if we caused problems
+        sys.stderr = self.save_stderr
+        sys.stdout = self.save_stdout
+
+        # make sure we are supposed to stop now
+        self.assertFalse(bind10.boss_of_bind.runnable)
+
+        # try our shutdown (turn on verbose to insure failure)
+        sys.stdout = open("/dev/null", "w")
+        sys.stdout.close()
+        bind10.boss_of_bind.verbose = True
+        bind10.shutdown()
+
+        # cleanup
         sys.stderr = self.save_stderr
         sys.stdout = self.save_stdout
         os.close(self.wakeup_pipe[0])
         os.close(self.wakeup_pipe[1])
-
-        self.assertFalse(bind10.boss_of_bind.runnable)
 
         bind10.BoB = self.save_bob_class
         

@@ -667,10 +667,15 @@ class BoB:
 
     def shutdown(self):
         """Stop the BoB instance."""
+        # Note that we try harder than usual to continue in the face of
+        # errors.
         if self.verbose:
-            sys.stdout.write("[bind10] Stopping the server.\n")
-        # first try using the BIND 10 request to stop
+            try:
+                sys.stdout.write("[bind10] Stopping the server.\n")
+            except:
+                pass
         try:
+            # first try using the BIND 10 request to stop
             self.stop_all_processes()
         except:
             pass
@@ -683,10 +688,14 @@ class BoB:
         processes_to_stop = list(self.processes.values())
         for proc_info in processes_to_stop:
             if self.verbose:
-                sys.stdout.write("[bind10] Sending SIGTERM to %s (PID %d).\n" % 
-                                 (proc_info.name, proc_info.pid))
+                try:
+                    sys.stdout.write("[bind10] Sending SIGTERM to %s (PID %d).\n" % 
+                                     (proc_info.name, proc_info.pid))
+                except:
+                    pass
             try:
-                proc_info.process.terminate()
+                if proc_info.process:
+                    proc_info.process.terminate()
             except OSError:
                 # ignore these (usually ESRCH because the child
                 # finally exited)
@@ -699,16 +708,26 @@ class BoB:
             processes_to_stop = list(self.processes.values())
             for proc_info in processes_to_stop:
                 if self.verbose:
-                    sys.stdout.write("[bind10] Sending SIGKILL to %s (PID %d).\n" % 
-                                     (proc_info.name, proc_info.pid))
+                    try:
+                        sys.stdout.write("[bind10] Sending SIGKILL to %s (PID %d).\n" % 
+                                         (proc_info.name, proc_info.pid))
+                    except:
+                        pass
                 try:
-                    proc_info.process.kill()
+                    if proc_info.process:
+                        proc_info.process.kill()
                 except OSError:
                     # ignore these (usually ESRCH because the child
                     # finally exited)
                     pass
         if self.verbose:
-            sys.stdout.write("[bind10] All processes ended, server done.\n")
+            try:
+                sys.stdout.write("[bind10] All processes ended, server done.\n")
+            except:
+                pass
+
+    def wait_on_child(self):
+        return os.waitpid(-1, os.WNOHANG)
 
     def reap_children(self):
         """Check to see if any of our child processes have exited, 
@@ -716,7 +735,7 @@ class BoB:
         """
         while True:
             try:
-                (pid, exit_status) = os.waitpid(-1, os.WNOHANG)
+                (pid, exit_status) = self.wait_on_child()
             except OSError as o:
                 if o.errno == errno.ECHILD: break
                 # XXX: should be impossible to get any other error here
@@ -734,21 +753,36 @@ class BoB:
                 # elsewhere.
                 if self.runnable:
                     if exit_status is None:
-                        sys.stdout.write(
-                            "[bind10] Process %s (PID %d) died: exit status not available" % 
-                            (proc_info.name, proc_info.pid))
+                        try:
+                            sys.stdout.write(
+                                "[bind10] Process %s (PID %d) died: exit status not available" % 
+                                (proc_info.name, proc_info.pid))
+                        except:
+                            # Error writing - shutdown
+                            self.runnable = False
                     else:
-                        sys.stdout.write(
-                            "[bind10] Process %s (PID %d) terminated, exit status = %d\n" % 
-                            (proc_info.name, proc_info.pid, exit_status))
+                        try:
+                            sys.stdout.write(
+                                "[bind10] Process %s (PID %d) terminated, exit status = %d\n" % 
+                                (proc_info.name, proc_info.pid, exit_status))
+                        except:
+                            # Error writing - shutdown
+                            self.runnable = False
 
                     # Was it a special process?
                     if proc_info.name == "b10-msgq":
-                        sys.stdout.write(
-                                 "[bind10] The b10-msgq process died, shutting down.\n")
+                        try:
+                            sys.stdout.write(
+                                     "[bind10] The b10-msgq process died, shutting down.\n")
+                        except:
+                            pass
                         self.runnable = False
             else:
-                sys.stdout.write("[bind10] Unknown child pid %d exited.\n" % pid)
+                try:
+                    sys.stdout.write("[bind10] Unknown child pid %d exited.\n" % pid)
+                except:
+                    # Error writing - shutdown
+                    self.runnable = False
 
     def restart_processes(self):
         """
@@ -1054,7 +1088,11 @@ def main():
     sys.stdout.write("[bind10] BIND 10 started\n")
     report_boot_time()
     main_loop(wakeup_pipe)
-    sys.stdout.write("[bind10] BIND 10 exiting\n");
+    try:
+        sys.stdout.write("[bind10] BIND 10 exiting\n");
+    except:
+        # do not let failure to write cause problems here!
+        pass
     shutdown()
 
 if __name__ == "__main__":
