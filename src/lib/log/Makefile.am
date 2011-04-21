@@ -5,6 +5,13 @@ AM_CPPFLAGS += $(BOOST_INCLUDES)
 AM_CPPFLAGS += -I$(top_srcdir)/src/lib/log -I$(top_builddir)/src/lib/log
 AM_CPPFLAGS += -I$(top_srcdir)/src/lib/util -I$(top_builddir)/src/lib/util
 
+AM_CPPFLAGS  += -I$(top_srcdir)/src/lib/bind9
+AM_CPPFLAGS  += -I$(top_srcdir)/src/lib/bind9/include
+AM_CPPFLAGS  += -I$(top_srcdir)/src/lib/bind9/unix/include
+AM_CPPFLAGS  += -I$(top_srcdir)/src/lib/bind9/nothreads/include
+AM_CPPFLAGS  += -I$(top_srcdir)/src/lib/bind9/x86_32/include
+AM_CPPFLAGS  += -Wformat -Wpointer-arith -Wmissing-prototypes
+
 CLEANFILES = *.gcno *.gcda
 
 lib_LTLIBRARIES = liblog.la
@@ -38,4 +45,6 @@ if USE_CLANGPP
 liblog_la_CXXFLAGS += -Wno-error
 endif
 liblog_la_CPPFLAGS = $(AM_CPPFLAGS)
-liblog_la_LIBADD = $(top_builddir)/src/lib/util/libutil.la
+liblog_la_LIBADD  = $(top_builddir)/src/lib/util/libutil.la
+liblog_la_LIBADD += $(top_builddir)/src/lib/exceptions/libexceptions.la
+liblog_la_LIBADD += $(top_builddir)/src/lib/bind9/libbind9.la

@@ -14,6 +14,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <cassert>
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -37,24 +38,88 @@ namespace log {
 // Static initializations
 
 LoggerImpl::LoggerInfoMap LoggerImpl::logger_info_;
+LoggerImpl::LoggerInfoMap LoggerImpl::bind9_info_;
 LoggerImpl::LoggerInfo LoggerImpl::root_logger_info_(isc::log::INFO, 0);
 
 // Constructor
-LoggerImpl::LoggerImpl(const std::string& name, bool)
+LoggerImpl::LoggerImpl(const std::string& name, bool) : mctx_(0), lctx_(0), lcfg_(0)
 {
-    // Are we the root logger?
+    // Regardless of anything else, category is the unadorned name of
+    // the logger.
+    category_ = name;
+
+    // Set up the module and category.
+    categories_[0].name = strdup(category_.c_str());
+    categories_[0].id = 0;
+    categories_[1].name = NULL;
+    categories_[1].id = 0;
+
+    modules_[0].name = strdup(getRootLoggerName().c_str());
+    modules_[0].id = 0;
+    modules_[1].name = NULL;
+
+    // The next set of code is concerned with static initialization.  This
+    // logger is instantiated with a given name.  If no other logger with this
+    // name has been created, we initialize the BIND 9 logging for that name.
+    // Otherwise we can omit the step.
+
+    bool initialized = false;
+
     if (name == getRootLoggerName()) {
+        // We are the root logger.
         is_root_ = true;
         name_ = name;
+
+        // See if it has already been initialized.
+        initialized = root_logger_info_.init;
+        root_logger_info_.init = true;
+
     } else {
+
+        // Not the root logger.  Create full name for this logger.
         is_root_ = false;
         name_ = getRootLoggerName() + "." + name;
+
+        // Has a copy of this module already been initialized?
+        LoggerInfoMap::iterator i = bind9_info_.find(name_);
+        if (i != bind9_info_.end()) {
+            // Yes!
+            initialized = true;
+        } else {
+
+            // No - add information to the map.
+            initialized = false;
+            bind9_info_[name_] =
+                LoggerInfo(isc::log::INFO, MIN_DEBUG_LEVEL, true);
+        }
+    }
+
+    if (! initialized) {
+        bind9LogInit();
     }
 }
+
+// Do BIND 9 Logging initialization
+
+void
+LoggerImpl::bind9LogInit() {
+
+    if ((isc_mem_create(0, 0, &mctx_) != ISC_R_SUCCESS) ||
+        (isc_log_create(mctx_, &lctx_, &lcfg_) != ISC_R_SUCCESS)) {
+        std::cout << "Unable to create BIND 9 context\n";
+    }
+
+    isc_log_registercategories(lctx_, categories_);
+    isc_log_registermodules(lctx_, modules_);
+}
+
 
 // Destructor. (Here because of virtual declaration.)
 
 LoggerImpl::~LoggerImpl() {
+    // Free up space for BIND 9 strings
+    free(const_cast<void*>(static_cast<const void*>(modules_[0].name))); modules_[0].name = NULL;
+    free(const_cast<void*>(static_cast<const void*>(categories_[0].name))); categories_[0].name = NULL;
 }
 
 // Set the severity for logging.

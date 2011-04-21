@@ -28,6 +28,12 @@
 #include <log/message_types.h>
 #include <log/root_logger_name.h>
 
+extern "C" {
+#include <isc/result.h>
+#include <isc/mem.h>
+#include <isc/log.h>
+}
+
 namespace isc {
 namespace log {
 
@@ -50,9 +56,11 @@ public:
     struct LoggerInfo {
         isc::log::Severity  severity;
         int                 dbglevel;
+        bool                init;       ///< Initialized?
 
         LoggerInfo(isc::log::Severity sev = isc::log::INFO,
-            int dbg = MIN_DEBUG_LEVEL) : severity(sev), dbglevel(dbg)
+            int dbg = MIN_DEBUG_LEVEL, bool initialized = false) :
+            severity(sev), dbglevel(dbg), init(initialized)
         {}
     };
 
@@ -246,10 +254,13 @@ public:
         logger_info_.clear();
     }
 
+    // Initialize BIND 9 logging
+    void bind9LogInit();
 
 private:
     bool                is_root_;           ///< true if a root logger
     std::string         name_;              ///< Name of this logger
+    std::string         category_;          ///< Category of logger
 
     // Split the status of the root logger from this logger.  If - is will
     // probably be the usual case - no per-logger setting is enabled, a
@@ -258,6 +269,15 @@ private:
 
     static LoggerInfo       root_logger_info_;  ///< Status of root logger
     static LoggerInfoMap    logger_info_;       ///< Store of debug levels etc.
+    static LoggerInfoMap    bind9_info_;        ///< Parallel store for bind 9 stuff
+
+    // Categories and modules.  Each logger only has one category (the
+    // the logger name) and one module (the name of the root logger).
+    isc_logcategory_t       categories_[2];     ///< Category and NULL
+    isc_logmodule_t         modules_[2];        ///< Module and NULL
+    isc_mem_t*              mctx_;              ///< Memory context
+    isc_log_t*              lctx_;              ///< Logging context
+    isc_logconfig_t*        lcfg_;              ///< Logging configuration
 };
 
 } // namespace log
