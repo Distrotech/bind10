@@ -12,12 +12,12 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE
 
-#include <iostream>
 #include <algorithm>
 #include <cassert>
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 #include <boost/lexical_cast.hpp>
 
 #include <log/debug_levels.h>
@@ -28,6 +28,8 @@
 #include <log/message_types.h>
 #include <log/root_logger_name.h>
 
+#include <isc/log.h>
+
 #include <util/strutil.h>
 
 using namespace std;
@@ -35,15 +37,43 @@ using namespace std;
 namespace isc {
 namespace log {
 
-// Static initializations
+// Static variables.  To avoid the static initialization fiasco, all the
+// static variables are accessed through functions which declare them static
+// inside. (The variables are created the first time the function is called.)
 
-LoggerImpl::LoggerInfoMap LoggerImpl::logger_info_;
-LoggerImpl::LoggerInfoMap LoggerImpl::bind9_info_;
-LoggerImpl::LoggerInfo LoggerImpl::root_logger_info_(isc::log::INFO, 0);
+LoggerImpl::LoggerInfo&
+LoggerImpl::rootLoggerInfo() {
+    static LoggerInfo root_logger_info(isc::log::INFO, 0);
+    return root_logger_info;
+}
+
+LoggerImpl::LoggerInfoMap&
+LoggerImpl::loggerInfo() {
+    static LoggerInfoMap logger_info;
+    return logger_info;
+}
+
+LoggerImpl::LoggerInfoMap&
+LoggerImpl::bind9Info() {
+    static LoggerInfoMap bind9_info;
+    return bind9_info;
+}
+
+// The following is a temporary function purely for the validation of BIND 9
+// logging in BIND 10.  It is used in the unit tests to determine if the
+// default channel - write to stderr and print all information - has been
+// created.
+
+bool&
+LoggerImpl::channelCreated() {
+    static bool created(false);
+    return created;
+}
 
 // Constructor
 LoggerImpl::LoggerImpl(const std::string& name, bool) : mctx_(0), lctx_(0), lcfg_(0)
 {
+
     // Regardless of anything else, category is the unadorned name of
     // the logger.
     category_ = name;
@@ -71,8 +101,8 @@ LoggerImpl::LoggerImpl(const std::string& name, bool) : mctx_(0), lctx_(0), lcfg
         name_ = name;
 
         // See if it has already been initialized.
-        initialized = root_logger_info_.init;
-        root_logger_info_.init = true;
+        initialized = rootLoggerInfo().init;
+        rootLoggerInfo().init = true;
 
     } else {
 
@@ -81,22 +111,60 @@ LoggerImpl::LoggerImpl(const std::string& name, bool) : mctx_(0), lctx_(0), lcfg
         name_ = getRootLoggerName() + "." + name;
 
         // Has a copy of this module already been initialized?
-        LoggerInfoMap::iterator i = bind9_info_.find(name_);
-        if (i != bind9_info_.end()) {
+        LoggerInfoMap::iterator i = bind9Info().find(name_);
+        if (i != bind9Info().end()) {
             // Yes!
             initialized = true;
         } else {
 
             // No - add information to the map.
             initialized = false;
-            bind9_info_[name_] =
-                LoggerInfo(isc::log::INFO, MIN_DEBUG_LEVEL, true);
+            bind9Info()[name_].reset(
+                new LoggerInfo(isc::log::INFO, MIN_DEBUG_LEVEL, true));
         }
     }
 
     if (! initialized) {
         bind9LogInit();
+
+        // Create a default channel (called "def_channel") if required.  This
+        // logs to stdout and prints all information (time, module, category
+        if (! channelCreated()) {
+            isc_logdestination destination;
+            memset(&destination, 0, sizeof(destination));
+            destination.file.stream = stdout;
+            if (! lcfg_) {
+                std::cerr << "Logging config is NULL\n";
+            }
+            isc_result_t result = isc_log_createchannel(lcfg_, "def_channel",
+                ISC_LOG_TOFILEDESC, ISC_LOG_INFO, &destination, ISC_LOG_PRINTALL);
+            if (result != ISC_R_SUCCESS) {
+                std::cout << "ERROR: Unable to create def_channel\n";
+            }
+
+            result = isc_log_usechannel(lcfg_, "def_channel", NULL, NULL);
+            if (result != ISC_R_SUCCESS) {
+                std::cout << "ERROR: Unable to use def_channel\n";
+            }
+        }
+                
+        // Save memory and logging context for later retrieval
+        if (is_root_) {
+            rootLoggerInfo().lctx = lctx_;
+            rootLoggerInfo().lcfg = lcfg_;
+            rootLoggerInfo().mctx = mctx_;
+        } else {
+            bind9Info()[name_]->lctx = lctx_;
+            bind9Info()[name_]->lcfg = lcfg_;
+            bind9Info()[name_]->mctx = mctx_;
+        }
+    } else {
+        // Restore context from saved BIND 9 information
+        mctx_ = bind9Info()[name_]->mctx;
+        lctx_ = bind9Info()[name_]->lctx;
+        lcfg_ = bind9Info()[name_]->lcfg;
     }
+
 }
 
 // Do BIND 9 Logging initialization
@@ -106,11 +174,12 @@ LoggerImpl::bind9LogInit() {
 
     if ((isc_mem_create(0, 0, &mctx_) != ISC_R_SUCCESS) ||
         (isc_log_create(mctx_, &lctx_, &lcfg_) != ISC_R_SUCCESS)) {
-        std::cout << "Unable to create BIND 9 context\n";
+        std::cout << "ERROR: Unable to create BIND 9 context\n";
     }
 
     isc_log_registercategories(lctx_, categories_);
     isc_log_registermodules(lctx_, modules_);
+
 }
 
 
@@ -120,6 +189,8 @@ LoggerImpl::~LoggerImpl() {
     // Free up space for BIND 9 strings
     free(const_cast<void*>(static_cast<const void*>(modules_[0].name))); modules_[0].name = NULL;
     free(const_cast<void*>(static_cast<const void*>(categories_[0].name))); categories_[0].name = NULL;
+
+    // Free up the logging context
 }
 
 // Set the severity for logging.
@@ -135,22 +206,22 @@ LoggerImpl::setSeverity(isc::log::Severity severity, int dbglevel) {
         // Can only set severity for the root logger, you can't disable it.
         // Any attempt to do so is silently ignored.
         if (severity != isc::log::DEFAULT) {
-            root_logger_info_ = LoggerInfo(severity, debug_level);
+            rootLoggerInfo() = LoggerInfo(severity, debug_level);
         }
 
     } else if (severity == isc::log::DEFAULT) {
 
         // Want to set to default; this means removing the information
-        // about this logger from the logger_info_ if it is set.
-        LoggerInfoMap::iterator i = logger_info_.find(name_);
-        if (i != logger_info_.end()) {
-            logger_info_.erase(i);
+        // about this logger from the loggerInfo() if it is set.
+        LoggerInfoMap::iterator i = loggerInfo().find(name_);
+        if (i != loggerInfo().end()) {
+            loggerInfo().erase(i);
         }
 
     } else {
 
         // Want to set this information
-        logger_info_[name_] = LoggerInfo(severity, debug_level);
+        loggerInfo()[name_].reset(new LoggerInfo(severity, debug_level));
     }
 }
 
@@ -160,12 +231,12 @@ isc::log::Severity
 LoggerImpl::getSeverity() {
 
     if (is_root_) {
-        return (root_logger_info_.severity);
+        return (rootLoggerInfo().severity);
     }
     else {
-        LoggerInfoMap::iterator i = logger_info_.find(name_);
-        if (i != logger_info_.end()) {
-           return ((i->second).severity);
+        LoggerInfoMap::iterator i = loggerInfo().find(name_);
+        if (i != loggerInfo().end()) {
+           return ((i->second)->severity);
         }
         else {
             return (isc::log::DEFAULT);
@@ -179,21 +250,21 @@ LoggerImpl::getSeverity() {
 isc::log::Severity
 LoggerImpl::getEffectiveSeverity() {
 
-    if (!is_root_ && !logger_info_.empty()) {
+    if (!is_root_ && !loggerInfo().empty()) {
 
         // Not root logger and there is at least one item in the info map for a
         // logger.
-        LoggerInfoMap::iterator i = logger_info_.find(name_);
-        if (i != logger_info_.end()) {
+        LoggerInfoMap::iterator i = loggerInfo().find(name_);
+        if (i != loggerInfo().end()) {
 
             // Found, so return the severity.
-            return ((i->second).severity);
+            return ((i->second)->severity);
         }
     }
 
     // Must be the root logger, or this logger is defaulting to the root logger
     // settings.
-    return (root_logger_info_.severity);
+    return (rootLoggerInfo().severity);
 }
 
 // Get the debug level.  This returns 0 unless the severity is DEBUG.
@@ -201,16 +272,16 @@ LoggerImpl::getEffectiveSeverity() {
 int
 LoggerImpl::getDebugLevel() {
 
-    if (!is_root_ && !logger_info_.empty()) {
+    if (!is_root_ && !loggerInfo().empty()) {
 
         // Not root logger and there is something in the map, check if there
         // is a setting for this one.
-        LoggerInfoMap::iterator i = logger_info_.find(name_);
-        if (i != logger_info_.end()) {
+        LoggerInfoMap::iterator i = loggerInfo().find(name_);
+        if (i != loggerInfo().end()) {
 
             // Found, so return the debug level.
-            if ((i->second).severity == isc::log::DEBUG) {
-                return ((i->second).dbglevel);
+            if ((i->second)->severity == isc::log::DEBUG) {
+                return ((i->second)->dbglevel);
             } else {
                 return (0);
             }
@@ -219,8 +290,8 @@ LoggerImpl::getDebugLevel() {
 
     // Must be the root logger, or this logger is defaulting to the root logger
     // settings.
-    if (root_logger_info_.severity == isc::log::DEBUG) {
-        return (root_logger_info_.dbglevel);
+    if (rootLoggerInfo().severity == isc::log::DEBUG) {
+        return (rootLoggerInfo().dbglevel);
     } else {
         return (0);
     }
@@ -233,16 +304,16 @@ LoggerImpl::getDebugLevel() {
 bool
 LoggerImpl::isDebugEnabled(int dbglevel) {
 
-    if (!is_root_ && !logger_info_.empty()) {
+    if (!is_root_ && !loggerInfo().empty()) {
 
         // Not root logger and there is something in the map, check if there
         // is a setting for this one.
-        LoggerInfoMap::iterator i = logger_info_.find(name_);
-        if (i != logger_info_.end()) {
+        LoggerInfoMap::iterator i = loggerInfo().find(name_);
+        if (i != loggerInfo().end()) {
 
             // Found, so return the debug level.
-            if ((i->second).severity <= isc::log::DEBUG) {
-                return ((i->second).dbglevel >= dbglevel);
+            if ((i->second)->severity <= isc::log::DEBUG) {
+                return ((i->second)->dbglevel >= dbglevel);
             } else {
                 return (false); // Nothing lower than debug
             }
@@ -251,36 +322,50 @@ LoggerImpl::isDebugEnabled(int dbglevel) {
 
     // Must be the root logger, or this logger is defaulting to the root logger
     // settings.
-    if (root_logger_info_.severity <= isc::log::DEBUG) {
-        return (root_logger_info_.dbglevel >= dbglevel);
+    if (rootLoggerInfo().severity <= isc::log::DEBUG) {
+        return (rootLoggerInfo().dbglevel >= dbglevel);
     } else {
        return (false);
     }
 }
 
+// Output message of a specific severity.
+void
+LoggerImpl::debug(const MessageID& ident, va_list ap) {
+    output(ISC_LOG_DEBUG(getDebugLevel()), ident, ap);
+}
+
+void
+LoggerImpl::info(const MessageID& ident, va_list ap) {
+    output(ISC_LOG_INFO, ident, ap);
+}
+
+void
+LoggerImpl::warn(const MessageID& ident, va_list ap) {
+    output(ISC_LOG_WARNING, ident, ap);
+}
+
+void
+LoggerImpl::error(const MessageID& ident, va_list ap) {
+    output(ISC_LOG_ERROR, ident, ap);
+}
+
+void
+LoggerImpl::fatal(const MessageID& ident, va_list ap) {
+    output(ISC_LOG_CRITICAL, ident, ap);
+}
+
+
 // Output a general message
 
 void
-LoggerImpl::output(const char* sev_text, const MessageID& ident,
-    va_list ap)
-{
-    char message[512];      // Should be large enough for any message
+LoggerImpl::output(int sev, const MessageID& ident, va_list ap) {
 
     // Obtain text of the message and substitute arguments.
-    const string format = MessageDictionary::globalDictionary().getText(ident);
-    vsnprintf(message, sizeof(message), format.c_str(), ap);
+    const string format = static_cast<string>(ident) + ", " + MessageDictionary::globalDictionary().getText(ident);
 
-    // Get the time in a struct tm format, and convert to text
-    time_t t_time;
-    time(&t_time);
-    struct tm* tm_time = localtime(&t_time);
-
-    char chr_time[32];
-    (void) strftime(chr_time, sizeof(chr_time), "%Y-%m-%d %H:%M:%S", tm_time);
-
-    // Now output.
-    std::cout << chr_time << " " << sev_text << " [" << getName() << "] " <<
-        ident << ", " << message << "\n";
+    // Write the message
+    isc_log_vwrite(lctx_, &categories_[0], &modules_[0], sev, format.c_str(), ap);
 }
 
 } // namespace log

@@ -5,7 +5,7 @@ AM_CFLAGS  += -I$(top_srcdir)/src/lib/bind9/include
 AM_CFLAGS  += -I$(top_srcdir)/src/lib/bind9/unix/include
 AM_CFLAGS  += -I$(top_srcdir)/src/lib/bind9/nothreads/include
 AM_CFLAGS  += -I$(top_srcdir)/src/lib/bind9/x86_32/include
-AM_CFLAGS  += -Wformat -Wpointer-arith -Wmissing-prototypes
+AM_CFLAGS  += -g -Wformat -Wpointer-arith -Wmissing-prototypes
 
 CLEANFILES = *.gcno *.gcda
 

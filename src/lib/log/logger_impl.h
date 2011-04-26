@@ -23,6 +23,8 @@
 #include <map>
 #include <utility>
 
+#include <boost/shared_ptr.hpp>
+
 #include <log/debug_levels.h>
 #include <log/logger.h>
 #include <log/message_types.h>
@@ -57,10 +59,14 @@ public:
         isc::log::Severity  severity;
         int                 dbglevel;
         bool                init;       ///< Initialized?
+        isc_mem_t*          mctx;       ///< Memory context for this logger
+        isc_log_t*          lctx;       ///< Logging context for this logger
+        isc_logconfig_t*    lcfg;       ///< Logging configuration
 
         LoggerInfo(isc::log::Severity sev = isc::log::INFO,
             int dbg = MIN_DEBUG_LEVEL, bool initialized = false) :
-            severity(sev), dbglevel(dbg), init(initialized)
+            severity(sev), dbglevel(dbg), init(initialized),
+            mctx(NULL), lctx(NULL)
         {}
     };
 
@@ -71,7 +77,7 @@ public:
     /// is held in a map, linking name of the logger (excluding the root
     /// name component) and its set severity and debug levels.  The root
     /// logger information is held separately.
-    typedef std::map<std::string, LoggerInfo>   LoggerInfoMap;
+    typedef std::map<std::string, boost::shared_ptr<LoggerInfo> > LoggerInfoMap;
 
 
     /// \brief Constructor
@@ -125,7 +131,7 @@ public:
     /// \brief Return DEBUG Level
     ///
     /// \return Current setting of debug level.  This is returned regardless of
-    /// whether the
+    /// whether debug is enabled.
     virtual int getDebugLevel();
 
 
@@ -167,8 +173,8 @@ public:
     /// to take longer and look up the information in the map holding the
     /// logging details.
     virtual bool isEnabled(isc::log::Severity severity) {
-        if (logger_info_.empty()) {
-            return (root_logger_info_.severity <= severity);
+        if (loggerInfo().empty()) {
+            return (rootLoggerInfo().severity <= severity);
         }
         else {
             return (getSeverity() <= severity);
@@ -181,10 +187,10 @@ public:
     /// The message is formatted to include the date and time, the severity
     /// and the logger generating the message.
     ///
-    /// \param sev_text Severity level as a text string
+    /// \param sev BIND 9 severity level
     /// \param ident Message identification
     /// \param ap Variable argument list holding message arguments
-    void output(const char* sev_text, const MessageID& ident,
+    void output(int sev, const MessageID& ident,
         va_list ap);
 
 
@@ -193,9 +199,7 @@ public:
     /// \param ident Message identification.
     /// \param text Text to log
     /// \param ap Variable argument list holding message arguments
-    void debug(const MessageID& ident, va_list ap) {
-        output("DEBUG", ident, ap);
-    }
+    void debug(const MessageID& ident, va_list ap);
 
 
     /// \brief Output Informational Message
@@ -203,36 +207,28 @@ public:
     /// \param ident Message identification.
     /// \param text Text to log
     /// \param ap Variable argument list holding message arguments
-    void info(const MessageID& ident, va_list ap) {
-        output("INFO ", ident, ap);
-    }
+    void info(const MessageID& ident, va_list ap);
 
     /// \brief Output Warning Message
     ///
     /// \param ident Message identification.
     /// \param text Text to log
     /// \param ap Variable argument list holding message arguments
-    void warn(const MessageID& ident, va_list ap) {
-        output("WARN ", ident, ap);
-    }
+    void warn(const MessageID& ident, va_list ap);
 
     /// \brief Output Error Message
     ///
     /// \param ident Message identification.
     /// \param text Text to log
     /// \param ap Variable argument list holding message arguments
-    void error(const MessageID& ident, va_list ap) {
-        output("ERROR", ident, ap);
-    }
+    void error(const MessageID& ident, va_list ap);
 
     /// \brief Output Fatal Message
     ///
     /// \param ident Message identification.
     /// \param text Text to log
     /// \param ap Variable argument list holding message arguments
-    void fatal(const MessageID& ident, va_list ap) {
-        output("FATAL", ident, ap);
-    }
+    void fatal(const MessageID& ident, va_list ap);
 
     /// \brief Equality
     ///
@@ -250,8 +246,8 @@ public:
     /// Only used for testing, this clears all the logger information and
     /// resets it back to default values.
     static void reset() {
-        root_logger_info_ = LoggerInfo(isc::log::INFO, MIN_DEBUG_LEVEL);
-        logger_info_.clear();
+        rootLoggerInfo() = LoggerInfo(isc::log::INFO, MIN_DEBUG_LEVEL);
+        loggerInfo().clear();
     }
 
     // Initialize BIND 9 logging
@@ -262,14 +258,25 @@ private:
     std::string         name_;              ///< Name of this logger
     std::string         category_;          ///< Category of logger
 
-    // Split the status of the root logger from this logger.  If - is will
-    // probably be the usual case - no per-logger setting is enabled, a
-    // quick check of logger_info_.empty() will return true and we can quickly
-    // return the root logger status without a length lookup in the map.
 
-    static LoggerInfo       root_logger_info_;  ///< Status of root logger
-    static LoggerInfoMap    logger_info_;       ///< Store of debug levels etc.
-    static LoggerInfoMap    bind9_info_;        ///< Parallel store for bind 9 stuff
+    /// \brief Root Logger Infomation
+    ///
+    /// Split the status of the root logger from this logger.  If - is will
+    /// probably be the usual case - no per-logger setting is enabled, a
+    /// quick check of loggerInfo().empty() will return true and we can quickly
+    /// return the root logger status without a lengthy lookup in the map.
+    ///
+    /// \return Reference to the root logger information
+    static LoggerInfo& rootLoggerInfo();
+
+    /// \return Returns a map of information about all loggers in the system.
+    static LoggerInfoMap& loggerInfo();
+
+    /// \return Reference to parallel store for BIND 9 information
+    static LoggerInfoMap& bind9Info();
+
+    /// \return TEMP - say if default channel has been created
+    static bool& channelCreated();
 
     // Categories and modules.  Each logger only has one category (the
     // the logger name) and one module (the name of the root logger).
