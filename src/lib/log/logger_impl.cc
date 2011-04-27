@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 
 #include <stdarg.h>
 #include <stdio.h>
