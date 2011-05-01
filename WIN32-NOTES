@@ -1,0 +1,79 @@
+What is needed:
+
+ - full IPv6 support (so at least Vista or Server 2008)
+
+ - POSIX (aka Unix) environment for tar/git/etc (I use cygwin)
+
+ - Visual Studio C++ (version 2010 tested)
+
+ - python >= 3.1 (I got Cpython 3.2 MSI from python.org,
+  note the pre-built python can give C++ runtime issue with
+  an incompatible Visual Studio)
+
+ - perl (the Windows native one, not yet used)
+
+ - sqlite3 >= 3.3.9 (got the 3.7.5 prebuilds, not yet used)
+
+ - splite3 python DSO (included in the MSI, not yet used)
+
+ - cmakefile (got the 2.8.4 .exe, can be used but see below)
+
+ - google test (aka gtest, got the 1.5.0 sources)
+
+ - boost >= 1.35 (got the 1.44 (newer is empty?) setup)
+
+ - setproctitle python module (in theory)
+
+ - botan 1.8.x
+
+ - log4cplus (in the future)
+
+How to compile google test:
+ - remove the /MD -> /MT line in the CMakeLists.txt, use cmake
+
+ - *or* open the solution gtest-md in msvc (please note the rights
+  of files in this directory must be fixed before)
+
+ - please remember the same Visual Studio version must be used
+  for gtest and bind10
+
+ - msvc gives the gtestd.lib (in place of gtest.lib) for the debug version
+
+Where I put things (hardwired paths):
+ - <home>\bind10.trac826 for bind10
+  (wired in dns tests preprocessor defines)
+
+ - <home>\gtest\include
+
+ - <home>\gtest\md10\{Debug,Release} gtest{d,}.lib and vc100.pdb
+
+ - "C:\\Program Files\boost\boost_1_44" (it seems only the include
+  is required now)
+
+ - C:\\Python32 (update your PATH, same for perl)
+
+ - C:\\sqlite3 (not yet needed)
+
+How to compile:
+ - open win32build\VS2010\bind10.sln file with Visual Studio 2010
+
+ - fix the paths
+
+ - build
+
+ - both Debug and Release versions of iscexc_tests\*\run_unittests.exe
+  should run
+
+ - only the Release version of/so iscdns_tests\Release\run_unittests.exe
+  runs
+
+Random notes (for me):
+ - getopt() is *not* standard (got working getopt.{h,cc})
+ - inet_pton() requires >= Vista/2008
+ - nanosleep() (supported?)
+ - forget lcov/pycoverage
+ - TODO: find the real cause of asio/boost wanting pthreads
+ - is asio part of boost?
+ - use select(): no kqueue / *poll
+ - cmake?
+
