@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
 #include <algorithm>
 #include <cstdlib>
 #include <string>
@@ -165,9 +167,12 @@ public:
     ///        mangled qid response has been sent, a second packet will be
     ///        sent with the correct QID.
     /// \param length Amount of data received.
-    void udpReceiveHandler(udp::endpoint* remote, udp::socket* socket,
-                    error_code ec = error_code(), size_t length = 0,
-                    bool bad_qid = false, bool second_send = false) {
+    void udpReceiveHandler(udp::endpoint* remote,
+                    udp::socket* socket,
+                    asio::error_code ec = asio::error_code(),
+                    size_t length = 0,
+                    bool bad_qid = false,
+                    bool second_send = false) {
         if (debug_) {
             cout << "udpReceiveHandler(): error = " << ec.value() <<
                     ", length = " << length << endl;
@@ -215,7 +220,8 @@ public:
     ///
     /// \param socket Socket on which data will be received
     /// \param ec Boost error code, value should be zero.
-    void tcpAcceptHandler(tcp::socket* socket, error_code ec = error_code())
+  void tcpAcceptHandler(tcp::socket* socket,
+                        asio::error_code ec = asio::error_code())
     {
         if (debug_) {
             cout << "tcpAcceptHandler(): error = " << ec.value() << endl;
@@ -254,7 +260,8 @@ public:
     /// \param ec ASIO error code, completion code of asynchronous I/O issued
     ///        by the "server" to receive data.
     /// \param length Amount of data received.
-    void tcpReceiveHandler(tcp::socket* socket, error_code ec = error_code(),
+    void tcpReceiveHandler(tcp::socket* socket,
+                           asio::error_code ec = asio::error_code(),
                            size_t length = 0)
     {
         if (debug_) {
@@ -382,8 +389,10 @@ public:
     ///        pass back to the send method.
     /// \param ec Boost error code, value should be zero.
     /// \param length Number of bytes sent.
-    void tcpSendHandler(size_t expected, tcp::socket* socket,
-                        error_code ec = error_code(), size_t length = 0)
+    void tcpSendHandler(size_t expected,
+                        tcp::socket* socket,
+                        asio::error_code ec = asio::error_code(),
+                        size_t length = 0)
     {
         if (debug_) {
             cout << "tcpSendHandler(): error = " << ec.value() <<

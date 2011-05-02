@@ -13,11 +13,16 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <config.h>
-
-#include <netinet/in.h>
 #include <stdint.h>
-#include <sys/socket.h>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#else
 #include <unistd.h>             // for some IPC/network system calls
+#include <netinet/in.h>
+#include <sys/socket.h>
+#endif
 
 #include <boost/bind.hpp>
 #include <boost/scoped_ptr.hpp>

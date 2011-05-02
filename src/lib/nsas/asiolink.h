@@ -16,6 +16,8 @@
 #define __ASIOLINK_H
 
 #include <string>
+#ifndef _WIN32
 #include <sys/socket.h>
+#endif
 
 #endif // __ASIOLINK_H

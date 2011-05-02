@@ -14,7 +14,12 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#else
 #include <netinet/in.h>
+#endif
 
 #include <dns/message.h>
 #include <dns/rcode.h>

@@ -16,6 +16,11 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#endif
+
 #include "zone_entry.h"
 #include "address_request_callback.h"
 #include "nameserver_entry.h"

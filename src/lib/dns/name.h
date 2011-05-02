@@ -632,27 +632,29 @@ public:
     ///
     //@{
     /// \brief Max allowable length of domain names.
-    static const size_t MAX_WIRE = 255;
+    static const size_t MAX_WIRE; // = 255
 
     /// \brief Max allowable labels of domain names.
     ///
     /// This is <code>ceil(MAX_WIRE / 2)</code>, and is equal to the number of
     /// labels of name "a.a.a.a....a." (127 "a"'s and trailing dot).
-    static const size_t MAX_LABELS = 128;
+    /// The #define should be removed when constant propagation will be fixed
+#define NAME_MAX_LABELS 128
+    static const size_t MAX_LABELS; // = 128
 
     /// \brief Max allowable length of labels of a domain name.
-    static const size_t MAX_LABELLEN = 63;
+    static const size_t MAX_LABELLEN; // = 63
 
     /// \brief Max possible pointer value for name compression.
     ///
     /// This is the highest number of 14-bit unsigned integer.  Name compression
     /// pointers are identified as a 2-byte value starting with the upper two
     /// bit being 11.
-    static const uint16_t MAX_COMPRESS_POINTER = 0x3fff;
+    static const uint16_t MAX_COMPRESS_POINTER; // = 0x3fff
     /// \brief A 8-bit masked value indicating a start of compression pointer.
-    static const uint16_t COMPRESS_POINTER_MARK8 = 0xc0;
+    static const uint16_t COMPRESS_POINTER_MARK8; // = 0xc0
     /// \brief A 16-bit masked value indicating a start of compression pointer.
-    static const uint16_t COMPRESS_POINTER_MARK16 = 0xc000;
+    static const uint16_t COMPRESS_POINTER_MARK16; // = 0xc000
     //@}
 
     ///

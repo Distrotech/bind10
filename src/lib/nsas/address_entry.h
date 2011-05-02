@@ -20,6 +20,7 @@
 /// Lightweight class that couples an address with a RTT and provides some
 /// convenience methods for accessing and updating the information.
 
+#include <time.h>
 #include <stdint.h>
 #include <asiolink/io_address.h>
 

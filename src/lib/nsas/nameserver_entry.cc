@@ -22,9 +22,12 @@
 #include <boost/foreach.hpp>
 
 #include <ctype.h>
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#else
 #include <strings.h>
-
-#include <config.h>
+#endif
 
 #include <exceptions/exceptions.h>
 #include <dns/name.h>

@@ -1,0 +1,141 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\lib\dns\edns.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\exceptions.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\masterload.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\message.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\messagerenderer.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\name.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\opcode.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\question.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\rcode.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\rdata.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\rdataclass.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\rdatafields.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\rdata\generic\detail\nsec_bitmap.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\rrclass.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\rrparamregistry.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\rrset.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\rrsetlist.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\rrttl.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\rrtype.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\tsig.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\tsigerror.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\tsigkey.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\lib\dns\edns.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\exceptions.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\masterload.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\message.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\messagerenderer.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\name.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\opcode.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\question.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\rcode.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\rdata.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\rdataclass.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\rdatafields.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\rdata\generic\detail\nsec_bitmap.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\rrclass.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\rrparamregistry.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\rrset.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\rrsetlist.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\rrttl.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\rrtype.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tsig.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tsigerror.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tsigkey.cc" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{F6E728D3-A0B2-40F6-9B91-7D4474D778F3}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>libdns</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\util;..\..\..\src\lib\dns;C:\Program Files\boost\boost_1_44;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PreBuildEvent>
+      <Command>cd ..\..\..\src\lib\dns
+copy gen-rdatacode.py.win32 gen-rdatacode.py
+python gen-rdatacode.py
+</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\util;..\..\..\src\lib\dns;C:\Program Files\boost\boost_1_44;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <PreBuildEvent>
+      <Command>cd ..\..\..\src\lib\dns
+copy gen-rdatacode.py.win32 gen-rdatacode.py
+python gen-rdatacode.py
+</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

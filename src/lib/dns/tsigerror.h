@@ -188,7 +188,7 @@ public:
 private:
     // This is internally used to specify the maximum possible RCODE value
     // that can be convertible to TSIGErrors.
-    static const int MAX_RCODE_FOR_TSIGERROR = 15;
+    static const int MAX_RCODE_FOR_TSIGERROR; // = 15
 
     uint16_t code_;
 };

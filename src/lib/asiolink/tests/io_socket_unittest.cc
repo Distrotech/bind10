@@ -15,7 +15,11 @@
 #include <config.h>
 #include <gtest/gtest.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <netinet/in.h>
+#endif
 
 #include <asio.hpp>
 #include <asiolink/io_socket.h>

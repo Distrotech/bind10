@@ -12,14 +12,19 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+#include <stdint.h>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>             // for some IPC/network system calls
+#endif
 #include <errno.h>
 
 #include <boost/shared_array.hpp>
-
-#include <config.h>
 
 #include <log/dummylog.h>
 
@@ -68,7 +73,9 @@ struct UDPServer::Data {
         // otherwise ASIO will bind to both
         udp proto = addr.is_v4() ? udp::v4() : udp::v6();
         socket_.reset(new udp::socket(io_service, proto));
+#ifndef _WIN32
         socket_->set_option(socket_base::reuse_address(true));
+#endif
         if (addr.is_v6()) {
             socket_->set_option(asio::ip::v6_only(true));
         }
@@ -170,7 +177,7 @@ UDPServer::UDPServer(io_service& io_service, const ip::address& addr,
 /// The function operator is implemented with the "stackless coroutine"
 /// pattern; see internal/coroutine.h for details.
 void
-UDPServer::operator()(error_code ec, size_t length) {
+UDPServer::operator()(asio::error_code ec, size_t length) {
     /// Because the coroutine reentry block is implemented as
     /// a switch statement, inline variable declarations are not
     /// permitted.  Certain variables used below can be declared here.

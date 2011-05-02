@@ -12,6 +12,7 @@
 
 #include <config.h>
 #include <string>
+#include <time.h>
 #include <gtest/gtest.h>
 #include <dns/tests/unittest_util.h>
 #include <dns/message.h>
@@ -26,6 +27,8 @@ using namespace isc::cache;
 using namespace isc;
 using namespace isc::dns;
 using namespace std;
+
+#undef max
 
 static uint32_t MAX_UINT32 = numeric_limits<uint32_t>::max();
 

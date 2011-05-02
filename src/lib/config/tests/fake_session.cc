@@ -32,9 +32,13 @@ using namespace std;
 using namespace isc::cc;
 using namespace isc::data;
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#endif
 
 // ok i want these in cc/data 
 bool
@@ -52,13 +56,15 @@ listContains(ConstElementPtr list, ConstElementPtr el) {
 
 void
 listRemove(ElementPtr list, ConstElementPtr el) {
-    int i = 0;
+    int i = -1;
     BOOST_FOREACH(ConstElementPtr s_el, list->listValue()) {
         if (*el == *s_el) {
-            list->remove(i);
-            return;
+            i = 0;
         }
         i++;
+    }
+    if (i >= 0) {
+        list->remove(i);
     }
 }
 // endwant

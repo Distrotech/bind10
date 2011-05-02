@@ -23,7 +23,9 @@
 // A middle term solution is to generalize our local wrapper interface
 // (currently only available for the auth server), where all such portability
 // issues are hidden, and to have other modules use the wrapper.
+#ifndef _WIN32
 #include <unistd.h>             // for some IPC/network system calls
+#endif
 #include <asio.hpp>
 #include <asio/error_code.hpp>
 #include <asio/deadline_timer.hpp>
@@ -34,7 +36,9 @@
 #include <iostream>
 #include <sstream>
 
+#ifndef _WIN32
 #include <sys/un.h>
+#endif
 
 #include <boost/bind.hpp>
 #include <boost/optional.hpp>

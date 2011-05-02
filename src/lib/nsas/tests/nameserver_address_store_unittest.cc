@@ -16,6 +16,13 @@
 ///
 /// This file contains tests for the nameserver address store as a whole.
 
+#include <config.h>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#endif
+
 #include <algorithm>
 #include <cassert>
 #include <string.h>
@@ -25,8 +32,6 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
 #include <gtest/gtest.h>
-
-#include <config.h>
 
 #include <dns/rdataclass.h>
 #include <dns/rrclass.h>

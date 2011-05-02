@@ -1,0 +1,2 @@
+#define BIND10_MSGQ_SOCKET_FILE "/Temp/bind10-devel/msgq_socket"
+

@@ -13,6 +13,7 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <Python.h>
+#include <stdint.h>
 #include <pydnspp_common.h>
 
 int

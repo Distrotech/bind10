@@ -22,6 +22,11 @@
 #include <boost/shared_ptr.hpp>
 #include <gtest/gtest.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#endif
+
 #include <dns/rdata.h>
 #include <dns/rrset.h>
 #include <dns/rrclass.h>

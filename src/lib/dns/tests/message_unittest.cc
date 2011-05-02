@@ -50,7 +50,11 @@ using namespace isc::dns::rdata;
 // class, at which point we'll also revise the tests including more cases.
 //
 
+/// put the right #ifdef here
+#ifndef _MSC_VER
 const uint16_t Message::DEFAULT_MAX_UDPSIZE;
+#endif
+
 const Name test_name("test.example.com");
 
 namespace {

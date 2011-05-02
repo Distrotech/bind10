@@ -108,7 +108,7 @@ class EncodeNormalizer : public iterator<input_iterator_tag, uint8_t> {
 public:
     EncodeNormalizer(const vector<uint8_t>::const_iterator& base,
                      const vector<uint8_t>::const_iterator& base_end) :
-        base_(base), base_end_(base_end), in_pad_(false)
+        base_(base), base_end_(base_end), in_pad_(base == base_end)
     {}
     EncodeNormalizer& operator++() {
         if (!in_pad_) {
@@ -138,7 +138,7 @@ private:
 // DecodeNormalizer is an input iterator intended to be used as a filter
 // between the encoded baseX stream and binary_from_baseXX.
 // A DecodeNormalizer object is configured with three string iterators
-// (base, base_beinpad, and base_beginpad), specifying the head of the string,
+// (base, base_beginpad, and base_end), specifying the head of the string,
 // the beginning position of baseX padding (when there's padding), and
 // end of the string, respectively.  It internally iterators over the original
 // stream, and return each character of the encoded string via its dereference
@@ -159,11 +159,11 @@ public:
                      const string::const_iterator& base_end) :
         base_zero_code_(base_zero_code),
         base_(base), base_beginpad_(base_beginpad), base_end_(base_end),
-        in_pad_(false)
+        in_pad_(base == base_beginpad)
     {}
     DecodeNormalizer& operator++() {
         ++base_;
-        while (base_ != base_end_ && isspace(*base_)) {
+        while (base_ != base_end_ && isspace((int)*base_ & 0xff)) {
             ++base_;
         }
         if (base_ == base_beginpad_) {
@@ -172,6 +172,8 @@ public:
         return (*this);
     }
     const char& operator*() const {
+        if (base_ == base_end_)
+            isc_throw(BadValue, "end of input");
         if (in_pad_ && *base_ == BASE_PADDING_CHAR) {
             return (base_zero_code_);
         } else {
@@ -268,7 +270,7 @@ BaseNTransformer<BitsPerChunk, BaseZeroCode, Encoder, Decoder>::decode(
                 isc_throw(BadValue, "Too many " << algorithm
                           << " padding characters: " << input);
             }
-        } else if (!isspace(ch)) {
+        } else if (!isspace((int)ch & 0xff)) {
             break;
         }
         ++srit;

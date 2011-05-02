@@ -17,7 +17,10 @@
 #include <iostream>
 
 // for some IPC/network system calls in asio/detail/pipe_select_interrupter.hpp
+#ifndef _WIN32
 #include <unistd.h>
+#endif
+#include <config.h>
 #include <asio.hpp>
 
 #include <util/io/fd_share.h>

@@ -1,0 +1,271 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{65B0B6D2-94CE-4A21-85E7-A047C79044F9}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>libdns_tests</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(Configuration)\</OutDir>
+    <TargetName>run_unittests</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(Configuration)\</OutDir>
+    <TargetName>run_unittests</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;TEST_DATA_SRCDIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/dns/tests/testdata";TEST_DATA_BUILDDIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/dns/tests/testdata";_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\util;..\..\..\..\gtest\include;C:\Program Files\boost\boost_1_44;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;libcryptolink.lib;libdns++.lib;gtestd.lib;botan.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\libexceptions\Debug;..\libutil\Debug;..\libutil_unittests\Debug;..\libcryptolink\Debug;..\libdns++\Debug;..\..\..\..\gtest\md10\Debug;..\..\..\..\botan\md10\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PreBuildEvent>
+      <Command>cd ..\..\..\src\lib\dns\tests\testdata
+copy gen-wiredata.py.win32 gen-wiredata.py
+python gen-wiredata.py -o edns_toWire1.wire edns_toWire1.spec
+python gen-wiredata.py -o edns_toWire2.wire edns_toWire2.spec
+python gen-wiredata.py -o edns_toWire3.wire edns_toWire3.spec
+python gen-wiredata.py -o edns_toWire4.wire edns_toWire4.spec
+python gen-wiredata.py -o message_fromWire10.wire message_fromWire10.spec
+python gen-wiredata.py -o message_fromWire11.wire message_fromWire11.spec
+python gen-wiredata.py -o name_toWire5.wire name_toWire5.spec
+python gen-wiredata.py -o name_toWire6.wire name_toWire6.spec
+python gen-wiredata.py -o rdatafields1.wire rdatafields1.spec
+python gen-wiredata.py -o rdatafields2.wire rdatafields2.spec
+python gen-wiredata.py -o rdatafields3.wire rdatafields3.spec
+python gen-wiredata.py -o rdatafields4.wire rdatafields4.spec
+python gen-wiredata.py -o rdatafields5.wire rdatafields5.spec
+python gen-wiredata.py -o rdatafields6.wire rdatafields6.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire10.wire rdata_nsec3_fromWire10.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire11.wire rdata_nsec3_fromWire11.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire12.wire rdata_nsec3_fromWire12.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire13.wire rdata_nsec3_fromWire13.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire14.wire rdata_nsec3_fromWire14.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire15.wire rdata_nsec3_fromWire15.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire1.wire rdata_nsec3_fromWire1.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire2.wire rdata_nsec3_fromWire2.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire4.wire rdata_nsec3_fromWire4.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire5.wire rdata_nsec3_fromWire5.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire6.wire rdata_nsec3_fromWire6.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire7.wire rdata_nsec3_fromWire7.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire8.wire rdata_nsec3_fromWire8.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire9.wire rdata_nsec3_fromWire9.spec
+python gen-wiredata.py -o rdata_nsec_fromWire10.wire rdata_nsec_fromWire10.spec
+python gen-wiredata.py -o rdata_nsec_fromWire4.wire rdata_nsec_fromWire4.spec
+python gen-wiredata.py -o rdata_nsec_fromWire5.wire rdata_nsec_fromWire5.spec
+python gen-wiredata.py -o rdata_nsec_fromWire6.wire rdata_nsec_fromWire6.spec
+python gen-wiredata.py -o rdata_nsec_fromWire7.wire rdata_nsec_fromWire7.spec
+python gen-wiredata.py -o rdata_nsec_fromWire8.wire rdata_nsec_fromWire8.spec
+python gen-wiredata.py -o rdata_nsec_fromWire9.wire rdata_nsec_fromWire9.spec
+python gen-wiredata.py -o rdata_rp_fromWire1.wire rdata_rp_fromWire1.spec
+python gen-wiredata.py -o rdata_rp_fromWire2.wire rdata_rp_fromWire2.spec
+python gen-wiredata.py -o rdata_rp_fromWire3.wire rdata_rp_fromWire3.spec
+python gen-wiredata.py -o rdata_rp_fromWire4.wire rdata_rp_fromWire4.spec
+python gen-wiredata.py -o rdata_rp_fromWire5.wire rdata_rp_fromWire5.spec
+python gen-wiredata.py -o rdata_rp_fromWire6.wire rdata_rp_fromWire6.spec
+python gen-wiredata.py -o rdata_rp_toWire1.wire rdata_rp_toWire1.spec
+python gen-wiredata.py -o rdata_rp_toWire2.wire rdata_rp_toWire2.spec
+python gen-wiredata.py -o rdata_rrsig_fromWire2.wire rdata_rrsig_fromWire2.spec
+python gen-wiredata.py -o rdata_soa_toWireUncompressed.wire rdata_soa_toWireUncompressed.spec
+python gen-wiredata.py -o rdata_tsig_fromWire1.wire rdata_tsig_fromWire1.spec
+python gen-wiredata.py -o rdata_tsig_fromWire2.wire rdata_tsig_fromWire2.spec
+python gen-wiredata.py -o rdata_tsig_fromWire3.wire rdata_tsig_fromWire3.spec
+python gen-wiredata.py -o rdata_tsig_fromWire4.wire rdata_tsig_fromWire4.spec
+python gen-wiredata.py -o rdata_tsig_fromWire5.wire rdata_tsig_fromWire5.spec
+python gen-wiredata.py -o rdata_tsig_fromWire6.wire rdata_tsig_fromWire6.spec
+python gen-wiredata.py -o rdata_tsig_fromWire7.wire rdata_tsig_fromWire7.spec
+python gen-wiredata.py -o rdata_tsig_fromWire8.wire rdata_tsig_fromWire8.spec
+python gen-wiredata.py -o rdata_tsig_fromWire9.wire rdata_tsig_fromWire9.spec
+python gen-wiredata.py -o rdata_tsig_toWire1.wire rdata_tsig_toWire1.spec
+python gen-wiredata.py -o rdata_tsig_toWire2.wire rdata_tsig_toWire2.spec
+python gen-wiredata.py -o rdata_tsig_toWire3.wire rdata_tsig_toWire3.spec
+python gen-wiredata.py -o rdata_tsig_toWire4.wire rdata_tsig_toWire4.spec
+python gen-wiredata.py -o rdata_tsig_toWire5.wire rdata_tsig_toWire5.spec
+python gen-wiredata.py -o rdata_txt_fromWire2.wire rdata_txt_fromWire2.spec
+python gen-wiredata.py -o rdata_txt_fromWire3.wire rdata_txt_fromWire3.spec
+python gen-wiredata.py -o rdata_txt_fromWire4.wire rdata_txt_fromWire4.spec
+python gen-wiredata.py -o rdata_txt_fromWire5.wire rdata_txt_fromWire5.spec
+</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;TEST_DATA_SRCDIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/dns/tests/testdata";TEST_DATA_BUILDDIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/dns/tests/testdata";NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\util;..\..\..\..\gtest\include;C:\Program Files\boost\boost_1_44;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;libcryptolink.lib;libdns++.lib;gtest.lib;botan.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\libexceptions\Release;..\libutil\Release;..\libutil_unittests\Release;..\libcryptolink\Release;..\libdns++\Release;..\..\..\..\gtest\md10\Release;..\..\..\..\botan\md10\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PreBuildEvent>
+      <Command>cd ..\..\..\src\lib\dns\tests\testdata
+copy gen-wiredata.py.win32 gen-wiredata.py
+python gen-wiredata.py -o edns_toWire1.wire edns_toWire1.spec
+python gen-wiredata.py -o edns_toWire2.wire edns_toWire2.spec
+python gen-wiredata.py -o edns_toWire3.wire edns_toWire3.spec
+python gen-wiredata.py -o edns_toWire4.wire edns_toWire4.spec
+python gen-wiredata.py -o message_fromWire10.wire message_fromWire10.spec
+python gen-wiredata.py -o message_fromWire11.wire message_fromWire11.spec
+python gen-wiredata.py -o name_toWire5.wire name_toWire5.spec
+python gen-wiredata.py -o name_toWire6.wire name_toWire6.spec
+python gen-wiredata.py -o rdatafields1.wire rdatafields1.spec
+python gen-wiredata.py -o rdatafields2.wire rdatafields2.spec
+python gen-wiredata.py -o rdatafields3.wire rdatafields3.spec
+python gen-wiredata.py -o rdatafields4.wire rdatafields4.spec
+python gen-wiredata.py -o rdatafields5.wire rdatafields5.spec
+python gen-wiredata.py -o rdatafields6.wire rdatafields6.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire10.wire rdata_nsec3_fromWire10.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire11.wire rdata_nsec3_fromWire11.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire12.wire rdata_nsec3_fromWire12.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire13.wire rdata_nsec3_fromWire13.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire14.wire rdata_nsec3_fromWire14.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire15.wire rdata_nsec3_fromWire15.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire1.wire rdata_nsec3_fromWire1.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire2.wire rdata_nsec3_fromWire2.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire4.wire rdata_nsec3_fromWire4.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire5.wire rdata_nsec3_fromWire5.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire6.wire rdata_nsec3_fromWire6.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire7.wire rdata_nsec3_fromWire7.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire8.wire rdata_nsec3_fromWire8.spec
+python gen-wiredata.py -o rdata_nsec3_fromWire9.wire rdata_nsec3_fromWire9.spec
+python gen-wiredata.py -o rdata_nsec_fromWire10.wire rdata_nsec_fromWire10.spec
+python gen-wiredata.py -o rdata_nsec_fromWire4.wire rdata_nsec_fromWire4.spec
+python gen-wiredata.py -o rdata_nsec_fromWire5.wire rdata_nsec_fromWire5.spec
+python gen-wiredata.py -o rdata_nsec_fromWire6.wire rdata_nsec_fromWire6.spec
+python gen-wiredata.py -o rdata_nsec_fromWire7.wire rdata_nsec_fromWire7.spec
+python gen-wiredata.py -o rdata_nsec_fromWire8.wire rdata_nsec_fromWire8.spec
+python gen-wiredata.py -o rdata_nsec_fromWire9.wire rdata_nsec_fromWire9.spec
+python gen-wiredata.py -o rdata_rp_fromWire1.wire rdata_rp_fromWire1.spec
+python gen-wiredata.py -o rdata_rp_fromWire2.wire rdata_rp_fromWire2.spec
+python gen-wiredata.py -o rdata_rp_fromWire3.wire rdata_rp_fromWire3.spec
+python gen-wiredata.py -o rdata_rp_fromWire4.wire rdata_rp_fromWire4.spec
+python gen-wiredata.py -o rdata_rp_fromWire5.wire rdata_rp_fromWire5.spec
+python gen-wiredata.py -o rdata_rp_fromWire6.wire rdata_rp_fromWire6.spec
+python gen-wiredata.py -o rdata_rp_toWire1.wire rdata_rp_toWire1.spec
+python gen-wiredata.py -o rdata_rp_toWire2.wire rdata_rp_toWire2.spec
+python gen-wiredata.py -o rdata_rrsig_fromWire2.wire rdata_rrsig_fromWire2.spec
+python gen-wiredata.py -o rdata_soa_toWireUncompressed.wire rdata_soa_toWireUncompressed.spec
+python gen-wiredata.py -o rdata_tsig_fromWire1.wire rdata_tsig_fromWire1.spec
+python gen-wiredata.py -o rdata_tsig_fromWire2.wire rdata_tsig_fromWire2.spec
+python gen-wiredata.py -o rdata_tsig_fromWire3.wire rdata_tsig_fromWire3.spec
+python gen-wiredata.py -o rdata_tsig_fromWire4.wire rdata_tsig_fromWire4.spec
+python gen-wiredata.py -o rdata_tsig_fromWire5.wire rdata_tsig_fromWire5.spec
+python gen-wiredata.py -o rdata_tsig_fromWire6.wire rdata_tsig_fromWire6.spec
+python gen-wiredata.py -o rdata_tsig_fromWire7.wire rdata_tsig_fromWire7.spec
+python gen-wiredata.py -o rdata_tsig_fromWire8.wire rdata_tsig_fromWire8.spec
+python gen-wiredata.py -o rdata_tsig_fromWire9.wire rdata_tsig_fromWire9.spec
+python gen-wiredata.py -o rdata_tsig_toWire1.wire rdata_tsig_toWire1.spec
+python gen-wiredata.py -o rdata_tsig_toWire2.wire rdata_tsig_toWire2.spec
+python gen-wiredata.py -o rdata_tsig_toWire3.wire rdata_tsig_toWire3.spec
+python gen-wiredata.py -o rdata_tsig_toWire4.wire rdata_tsig_toWire4.spec
+python gen-wiredata.py -o rdata_tsig_toWire5.wire rdata_tsig_toWire5.spec
+python gen-wiredata.py -o rdata_txt_fromWire2.wire rdata_txt_fromWire2.spec
+python gen-wiredata.py -o rdata_txt_fromWire3.wire rdata_txt_fromWire3.spec
+python gen-wiredata.py -o rdata_txt_fromWire4.wire rdata_txt_fromWire4.spec
+python gen-wiredata.py -o rdata_txt_fromWire5.wire rdata_txt_fromWire5.spec
+</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\lib\dns\tests\rdata_unittest.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\tests\unittest_util.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\lib\dns\tests\edns_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\masterload_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\messagerenderer_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\message_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\name_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\opcode_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\question_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rcode_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdatafields_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_cname_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_dname_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_dnskey_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_ds_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_in_aaaa_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_in_a_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_mx_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_nsec3param_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_nsec3_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_nsecbitmap_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_nsec_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_ns_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_opt_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_ptr_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_rp_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_rrsig_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_soa_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_tsig_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_txt_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rrclass_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rrparamregistry_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rrsetlist_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rrset_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rrttl_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rrtype_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\run_unittests.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\tsigerror_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\tsigkey_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\tsig_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\unittest_util.cc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -20,9 +20,11 @@
 #endif
 
 #include <log/dummylog.h>
+#ifndef _WIN32
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>             // for some IPC/network system calls
+#endif
 
 #include <algorithm>
 #include <cassert>
@@ -384,7 +386,7 @@ TCPSocket<C>::processReceivedData(const void* staging, size_t length,
 
         // Still need data in the output packet.  Copy what we can from the
         // staging buffer to the output buffer.
-        size_t copy_amount = std::min(expected - outbuff->getLength(), data_length);
+        size_t copy_amount = min(expected - outbuff->getLength(), data_length);
         outbuff->writeData(data, copy_amount);
     }
 

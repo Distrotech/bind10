@@ -14,6 +14,8 @@
 
 #include <config.h>
 
+#include <stdint.h>
+
 #include <string>
 
 #include <gtest/gtest.h>

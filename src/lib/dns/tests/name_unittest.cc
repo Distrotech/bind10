@@ -37,8 +37,11 @@ using namespace isc::util;
 // XXX: these are defined as class static constants, but some compilers
 // seemingly cannot find the symbols when used in the EXPECT_xxx macros.
 //
+/// put the right #ifdef here
+#ifndef _MSC_VER
 const size_t Name::MAX_WIRE;
 const size_t Name::MAX_LABELS;
+#endif
 
 namespace {
 class NameTest : public ::testing::Test {

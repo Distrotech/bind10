@@ -77,7 +77,11 @@ TEST_F(NegativeCacheTest, testNXDOMAIN){
     const RRTTL& soa_ttl = rrset_ptr->getTTL();
     EXPECT_EQ(soa_ttl.getValue(), 172800);
 
-    sleep(1);
+#ifdef _WIN32
+	Sleep(1000);
+#else
+	sleep(1);
+#endif
 
     // Query nonexist.example.com again
     Message msg_nxdomain2(Message::PARSE);
@@ -197,7 +201,11 @@ TEST_F(NegativeCacheTest, testNoerrorNodata){
     messageFromFile(msg_nodata2, "message_nodata_with_soa.wire");
     msg_nodata2.makeResponse();
 
+#ifdef _WIN32
+	Sleep(1000);
+#else
     sleep(1);
+#endif
 
     EXPECT_TRUE(cache->lookup(example_dot_com, RRType::MX(), RRClass::IN(), msg_nodata2));
 

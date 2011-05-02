@@ -18,7 +18,9 @@
 // IMPORTANT NOTE: only very few ASIO headers files can be included in
 // this file.  In particular, asio.hpp should never be included here.
 // See the description of the namespace below.
+#ifndef _WIN32
 #include <unistd.h>             // for some network system calls
+#endif
 
 #include <functional>
 #include <string>

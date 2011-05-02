@@ -12,6 +12,13 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#endif
+
 #include <server_common/portconfig.h>
 
 #include <cc/data.h>

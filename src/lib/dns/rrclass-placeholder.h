@@ -22,6 +22,8 @@
 
 #include <exceptions/exceptions.h>
 
+#undef IN
+
 namespace isc {
 namespace util {
 class InputBuffer;

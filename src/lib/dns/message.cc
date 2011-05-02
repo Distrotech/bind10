@@ -49,6 +49,9 @@ using namespace isc::util;
 namespace isc {
 namespace dns {
 
+const uint16_t Message::DEFAULT_MAX_UDPSIZE = 512;
+const uint16_t Message::DEFAULT_MAX_EDNS0_UDPSIZE = 4096;
+
 namespace {
 // protocol constants
 const size_t HEADERLEN = 12;

@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
 #include <stdexcept>
 
 #include <dns/name.h>
@@ -210,7 +212,11 @@ TEST_F(CacheTest, expire) {
     aaaa->addRdata(in::AAAA("2001:db8:3:bb::5"));
     cache.addPositive(aaaa, 0, 2);
 
+#ifdef _WIN32
+	Sleep(3000);
+#else
     sleep(3);
+#endif
 
     RRsetPtr r;
     uint32_t f;

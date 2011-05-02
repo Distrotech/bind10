@@ -23,7 +23,9 @@
 #include <getopt.h>
 #include <string.h>
 #include <time.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 #include <util/filename.h>
 #include <util/strutil.h>

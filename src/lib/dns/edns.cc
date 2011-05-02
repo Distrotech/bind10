@@ -41,6 +41,8 @@ using namespace isc::util;
 namespace isc {
 namespace dns {
 
+const uint8_t EDNS::SUPPORTED_VERSION = 0;
+
 namespace {
 // This diagram shows the wire-format representation of the TTL field of
 // OPT RR and its relationship with implementation specific parameters.

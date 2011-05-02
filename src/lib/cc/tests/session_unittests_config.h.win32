@@ -1,0 +1,2 @@
+#define BIND10_TEST_SOCKET_FILE "./test_socket.sock"
+

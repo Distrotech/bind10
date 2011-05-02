@@ -545,10 +545,10 @@ public:
     /// truncation.
     ///
     /// With EDNS the maximum size can be increased per message.
-    static const uint16_t DEFAULT_MAX_UDPSIZE = 512;
+    static const uint16_t DEFAULT_MAX_UDPSIZE; // = 512
 
     /// \brief The default maximum size of UDP DNS messages we can handle
-    static const uint16_t DEFAULT_MAX_EDNS0_UDPSIZE = 4096;
+    static const uint16_t DEFAULT_MAX_EDNS0_UDPSIZE; // = 4096
     //@}
 
 private:

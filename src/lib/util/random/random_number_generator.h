@@ -60,7 +60,7 @@ public:
     /// \param min The minimum number in the range
     /// \param max The maximum number in the range
     UniformRandomIntegerGenerator(int min, int max):
-        min_(std::min(min, max)), max_(std::max(min, max)),
+        min_(min(min, max)), max_(max(min, max)),
         dist_(min_, max_), generator_(rng_, dist_)
     {
         // To preserve the restriction of the underlying uniform_int class (and

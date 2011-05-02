@@ -15,11 +15,14 @@
 #include <config.h>
 
 #include <limits>
+#include <ctime>
 #include <dns/message.h>
 #include <nsas/nsas_entry.h>
 #include "message_entry.h"
 #include "message_utility.h"
 #include "rrset_cache.h"
+
+#undef max
 
 using namespace isc::dns;
 using namespace std;

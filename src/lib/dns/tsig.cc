@@ -12,7 +12,11 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
+#ifndef _WIN32
 #include <sys/time.h>
+#endif
 
 #include <stdint.h>
 
@@ -42,6 +46,9 @@ using namespace isc::dns::rdata;
 namespace isc {
 namespace dns {
 
+const uint32_t TSIGRecord::TSIG_TTL = 0;
+const uint16_t TSIGContext::DEFAULT_FUDGE = 300;
+
 // Borrowed from dnssectime.cc.  This trick should be unified somewhere.
 namespace tsig {
 namespace detail {
@@ -57,10 +64,25 @@ gettimeofdayWrapper() {
         return (gettimeFunction());
     }
 
+#ifdef _WIN32
+    SYSTEMTIME epoch = { 1970, 1, 4, 1, 0, 0, 0, 0 };
+    FILETIME temp;
+    SystemTimeToFileTime(&epoch, &temp);
+    ULARGE_INTEGER t;
+    t.LowPart = temp.dwLowDateTime;
+    t.HighPart = temp.dwHighDateTime;
+    FILETIME now;
+    GetSystemTimeAsFileTime(&now);
+    ULARGE_INTEGER n;
+    n.LowPart = now.dwLowDateTime;
+    n.HighPart = now.dwHighDateTime;
+    return (static_cast<int64_t>((n.QuadPart - t.QuadPart) / 10000000));
+#else
     struct timeval now;
     gettimeofday(&now, NULL);
 
     return (static_cast<int64_t>(now.tv_sec));
+#endif
 }
 }
 

@@ -14,9 +14,13 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <unistd.h>             // for some IPC/network system calls
 #include <sys/socket.h>
 #include <netinet/in.h>
+#endif
 
 #include <asio.hpp>
 
@@ -37,7 +41,7 @@ namespace asiolink {
 // XXX: we cannot simply construct the address in the initialization list,
 // because we'd like to throw our own exception on failure.
 IOAddress::IOAddress(const string& address_str) {
-    error_code err;
+    asio::error_code err;
     asio_address_ = ip::address::from_string(address_str, err);
     if (err) {
         isc_throw(IOError, "Failed to convert string to address '"

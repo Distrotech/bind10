@@ -46,9 +46,9 @@
 
 #define strncasecmp _strnicmp
 #define unlink _unlink
-#define getpid _getpid
-#define random rand
-#define srandom srand
+#define getpid() _getpid()
+#define random() rand()
+#define srandom() srand()
 typedef unsigned int uid_t;
 
 /* Prevent inclusion of winsock.h in windows.h */

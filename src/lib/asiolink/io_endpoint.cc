@@ -13,10 +13,15 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <config.h>
+#include <stdint.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <unistd.h>             // for some IPC/network system calls
 #include <sys/socket.h>
 #include <netinet/in.h>
+#endif
 
 #include <asio.hpp>
 

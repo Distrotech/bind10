@@ -14,8 +14,14 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#include <time.h>
+#else
 #include <sys/socket.h>
 #include <sys/time.h>
+#endif
 
 #include <string.h>
 
@@ -130,9 +136,15 @@ protected:
         if (res_ != NULL) {
             freeaddrinfo(res_);
         }
+#ifdef _WIN32
+        if (sock_ != INVALID_SOCKET) {
+            closesocket(sock_);
+        }
+#else
         if (sock_ != -1) {
             close(sock_);
         }
+#endif
         delete dns_service_;
         delete callback_;
         delete io_service_;
@@ -143,11 +155,20 @@ protected:
         res_ = resolveAddress(family, IPPROTO_UDP, false);
 
         sock_ = socket(res_->ai_family, res_->ai_socktype, res_->ai_protocol);
+#ifdef _WIN32
+        if (sock_ == INVALID_SOCKET) {
+            isc_throw(IOError, "failed to open test socket");
+        }
+        const int cc = sendto(sock_,
+                              (const char *) test_data, sizeof(test_data), 0,
+                              res_->ai_addr, res_->ai_addrlen);
+#else
         if (sock_ < 0) {
             isc_throw(IOError, "failed to open test socket");
         }
         const int cc = sendto(sock_, test_data, sizeof(test_data), 0,
                               res_->ai_addr, res_->ai_addrlen);
+#endif
         if (cc != sizeof(test_data)) {
             isc_throw(IOError, "unexpected sendto result: " << cc);
         }
@@ -159,13 +180,24 @@ protected:
         res_ = resolveAddress(family, IPPROTO_TCP, false);
 
         sock_ = socket(res_->ai_family, res_->ai_socktype, res_->ai_protocol);
+#ifdef _WIN32
+        if (sock_ == INVALID_SOCKET) {
+            isc_throw(IOError, "failed to open test socket");
+        }
+#else
         if (sock_ < 0) {
             isc_throw(IOError, "failed to open test socket");
         }
+#endif
         if (connect(sock_, res_->ai_addr, res_->ai_addrlen) < 0) {
             isc_throw(IOError, "failed to connect to the test server");
         }
+#ifdef _WIN32
+        const int cc = send(sock_, (const char *) test_data,
+                            sizeof(test_data), 0);
+#else
         const int cc = send(sock_, test_data, sizeof(test_data), 0);
+#endif
         if (cc != sizeof(test_data)) {
             isc_throw(IOError, "unexpected send result: " << cc);
         }
@@ -179,6 +211,15 @@ protected:
         res_ = resolveAddress(family, IPPROTO_UDP, true);
 
         sock_ = socket(res_->ai_family, res_->ai_socktype, res_->ai_protocol);
+#ifdef _WIN32
+        if (sock_ == INVALID_SOCKET) {
+            isc_throw(IOError, "failed to open test socket");
+        }
+
+        if (::bind(sock_, res_->ai_addr, res_->ai_addrlen) < 0) {
+            isc_throw(IOError, "bind failed: " << strerror(WSAGetLastError()));
+        }
+#else
         if (sock_ < 0) {
             isc_throw(IOError, "failed to open test socket");
         }
@@ -186,6 +227,7 @@ protected:
         if (bind(sock_, res_->ai_addr, res_->ai_addrlen) < 0) {
             isc_throw(IOError, "bind failed: " << strerror(errno));
         }
+#endif
 
         // The IO service queue should have a RecursiveQuery object scheduled
         // to run at this point.  This call will cause it to begin an
@@ -203,6 +245,19 @@ protected:
         // we add an ad hoc timeout.
         const struct timeval timeo = { 10, 0 };
         int recv_options = 0;
+#ifdef _WIN32
+        if (setsockopt(sock_, SOL_SOCKET, SO_RCVTIMEO,
+                       (const char *) &timeo, sizeof(timeo))) {
+                isc_throw(IOError,
+                          "set RCVTIMEO failed: " <<
+                          strerror(WSAGetLastError()));
+        }
+        const int ret = recv(sock_, (char *) buffer, size, recv_options);
+        if (ret < 0) {
+            isc_throw(IOError,
+                      "recvfrom failed: " << strerror(WSAGetLastError()));
+        }
+#else
         if (setsockopt(sock_, SOL_SOCKET, SO_RCVTIMEO, &timeo,
                        sizeof(timeo))) {
             if (errno == ENOPROTOOPT) {
@@ -220,6 +275,7 @@ protected:
         if (ret < 0) {
             isc_throw(IOError, "recvfrom failed: " << strerror(errno));
         }
+#endif
         
         // Pass the message size back via the size parameter
         size = ret;
@@ -537,9 +593,9 @@ TEST_F(RecursiveQueryTest, v4TCPOnly) {
 
 vector<pair<string, uint16_t> >
 singleAddress(const string &address, uint16_t port) {
-    vector<pair<string, uint16_t> > result;
-    result.push_back(pair<string, uint16_t>(address, port));
-    return (result);
+    vector<pair<string, uint16_t> > result_;
+    result_.push_back(pair<string, uint16_t>(address, port));
+    return (result_);
 }
 
 TEST_F(RecursiveQueryTest, recursiveSetupV4) {
@@ -606,12 +662,21 @@ createTestSocket()
 {
     struct addrinfo* res_ = resolveAddress(AF_INET, IPPROTO_UDP, true);
     int sock_ = socket(res_->ai_family, res_->ai_socktype, res_->ai_protocol);
+#ifdef _WIN32
+    if (sock_ == INVALID_SOCKET) {
+        isc_throw(IOError, "failed to open test socket");
+    }
+    if (::bind(sock_, res_->ai_addr, res_->ai_addrlen) < 0) {
+        isc_throw(IOError, "failed to bind test socket");
+    }
+#else
     if (sock_ < 0) {
         isc_throw(IOError, "failed to open test socket");
     }
     if (bind(sock_, res_->ai_addr, res_->ai_addrlen) < 0) {
         isc_throw(IOError, "failed to bind test socket");
     }
+#endif
     return sock_;
 }
 
@@ -619,6 +684,13 @@ int
 setSocketTimeout(int sock_, size_t tv_sec, size_t tv_usec) {
     const struct timeval timeo = { tv_sec, tv_usec };
     int recv_options = 0;
+#ifdef _WIN32
+    if (setsockopt(sock_, SOL_SOCKET, SO_RCVTIMEO,
+                   (const char *) &timeo, sizeof(timeo))) {
+        isc_throw(IOError,
+                  "set RCVTIMEO failed: " << strerror(WSAGetLastError()));
+    }
+#else
     if (setsockopt(sock_, SOL_SOCKET, SO_RCVTIMEO, &timeo, sizeof(timeo))) {
         if (errno == ENOPROTOOPT) { // see RecursiveQueryTest::recvUDP()
             recv_options = MSG_DONTWAIT;
@@ -626,6 +698,7 @@ setSocketTimeout(int sock_, size_t tv_sec, size_t tv_usec) {
             isc_throw(IOError, "set RCVTIMEO failed: " << strerror(errno));
         }
     }
+#endif
     return recv_options;
 }
 

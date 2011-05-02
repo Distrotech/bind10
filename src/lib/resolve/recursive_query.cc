@@ -12,15 +12,20 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#else
 #include <netinet/in.h>
-#include <stdlib.h>
 #include <sys/socket.h>
 #include <unistd.h>             // for some IPC/network system calls
+#endif
+#include <stdlib.h>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
-
-#include <config.h>
 
 #include <log/dummylog.h>
 
@@ -131,6 +136,28 @@ RecursiveQuery::RecursiveQuery(DNSService& dns_service,
     lookup_timeout_(lookup_timeout), retries_(retries), rtt_recorder_()
 {
 }
+
+#ifdef _WIN32
+static void
+win32_gettimeofday(struct timeval *tv)
+{
+    SYSTEMTIME epoch = { 1970, 1, 4, 1, 0, 0, 0, 0 };
+    FILETIME temp;
+    SystemTimeToFileTime(&epoch, &temp);
+    ULARGE_INTEGER t;
+    t.LowPart = temp.dwLowDateTime;
+    t.HighPart = temp.dwHighDateTime;
+    FILETIME now;
+    GetSystemTimeAsFileTime(&now);
+    ULARGE_INTEGER n;
+    n.LowPart = now.dwLowDateTime;
+    n.HighPart = now.dwHighDateTime;
+    n.QuadPart -= t.QuadPart;
+    tv->tv_sec = n.QuadPart / 10000000;
+    n.QuadPart -= tv->tv_sec * 10000000;
+    tv->tv_usec = n.QuadPart / 10;
+}
+#endif
 
 // Set the test server - only used for unit testing.
 void
@@ -327,7 +354,11 @@ private:
         // We need to keep track of the Address, so that we can update
         // the RTT
         current_ns_address = address;
+#ifdef _WIN32
+	win32_gettimeofday(&current_ns_qsent_time);
+#else
         gettimeofday(&current_ns_qsent_time, NULL);
+#endif
         ++outstanding_events_;
         if (test_server_.second != 0) {
             IOFetch query(protocol_, io_, question_,
@@ -355,7 +386,11 @@ private:
         if (test_server_.second != 0) {
             dlog("Sending upstream query (" + question_.toText() +
                  ") to test server at " + test_server_.first);
+#ifdef _WIN32
+	    win32_gettimeofday(&current_ns_qsent_time);
+#else
             gettimeofday(&current_ns_qsent_time, NULL);
+#endif
             ++outstanding_events_;
             IOFetch query(protocol, io_, question_,
                 test_server_.first,
@@ -368,7 +403,11 @@ private:
             dlog("Sending upstream query (" + question_.toText() +
                 ") to " + upstream_->at(serverIndex).first);
             ++outstanding_events_;
+#ifdef _WIN32
+	    win32_gettimeofday(&current_ns_qsent_time);
+#else
             gettimeofday(&current_ns_qsent_time, NULL);
+#endif
             IOFetch query(protocol, io_, question_,
                 upstream_->at(serverIndex).first,
                 upstream_->at(serverIndex).second, buffer_, this,
@@ -686,7 +725,11 @@ public:
 
             // Update the NSAS with the time it took
             struct timeval cur_time;
+#ifdef _WIN32
+	    win32_gettimeofday(&cur_time);
+#else
             gettimeofday(&cur_time, NULL);
+#endif
             uint32_t rtt = 0;
 
             // Only calculate RTT if it is positive

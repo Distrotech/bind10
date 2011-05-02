@@ -535,7 +535,7 @@ private:
     // The max label count for one domain name is Name::MAX_LABELS (128).
     // Since each node in rbtree stores at least one label, it's also equal
     // to the possible maximum level.
-    const static int RBT_MAX_LEVEL = isc::dns::Name::MAX_LABELS;
+    const static int RBT_MAX_LEVEL = NAME_MAX_LABELS;
 
     int node_count_;
     const RBNode<T>* nodes_[RBT_MAX_LEVEL];

@@ -12,6 +12,12 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
+
 #include <gtest/gtest.h>
 #include <asiodns/dns_server.h>
 #include <resolve/resolver_callback.h>

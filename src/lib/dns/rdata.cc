@@ -112,7 +112,9 @@ Generic::Generic(isc::util::InputBuffer& buffer, size_t rdata_len) {
     }
 
     vector<uint8_t> data(rdata_len);
-    buffer.readData(&data[0], rdata_len);
+    if (rdata_len > 0) {
+        buffer.readData(&data[0], rdata_len);
+    }
 
     impl_ = new GenericImpl(data);
 }
@@ -242,8 +244,8 @@ compare_internal(const GenericImpl& lhs, const GenericImpl& rhs) {
     size_t len = (this_len < other_len) ? this_len : other_len;
     int cmp;
 
-    if ((cmp = memcmp(&lhs.data_[0], &rhs.data_[0], len))
-        != 0) {
+    if ((this_len > 0) && (other_len > 0) &&
+        ((cmp = memcmp(&lhs.data_[0], &rhs.data_[0], len)) != 0)) {
         return (cmp);
     } else {
         return ((this_len == other_len) ? 0 :

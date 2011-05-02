@@ -42,6 +42,9 @@ masterLoad(const char* const filename, const Name& origin,
 {
     ifstream ifs;
 
+    if (filename == NULL) {
+        isc_throw(MasterLoadError, "Invalid NULL master file");
+    }
     ifs.open(filename, ios_base::in);
     if (ifs.fail()) {
         isc_throw(MasterLoadError, "Failed to open master file: " << filename);

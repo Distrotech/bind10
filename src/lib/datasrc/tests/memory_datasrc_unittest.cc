@@ -858,7 +858,7 @@ TEST_F(MemoryZoneTest, nestedEmptyWildcard) {
             NULL
         };
 
-        for (const char** name(names); *name != NULL; ++ name) {
+        for (const char** name = names; *name != NULL; ++ name) {
             SCOPED_TRACE(string("Node ") + *name);
             findTest(Name(*name), RRType::A(), Zone::NXRRSET);
         }
@@ -876,7 +876,7 @@ TEST_F(MemoryZoneTest, nestedEmptyWildcard) {
     {
         SCOPED_TRACE("Asking directly for A on parent nodes");
 
-        for (const char** name(names); *name != NULL; ++ name) {
+        for (const char** name = names; *name != NULL; ++ name) {
             SCOPED_TRACE(string("Node ") + *name);
             findTest(Name(*name), RRType::A(), Zone::NXRRSET);
         }
@@ -885,7 +885,7 @@ TEST_F(MemoryZoneTest, nestedEmptyWildcard) {
     {
         SCOPED_TRACE("Asking for ANY on parent nodes");
 
-        for (const char** name(names); *name != NULL; ++ name) {
+        for (const char** name = names; *name != NULL; ++ name) {
             SCOPED_TRACE(string("Node ") + *name);
 
             RRsetList target;
@@ -927,7 +927,7 @@ MemoryZoneTest::doCancelWildcardTest() {
             NULL
         };
 
-        for (const char** name(names); *name != NULL; ++ name) {
+        for (const char** name = names; *name != NULL; ++ name) {
             SCOPED_TRACE(string("Node ") + *name);
 
             findTest(Name(*name), RRType::A(), Zone::SUCCESS, false, rr_wild_,

@@ -13,6 +13,7 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <config.h>
+#include <stdint.h>
 #include <gtest/gtest.h>
 
 #include <asio.hpp>
@@ -24,7 +25,9 @@
 #include <asiodns/dns_lookup.h>
 #include <string>
 #include <csignal>
+#ifndef _WIN32
 #include <unistd.h> //for alarm
+#endif
 
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
@@ -353,6 +356,15 @@ class DNSServerTest : public::testing::Test {
             // Since thread hasn't been introduced into the tool box, using signal
             // to make sure run function will eventually return even server stop
             // failed
+#ifdef _WIN32
+            UINT_PTR id = 1;
+            SetTimer(NULL, id, io_service_time_out * 1000,
+                     DNSServerTest::stopIOService);
+            service.run();
+            service.reset();
+            //cancel scheduled alarm
+            KillTimer(NULL, id);
+#else
             void (*prev_handler)(int) = std::signal(SIGALRM, DNSServerTest::stopIOService);
             alarm(io_service_time_out);
             service.run();
@@ -360,10 +372,20 @@ class DNSServerTest : public::testing::Test {
             //cancel scheduled alarm
             alarm(0);
             std::signal(SIGALRM, prev_handler);
+#endif
         }
 
 
-        static void stopIOService(int _no_use_parameter) {
+#ifdef _WIN32
+        static void CALLBACK stopIOService(
+            HWND _no_use_hwnd,
+            UINT _no_use_umsg,
+            UINT_PTR _no_use_idevent,
+            DWORD _no_use_dwtime)
+#else
+        static void stopIOService(int _no_use_parameter)
+#endif
+        {
             io_service_is_time_out = true;
             service.stop();
         }

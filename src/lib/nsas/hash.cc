@@ -60,6 +60,8 @@ if advised of the possibility of such damage.
 
 #include <config.h>
 
+#include <time.h>
+
 #include "hash.h"
 
 using namespace std;

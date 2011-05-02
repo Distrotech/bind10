@@ -24,6 +24,9 @@
 
 namespace isc {
 namespace dns {
+
+const int TSIGError::MAX_RCODE_FOR_TSIGERROR = 15;
+
 namespace {
 const char* const tsigerror_text[] = {
     "BADSIG",

@@ -13,10 +13,15 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <config.h>
+#include <stdint.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>             // for some IPC/network system calls
+#endif
 #include <errno.h>
 
 #include <boost/shared_array.hpp>
@@ -64,13 +69,15 @@ TCPServer::TCPServer(io_service& io_service,
     if (addr.is_v6()) {
         acceptor_->set_option(ip::v6_only(true));
     }
+#ifndef _WIN32
     acceptor_->set_option(tcp::acceptor::reuse_address(true));
+#endif
     acceptor_->bind(endpoint);
     acceptor_->listen();
 }
 
 void
-TCPServer::operator()(error_code ec, size_t length) {
+TCPServer::operator()(asio::error_code ec, size_t length) {
     /// Because the coroutine reentry block is implemented as
     /// a switch statement, inline variable declarations are not
     /// permitted.  Certain variables used below can be declared here.

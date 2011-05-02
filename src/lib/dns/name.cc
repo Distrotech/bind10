@@ -32,6 +32,13 @@ using isc::dns::NameComparisonResult;
 namespace isc {
 namespace dns {
 
+const size_t Name:: MAX_WIRE = 255;
+const size_t Name:: MAX_LABELS = NAME_MAX_LABELS; // 128
+const size_t Name:: MAX_LABELLEN = 63;
+const uint16_t Name:: MAX_COMPRESS_POINTER = 0x3fff;
+const uint16_t Name:: COMPRESS_POINTER_MARK8 = 0xc0;
+const uint16_t Name:: COMPRESS_POINTER_MARK16 = 0xc000;
+
 namespace {
 ///
 /// These are shortcut arrays for efficient character conversion.

@@ -180,8 +180,8 @@ TEST_F(HashTableTest, GetTest) {
     EXPECT_TRUE(value.get() == NULL);
 }
 
-shared_ptr<TestEntry>
-pass(shared_ptr<TestEntry> value) {
+boost::shared_ptr<TestEntry>
+pass(boost::shared_ptr<TestEntry> value) {
     return (value);
 }
 
@@ -190,7 +190,7 @@ TEST_F(HashTableTest, GetOrAddTest) {
     EXPECT_TRUE(table_.add(dummy1_, dummy1_->hashKey()));
 
     // Check it looks it up
-    std::pair<bool, shared_ptr<TestEntry> > result = table_.getOrAdd(
+    std::pair<bool, boost::shared_ptr<TestEntry> > result = table_.getOrAdd(
         dummy1_->hashKey(), boost::bind(pass, dummy3_));
     EXPECT_FALSE(result.first);
     EXPECT_EQ(dummy1_.get(), result.second.get());

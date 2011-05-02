@@ -27,6 +27,8 @@
 #include <dns/rrclass.h>
 #include <cc/data.h>
 
+#undef ERROR
+
 namespace isc {
 
 namespace dns {

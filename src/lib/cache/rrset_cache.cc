@@ -14,6 +14,7 @@
 
 #include <config.h>
 
+#include <ctime>
 #include <string>
 #include "rrset_cache.h"
 #include <nsas/nsas_entry_compare.h>

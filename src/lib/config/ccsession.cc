@@ -23,7 +23,11 @@
 #include <stdexcept>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+#include <time.h>
+#else
 #include <sys/time.h>
+#endif
 
 #include <iostream>
 #include <fstream>

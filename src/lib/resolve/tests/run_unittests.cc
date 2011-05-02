@@ -12,6 +12,12 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
+
 #include <gtest/gtest.h>
 
 #include <dns/tests/unittest_util.h>
@@ -20,5 +26,13 @@ int
 main(int argc, char* argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
 
+#ifdef _WIN32
+	WSADATA wsaData;
+	WSAStartup(MAKEWORD(2,2), &wsaData);
+	int ret = RUN_ALL_TESTS();
+	WSACleanup();
+	return (ret);
+#else
     return (RUN_ALL_TESTS());
+#endif
 }

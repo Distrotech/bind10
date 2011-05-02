@@ -14,6 +14,11 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#endif
+
 #include <gtest/gtest.h>
 
 #include <dns/name.h>

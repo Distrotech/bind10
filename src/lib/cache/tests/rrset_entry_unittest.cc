@@ -14,6 +14,7 @@
 
 #include <config.h>
 #include <string>
+#include <time.h>
 #include <gtest/gtest.h>
 #include <cache/cache_entry_key.h>
 #include <cache/rrset_entry.h>
@@ -81,7 +82,11 @@ TEST_F(RRsetEntryTest, constructor) {
 
 TEST_F(RRsetEntryTest, updateTTL) {
     uint32_t ttl = rrset_entry.getTTL();
+#ifdef _WIN32
+	Sleep(1000);
+#else
     sleep(1);
+#endif
     // The TTL should be decreased
     EXPECT_TRUE(rrset_entry.getTTL() < ttl);
 }
@@ -89,10 +94,18 @@ TEST_F(RRsetEntryTest, updateTTL) {
 TEST_F(RRsetEntryTest, TTLExpire) {
     RRset exp_rrset(name, RRClass::IN(), RRType::A(), RRTTL(1));
     RRsetEntry rrset_entry(exp_rrset, RRSET_TRUST_ANSWER_AA);
+#ifdef _WIN32
+	Sleep(1000);
+#else
     sleep(1);
+#endif
     uint32_t ttl = rrset_entry.getTTL();
     EXPECT_LT(ttl, 1);
+#ifdef _WIN32
+	Sleep(1000);
+#else
     sleep(1);
+#endif
     ttl = rrset_entry.getTTL();
     EXPECT_LT(ttl, 1);
 }

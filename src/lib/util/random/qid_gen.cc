@@ -18,9 +18,15 @@
 // (and other parts where we need randomness, perhaps another thing
 // for a general libutil?)
 
+#include <config.h>
+
 #include <util/random/qid_gen.h>
 
+#ifdef _WIN32
+#include <time.h>
+#else
 #include <sys/time.h>
+#endif
 
 namespace isc {
 namespace util {
@@ -41,9 +47,15 @@ QidGenerator::QidGenerator() : dist_(0, 65535),
 
 void
 QidGenerator::seed() {
+#ifdef _WIN32
+    FILETIME now;
+    GetSystemTimeAsFileTime(&now);
+    generator_.seed(now.dwLowDateTime + now.dwHighDateTime);
+#else
     struct timeval tv;
     gettimeofday(&tv, 0);
     generator_.seed((tv.tv_sec * 1000000) + tv.tv_usec);
+#endif
 }
 
 uint16_t

@@ -38,7 +38,10 @@ using namespace isc::dns;
 using namespace isc::util;
 using namespace isc::dns::rdata;
 
+/// put the right #ifdef here
+#ifndef _MSC_VER
 const uint8_t EDNS::SUPPORTED_VERSION;
+#endif
 
 namespace {
 class EDNSTest : public ::testing::Test {
