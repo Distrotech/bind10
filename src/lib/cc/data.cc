@@ -852,6 +852,8 @@ removeIdentical(ElementPtr a, ConstElementPtr b) {
         if (b->contains((*it).first)) {
             if (a->get((*it).first)->equals(*b->get((*it).first))) {
                 a->remove((*it).first);
+		// temporary fix
+		it = m.begin();
             }
         }
     }
