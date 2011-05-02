@@ -15,7 +15,11 @@
 #ifndef __BENCHMARK_H
 #define __BENCHMARK_H 1
 
+#ifdef _WIN32
+#include <time.h>
+#else
 #include <sys/time.h>
+#endif
 
 #include <iostream>
 #include <ios>
