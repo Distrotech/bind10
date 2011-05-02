@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7B80F6F0-E0CD-40D3-87B7-95C2EA2581BA}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>libcache_tests</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(Configuration)\</OutDir>
+    <TargetName>run_unittests</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(Configuration)\</OutDir>
+    <TargetName>run_unittests</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;TEST_DATA_SRCDIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/cache/tests/testdata";TEST_DATA_BUILDDIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/cache/tests/testdata";_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\cache;..\..\..\..\gtest\include;C:\Program Files\boost\boost_1_44;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libdns++.lib;libasiolink.lib;libnsas.lib;libcache.lib;gtestd.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\libexceptions\Debug;..\libutil\Debug;..\libdns++\Debug;..\libasiolink\Debug;..\libnsas\Debug;..\libcache\Debug;..\..\..\..\gtest\md10\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;TEST_DATA_SRCDIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/cache/tests/testdata";TEST_DATA_BUILDDIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/cache/tests/testdata";NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\cache;..\..\..\..\gtest\include;C:\Program Files\boost\boost_1_44;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libdns++.lib;libasiolink.lib;libnsas.lib;libcache.lib;gtest.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\libexceptions\Release;..\libutil\Release;..\libdns++\Release;..\libasiolink\Release;..\libnsas\Release;..\libcache\Release;..\..\..\..\gtest\md10\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\lib\cache\tests\cache_test_messagefromfile.h" />
+    <ClInclude Include="..\..\..\src\lib\cache\tests\cache_test_sectioncount.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\tests\unittest_util.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\lib\cache\tests\local_zone_data_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\cache\tests\message_cache_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\cache\tests\message_entry_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\cache\tests\negative_cache_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\cache\tests\resolver_cache_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\cache\tests\rrset_cache_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\cache\tests\rrset_entry_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\cache\tests\run_unittests.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\unittest_util.cc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -13,6 +13,7 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <config.h>
+#include <stdint.h>
 
 #ifdef _WIN32
 #include <ws2tcpip.h>

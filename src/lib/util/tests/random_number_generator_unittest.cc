@@ -23,6 +23,9 @@
 
 #include <util/random/random_number_generator.h>
 
+#undef min
+#undef max
+
 namespace isc {
 namespace util {
 namespace random {
