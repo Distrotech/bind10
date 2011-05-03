@@ -14,6 +14,8 @@
 
 #include <config.h>
 
+#include <time.h>
+
 #include <gtest/gtest.h>
 #include <boost/shared_ptr.hpp>
 

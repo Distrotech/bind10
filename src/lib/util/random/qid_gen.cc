@@ -19,6 +19,7 @@
 // for a general libutil?)
 
 #include <config.h>
+#include <stdint.h>
 
 #include <util/random/qid_gen.h>
 
