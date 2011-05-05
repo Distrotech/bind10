@@ -12,7 +12,16 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
+#ifdef _WIN32
+#include <getopt.h>
+#include <winsock2.h>           // for timeval
+#include <process.h>            // for getpid
+#define getpid _getpid
+#else
 #include <unistd.h>             // for getpid
+#endif
 
 #include <cassert>
 #include <cstdlib>              // for rand

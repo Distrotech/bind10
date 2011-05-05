@@ -12,7 +12,17 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
 #include <time.h>               // for nanosleep
+
+#ifdef _WIN32
+#include <winsock2.h>
+
+struct timespec {
+    DWORD   tv_sec;    // seconds (was time_t)
+    long    tv_nsec;   // nanoseconds
+};
+#endif
 
 #include <bench/benchmark.h>
 
@@ -32,13 +42,20 @@ public:
         setup_completed_(false), teardown_completed_(false)
     {}
     unsigned int run() {
+#ifdef _WIN32
+        Sleep((sleep_time_.tv_sec * 1000) + (sleep_time_.tv_nsec / 1000));
+#else
         nanosleep(&sleep_time_, NULL);
+#endif
         return (sub_iterations_);
     }
     const int sub_iterations_;
     const struct timespec sleep_time_;
     bool setup_completed_;
     bool teardown_completed_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    TestBenchMark& operator=(TestBenchMark const&);
 };
 }
 
@@ -82,7 +99,11 @@ TEST(BenchMarkTest, run) {
     // risk of overlooking possible bugs.
     struct timeval check_begin, check_end;
     gettimeofday(&check_begin, NULL);
+#ifdef _WIN32
+    Sleep((sleep_timespec.tv_sec * 1000) + (sleep_timespec.tv_nsec / 1000));
+#else
     nanosleep(&sleep_timespec, 0);
+#endif
     gettimeofday(&check_end, NULL);
     check_end.tv_sec -= check_begin.tv_sec;
     if (check_end.tv_usec >= check_begin.tv_usec) {

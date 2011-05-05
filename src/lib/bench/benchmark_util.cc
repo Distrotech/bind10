@@ -104,6 +104,9 @@ loadQueryData(istream& input, BenchQueries& queries, const RRClass& qclass,
                 buffer.getLength());
             queries.push_back(query_data);
         } catch (const Exception& error) {
+#ifdef _MSC_VER
+            error;
+#endif
             if (strict) {
                 isc_throw(BenchMarkError,
                           "failed to parse/create query around line " <<

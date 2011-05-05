@@ -12,12 +12,19 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
 
 #include <boost/shared_ptr.hpp>
+
+#ifdef _WIN32
+#include <getopt.h>
+#include <winsock2.h>
+#endif
 
 #include <bench/benchmark.h>
 

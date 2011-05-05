@@ -46,7 +46,6 @@
 
 #define strncasecmp _strnicmp
 #define unlink _unlink
-#define getpid _getpid
 #define srandom srand
 #define random() rand()
 typedef unsigned int uid_t;

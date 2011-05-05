@@ -61,6 +61,8 @@ public:
     }
 private:
     stringstream& stream_;
+    // silence MSVC warning C4512: assignment operator could not be generated
+    QueryInserter& operator=(QueryInserter const&);
 };
 
 class QueryChecker {
@@ -103,6 +105,8 @@ private:
     const vector<QueryParam>* expected_;
     vector<QueryParam>::const_iterator iter_;
     const RRClass rrclass_;
+    // silence MSVC warning C4512: assignment operator could not be generated
+    QueryChecker& operator=(QueryChecker const&);
 };
 
 TEST_F(LoadQueryTest, load) {
