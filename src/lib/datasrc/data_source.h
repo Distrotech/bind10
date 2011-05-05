@@ -27,7 +27,9 @@
 #include <dns/rrclass.h>
 #include <cc/data.h>
 
+#if defined(_WIN32) && defined(ERROR)
 #undef ERROR
+#endif
 
 namespace isc {
 
@@ -408,6 +410,8 @@ private:
     const uint8_t flags_;
     const uint16_t iterations_;
     const std::vector<uint8_t> salt_;
+    // silence MSVC warning C4512: assignment operator could not be generated
+    Nsec3Param& operator=(Nsec3Param const&);
 };
 
 }

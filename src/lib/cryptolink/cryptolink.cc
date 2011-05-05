@@ -12,6 +12,11 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4290 4512)
+#endif
+
 #include <cryptolink/cryptolink.h>
 #include <cryptolink/crypto_hmac.h>
 
@@ -67,3 +72,6 @@ CryptoLink::createHMAC(const void* secret, size_t secret_len,
 } // namespace cryptolink
 } // namespace isc
 
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

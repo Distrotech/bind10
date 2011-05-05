@@ -85,6 +85,8 @@ public:
 
 private:
     const rdata::any::TSIG rdata_;
+    // silence MSVC warning C4512: assignment operator could not be generated
+    TSIGRecord& operator=(TSIGRecord const&);
 };
 
 /// A pointer-like type pointing to a \c TSIGRecord object.

@@ -51,7 +51,7 @@ using namespace isc::dns::rdata;
 //
 
 /// put the right #ifdef here
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && !defined(__GNUC__)
 const uint16_t Message::DEFAULT_MAX_UDPSIZE;
 #endif
 

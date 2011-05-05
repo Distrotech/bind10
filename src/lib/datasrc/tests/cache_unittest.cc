@@ -213,7 +213,7 @@ TEST_F(CacheTest, expire) {
     cache.addPositive(aaaa, 0, 2);
 
 #ifdef _WIN32
-	Sleep(3000);
+    Sleep(3000);
 #else
     sleep(3);
 #endif

@@ -61,6 +61,8 @@ public:
 
 private:
     HashTable<T>& hashtable_;         ///< Hash table to access element
+    // silence MSVC warning C4512: assignment operator could not be generated
+    HashDeleter& operator=(HashDeleter const&);
 };
 
 // delete the object from the relevant hash table

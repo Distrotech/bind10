@@ -63,6 +63,9 @@ struct TSIG::TSIGImpl {
     const uint16_t original_id_;
     const uint16_t error_;
     const vector<uint8_t> other_data_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    TSIGImpl& operator=(TSIGImpl const&);
 };
 
 namespace {
@@ -93,6 +96,9 @@ tokenToNum(const string& num_token) {
     try {
         num = lexical_cast<NumType>(num_token);
     } catch (const boost::bad_lexical_cast& ex) {
+#ifdef _MSC_VER
+        ex;
+#endif
         isc_throw(InvalidRdataText, "Invalid TSIG numeric parameter: " <<
                   num_token);
     }

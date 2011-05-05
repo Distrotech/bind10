@@ -94,12 +94,12 @@ private:
      * \brief Internal state and data.
      *
      * We use the pimple design pattern, but not because we need to hide
-     * internal data. This class and whole header is for private use anyway.
+     * internal data. This struct and whole header is for private use anyway.
      * It turned out that UDPServer is copied a lot, because it is a coroutine.
      * This way the overhead of copying is lower, we copy only one shared
      * pointer instead of about 10 of them.
      */
-    class Data;
+    struct Data;
     boost::shared_ptr<Data> data_;
 };
 

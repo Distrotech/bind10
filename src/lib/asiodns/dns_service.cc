@@ -121,6 +121,9 @@ public:
         }
         addServer(portnum, address);
     }
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    DNSServiceImpl& operator=(DNSServiceImpl const&);
 };
 
 DNSServiceImpl::DNSServiceImpl(IOService& io_service,

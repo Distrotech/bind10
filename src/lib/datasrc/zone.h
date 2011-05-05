@@ -98,6 +98,10 @@ public:
         {}
         const Result code;
         const isc::dns::ConstRRsetPtr rrset;
+    private:
+        // silence MSVC warning C4512:
+        // assignment operator could not be generated
+        FindResult& operator=(FindResult const&);
     };
 
     /// Find options.

@@ -41,6 +41,8 @@ public:
     }
 private:
     vector<ConstRRsetPtr>& rrsets_;
+    // silence MSVC warning C4512: assignment operator could not be generated
+    TestCallback& operator=(TestCallback const&);
 };
 
 // A function version of TestCallback.
@@ -241,6 +243,8 @@ public:
     }
 private:
     stringstream& ss_;
+    // silence MSVC warning C4512: assignment operator could not be generated
+    StreamInvalidator& operator=(StreamInvalidator const&);
 };
 
 TEST_F(MasterLoadTest, loadBadStream) {

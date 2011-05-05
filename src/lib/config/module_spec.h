@@ -20,6 +20,11 @@
 
 #include <sstream>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4290)
+#endif
+
 namespace isc { namespace config {
 
     ///
@@ -183,6 +188,10 @@ namespace isc { namespace config {
     moduleSpecFromFile(std::ifstream& in, const bool check = true)
                        throw(isc::data::JSONError, ModuleSpecError);
 } }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #endif // _DATA_DEF_H
 

@@ -44,6 +44,11 @@
 #include "nameserver_address.h"
 #include "nameserver_entry.h"
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4373)
+#endif
+
 using namespace isc::asiolink;
 using namespace isc::nsas;
 using namespace isc::dns;
@@ -445,3 +450,7 @@ NameserverEntry::askIP(isc::resolve::ResolverInterface* resolver,
 
 } // namespace dns
 } // namespace isc
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

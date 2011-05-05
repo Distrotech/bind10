@@ -39,11 +39,22 @@
 
 #include <cc/data.h>
 
+#ifdef _MSC_VER
+#define RETERR(x) __pragma(warning(push)) \
+                  __pragma(warning(disable: 4127)) \
+                  do { \
+                      DataSrc::Result r = (x); \
+                      if (r != DataSrc::SUCCESS) \
+                          return (r); \
+                      } while (0) \
+                    __pragma(warning(pop))
+#else
 #define RETERR(x) do { \
                       DataSrc::Result r = (x); \
                       if (r != DataSrc::SUCCESS) \
                           return (r); \
                       } while (0)
+#endif
 
 using namespace std;
 using namespace isc::util;
@@ -60,6 +71,9 @@ struct MatchRRsetForType {
         return (rrset->getType() == rrtype_);
     }
     const RRType rrtype_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    MatchRRsetForType& operator=(MatchRRsetForType const&);
 };
 
 // This is a helper to retrieve a specified RR type of RRset from RRsetList.

@@ -194,6 +194,8 @@ private:
 
     /// \brief cache the SOA rrset parsed from the negative response message.
     RRsetCachePtr negative_soa_cache_;
+    // silence MSVC warning C4512: assignment operator could not be generated
+    ResolverClassCache& operator=(ResolverClassCache const&);
 };
 
 class ResolverCache {

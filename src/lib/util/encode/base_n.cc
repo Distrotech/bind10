@@ -18,6 +18,11 @@
 #include <string>
 #include <vector>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4512)
+#endif
+
 #include <boost/archive/iterators/base64_from_binary.hpp>
 #include <boost/archive/iterators/binary_from_base64.hpp>
 #include <boost/archive/iterators/transform_width.hpp>
@@ -398,3 +403,7 @@ decodeHex(const string& input, vector<uint8_t>& result) {
 } // namespace encode
 } // namespace util
 } // namespace isc
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

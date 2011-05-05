@@ -61,6 +61,9 @@ public:
     RRsetPtr version;
     RRsetPtr version_ns;
     RRsetPtr version_soa;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    StaticDataSrcImpl& operator=(StaticDataSrcImpl const&);
 };
 
 StaticDataSrcImpl::StaticDataSrcImpl() :

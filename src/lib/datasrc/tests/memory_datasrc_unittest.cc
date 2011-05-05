@@ -158,7 +158,11 @@ class MemoryZoneTest : public ::testing::Test {
     // A straightforward pair of textual RR(set) and a RRsetPtr variable
     // to store the RRset.  Used to build test data below.
     struct RRsetData {
+#ifdef _MSC_VER
+        char* text; // textual representation of an RRset
+#else
         const char* const text; // textual representation of an RRset
+#endif
         RRsetPtr* rrset;
     };
 public:

@@ -38,7 +38,7 @@ using namespace isc::util;
 // seemingly cannot find the symbols when used in the EXPECT_xxx macros.
 //
 /// put the right #ifdef here
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && !defined(__GNUC__)
 const size_t Name::MAX_WIRE;
 const size_t Name::MAX_LABELS;
 #endif

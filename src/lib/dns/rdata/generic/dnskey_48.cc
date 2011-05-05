@@ -49,6 +49,9 @@ struct DNSKEYImpl {
     uint8_t protocol_;
     uint8_t algorithm_;
     const vector<uint8_t> keydata_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    DNSKEYImpl& operator=(DNSKEYImpl const&);
 };
 
 DNSKEY::DNSKEY(const string& dnskey_str) :
@@ -181,7 +184,7 @@ DNSKEY::getTag() const {
     ac += impl_->algorithm_;
     
     size_t size = impl_->keydata_.size();
-    for (int i = 0; i < size; i ++) {
+    for (unsigned int i = 0; i < size; i ++) {
         ac += (i & 1) ? impl_->keydata_[i] : (impl_->keydata_[i] << 8);
     }
     ac += (ac >> 16) & 0xffff;

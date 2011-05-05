@@ -331,7 +331,9 @@ TEST(UDPSocket, SequenceTest) {
 
     // ...and check that the data was copied to the output client buffer.
     const char* client_char_data = static_cast<const char*>(client_buffer->getData());
-    EXPECT_TRUE(equal(&data[0], &data[client_cb.getLength() - 1], client_char_data));
+    EXPECT_TRUE(equal(&data[0],
+                &data[client_cb.getLength() - 1],
+                client_char_data));
 
     // Close client and server.
     EXPECT_NO_THROW(client.close());

@@ -285,6 +285,8 @@ private:
     std::map<std::string, ConfigData> remote_module_configs_;
     void updateRemoteConfig(const std::string& module_name,
                             isc::data::ConstElementPtr new_config);
+    // silence MSVC warning C4512: assignment operator could not be generated
+    ModuleCCSession& operator=(ModuleCCSession const&);
 };
 
 }

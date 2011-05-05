@@ -22,7 +22,9 @@
 #include "message_utility.h"
 #include "rrset_cache.h"
 
+#if defined(_WIN32) && defined(max)
 #undef max
+#endif
 
 using namespace isc::dns;
 using namespace std;
@@ -156,7 +158,7 @@ MessageEntry::genMessage(const time_t& time_now,
         msg.setHeaderFlag(Message::HEADERFLAG_AA, false);
         msg.setHeaderFlag(Message::HEADERFLAG_TC, headerflag_tc_);
 
-        bool dnssec_need = msg.getEDNS().get();
+        bool dnssec_need = msg.getEDNS().get() != 0;
         addRRset(msg, rrset_entry_vec, Message::SECTION_ANSWER, dnssec_need);
         addRRset(msg, rrset_entry_vec, Message::SECTION_AUTHORITY, dnssec_need);
         addRRset(msg, rrset_entry_vec, Message::SECTION_ADDITIONAL, dnssec_need);

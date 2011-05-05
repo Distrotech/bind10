@@ -83,7 +83,7 @@ TEST_F(RRsetEntryTest, constructor) {
 TEST_F(RRsetEntryTest, updateTTL) {
     uint32_t ttl = rrset_entry.getTTL();
 #ifdef _WIN32
-	Sleep(1000);
+    Sleep(1000);
 #else
     sleep(1);
 #endif
@@ -95,14 +95,14 @@ TEST_F(RRsetEntryTest, TTLExpire) {
     RRset exp_rrset(name, RRClass::IN(), RRType::A(), RRTTL(1));
     RRsetEntry rrset_entry(exp_rrset, RRSET_TRUST_ANSWER_AA);
 #ifdef _WIN32
-	Sleep(1000);
+    Sleep(1000);
 #else
     sleep(1);
 #endif
     uint32_t ttl = rrset_entry.getTTL();
     EXPECT_LT(ttl, 1);
 #ifdef _WIN32
-	Sleep(1000);
+    Sleep(1000);
 #else
     sleep(1);
 #endif

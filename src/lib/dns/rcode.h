@@ -21,7 +21,9 @@
 #ifndef __RCODE_H
 #define __RCODE_H 1
 
+#if defined(_WIN32) && defined(NOERROR)
 #undef NOERROR
+#endif
 
 namespace isc {
 namespace dns {

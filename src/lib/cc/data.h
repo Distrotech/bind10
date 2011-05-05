@@ -22,6 +22,11 @@
 #include <stdexcept>
 #include <exceptions/exceptions.h>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4290 4373)
+#endif
+
 namespace isc { namespace data {
 
 class Element;
@@ -567,6 +572,11 @@ std::ostream& operator<<(std::ostream& out, const Element& e);
 bool operator==(const Element& a, const Element& b);
 bool operator!=(const Element& a, const Element& b);
 } }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
 #endif // _ISC_DATA_H
 
 // Local Variables: 

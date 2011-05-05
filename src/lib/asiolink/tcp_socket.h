@@ -43,6 +43,10 @@
 #include <asiolink/io_service.h>
 #include <asiolink/tcp_endpoint.h>
 
+#if defined(_WIN32) && defined(min)
+#undef min
+#endif
+
 namespace isc {
 namespace asiolink {
 
@@ -279,6 +283,9 @@ TCPSocket<C>::asyncSend(const void* data, size_t length,
             socket_.async_send(asio::buffer(send_buffer_->getData(),
                                send_buffer_->getLength()), callback);
         } catch (boost::numeric::bad_numeric_cast& e) {
+#ifdef _MSC_VER
+            e;
+#endif
             isc_throw(BufferTooLarge,
                       "attempt to send buffer larger than 64kB");
         }
@@ -386,7 +393,7 @@ TCPSocket<C>::processReceivedData(const void* staging, size_t length,
 
         // Still need data in the output packet.  Copy what we can from the
         // staging buffer to the output buffer.
-        size_t copy_amount = min(expected - outbuff->getLength(), data_length);
+        size_t copy_amount = std::min(expected - outbuff->getLength(), data_length);
         outbuff->writeData(data, copy_amount);
     }
 

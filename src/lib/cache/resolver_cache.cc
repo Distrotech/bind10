@@ -144,14 +144,14 @@ ResolverCache::ResolverCache()
 
 ResolverCache::ResolverCache(std::vector<CacheSizeInfo> caches_info)
 {
-    for (int i = 0; i < caches_info.size(); ++i) {
+    for (unsigned int i = 0; i < caches_info.size(); ++i) {
         class_caches_.push_back(new ResolverClassCache(caches_info[i]));
     }
 }
 
 ResolverCache::~ResolverCache()
 {
-    for (int i = 0; i < class_caches_.size(); ++i) {
+    for (unsigned int i = 0; i < class_caches_.size(); ++i) {
         delete class_caches_[i];
     }
 }
@@ -239,7 +239,7 @@ ResolverCache::load(const std::string&) {
 
 ResolverClassCache*
 ResolverCache::getClassCache(const isc::dns::RRClass& cache_class) const {
-    for (int i = 0; i < class_caches_.size(); ++i) {
+    for (unsigned int i = 0; i < class_caches_.size(); ++i) {
         if (class_caches_[i]->getClass() == cache_class) {
             return (class_caches_[i]);
         }

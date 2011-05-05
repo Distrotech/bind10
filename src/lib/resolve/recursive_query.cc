@@ -153,9 +153,9 @@ win32_gettimeofday(struct timeval *tv)
     n.LowPart = now.dwLowDateTime;
     n.HighPart = now.dwHighDateTime;
     n.QuadPart -= t.QuadPart;
-    tv->tv_sec = n.QuadPart / 10000000;
+    tv->tv_sec = (long) (n.QuadPart / 10000000);
     n.QuadPart -= tv->tv_sec * 10000000;
-    tv->tv_usec = n.QuadPart / 10;
+    tv->tv_usec = (long) (n.QuadPart / 10);
 }
 #endif
 
@@ -355,7 +355,7 @@ private:
         // the RTT
         current_ns_address = address;
 #ifdef _WIN32
-	win32_gettimeofday(&current_ns_qsent_time);
+        win32_gettimeofday(&current_ns_qsent_time);
 #else
         gettimeofday(&current_ns_qsent_time, NULL);
 #endif
@@ -387,7 +387,7 @@ private:
             dlog("Sending upstream query (" + question_.toText() +
                  ") to test server at " + test_server_.first);
 #ifdef _WIN32
-	    win32_gettimeofday(&current_ns_qsent_time);
+            win32_gettimeofday(&current_ns_qsent_time);
 #else
             gettimeofday(&current_ns_qsent_time, NULL);
 #endif
@@ -404,7 +404,7 @@ private:
                 ") to " + upstream_->at(serverIndex).first);
             ++outstanding_events_;
 #ifdef _WIN32
-	    win32_gettimeofday(&current_ns_qsent_time);
+            win32_gettimeofday(&current_ns_qsent_time);
 #else
             gettimeofday(&current_ns_qsent_time, NULL);
 #endif
@@ -726,7 +726,7 @@ public:
             // Update the NSAS with the time it took
             struct timeval cur_time;
 #ifdef _WIN32
-	    win32_gettimeofday(&cur_time);
+            win32_gettimeofday(&cur_time);
 #else
             gettimeofday(&cur_time, NULL);
 #endif

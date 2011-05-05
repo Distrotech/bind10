@@ -52,6 +52,10 @@
 #include <util/buffer.h>
 #include <util/random/qid_gen.h>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4351)
+#endif
 
 using namespace asio;
 using namespace isc::asiolink;
@@ -410,3 +414,6 @@ void IOFetch::logIOFailure(asio::error_code ec) {
 } // namespace asiodns
 } // namespace isc {
 
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

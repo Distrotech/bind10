@@ -47,6 +47,9 @@ struct NSEC3PARAMImpl {
     uint8_t flags_;
     uint16_t iterations_;
     const vector<uint8_t> salt_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    NSEC3PARAMImpl& operator=(NSEC3PARAMImpl const&);
 };
 
 NSEC3PARAM::NSEC3PARAM(const string& nsec3param_str) :

@@ -393,6 +393,9 @@ struct RenderSection {
     MessageRenderer& renderer_;
     const bool partial_ok_;
     bool truncated_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    RenderSection& operator=(RenderSection const&);
 };
 }
 
@@ -576,6 +579,9 @@ struct MatchRR : public unary_function<RRsetPtr, bool> {
     const Name& name_;
     const RRType& rrtype_;
     const RRClass& rrclass_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    MatchRR& operator=(MatchRR const&);
 };
 }
 
@@ -679,6 +685,9 @@ struct SectionFormatter {
     }
     const Message::Section section_;
     string& output_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    SectionFormatter& operator=(SectionFormatter const&);
 };
 }
 

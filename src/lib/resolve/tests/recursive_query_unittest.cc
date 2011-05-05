@@ -366,7 +366,7 @@ protected:
 
         void operator()(asio::error_code ec = asio::error_code(),
                         size_t length = 0)
-        {}
+        { ec; }
 
         void resume(const bool) {
           // should never be called in our tests
@@ -400,6 +400,9 @@ protected:
         const SimpleCallback* checkin_;
         const DNSLookup* lookup_;
         const DNSAnswer* answer_;
+        // silence MSVC warning C4512:
+        // assignment operator could not be generated
+        MockServer& operator=(MockServer const&);
     };
 
     // This version of mock server just stops the io_service when it is resumed
@@ -420,6 +423,9 @@ protected:
             }
         private:
             bool* done_;
+            // silence MSVC warning C4512:
+            // assignment operator could not be generated
+           MockServerStop& operator=(MockServerStop const&);
     };
 
     // This version of mock server just stops the io_service when it is resumed
@@ -453,6 +459,9 @@ protected:
             bool* done1_;
             bool* done2_;
             bool stopped_once_;
+            // silence MSVC warning C4512:
+            // assignment operator could not be generated
+            MockServerStop2& operator=(MockServerStop2 const&);
     };
 
 private:

@@ -297,6 +297,9 @@ public:
     /// \param compress A boolean indicating whether to enable name compression.
     virtual void writeName(const Name& name, bool compress = true) = 0;
     //@}
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    AbstractMessageRenderer& operator=(AbstractMessageRenderer const&);
 };
 
 /// The \c MessageRenderer is a concrete derived class of
@@ -333,6 +336,8 @@ public:
 private:
     struct MessageRendererImpl;
     MessageRendererImpl* impl_;
+    // silence MSVC warning C4512: assignment operator could not be generated
+    MessageRenderer& operator=(MessageRenderer const&);
 };
 }
 }

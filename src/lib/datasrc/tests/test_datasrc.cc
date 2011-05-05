@@ -80,23 +80,29 @@ namespace {
 // For simplicity we use the same single TTL for all test RRs.
 const uint32_t TEST_TTL = 3600;
 
+#ifdef _MSC_VER
+#define PODconst
+#else
+#define PODconst const
+#endif
+
 struct RRData {
-    const char* const name;
-    const char* const rrtype;
-    const char* const rdata;
+    PODconst char* PODconst name;
+    PODconst char* PODconst rrtype;
+    PODconst char* PODconst rdata;
 };
 
 struct ZoneData {
-    const char* const zone_name;
-    const char* const rrclass;
-    const struct RRData* records;
-    const struct RRData* glue_records;
+    PODconst char* PODconst zone_name;
+    PODconst char* PODconst rrclass;
+    PODconst struct RRData* records;
+    PODconst struct RRData* glue_records;
 };
 
 //
 // zone data for example.com
 //
-const struct RRData example_com_records[] = {
+PODconst struct RRData example_com_records[] = {
     // example.com
     {"example.com", "NS", "dns01.example.com"},
     {"example.com", "NS", "dns02.example.com"},
@@ -200,7 +206,7 @@ const struct RRData example_com_records[] = {
     {NULL, NULL, NULL}
 };
 
-const struct RRData example_com_glue_records[] = {
+PODconst struct RRData example_com_glue_records[] = {
     {"ns1.subzone.example.com", "A", "192.0.2.1"},
     {"ns2.subzone.example.com", "A", "192.0.2.2"},
     {NULL, NULL, NULL}
@@ -209,7 +215,7 @@ const struct RRData example_com_glue_records[] = {
 //
 // zone data for sql1.example.com
 //
-const struct RRData sql1_example_com_records[] = {
+PODconst struct RRData sql1_example_com_records[] = {
     {"sql1.example.com", "NS", "dns01.example.com"},
     {"sql1.example.com", "NS", "dns02.example.com"},
     {"sql1.example.com", "NS", "dns03.example.com"},
@@ -231,7 +237,7 @@ const struct RRData sql1_example_com_records[] = {
 //
 // zone data for loop.example
 //
-const struct RRData loop_example_records[] = {
+PODconst struct RRData loop_example_records[] = {
     {"loop.example", "SOA", "master.loop.example admin.loop.example. "
      "1234 3600 1800 2419200 7200"},
     {"loop.example", "NS", "ns.loop.example"},
@@ -243,7 +249,7 @@ const struct RRData loop_example_records[] = {
 //
 // zone data for nons.example
 //
-const struct RRData nons_example_records[] = {
+PODconst struct RRData nons_example_records[] = {
     {"nons.example", "SOA", "master.nons.example admin.nons.example. "
      "1234 3600 1800 2419200 7200"},
     {"www.nons.example", "A", "192.0.2.1"},
@@ -260,7 +266,7 @@ const struct RRData nons_example_records[] = {
     {NULL, NULL, NULL}
 };
 
-const struct RRData nons_example_glue_records[] = {
+PODconst struct RRData nons_example_glue_records[] = {
     {"ns.incompletechild.nons.example", "A", "192.0.2.1"},
     {NULL, NULL, NULL}
 };
@@ -268,7 +274,7 @@ const struct RRData nons_example_glue_records[] = {
 //
 // zone data for nons-dname.example
 //
-const struct RRData nonsdname_example_records[] = {
+PODconst struct RRData nonsdname_example_records[] = {
     {"nons-dname.example", "SOA", "master.nons-dname.example "
      "admin.nons-dname.example. 1234 3600 1800 2419200 7200"},
     {"nons-dname.example", "DNAME", "example.org"},
@@ -280,7 +286,7 @@ const struct RRData nonsdname_example_records[] = {
 //
 // zone data for nosoa.example
 //
-const struct RRData nosoa_example_records[] = {
+PODconst struct RRData nosoa_example_records[] = {
     {"nosoa.example", "NS", "ns.nosoa.example"},
     {"www.nosoa.example", "A", "192.0.2.1"},
     {"ns.nosoa.example", "A", "192.0.2.2"},
@@ -290,7 +296,7 @@ const struct RRData nosoa_example_records[] = {
 //
 // zone data for apexcname.example.
 //
-const struct RRData apexcname_example_records[] = {
+PODconst struct RRData apexcname_example_records[] = {
     {"apexcname.example", "CNAME", "canonical.apexcname.example"},
     {"canonical.apexcname.example", "SOA",
      "master.apexcname.example "
@@ -302,14 +308,14 @@ const struct RRData apexcname_example_records[] = {
 //
 // empty data set, for convenience.
 //
-const struct RRData empty_records[] = {
+PODconst struct RRData empty_records[] = {
     {NULL, NULL, NULL}
 };
 
 //
 // test zones
 //
-const struct ZoneData zone_data[] = {
+PODconst struct ZoneData zone_data[] = {
     { "example.com", "IN", example_com_records, example_com_glue_records },
     { "sql1.example.com", "IN", sql1_example_com_records, empty_records },
     { "loop.example", "IN", loop_example_records, empty_records },
@@ -425,6 +431,9 @@ struct ZoneNameMatch : public unary_function<Name, bool> {
         return (zone.zone_name == name_);
     }
     const Name& name_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    ZoneNameMatch& operator=(ZoneNameMatch const&);
 };
 
 // XXX: the main data source module can override the returned RRset.
@@ -510,6 +519,9 @@ public:
     uint32_t& flags_;
     bool name_found_;
     bool has_delegation_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    RRsetMatch& operator=(RRsetMatch const&);
 };
 
 void

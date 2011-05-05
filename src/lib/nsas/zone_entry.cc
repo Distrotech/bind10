@@ -33,6 +33,11 @@
 #include <dns/rcode.h>
 #include <dns/rdataclass.h>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4373)
+#endif
+
 using namespace std;
 
 namespace isc {
@@ -574,3 +579,7 @@ ZoneEntry::insertCallback(NameserverPtr ns, AddressFamily family) {
 
 }; // namespace nsas
 }; // namespace isc
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

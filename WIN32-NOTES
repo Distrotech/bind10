@@ -4,7 +4,9 @@ What is needed:
 
  - POSIX (aka Unix) environment for tar/git/etc (I use cygwin)
 
- - Visual Studio C++ (versions 2008 and 2010 were tested)
+ - Visual Studio C++ (versions 2008 and 2010 were tested,
+  note older versions could fail to correctly compile,
+  cf. C4373 warning)
 
  - python >= 3.1 (I got Cpython 3.2 MSI from python.org,
   note the pre-built python can give C++ runtime issue with

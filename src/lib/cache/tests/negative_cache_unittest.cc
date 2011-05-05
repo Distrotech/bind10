@@ -78,9 +78,9 @@ TEST_F(NegativeCacheTest, testNXDOMAIN){
     EXPECT_EQ(soa_ttl.getValue(), 172800);
 
 #ifdef _WIN32
-	Sleep(1000);
+    Sleep(1000);
 #else
-	sleep(1);
+    sleep(1);
 #endif
 
     // Query nonexist.example.com again
@@ -202,7 +202,7 @@ TEST_F(NegativeCacheTest, testNoerrorNodata){
     msg_nodata2.makeResponse();
 
 #ifdef _WIN32
-	Sleep(1000);
+    Sleep(1000);
 #else
     sleep(1);
 #endif

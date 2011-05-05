@@ -46,6 +46,10 @@ public:
         {}
         const result::Result code;
         const ZonePtr zone;
+    private:
+        // silence MSVC warning C4512:
+        // assignment operator could not be generated
+        FindResult& operator=(FindResult const&);
     };
     ///
     /// \name Constructors and Destructor.

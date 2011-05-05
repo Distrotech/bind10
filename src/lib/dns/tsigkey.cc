@@ -65,6 +65,9 @@ TSIGKey::TSIGKeyImpl {
     Name algorithm_name_;
     const isc::cryptolink::HashAlgorithm algorithm_;
     const vector<uint8_t> secret_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    TSIGKeyImpl& operator=(TSIGKeyImpl const&);
 };
 
 TSIGKey::TSIGKey(const Name& key_name, const Name& algorithm_name,

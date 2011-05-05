@@ -26,6 +26,13 @@
 #include <boost/random/uniform_real.hpp>
 #include <boost/random/variate_generator.hpp>
 
+#if defined(_WIN32) && defined(min)
+#undef min
+#endif
+#if defined(_WIN32) && defined(max)
+#undef max
+#endif
+
 namespace isc {
 namespace util {
 namespace random {
@@ -60,7 +67,7 @@ public:
     /// \param min The minimum number in the range
     /// \param max The maximum number in the range
     UniformRandomIntegerGenerator(int min, int max):
-        min_(min(min, max)), max_(max(min, max)),
+        min_(std::min(min, max)), max_(std::max(min, max)),
         dist_(min_, max_), generator_(rng_, dist_)
     {
         // To preserve the restriction of the underlying uniform_int class (and

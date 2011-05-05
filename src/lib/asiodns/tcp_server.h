@@ -117,6 +117,8 @@ private:
 
     boost::shared_ptr<isc::asiolink::IOEndpoint> peer_;
     boost::shared_ptr<isc::asiolink::IOSocket> iosock_;
+    // silence MSVC warning C4512: assignment operator could not be generated
+    TCPServer& operator=(TCPServer const&);
 };
 
 } // namespace asiodns

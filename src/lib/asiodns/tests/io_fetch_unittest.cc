@@ -43,6 +43,11 @@
 #include <asiolink/io_service.h>
 #include <asiodns/io_fetch.h>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4351)
+#endif
+
 using namespace asio;
 using namespace isc::dns;
 using namespace isc::util;
@@ -106,9 +111,9 @@ public:
         result_buff_(new OutputBuffer(512)),
         msgbuf_(new OutputBuffer(512)),
         udp_fetch_(IOFetch::UDP, service_, question_, IOAddress(TEST_HOST),
-            TEST_PORT, result_buff_, this, 100),
+            TEST_PORT, result_buff_, NULL, 100),
         tcp_fetch_(IOFetch::TCP, service_, question_, IOAddress(TEST_HOST),
-            TEST_PORT, result_buff_, this, (16 * SEND_INTERVAL)),
+            TEST_PORT, result_buff_, NULL, (16 * SEND_INTERVAL)),
                                         // Timeout interval chosen to ensure no timeout
         protocol_(IOFetch::TCP),        // for initialization - will be changed
         cumulative_(0),
@@ -125,6 +130,14 @@ public:
         qid_1(0),
         tcp_short_send_(false)
     {
+        // use 'this'
+        udp_fetch_ = IOFetch(IOFetch::UDP, service_,
+            question_, IOAddress(TEST_HOST),
+            TEST_PORT, result_buff_, this, 100);
+        tcp_fetch_ = IOFetch(IOFetch::TCP, service_,
+            question_, IOAddress(TEST_HOST),
+            TEST_PORT, result_buff_, this, (16 * SEND_INTERVAL));
+
         // Construct the data buffer for question we expect to receive.
         Message msg(Message::RENDER);
         msg.setQid(0);
@@ -220,7 +233,7 @@ public:
     ///
     /// \param socket Socket on which data will be received
     /// \param ec Boost error code, value should be zero.
-  void tcpAcceptHandler(tcp::socket* socket,
+    void tcpAcceptHandler(tcp::socket* socket,
                         asio::error_code ec = asio::error_code())
     {
         if (debug_) {
@@ -735,3 +748,7 @@ TEST_F(IOFetchTest, TcpSendReceive8192ShortSend) {
 
 } // namespace asiodns
 } // namespace isc
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

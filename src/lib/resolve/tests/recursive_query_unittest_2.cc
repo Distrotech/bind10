@@ -49,6 +49,11 @@
 #include <resolve/recursive_query.h>
 #include <resolve/resolver_interface.h>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4351)
+#endif
+
 using namespace asio;
 using namespace asio::ip;
 using namespace isc::asiolink;
@@ -638,6 +643,8 @@ private:
     bool            run_;           ///< Set true when completion handler run
     bool            status_;        ///< Set true for success, false on error
     bool            debug_;         ///< Debug flag
+    // silence MSVC warning C4512: assignment operator could not be generated
+    ResolverCallback& operator=(ResolverCallback const&);
 };
 
 // Sets up the UDP and TCP "servers", then tries a resolution.
@@ -696,10 +703,14 @@ TEST_F(RecursiveQueryTest2, Resolve) {
     // weren't, we would expect some absurdly high answers.
     vector<uint32_t> rtt = recorder->getRtt();
     EXPECT_GT(rtt.size(), 0);
-    for (int i = 0; i < rtt.size(); ++i) {
+    for (unsigned int i = 0; i < rtt.size(); ++i) {
         EXPECT_LT(rtt[i], 2000);
     }
 }
 
 } // namespace asiodns
 } // namespace isc
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

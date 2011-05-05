@@ -162,6 +162,9 @@ struct UDPServer::Data {
 
     std::auto_ptr<IOEndpoint> peer_;
     std::auto_ptr<IOSocket> iosock_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    Data& operator=(Data const&);
 };
 
 /// The following functions implement the \c UDPServer class.

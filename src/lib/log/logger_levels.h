@@ -26,7 +26,9 @@ namespace log {
 /// N.B. The order of the levels - DEBUG less than INFO less that WARN etc. is
 /// implicitly assumed in several implementations.  They must not be changed.
 
+#if defined(_WIN32) && defined(ERROR)
 #undef ERROR
+#endif
 
 typedef enum {
     DEFAULT = 0,    // Default to logging level of the parent

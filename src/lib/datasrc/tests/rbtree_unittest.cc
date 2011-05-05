@@ -35,7 +35,7 @@ using namespace isc::datasrc;
 // XXX: some compilers cannot find class static constants used in
 // EXPECT_xxx macros, for which we need an explicit empty definition.
 /// put the right #ifdef here
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && !defined(__GNUC__)
 const size_t Name::MAX_LABELS;
 #endif
 

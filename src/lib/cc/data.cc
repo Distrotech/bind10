@@ -28,6 +28,11 @@
 
 #include <cmath>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4290)
+#endif
+
 using namespace std;
 
 namespace isc {
@@ -747,6 +752,9 @@ MapElement::find(const std::string& id, ConstElementPtr t) const {
         }
     } catch (const TypeError& e) {
         // ignore
+#ifdef _MSC_VER
+        e;
+#endif
     }
     return (false);
 }
@@ -783,11 +791,11 @@ StringElement::equals(const Element& other) const {
 bool
 ListElement::equals(const Element& other) const {
     if (other.getType() == Element::list) {
-        const int s = size();
+        const unsigned int s = size();
         if (s != other.size()) {
             return (false);
         }
-        for (int i = 0; i < s; ++i) {
+        for (unsigned int i = 0; i < s; ++i) {
             if (!get(i)->equals(*other.get(i))) {
                 return (false);
             }
@@ -853,8 +861,8 @@ removeIdentical(ElementPtr a, ConstElementPtr b) {
         if (b->contains((*it).first)) {
             if (a->get((*it).first)->equals(*b->get((*it).first))) {
                 a->remove((*it).first);
-		// temporary fix
-		goto again;
+                // temporary fix
+                goto again;
             }
         }
     }
@@ -904,3 +912,7 @@ merge(ElementPtr element, ConstElementPtr other) {
 
 }
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

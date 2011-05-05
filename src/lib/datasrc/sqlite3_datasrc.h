@@ -21,6 +21,11 @@
 
 #include <datasrc/data_source.h>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4373)
+#endif
+
 namespace isc {
 
 namespace dns {
@@ -116,6 +121,10 @@ private:
 
 }
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #endif // __DATA_SOURCE_SQLITE3_H
 

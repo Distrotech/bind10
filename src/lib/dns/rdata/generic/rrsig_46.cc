@@ -70,6 +70,9 @@ struct RRSIGImpl {
     uint16_t tag_;
     const Name signer_;
     const vector<uint8_t> signature_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    RRSIGImpl& operator=(RRSIGImpl const&);
 };
 
 RRSIG::RRSIG(const string& rrsig_str) :

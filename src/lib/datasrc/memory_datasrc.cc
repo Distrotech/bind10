@@ -295,6 +295,10 @@ struct MemoryZone::MemoryZoneImpl {
         const DomainNode* dname_node_;
         ConstRRsetPtr rrset_;
         const FindOptions options_;
+    private:
+        // silence MSVC warning C4512:
+        // assignment operator could not be generated
+        FindState& operator=(FindState const&);
     };
 
     // A callback called from possible zone cut nodes and nodes with DNAME.

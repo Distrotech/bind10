@@ -241,6 +241,10 @@ public:
         {}
         const Result code;
         const TSIGKey* const key;
+    private:
+        // silence MSVC warning C4512:
+        // assignment operator could not be generated
+        FindResult& operator=(FindResult const&);
     };
 
     ///

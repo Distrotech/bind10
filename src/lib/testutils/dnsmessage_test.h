@@ -122,6 +122,9 @@ struct RRsetMatch : public std::unary_function<isc::dns::ConstRRsetPtr, bool> {
                 rrset->getName() == target_->getName());
     }
     const isc::dns::ConstRRsetPtr target_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    RRsetMatch& operator=(RRsetMatch const&);
 };
 
 // Helper callback functor for masterLoad() used in rrsetsCheck (stream
@@ -136,6 +139,8 @@ public:
     }
 private:
     std::vector<isc::dns::ConstRRsetPtr>& rrsets_;
+    // silence MSVC warning C4512: assignment operator could not be generated
+    RRsetInserter& operator=(RRsetInserter const&);
 };
 }
 

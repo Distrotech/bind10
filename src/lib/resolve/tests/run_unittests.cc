@@ -27,11 +27,11 @@ main(int argc, char* argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
 
 #ifdef _WIN32
-	WSADATA wsaData;
-	WSAStartup(MAKEWORD(2,2), &wsaData);
-	int ret = RUN_ALL_TESTS();
-	WSACleanup();
-	return (ret);
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2,2), &wsaData);
+    int ret = RUN_ALL_TESTS();
+    WSACleanup();
+    return (ret);
 #else
     return (RUN_ALL_TESTS());
 #endif

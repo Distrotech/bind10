@@ -157,12 +157,25 @@ public:
 /// this is defined as a macro.  The convenience for the ostream is a secondary
 /// purpose (if that were the only possible reason we should rather avoid
 /// using a macro).
+/// Avoid C4127 warning: conditional expression is constant
+#ifdef _MSC_VER
+#define isc_throw(type, stream) \
+    __pragma(warning(push)) \
+    __pragma(warning(disable: 4127)) \
+    do { \
+        std::ostringstream oss__; \
+        oss__ << stream; \
+        throw type(__FILE__, __LINE__, oss__.str().c_str()); \
+    } while (1) \
+    __pragma(warning(pop))
+#else
 #define isc_throw(type, stream) \
     do { \
         std::ostringstream oss__; \
         oss__ << stream; \
         throw type(__FILE__, __LINE__, oss__.str().c_str()); \
     } while (1)
+#endif
 }
 #endif // __EXCEPTIONS_H
 

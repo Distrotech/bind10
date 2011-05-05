@@ -22,7 +22,9 @@
 
 #include <exceptions/exceptions.h>
 
+#if defined(_WIN32) && defined(IN)
 #undef IN
+#endif
 
 namespace isc {
 namespace util {

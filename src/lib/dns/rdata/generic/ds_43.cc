@@ -49,6 +49,9 @@ struct DSImpl {
     uint8_t algorithm_;
     uint8_t digest_type_;
     const vector<uint8_t> digest_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    DSImpl& operator=(DSImpl const&);
 };
 
 DS::DS(const string& ds_str) :

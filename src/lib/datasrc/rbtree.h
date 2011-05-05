@@ -294,15 +294,15 @@ private:
 // This is only to support NULL nodes.
 template <typename T>
 RBNode<T>::RBNode() :
-    parent_(this),
-    left_(this),
-    right_(this),
     color_(BLACK),
     // dummy name, the value doesn't matter:
     name_(isc::dns::Name::ROOT_NAME()),
-    down_(this),
     flags_(0)
 {
+    parent_ = this;
+    left_ = this;
+    right_ = this;
+    down_ = this;
 }
 
 template <typename T>

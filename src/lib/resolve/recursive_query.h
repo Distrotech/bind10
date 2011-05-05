@@ -167,6 +167,8 @@ private:
     int lookup_timeout_;
     unsigned retries_;
     boost::shared_ptr<RttRecorder>  rtt_recorder_;  ///< Round-trip time recorder
+    // silence MSVC warning C4512: assignment operator could not be generated
+    RecursiveQuery& operator=(RecursiveQuery const&);
 };
 
 }      // namespace asiodns

@@ -28,7 +28,9 @@ using namespace isc;
 using namespace isc::dns;
 using namespace std;
 
+#if defined(_WIN32) && defined(max)
 #undef max
+#endif
 
 static uint32_t MAX_UINT32 = numeric_limits<uint32_t>::max();
 
