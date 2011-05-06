@@ -17,8 +17,12 @@
 /// Simple example program showing how to use the logger.
 
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
+#ifdef _WIN32
+#include <getopt.h>
+#else
+#include <unistd.h>
+#endif
 
 #include <iostream>
 

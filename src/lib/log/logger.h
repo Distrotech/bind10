@@ -158,35 +158,35 @@ public:
     /// are used for more verbose output.
     /// \param ident Message identification.
     /// \param ... Optional arguments for the message.
-    void debug(int dbglevel, const MessageID& ident, ...);
+    void debug(int dbglevel, const MessageID ident, ...);
 
 
     /// \brief Output Informational Message
     ///
     /// \param ident Message identification.
     /// \param ... Optional arguments for the message.
-    void info(const MessageID& ident, ...);
+    void info(const MessageID ident, ...);
 
 
     /// \brief Output Warning Message
     ///
     /// \param ident Message identification.
     /// \param ... Optional arguments for the message.
-    void warn(const MessageID& ident, ...);
+    void warn(const MessageID ident, ...);
 
 
     /// \brief Output Error Message
     ///
     /// \param ident Message identification.
     /// \param ... Optional arguments for the message.
-    void error(const MessageID& ident, ...);
+    void error(const MessageID ident, ...);
 
 
     /// \brief Output Fatal Message
     ///
     /// \param ident Message identification.
     /// \param ... Optional arguments for the message.
-    void fatal(const MessageID& ident, ...);
+    void fatal(const MessageID ident, ...);
 
     /// \brief Equality
     ///

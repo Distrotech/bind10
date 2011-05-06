@@ -112,7 +112,7 @@ Logger::isFatalEnabled() {
 // Output methods
 
 void
-Logger::debug(int dbglevel, const isc::log::MessageID& ident, ...) {
+Logger::debug(int dbglevel, const isc::log::MessageID ident, ...) {
     if (isDebugEnabled(dbglevel)) {
         va_list ap;
         va_start(ap, ident);
@@ -122,7 +122,7 @@ Logger::debug(int dbglevel, const isc::log::MessageID& ident, ...) {
 }
 
 void
-Logger::info(const isc::log::MessageID& ident, ...) {
+Logger::info(const isc::log::MessageID ident, ...) {
     if (isInfoEnabled()) {
         va_list ap;
         va_start(ap, ident);
@@ -132,7 +132,7 @@ Logger::info(const isc::log::MessageID& ident, ...) {
 }
 
 void
-Logger::warn(const isc::log::MessageID& ident, ...) {
+Logger::warn(const isc::log::MessageID ident, ...) {
     if (isWarnEnabled()) {
         va_list ap;
         va_start(ap, ident);
@@ -142,7 +142,7 @@ Logger::warn(const isc::log::MessageID& ident, ...) {
 }
 
 void
-Logger::error(const isc::log::MessageID& ident, ...) {
+Logger::error(const isc::log::MessageID ident, ...) {
     if (isErrorEnabled()) {
         va_list ap;
         va_start(ap, ident);
@@ -152,7 +152,7 @@ Logger::error(const isc::log::MessageID& ident, ...) {
 }
 
 void
-Logger::fatal(const isc::log::MessageID& ident, ...) {
+Logger::fatal(const isc::log::MessageID ident, ...) {
     if (isFatalEnabled()) {
         va_list ap;
         va_start(ap, ident);
