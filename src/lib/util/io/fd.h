@@ -15,7 +15,11 @@
 #ifndef __UTIL_IO_FD_H
 #define __UTIL_IO_FD_H 1
 
+#include <config.h>
+
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 /**
  * @file fd.h

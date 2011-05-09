@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="libcc_tests"
-	ProjectGUID="{0131E967-F93E-4E63-9561-47C94411FBEC}"
-	RootNamespace="libcc_tests"
+	Name="libutil_io"
+	ProjectGUID="{E1DCE3BE-46BC-444F-927C-714414FDC457}"
+	RootNamespace="libutil_io"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -20,12 +20,11 @@
 			Name="Debug|Win32"
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd ..\..\..\src\lib\cc\tests&#x0D;&#x0A;copy session_unittests_config.h.win32 session_unittests_config.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,8 +41,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\cc\tests;..\..\..\ext\asio;..\..\..\..\gtest\include;&quot;C:\Program Files\boost\boost_1_44&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -61,21 +60,10 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
-				AdditionalDependencies="libexceptions.lib libcc.lib gtestd.lib"
-				OutputFile="$(OutDir)\run_unittests.exe"
-				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\libexceptions\Debug;..\libcc\Debug;..\..\..\..\gtest\md9\Debug;&quot;C:\Program Files\boost\boost_1_44\lib&quot;"
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				TargetMachine="1"
+				Name="VCLibrarianTool"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -87,9 +75,6 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -97,13 +82,12 @@
 			Name="Release|Win32"
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd ..\..\..\src\lib\cc\tests&#x0D;&#x0A;copy session_unittests_config.h.win32 session_unittests_config.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -121,8 +105,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\cc\tests;..\..\..\ext\asio;..\..\..\..\gtest\include;&quot;C:\Program Files\boost\boost_1_44&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -139,23 +123,10 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
-				AdditionalDependencies="libexceptions.lib libcc.lib gtest.lib"
-				OutputFile="$(OutDir)\run_unittests.exe"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\libexceptions\Release;..\libcc\Release;..\..\..\..\gtest\md9\Release;&quot;C:\Program Files\boost\boost_1_44\lib&quot;"
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				TargetMachine="1"
+				Name="VCLibrarianTool"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -165,9 +136,6 @@
 			/>
 			<Tool
 				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -183,15 +151,11 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\..\src\lib\cc\tests\data_unittests.cc"
+				RelativePath="..\..\..\src\lib\util\io\fd.cc"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\lib\cc\tests\run_unittests.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\cc\tests\session_unittests.cc"
+				RelativePath="..\..\..\src\lib\util\io\fd_share.cc"
 				>
 			</File>
 		</Filter>
@@ -201,7 +165,11 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\..\src\lib\cc\tests\session_unittests_config.h"
+				RelativePath="..\..\..\src\lib\util\io\fd.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\util\io\fd_share.h"
 				>
 			</File>
 		</Filter>

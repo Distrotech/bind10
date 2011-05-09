@@ -14,7 +14,12 @@
 
 #include "fd.h"
 
-#include <unistd.h>
+#ifdef _WIN32
+#include <io.h>
+#define write _write
+#define read _read
+#endif
+
 #include <cerrno>
 
 namespace isc {

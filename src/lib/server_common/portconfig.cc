@@ -58,10 +58,7 @@ parseAddresses(isc::data::ConstElementPtr addresses,
                     result.push_back(AddressPair(addr->stringValue(),
                         port->intValue()));
                 }
-                catch (const TypeError &e) { // Better error message
-#ifdef _MSC_VER
-                    e;
-#endif
+                catch (const TypeError&) { // Better error message
                     isc_throw(TypeError,
                         "Address must be a string and port an integer");
                 }

@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="libcc_tests"
-	ProjectGUID="{0131E967-F93E-4E63-9561-47C94411FBEC}"
-	RootNamespace="libcc_tests"
+	Name="BINDInstall"
+	ProjectGUID="{037FE4D5-39B8-4E16-9079-77954AFA21DB}"
+	RootNamespace="BINDInstall"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -25,7 +25,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd ..\..\..\src\lib\cc\tests&#x0D;&#x0A;copy session_unittests_config.h.win32 session_unittests_config.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,7 +41,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\cc\tests;..\..\..\ext\asio;..\..\..\..\gtest\include;&quot;C:\Program Files\boost\boost_1_44&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -63,10 +61,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="false"
-				AdditionalDependencies="libexceptions.lib libcc.lib gtestd.lib"
-				OutputFile="$(OutDir)\run_unittests.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\libexceptions\Debug;..\libcc\Debug;..\..\..\..\gtest\md9\Debug;&quot;C:\Program Files\boost\boost_1_44\lib&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -103,7 +98,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd ..\..\..\src\lib\cc\tests&#x0D;&#x0A;copy session_unittests_config.h.win32 session_unittests_config.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -121,7 +115,6 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\cc\tests;..\..\..\ext\asio;..\..\..\..\gtest\include;&quot;C:\Program Files\boost\boost_1_44&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -141,10 +134,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="false"
-				AdditionalDependencies="libexceptions.lib libcc.lib gtest.lib"
-				OutputFile="$(OutDir)\run_unittests.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\libexceptions\Release;..\libcc\Release;..\..\..\..\gtest\md9\Release;&quot;C:\Program Files\boost\boost_1_44\lib&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -183,15 +173,11 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\..\src\lib\cc\tests\data_unittests.cc"
+				RelativePath="..\..\BINDInstall\BINDInstall.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\lib\cc\tests\run_unittests.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\cc\tests\session_unittests.cc"
+				RelativePath="..\..\BINDInstall\stdafx.cpp"
 				>
 			</File>
 		</Filter>
@@ -201,7 +187,11 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\..\src\lib\cc\tests\session_unittests_config.h"
+				RelativePath="..\..\BINDInstall\stdafx.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\BINDInstall\targetver.h"
 				>
 			</File>
 		</Filter>

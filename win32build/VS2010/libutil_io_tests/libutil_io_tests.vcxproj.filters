@@ -15,19 +15,11 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\lib\cc\tests\data_unittests.cc">
+    <ClCompile Include="..\..\..\src\lib\util\io\tests\fd_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\lib\cc\tests\run_unittests.cc">
+    <ClCompile Include="..\..\..\src\lib\util\io\tests\run_unittests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\lib\cc\tests\session_unittests.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\src\lib\cc\tests\session_unittests_config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

@@ -97,10 +97,7 @@ IntervalTimerImpl::update() {
     try {
         // Update expire time to (current time + interval_).
         timer_.expires_from_now(boost::posix_time::millisec(interval_));
-    } catch (const asio::system_error& e) {
-#ifdef _MSC_VER
-        e;
-#endif
+    } catch (const asio::system_error&) {
         isc_throw(isc::Unexpected, "Failed to update timer");
     }
     // Reset timer.

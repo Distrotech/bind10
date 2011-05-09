@@ -12,14 +12,25 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
 #include <cstring>
 #include <cstdlib>
 
+#ifdef _WIN32
+#include <process.h>
+#include <winsock2.h>
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
+#endif
 #include <stdlib.h>             // for malloc and free
 #include "fd_share.h"
+
+#ifndef _WIN32
+
+/* Unix version */
 
 namespace isc {
 namespace util {
@@ -137,3 +148,78 @@ send_fd(const int sock, const int fd) {
 } // End for namespace io
 } // End for namespace util
 } // End for namespace isc
+
+#else
+
+/* Windows version */
+
+namespace isc {
+namespace util {
+namespace io {
+
+namespace {
+// Need the peer PID
+
+int
+send_pid(const int sock) {
+    pid_t pid(_getpid());
+    if (send(sock, (const char *)&pid, sizeof(pid), 0) != sizeof(pid)) {
+        return (FD_COMM_ERROR);
+    }
+    return (0);
+}
+
+pid_t
+recv_pid(const int sock) {
+    pid_t pid;
+    if (recv(sock, (char *)&pid , sizeof(pid), 0) != sizeof(pid)) {
+        return (FD_COMM_ERROR);
+    }
+    return (pid);
+}
+}
+
+int
+recv_fd(const int sock) {
+    int ret(send_pid(sock));
+    if (ret != 0) {
+        return (ret);
+    }
+    WSAPROTOCOL_INFO pi;
+    if (recv(sock, (char *)&pi, sizeof(pi), 0) != sizeof(pi)) {
+        return (FD_COMM_ERROR);
+    }
+    SOCKET nsock = WSASocket(pi.iAddressFamily,
+                             pi.iSocketType,
+                             pi.iProtocol,
+                             &pi, 0, 0);
+    if (nsock == INVALID_SOCKET) {
+        return (FD_OTHER_ERROR);
+    }
+    return ((int) nsock);
+}
+
+int
+send_fd(const int sock, const int fd) {
+    pid_t peerpid(recv_pid(sock));
+    if (peerpid == FD_COMM_ERROR) {
+        return (FD_COMM_ERROR);
+    }
+
+    WSAPROTOCOL_INFO pi;
+    if (WSADuplicateSocket(fd, peerpid, &pi) != 0) {
+        return (FD_OTHER_ERROR);
+    }
+
+    if (send(sock, (const char *)&pi, sizeof(pi), 0) != sizeof(pi)) {
+        return (FD_COMM_ERROR);
+    }
+    return (0);
+
+}
+
+} // End for namespace io
+} // End for namespace util
+} // End for namespace isc
+
+#endif

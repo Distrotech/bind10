@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="libcc_tests"
-	ProjectGUID="{0131E967-F93E-4E63-9561-47C94411FBEC}"
-	RootNamespace="libcc_tests"
+	Name="libutil_io_python"
+	ProjectGUID="{6AF54258-C144-4C6B-A10F-DA6D17193B5D}"
+	RootNamespace="libutil_io_python"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -20,12 +20,11 @@
 			Name="Debug|Win32"
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
+			ConfigurationType="2"
 			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd ..\..\..\src\lib\cc\tests&#x0D;&#x0A;copy session_unittests_config.h.win32 session_unittests_config.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,8 +41,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\cc\tests;..\..\..\ext\asio;..\..\..\..\gtest\include;&quot;C:\Program Files\boost\boost_1_44&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;C:\Python32\include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBUTIL_IO_PYTHON_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -62,13 +61,12 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
-				AdditionalDependencies="libexceptions.lib libcc.lib gtestd.lib"
-				OutputFile="$(OutDir)\run_unittests.exe"
+				AdditionalDependencies="libutil_io.lib python3.lib ws2_32.lib"
+				OutputFile="$(OutDir)\$(ProjectName).pyd"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\libexceptions\Debug;..\libcc\Debug;..\..\..\..\gtest\md9\Debug;&quot;C:\Program Files\boost\boost_1_44\lib&quot;"
+				AdditionalLibraryDirectories="..\libutil_io\Debug;C:\Python32\libs"
 				GenerateDebugInformation="true"
-				SubSystem="1"
+				SubSystem="2"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -97,13 +95,12 @@
 			Name="Release|Win32"
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
+			ConfigurationType="2"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd ..\..\..\src\lib\cc\tests&#x0D;&#x0A;copy session_unittests_config.h.win32 session_unittests_config.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -121,8 +118,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\cc\tests;..\..\..\ext\asio;..\..\..\..\gtest\include;&quot;C:\Program Files\boost\boost_1_44&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;C:\Python32\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBUTIL_IO_PYTHON_EXPORTS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -140,13 +137,12 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
-				AdditionalDependencies="libexceptions.lib libcc.lib gtest.lib"
-				OutputFile="$(OutDir)\run_unittests.exe"
+				AdditionalDependencies="libutil_io.lib python3.lib ws2_32.lib"
+				OutputFile="$(OutDir)\$(ProjectName).pyd"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\libexceptions\Release;..\libcc\Release;..\..\..\..\gtest\md9\Release;&quot;C:\Program Files\boost\boost_1_44\lib&quot;"
+				AdditionalLibraryDirectories="..\libutil_io\Release;C:\Python32\libs"
 				GenerateDebugInformation="true"
-				SubSystem="1"
+				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				TargetMachine="1"
@@ -183,15 +179,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\..\src\lib\cc\tests\data_unittests.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\cc\tests\run_unittests.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\cc\tests\session_unittests.cc"
+				RelativePath="..\..\..\src\lib\util\io\fdshare_python.cc"
 				>
 			</File>
 		</Filter>
@@ -200,10 +188,6 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath="..\..\..\src\lib\cc\tests\session_unittests_config.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

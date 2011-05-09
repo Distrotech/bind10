@@ -34,6 +34,7 @@ What is needed:
  - log4cplus (in the future)
 
 How to compile google test:
+
  - remove the /MD -> /MT line in the CMakeLists.txt, use cmake
 
  - *or* open the solution gtest-md in msvc (please note the rights
@@ -45,6 +46,7 @@ How to compile google test:
  - msvc gives the gtestd.lib (in place of gtest.lib) for the debug version
 
 Where I put things (hardwired paths):
+
  - <home>\bind10.trac826 for bind10
   (wired in dns tests preprocessor defines)
 
@@ -64,6 +66,7 @@ Where I put things (hardwired paths):
  - C:\\sqlite3
 
 How to compile:
+
  - open win32build\VS2010\bind10.sln file with Visual Studio 2010, or,
    open win32build\VS2008\bind10.sln file with Visual Studio 2008
 
@@ -73,10 +76,36 @@ How to compile:
 
  - partial or todo directory ports are marked
 
-Random notes (for me):
+Random notes (for porting new code):
  - getopt() is *not* standard (got working getopt.{h,cc})
  - inet_pton() requires >= Vista/2008
  - forget lcov/pycoverage
- - TODO: find the real cause of asio/boost wanting pthreads
  - cmake?
 
+ - ifdefs: _WIN32 and _MSC_VER
+ - for(int i; ... -very-often-> for(unsigned int i; ...
+ - *no* <unistd.h> (or network includes)
+ - <sys/time.h> -> <time.h>
+ - missing general defines -> include <config.h> in front
+ - missing less general defines -> conditionally include <winsock2.h>
+ - missing TCP/IP defines -> conditionally include <ws2tcpip.h>
+  and perhaps <mswsock> too *before* asio
+ - integer posix types -> include <stdint.h> (or <cstdint>)
+ - "this" used too soon -> move to body
+ - "=" with contants: standard private C4512 declaration
+ - reuse_address is different in Windows
+ - missing namespace:
+  * error_code -> asio::error_code (both type and function)
+  * shared_ptr -> boost::shared_ptr
+ - *no* PF_UNIX (aka asio::local) sockets
+ - *no* fork() (but can use threads)
+ - unused variable in catch: simply remove it
+ - sleep() or nanosleep() -> Sleep()
+ - gettimeofday() -> GetSystemTimeAsFileTime() - SystemTimeToFileTime(epoch)
+ - underscored function names: _getid, _read, _write (caution: convert
+  the handle before), 
+ - defined misc names: min, max, IN, ERROR, NOERROR
+ - different names: close -> closesocket (and error is INVALID_SOCKET
+  not < 0), errno -> WSAGetLastError()
+ - different declarations: send, recv, 
+ - WSAStartup/WSACleanup in main()

@@ -21,9 +21,15 @@
     <ClInclude Include="..\..\..\src\lib\util\unittests\resolver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\util\unittests\fork.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\util\unittests\newhook.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\util\unittests\fork.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

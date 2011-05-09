@@ -750,11 +750,8 @@ MapElement::find(const std::string& id, ConstElementPtr t) const {
             t = p;
             return (true);
         }
-    } catch (const TypeError& e) {
+    } catch (const TypeError&) {
         // ignore
-#ifdef _MSC_VER
-        e;
-#endif
     }
     return (false);
 }

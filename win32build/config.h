@@ -44,11 +44,11 @@
 
 /* WIN32 specials */
 
-#define strncasecmp _strnicmp
-#define unlink _unlink
 #define srandom srand
 #define random() rand()
+typedef int pid_t;
 typedef unsigned int uid_t;
+typedef int ssize_t;
 
 /* Prevent inclusion of winsock.h in windows.h */
 #ifndef _WINSOCKAPI_

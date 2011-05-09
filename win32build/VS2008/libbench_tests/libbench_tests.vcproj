@@ -61,6 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				LinkLibraryDependencies="false"
 				AdditionalDependencies="libexceptions.lib libutil.lib libdns++.lib libbench.lib gtestd.lib ws2_32.lib"
 				OutputFile="$(OutDir)\run_unittests.exe"
 				LinkIncremental="2"
@@ -137,6 +138,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				LinkLibraryDependencies="false"
 				AdditionalDependencies="libexceptions.lib libutil.lib libdns++.lib libbench.lib gtest.lib ws2_32.lib"
 				OutputFile="$(OutDir)\run_unittests.exe"
 				LinkIncremental="1"

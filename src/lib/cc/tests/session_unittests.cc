@@ -13,14 +13,18 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <config.h>
+#include <stdint.h>
 
 // for some IPC/network system calls in asio/detail/pipe_select_interrupter.hpp 
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 // XXX: the ASIO header must be included before others.  See session.cc.
 #include <asio.hpp>
 
 #include <gtest/gtest.h>
 #include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <exceptions/exceptions.h>
 
@@ -59,22 +63,46 @@ class TestDomainSocket {
 public:
     TestDomainSocket(asio::io_service& io_service, const char* file) :
         io_service_(io_service),
+#ifndef _WIN32
         ep_(file),
         acceptor_(io_service_, ep_),
-        socket_(io_service_)
+#else
+        acceptor_(io_service_),
+#endif
+        socket_(io_service_),
+	ready_(false)
     {
+#ifdef _WIN32
+        std::string spec(file);
+        asio::ip::address addr;
+        if (spec.find("v4_") == 0)
+            addr = asio::ip::address_v4::loopback();
+        else if (spec.find("v6_") == 0)
+            addr = asio::ip::address_v6::loopback();
+        uint16_t port = boost::lexical_cast<uint16_t>(spec.substr(3));
+        ep_ = asio::ip::tcp::endpoint(addr, port);
+        acceptor_.open(ep_.protocol());
+        acceptor_.set_option(asio::socket_base::reuse_address(true));
+        acceptor_.bind(ep_);
+        acceptor_.listen(asio::socket_base::max_connections);
+#endif
         acceptor_.async_accept(socket_,
                                boost::bind(&TestDomainSocket::acceptHandler,
                                            this, _1));
     }
     
     ~TestDomainSocket() {
+        acceptor_.close();
         socket_.close();
+#ifndef _WIN32
         unlink(BIND10_TEST_SOCKET_FILE);
+#endif
     }
 
     void
-    acceptHandler(const asio::error_code&) const {
+    acceptHandler(const asio::error_code&) {
+      if (ready_)
+         waitSendLname();
     }
 
     void
@@ -104,26 +132,40 @@ public:
     }
 
     void
-    setSendLname() {
+    waitSendLname() {
         // ignore whatever data we get, send back an lname
         asio::async_read(socket_,  asio::buffer(data_buf, 0),
                          boost::bind(&TestDomainSocket::sendLname, this));
     }
     
+    void
+    setSendLname() {
+        ready_ = true;
+    }
+
 private:
     asio::io_service& io_service_;
+#ifndef _WIN32
     asio::local::stream_protocol::endpoint ep_;
     asio::local::stream_protocol::acceptor acceptor_;
     asio::local::stream_protocol::socket socket_;
+#else
+    asio::ip::tcp::endpoint ep_;
+    asio::ip::tcp::acceptor acceptor_;
+    asio::ip::tcp::socket socket_;
+#endif
     char data_buf[1024];
+    bool ready_;
 };
 
 class SessionTest : public ::testing::Test {
 protected:
     SessionTest() : sess(my_io_service), work(my_io_service) {
+#ifndef _WIN32
         // The TestDomainSocket is held as a 'new'-ed pointer,
         // so we can call unlink() first.
         unlink(BIND10_TEST_SOCKET_FILE);
+#endif
         tds = new TestDomainSocket(my_io_service, BIND10_TEST_SOCKET_FILE);
     }
 
@@ -234,5 +276,3 @@ TEST_F(SessionTest, run_with_handler_timeout) {
     // No followup message, should time out.
     ASSERT_THROW(my_io_service.run(), SessionTimeout);
 }
-
-

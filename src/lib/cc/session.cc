@@ -41,6 +41,7 @@
 #endif
 
 #include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/optional.hpp>
 #include <boost/function.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
@@ -49,6 +50,9 @@
 
 #include <cc/data.h>
 #include <cc/session.h>
+
+#ifdef _WIN32
+#endif
 
 using namespace std;
 using namespace isc::cc;
@@ -102,7 +106,11 @@ private:
 
 private:
     io_service& io_service_;
+#ifndef _WIN32
     asio::local::stream_protocol::socket socket_;
+#else
+    asio::ip::tcp::socket socket_;
+#endif
     uint32_t data_length_;
     boost::function<void()> user_handler_;
     asio::error_code error_;
@@ -122,10 +130,28 @@ private:
 void
 SessionImpl::establish(const char& socket_file) {
     try {
-        socket_.connect(asio::local::stream_protocol::endpoint(&socket_file),
-                        error_);
+#ifndef _WIN32
+        asio::local::stream_protocol::endpoint ep(&socket_file);
+#else
+        const std::string spec(&socket_file);
+        asio::ip::address addr;
+        if (spec.find("v4_") == 0)
+            addr = asio::ip::address_v4::loopback();
+        else if (spec.find("v6_") == 0)
+            addr = asio::ip::address_v6::loopback();
+        else {
+             isc_throw(SessionError, "bad endpoint: " << spec);
+        }
+        uint16_t port = boost::lexical_cast<uint16_t>(spec.substr(3));
+        asio::ip::tcp::endpoint ep(addr, port);
+#endif
+        socket_.connect(ep, error_);
     } catch(const asio::system_error& se) {
         isc_throw(SessionError, se.what());
+#ifdef _WIN32
+    } catch(const boost::bad_lexical_cast&) {
+        isc_throw(SessionError, "bad port");
+#endif
     }
     if (error_) {
         isc_throw(SessionError, "Unable to connect to message queue: " <<
@@ -356,7 +382,7 @@ Session::recvmsg(ConstElementPtr& env, ConstElementPtr& msg,
     size_t length = impl_->readDataLength();
     if (hasQueuedMsgs()) {
         ConstElementPtr q_el;
-        for (int i = 0; i < impl_->queue_->size(); i++) {
+        for (unsigned int i = 0; i < impl_->queue_->size(); i++) {
             q_el = impl_->queue_->get(i);
             if (( seq == -1 &&
                   !q_el->get(0)->contains("reply")

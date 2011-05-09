@@ -15,7 +15,11 @@
 #ifndef __UTIL_UNITTESTS_FORK_H
 #define __UTIL_UNITTESTS_FORK_H 1
 
+#include <config.h>
+
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 /**
  * @file fork.h

@@ -95,10 +95,7 @@ tokenToNum(const string& num_token) {
     NumType num;
     try {
         num = lexical_cast<NumType>(num_token);
-    } catch (const boost::bad_lexical_cast& ex) {
-#ifdef _MSC_VER
-        ex;
-#endif
+    } catch (const boost::bad_lexical_cast&) {
         isc_throw(InvalidRdataText, "Invalid TSIG numeric parameter: " <<
                   num_token);
     }
