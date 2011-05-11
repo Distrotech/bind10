@@ -40,7 +40,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(Configuration)\</OutDir>
-    <TargetName>pydnspp</TargetName>
+    <TargetName>pydnspp_d</TargetName>
     <TargetExt>.pyd</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -61,8 +61,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>$(OutDir)pydnspp.pyd</OutputFile>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libdns++.lib;python3.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)pydnspp_d.pyd</OutputFile>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libdns++.lib;python32_d.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\libexceptions\Debug;..\libutil\Debug;..\libdns++\Debug;C:\Python32\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
@@ -88,7 +88,7 @@ copy bind10_config.py.win32 bind10_config.py
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)pydnspp.pyd</OutputFile>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libdns++.lib;python3.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libdns++.lib;python32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\libexceptions\Release;..\libutil\Release;..\libdns++\Release;C:\Python32\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>

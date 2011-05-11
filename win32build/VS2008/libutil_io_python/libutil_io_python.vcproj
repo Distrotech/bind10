@@ -61,8 +61,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libutil_io.lib python3.lib ws2_32.lib"
-				OutputFile="$(OutDir)\$(ProjectName).pyd"
+				AdditionalDependencies="libutil_io.lib python32_d.lib ws2_32.lib"
+				OutputFile="$(OutDir)\$(ProjectName)_d.pyd"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\libutil_io\Debug;C:\Python32\libs"
 				GenerateDebugInformation="true"
@@ -137,7 +137,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libutil_io.lib python3.lib ws2_32.lib"
+				AdditionalDependencies="libutil_io.lib python32.lib ws2_32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).pyd"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\libutil_io\Release;C:\Python32\libs"

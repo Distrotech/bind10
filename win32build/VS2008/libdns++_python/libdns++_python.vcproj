@@ -63,8 +63,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="false"
-				AdditionalDependencies="libexceptions.lib libutil.lib libdns++.lib python3.lib ws2_32.lib"
-				OutputFile="$(OutDir)\run_unittests.pyd"
+				AdditionalDependencies="libexceptions.lib libutil.lib libdns++.lib python32_d.lib ws2_32.lib"
+				OutputFile="$(OutDir)\pydnspp_d.pyd"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\libexceptions\Debug;..\libutil\Debug;&quot;..\libdns++\Debug&quot;;C:\Python32\libs"
 				GenerateDebugInformation="true"
@@ -141,8 +141,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="false"
-				AdditionalDependencies="libexceptions.lib libutil.lib libdns++.lib python3.lib ws2_32.lib"
-				OutputFile="$(OutDir)\run_unittests.pyd"
+				AdditionalDependencies="libexceptions.lib libutil.lib libdns++.lib python32.lib ws2_32.lib"
+				OutputFile="$(OutDir)\pydnspp.pyd"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\libexceptions\Release;..\libutil\Release;&quot;..\libdns++\Release&quot;;C:\Python32\libs"
 				GenerateDebugInformation="true"
