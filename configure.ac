@@ -458,6 +458,17 @@ if test "${log4cplus_path}" == "no" ; then
 elif test "${log4cplus_path}" != "yes" ; then
   LOG4CPLUS_INCLUDES="-I${log4cplus_path}/include"
   LOG4CPLUS_LDFLAGS="-L${log4cplus_path}/lib"
+else
+# If not specified, try some common paths.
+	log4cplusdirs="/usr/local /usr/pkg /opt /opt/local"
+	for d in $log4cplusdirs
+	do
+		if test -f $d/include/log4cplus/logger.h; then
+			LOG4CPLUS_INCLUDES="-I$d/include"
+			LOG4CPLUS_LDFLAGS="-L$d/lib"
+			break
+		fi
+	done
 fi
 
 AC_SUBST(LOG4CPLUS_LDFLAGS)
@@ -934,6 +945,8 @@ dnl includes too
   Boost:         ${BOOST_INCLUDES}
   Botan:         ${BOTAN_INCLUDES}
                  ${BOTAN_LDFLAGS}
+  Log4cplus:     ${LOG4CPLUS_INCLUDES}
+                 ${LOG4CPLUS_LDFLAGS}
   SQLite:        $SQLITE_CFLAGS
                  $SQLITE_LIBS
 
