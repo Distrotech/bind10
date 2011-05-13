@@ -447,6 +447,43 @@ AC_LINK_IFELSE(
 CPPFLAGS=$CPPFLAGS_SAVED
 LDFLAGS=$LDFLAGS_SAVED
 
+# Check for log4cplus
+log4cplus_path="yes"
+AC_ARG_WITH([log4cplus],
+  AC_HELP_STRING([--with-log4cplus=PATH],
+    [specify exact directory of log4cplus library and headers]),
+    [log4cplus_path="$withval"])
+if test "${log4cplus_path}" == "no" ; then
+    AC_MSG_ERROR([Need log4cplus])
+elif test "${log4cplus_path}" != "yes" ; then
+  LOG4CPLUS_INCLUDES="-I${log4cplus_path}/include"
+  LOG4CPLUS_LDFLAGS="-L${log4cplus_path}/lib"
+fi
+
+AC_SUBST(LOG4CPLUS_LDFLAGS)
+AC_SUBST(LOG4CPLUS_INCLUDES)
+
+CPPFLAGS_SAVED=$CPPFLAGS
+CPPFLAGS="$LOG4CPLUS_INCLUDES $CPPFLAGS"
+LDFLAGS_SAVED="$LDFLAGS"
+LDFLAGS="$LOG4CPLUS_LDFLAGS $LDFLAGS"
+LIBS=" $LIBS -llog4cplus"
+
+AC_CHECK_HEADERS([log4cplus/logger.h],,AC_MSG_ERROR([Missing required header files.]))
+AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([#include <log4cplus/logger.h>
+                         ],
+                         [using namespace log4cplus;
+                          Logger logger = Logger::getInstance("main");
+                         ])],
+        [AC_MSG_RESULT([checking for log4cplus library... yes])],
+        [AC_MSG_RESULT([checking for log4cplus library... no])
+         AC_MSG_ERROR([Needs log4cplus library])]
+)
+
+CPPFLAGS=$CPPFLAGS_SAVED
+LDFLAGS=$LDFLAGS_SAVED
+
 #
 # Configure Boost header path
 #
