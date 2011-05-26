@@ -85,12 +85,6 @@
 	Botan libraries and development include headers.
       </para>
 
-<!--
-TODO
-Debian and Ubuntu:
- libgmp3-dev and libbz2-dev required for botan too
--->
-
       <para>
 	The authoritative server requires SQLite 3.3.9 or newer.
 	The <command>b10-xfrin</command>, <command>b10-xfrout</command>,
@@ -318,6 +312,14 @@ var/
   <!-- TODO: we don't check for this version -->
   <!-- NOTE: jreed has tested with 1.34, 1.38, and 1.41. -->
         </para>
+
+<!-- TODO: why document dependencies twice? -->
+<!-- TODO: document boost here -->
+<!--
+TODO
+Debian and Ubuntu:
+ libgmp3-dev and libbz2-dev required for botan too
+-->
 
         <para>
 	  The Python Library and Python _sqlite3 module are required to
