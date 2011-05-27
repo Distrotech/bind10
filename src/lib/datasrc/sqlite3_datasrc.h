@@ -96,6 +96,10 @@ public:
     Result init(const isc::data::ConstElementPtr config);
     Result close();
 
+    // experimental extensions
+    Result init(const std::string& db_file);
+    DataSrc::Result findZone(const std::string& name, int& zone_id) const;
+
 private:
     enum Mode {
         NORMAL,

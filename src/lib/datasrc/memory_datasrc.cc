@@ -674,6 +674,11 @@ MemoryDataSourceClient::~MemoryDataSourceClient() {
     delete impl_;
 }
 
+void
+MemoryDataSourceClient::open(const std::string&) {
+    // do nothing for now
+}
+
 unsigned int
 MemoryDataSourceClient::getZoneCount() const {
     return (impl_->zone_count);

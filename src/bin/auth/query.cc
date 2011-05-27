@@ -19,7 +19,7 @@
 #include <dns/rcode.h>
 #include <dns/rdataclass.h>
 
-#include <datasrc/memory_datasrc.h>
+#include <datasrc/client.h>
 
 #include <auth/query.h>
 
@@ -125,8 +125,7 @@ Query::process() const {
     const bool qtype_is_any = (qtype_ == RRType::ANY());
 
     response_.setHeaderFlag(Message::HEADERFLAG_AA, false);
-    const MemoryDataSourceClient::FindResult result =
-        datasrc_.findZone(qname_);
+    const DataSourceClient::FindResult result = datasrc_.findZone(qname_);
 
     // If we have no matching authoritative zone for the query name, return
     // REFUSED.  In short, this is to be compatible with BIND 9, but the

@@ -17,6 +17,7 @@
 
 #include <string>
 
+#include <datasrc/client.h>
 #include <datasrc/zonetable.h>
 
 namespace isc {
@@ -182,56 +183,6 @@ private:
     //@}
 };
 
-class DataSourceClient {
-protected:
-    DataSourceClient() {}
-public:
-    /// \brief A helper structure to represent the search result of
-    /// <code>MemoryDataSourceClient::find()</code>.
-    ///
-    /// This is a straightforward pair of the result code and a share pointer
-    /// to the found zone to represent the result of \c find().
-    /// We use this in order to avoid overloading the return value for both
-    /// the result code ("success" or "not found") and the found object,
-    /// i.e., avoid using \c NULL to mean "not found", etc.
-    ///
-    /// This is a simple value class with no internal state, so for
-    /// convenience we allow the applications to refer to the members
-    /// directly.
-    ///
-    /// See the description of \c find() for the semantics of the member
-    /// variables.
-    struct FindResult {
-        FindResult(result::Result param_code, const ZoneHandlePtr param_zone) :
-            code(param_code), zone(param_zone)
-        {}
-        const result::Result code;
-        const ZoneHandlePtr zone;
-    };
-
-    virtual ~DataSourceClient() {}
-#ifdef notyet
-    virtual open();             // all or only for a particular zone
-    virtual reopen();           // same
-#endif
-    // eventually this will need to be non const member function
-    // (unfortunately)
-    virtual FindResult findZone(const isc::dns::Name& name) const = 0;
-#ifdef notyet
-    virtual void dumpZone();    // synchronous, asynchronous
-
-    // This will create a separate DB connection, etc
-    // iterator should probably be per RR basis (or RRset but may not be
-    // unique)
-    virtual createZoneIterator();
-
-    // This will create a separate DB connection, etc
-    // note that in the original design of #374 we cannot parallelize updating
-    // multiple (different) zones.
-    virtual ZoneUpdater beginUpdateZone(bool replace);
-#endif
-};
-
 /// \brief A data source that uses in memory dedicated backend.
 ///
 /// The \c MemoryDataSourceClient class represents a data source and provides a
@@ -284,6 +235,8 @@ public:
     /// The destructor.
     ~MemoryDataSourceClient();
     //@}
+
+    virtual void open(const std::string& param);
 
     /// Return the number of zones stored in the data source.
     ///

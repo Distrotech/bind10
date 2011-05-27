@@ -18,6 +18,7 @@
 #include <dns/rrclass.h>
 
 #include <datasrc/zonetable.h>
+#include <datasrc/client.h>
 // We use MemoryZoneHandle to put something into the table
 #include <datasrc/memory_datasrc.h>
 

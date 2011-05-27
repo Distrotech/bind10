@@ -571,6 +571,12 @@ Sqlite3DataSrc::findReferral(const Name& qname,
     return (SUCCESS);
 }
 
+DataSrc::Result
+Sqlite3DataSrc::findZone(const string& name, int& zone_id) const {
+    zone_id = hasExactZone(name.c_str());
+    return (zone_id >= 0 ? SUCCESS : ERROR);
+}
+
 Sqlite3DataSrc::Sqlite3DataSrc() :
     dbparameters(new Sqlite3Parameters)
 {
@@ -592,6 +598,12 @@ Sqlite3DataSrc::init(isc::data::ConstElementPtr config) {
     } else {
         isc_throw(DataSourceError, "No SQLite database file specified");
     }
+    return (SUCCESS);
+}
+
+DataSrc::Result
+Sqlite3DataSrc::init(const string& db_file) {
+    open(db_file);
     return (SUCCESS);
 }
 
