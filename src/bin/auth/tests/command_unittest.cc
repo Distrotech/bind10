@@ -60,7 +60,7 @@ protected:
     MockSession statistics_session;
     MockXfroutClient xfrout;
     AuthSrv server;
-    AuthSrv::ConstMemoryDataSrcPtr memory_datasrc;
+    AuthSrv::ConstMemoryDataSourceClientPtr memory_datasrc;
     ConstElementPtr result;
     int rcode;
 public:
@@ -110,17 +110,17 @@ TEST_F(AuthConmmandTest, shutdown) {
 // zones, and checks the zones are correctly loaded.
 void
 zoneChecks(AuthSrv& server) {
-    EXPECT_TRUE(server.getMemoryDataSrc(RRClass::IN()));
-    EXPECT_EQ(Zone::SUCCESS, server.getMemoryDataSrc(RRClass::IN())->
+    EXPECT_TRUE(server.getMemoryDataSourceClient(RRClass::IN()));
+    EXPECT_EQ(ZoneHandle::SUCCESS, server.getMemoryDataSourceClient(RRClass::IN())->
               findZone(Name("ns.test1.example")).zone->
               find(Name("ns.test1.example"), RRType::A()).code);
-    EXPECT_EQ(Zone::NXRRSET, server.getMemoryDataSrc(RRClass::IN())->
+    EXPECT_EQ(ZoneHandle::NXRRSET, server.getMemoryDataSourceClient(RRClass::IN())->
               findZone(Name("ns.test1.example")).zone->
               find(Name("ns.test1.example"), RRType::AAAA()).code);
-    EXPECT_EQ(Zone::SUCCESS, server.getMemoryDataSrc(RRClass::IN())->
+    EXPECT_EQ(ZoneHandle::SUCCESS, server.getMemoryDataSourceClient(RRClass::IN())->
               findZone(Name("ns.test2.example")).zone->
               find(Name("ns.test2.example"), RRType::A()).code);
-    EXPECT_EQ(Zone::NXRRSET, server.getMemoryDataSrc(RRClass::IN())->
+    EXPECT_EQ(ZoneHandle::NXRRSET, server.getMemoryDataSourceClient(RRClass::IN())->
               findZone(Name("ns.test2.example")).zone->
               find(Name("ns.test2.example"), RRType::AAAA()).code);
 }
@@ -147,20 +147,20 @@ configureZones(AuthSrv& server) {
 
 void
 newZoneChecks(AuthSrv& server) {
-    EXPECT_TRUE(server.getMemoryDataSrc(RRClass::IN()));
-    EXPECT_EQ(Zone::SUCCESS, server.getMemoryDataSrc(RRClass::IN())->
+    EXPECT_TRUE(server.getMemoryDataSourceClient(RRClass::IN()));
+    EXPECT_EQ(ZoneHandle::SUCCESS, server.getMemoryDataSourceClient(RRClass::IN())->
               findZone(Name("ns.test1.example")).zone->
               find(Name("ns.test1.example"), RRType::A()).code);
     // now test1.example should have ns/AAAA
-    EXPECT_EQ(Zone::SUCCESS, server.getMemoryDataSrc(RRClass::IN())->
+    EXPECT_EQ(ZoneHandle::SUCCESS, server.getMemoryDataSourceClient(RRClass::IN())->
               findZone(Name("ns.test1.example")).zone->
               find(Name("ns.test1.example"), RRType::AAAA()).code);
 
     // test2.example shouldn't change
-    EXPECT_EQ(Zone::SUCCESS, server.getMemoryDataSrc(RRClass::IN())->
+    EXPECT_EQ(ZoneHandle::SUCCESS, server.getMemoryDataSourceClient(RRClass::IN())->
               findZone(Name("ns.test2.example")).zone->
               find(Name("ns.test2.example"), RRType::A()).code);
-    EXPECT_EQ(Zone::NXRRSET, server.getMemoryDataSrc(RRClass::IN())->
+    EXPECT_EQ(ZoneHandle::NXRRSET, server.getMemoryDataSourceClient(RRClass::IN())->
               findZone(Name("ns.test2.example")).zone->
               find(Name("ns.test2.example"), RRType::AAAA()).code);
 }

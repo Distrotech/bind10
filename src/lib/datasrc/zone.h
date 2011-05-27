@@ -55,7 +55,7 @@ namespace datasrc {
 /// class beginning with "Abstract".  This is because we want to have
 /// commonly used definitions such as \c Result and \c ZonePtr, and we want
 /// to make them look more intuitive.
-class Zone {
+class ZoneHandle {
 public:
     /// Result codes of the \c find() method.
     ///
@@ -119,10 +119,10 @@ protected:
     ///
     /// This is intentionally defined as \c protected as this base class should
     /// never be instantiated (except as part of a derived class).
-    Zone() {}
+    ZoneHandle() {}
 public:
     /// The destructor.
-    virtual ~Zone() {}
+    virtual ~ZoneHandle() {}
     //@}
 
     ///
@@ -201,11 +201,11 @@ public:
     //@}
 };
 
-/// \brief A pointer-like type pointing to a \c Zone object.
-typedef boost::shared_ptr<Zone> ZonePtr;
+/// \brief A pointer-like type pointing to a \c ZoneHandle object.
+typedef boost::shared_ptr<ZoneHandle> ZoneHandlePtr;
 
-/// \brief A pointer-like type pointing to a \c Zone object.
-typedef boost::shared_ptr<const Zone> ConstZonePtr;
+/// \brief A pointer-like type pointing to a \c ZoneHandle object.
+typedef boost::shared_ptr<const ZoneHandle> ConstZoneHandlePtr;
 
 }
 }

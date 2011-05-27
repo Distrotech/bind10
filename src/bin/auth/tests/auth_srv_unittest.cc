@@ -660,17 +660,19 @@ TEST_F(AuthSrvTest, updateConfigFail) {
                 QR_FLAG | AA_FLAG, 1, 1, 1, 0);
 }
 
-TEST_F(AuthSrvTest, updateWithMemoryDataSrc) {
+TEST_F(AuthSrvTest, updateWithMemoryDataSourceClient) {
     // Test configuring memory data source.  Detailed test cases are covered
     // in the configuration tests.  We only check the AuthSrv interface here.
 
     // By default memory data source isn't enabled
-    EXPECT_EQ(AuthSrv::MemoryDataSrcPtr(), server.getMemoryDataSrc(rrclass));
+    EXPECT_EQ(AuthSrv::MemoryDataSourceClientPtr(),
+              server.getMemoryDataSourceClient(rrclass));
     updateConfig(&server,
                  "{\"datasources\": [{\"type\": \"memory\"}]}", true);
     // after successful configuration, we should have one (with empty zoneset).
-    ASSERT_NE(AuthSrv::MemoryDataSrcPtr(), server.getMemoryDataSrc(rrclass));
-    EXPECT_EQ(0, server.getMemoryDataSrc(rrclass)->getZoneCount());
+    ASSERT_NE(AuthSrv::MemoryDataSourceClientPtr(),
+              server.getMemoryDataSourceClient(rrclass));
+    EXPECT_EQ(0, server.getMemoryDataSourceClient(rrclass)->getZoneCount());
 
     // The memory data source is empty, should return REFUSED rcode.
     createDataFromFile("examplequery_fromWire.wire");
@@ -681,7 +683,7 @@ TEST_F(AuthSrvTest, updateWithMemoryDataSrc) {
                 opcode.getCode(), QR_FLAG, 1, 0, 0, 0);
 }
 
-TEST_F(AuthSrvTest, chQueryWithMemoryDataSrc) {
+TEST_F(AuthSrvTest, chQueryWithMemoryDataSourceClient) {
     // Configure memory data source for class IN
     updateConfig(&server, "{\"datasources\": "
                  "[{\"class\": \"IN\", \"type\": \"memory\"}]}", true);

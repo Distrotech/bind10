@@ -28,7 +28,7 @@ class RRsetList;
 namespace datasrc {
 
 /// A derived zone class intended to be used with the memory data source.
-class MemoryZone : public Zone {
+class MemoryZoneHandle : public ZoneHandle {
     ///
     /// \name Constructors and Destructor.
     ///
@@ -37,8 +37,8 @@ class MemoryZone : public Zone {
     /// defined as private, making this class non copyable.
     //@{
 private:
-    MemoryZone(const MemoryZone& source);
-    MemoryZone& operator=(const MemoryZone& source);
+    MemoryZoneHandle(const MemoryZoneHandle& source);
+    MemoryZoneHandle& operator=(const MemoryZoneHandle& source);
 public:
     /// \brief Constructor from zone parameters.
     ///
@@ -48,10 +48,11 @@ public:
     ///
     /// \param rrclass The RR class of the zone.
     /// \param origin The origin name of the zone.
-    MemoryZone(const isc::dns::RRClass& rrclass, const isc::dns::Name& origin);
+    MemoryZoneHandle(const isc::dns::RRClass& rrclass,
+                     const isc::dns::Name& origin);
 
     /// The destructor.
-    virtual ~MemoryZone();
+    virtual ~MemoryZoneHandle();
     //@}
 
     /// \brief Returns the origin of the zone.
@@ -168,27 +169,78 @@ public:
     ///
     /// This method never throws an exception.
     ///
-    /// \param zone Another \c MemoryZone object which is to be swapped with
+    /// \param zone Another \c MemoryZoneHandle object which is to be swapped
+    /// with
     /// \c this zone.
-    void swap(MemoryZone& zone);
+    void swap(MemoryZoneHandle& zone);
 
 private:
     /// \name Hidden private data
     //@{
-    struct MemoryZoneImpl;
-    MemoryZoneImpl* impl_;
+    struct MemoryZoneHandleImpl;
+    MemoryZoneHandleImpl* impl_;
     //@}
+};
+
+class DataSourceClient {
+protected:
+    DataSourceClient() {}
+public:
+    /// \brief A helper structure to represent the search result of
+    /// <code>MemoryDataSourceClient::find()</code>.
+    ///
+    /// This is a straightforward pair of the result code and a share pointer
+    /// to the found zone to represent the result of \c find().
+    /// We use this in order to avoid overloading the return value for both
+    /// the result code ("success" or "not found") and the found object,
+    /// i.e., avoid using \c NULL to mean "not found", etc.
+    ///
+    /// This is a simple value class with no internal state, so for
+    /// convenience we allow the applications to refer to the members
+    /// directly.
+    ///
+    /// See the description of \c find() for the semantics of the member
+    /// variables.
+    struct FindResult {
+        FindResult(result::Result param_code, const ZoneHandlePtr param_zone) :
+            code(param_code), zone(param_zone)
+        {}
+        const result::Result code;
+        const ZoneHandlePtr zone;
+    };
+
+    virtual ~DataSourceClient() {}
+#ifdef notyet
+    virtual open();             // all or only for a particular zone
+    virtual reopen();           // same
+#endif
+    // eventually this will need to be non const member function
+    // (unfortunately)
+    virtual FindResult findZone(const isc::dns::Name& name) const = 0;
+#ifdef notyet
+    virtual void dumpZone();    // synchronous, asynchronous
+
+    // This will create a separate DB connection, etc
+    // iterator should probably be per RR basis (or RRset but may not be
+    // unique)
+    virtual createZoneIterator();
+
+    // This will create a separate DB connection, etc
+    // note that in the original design of #374 we cannot parallelize updating
+    // multiple (different) zones.
+    virtual ZoneUpdater beginUpdateZone(bool replace);
+#endif
 };
 
 /// \brief A data source that uses in memory dedicated backend.
 ///
-/// The \c MemoryDataSrc class represents a data source and provides a
+/// The \c MemoryDataSourceClient class represents a data source and provides a
 /// basic interface to help DNS lookup processing. For a given domain
 /// name, its \c findZone() method searches the in memory dedicated backend
 /// for the zone that gives a longest match against that name.
 ///
 /// The in memory dedicated backend are assumed to be of the same RR class,
-/// but the \c MemoryDataSrc class does not enforce the assumption through
+/// but the \c MemoryDataSourceClient class does not enforce the assumption through
 /// its interface.
 /// For example, the \c addZone() method does not check if the new zone is of
 /// the same RR class as that of the others already in the dedicated backend.
@@ -206,33 +258,10 @@ private:
 /// backend.
 ///
 /// The findZone() method takes a domain name and returns the best matching \c
-/// MemoryZone in the form of (Boost) shared pointer, so that it can provide
+/// MemoryZoneHandle in the form of (Boost) shared pointer, so that it can provide
 /// the general interface for all data sources.
-class MemoryDataSrc {
+class MemoryDataSourceClient : public DataSourceClient {
 public:
-    /// \brief A helper structure to represent the search result of
-    /// <code>MemoryDataSrc::find()</code>.
-    ///
-    /// This is a straightforward pair of the result code and a share pointer
-    /// to the found zone to represent the result of \c find().
-    /// We use this in order to avoid overloading the return value for both
-    /// the result code ("success" or "not found") and the found object,
-    /// i.e., avoid using \c NULL to mean "not found", etc.
-    ///
-    /// This is a simple value class with no internal state, so for
-    /// convenience we allow the applications to refer to the members
-    /// directly.
-    ///
-    /// See the description of \c find() for the semantics of the member
-    /// variables.
-    struct FindResult {
-        FindResult(result::Result param_code, const ZonePtr param_zone) :
-            code(param_code), zone(param_zone)
-        {}
-        const result::Result code;
-        const ZonePtr zone;
-    };
-
     ///
     /// \name Constructors and Destructor.
     ///
@@ -241,8 +270,8 @@ public:
     /// defined as private, making this class non copyable.
     //@{
 private:
-    MemoryDataSrc(const MemoryDataSrc& source);
-    MemoryDataSrc& operator=(const MemoryDataSrc& source);
+    MemoryDataSourceClient(const MemoryDataSourceClient& source);
+    MemoryDataSourceClient& operator=(const MemoryDataSourceClient& source);
 
 public:
     /// Default constructor.
@@ -250,10 +279,10 @@ public:
     /// This constructor internally involves resource allocation, and if
     /// it fails, a corresponding standard exception will be thrown.
     /// It never throws an exception otherwise.
-    MemoryDataSrc();
+    MemoryDataSourceClient();
 
     /// The destructor.
-    ~MemoryDataSrc();
+    ~MemoryDataSourceClient();
     //@}
 
     /// Return the number of zones stored in the data source.
@@ -263,7 +292,7 @@ public:
     /// \return The number of zones stored in the data source.
     unsigned int getZoneCount() const;
 
-    /// Add a \c Zone to the \c MemoryDataSrc.
+    /// Add a \c Zone to the \c MemoryDataSourceClient.
     ///
     /// \c Zone must not be associated with a NULL pointer; otherwise
     /// an exception of class \c InvalidParameter will be thrown.
@@ -276,9 +305,9 @@ public:
     /// added to the memory data source.
     /// \return \c result::EXIST The memory data source already
     /// stores a zone that has the same origin.
-    result::Result addZone(ZonePtr zone);
+    result::Result addZone(ZoneHandlePtr zone);
 
-    /// Find a \c Zone that best matches the given name in the \c MemoryDataSrc.
+    /// Find a \c Zone that best matches the given name in the \c MemoryDataSourceClient.
     ///
     /// It searches the internal storage for a \c Zone that gives the
     /// longest match against \c name, and returns the result in the
@@ -296,11 +325,11 @@ public:
     ///
     /// \param name A domain name for which the search is performed.
     /// \return A \c FindResult object enclosing the search result (see above).
-    FindResult findZone(const isc::dns::Name& name) const;
+    virtual FindResult findZone(const isc::dns::Name& name) const;
 
 private:
-    class MemoryDataSrcImpl;
-    MemoryDataSrcImpl* impl_;
+    class MemoryDataSourceClientImpl;
+    MemoryDataSourceClientImpl* impl_;
 };
 }
 }

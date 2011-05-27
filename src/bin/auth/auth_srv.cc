@@ -109,7 +109,7 @@ public:
 
     /// In-memory data source.  Currently class IN only for simplicity.
     const RRClass memory_datasrc_class_;
-    AuthSrv::MemoryDataSrcPtr memory_datasrc_;
+    AuthSrv::MemoryDataSourceClientPtr memory_datasrc_;
 
     /// Hot spot cache
     isc::datasrc::HotCache cache_;
@@ -342,8 +342,8 @@ AuthSrv::getConfigSession() const {
     return (impl_->config_session_);
 }
 
-AuthSrv::MemoryDataSrcPtr
-AuthSrv::getMemoryDataSrc(const RRClass& rrclass) {
+AuthSrv::MemoryDataSourceClientPtr
+AuthSrv::getMemoryDataSourceClient(const RRClass& rrclass) {
     // XXX: for simplicity, we only support the IN class right now.
     if (rrclass != impl_->memory_datasrc_class_) {
         isc_throw(InvalidParameter,
@@ -354,8 +354,8 @@ AuthSrv::getMemoryDataSrc(const RRClass& rrclass) {
 }
 
 void
-AuthSrv::setMemoryDataSrc(const isc::dns::RRClass& rrclass,
-                          MemoryDataSrcPtr memory_datasrc)
+AuthSrv::setMemoryDataSourceClient(const isc::dns::RRClass& rrclass,
+                                   MemoryDataSourceClientPtr memory_datasrc)
 {
     // XXX: see above
     if (rrclass != impl_->memory_datasrc_class_) {

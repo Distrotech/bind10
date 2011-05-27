@@ -26,7 +26,7 @@ class RRset;
 }
 
 namespace datasrc {
-class MemoryDataSrc;
+class DataSourceClient;
 }
 
 namespace auth {
@@ -71,7 +71,7 @@ private:
     /// Adds a SOA of the zone into the authority zone of response_.
     /// Can throw NoSOA.
     ///
-    void putSOA(const isc::datasrc::Zone& zone) const;
+    void putSOA(const isc::datasrc::ZoneHandle& zone) const;
 
     /// \brief Look up additional data (i.e., address records for the names
     /// included in NS or MX records).
@@ -87,7 +87,7 @@ private:
     /// found.
     /// \param rrset The RRset (i.e., NS or MX rrset) which require additional
     /// processing.
-    void getAdditional(const isc::datasrc::Zone& zone,
+    void getAdditional(const isc::datasrc::ZoneHandle& zone,
                        const isc::dns::RRset& rrset) const;
 
     /// \brief Find address records for a specified name.
@@ -102,18 +102,18 @@ private:
     /// The glue records must exactly match the name in the NS RDATA, without
     /// CNAME or wildcard processing.
     ///
-    /// \param zone The \c Zone wherein the address records is to be found.
+    /// \param zone The \c ZoneHandle wherein the address records is to be found.
     /// \param qname The name in rrset RDATA.
     /// \param options The search options.
-    void findAddrs(const isc::datasrc::Zone& zone,
+    void findAddrs(const isc::datasrc::ZoneHandle& zone,
                    const isc::dns::Name& qname,
-                   const isc::datasrc::Zone::FindOptions options
-                   = isc::datasrc::Zone::FIND_DEFAULT) const;
+                   const isc::datasrc::ZoneHandle::FindOptions options
+                   = isc::datasrc::ZoneHandle::FIND_DEFAULT) const;
 
-    /// \brief Look up \c Zone's NS and address records for the NS RDATA
+    /// \brief Look up \c ZoneHandle's NS and address records for the NS RDATA
     /// (domain name) for authoritative answer.
     ///
-    /// On returning an authoritative answer, insert the \c Zone's NS into the
+    /// On returning an authoritative answer, insert the \c ZoneHandle's NS into the
     /// authority section and AAAA/A RRs of each of the NS RDATA into the
     /// additional section.
     ///
@@ -126,24 +126,24 @@ private:
     /// include AAAA/A RRs under a zone cut in additional section. (BIND 9
     /// excludes under-cut RRs; NSD include them.)
     ///
-    /// \param zone The \c Zone wherein the additional data to the query is to
+    /// \param zone The \c ZoneHandle wherein the additional data to the query is to
     /// be found.
-    void getAuthAdditional(const isc::datasrc::Zone& zone) const;
+    void getAuthAdditional(const isc::datasrc::ZoneHandle& zone) const;
 
 public:
     /// Constructor from query parameters.
     ///
     /// This constructor never throws an exception.
     ///
-    /// \param memory_datasrc The memory datasource wherein the answer to the query is
+    /// \param datasrc The datasource client wherein the answer to the query is
     /// to be found.
     /// \param qname The query name
     /// \param qtype The RR type of the query
     /// \param response The response message to store the answer to the query.
-    Query(const isc::datasrc::MemoryDataSrc& memory_datasrc,
+    Query(const isc::datasrc::DataSourceClient& datasrc,
           const isc::dns::Name& qname, const isc::dns::RRType& qtype,
           isc::dns::Message& response) :
-        memory_datasrc_(memory_datasrc), qname_(qname), qtype_(qtype),
+        datasrc_(datasrc), qname_(qname), qtype_(qtype),
         response_(response)
     {}
 
@@ -208,7 +208,7 @@ public:
     };
 
 private:
-    const isc::datasrc::MemoryDataSrc& memory_datasrc_;
+    const isc::datasrc::DataSourceClient& datasrc_;
     const isc::dns::Name& qname_;
     const isc::dns::RRType& qtype_;
     isc::dns::Message& response_;

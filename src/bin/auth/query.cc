@@ -31,14 +31,14 @@ namespace isc {
 namespace auth {
 
 void
-Query::getAdditional(const Zone& zone, const RRset& rrset) const {
+Query::getAdditional(const ZoneHandle& zone, const RRset& rrset) const {
     RdataIteratorPtr rdata_iterator(rrset.getRdataIterator());
     for (; !rdata_iterator->isLast(); rdata_iterator->next()) {
         const Rdata& rdata(rdata_iterator->getCurrent());
         if (rrset.getType() == RRType::NS()) {
             // Need to perform the search in the "GLUE OK" mode.
             const generic::NS& ns = dynamic_cast<const generic::NS&>(rdata);
-            findAddrs(zone, ns.getNSName(), Zone::FIND_GLUE_OK);
+            findAddrs(zone, ns.getNSName(), ZoneHandle::FIND_GLUE_OK);
         } else if (rrset.getType() == RRType::MX()) {
             const generic::MX& mx(dynamic_cast<const generic::MX&>(rdata));
             findAddrs(zone, mx.getMXName());
@@ -47,8 +47,8 @@ Query::getAdditional(const Zone& zone, const RRset& rrset) const {
 }
 
 void
-Query::findAddrs(const Zone& zone, const Name& qname,
-                 const Zone::FindOptions options) const
+Query::findAddrs(const ZoneHandle& zone, const Name& qname,
+                 const ZoneHandle::FindOptions options) const
 {
     // Out of zone name
     NameComparisonResult result = zone.getOrigin().compare(qname);
@@ -66,9 +66,9 @@ Query::findAddrs(const Zone& zone, const Name& qname,
 
     // Find A rrset
     if (qname_ != qname || qtype_ != RRType::A()) {
-        Zone::FindResult a_result = zone.find(qname, RRType::A(), NULL,
+        ZoneHandle::FindResult a_result = zone.find(qname, RRType::A(), NULL,
                                               options);
-        if (a_result.code == Zone::SUCCESS) {
+        if (a_result.code == ZoneHandle::SUCCESS) {
             response_.addRRset(Message::SECTION_ADDITIONAL,
                     boost::const_pointer_cast<RRset>(a_result.rrset));
         }
@@ -76,9 +76,9 @@ Query::findAddrs(const Zone& zone, const Name& qname,
 
     // Find AAAA rrset
     if (qname_ != qname || qtype_ != RRType::AAAA()) {
-        Zone::FindResult aaaa_result =
+        ZoneHandle::FindResult aaaa_result =
             zone.find(qname, RRType::AAAA(), NULL, options);
-        if (aaaa_result.code == Zone::SUCCESS) {
+        if (aaaa_result.code == ZoneHandle::SUCCESS) {
             response_.addRRset(Message::SECTION_ADDITIONAL,
                     boost::const_pointer_cast<RRset>(aaaa_result.rrset));
         }
@@ -86,10 +86,10 @@ Query::findAddrs(const Zone& zone, const Name& qname,
 }
 
 void
-Query::putSOA(const Zone& zone) const {
-    Zone::FindResult soa_result(zone.find(zone.getOrigin(),
+Query::putSOA(const ZoneHandle& zone) const {
+    ZoneHandle::FindResult soa_result(zone.find(zone.getOrigin(),
         RRType::SOA()));
-    if (soa_result.code != Zone::SUCCESS) {
+    if (soa_result.code != ZoneHandle::SUCCESS) {
         isc_throw(NoSOA, "There's no SOA record in zone " <<
             zone.getOrigin().toText());
     } else {
@@ -104,11 +104,11 @@ Query::putSOA(const Zone& zone) const {
 }
 
 void
-Query::getAuthAdditional(const Zone& zone) const {
+Query::getAuthAdditional(const ZoneHandle& zone) const {
     // Fill in authority and addtional sections.
-    Zone::FindResult ns_result = zone.find(zone.getOrigin(), RRType::NS());
+    ZoneHandle::FindResult ns_result = zone.find(zone.getOrigin(), RRType::NS());
     // zone origin name should have NS records
-    if (ns_result.code != Zone::SUCCESS) {
+    if (ns_result.code != ZoneHandle::SUCCESS) {
         isc_throw(NoApexNS, "There's no apex NS records in zone " <<
                 zone.getOrigin().toText());
     } else {
@@ -125,8 +125,8 @@ Query::process() const {
     const bool qtype_is_any = (qtype_ == RRType::ANY());
 
     response_.setHeaderFlag(Message::HEADERFLAG_AA, false);
-    const MemoryDataSrc::FindResult result =
-        memory_datasrc_.findZone(qname_);
+    const MemoryDataSourceClient::FindResult result =
+        datasrc_.findZone(qname_);
 
     // If we have no matching authoritative zone for the query name, return
     // REFUSED.  In short, this is to be compatible with BIND 9, but the
@@ -145,11 +145,11 @@ Query::process() const {
     while (keep_doing) {
         keep_doing = false;
         std::auto_ptr<RRsetList> target(qtype_is_any ? new RRsetList : NULL);
-        const Zone::FindResult db_result(result.zone->find(qname_, qtype_,
+        const ZoneHandle::FindResult db_result(result.zone->find(qname_, qtype_,
             target.get()));
 
         switch (db_result.code) {
-            case Zone::DNAME: {
+            case ZoneHandle::DNAME: {
                 // First, put the dname into the answer
                 response_.addRRset(Message::SECTION_ANSWER,
                     boost::const_pointer_cast<RRset>(db_result.rrset));
@@ -191,7 +191,7 @@ Query::process() const {
                 response_.addRRset(Message::SECTION_ANSWER, cname);
                 break;
             }
-            case Zone::CNAME:
+            case ZoneHandle::CNAME:
                 /*
                  * We don't do chaining yet. Therefore handling a CNAME is
                  * mostly the same as handling SUCCESS, but we didn't get
@@ -204,7 +204,7 @@ Query::process() const {
                 response_.addRRset(Message::SECTION_ANSWER,
                     boost::const_pointer_cast<RRset>(db_result.rrset));
                 break;
-            case Zone::SUCCESS:
+            case ZoneHandle::SUCCESS:
                 if (qtype_is_any) {
                     // If quety type is ANY, insert all RRs under the domain
                     // into answer section.
@@ -224,24 +224,24 @@ Query::process() const {
                 // and AAAA/A RRS of each of the NS RDATA into the additional
                 // section.
                 if (qname_ != result.zone->getOrigin() ||
-                    db_result.code != Zone::SUCCESS ||
+                    db_result.code != ZoneHandle::SUCCESS ||
                     (qtype_ != RRType::NS() && !qtype_is_any))
                 {
                     getAuthAdditional(*result.zone);
                 }
                 break;
-            case Zone::DELEGATION:
+            case ZoneHandle::DELEGATION:
                 response_.setHeaderFlag(Message::HEADERFLAG_AA, false);
                 response_.addRRset(Message::SECTION_AUTHORITY,
                     boost::const_pointer_cast<RRset>(db_result.rrset));
                 getAdditional(*result.zone, *db_result.rrset);
                 break;
-            case Zone::NXDOMAIN:
+            case ZoneHandle::NXDOMAIN:
                 // Just empty answer with SOA in authority section
                 response_.setRcode(Rcode::NXDOMAIN());
                 putSOA(*result.zone);
                 break;
-            case Zone::NXRRSET:
+            case ZoneHandle::NXRRSET:
                 // Just empty answer with SOA in authority section
                 putSOA(*result.zone);
                 break;

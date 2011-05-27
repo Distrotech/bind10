@@ -107,7 +107,8 @@ DatasourcesConfig::commit() {
     // server implementation details, and isn't scalable wrt the number of
     // data source types, and should eventually be improved.
     // Currently memory data source for class IN is the only possibility.
-    server_.setMemoryDataSrc(RRClass::IN(), AuthSrv::MemoryDataSrcPtr());
+    server_.setMemoryDataSourceClient(RRClass::IN(),
+                                      AuthSrv::MemoryDataSourceClientPtr());
 
     BOOST_FOREACH(shared_ptr<AuthConfigParser> datasrc_config, datasources_) {
         datasrc_config->commit();
@@ -125,12 +126,12 @@ public:
     {}
     virtual void build(ConstElementPtr config_value);
     virtual void commit() {
-        server_.setMemoryDataSrc(rrclass_, memory_datasrc_);
+        server_.setMemoryDataSourceClient(rrclass_, memory_datasrc_);
     }
 private:
     AuthSrv& server_;
     RRClass rrclass_;
-    AuthSrv::MemoryDataSrcPtr memory_datasrc_;
+    AuthSrv::MemoryDataSourceClientPtr memory_datasrc_;
 };
 
 void
@@ -143,8 +144,9 @@ MemoryDatasourceConfig::build(ConstElementPtr config_value) {
     // We'd eventually optimize building zones (in case of reloading) by
     // selectively loading fresh zones.  Right now we simply check the
     // RR class is supported by the server implementation.
-    server_.getMemoryDataSrc(rrclass_);
-    memory_datasrc_ = AuthSrv::MemoryDataSrcPtr(new MemoryDataSrc());
+    server_.getMemoryDataSourceClient(rrclass_);
+    memory_datasrc_ =
+        AuthSrv::MemoryDataSourceClientPtr(new MemoryDataSourceClient());
 
     ConstElementPtr zones_config = config_value->get("zones");
     if (!zones_config) {
@@ -163,8 +165,9 @@ MemoryDatasourceConfig::build(ConstElementPtr config_value) {
             isc_throw(AuthConfigError, "Missing zone file for zone: "
                       << origin->str());
         }
-        shared_ptr<MemoryZone> new_zone(new MemoryZone(rrclass_,
-            Name(origin->stringValue())));
+        shared_ptr<MemoryZoneHandle>
+            new_zone(new MemoryZoneHandle(rrclass_,
+                                          Name(origin->stringValue())));
         const result::Result result = memory_datasrc_->addZone(new_zone);
         if (result == result::EXIST) {
             isc_throw(AuthConfigError, "zone "<< origin->str()

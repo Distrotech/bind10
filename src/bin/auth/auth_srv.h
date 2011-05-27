@@ -17,7 +17,7 @@
 
 #include <string>
 
-// For MemoryDataSrcPtr below.  This should be a temporary definition until
+// For MemoryDataSourceClientPtr below.  This should be a temporary definition until
 // we reorganize the data source framework.
 #include <boost/shared_ptr.hpp>
 
@@ -39,7 +39,7 @@
 
 namespace isc {
 namespace datasrc {
-class MemoryDataSrc;
+class MemoryDataSourceClient;
 }
 namespace xfr {
 class AbstractXfroutClient;
@@ -154,7 +154,7 @@ public:
     /// If there is a data source installed, it will be replaced with the
     /// new one.
     ///
-    /// In the current implementation, the SQLite data source and MemoryDataSrc
+    /// In the current implementation, the SQLite data source and MemoryDataSourceClient
     /// are assumed.
     /// We can enable memory data source and get the path of SQLite database by
     /// the \c config parameter.  If we disabled memory data source, the SQLite
@@ -254,16 +254,17 @@ public:
     ///
     void setXfrinSession(isc::cc::AbstractSession* xfrin_session);
 
-    /// A shared pointer type for \c MemoryDataSrc.
+    /// A shared pointer type for \c MemoryDataSourceClient.
     ///
     /// This is defined inside the \c AuthSrv class as it's supposed to be
     /// a short term interface until we integrate the in-memory and other
     /// data source frameworks.
-    typedef boost::shared_ptr<isc::datasrc::MemoryDataSrc> MemoryDataSrcPtr;
+    typedef boost::shared_ptr<isc::datasrc::MemoryDataSourceClient>
+    MemoryDataSourceClientPtr;
 
-    /// An immutable shared pointer type for \c MemoryDataSrc.
-    typedef boost::shared_ptr<const isc::datasrc::MemoryDataSrc>
-    ConstMemoryDataSrcPtr;
+    /// An immutable shared pointer type for \c MemoryDataSourceClient.
+    typedef boost::shared_ptr<const isc::datasrc::MemoryDataSourceClient>
+    ConstMemoryDataSourceClientPtr;
 
     /// Returns the in-memory data source configured for the \c AuthSrv,
     /// if any.
@@ -281,11 +282,12 @@ public:
     /// \param rrclass The RR class of the requested in-memory data source.
     /// \return A pointer to the in-memory data source, if configured;
     /// otherwise NULL.
-    MemoryDataSrcPtr getMemoryDataSrc(const isc::dns::RRClass& rrclass);
+    MemoryDataSourceClientPtr
+    getMemoryDataSourceClient(const isc::dns::RRClass& rrclass);
 
     /// Sets or replaces the in-memory data source of the specified RR class.
     ///
-    /// As noted in \c getMemoryDataSrc(), some RR classes may not be
+    /// As noted in \c getMemoryDataSourceClient(), some RR classes may not be
     /// supported, in which case an exception of class \c InvalidParameter
     /// will be thrown.
     /// This method never throws an exception otherwise.
@@ -296,9 +298,9 @@ public:
     /// in-memory data source.
     ///
     /// \param rrclass The RR class of the in-memory data source to be set.
-    /// \param memory_datasrc A (shared) pointer to \c MemoryDataSrc to be set.
-    void setMemoryDataSrc(const isc::dns::RRClass& rrclass,
-                          MemoryDataSrcPtr memory_datasrc);
+    /// \param memory_datasrc A (shared) pointer to \c MemoryDataSourceClient to be set.
+    void setMemoryDataSourceClient(const isc::dns::RRClass& rrclass,
+                                   MemoryDataSourceClientPtr memory_datasrc);
 
     /// \brief Set the communication session with Statistics.
     ///

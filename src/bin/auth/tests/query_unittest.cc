@@ -103,9 +103,9 @@ const char* const other_zone_rrs =
 // will result in DNAME.
 // This mock zone doesn't handle empty non terminal nodes (if we need to test
 // such cases find() should have specialized code for it).
-class MockZone : public Zone {
+class MockZoneHandle : public ZoneHandle {
 public:
-    MockZone() :
+    MockZoneHandle() :
         origin_(Name("example.com")),
         delegation_name_("delegation.example.com"),
         dname_name_("dname.example.com"),
@@ -120,7 +120,7 @@ public:
             other_zone_rrs;
 
         masterLoad(zone_stream, origin_, rrclass_,
-                   boost::bind(&MockZone::loadRRset, this, _1));
+                   boost::bind(&MockZoneHandle::loadRRset, this, _1));
     }
     virtual const isc::dns::Name& getOrigin() const { return (origin_); }
     virtual const isc::dns::RRClass& getClass() const { return (rrclass_); }
@@ -163,8 +163,8 @@ private:
     const RRClass rrclass_;
 };
 
-Zone::FindResult
-MockZone::find(const Name& name, const RRType& type,
+ZoneHandle::FindResult
+MockZoneHandle::find(const Name& name, const RRType& type,
                RRsetList* target, const FindOptions options) const
 {
     // Emulating a broken zone: mandatory apex RRs are missing if specifically
@@ -233,11 +233,11 @@ protected:
         response.setRcode(Rcode::NOERROR());
         response.setOpcode(Opcode::QUERY());
         // create and add a matching zone.
-        mock_zone = new MockZone();
-        memory_datasrc.addZone(ZonePtr(mock_zone));
+        mock_zone = new MockZoneHandle();
+        memory_datasrc.addZone(ZoneHandlePtr(mock_zone));
     }
-    MockZone* mock_zone;
-    MemoryDataSrc memory_datasrc;
+    MockZoneHandle* mock_zone;
+    MemoryDataSourceClient memory_datasrc;
     const Name qname;
     const RRClass qclass;
     const RRType qtype;
@@ -286,7 +286,7 @@ responseCheck(Message& response, const isc::dns::Rcode& rcode,
 TEST_F(QueryTest, noZone) {
     // There's no zone in the memory datasource.  So the response should have
     // REFUSED.
-    MemoryDataSrc empty_memory_datasrc;
+    MemoryDataSourceClient empty_memory_datasrc;
     Query nozone_query(empty_memory_datasrc, qname, qtype, response);
     EXPECT_NO_THROW(nozone_query.process());
     EXPECT_EQ(Rcode::REFUSED(), response.getRcode());

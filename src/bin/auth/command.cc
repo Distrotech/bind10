@@ -136,8 +136,9 @@ public:
         // that doesn't block other server operations.
         // TODO: we may (should?) want to check the "last load time" and
         // the timestamp of the file and skip loading if the file isn't newer.
-        shared_ptr<MemoryZone> newzone(new MemoryZone(oldzone->getClass(),
-                                                      oldzone->getOrigin()));
+        shared_ptr<MemoryZoneHandle> newzone(new MemoryZoneHandle(
+                                                 oldzone->getClass(),
+                                                 oldzone->getOrigin()));
         newzone->load(oldzone->getFileName());
         oldzone->swap(*newzone);
 
@@ -148,7 +149,8 @@ public:
     }
 
 private:
-    shared_ptr<MemoryZone> oldzone; // zone to be updated with the new file.
+    // zone to be updated with the new file.
+    shared_ptr<MemoryZoneHandle> oldzone;
 
     // A helper private method to parse and validate command parameters.
     // On success, it sets 'oldzone' to the zone to be updated.
@@ -182,7 +184,8 @@ private:
         const RRClass zone_class = class_elem ?
             RRClass(class_elem->stringValue()) : RRClass::IN();
 
-        AuthSrv::MemoryDataSrcPtr datasrc(server.getMemoryDataSrc(zone_class));
+        AuthSrv::MemoryDataSourceClientPtr
+            datasrc(server.getMemoryDataSourceClient(zone_class));
         if (datasrc == NULL) {
             isc_throw(AuthCommandError, "Memory data source is disabled");
         }
@@ -194,13 +197,14 @@ private:
         const Name origin(origin_elem->stringValue());
 
         // Get the current zone
-        const MemoryDataSrc::FindResult result = datasrc->findZone(origin);
+        const MemoryDataSourceClient::FindResult result =
+            datasrc->findZone(origin);
         if (result.code != result::SUCCESS) {
             isc_throw(AuthCommandError, "Zone " << origin <<
                       " is not found in data source");
         }
 
-        oldzone = boost::dynamic_pointer_cast<MemoryZone>(result.zone);
+        oldzone = boost::dynamic_pointer_cast<MemoryZoneHandle>(result.zone);
 
         return (true);
     }

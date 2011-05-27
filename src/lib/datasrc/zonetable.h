@@ -32,20 +32,20 @@ namespace datasrc {
 /// \brief A set of authoritative zones.
 ///
 /// \c ZoneTable class is primarily intended to be used as a backend for the
-/// \c MemoryDataSrc class, but is exposed as a separate class in case some
+/// \c MemoryDataSourceClient class, but is exposed as a separate class in case some
 /// application wants to use it directly (e.g. for a customized data source
 /// implementation).
 ///
 /// For more descriptions about its struct and interfaces, please refer to the
-/// corresponding struct and interfaces of \c MemoryDataSrc.
+/// corresponding struct and interfaces of \c MemoryDataSourceClient.
 class ZoneTable {
 public:
     struct FindResult {
-        FindResult(result::Result param_code, const ZonePtr param_zone) :
+        FindResult(result::Result param_code, const ZoneHandlePtr param_zone) :
             code(param_code), zone(param_zone)
         {}
         const result::Result code;
-        const ZonePtr zone;
+        const ZoneHandlePtr zone;
     };
     ///
     /// \name Constructors and Destructor.
@@ -83,7 +83,7 @@ public:
     /// added to the zone table.
     /// \return \c result::EXIST The zone table already contains
     /// zone of the same origin.
-    result::Result addZone(ZonePtr zone);
+    result::Result addZone(ZoneHandlePtr zone);
 
     /// Remove a \c Zone of the given origin name from the \c ZoneTable.
     ///
