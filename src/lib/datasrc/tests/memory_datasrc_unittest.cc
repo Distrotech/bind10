@@ -291,7 +291,8 @@ public:
      *     to the one searched. It is meant for checking answers for wildcard
      *     queries.
      */
-    void findTest(const Name& name, const RRType& rrtype, ZoneHandle::Result result,
+    void findTest(const Name& name, const RRType& rrtype,
+                  ZoneHandle::Result result,
                   bool check_answer = true,
                   const ConstRRsetPtr& answer = ConstRRsetPtr(),
                   RRsetList* target = NULL,
@@ -305,8 +306,9 @@ public:
         // The whole block is inside, because we need to check the result and
         // we can't assign to FindResult
         EXPECT_NO_THROW({
-                ZoneHandle::FindResult find_result(zone->find(name, rrtype, target,
-                                                        options));
+                ZoneHandle::FindResult find_result(zone->find(name, rrtype,
+                                                              target,
+                                                              options));
                 // Check it returns correct answers
                 EXPECT_EQ(result, find_result.code);
                 if (check_answer) {
@@ -465,8 +467,8 @@ TEST_F(MemoryZoneHandleTest, NSAndDNAMEAtApex) {
 // Search under a DNAME record. It should return the DNAME
 TEST_F(MemoryZoneHandleTest, findBelowDNAME) {
     EXPECT_NO_THROW(EXPECT_EQ(SUCCESS, zone_.add(rr_dname_)));
-    findTest(Name("below.dname.example.org"), RRType::A(), ZoneHandle::DNAME, true,
-        rr_dname_);
+    findTest(Name("below.dname.example.org"), RRType::A(),
+             ZoneHandle::DNAME, true, rr_dname_);
 }
 
 // Search at the domain with DNAME. It should act as DNAME isn't there, DNAME
@@ -477,7 +479,8 @@ TEST_F(MemoryZoneHandleTest, findAtDNAME) {
 
     const Name dname_name(rr_dname_->getName());
     findTest(dname_name, RRType::A(), ZoneHandle::SUCCESS, true, rr_dname_a_);
-    findTest(dname_name, RRType::DNAME(), ZoneHandle::SUCCESS, true, rr_dname_);
+    findTest(dname_name, RRType::DNAME(), ZoneHandle::SUCCESS, true,
+             rr_dname_);
     findTest(dname_name, RRType::TXT(), ZoneHandle::NXRRSET, true);
 }
 
@@ -490,8 +493,8 @@ TEST_F(MemoryZoneHandleTest, DNAMEUnderNS) {
     Name lowName("below.dname.child.example.org.");
 
     findTest(lowName, RRType::A(), ZoneHandle::DELEGATION, true, rr_child_ns_);
-    findTest(lowName, RRType::A(), ZoneHandle::DNAME, true, rr_child_dname_, NULL,
-        NULL, ZoneHandle::FIND_GLUE_OK);
+    findTest(lowName, RRType::A(), ZoneHandle::DNAME, true, rr_child_dname_,
+             NULL, NULL, ZoneHandle::FIND_GLUE_OK);
 }
 
 // Test adding child zones and zone cut handling
@@ -579,8 +582,8 @@ TEST_F(MemoryZoneHandleTest, glue) {
     EXPECT_NO_THROW(EXPECT_EQ(SUCCESS, zone_.add(rr_grandchild_glue_)));
 
     // by default glue is hidden due to the zone cut
-    findTest(rr_child_glue_->getName(), RRType::A(), ZoneHandle::DELEGATION, true,
-             rr_child_ns_);
+    findTest(rr_child_glue_->getName(), RRType::A(), ZoneHandle::DELEGATION,
+             true, rr_child_ns_);
 
 
     // If we do it in the "glue OK" mode, we should find the exact match.
@@ -588,12 +591,13 @@ TEST_F(MemoryZoneHandleTest, glue) {
              rr_child_glue_, NULL, NULL, ZoneHandle::FIND_GLUE_OK);
 
     // glue OK + NXRRSET case
-    findTest(rr_child_glue_->getName(), RRType::AAAA(), ZoneHandle::NXRRSET, true,
-             ConstRRsetPtr(), NULL, NULL, ZoneHandle::FIND_GLUE_OK);
+    findTest(rr_child_glue_->getName(), RRType::AAAA(), ZoneHandle::NXRRSET,
+             true, ConstRRsetPtr(), NULL, NULL, ZoneHandle::FIND_GLUE_OK);
 
     // glue OK + NXDOMAIN case
-    findTest(Name("www.child.example.org"), RRType::A(), ZoneHandle::DELEGATION,
-             true, rr_child_ns_, NULL, NULL, ZoneHandle::FIND_GLUE_OK);
+    findTest(Name("www.child.example.org"), RRType::A(),
+             ZoneHandle::DELEGATION, true, rr_child_ns_, NULL, NULL,
+             ZoneHandle::FIND_GLUE_OK);
 
     // nested cut case.  The glue should be found.
     findTest(rr_grandchild_glue_->getName(), RRType::AAAA(),
@@ -624,7 +628,8 @@ TEST_F(MemoryZoneHandleTest, find) {
 
     // These two should be successful
     findTest(origin_, RRType::NS(), ZoneHandle::SUCCESS, true, rr_ns_);
-    findTest(rr_ns_a_->getName(), RRType::A(), ZoneHandle::SUCCESS, true, rr_ns_a_);
+    findTest(rr_ns_a_->getName(), RRType::A(), ZoneHandle::SUCCESS, true,
+             rr_ns_a_);
 
     // These domain exist but don't have the provided RRType
     findTest(origin_, RRType::AAAA(), ZoneHandle::NXRRSET);
@@ -689,12 +694,12 @@ TEST_F(MemoryZoneHandleTest, load) {
     EXPECT_NO_THROW(rootzone.load(TEST_DATA_DIR "/root.zone"));
 
     // Now see there are some rrsets (we don't look inside, though)
-    findTest(Name("."), RRType::SOA(), ZoneHandle::SUCCESS, false, ConstRRsetPtr(),
-        NULL, &rootzone);
-    findTest(Name("."), RRType::NS(), ZoneHandle::SUCCESS, false, ConstRRsetPtr(),
-        NULL, &rootzone);
-    findTest(Name("a.root-servers.net."), RRType::A(), ZoneHandle::SUCCESS, false,
-        ConstRRsetPtr(), NULL, &rootzone);
+    findTest(Name("."), RRType::SOA(), ZoneHandle::SUCCESS, false,
+             ConstRRsetPtr(), NULL, &rootzone);
+    findTest(Name("."), RRType::NS(), ZoneHandle::SUCCESS, false,
+             ConstRRsetPtr(), NULL, &rootzone);
+    findTest(Name("a.root-servers.net."), RRType::A(), ZoneHandle::SUCCESS,
+             false, ConstRRsetPtr(), NULL, &rootzone);
     // But this should no longer be here
     findTest(rr_ns_a_->getName(), RRType::AAAA(), ZoneHandle::NXDOMAIN, true,
              ConstRRsetPtr(), NULL, &rootzone);
@@ -728,21 +733,22 @@ TEST_F(MemoryZoneHandleTest, wildcard) {
     // Search the original name of wildcard
     {
         SCOPED_TRACE("Search directly at *");
-        findTest(Name("*.wild.example.org"), RRType::A(), ZoneHandle::SUCCESS, true,
-            rr_wild_);
+        findTest(Name("*.wild.example.org"), RRType::A(), ZoneHandle::SUCCESS,
+                 true, rr_wild_);
     }
     // Search "created" name.
     {
         SCOPED_TRACE("Search at created child");
-        findTest(Name("a.wild.example.org"), RRType::A(), ZoneHandle::SUCCESS, false,
-            rr_wild_, NULL, NULL, ZoneHandle::FIND_DEFAULT, true);
+        findTest(Name("a.wild.example.org"), RRType::A(), ZoneHandle::SUCCESS,
+                 false, rr_wild_, NULL, NULL, ZoneHandle::FIND_DEFAULT, true);
     }
 
     // Search another created name, this time little bit lower
     {
         SCOPED_TRACE("Search at created grand-child");
-        findTest(Name("a.b.wild.example.org"), RRType::A(), ZoneHandle::SUCCESS,
-            false, rr_wild_, NULL, NULL, ZoneHandle::FIND_DEFAULT, true);
+        findTest(Name("a.b.wild.example.org"), RRType::A(),
+                 ZoneHandle::SUCCESS, false, rr_wild_, NULL, NULL,
+                 ZoneHandle::FIND_DEFAULT, true);
     }
 
     EXPECT_EQ(SUCCESS, zone_.add(rr_under_wild_));
@@ -766,14 +772,15 @@ TEST_F(MemoryZoneHandleTest, delegatedWildcard) {
 
     {
         SCOPED_TRACE("Looking under delegation point");
-        findTest(Name("a.child.example.org"), RRType::A(), ZoneHandle::DELEGATION,
-            true, rr_child_ns_);
+        findTest(Name("a.child.example.org"), RRType::A(),
+                 ZoneHandle::DELEGATION, true, rr_child_ns_);
     }
 
     {
         SCOPED_TRACE("Looking under delegation point in GLUE_OK mode");
-        findTest(Name("a.child.example.org"), RRType::A(), ZoneHandle::DELEGATION,
-            true, rr_child_ns_, NULL, NULL, ZoneHandle::FIND_GLUE_OK);
+        findTest(Name("a.child.example.org"), RRType::A(),
+                 ZoneHandle::DELEGATION, true, rr_child_ns_, NULL, NULL,
+                 ZoneHandle::FIND_GLUE_OK);
     }
 }
 
@@ -785,8 +792,8 @@ TEST_F(MemoryZoneHandleTest, anyWildcard) {
     {
         SCOPED_TRACE("Asking direcly for *");
         RRsetList target;
-        findTest(Name("*.wild.example.org"), RRType::ANY(), ZoneHandle::SUCCESS,
-            true, ConstRRsetPtr(), &target);
+        findTest(Name("*.wild.example.org"), RRType::ANY(),
+                 ZoneHandle::SUCCESS, true, ConstRRsetPtr(), &target);
         ASSERT_EQ(1, target.size());
         EXPECT_EQ(RRType::A(), (*target.begin())->getType());
         EXPECT_EQ(Name("*.wild.example.org"), (*target.begin())->getName());
@@ -796,8 +803,8 @@ TEST_F(MemoryZoneHandleTest, anyWildcard) {
     {
         SCOPED_TRACE("Asking in the wild way");
         RRsetList target;
-        findTest(Name("a.wild.example.org"), RRType::ANY(), ZoneHandle::SUCCESS,
-            true, ConstRRsetPtr(), &target);
+        findTest(Name("a.wild.example.org"), RRType::ANY(),
+                 ZoneHandle::SUCCESS, true, ConstRRsetPtr(), &target);
         ASSERT_EQ(1, target.size());
         EXPECT_EQ(RRType::A(), (*target.begin())->getType());
         EXPECT_EQ(Name("a.wild.example.org"), (*target.begin())->getName());
@@ -817,8 +824,8 @@ TEST_F(MemoryZoneHandleTest, emptyWildcard) {
 
     {
         SCOPED_TRACE("Asking for the original record under wildcard");
-        findTest(Name("wild.*.foo.example.org"), RRType::A(), ZoneHandle::SUCCESS,
-            true, rr_emptywild_);
+        findTest(Name("wild.*.foo.example.org"), RRType::A(),
+                 ZoneHandle::SUCCESS, true, rr_emptywild_);
     }
 
     {
@@ -831,13 +838,13 @@ TEST_F(MemoryZoneHandleTest, emptyWildcard) {
     {
         SCOPED_TRACE("Asking for ANY record");
         RRsetList normalTarget;
-        findTest(Name("*.foo.example.org"), RRType::ANY(), ZoneHandle::NXRRSET, true,
-            ConstRRsetPtr(), &normalTarget);
+        findTest(Name("*.foo.example.org"), RRType::ANY(),
+                 ZoneHandle::NXRRSET, true, ConstRRsetPtr(), &normalTarget);
         EXPECT_EQ(0, normalTarget.size());
 
         RRsetList wildTarget;
-        findTest(Name("a.foo.example.org"), RRType::ANY(), ZoneHandle::NXRRSET, true,
-            ConstRRsetPtr(), &wildTarget);
+        findTest(Name("a.foo.example.org"), RRType::ANY(),
+                 ZoneHandle::NXRRSET, true, ConstRRsetPtr(), &wildTarget);
         EXPECT_EQ(0, wildTarget.size());
     }
 
@@ -922,8 +929,8 @@ MemoryZoneHandleTest::doCancelWildcardTest() {
     // This is existing, non-wildcard domain, shouldn't wildcard at all
     {
         SCOPED_TRACE("Existing domain under foo.wild.example.org");
-        findTest(Name("bar.foo.wild.example.org"), RRType::A(), ZoneHandle::SUCCESS,
-            true, rr_not_wild_);
+        findTest(Name("bar.foo.wild.example.org"), RRType::A(),
+                 ZoneHandle::SUCCESS, true, rr_not_wild_);
     }
 
     // These should be caught by the wildcard
@@ -940,15 +947,16 @@ MemoryZoneHandleTest::doCancelWildcardTest() {
         for (const char** name(names); *name != NULL; ++ name) {
             SCOPED_TRACE(string("Node ") + *name);
 
-            findTest(Name(*name), RRType::A(), ZoneHandle::SUCCESS, false, rr_wild_,
-                NULL, NULL, ZoneHandle::FIND_DEFAULT, true);
+            findTest(Name(*name), RRType::A(), ZoneHandle::SUCCESS, false,
+                     rr_wild_, NULL, NULL, ZoneHandle::FIND_DEFAULT, true);
         }
     }
 
     // This shouldn't be wildcarded, it's an existing domain
     {
         SCOPED_TRACE("The foo.wild.example.org itself");
-        findTest(Name("foo.wild.example.org"), RRType::A(), ZoneHandle::NXRRSET);
+        findTest(Name("foo.wild.example.org"), RRType::A(),
+                 ZoneHandle::NXRRSET);
     }
 }
 
@@ -1009,12 +1017,12 @@ TEST_F(MemoryZoneHandleTest, swap) {
     EXPECT_EQ(RRClass::CH(), zone1.getClass());
     EXPECT_EQ(RRClass::IN(), zone2.getClass());
     // make sure the zone data is swapped, too
-    findTest(origin_, RRType::NS(), ZoneHandle::NXDOMAIN, false, ConstRRsetPtr(),
-             NULL, &zone1);
+    findTest(origin_, RRType::NS(), ZoneHandle::NXDOMAIN,
+             false, ConstRRsetPtr(), NULL, &zone1);
     findTest(other_origin, RRType::TXT(), ZoneHandle::SUCCESS, false,
              ConstRRsetPtr(), NULL, &zone1);
-    findTest(origin_, RRType::NS(), ZoneHandle::SUCCESS, false, ConstRRsetPtr(),
-             NULL, &zone2);
+    findTest(origin_, RRType::NS(), ZoneHandle::SUCCESS, false,
+             ConstRRsetPtr(), NULL, &zone2);
     findTest(other_origin, RRType::TXT(), ZoneHandle::NXDOMAIN, false,
              ConstRRsetPtr(), NULL, &zone2);
 }

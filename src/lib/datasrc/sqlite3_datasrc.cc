@@ -571,8 +571,50 @@ Sqlite3DataSrc::findReferral(const Name& qname,
     return (SUCCESS);
 }
 
+void
+Sqlite3DataSrc::searchForRecords(int zone_id, const string& name) const {
+    sqlite3_reset(dbparameters->q_any_);
+    sqlite3_clear_bindings(dbparameters->q_any_);
+    sqlite3_bind_int(dbparameters->q_any_, 1, zone_id);
+    sqlite3_bind_text(dbparameters->q_any_, 2, name.c_str(), -1,
+                      SQLITE_TRANSIENT); // this must transient
+}
+
+namespace {
+const char*
+convertToPlainChar(const unsigned char* ucp) {
+    if (ucp == NULL) {
+        return ("");
+    }
+    const void* p = ucp;
+    return (static_cast<const char*>(p));
+}
+}
+
 DataSrc::Result
-Sqlite3DataSrc::findZone(const string& name, int& zone_id) const {
+Sqlite3DataSrc::getNextRecord(vector<string>& columns) const {
+    sqlite3_stmt* current_stmt = dbparameters->q_any_;
+    const int rc = sqlite3_step(current_stmt);
+
+    if (rc == SQLITE_ROW) {
+        columns.clear();
+        for (int column = 0; column < 4; ++column) {
+            columns.push_back(convertToPlainChar(sqlite3_column_text(
+                                                     current_stmt, column)));
+        }
+        return (SUCCESS);
+    } else if (rc == SQLITE_DONE) {
+        // reached the end of matching rows
+        sqlite3_reset(current_stmt);
+        sqlite3_clear_bindings(current_stmt);
+        return (ERROR); // error code is not a good one, but use it for now
+    }
+    sqlite3_reset(current_stmt);
+    isc_throw(DataSourceError, "Unexpected failure in sqlite3_step");
+}
+
+DataSrc::Result
+Sqlite3DataSrc::getZone(const string& name, int& zone_id) const {
     zone_id = hasExactZone(name.c_str());
     return (zone_id >= 0 ? SUCCESS : ERROR);
 }

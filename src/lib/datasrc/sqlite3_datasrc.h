@@ -16,6 +16,7 @@
 #define __DATA_SOURCE_SQLITE3_H
 
 #include <string>
+#include <vector>
 
 #include <exceptions/exceptions.h>
 
@@ -98,7 +99,9 @@ public:
 
     // experimental extensions
     Result init(const std::string& db_file);
-    DataSrc::Result findZone(const std::string& name, int& zone_id) const;
+    DataSrc::Result getZone(const std::string& name, int& zone_id) const;
+    void searchForRecords(int zone_id, const std::string& name) const;
+    DataSrc::Result getNextRecord(std::vector<std::string>& columns) const;
 
 private:
     enum Mode {

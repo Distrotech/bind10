@@ -38,6 +38,8 @@ TEST_F(DataBaseDataSourceClientTest, findZone) {
     EXPECT_EQ(result::SUCCESS, db_client.findZone(Name("example.com")).code);
     EXPECT_EQ(Name("example.com"),
               db_client.findZone(Name("example.com")).zone->getOrigin());
+    EXPECT_EQ(Name("example.com"),
+              db_client.findZone(Name("EXAMPLE.com")).zone->getOrigin());
     EXPECT_EQ(result::SUCCESS,
               db_client.findZone(Name("sql1.example.com")).code);
     EXPECT_EQ(Name("sql1.example.com"),
@@ -49,4 +51,21 @@ TEST_F(DataBaseDataSourceClientTest, findZone) {
     EXPECT_EQ(result::NOTFOUND, db_client.findZone(Name("com")).code);
     EXPECT_FALSE(db_client.findZone(Name("com")).zone);
 }
+
+TEST_F(DataBaseDataSourceClientTest, find) {
+    ZoneHandlePtr zone = db_client.findZone(Name("example.com")).zone;
+    EXPECT_EQ(ZoneHandle::SUCCESS, zone->find(Name("example.com"),
+                                              RRType::SOA()).code);
+    EXPECT_EQ(ZoneHandle::DELEGATION,
+              zone->find(Name("www.subzone.example.com"), RRType::A()).code);
+
+    EXPECT_EQ(ZoneHandle::SUCCESS,
+              zone->find(Name("www.example.com"), RRType::A()).code);
+    EXPECT_EQ(ZoneHandle::NXRRSET,
+              zone->find(Name("www.example.com"), RRType::AAAA()).code);
+    EXPECT_EQ(ZoneHandle::CNAME,
+              zone->find(Name("foo.example.com"), RRType::AAAA()).code);
+    cout << zone->find(Name("foo.example.com"), RRType::AAAA()).rrset->toText();
+}
+
 }
