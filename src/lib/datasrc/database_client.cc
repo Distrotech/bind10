@@ -138,9 +138,10 @@ getRRsets(const DataBaseConnection& conn, int zone_id, const Name& name,
 
 ZoneHandle::FindResult
 DataBaseZoneHandle::find(const Name& name, const RRType& type,
-                         RRsetList*, const FindOptions) const
+                         RRsetList*, const FindOptions options) const
 {
     RRsetMap rrsets;
+    RRsetPtr nsrrset;
     RRsetPtr rrset;
 
     // Match downward, from the zone apex to the query name, looking for
@@ -155,14 +156,17 @@ DataBaseZoneHandle::find(const Name& name, const RRType& type,
             if (getRRsets(conn_, id_, sub,
                           RRClass::IN(), // experimentally faked
                           rrsets)) {
-                rrset = rrsets[RRType::DNAME()];
-                if (rrset) {
+                if ((rrset = rrsets[RRType::DNAME()])) {
                     return (FindResult(DNAME, rrset));
                 }
-                // Note: if glue is allowed, don't stop here.
-                rrset = rrsets[RRType::NS()];
-                if (rrset) {
-                    return (FindResult(DELEGATION, rrset));
+
+                if ((nsrrset = rrsets[RRType::NS()])) {
+                    if ((options & FIND_GLUE_OK) == 0) {
+                        return (FindResult(DELEGATION, nsrrset));
+                    }
+                    // If glues are ok, remember the NS of the highest zonecut
+                    // and seek an exact match.
+                    break;
                 }
             }
         }
@@ -174,12 +178,9 @@ DataBaseZoneHandle::find(const Name& name, const RRType& type,
     rrsets.insert(RRsetMapEntry(type, RRsetPtr()));
     rrsets.insert(RRsetMapEntry(RRType::CNAME(), RRsetPtr()));
     if (getRRsets(conn_, id_, name, RRClass::IN(), rrsets)) {
-        rrset = rrsets[type];
-        if (rrset) {
+        if ((rrset = rrsets[type])) {
             return (FindResult(SUCCESS, rrset));
-        }
-        rrset = rrsets[RRType::CNAME()];
-        if (rrset) {
+        } else if ((rrset = rrsets[RRType::CNAME()])) {
             return (FindResult(CNAME, rrset));
         }
     }

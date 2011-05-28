@@ -54,18 +54,33 @@ TEST_F(DataBaseDataSourceClientTest, findZone) {
 
 TEST_F(DataBaseDataSourceClientTest, find) {
     ZoneHandlePtr zone = db_client.findZone(Name("example.com")).zone;
+
+    // normal successful case
     EXPECT_EQ(ZoneHandle::SUCCESS, zone->find(Name("example.com"),
                                               RRType::SOA()).code);
+
+    // delegation with NS.  if glue is okay, search continues under a zone cut
     EXPECT_EQ(ZoneHandle::DELEGATION,
               zone->find(Name("www.subzone.example.com"), RRType::A()).code);
+    EXPECT_EQ(ZoneHandle::DELEGATION,
+              zone->find(Name("ns1.subzone.example.com"), RRType::A()).code);
+    EXPECT_EQ(ZoneHandle::SUCCESS,
+              zone->find(Name("ns1.subzone.example.com"),
+                         RRType::A(), NULL, ZoneHandle::FIND_GLUE_OK).code);
 
+    // delegation with DNAME
+    EXPECT_EQ(ZoneHandle::DNAME,
+              zone->find(Name("www.dname.example.com"), RRType::A()).code);
+
+    // Exact-matching names exist.  Including CNAME case.
     EXPECT_EQ(ZoneHandle::SUCCESS,
               zone->find(Name("www.example.com"), RRType::A()).code);
     EXPECT_EQ(ZoneHandle::NXRRSET,
               zone->find(Name("www.example.com"), RRType::AAAA()).code);
     EXPECT_EQ(ZoneHandle::CNAME,
               zone->find(Name("foo.example.com"), RRType::AAAA()).code);
-    cout << zone->find(Name("foo.example.com"), RRType::AAAA()).rrset->toText();
+    EXPECT_EQ(ZoneHandle::SUCCESS,
+              zone->find(Name("foo.example.com"), RRType::CNAME()).code);
 }
 
 }
