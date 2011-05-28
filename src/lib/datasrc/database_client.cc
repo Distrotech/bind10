@@ -45,6 +45,7 @@ public:
                                     int& zone_id) const = 0;
     virtual void searchForRecords(int zone_id, const string& name) const = 0;
     virtual DataSrc::Result getNextRecord(vector<string>& columns) const = 0;
+    virtual string getPreviousName(int zone_id, const string& name) const = 0;
 };
 
 class SQLite3Connection : public DataBaseConnection {
@@ -65,6 +66,10 @@ public:
 
     virtual DataSrc::Result getNextRecord(vector<string>& columns) const {
         return (sqlite3_src_.getNextRecord(columns));
+    }
+
+    virtual string getPreviousName(int zone_id, const string& name) const {
+        return (sqlite3_src_.getPreviousName(zone_id, name));
     }
 
 #ifdef notyet
@@ -103,12 +108,13 @@ typedef RRsetMap::value_type RRsetMapEntry;
 
 bool
 getRRsets(const DataBaseConnection& conn, int zone_id, const Name& name,
-          RRClass rrclass, RRsetMap& target)
+          RRClass rrclass, RRsetMap& target, int& rows)
 {
     bool found = false;
 
     vector<string> columns;
     conn.searchForRecords(zone_id, name.toText());
+    rows = 0;
     while (true) {
         const DataSrc::Result result = conn.getNextRecord(columns);
         if (result != DataSrc::SUCCESS) {
@@ -116,6 +122,7 @@ getRRsets(const DataBaseConnection& conn, int zone_id, const Name& name,
         }
 
         assert(columns.size() == 4); // should actually be exception
+        ++rows;
         const RRType rrtype(columns[0]);
         if (target.find(rrtype) != target.end()) {
             found = true;
@@ -143,6 +150,7 @@ DataBaseZoneHandle::find(const Name& name, const RRType& type,
     RRsetMap rrsets;
     RRsetPtr nsrrset;
     RRsetPtr rrset;
+    int match_rrs;
 
     // Match downward, from the zone apex to the query name, looking for
     // referrals.  Note that we exclude the apex name and query name
@@ -155,7 +163,7 @@ DataBaseZoneHandle::find(const Name& name, const RRType& type,
             rrsets.insert(RRsetMapEntry(RRType::DNAME(), RRsetPtr()));
             if (getRRsets(conn_, id_, sub,
                           RRClass::IN(), // experimentally faked
-                          rrsets)) {
+                          rrsets, match_rrs)) {
                 if ((rrset = rrsets[RRType::DNAME()])) {
                     return (FindResult(DNAME, rrset));
                 }
@@ -172,19 +180,21 @@ DataBaseZoneHandle::find(const Name& name, const RRType& type,
         }
     }
 
-    // wildcard, NXRRSET/NXDOMAIN cases
-
     rrsets.clear();
     rrsets.insert(RRsetMapEntry(type, RRsetPtr()));
     rrsets.insert(RRsetMapEntry(RRType::CNAME(), RRsetPtr()));
-    if (getRRsets(conn_, id_, name, RRClass::IN(), rrsets)) {
+    if (getRRsets(conn_, id_, name, RRClass::IN(), rrsets, match_rrs)) {
         if ((rrset = rrsets[type])) {
             return (FindResult(SUCCESS, rrset));
         } else if ((rrset = rrsets[RRType::CNAME()])) {
             return (FindResult(CNAME, rrset));
         }
     }
-
+    if (match_rrs == 0) {
+        // There isn't even any type of RR of the name.  It's NXDOMAIN.
+        // (should actually consider empty node case and wildcard)
+        return (FindResult(NXDOMAIN, ConstRRsetPtr()));
+    }
     return (FindResult(NXRRSET, ConstRRsetPtr()));
 }
 

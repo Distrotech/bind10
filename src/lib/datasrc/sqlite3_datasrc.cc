@@ -571,15 +571,6 @@ Sqlite3DataSrc::findReferral(const Name& qname,
     return (SUCCESS);
 }
 
-void
-Sqlite3DataSrc::searchForRecords(int zone_id, const string& name) const {
-    sqlite3_reset(dbparameters->q_any_);
-    sqlite3_clear_bindings(dbparameters->q_any_);
-    sqlite3_bind_int(dbparameters->q_any_, 1, zone_id);
-    sqlite3_bind_text(dbparameters->q_any_, 2, name.c_str(), -1,
-                      SQLITE_TRANSIENT); // this must transient
-}
-
 namespace {
 const char*
 convertToPlainChar(const unsigned char* ucp) {
@@ -589,6 +580,15 @@ convertToPlainChar(const unsigned char* ucp) {
     const void* p = ucp;
     return (static_cast<const char*>(p));
 }
+}
+
+void
+Sqlite3DataSrc::searchForRecords(int zone_id, const string& name) const {
+    sqlite3_reset(dbparameters->q_any_);
+    sqlite3_clear_bindings(dbparameters->q_any_);
+    sqlite3_bind_int(dbparameters->q_any_, 1, zone_id);
+    sqlite3_bind_text(dbparameters->q_any_, 2, name.c_str(), -1,
+                      SQLITE_TRANSIENT); // this must be transient
 }
 
 DataSrc::Result
@@ -613,10 +613,38 @@ Sqlite3DataSrc::getNextRecord(vector<string>& columns) const {
     isc_throw(DataSourceError, "Unexpected failure in sqlite3_step");
 }
 
+string
+Sqlite3DataSrc::getPreviousName(int zone_id, const string& name) const {
+    string ret;
+
+    sqlite3_reset(dbparameters->q_previous_);
+    sqlite3_clear_bindings(dbparameters->q_previous_);
+    sqlite3_bind_int(dbparameters->q_previous_, 1, zone_id);
+    sqlite3_bind_text(dbparameters->q_previous_, 2,
+                      name.c_str(), -1, SQLITE_STATIC);
+    const int rc = sqlite3_step(dbparameters->q_previous_);
+    if (rc == SQLITE_ROW) {
+        ret = string(convertToPlainChar(sqlite3_column_text(
+                                             dbparameters->q_previous_, 0)));
+    }
+    sqlite3_reset(dbparameters->q_previous_);
+
+    return (ret);
+}
+
 DataSrc::Result
 Sqlite3DataSrc::getZone(const string& name, int& zone_id) const {
-    zone_id = hasExactZone(name.c_str());
-    return (zone_id >= 0 ? SUCCESS : ERROR);
+    // mostly a copy of hasExactZone(), but do so to be as self-contained as
+    // possible.
+    sqlite3_reset(dbparameters->q_zone_);
+    sqlite3_bind_text(dbparameters->q_zone_, 1, name.c_str(), -1,
+                      SQLITE_STATIC);
+    const int rc = sqlite3_step(dbparameters->q_zone_);
+    if (rc == SQLITE_ROW) {
+        zone_id = sqlite3_column_int(dbparameters->q_zone_, 0);
+    }
+    sqlite3_reset(dbparameters->q_zone_);
+    return (rc == SQLITE_ROW ? SUCCESS : ERROR);
 }
 
 Sqlite3DataSrc::Sqlite3DataSrc() :

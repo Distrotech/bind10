@@ -81,6 +81,10 @@ TEST_F(DataBaseDataSourceClientTest, find) {
               zone->find(Name("foo.example.com"), RRType::AAAA()).code);
     EXPECT_EQ(ZoneHandle::SUCCESS,
               zone->find(Name("foo.example.com"), RRType::CNAME()).code);
+
+    // NXDOMAIN
+    EXPECT_EQ(ZoneHandle::NXDOMAIN,
+              zone->find(Name("notexist.example.com"), RRType::A()).code);
 }
 
 }
