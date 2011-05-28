@@ -100,7 +100,8 @@ public:
     // experimental extensions
     Result init(const std::string& db_file);
     DataSrc::Result getZone(const std::string& name, int& zone_id) const;
-    void searchForRecords(int zone_id, const std::string& name) const;
+    void searchForRecords(int zone_id, const std::string& name,
+                          bool match_subdomain) const;
     DataSrc::Result getNextRecord(std::vector<std::string>& columns) const;
     std::string getPreviousName(int zone_id, const std::string& name) const;
 

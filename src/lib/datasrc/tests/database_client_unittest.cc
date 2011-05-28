@@ -85,6 +85,10 @@ TEST_F(DataBaseDataSourceClientTest, find) {
     // NXDOMAIN
     EXPECT_EQ(ZoneHandle::NXDOMAIN,
               zone->find(Name("notexist.example.com"), RRType::A()).code);
+
+    // empty node NXRRSET
+    EXPECT_EQ(ZoneHandle::NXRRSET,
+              zone->find(Name("bar.example.com"), RRType::A()).code);
 }
 
 }

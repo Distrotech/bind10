@@ -43,7 +43,8 @@ public:
     virtual ~DataBaseConnection() {}
     virtual DataSrc::Result getZone(const string& name,
                                     int& zone_id) const = 0;
-    virtual void searchForRecords(int zone_id, const string& name) const = 0;
+    virtual void searchForRecords(int zone_id, const string& name,
+                                  bool match_subdomain = false) const = 0;
     virtual DataSrc::Result getNextRecord(vector<string>& columns) const = 0;
     virtual string getPreviousName(int zone_id, const string& name) const = 0;
 };
@@ -60,8 +61,10 @@ public:
         return (sqlite3_src_.getZone(name, zone_id));
     }
 
-    virtual void searchForRecords(int zone_id, const string& name) const {
-        sqlite3_src_.searchForRecords(zone_id, name);
+    virtual void searchForRecords(int zone_id, const string& name,
+                                  bool match_subdomain) const
+    {
+        sqlite3_src_.searchForRecords(zone_id, name, match_subdomain);
     }
 
     virtual DataSrc::Result getNextRecord(vector<string>& columns) const {
@@ -141,6 +144,14 @@ getRRsets(const DataBaseConnection& conn, int zone_id, const Name& name,
 
     return (found);
 }
+
+bool
+isEmptyNodeName(const DataBaseConnection& conn, int zone_id, const Name& name)
+{
+    vector<string> columns;
+    conn.searchForRecords(zone_id, name.toText(), true);
+    return (conn.getNextRecord(columns) == DataSrc::SUCCESS);
+}
 }
 
 ZoneHandle::FindResult
@@ -191,8 +202,11 @@ DataBaseZoneHandle::find(const Name& name, const RRType& type,
         }
     }
     if (match_rrs == 0) {
-        // There isn't even any type of RR of the name.  It's NXDOMAIN.
-        // (should actually consider empty node case and wildcard)
+        // There isn't even any type of RR of the name.  It's either NXRRSET
+        // if it's an empty non terminal or NXDOMAIN.
+        if (isEmptyNodeName(conn_, id_, name)) {
+            return (FindResult(NXRRSET, ConstRRsetPtr()));
+        }
         return (FindResult(NXDOMAIN, ConstRRsetPtr()));
     }
     return (FindResult(NXRRSET, ConstRRsetPtr()));

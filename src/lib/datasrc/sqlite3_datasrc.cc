@@ -34,18 +34,22 @@ namespace isc {
 namespace datasrc {
 
 struct Sqlite3Parameters {
-    Sqlite3Parameters() :  db_(NULL), version_(-1),
-        q_zone_(NULL), q_record_(NULL), q_addrs_(NULL), q_referral_(NULL),
-        q_any_(NULL), q_count_(NULL), q_previous_(NULL), q_nsec3_(NULL),
-        q_prevnsec3_(NULL)
+    Sqlite3Parameters() :  db_(NULL), version_(-1), current_stmt_(NULL),
+                           q_zone_(NULL), q_record_(NULL), q_addrs_(NULL),
+                           q_referral_(NULL), q_any_(NULL),
+                           q_any_and_sub_(NULL), q_count_(NULL),
+                           q_previous_(NULL), q_nsec3_(NULL),
+                           q_prevnsec3_(NULL)
     {}
     sqlite3* db_;
     int version_;
+    sqlite3_stmt* current_stmt_;
     sqlite3_stmt* q_zone_;
     sqlite3_stmt* q_record_;
     sqlite3_stmt* q_addrs_;
     sqlite3_stmt* q_referral_;
     sqlite3_stmt* q_any_;
+    sqlite3_stmt* q_any_and_sub_;
     sqlite3_stmt* q_count_;
     sqlite3_stmt* q_previous_;
     sqlite3_stmt* q_nsec3_;
@@ -96,6 +100,9 @@ const char* const q_referral_str = "SELECT rdtype, ttl, sigtype, rdata FROM "
 
 const char* const q_any_str = "SELECT rdtype, ttl, sigtype, rdata "
     "FROM records WHERE zone_id=?1 AND name=?2";
+
+const char* const q_any_and_sub_str = "SELECT rdtype, ttl, sigtype, rdata "
+    "FROM records WHERE zone_id=?1 AND name LIKE ('%' || ?2);";
 
 const char* const q_count_str = "SELECT COUNT(*) FROM records "
     "WHERE zone_id=?1 AND rname LIKE (?2 || '%');";
@@ -583,33 +590,37 @@ convertToPlainChar(const unsigned char* ucp) {
 }
 
 void
-Sqlite3DataSrc::searchForRecords(int zone_id, const string& name) const {
-    sqlite3_reset(dbparameters->q_any_);
-    sqlite3_clear_bindings(dbparameters->q_any_);
-    sqlite3_bind_int(dbparameters->q_any_, 1, zone_id);
-    sqlite3_bind_text(dbparameters->q_any_, 2, name.c_str(), -1,
+Sqlite3DataSrc::searchForRecords(int zone_id, const string& name,
+                                 bool match_subdomain) const
+{
+    dbparameters->current_stmt_ = match_subdomain ?
+        dbparameters->q_any_and_sub_ : dbparameters->q_any_;
+    sqlite3_reset(dbparameters->current_stmt_);
+    sqlite3_clear_bindings(dbparameters->current_stmt_);
+    sqlite3_bind_int(dbparameters->current_stmt_, 1, zone_id);
+    sqlite3_bind_text(dbparameters->current_stmt_, 2, name.c_str(), -1,
                       SQLITE_TRANSIENT); // this must be transient
 }
 
 DataSrc::Result
 Sqlite3DataSrc::getNextRecord(vector<string>& columns) const {
-    sqlite3_stmt* current_stmt = dbparameters->q_any_;
-    const int rc = sqlite3_step(current_stmt);
+    const int rc = sqlite3_step(dbparameters->current_stmt_);
 
     if (rc == SQLITE_ROW) {
         columns.clear();
         for (int column = 0; column < 4; ++column) {
-            columns.push_back(convertToPlainChar(sqlite3_column_text(
-                                                     current_stmt, column)));
+            columns.push_back(convertToPlainChar(
+                                  sqlite3_column_text(
+                                      dbparameters->current_stmt_, column)));
         }
         return (SUCCESS);
     } else if (rc == SQLITE_DONE) {
         // reached the end of matching rows
-        sqlite3_reset(current_stmt);
-        sqlite3_clear_bindings(current_stmt);
+        sqlite3_reset(dbparameters->current_stmt_);
+        sqlite3_clear_bindings(dbparameters->current_stmt_);
         return (ERROR); // error code is not a good one, but use it for now
     }
-    sqlite3_reset(current_stmt);
+    sqlite3_reset(dbparameters->current_stmt_);
     isc_throw(DataSourceError, "Unexpected failure in sqlite3_step");
 }
 
@@ -765,6 +776,7 @@ checkAndSetupSchema(Sqlite3Initializer* initializer) {
     initializer->params_.q_addrs_ = prepare(db, q_addrs_str);
     initializer->params_.q_referral_ = prepare(db, q_referral_str);
     initializer->params_.q_any_ = prepare(db, q_any_str);
+    initializer->params_.q_any_and_sub_ = prepare(db, q_any_and_sub_str);
     initializer->params_.q_count_ = prepare(db, q_count_str);
     initializer->params_.q_previous_ = prepare(db, q_previous_str);
     initializer->params_.q_nsec3_ = prepare(db, q_nsec3_str);
@@ -818,6 +830,9 @@ Sqlite3DataSrc::close(void) {
 
     sqlite3_finalize(dbparameters->q_any_);
     dbparameters->q_any_ = NULL;
+
+    sqlite3_finalize(dbparameters->q_any_and_sub_);
+    dbparameters->q_any_and_sub_ = NULL;
 
     sqlite3_finalize(dbparameters->q_count_);
     dbparameters->q_count_ = NULL;
