@@ -18,9 +18,12 @@
 
 #include <datasrc/database_client.h>
 
+#include <testutils/dnsmessage_test.h>
+
 using namespace std;
 using namespace isc::dns;
 using namespace isc::datasrc;
+using namespace isc::testutils;
 
 namespace {
 const char* const SQLITE_DBFILE_EXAMPLE = TEST_DATA_DIR "/test.sqlite3";
@@ -89,6 +92,25 @@ TEST_F(DataBaseDataSourceClientTest, find) {
     // empty node NXRRSET
     EXPECT_EQ(ZoneHandle::NXRRSET,
               zone->find(Name("bar.example.com"), RRType::A()).code);
+}
+
+TEST_F(DataBaseDataSourceClientTest, zoneIterator) {
+    ZoneIteratorPtr iterator =
+        db_client.createZoneIterator(Name("example.com"));
+    vector<ConstRRsetPtr> actual_rrsets;
+    ConstRRsetPtr rrset = iterator->getNextRRset();
+    ASSERT_TRUE(rrset);
+    actual_rrsets.push_back(rrset);
+    rrset = iterator->getNextRRset();
+    ASSERT_TRUE(rrset);
+    actual_rrsets.push_back(rrset);
+
+    rrsetsCheck("example.com. 3600 IN SOA master.example.com. "
+                "admin.example.com. 1234 3600 1800 2419200 7200\n"
+                "example.com. 3600 IN RRSIG SOA 5 2 3600 20100322084538 "
+                "20100220084538 33495 example.com. FAKEFAKEFAKEFAKE",
+                actual_rrsets.begin(), actual_rrsets.end(),
+                Name("example.com"));
 }
 
 }

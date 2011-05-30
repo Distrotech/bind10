@@ -15,7 +15,7 @@
 #include <string>
 #include <map>
 
-#include <boost/foreach.hpp>
+#include <boost/scoped_ptr.hpp>
 
 #include <dns/name.h>
 #include <dns/rrtype.h>
@@ -31,6 +31,7 @@
 #include <datasrc/sqlite3_datasrc.h>
 
 using namespace std;
+using namespace boost;
 using namespace isc::dns;
 using namespace isc::dns::rdata;
 
@@ -45,6 +46,7 @@ public:
                                     int& zone_id) const = 0;
     virtual void searchForRecords(int zone_id, const string& name,
                                   bool match_subdomain = false) const = 0;
+    virtual void traverseZone(int zone_id) const = 0;
     virtual DataSrc::Result getNextRecord(vector<string>& columns) const = 0;
     virtual string getPreviousName(int zone_id, const string& name) const = 0;
 };
@@ -65,6 +67,10 @@ public:
                                   bool match_subdomain) const
     {
         sqlite3_src_.searchForRecords(zone_id, name, match_subdomain);
+    }
+
+    virtual void traverseZone(int zone_id) const {
+        sqlite3_src_.traverseZone(zone_id);
     }
 
     virtual DataSrc::Result getNextRecord(vector<string>& columns) const {
@@ -106,6 +112,32 @@ private:
 };
 
 namespace {
+class DataBaseZoneIterator : public ZoneIterator {
+public:
+    DataBaseZoneIterator(const Name& zone_name, const string& conn_param) :
+        conn_(new SQLite3Connection(conn_param))
+    {
+        int zone_id;
+        conn_->getZone(zone_name.toText(), zone_id);
+        conn_->traverseZone(zone_id);
+    }
+    ConstRRsetPtr getNextRRset() {
+        vector<string> columns;
+        const DataSrc::Result result = conn_->getNextRecord(columns);
+        if (result != DataSrc::SUCCESS) {
+            return (RRsetPtr());
+        }
+        assert(columns.size() == 4); // should actually be exception
+        const RRType rrtype(columns[1]);
+        RRsetPtr rrset(new RRset(Name(columns[0]), RRClass::IN(),
+                                 rrtype, RRTTL(columns[2])));
+        rrset->addRdata(createRdata(rrtype, RRClass::IN(), columns[3]));
+        return (rrset);
+    }
+private:
+    boost::scoped_ptr<DataBaseConnection> conn_;
+};
+
 typedef map<RRType, RRsetPtr> RRsetMap;
 typedef RRsetMap::value_type RRsetMapEntry;
 
@@ -217,6 +249,7 @@ DataBaseDataSourceClient::DataBaseDataSourceClient() : conn_(NULL) {
 
 void
 DataBaseDataSourceClient::open(const string& param) {
+    param_ = param;             // remember it for later use
     conn_ = new SQLite3Connection(param);
 }
 
@@ -237,6 +270,13 @@ DataBaseDataSourceClient::findZone(const isc::dns::Name& name) const {
         }
     }
     return (FindResult(result::NOTFOUND, ZoneHandlePtr()));
+}
+
+ZoneIteratorPtr
+DataBaseDataSourceClient::createZoneIterator(const isc::dns::Name& name)
+    const
+{
+    return (ZoneIteratorPtr(new DataBaseZoneIterator(name, param_)));
 }
 }
 }

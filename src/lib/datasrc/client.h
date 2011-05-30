@@ -15,6 +15,10 @@
 #ifndef __CLIENT_H
 #define __CLIENT_H 1
 
+#include <boost/shared_ptr.hpp>
+
+#include <dns/rrset.h>
+
 #include <datasrc/zone.h>
 
 namespace isc {
@@ -22,6 +26,17 @@ namespace dns {
 class Name;
 }
 namespace datasrc {
+class ZoneIterator;
+typedef boost::shared_ptr<ZoneIterator> ZoneIteratorPtr;
+
+class ZoneIterator {
+protected:
+    ZoneIterator() {}
+public:
+    virtual ~ZoneIterator() {}
+    virtual isc::dns::ConstRRsetPtr getNextRRset() = 0;
+};
+
 class DataSourceClient {
 protected:
     DataSourceClient() {}
@@ -62,13 +77,15 @@ public:
     // eventually this will need to be non const member function
     // (unfortunately)
     virtual FindResult findZone(const isc::dns::Name& name) const = 0;
-#ifdef notyet
-    virtual void dumpZone();    // synchronous, asynchronous
 
     // This will create a separate DB connection, etc
     // iterator should probably be per RR basis (or RRset but may not be
     // unique)
-    virtual createZoneIterator();
+    virtual ZoneIteratorPtr createZoneIterator(const isc::dns::Name& name)
+        const = 0;
+
+#ifdef notyet
+    virtual void dumpZone();    // synchronous, asynchronous
 
     // This will create a separate DB connection, etc
     // note that in the original design of #374 we cannot parallelize updating

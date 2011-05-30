@@ -280,6 +280,10 @@ public:
     /// \return A \c FindResult object enclosing the search result (see above).
     virtual FindResult findZone(const isc::dns::Name& name) const;
 
+    virtual ZoneIteratorPtr createZoneIterator(const isc::dns::Name&) const {
+        return (ZoneIteratorPtr());
+    }
+
 private:
     class MemoryDataSourceClientImpl;
     MemoryDataSourceClientImpl* impl_;

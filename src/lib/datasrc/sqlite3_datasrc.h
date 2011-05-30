@@ -104,6 +104,7 @@ public:
                           bool match_subdomain) const;
     DataSrc::Result getNextRecord(std::vector<std::string>& columns) const;
     std::string getPreviousName(int zone_id, const std::string& name) const;
+    void traverseZone(int zone_id) const;
 
 private:
     enum Mode {

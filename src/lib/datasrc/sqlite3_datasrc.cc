@@ -39,7 +39,7 @@ struct Sqlite3Parameters {
                            q_referral_(NULL), q_any_(NULL),
                            q_any_and_sub_(NULL), q_count_(NULL),
                            q_previous_(NULL), q_nsec3_(NULL),
-                           q_prevnsec3_(NULL)
+                           q_prevnsec3_(NULL), q_traverse_zone_(NULL)
     {}
     sqlite3* db_;
     int version_;
@@ -54,6 +54,7 @@ struct Sqlite3Parameters {
     sqlite3_stmt* q_previous_;
     sqlite3_stmt* q_nsec3_;
     sqlite3_stmt* q_prevnsec3_;
+    sqlite3_stmt* q_traverse_zone_;
 };
 
 namespace {
@@ -117,6 +118,8 @@ const char* const q_nsec3_str = "SELECT rdtype, ttl, rdata FROM nsec3 "
 const char* const q_prevnsec3_str = "SELECT hash FROM nsec3 "
     "WHERE zone_id = ?1 AND hash <= $2 ORDER BY hash DESC LIMIT 1";
 
+const char* const q_traverse_zone_str = "SELECT name, rdtype, ttl, rdata "
+    "FROM records WHERE zone_id=?1";
 }
 
 //
@@ -643,6 +646,14 @@ Sqlite3DataSrc::getPreviousName(int zone_id, const string& name) const {
     return (ret);
 }
 
+void
+Sqlite3DataSrc::traverseZone(int zone_id) const {
+    dbparameters->current_stmt_ = dbparameters->q_traverse_zone_;
+    sqlite3_reset(dbparameters->current_stmt_);
+    sqlite3_clear_bindings(dbparameters->current_stmt_);
+    sqlite3_bind_int(dbparameters->current_stmt_, 1, zone_id);
+}
+
 DataSrc::Result
 Sqlite3DataSrc::getZone(const string& name, int& zone_id) const {
     // mostly a copy of hasExactZone(), but do so to be as self-contained as
@@ -726,6 +737,9 @@ public:
         if (params_.q_prevnsec3_ != NULL) {
             sqlite3_finalize(params_.q_prevnsec3_);
         }
+        if (params_.q_traverse_zone_ != NULL) {
+            sqlite3_finalize(params_.q_traverse_zone_);
+        }
         if (params_.db_ != NULL) {
             sqlite3_close(params_.db_);
         }
@@ -781,6 +795,7 @@ checkAndSetupSchema(Sqlite3Initializer* initializer) {
     initializer->params_.q_previous_ = prepare(db, q_previous_str);
     initializer->params_.q_nsec3_ = prepare(db, q_nsec3_str);
     initializer->params_.q_prevnsec3_ = prepare(db, q_prevnsec3_str);
+    initializer->params_.q_traverse_zone_ = prepare(db, q_traverse_zone_str);
 }
 }
 
