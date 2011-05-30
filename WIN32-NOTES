@@ -29,7 +29,8 @@ What is needed:
  - setproctitle python module (in theory)
 
  - botan 1.8.x (compiled from sources to control things, i.e.,
-  tried to factorize the (in)convenience with gtest)
+  tried to factorize the (in)convenience with gtest. Note its
+  config requires a python2)
 
  - log4cplus (in the future)
 
@@ -58,12 +59,12 @@ Where I put things (hardwired paths):
  - <home>\botan\include and <home>\botan\md{9,10}\{Debug,Release}
    (--disable-shared to get static libs, no DLL)
 
- - "C:\\Program Files\boost\boost_1_44" (the include and
+ - "C:\Program Files\boost\boost_1_44" (the include and
   sometimes the libraries (in lib) too)
 
- - C:\\Python32 (update your PATH, same for perl)
+ - C:\Python32 (update your PATH, same for perl)
 
- - C:\\sqlite3
+ - C:\sqlite3
 
 How to compile:
 
