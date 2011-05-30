@@ -105,6 +105,11 @@ public:
     DataSrc::Result getNextRecord(std::vector<std::string>& columns) const;
     std::string getPreviousName(int zone_id, const std::string& name) const;
     void traverseZone(int zone_id) const;
+    void startUpdateZoneTransaction(int zone_id, bool replace);
+    void addRecordToZone(int zone_id,
+                         const std::vector<std::string>& record_params);
+    void commitUpdateZoneTransaction();
+    void resetQuery();
 
 private:
     enum Mode {

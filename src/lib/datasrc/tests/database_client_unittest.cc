@@ -15,6 +15,11 @@
 #include <gtest/gtest.h>
 
 #include <dns/name.h>
+#include <dns/rdata.h>
+#include <dns/rrclass.h>
+#include <dns/rrset.h>
+#include <dns/rrttl.h>
+#include <dns/rrtype.h>
 
 #include <datasrc/database_client.h>
 
@@ -22,11 +27,12 @@
 
 using namespace std;
 using namespace isc::dns;
+using namespace isc::dns::rdata;
 using namespace isc::datasrc;
 using namespace isc::testutils;
 
 namespace {
-const char* const SQLITE_DBFILE_EXAMPLE = TEST_DATA_DIR "/test.sqlite3";
+const char* const SQLITE_DBFILE_EXAMPLE = TEST_DATA_DIR "/test.sqlite3.bak";
 
 class DataBaseDataSourceClientTest : public ::testing::Test {
 protected:
@@ -111,6 +117,44 @@ TEST_F(DataBaseDataSourceClientTest, zoneIterator) {
                 "20100220084538 33495 example.com. FAKEFAKEFAKEFAKE",
                 actual_rrsets.begin(), actual_rrsets.end(),
                 Name("example.com"));
+}
+
+TEST_F(DataBaseDataSourceClientTest, updateZone) {
+    ZoneHandlePtr zone = db_client.findZone(Name("example.com")).zone;
+    ZoneUpdaterPtr updater =
+        db_client.startUpdateZone(Name("example.com"), false);
+    EXPECT_EQ(ZoneHandle::NXDOMAIN,
+              zone->find(Name("newrecord.example.com"), RRType::A()).code);
+    RRset new_rrset(Name("newrecord.example.com"), RRClass::IN(), RRType::A(),
+                    RRTTL(3600));
+    new_rrset.addRdata(rdata::createRdata(RRType::A(), RRClass::IN(),
+                                          "192.0.2.100"));
+    updater->addRRset(new_rrset);
+    EXPECT_EQ(ZoneHandle::SUCCESS,
+              zone->find(Name("newrecord.example.com"), RRType::A()).code);
+    updater->commit();
+    EXPECT_EQ(ZoneHandle::SUCCESS,
+              zone->find(Name("newrecord.example.com"), RRType::A()).code);
+}
+
+TEST_F(DataBaseDataSourceClientTest, replaceZone) {
+    ZoneHandlePtr zone = db_client.findZone(Name("example.com")).zone;
+    EXPECT_EQ(ZoneHandle::SUCCESS,
+              zone->find(Name("example.com"), RRType::SOA()).code);
+    ZoneUpdaterPtr updater =
+        db_client.startUpdateZone(Name("example.com"), true);
+    EXPECT_EQ(ZoneHandle::NXDOMAIN,
+              zone->find(Name("example.com"), RRType::SOA()).code);
+    RRset new_rrset(Name("example.com"), RRClass::IN(), RRType::SOA(),
+                    RRTTL(3600));
+    new_rrset.addRdata(rdata::createRdata(RRType::SOA(), RRClass::IN(),
+                                          "master.example.com. "
+                                          "admin.example.com. "
+                                          "1234 3600 1800 2419200 7200"));
+    updater->addRRset(new_rrset);
+    updater->commit();
+    EXPECT_EQ(ZoneHandle::SUCCESS,
+              zone->find(Name("example.com"), RRType::SOA()).code);
 }
 
 }

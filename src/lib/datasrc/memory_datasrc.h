@@ -284,6 +284,11 @@ public:
         return (ZoneIteratorPtr());
     }
 
+    // not implemented yet
+    virtual ZoneUpdaterPtr startUpdateZone(const isc::dns::Name&, bool) {
+        return (ZoneUpdaterPtr());
+    }
+
 private:
     class MemoryDataSourceClientImpl;
     MemoryDataSourceClientImpl* impl_;

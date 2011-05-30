@@ -15,6 +15,8 @@
 #include <string>
 #include <sstream>
 
+#include <boost/foreach.hpp>
+
 #include <sqlite3.h>
 
 #include <datasrc/sqlite3_datasrc.h>
@@ -27,6 +29,7 @@
 #include <dns/rrsetlist.h>
 
 using namespace std;
+using namespace boost;
 using namespace isc::dns;
 using namespace isc::dns::rdata;
 
@@ -39,7 +42,9 @@ struct Sqlite3Parameters {
                            q_referral_(NULL), q_any_(NULL),
                            q_any_and_sub_(NULL), q_count_(NULL),
                            q_previous_(NULL), q_nsec3_(NULL),
-                           q_prevnsec3_(NULL), q_traverse_zone_(NULL)
+                           q_prevnsec3_(NULL), q_traverse_zone_(NULL),
+                           q_delete_zone_records_(NULL),
+                           q_add_record_to_zone_(NULL)
     {}
     sqlite3* db_;
     int version_;
@@ -55,6 +60,8 @@ struct Sqlite3Parameters {
     sqlite3_stmt* q_nsec3_;
     sqlite3_stmt* q_prevnsec3_;
     sqlite3_stmt* q_traverse_zone_;
+    sqlite3_stmt* q_delete_zone_records_;
+    sqlite3_stmt* q_add_record_to_zone_;
 };
 
 namespace {
@@ -120,6 +127,13 @@ const char* const q_prevnsec3_str = "SELECT hash FROM nsec3 "
 
 const char* const q_traverse_zone_str = "SELECT name, rdtype, ttl, rdata "
     "FROM records WHERE zone_id=?1";
+
+const char* const q_delete_zone_records_str = "DELETE FROM records WHERE "
+    "zone_id=?1";
+
+const char* const q_add_record_to_zone_str = "INSERT INTO records "
+    "(zone_id, name, rname, ttl, rdtype, sigtype, rdata) "
+    "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)";
 }
 
 //
@@ -669,6 +683,55 @@ Sqlite3DataSrc::getZone(const string& name, int& zone_id) const {
     return (rc == SQLITE_ROW ? SUCCESS : ERROR);
 }
 
+void
+Sqlite3DataSrc::startUpdateZoneTransaction(int zone_id, bool replace) {
+    if (sqlite3_exec(dbparameters->db_, "begin", NULL, NULL, NULL)
+        != SQLITE_OK) {
+        isc_throw(Sqlite3Error, "failed to start a transaction");
+    }
+    if (replace) {
+        sqlite3_reset(dbparameters->q_delete_zone_records_);
+        sqlite3_bind_int(dbparameters->q_delete_zone_records_, 1, zone_id);
+        const int rc = sqlite3_step(dbparameters->q_delete_zone_records_);
+        if (rc != SQLITE_DONE) {
+            sqlite3_reset(dbparameters->q_delete_zone_records_);
+            isc_throw(Sqlite3Error, "failed to delete zone records");
+        }
+        sqlite3_reset(dbparameters->q_delete_zone_records_);
+    }
+}
+
+void
+Sqlite3DataSrc::addRecordToZone(int zone_id,
+                                const vector<string>& record_params)
+{
+    int param_id = 0;
+    sqlite3_reset(dbparameters->q_add_record_to_zone_);
+    sqlite3_bind_int(dbparameters->q_add_record_to_zone_, ++param_id, zone_id);
+    BOOST_FOREACH(const string& param, record_params) {
+        sqlite3_bind_text(dbparameters->q_add_record_to_zone_, ++param_id,
+                          param.c_str(), -1, SQLITE_TRANSIENT);
+    }
+    if (sqlite3_step(dbparameters->q_add_record_to_zone_) != SQLITE_DONE) {
+        isc_throw(Sqlite3Error, "failed to add a record to SQLite DB");
+    }
+}
+
+void
+Sqlite3DataSrc::commitUpdateZoneTransaction() {
+    const int rc = sqlite3_exec(dbparameters->db_, "commit", NULL, NULL, NULL);
+    if (rc != SQLITE_OK) {
+        isc_throw(Sqlite3Error, "failed to commit a transaction: " << rc);
+    }
+}
+
+void
+Sqlite3DataSrc::resetQuery() {
+    if (dbparameters->current_stmt_ != NULL) {
+        sqlite3_reset(dbparameters->current_stmt_);
+    }
+}
+
 Sqlite3DataSrc::Sqlite3DataSrc() :
     dbparameters(new Sqlite3Parameters)
 {
@@ -740,6 +803,12 @@ public:
         if (params_.q_traverse_zone_ != NULL) {
             sqlite3_finalize(params_.q_traverse_zone_);
         }
+        if (params_.q_delete_zone_records_ != NULL) {
+            sqlite3_finalize(params_.q_delete_zone_records_);
+        }
+        if (params_.q_add_record_to_zone_ != NULL) {
+            sqlite3_finalize(params_.q_add_record_to_zone_);
+        }
         if (params_.db_ != NULL) {
             sqlite3_close(params_.db_);
         }
@@ -796,6 +865,10 @@ checkAndSetupSchema(Sqlite3Initializer* initializer) {
     initializer->params_.q_nsec3_ = prepare(db, q_nsec3_str);
     initializer->params_.q_prevnsec3_ = prepare(db, q_prevnsec3_str);
     initializer->params_.q_traverse_zone_ = prepare(db, q_traverse_zone_str);
+    initializer->params_.q_delete_zone_records_ =
+        prepare(db, q_delete_zone_records_str);
+    initializer->params_.q_add_record_to_zone_ =
+        prepare(db, q_add_record_to_zone_str);
 }
 }
 
@@ -860,6 +933,15 @@ Sqlite3DataSrc::close(void) {
 
     sqlite3_finalize(dbparameters->q_nsec3_);
     dbparameters->q_nsec3_ = NULL;
+
+    sqlite3_finalize(dbparameters->q_traverse_zone_);
+    dbparameters->q_traverse_zone_ = NULL;
+
+    sqlite3_finalize(dbparameters->q_delete_zone_records_);
+    dbparameters->q_delete_zone_records_ = NULL;
+
+    sqlite3_finalize(dbparameters->q_add_record_to_zone_);
+    dbparameters->q_add_record_to_zone_ = NULL;
 
     sqlite3_close(dbparameters->db_);
     dbparameters->db_ = NULL;

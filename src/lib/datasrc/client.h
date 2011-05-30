@@ -24,6 +24,7 @@
 namespace isc {
 namespace dns {
 class Name;
+class RRset;
 }
 namespace datasrc {
 class ZoneIterator;
@@ -36,6 +37,16 @@ public:
     virtual ~ZoneIterator() {}
     virtual isc::dns::ConstRRsetPtr getNextRRset() = 0;
 };
+
+class ZoneUpdater {
+protected:
+    ZoneUpdater() {}
+public:
+    virtual ~ZoneUpdater() {}
+    virtual void addRRset(const isc::dns::RRset& rrset) = 0;
+    virtual void commit() = 0;
+};
+typedef boost::shared_ptr<ZoneUpdater> ZoneUpdaterPtr;
 
 class DataSourceClient {
 protected:
@@ -84,13 +95,14 @@ public:
     virtual ZoneIteratorPtr createZoneIterator(const isc::dns::Name& name)
         const = 0;
 
-#ifdef notyet
-    virtual void dumpZone();    // synchronous, asynchronous
-
-    // This will create a separate DB connection, etc
+    // This may have an option to use a separate DB connection, etc
     // note that in the original design of #374 we cannot parallelize updating
     // multiple (different) zones.
-    virtual ZoneUpdater beginUpdateZone(bool replace);
+    virtual ZoneUpdaterPtr startUpdateZone(const isc::dns::Name& zone_name,
+                                           bool replace) = 0;
+
+#ifdef notyet
+    virtual void dumpZone();    // synchronous, asynchronous
 #endif
 };
 #ifdef sample

@@ -24,9 +24,12 @@ class DataBaseConnection;
 class DataBaseDataSourceClient : public DataSourceClient {
 public:
     DataBaseDataSourceClient();
+    virtual ~DataBaseDataSourceClient();
     virtual void open(const std::string& param);
     virtual FindResult findZone(const isc::dns::Name& name) const;
     virtual ZoneIteratorPtr createZoneIterator(const isc::dns::Name&) const;
+    virtual ZoneUpdaterPtr startUpdateZone(const isc::dns::Name& zone_name,
+                                           bool replace);
 private:
     std::string param_;
     DataBaseConnection* conn_;

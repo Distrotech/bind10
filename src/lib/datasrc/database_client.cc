@@ -14,6 +14,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 #include <boost/scoped_ptr.hpp>
 
@@ -49,6 +50,11 @@ public:
     virtual void traverseZone(int zone_id) const = 0;
     virtual DataSrc::Result getNextRecord(vector<string>& columns) const = 0;
     virtual string getPreviousName(int zone_id, const string& name) const = 0;
+    virtual void startUpdateZoneTransaction(int zone_id, bool replace) = 0;
+    virtual void commitUpdateZoneTransaction() = 0;
+    virtual void addRecordToZone(int zone_id,
+                                 const vector<string>& record_params) = 0;
+    virtual void resetQuery() = 0;
 };
 
 class SQLite3Connection : public DataBaseConnection {
@@ -81,11 +87,24 @@ public:
         return (sqlite3_src_.getPreviousName(zone_id, name));
     }
 
-#ifdef notyet
-    virtual DataSrc::Result searchForRecords(const string& name,
-                                             const string& type) const {
+    virtual void startUpdateZoneTransaction(int zone_id, bool replace) {
+        sqlite3_src_.startUpdateZoneTransaction(zone_id, replace);
     }
-#endif
+
+    virtual void addRecordToZone(int zone_id,
+                                 const vector<string>& record_params)
+    {
+        sqlite3_src_.addRecordToZone(zone_id, record_params);
+    }
+
+    virtual void commitUpdateZoneTransaction() {
+        sqlite3_src_.commitUpdateZoneTransaction();
+    }
+
+    virtual void resetQuery() {
+        sqlite3_src_.resetQuery();
+    }
+
 private:
     // In this initial experiment, we use the current sqlite3 datasrc
     Sqlite3DataSrc sqlite3_src_;
@@ -94,7 +113,7 @@ private:
 class DataBaseZoneHandle : public ZoneHandle {
 public:
     DataBaseZoneHandle(const DataBaseDataSourceClient& client,
-                       const DataBaseConnection& conn,
+                       DataBaseConnection& conn,
                        const Name& origin, int id) :
         client_(client), conn_(conn), origin_(origin), id_(id)
     {}
@@ -106,7 +125,7 @@ public:
 
 private:
     const DataBaseDataSourceClient& client_;
-    const DataBaseConnection& conn_;
+    DataBaseConnection& conn_;
     const Name origin_;
     const int id_;
 };
@@ -120,6 +139,8 @@ public:
         int zone_id;
         conn_->getZone(zone_name.toText(), zone_id);
         conn_->traverseZone(zone_id);
+    }
+    virtual ~DataBaseZoneIterator() {
     }
     ConstRRsetPtr getNextRRset() {
         vector<string> columns;
@@ -138,11 +159,46 @@ private:
     boost::scoped_ptr<DataBaseConnection> conn_;
 };
 
+class DataBaseZoneUpdater : public ZoneUpdater {
+public:
+    DataBaseZoneUpdater(const Name& zone_name, DataBaseConnection& conn,
+                        bool replace) :
+        conn_(conn)
+    {
+        conn_.getZone(zone_name.toText(), zone_id_);
+        conn_.startUpdateZoneTransaction(zone_id_, replace);
+    }
+
+    virtual void addRRset(const isc::dns::RRset& rrset) {
+        vector<string> record_params;
+        record_params.push_back(rrset.getName().toText());
+        record_params.push_back(rrset.getName().reverse().toText());
+        record_params.push_back(rrset.getTTL().toText());
+        record_params.push_back(rrset.getType().toText());
+        // don't do RRSIG specific process for simplicity
+        record_params.push_back("");
+        record_params.push_back(""); // placeholder
+        for (RdataIteratorPtr it = rrset.getRdataIterator();
+             !it->isLast();
+             it->next()) {
+            record_params.back() = it->getCurrent().toText();
+            conn_.addRecordToZone(zone_id_, record_params);
+        }
+    }
+
+    virtual void commit() {
+        conn_.commitUpdateZoneTransaction();
+    }
+private:
+    int zone_id_;
+    DataBaseConnection& conn_;
+};
+
 typedef map<RRType, RRsetPtr> RRsetMap;
 typedef RRsetMap::value_type RRsetMapEntry;
 
 bool
-getRRsets(const DataBaseConnection& conn, int zone_id, const Name& name,
+getRRsets(DataBaseConnection& conn, int zone_id, const Name& name,
           RRClass rrclass, RRsetMap& target, int& rows)
 {
     bool found = false;
@@ -178,11 +234,12 @@ getRRsets(const DataBaseConnection& conn, int zone_id, const Name& name,
 }
 
 bool
-isEmptyNodeName(const DataBaseConnection& conn, int zone_id, const Name& name)
-{
+isEmptyNodeName(DataBaseConnection& conn, int zone_id, const Name& name) {
     vector<string> columns;
     conn.searchForRecords(zone_id, name.toText(), true);
-    return (conn.getNextRecord(columns) == DataSrc::SUCCESS);
+    const bool result = (conn.getNextRecord(columns) == DataSrc::SUCCESS);
+    conn.resetQuery();
+    return (result);
 }
 }
 
@@ -247,6 +304,10 @@ DataBaseZoneHandle::find(const Name& name, const RRType& type,
 DataBaseDataSourceClient::DataBaseDataSourceClient() : conn_(NULL) {
 }
 
+DataBaseDataSourceClient::~DataBaseDataSourceClient() {
+    delete conn_;
+}
+
 void
 DataBaseDataSourceClient::open(const string& param) {
     param_ = param;             // remember it for later use
@@ -265,7 +326,7 @@ DataBaseDataSourceClient::findZone(const isc::dns::Name& name) const {
         if (result == DataSrc::SUCCESS) {
             return (FindResult(result::SUCCESS,
                                ZoneHandlePtr(new DataBaseZoneHandle(
-                                                 *this, *this->conn_,
+                                                 *this, *conn_,
                                                  matchname, zone_id))));
         }
     }
@@ -277,6 +338,13 @@ DataBaseDataSourceClient::createZoneIterator(const isc::dns::Name& name)
     const
 {
     return (ZoneIteratorPtr(new DataBaseZoneIterator(name, param_)));
+}
+
+ZoneUpdaterPtr
+DataBaseDataSourceClient::startUpdateZone(const Name& zone_name, bool replace)
+{
+    return (ZoneUpdaterPtr(new DataBaseZoneUpdater(zone_name, *conn_,
+                                                   replace)));
 }
 }
 }
