@@ -12,14 +12,19 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <stdlib.h>
+
 #include <gtest/gtest.h>
 
+#include <dns/masterload.h>
 #include <dns/name.h>
 #include <dns/rdata.h>
 #include <dns/rrclass.h>
 #include <dns/rrset.h>
 #include <dns/rrttl.h>
 #include <dns/rrtype.h>
+
+#include <cc/data.h>
 
 #include <datasrc/database_client.h>
 
@@ -28,19 +33,50 @@
 using namespace std;
 using namespace isc::dns;
 using namespace isc::dns::rdata;
+using namespace isc::data;
 using namespace isc::datasrc;
 using namespace isc::testutils;
 
 namespace {
 const char* const SQLITE_DBFILE_EXAMPLE = TEST_DATA_DIR "/test.sqlite3.bak";
 
+struct Loader {
+    Loader(ZoneUpdaterPtr updater) : updater_(updater) {}
+    void operator()(ConstRRsetPtr rrset) {
+        updater_->addRRset(*rrset);
+    }
+private:
+    ZoneUpdaterPtr updater_;
+};
+
 class DataBaseDataSourceClientTest : public ::testing::Test {
 protected:
     DataBaseDataSourceClientTest() {
-        db_client.open(SQLITE_DBFILE_EXAMPLE);
+        sqlite3_param = Element::fromJSON(
+            "{ \"type\": \"sqlite3\", "
+            "\"database_file\": \"" TEST_DATA_DIR "/test.sqlite3.bak\"}");
+        mysql_param = Element::fromJSON("{ \"type\": \"mysql\"}");
+
+        const char* db_type = getenv("TEST_DBTYPE");
+        if (db_type == NULL || strcmp(db_type, "sqlite3") == 0) {
+            db_client.open(sqlite3_param);
+        } else if (strcmp(db_type, "mysql") == 0) {
+            db_client.open(mysql_param);
+        } else {
+            ASSERT_TRUE(false) << "Unknown or unsupported DB type";
+        }
+
+        // Re-load the original test zone
+        ZoneUpdaterPtr updater =
+            db_client.startUpdateZone(Name("example.com"), true);
+        masterLoad(TEST_DATA_DIR "/example.com.norm", Name("example.com"),
+                   RRClass::IN(), Loader(updater));
+        updater->commit();
     }
 
     DataBaseDataSourceClient db_client;
+    ConstElementPtr sqlite3_param;
+    ConstElementPtr mysql_param;
 };
 
 TEST_F(DataBaseDataSourceClientTest, findZone) {

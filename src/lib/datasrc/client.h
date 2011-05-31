@@ -19,6 +19,8 @@
 
 #include <dns/rrset.h>
 
+#include <cc/data.h>
+
 #include <datasrc/zone.h>
 
 namespace isc {
@@ -83,7 +85,7 @@ public:
     // "param" should eventually be more generic.
     // might better be integrated to the constructor, but at the same time
     // it would be good if we had an option of delaying the actual open.
-    virtual void open(const std::string& param) = 0;
+    virtual void open(isc::data::ConstElementPtr config) = 0;
 
     // eventually this will need to be non const member function
     // (unfortunately)

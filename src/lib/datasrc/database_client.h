@@ -15,6 +15,12 @@
 #ifndef __DATABASE_CLIENT_H
 #define __DATABASE_CLIENT_H 1
 
+#include <string>
+#include <vector>
+
+#include <cc/data.h>
+
+#include <datasrc/data_source.h>
 #include <datasrc/client.h>
 
 namespace isc {
@@ -25,14 +31,35 @@ class DataBaseDataSourceClient : public DataSourceClient {
 public:
     DataBaseDataSourceClient();
     virtual ~DataBaseDataSourceClient();
-    virtual void open(const std::string& param);
+    virtual void open(isc::data::ConstElementPtr db_param);
     virtual FindResult findZone(const isc::dns::Name& name) const;
     virtual ZoneIteratorPtr createZoneIterator(const isc::dns::Name&) const;
     virtual ZoneUpdaterPtr startUpdateZone(const isc::dns::Name& zone_name,
                                            bool replace);
 private:
-    std::string param_;
+    isc::data::ConstElementPtr db_param_;
     DataBaseConnection* conn_;
+};
+
+class DataBaseConnection {
+protected:
+    DataBaseConnection() {}
+public:
+    virtual ~DataBaseConnection() {}
+    virtual DataSrc::Result getZone(const std::string& name,
+                                    int& zone_id) const = 0;
+    virtual void searchForRecords(int zone_id, const std::string& name,
+                                  bool match_subdomain = false) = 0;
+    virtual void traverseZone(int zone_id) = 0;
+    virtual DataSrc::Result
+    getNextRecord(std::vector<std::string>& columns) = 0;
+    virtual std::string getPreviousName(int zone_id,
+                                        const std::string& name) const = 0;
+    virtual void startUpdateZoneTransaction(int zone_id, bool replace) = 0;
+    virtual void commitUpdateZoneTransaction() = 0;
+    virtual void addRecordToZone(int zone_id,
+                                 const std::vector<std::string>& record_params) = 0;
+    virtual void resetQuery() = 0;
 };
 }
 }

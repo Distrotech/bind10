@@ -236,7 +236,7 @@ public:
     ~MemoryDataSourceClient();
     //@}
 
-    virtual void open(const std::string& param);
+    virtual void open(isc::data::ConstElementPtr config);
 
     /// Return the number of zones stored in the data source.
     ///

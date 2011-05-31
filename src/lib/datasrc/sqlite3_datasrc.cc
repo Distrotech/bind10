@@ -608,7 +608,7 @@ convertToPlainChar(const unsigned char* ucp) {
 
 void
 Sqlite3DataSrc::searchForRecords(int zone_id, const string& name,
-                                 bool match_subdomain) const
+                                 bool match_subdomain)
 {
     dbparameters->current_stmt_ = match_subdomain ?
         dbparameters->q_any_and_sub_ : dbparameters->q_any_;
@@ -620,7 +620,7 @@ Sqlite3DataSrc::searchForRecords(int zone_id, const string& name,
 }
 
 DataSrc::Result
-Sqlite3DataSrc::getNextRecord(vector<string>& columns) const {
+Sqlite3DataSrc::getNextRecord(vector<string>& columns) {
     const int rc = sqlite3_step(dbparameters->current_stmt_);
 
     if (rc == SQLITE_ROW) {
@@ -661,7 +661,7 @@ Sqlite3DataSrc::getPreviousName(int zone_id, const string& name) const {
 }
 
 void
-Sqlite3DataSrc::traverseZone(int zone_id) const {
+Sqlite3DataSrc::traverseZone(int zone_id) {
     dbparameters->current_stmt_ = dbparameters->q_traverse_zone_;
     sqlite3_reset(dbparameters->current_stmt_);
     sqlite3_clear_bindings(dbparameters->current_stmt_);
@@ -753,12 +753,6 @@ Sqlite3DataSrc::init(isc::data::ConstElementPtr config) {
     } else {
         isc_throw(DataSourceError, "No SQLite database file specified");
     }
-    return (SUCCESS);
-}
-
-DataSrc::Result
-Sqlite3DataSrc::init(const string& db_file) {
-    open(db_file);
     return (SUCCESS);
 }
 

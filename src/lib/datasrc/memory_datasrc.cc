@@ -22,6 +22,8 @@
 #include <dns/rrsetlist.h>
 #include <dns/masterload.h>
 
+#include <cc/data.h>
+
 #include <datasrc/memory_datasrc.h>
 #include <datasrc/rbtree.h>
 #include <datasrc/logger.h>
@@ -675,7 +677,7 @@ MemoryDataSourceClient::~MemoryDataSourceClient() {
 }
 
 void
-MemoryDataSourceClient::open(const std::string&) {
+MemoryDataSourceClient::open(isc::data::ConstElementPtr) {
     // do nothing for now
 }
 

@@ -2,6 +2,7 @@ SUBDIRS = . tests
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/lib -I$(top_builddir)/src/lib
 AM_CPPFLAGS += -I$(top_srcdir)/src/lib/dns -I$(top_builddir)/src/lib/dns
+AM_CPPFLAGS += -I/opt/local/include/mysql5
 AM_CPPFLAGS += $(BOOST_INCLUDES)
 AM_CPPFLAGS += $(SQLITE_CFLAGS)
 
@@ -22,12 +23,16 @@ libdatasrc_la_SOURCES += zone.h
 libdatasrc_la_SOURCES += result.h
 libdatasrc_la_SOURCES += logger.h logger.cc
 libdatasrc_la_SOURCES += client.h database_client.h database_client.cc
+libdatasrc_la_SOURCES += mysql_conn.h mysql_conn.cc
 nodist_libdatasrc_la_SOURCES = messagedef.h messagedef.cc
+
+libdatasrc_la_LDFLAGS = -L/opt/local/lib/mysql5/mysql
 
 libdatasrc_la_LIBADD = $(top_builddir)/src/lib/exceptions/libexceptions.la
 libdatasrc_la_LIBADD += $(top_builddir)/src/lib/dns/libdns++.la
 libdatasrc_la_LIBADD += $(top_builddir)/src/lib/log/liblog.la
 libdatasrc_la_LIBADD += $(top_builddir)/src/lib/cc/libcc.la
+libdatasrc_la_LIBADD += -lmysqlclient
 
 BUILT_SOURCES = messagedef.h messagedef.cc
 messagedef.h messagedef.cc: Makefile messagedef.mes

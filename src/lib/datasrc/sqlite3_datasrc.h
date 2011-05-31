@@ -98,13 +98,12 @@ public:
     Result close();
 
     // experimental extensions
-    Result init(const std::string& db_file);
     DataSrc::Result getZone(const std::string& name, int& zone_id) const;
     void searchForRecords(int zone_id, const std::string& name,
-                          bool match_subdomain) const;
-    DataSrc::Result getNextRecord(std::vector<std::string>& columns) const;
+                          bool match_subdomain);
+    DataSrc::Result getNextRecord(std::vector<std::string>& columns);
     std::string getPreviousName(int zone_id, const std::string& name) const;
-    void traverseZone(int zone_id) const;
+    void traverseZone(int zone_id);
     void startUpdateZoneTransaction(int zone_id, bool replace);
     void addRecordToZone(int zone_id,
                          const std::vector<std::string>& record_params);

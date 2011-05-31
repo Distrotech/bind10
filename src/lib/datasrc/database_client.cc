@@ -26,41 +26,27 @@
 #include <dns/rrsetlist.h>
 #include <dns/rrttl.h>
 
+#include <cc/data.h>
+
+#include <datasrc/data_source.h>
 #include <datasrc/client.h>
 #include <datasrc/database_client.h>
 #include <datasrc/zone.h>
 #include <datasrc/sqlite3_datasrc.h>
+#include <datasrc/mysql_conn.h>
 
 using namespace std;
 using namespace boost;
+using namespace isc::data;
 using namespace isc::dns;
 using namespace isc::dns::rdata;
 
 namespace isc {
 namespace datasrc {
-class DataBaseConnection {
-protected:
-    DataBaseConnection() {}
-public:
-    virtual ~DataBaseConnection() {}
-    virtual DataSrc::Result getZone(const string& name,
-                                    int& zone_id) const = 0;
-    virtual void searchForRecords(int zone_id, const string& name,
-                                  bool match_subdomain = false) const = 0;
-    virtual void traverseZone(int zone_id) const = 0;
-    virtual DataSrc::Result getNextRecord(vector<string>& columns) const = 0;
-    virtual string getPreviousName(int zone_id, const string& name) const = 0;
-    virtual void startUpdateZoneTransaction(int zone_id, bool replace) = 0;
-    virtual void commitUpdateZoneTransaction() = 0;
-    virtual void addRecordToZone(int zone_id,
-                                 const vector<string>& record_params) = 0;
-    virtual void resetQuery() = 0;
-};
-
 class SQLite3Connection : public DataBaseConnection {
 public:
-    SQLite3Connection(const string& db_file) {
-        sqlite3_src_.init(db_file);
+    SQLite3Connection(ConstElementPtr param) {
+        sqlite3_src_.init(param);
     }
 
     virtual ~SQLite3Connection() {}
@@ -70,16 +56,16 @@ public:
     }
 
     virtual void searchForRecords(int zone_id, const string& name,
-                                  bool match_subdomain) const
+                                  bool match_subdomain)
     {
         sqlite3_src_.searchForRecords(zone_id, name, match_subdomain);
     }
 
-    virtual void traverseZone(int zone_id) const {
+    virtual void traverseZone(int zone_id) {
         sqlite3_src_.traverseZone(zone_id);
     }
 
-    virtual DataSrc::Result getNextRecord(vector<string>& columns) const {
+    virtual DataSrc::Result getNextRecord(vector<string>& columns) {
         return (sqlite3_src_.getNextRecord(columns));
     }
 
@@ -131,10 +117,23 @@ private:
 };
 
 namespace {
+DataBaseConnection*
+dbconnFactory(ConstElementPtr db_param) {
+    if (db_param->contains("type")) {
+        const string dbtype = db_param->get("type")->stringValue();
+        if (dbtype == "sqlite3") {
+            return (new SQLite3Connection(db_param));
+        } else if (dbtype == "mysql") {
+            return (new MySQLConnection());
+        }
+    }
+    isc_throw(DataSourceError, "database type unknown or unspecified");
+}
+
 class DataBaseZoneIterator : public ZoneIterator {
 public:
-    DataBaseZoneIterator(const Name& zone_name, const string& conn_param) :
-        conn_(new SQLite3Connection(conn_param))
+    DataBaseZoneIterator(const Name& zone_name, ConstElementPtr conn_param) :
+        conn_(dbconnFactory(conn_param))
     {
         int zone_id;
         conn_->getZone(zone_name.toText(), zone_id);
@@ -309,9 +308,9 @@ DataBaseDataSourceClient::~DataBaseDataSourceClient() {
 }
 
 void
-DataBaseDataSourceClient::open(const string& param) {
-    param_ = param;             // remember it for later use
-    conn_ = new SQLite3Connection(param);
+DataBaseDataSourceClient::open(ConstElementPtr db_param) {
+    db_param_ = db_param;
+    conn_ = dbconnFactory(db_param);
 }
 
 DataSourceClient::FindResult
@@ -337,7 +336,7 @@ ZoneIteratorPtr
 DataBaseDataSourceClient::createZoneIterator(const isc::dns::Name& name)
     const
 {
-    return (ZoneIteratorPtr(new DataBaseZoneIterator(name, param_)));
+    return (ZoneIteratorPtr(new DataBaseZoneIterator(name, db_param_)));
 }
 
 ZoneUpdaterPtr
