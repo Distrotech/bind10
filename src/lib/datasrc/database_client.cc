@@ -240,6 +240,70 @@ isEmptyNodeName(DataBaseConnection& conn, int zone_id, const Name& name) {
     conn.resetQuery();
     return (result);
 }
+
+// borrowed from the memory datasource implementation.
+ConstRRsetPtr
+prepareRRset(const Name& name, const ConstRRsetPtr& rrset, bool rename) {
+    if (rename) {
+        RRsetPtr result(new RRset(name, rrset->getClass(),
+                                  rrset->getType(), rrset->getTTL()));
+        for (RdataIteratorPtr i(rrset->getRdataIterator()); !i->isLast();
+             i->next()) {
+            result->addRdata(i->getCurrent());
+        }
+        return (result);
+    } else {
+        return (rrset);
+    }
+}
+
+ZoneHandle::FindResult
+findExactMatch(DataBaseConnection& conn, int zone_id, const Name& name,
+               const Name& orig_name, RRType type, bool ignore_delegation)
+{
+    RRsetMap rrsets;
+    RRsetPtr rrset;
+    int match_rrs;
+    const bool is_wild(&orig_name != &name);
+
+    rrsets.clear();
+    rrsets.insert(RRsetMapEntry(type, RRsetPtr()));
+    rrsets.insert(RRsetMapEntry(RRType::CNAME(), RRsetPtr()));
+    if (!ignore_delegation) {
+        rrsets.insert(RRsetMapEntry(RRType::NS(), RRsetPtr()));
+    }
+    if (getRRsets(conn, zone_id, name, RRClass::IN(), rrsets, match_rrs)) {
+        if (!ignore_delegation && ((rrset = rrsets[RRType::NS()]))) {
+            return (ZoneHandle::FindResult(ZoneHandle::DELEGATION,
+                                           prepareRRset(orig_name, rrset,
+                                                        is_wild)));
+        } else if ((rrset = rrsets[type])) {
+            return (ZoneHandle::FindResult(ZoneHandle::SUCCESS,
+                                           prepareRRset(orig_name, rrset,
+                                                        is_wild)));
+        } else if ((rrset = rrsets[RRType::CNAME()])) {
+            return (ZoneHandle::FindResult(ZoneHandle::CNAME,
+                                           prepareRRset(orig_name, rrset,
+                                                        is_wild)));
+        }
+    }
+    if (match_rrs == 0) {
+        // There isn't even any type of RR of the name.  It's either NXRRSET
+        // if it's an empty non terminal or NXDOMAIN.
+        if (isEmptyNodeName(conn, zone_id, name)) {
+            return (ZoneHandle::FindResult(ZoneHandle::NXRRSET,
+                                           ConstRRsetPtr()));
+        }
+        return (ZoneHandle::FindResult(ZoneHandle::NXDOMAIN, ConstRRsetPtr()));
+    }
+    return (ZoneHandle::FindResult(ZoneHandle::NXRRSET, ConstRRsetPtr()));
+}
+
+const Name&
+star_name() {
+    static Name star_name("*");
+    return (star_name);
+}
 }
 
 ZoneHandle::FindResult
@@ -279,25 +343,24 @@ DataBaseZoneHandle::find(const Name& name, const RRType& type,
         }
     }
 
-    rrsets.clear();
-    rrsets.insert(RRsetMapEntry(type, RRsetPtr()));
-    rrsets.insert(RRsetMapEntry(RRType::CNAME(), RRsetPtr()));
-    if (getRRsets(conn_, id_, name, RRClass::IN(), rrsets, match_rrs)) {
-        if ((rrset = rrsets[type])) {
-            return (FindResult(SUCCESS, rrset));
-        } else if ((rrset = rrsets[RRType::CNAME()])) {
-            return (FindResult(CNAME, rrset));
+    // Look for an answer at the exact matching name
+    const bool ignore_delegation(diff == 0 || (options & FIND_GLUE_OK) != 0);
+    ZoneHandle::FindResult result = findExactMatch(conn_, id_, name, name,
+                                                   type, ignore_delegation);
+    if (result.code != NXDOMAIN) {
+        return (result);
+    }
+
+    // As a last resort, try to find the longest matching wildcard, if any.
+    for (int i = 1; i <= diff; ++i) {
+        ZoneHandle::FindResult result =
+            findExactMatch(conn_, id_, star_name().concatenate(name.split(i)),
+                           name, type, ignore_delegation);
+        if (result.code != NXDOMAIN) {
+            return (result);
         }
     }
-    if (match_rrs == 0) {
-        // There isn't even any type of RR of the name.  It's either NXRRSET
-        // if it's an empty non terminal or NXDOMAIN.
-        if (isEmptyNodeName(conn_, id_, name)) {
-            return (FindResult(NXRRSET, ConstRRsetPtr()));
-        }
-        return (FindResult(NXDOMAIN, ConstRRsetPtr()));
-    }
-    return (FindResult(NXRRSET, ConstRRsetPtr()));
+    return (result);
 }
 
 DataBaseDataSourceClient::DataBaseDataSourceClient() : conn_(NULL) {

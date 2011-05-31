@@ -113,6 +113,13 @@ TEST_F(DataBaseDataSourceClientTest, find) {
               zone->find(Name("ns1.subzone.example.com"),
                          RRType::A(), NULL, ZoneHandle::FIND_GLUE_OK).code);
 
+    // delegation at (not below) the zone cut
+    EXPECT_EQ(ZoneHandle::DELEGATION,
+              zone->find(Name("subzone.example.com"), RRType::A()).code);
+    // check this doesn't happen on the apex name
+    EXPECT_EQ(ZoneHandle::SUCCESS,
+              zone->find(Name("example.com"), RRType::NS()).code);
+
     // delegation with DNAME
     EXPECT_EQ(ZoneHandle::DNAME,
               zone->find(Name("www.dname.example.com"), RRType::A()).code);
@@ -134,6 +141,16 @@ TEST_F(DataBaseDataSourceClientTest, find) {
     // empty node NXRRSET
     EXPECT_EQ(ZoneHandle::NXRRSET,
               zone->find(Name("bar.example.com"), RRType::A()).code);
+
+    // wildcard match
+    EXPECT_EQ(ZoneHandle::SUCCESS,
+              zone->find(Name("foo.wild.example.com"), RRType::A()).code);
+    EXPECT_EQ(Name("foo.wild.example.com"),
+              zone->find(Name("foo.wild.example.com"),
+                         RRType::A()).rrset->getName());
+    // wildcard matches two labels
+    EXPECT_EQ(ZoneHandle::SUCCESS,
+              zone->find(Name("foo.bar.wild.example.com"), RRType::A()).code);
 }
 
 TEST_F(DataBaseDataSourceClientTest, zoneIterator) {
