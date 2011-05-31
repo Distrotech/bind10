@@ -48,7 +48,11 @@
 #define random() rand()
 typedef int pid_t;
 typedef unsigned int uid_t;
+#ifdef _WIN64
+typedef __int64 ssize_t;
+#else
 typedef int ssize_t;
+#endif
 
 /* Prevent inclusion of winsock.h in windows.h */
 #ifndef _WINSOCKAPI_

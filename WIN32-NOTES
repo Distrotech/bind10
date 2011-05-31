@@ -1,36 +1,40 @@
 What is needed:
 
- - full IPv6 support (so at least Vista or Server 2008)
+ - full IPv6 support (so at least Vista or Server 2008,
+  tested on Server 2008 x86 and Windows 7 x86_64)
 
  - POSIX (aka Unix) environment for tar/git/etc (I use cygwin)
 
  - Visual Studio C++ (versions 2008 and 2010 were tested,
   note older versions could fail to correctly compile,
-  cf. C4373 warning)
+  cf. C4373 warning, 2010 express and 64 bit support
+  from the 7.1 SDK work too)
 
  - python >= 3.1 (I got Cpython 3.2 MSI from python.org,
   note the pre-built python can give C++ runtime issue with
   an incompatible Visual Studio, and botan wants a version 2
   for configuration)
 
- - perl (the Windows native one, not yet used)
+ - perl (the Windows native one)
 
  - sqlite3 >= 3.3.9 (got the 3.7.6 prebuilds but the distrib
-  is needed to get the .h and .lib file)
+  is needed to get/build the .h and .lib file) (note for the second
+  'lib /def:C:\path\to\sqlite3.def /out:C:\path\to\sqlite3.lib /machine:x86')
 
- - splite3 python DSO (included in the MSI, not yet used)
+ - splite3 python DSO (included in the Python MSI)
 
  - cmakefile (got the 2.8.4 .exe, can be used but see below)
 
- - google test (aka gtest, got the 1.5.0 sources)
+ - google test (aka gtest, got the 1.[56].0 sources)
 
- - boost >= 1.35 (got the 1.44 (newer is empty?) setup)
+ - boost >= 1.35 (got the 1.44/1.46 setup from Boostpro, installed
+  Multithread and Multithread Debug)
 
  - setproctitle python module (in theory)
 
  - botan 1.8.x (compiled from sources to control things, i.e.,
   tried to factorize the (in)convenience with gtest. Note its
-  config requires a python2)
+  config phase requires a python2)
 
  - log4cplus (in the future)
 
@@ -60,18 +64,18 @@ Where I put things (hardwired paths):
    (--disable-shared to get static libs, no DLL)
 
  - "C:\Program Files\boost\boost_1_44" (the include and
-  sometimes the libraries (in lib) too)
+  sometimes the libraries (in lib, called by the auto_link) too)
 
  - C:\Python32 (update your PATH, same for perl)
 
- - C:\sqlite3
+ - C:\sqlite3 (don't forget to copy the DLL in a place in the PATH)
 
 How to compile:
 
  - open win32build\VS2010\bind10.sln file with Visual Studio 2010, or,
    open win32build\VS2008\bind10.sln file with Visual Studio 2008
 
- - fix the paths
+ - fix the paths (\ becomes \\\ in grep/ed/etc)
 
  - build
 
