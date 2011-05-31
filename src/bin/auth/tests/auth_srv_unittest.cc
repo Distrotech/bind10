@@ -32,7 +32,9 @@
 #include <server_common/portconfig.h>
 #include <server_common/keyring.h>
 
+#include <datasrc/client.h>
 #include <datasrc/memory_datasrc.h>
+
 #include <auth/auth_srv.h>
 #include <auth/common.h>
 #include <auth/statistics.h>
@@ -45,6 +47,7 @@
 using namespace std;
 using namespace isc::cc;
 using namespace isc::dns;
+using namespace isc::datasrc;
 using namespace isc::util;
 using namespace isc::dns::rdata;
 using namespace isc::data;
@@ -672,7 +675,8 @@ TEST_F(AuthSrvTest, updateWithMemoryDataSourceClient) {
     // after successful configuration, we should have one (with empty zoneset).
     ASSERT_NE(AuthSrv::MemoryDataSourceClientPtr(),
               server.getMemoryDataSourceClient(rrclass));
-    EXPECT_EQ(0, server.getMemoryDataSourceClient(rrclass)->getZoneCount());
+    EXPECT_EQ(0,
+              dynamic_cast<MemoryDataSourceClient&>(*server.getMemoryDataSourceClient(rrclass)).getZoneCount());
 
     // The memory data source is empty, should return REFUSED rcode.
     createDataFromFile("examplequery_fromWire.wire");

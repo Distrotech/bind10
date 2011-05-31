@@ -25,6 +25,7 @@
 
 #include <cc/data.h>
 
+#include <datasrc/database_client.h>
 #include <datasrc/memory_datasrc.h>
 #include <datasrc/zonetable.h>
 
@@ -107,8 +108,8 @@ DatasourcesConfig::commit() {
     // server implementation details, and isn't scalable wrt the number of
     // data source types, and should eventually be improved.
     // Currently memory data source for class IN is the only possibility.
-    server_.setMemoryDataSourceClient(RRClass::IN(),
-                                      AuthSrv::MemoryDataSourceClientPtr());
+    server_.setAltDataSourceClient(RRClass::IN(),
+                                   AuthSrv::MemoryDataSourceClientPtr());
 
     BOOST_FOREACH(shared_ptr<AuthConfigParser> datasrc_config, datasources_) {
         datasrc_config->commit();
@@ -126,7 +127,7 @@ public:
     {}
     virtual void build(ConstElementPtr config_value);
     virtual void commit() {
-        server_.setMemoryDataSourceClient(rrclass_, memory_datasrc_);
+        server_.setAltDataSourceClient(rrclass_, memory_datasrc_);
     }
 private:
     AuthSrv& server_;
@@ -183,6 +184,26 @@ MemoryDatasourceConfig::build(ConstElementPtr config_value) {
         new_zone->load(file->stringValue());
     }
 }
+
+class DataBaseDatasourceConfig : public AuthConfigParser {
+public:
+    DataBaseDatasourceConfig(AuthSrv& server) :
+        server_(server)
+    {}
+    virtual void build(ConstElementPtr config_value) {
+        datasrc_ = DataSourceClientPtr(
+            new DataBaseDataSourceClient());
+        datasrc_->open(config_value);
+    }
+    virtual void commit() {
+        // XXX this is a quick hack: class is hardcoded, and we can only
+        // use at most one alternate data source.
+        server_.setAltDataSourceClient(RRClass::IN(), datasrc_);
+    }
+private:
+    AuthSrv& server_;
+    DataSourceClientPtr datasrc_;
+};
 
 /// A derived \c AuthConfigParser class for the "statistics-internal"
 /// configuration identifier.
@@ -295,6 +316,9 @@ createAuthConfigParser(AuthSrv& server, const std::string& config_id,
         return (new StatisticsIntervalConfig(server));
     } else if (internal && config_id == "datasources/memory") {
         return (new MemoryDatasourceConfig(server));
+    } else if (internal && (config_id == "datasources/sqlite3" ||
+                            config_id == "datasources/mysql")) {
+        return (new DataBaseDatasourceConfig(server));
     } else if (config_id == "listen_on") {
         return (new ListenAddressConfig(server));
     } else if (config_id == "_commit_throw") {

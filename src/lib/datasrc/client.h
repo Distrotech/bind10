@@ -32,6 +32,12 @@ namespace datasrc {
 class ZoneIterator;
 typedef boost::shared_ptr<ZoneIterator> ZoneIteratorPtr;
 
+class ZoneUpdater;
+typedef boost::shared_ptr<ZoneUpdater> ZoneUpdaterPtr;
+
+class DataSourceClient;
+typedef boost::shared_ptr<DataSourceClient> DataSourceClientPtr;
+
 class ZoneIterator {
 protected:
     ZoneIterator() {}
@@ -48,7 +54,6 @@ public:
     virtual void addRRset(const isc::dns::RRset& rrset) = 0;
     virtual void commit() = 0;
 };
-typedef boost::shared_ptr<ZoneUpdater> ZoneUpdaterPtr;
 
 class DataSourceClient {
 protected:

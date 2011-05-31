@@ -26,6 +26,8 @@
 #include <dns/message.h>
 #include <util/buffer.h>
 
+#include <datasrc/client.h>
+
 #include <asiodns/dns_server.h>
 #include <asiodns/dns_lookup.h>
 #include <asiodns/dns_answer.h>
@@ -282,7 +284,7 @@ public:
     /// \param rrclass The RR class of the requested in-memory data source.
     /// \return A pointer to the in-memory data source, if configured;
     /// otherwise NULL.
-    MemoryDataSourceClientPtr
+    isc::datasrc::DataSourceClientPtr
     getMemoryDataSourceClient(const isc::dns::RRClass& rrclass);
 
     /// Sets or replaces the in-memory data source of the specified RR class.
@@ -298,9 +300,10 @@ public:
     /// in-memory data source.
     ///
     /// \param rrclass The RR class of the in-memory data source to be set.
-    /// \param memory_datasrc A (shared) pointer to \c MemoryDataSourceClient to be set.
-    void setMemoryDataSourceClient(const isc::dns::RRClass& rrclass,
-                                   MemoryDataSourceClientPtr memory_datasrc);
+    /// \param alt_datasrc A (shared) pointer to \c MemoryDataSourceClient to be set.
+    void setAltDataSourceClient(const isc::dns::RRClass& rrclass,
+                                isc::datasrc::DataSourceClientPtr
+                                alt_datasrc);
 
     /// \brief Set the communication session with Statistics.
     ///

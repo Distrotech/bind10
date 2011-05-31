@@ -49,6 +49,7 @@
 #include <datasrc/query.h>
 #include <datasrc/data_source.h>
 #include <datasrc/memory_datasrc.h>
+#include <datasrc/client.h>
 #include <datasrc/static_datasrc.h>
 #include <datasrc/sqlite3_datasrc.h>
 
@@ -108,8 +109,8 @@ public:
     AbstractSession* xfrin_session_;
 
     /// In-memory data source.  Currently class IN only for simplicity.
-    const RRClass memory_datasrc_class_;
-    AuthSrv::MemoryDataSourceClientPtr memory_datasrc_;
+    const RRClass alt_datasrc_class_;
+    DataSourceClientPtr alt_datasrc_;
 
     /// Hot spot cache
     isc::datasrc::HotCache cache_;
@@ -145,7 +146,7 @@ AuthSrvImpl::AuthSrvImpl(const bool use_cache,
                          AbstractXfroutClient& xfrout_client) :
     config_session_(NULL), verbose_mode_(false),
     xfrin_session_(NULL),
-    memory_datasrc_class_(RRClass::IN()),
+    alt_datasrc_class_(RRClass::IN()),
     statistics_timer_(io_service_),
     counters_(verbose_mode_),
     keyring_(NULL),
@@ -342,37 +343,37 @@ AuthSrv::getConfigSession() const {
     return (impl_->config_session_);
 }
 
-AuthSrv::MemoryDataSourceClientPtr
+DataSourceClientPtr
 AuthSrv::getMemoryDataSourceClient(const RRClass& rrclass) {
     // XXX: for simplicity, we only support the IN class right now.
-    if (rrclass != impl_->memory_datasrc_class_) {
+    if (rrclass != impl_->alt_datasrc_class_) {
         isc_throw(InvalidParameter,
                   "Memory data source is not supported for RR class "
                   << rrclass);
     }
-    return (impl_->memory_datasrc_);
+    return (impl_->alt_datasrc_);
 }
 
 void
-AuthSrv::setMemoryDataSourceClient(const isc::dns::RRClass& rrclass,
-                                   MemoryDataSourceClientPtr memory_datasrc)
+AuthSrv::setAltDataSourceClient(const isc::dns::RRClass& rrclass,
+                                   DataSourceClientPtr alt_datasrc)
 {
     // XXX: see above
-    if (rrclass != impl_->memory_datasrc_class_) {
+    if (rrclass != impl_->alt_datasrc_class_) {
         isc_throw(InvalidParameter,
                   "Memory data source is not supported for RR class "
                   << rrclass);
     }
     if (impl_->verbose_mode_) {
-        if (!impl_->memory_datasrc_ && memory_datasrc) {
+        if (!impl_->alt_datasrc_ && alt_datasrc) {
             cerr << "[b10-auth] Memory data source is enabled for class "
                  << rrclass << endl;
-        } else if (impl_->memory_datasrc_ && !memory_datasrc) {
+        } else if (impl_->alt_datasrc_ && !alt_datasrc) {
             cerr << "[b10-auth] Memory data source is disabled for class "
                  << rrclass << endl;
         }
     }
-    impl_->memory_datasrc_ = memory_datasrc;
+    impl_->alt_datasrc_ = alt_datasrc;
 }
 
 uint32_t
@@ -541,10 +542,10 @@ AuthSrvImpl::processNormalQuery(const IOMessage& io_message, MessagePtr message,
         // If a memory data source is configured call the separate
         // Query::process()
         const ConstQuestionPtr question = *message->beginQuestion();
-        if (memory_datasrc_ && memory_datasrc_class_ == question->getClass()) {
+        if (alt_datasrc_ && alt_datasrc_class_ == question->getClass()) {
             const RRType& qtype = question->getType();
             const Name& qname = question->getName();
-            auth::Query(*memory_datasrc_, qname, qtype, *message).process();
+            auth::Query(*alt_datasrc_, qname, qtype, *message).process();
         } else {
             datasrc::Query query(*message, cache_, dnssec_ok);
             data_sources_.doQuery(query);
