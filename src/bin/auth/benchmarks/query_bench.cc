@@ -148,6 +148,30 @@ public:
     }
 };
 
+class AltQueryBenchMark  : public QueryBenchMark {
+public:
+    AltQueryBenchMark(const char* const datasrc_file,
+                      const BenchQueries& queries,
+                      MessagePtr query_message,
+                      OutputBufferPtr buffer) :
+        QueryBenchMark(false, queries, query_message, buffer)
+    {
+        if (datasrc_file != NULL) {
+            configureAuthServer(*server_,
+                                Element::fromJSON(
+                                    "{\"datasources\": "
+                                    " [{\"type\": \"sqlite3\","
+                                    "   \"database_file\": \"" +
+                                    string(datasrc_file) + "\"}]}"));
+        } else {
+            configureAuthServer(*server_,
+                                Element::fromJSON(
+                                    "{\"datasources\": "
+                                    " [{\"type\": \"mysql\"}]}"));
+        }
+    }
+};
+
 void
 printQPSResult(unsigned int iteration, double duration,
             double iteration_per_second)
@@ -180,6 +204,7 @@ namespace {
 const int ITERATION_DEFAULT = 1;
 enum DataSrcType {
     SQLITE3,
+    MYSQL,
     MEMORY
 };
 
@@ -234,6 +259,8 @@ main(int argc, char* argv[]) {
     DataSrcType datasrc_type = SQLITE3;
     if (strcmp(opt_datasrc_type, "sqlite3") == 0) {
         ;                       // no need to override
+    } else if (strcmp(opt_datasrc_type, "mysql") == 0) {
+        datasrc_type = MYSQL;
     } else if (strcmp(opt_datasrc_type, "memory") == 0) {
         datasrc_type = MEMORY;
     } else {
@@ -285,6 +312,17 @@ main(int argc, char* argv[]) {
         BenchMark<Sqlite3QueryBenchMark>(
             iteration, Sqlite3QueryBenchMark(-1, datasrc_file, queries,
                                              message, buffer));
+
+        cout << "Benchmark for alternate SQLite3 data source" << endl;
+        BenchMark<AltQueryBenchMark>(
+            iteration, AltQueryBenchMark(datasrc_file, queries,
+                                         message, buffer));
+        break;
+    case MYSQL:
+        cout << "Benchmark with MySQL Data Source" << endl;
+        BenchMark<AltQueryBenchMark>(
+            iteration, AltQueryBenchMark(NULL, queries,
+                                         message, buffer));
         break;
     case MEMORY:
         cout << "Benchmark with In Memory Data Source" << endl;

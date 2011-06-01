@@ -191,6 +191,7 @@ public:
         server_(server)
     {}
     virtual void build(ConstElementPtr config_value) {
+        cout << "[b10-auth] configuring alternate data source" << endl;
         datasrc_ = DataSourceClientPtr(
             new DataBaseDataSourceClient());
         datasrc_->open(config_value);
