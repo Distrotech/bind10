@@ -98,10 +98,8 @@ private:
 
 class DataBaseZoneHandle : public ZoneHandle {
 public:
-    DataBaseZoneHandle(const DataBaseDataSourceClient& client,
-                       DataBaseConnection& conn,
-                       const Name& origin, int id) :
-        client_(client), conn_(conn), origin_(origin), id_(id)
+    DataBaseZoneHandle(DataBaseConnection& conn, const Name& origin, int id) :
+        conn_(conn), origin_(origin), id_(id)
     {}
     virtual const Name& getOrigin() const { return (origin_); }
     virtual const RRClass& getClass() const { return (RRClass::IN()); }
@@ -110,7 +108,6 @@ public:
                             const FindOptions options) const;
 
 private:
-    const DataBaseDataSourceClient& client_;
     DataBaseConnection& conn_;
     const Name origin_;
     const int id_;
@@ -388,8 +385,8 @@ DataBaseDataSourceClient::findZone(const isc::dns::Name& name) const {
         if (result == DataSrc::SUCCESS) {
             return (FindResult(result::SUCCESS,
                                ZoneHandlePtr(new DataBaseZoneHandle(
-                                                 *this, *conn_,
-                                                 matchname, zone_id))));
+                                                 *conn_, matchname,
+                                                 zone_id))));
         }
     }
     return (FindResult(result::NOTFOUND, ZoneHandlePtr()));
