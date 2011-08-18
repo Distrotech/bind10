@@ -41,7 +41,7 @@ bind10-devel-20110819 released on August 19, 2011
 	(Trac #1104, git 9b2e89cabb6191db86f88ee717f7abc4171fa979)
 
 274.	[bug]		naokikambe
-	add unittests for functions xml_handler, xsd_handler and xsl_handler
+	Add unittests for functions xml_handler, xsd_handler and xsl_handler
 	respectively to make sure their behaviors are correct, regardless of
 	whether type which xml.etree.ElementTree.tostring() after Python3.2
 	returns is str or byte.
