@@ -201,6 +201,7 @@ void do_sleep() {
 
 // returns the schema version if the schema version table exists
 // returns -1 if it does not
+// raises an SQLite3Error if there is a problem querying the db
 int check_schema_version(sqlite3* db) {
     sqlite3_stmt* prepared = NULL;
     // At this point in time, the database might be exclusively locked, in
@@ -229,7 +230,9 @@ int check_schema_version(sqlite3* db) {
     return (version);
 }
 
-// return db version
+// Obtains an exclusive lock, checks the database again, and creates
+// the tables if they do not exist yet.
+// Returns the schema version
 int create_database(sqlite3* db) {
     // try to get an exclusive lock. Once that is obtained, do the version
     // check *again*, just in case this process was racing another
@@ -241,6 +244,7 @@ int create_database(sqlite3* db) {
         rc = sqlite3_exec(db, "BEGIN EXCLUSIVE TRANSACTION", NULL, NULL,
                             NULL);
         if (rc == SQLITE_OK) {
+            // Lock acquired, move on
             break;
         } else if (rc != SQLITE_BUSY || i == 50) {
             isc_throw(SQLite3Error, "Unable to acquire exclusive lock "

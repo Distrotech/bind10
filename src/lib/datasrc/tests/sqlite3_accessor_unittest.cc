@@ -301,13 +301,35 @@ TEST_F(SQLite3Access, getRecords) {
 // and when done
 class SQLite3Create : public ::testing::Test {
 public:
-    SQLite3Create() {
+    SQLite3Create() : db_(NULL) {
         remove(SQLITE_NEW_DBFILE);
     }
 
+    int open(const char* dbfile) {
+        return sqlite3_open(dbfile, &db_);
+    }
+
     ~SQLite3Create() {
+        if (db_ != NULL) {
+            sqlite3_close(db_);
+        }
         remove(SQLITE_NEW_DBFILE);
     }
+
+    void start_exclusive_transaction() {
+        sqlite3_exec(db_, "BEGIN EXCLUSIVE TRANSACTION", NULL, NULL, NULL);
+    }
+
+    void start_immediate_transaction() {
+        sqlite3_exec(db_, "BEGIN IMMEDIATE TRANSACTION", NULL, NULL, NULL);
+    }
+
+    void rollback_transaction() {
+        sqlite3_exec(db_, "ROLLBACK TRANSACTION", NULL, NULL, NULL);
+    }
+
+private:
+    sqlite3* db_;
 };
 
 bool exists(const char* filename) {
@@ -325,35 +347,53 @@ TEST_F(SQLite3Create, creationtest) {
 TEST_F(SQLite3Create, emptytest) {
     ASSERT_FALSE(exists(SQLITE_NEW_DBFILE));
 
-    // open one manualle
-    sqlite3* db;
-    ASSERT_EQ(SQLITE_OK, sqlite3_open(SQLITE_NEW_DBFILE, &db));
+    ASSERT_EQ(SQLITE_OK, open(SQLITE_NEW_DBFILE));
 
     // empty, but not locked, so creating it now should work
     SQLite3Database db2(SQLITE_NEW_DBFILE, RRClass::IN());
-
-    sqlite3_close(db);
-
-    // should work now that we closed it
-    SQLite3Database db3(SQLITE_NEW_DBFILE, RRClass::IN());
 }
 
 TEST_F(SQLite3Create, lockedtest) {
     ASSERT_FALSE(exists(SQLITE_NEW_DBFILE));
 
-    // open one manually
-    sqlite3* db;
-    ASSERT_EQ(SQLITE_OK, sqlite3_open(SQLITE_NEW_DBFILE, &db));
-    sqlite3_exec(db, "BEGIN EXCLUSIVE TRANSACTION", NULL, NULL, NULL);
+    ASSERT_EQ(SQLITE_OK, open(SQLITE_NEW_DBFILE));
+
+    start_exclusive_transaction();
 
     // should not be able to open it
     EXPECT_THROW(SQLite3Database db2(SQLITE_NEW_DBFILE, RRClass::IN()),
                  SQLite3Error);
 
-    sqlite3_exec(db, "ROLLBACK TRANSACTION", NULL, NULL, NULL);
+    rollback_transaction();
+
+    // should work now that we rolled back
+    SQLite3Database db3(SQLITE_NEW_DBFILE, RRClass::IN());
+}
+
+TEST_F(SQLite3Create, writelockedtest) {
+    ASSERT_FALSE(exists(SQLITE_NEW_DBFILE));
+
+    // open one manually
+    ASSERT_EQ(SQLITE_OK, open(SQLITE_NEW_DBFILE));
+    start_immediate_transaction();
+
+    // should be able to open it, but not create the new tables
+    EXPECT_THROW(SQLite3Database db2(SQLITE_NEW_DBFILE, RRClass::IN()),
+                 SQLite3Error);
+
+    rollback_transaction();
 
     // should work now that we closed it
     SQLite3Database db3(SQLITE_NEW_DBFILE, RRClass::IN());
+
+    // and now that the database has been initialized, the exact same sequence
+    // should not fail
+    start_immediate_transaction();
+
+    // should be able to open it, but not create the new tables
+    SQLite3Database db2(SQLITE_NEW_DBFILE, RRClass::IN());
+
+    rollback_transaction();
 }
 
 } // end anonymous namespace
