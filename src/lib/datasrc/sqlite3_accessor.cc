@@ -23,6 +23,10 @@
 
 #define SQLITE_SCHEMA_VERSION 1
 
+// wait 5 seconds (50 times 0.1 second) for database lock at startup and
+// database creation
+#define DB_LOCK_WAIT_TIME 50
+
 namespace isc {
 namespace datasrc {
 
@@ -118,22 +122,22 @@ const char* const SCHEMA_LIST[] = {
     "CREATE TABLE schema_version (version INTEGER NOT NULL)",
     "INSERT INTO schema_version VALUES (1)",
     "CREATE TABLE zones (id INTEGER PRIMARY KEY, "
-    "name STRING NOT NULL COLLATE NOCASE, "
-    "rdclass STRING NOT NULL COLLATE NOCASE DEFAULT 'IN', "
-    "dnssec BOOLEAN NOT NULL DEFAULT 0)",
+        "name STRING NOT NULL COLLATE NOCASE, "
+        "rdclass STRING NOT NULL COLLATE NOCASE DEFAULT 'IN', "
+        "dnssec BOOLEAN NOT NULL DEFAULT 0)",
     "CREATE INDEX zones_byname ON zones (name)",
     "CREATE TABLE records (id INTEGER PRIMARY KEY, "
-    "zone_id INTEGER NOT NULL, name STRING NOT NULL COLLATE NOCASE, "
-    "rname STRING NOT NULL COLLATE NOCASE, ttl INTEGER NOT NULL, "
-    "rdtype STRING NOT NULL COLLATE NOCASE, sigtype STRING COLLATE NOCASE, "
-    "rdata STRING NOT NULL)",
+        "zone_id INTEGER NOT NULL, name STRING NOT NULL COLLATE NOCASE, "
+        "rname STRING NOT NULL COLLATE NOCASE, ttl INTEGER NOT NULL, "
+        "rdtype STRING NOT NULL COLLATE NOCASE, sigtype STRING COLLATE NOCASE, "
+        "rdata STRING NOT NULL)",
     "CREATE INDEX records_byname ON records (name)",
     "CREATE INDEX records_byrname ON records (rname)",
     "CREATE TABLE nsec3 (id INTEGER PRIMARY KEY, zone_id INTEGER NOT NULL, "
-    "hash STRING NOT NULL COLLATE NOCASE, "
-    "owner STRING NOT NULL COLLATE NOCASE, "
-    "ttl INTEGER NOT NULL, rdtype STRING NOT NULL COLLATE NOCASE, "
-    "rdata STRING NOT NULL)",
+        "hash STRING NOT NULL COLLATE NOCASE, "
+        "owner STRING NOT NULL COLLATE NOCASE, "
+        "ttl INTEGER NOT NULL, rdtype STRING NOT NULL COLLATE NOCASE, "
+        "rdata STRING NOT NULL)",
     "CREATE INDEX nsec3_byhash ON nsec3 (hash)",
     NULL
 };
@@ -207,7 +211,7 @@ int check_schema_version(sqlite3* db) {
     // At this point in time, the database might be exclusively locked, in
     // which case even prepare() will return BUSY, so we may need to try a
     // few times
-    for (size_t i = 0; i < 50; ++i) {
+    for (size_t i = 1; i <= DB_LOCK_WAIT_TIME; ++i) {
         int rc = sqlite3_prepare_v2(db, q_version_str, -1, &prepared, NULL);
         if (rc == SQLITE_ERROR) {
             // this is the error that is returned when the table does not
@@ -215,7 +219,7 @@ int check_schema_version(sqlite3* db) {
             return (-1);
         } else if (rc == SQLITE_OK) {
             break;
-        } else if (rc != SQLITE_BUSY || i == 50) {
+        } else if (rc != SQLITE_BUSY || i == DB_LOCK_WAIT_TIME) {
             isc_throw(SQLite3Error, "Unable to prepare version query: "
                         << rc << " " << sqlite3_errmsg(db));
         }
@@ -238,15 +242,14 @@ int create_database(sqlite3* db) {
     // check *again*, just in case this process was racing another
     //
     // try for 5 secs (50*0.1)
-    int rc;
     logger.info(DATASRC_SQLITE_SETUP);
-    for (size_t i = 0; i < 50; ++i) {
-        rc = sqlite3_exec(db, "BEGIN EXCLUSIVE TRANSACTION", NULL, NULL,
-                            NULL);
+    for (size_t i = 1; i <= DB_LOCK_WAIT_TIME; ++i) {
+        int rc = sqlite3_exec(db, "BEGIN EXCLUSIVE TRANSACTION", NULL, NULL,
+                              NULL);
         if (rc == SQLITE_OK) {
             // Lock acquired, move on
             break;
-        } else if (rc != SQLITE_BUSY || i == 50) {
+        } else if (rc != SQLITE_BUSY || i == DB_LOCK_WAIT_TIME) {
             isc_throw(SQLite3Error, "Unable to acquire exclusive lock "
                         "for database creation: " << sqlite3_errmsg(db));
         }
@@ -273,8 +276,11 @@ checkAndSetupSchema(Initializer* initializer) {
     sqlite3* const db = initializer->params_.db_;
 
     int schema_version = check_schema_version(db);
-    if (schema_version != SQLITE_SCHEMA_VERSION) {
+    if (schema_version == -1) {
         schema_version = create_database(db);
+    }
+    if (schema_version != SQLITE_SCHEMA_VERSION) {
+        isc_throw(SQLite3Error, "Bad sqlite database schema version ");
     }
     initializer->params_.version_ = schema_version;
 
@@ -363,13 +369,11 @@ SQLite3Database::close(void) {
 
 std::pair<bool, int>
 SQLite3Database::getZone(const isc::dns::Name& name) const {
-    int rc;
-
     // Take the statement (simple SELECT id FROM zones WHERE...)
     // and prepare it (bind the parameters to it)
     sqlite3_reset(dbparameters_->q_zone_);
-    rc = sqlite3_bind_text(dbparameters_->q_zone_, 1, name.toText().c_str(),
-                           -1, SQLITE_TRANSIENT);
+    int rc = sqlite3_bind_text(dbparameters_->q_zone_, 1, name.toText().c_str(),
+                               -1, SQLITE_TRANSIENT);
     if (rc != SQLITE_OK) {
         isc_throw(SQLite3Error, "Could not bind " << name <<
                   " to SQL statement (zone)");
