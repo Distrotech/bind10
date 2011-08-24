@@ -280,7 +280,7 @@ checkAndSetupSchema(Initializer* initializer) {
         schema_version = create_database(db);
     }
     if (schema_version != SQLITE_SCHEMA_VERSION) {
-        isc_throw(SQLite3Error, "Bad sqlite database schema version ");
+        isc_throw(SQLite3Error, "Bad sqlite database schema version");
     }
     initializer->params_.version_ = schema_version;
 
