@@ -260,6 +260,7 @@ int create_database(sqlite3* db) {
         for (int i = 0; SCHEMA_LIST[i] != NULL; ++i) {
             if (sqlite3_exec(db, SCHEMA_LIST[i], NULL, NULL, NULL) !=
                 SQLITE_OK) {
+                sqlite3_exec(db, "ROLLBACK TRANSACTION", NULL, NULL, NULL);
                 isc_throw(SQLite3Error,
                         "Failed to set up schema " << SCHEMA_LIST[i]);
             }
@@ -267,6 +268,7 @@ int create_database(sqlite3* db) {
         sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, NULL);
         return (SQLITE_SCHEMA_VERSION);
     } else {
+        sqlite3_exec(db, "ROLLBACK TRANSACTION", NULL, NULL, NULL);
         return (schema_version);
     }
 }
