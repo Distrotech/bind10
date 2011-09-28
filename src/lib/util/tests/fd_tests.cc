@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#include "../fd.h"
+#include <util/io/fd.h>
 
 #include <util/unittests/fork.h>
 
@@ -50,7 +50,7 @@ TEST_F(FDTest, read) {
     int read_pipe(0);
     buffer = new unsigned char[TEST_DATA_SIZE];
     pid_t feeder(provide_input(&read_pipe, data, TEST_DATA_SIZE));
-    ASSERT_NE(feeder, -1);
+    ASSERT_GE(feeder, 0);
     ssize_t received(read_data(read_pipe, buffer, TEST_DATA_SIZE));
     EXPECT_TRUE(process_ok(feeder));
     EXPECT_EQ(TEST_DATA_SIZE, received);
@@ -61,7 +61,7 @@ TEST_F(FDTest, read) {
 TEST_F(FDTest, write) {
     int write_pipe(0);
     pid_t checker(check_output(&write_pipe, data, TEST_DATA_SIZE));
-    ASSERT_NE(checker, -1);
+    ASSERT_GE(checker, 0);
     EXPECT_TRUE(write_data(write_pipe, data, TEST_DATA_SIZE));
     EXPECT_EQ(0, close(write_pipe));
     EXPECT_TRUE(process_ok(checker));

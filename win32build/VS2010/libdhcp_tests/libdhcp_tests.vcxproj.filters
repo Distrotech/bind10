@@ -15,10 +15,25 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\lib\util\io\tests\fd_tests.cc">
+    <ClCompile Include="..\..\..\src\lib\dhcp\tests\libdhcp_unittest.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\lib\util\io\tests\run_unittests.cc">
+    <ClCompile Include="..\..\..\src\lib\dhcp\tests\option_unittest.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\dhcp\tests\option6_addrlst_unittest.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\dhcp\tests\option6_ia_unittest.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\dhcp\tests\option6_iaaddr_unittest.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\dhcp\tests\run_unittests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

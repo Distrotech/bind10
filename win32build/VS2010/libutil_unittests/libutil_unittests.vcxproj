@@ -14,10 +14,15 @@
     <ClInclude Include="..\..\..\src\lib\util\unittests\fork.h" />
     <ClInclude Include="..\..\..\src\lib\util\unittests\newhook.h" />
     <ClInclude Include="..\..\..\src\lib\util\unittests\resolver.h" />
+    <ClInclude Include="..\..\..\src\lib\util\unittests\run_all.h" />
+    <ClInclude Include="..\..\..\src\lib\util\unittests\testdata.h" />
+    <ClInclude Include="..\..\..\src\lib\util\unittests\textdata.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\util\unittests\fork.cc" />
     <ClCompile Include="..\..\..\src\lib\util\unittests\newhook.cc" />
+    <ClCompile Include="..\..\..\src\lib\util\unittests\run_all.cc" />
+    <ClCompile Include="..\..\..\src\lib\util\unittests\testdata.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{2844FDFB-A0A1-4FA4-A654-15D69CC717DD}</ProjectGuid>
@@ -58,7 +63,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\..\gtest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
@@ -74,7 +79,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\..\gtest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>

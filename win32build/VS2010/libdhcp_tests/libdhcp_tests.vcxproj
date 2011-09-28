@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{805598B5-9E7E-4CB1-952C-C0060FBE630D}</ProjectGuid>
+    <ProjectGuid>{D9178188-26B3-466B-A85A-C3C3344438BE}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>libutil_io_tests</RootNamespace>
+    <RootNamespace>libdhcp_tests</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -53,15 +53,15 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\..\gtest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\ext\asio;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libutil_io.lib;libutil_unittests.lib;gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>..\libutil_io\Debug;..\libutil_unittests\Debug;..\..\..\..\gtest\md10\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;liblog.lib;libasiolink.lib;libdhcp.lib;log4cplusSD.lib;gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\libexceptions\Debug;..\libutil\Debug;..\libutil_unittests\Debug;..\liblog\Debug;..\libasiolink\Debug;..\libdhcp\Debug;..\..\..\..\log4cplus\md10\Debug;..\..\..\..\gtest\md10\Debug;%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -72,7 +72,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\..\gtest\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\ext\asio;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
@@ -80,14 +80,19 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>libutil_io.lib;libutil_unittests.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>..\libutil_io\Release;..\libutil_unittests\Release;..\..\..\..\gtest\md10\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\libexceptions\Release;..\libutil\Release;..\libutil_unittests\Release;..\liblog\Release;..\libasiolink\Release;..\libdhcp\Release;..\..\..\..\log4cplus\md10\Release;..\..\..\..\gtest\md10\Release;%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;liblog.lib;libasiolink.lib;libdhcp.lib;log4cplusS.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\lib\util\io\tests\fd_tests.cc" />
-    <ClCompile Include="..\..\..\src\lib\util\io\tests\run_unittests.cc" />
+    <ClCompile Include="..\..\..\src\lib\dhcp\tests\libdhcp_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dhcp\tests\option6_addrlst_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dhcp\tests\option6_iaaddr_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dhcp\tests\option6_ia_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dhcp\tests\option_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dhcp\tests\run_unittests.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

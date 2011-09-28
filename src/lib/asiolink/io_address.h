@@ -76,10 +76,28 @@ public:
     /// \return A string representation of the address.
     std::string toText() const;
 
+    /// \brief Returns const reference to the underlying address object.
+    ///
+    /// This is useful, when access to interface offerted by
+    //  asio::ip::address_v4 and asio::ip::address_v6 is beneficial.
+    /// 
+    /// \return A const reference to asio::ip::address object
+    const asio::ip::address& getAddress() const;
+
     /// \brief Returns the address family
     ///
     /// \return AF_INET for IPv4 or AF_INET6 for IPv6.
     short getFamily() const;
+
+
+    /// \brief Creates an address from over wire data.
+    ///
+    /// \param family AF_NET for IPv4 or AF_NET6 for IPv6.
+    /// \param data pointer to first char of data
+    ///
+    /// \return Created IOAddress object
+    static IOAddress
+    from_bytes(short family, const char* data);
 
     /// \brief Compare addresses for equality
     ///

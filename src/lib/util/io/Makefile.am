@@ -1,5 +1,3 @@
-SUBDIRS = . tests
-
 AM_CXXFLAGS = $(B10_CXXFLAGS)
 
 lib_LTLIBRARIES = libutil_io.la
@@ -15,4 +13,6 @@ libutil_io_python_la_LDFLAGS = -module
 libutil_io_python_la_SOURCES = fdshare_python.cc
 libutil_io_python_la_LIBADD = libutil_io.la
 libutil_io_python_la_CPPFLAGS = $(AM_CPPFLAGS) $(PYTHON_INCLUDES)
-libutil_io_python_la_CXXFLAGS = $(AM_CXXFLAGS)
+# Note: PYTHON_CXXFLAGS may have some -Wno... workaround, which must be
+# placed after -Wextra defined in AM_CXXFLAGS
+libutil_io_python_la_CXXFLAGS = $(AM_CXXFLAGS) $(PYTHON_CXXFLAGS)
