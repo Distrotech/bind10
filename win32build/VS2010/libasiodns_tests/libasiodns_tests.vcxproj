@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -53,7 +53,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;TEST_DATA_DIR="testdata";_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\ext\asio;..\..\..\ext\coroutine;..\..\..\..\gtest\include;C:\Program Files\boost\boost_1_44;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\ext\asio;..\..\..\ext\coroutine;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
@@ -61,7 +61,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>libexceptions.lib;libutil.lib;libdns++.lib;liblog.lib;libasiolink.lib;libasiodns.lib;gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>..\libexceptions\Debug;..\libutil\Debug;..\libdns++\Debug;..\liblog\Debug;..\libasiolink\Debug;..\libasiodns\Debug;..\..\..\..\gtest\md10\Debug;C:\Program Files\boost\boost_1_44\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\libexceptions\Debug;..\libutil\Debug;..\libdns++\Debug;..\liblog\Debug;..\libasiolink\Debug;..\libasiodns\Debug;..\..\..\..\gtest\md10\Debug;%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -72,7 +72,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;TEST_DATA_DIR="testdata";NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\ext\asio;..\..\..\ext\coroutine;..\..\..\..\gtest\include;C:\Program Files\boost\boost_1_44;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\ext\asio;..\..\..\ext\coroutine;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
@@ -82,7 +82,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
       <AdditionalDependencies>libexceptions.lib;libutil.lib;libdns++.lib;liblog.lib;libasiolink.lib;libasiodns.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libexceptions\Release;..\libutil\Release;..\libdns++\Release;..\liblog\Release;..\libasiolink\Release;..\libasiodns\Release;..\..\..\..\gtest\md10\Release;C:\Program Files\boost\boost_1_44\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\libexceptions\Release;..\libutil\Release;..\libdns++\Release;..\liblog\Release;..\libasiolink\Release;..\libasiodns\Release;..\..\..\..\gtest\md10\Release;%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

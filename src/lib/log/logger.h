@@ -18,32 +18,84 @@
 #include <cstdlib>
 #include <string>
 
-#include <log/debug_levels.h>
-#include <log/logger_levels.h>
+#include <exceptions/exceptions.h>
+#include <log/logger_level.h>
 #include <log/message_types.h>
+#include <log/log_formatter.h>
 
 namespace isc {
 namespace log {
 
-/// \brief Logging API
-///
-/// This module forms the interface into the logging subsystem. Features of the
-/// system and its implementation are:
-///
-/// # Multiple logging objects can be created, each given a name; those with the
-///   same name share characteristics (like destination, level being logged
-///   etc.)
-/// # Messages can be logged at severity levels of FATAL, ERROR, WARN, INFO or
-///   DEBUG.  The DEBUG level has further sub-levels numbered 0 (least
-///   informative) to 99 (most informative).
-/// # Each logger has a severity level set associated with it.  When a message
-///   is logged, it is output only if it is logged at a level equal to the
-///   logger severity level or greater, e.g. if the logger's severity is WARN,
-///   only messages logged at WARN, ERROR or FATAL will be output.
-/// # Messages are identified by message identifiers, which are keys into a
-///   message dictionary.
+/// \page LoggingApi Logging API
+/// \section LoggingApiOverview Overview
+/// BIND 10 logging uses the concepts of the widely-used Java logging
+/// package log4j (http://logging.apache.log/log4j), albeit implemented 
+/// in C++ using an open-source port.  Features of the system are:
+/// 
+/// - Within the code objects - known as loggers - can be created and
+/// used to log messages.  These loggers have names; those with the
+/// same name share characteristics (such as output destination).
+/// - Loggers have a hierarchical relationship, with each logger being
+/// the child of another logger, except for the top of the hierarchy, the
+/// root logger.  If a logger does not log a message, it is passed to the
+/// parent logger.
+/// - Messages can be logged at severity levels of FATAL, ERROR, WARN, INFO
+/// or DEBUG.  The DEBUG level has further sub-levels numbered 0 (least
+/// informative) to 99 (most informative).
+/// - Each logger has a severity level set associated with it.  When a
+/// message is logged, it is output only if it is logged at a level equal
+/// to the logger severity level or greater, e.g. if the logger's severity
+/// is WARN, only messages logged at WARN, ERROR or FATAL will be output.
+/// 
+/// \section LoggingApiLoggerNames BIND 10 Logger Names
+/// Within BIND 10, the root logger root logger is given the name of the
+/// program (via the stand-alone function setRootLoggerName()). Other loggers
+/// are children of the root logger and are named "<program>.<sublogger>".
+/// This name appears in logging output, allowing users to identify both
+/// the BIND 10 program and the component within the program that generated
+/// the message.
+/// 
+/// When creating a logger, the abbreviated name "<sublogger>" can be used;
+/// the program name will be prepended to it when the logger is created.
+/// In this way, individual libraries can have their own loggers without
+/// worrying about the program in which they are used, but:
+/// - The origin of the message will be clearly identified.
+/// - The same component can have different options (e.g. logging severity)
+/// in different programs at the same time.
+/// 
+/// \section LoggingApiLoggingMessages Logging Messages
+/// Instead of embedding the text of messages within the code, each message
+/// is referred to using a symbolic name.  The logging code uses this name as
+/// a key in a dictionary from which the message text is obtained.  Such a
+/// system allows for the optional replacement of message text at run time.
+/// More details about the message disction (and the compiler used to create
+/// the symbol definitions) can be found in other modules in the src/lib/log
+/// directory.
 
 class LoggerImpl;   // Forward declaration of the implementation class
+
+/// \brief Logging Not Initialized
+///
+/// Exception thrown if an attempt is made to access a logging function
+/// if the logging system has not been initialized.
+class LoggingNotInitialized : public isc::Exception {
+public:
+    LoggingNotInitialized(const char* file, size_t line, const char* what) :
+        isc::Exception(file, line, what)
+    {}
+};
+
+/// \brief Logger Class
+///
+/// This class is the main class used for logging.  Use comprises:
+///
+/// 1. Constructing a logger by instantiating it with a specific name. (If the
+/// same logger is in multiple functions within a file, overhead can be
+/// minimised by declaring it as a file-wide static variable.)
+/// 2. Using the error(), info() etc. methods to log an error.  (However, it is
+/// recommended to use the LOG_ERROR, LOG_INFO etc. macros defined in macros.h.
+/// These will avoid the potentially-expensive evaluation of arguments if the
+/// severity is such that the message will be suppressed.)
 
 class Logger {
 public:
@@ -55,44 +107,19 @@ public:
     /// \param name Name of the logger.  If the name is that of the root name,
     /// this creates an instance of the root logger; otherwise it creates a
     /// child of the root logger.
-    ///
-    /// \param infunc This argument is present to get round a bug in some
-    /// implementations of the logging system.  If the logger is declared in
-    /// a function (such that it will be deleted when the function exits,
-    /// before the program ends), set this true.  If declared outside a
-    /// function (such that it gets deleted during program rundown), set false
-    /// (the default).\n
-    /// \n
-    /// The problems encountered was that during program rundown, one logging
-    /// implementation (log4cxx) threw a MutexException (this is described in
-    /// https://issues.apache.org/jira/browse/LOGCXX-322).  As this only occurs
-    /// during program rundown, the issue is not serious - it just looks bad to
-    /// have the program crash instead of shut down cleanly.\n
-    /// \n
-    /// If log4cxx is chosen as the implementation, this flag controls the
-    /// deletion of the underlying log4cxx data structures when the logger is
-    /// deleted.  Setting it false for externally-declared loggers inhibits
-    /// their deletion; so at program exit the memory is not reclaimed during
-    /// program rundown, only when the process is selected.  Setting it true
-    /// for loggers that will be deleted in the normal running of the program
-    /// enables their deletion - which causes no issues as the problem only
-    /// manifests itself during program rundown.
-    /// \n
-    /// The flag has no effect on non-log4cxx implementations.
-    Logger(const std::string& name, bool infunc = false) :
-        loggerptr_(NULL), name_(name), infunc_(infunc)
+    Logger(const std::string& name) : loggerptr_(NULL), name_(name)
     {}
-
 
     /// \brief Destructor
     virtual ~Logger();
 
+    /// \brief The formatter used to replace placeholders
+    typedef isc::log::Formatter<Logger> Formatter;
 
     /// \brief Get Name of Logger
     ///
     /// \return The full name of the logger (including the root name)
     virtual std::string getName();
-
 
     /// \brief Set Severity Level for Logger
     ///
@@ -105,13 +132,11 @@ public:
     /// outside these limits is silently coerced to the nearest boundary.
     virtual void setSeverity(isc::log::Severity severity, int dbglevel = 1);
 
-
     /// \brief Get Severity Level for Logger
     ///
     /// \return The current logging level of this logger.  In most cases though,
     /// the effective logging level is what is required.
     virtual isc::log::Severity getSeverity();
-
 
     /// \brief Get Effective Severity Level for Logger
     ///
@@ -120,13 +145,18 @@ public:
     /// is the severity of the parent.
     virtual isc::log::Severity getEffectiveSeverity();
 
-
     /// \brief Return DEBUG Level
     ///
     /// \return Current setting of debug level.  This is returned regardless of
     /// whether the severity is set to debug.
     virtual int getDebugLevel();
 
+    /// \brief Get Effective Debug Level for Logger
+    ///
+    /// \return The effective debug level of the logger.  This is the same
+    /// as getDebugLevel() if the logger has a debug level set, but otherwise
+    /// is the debug level of the parent.
+    virtual int getEffectiveDebugLevel();
 
     /// \brief Returns if Debug Message Should Be Output
     ///
@@ -135,76 +165,63 @@ public:
     /// checked is less than or equal to the debug level set for the logger.
     virtual bool isDebugEnabled(int dbglevel = MIN_DEBUG_LEVEL);
 
-
     /// \brief Is INFO Enabled?
     virtual bool isInfoEnabled();
-
 
     /// \brief Is WARNING Enabled?
     virtual bool isWarnEnabled();
 
-
     /// \brief Is ERROR Enabled?
     virtual bool isErrorEnabled();
 
-
     /// \brief Is FATAL Enabled?
     virtual bool isFatalEnabled();
-
 
     /// \brief Output Debug Message
     ///
     /// \param dbglevel Debug level, ranging between 0 and 99.  Higher numbers
     /// are used for more verbose output.
     /// \param ident Message identification.
-    /// \param ... Optional arguments for the message.
-    void debug(int dbglevel, const MessageID ident, ...);
-
+    Formatter debug(int dbglevel, const MessageID& ident);
 
     /// \brief Output Informational Message
     ///
     /// \param ident Message identification.
-    /// \param ... Optional arguments for the message.
-    void info(const MessageID ident, ...);
-
+    Formatter info(const MessageID& ident);
 
     /// \brief Output Warning Message
     ///
     /// \param ident Message identification.
-    /// \param ... Optional arguments for the message.
-    void warn(const MessageID ident, ...);
-
+    Formatter warn(const MessageID& ident);
 
     /// \brief Output Error Message
     ///
     /// \param ident Message identification.
-    /// \param ... Optional arguments for the message.
-    void error(const MessageID ident, ...);
-
+    Formatter error(const MessageID& ident);
 
     /// \brief Output Fatal Message
     ///
     /// \param ident Message identification.
-    /// \param ... Optional arguments for the message.
-    void fatal(const MessageID ident, ...);
+    Formatter fatal(const MessageID& ident);
 
     /// \brief Equality
     ///
     /// Check if two instances of this logger refer to the same stream.
-    /// (This method is principally for testing.)
     ///
     /// \return true if the logger objects are instances of the same logger.
     bool operator==(Logger& other);
 
-protected:
-
-    /// \brief Reset Global Data
-    ///
-    /// Used for testing, this calls upon the underlying logger implementation
-    /// to clear any global data.
-    static void reset();
-
 private:
+    friend class isc::log::Formatter<Logger>;
+
+    /// \brief Raw output function
+    ///
+    /// This is used by the formatter to output formatted output.
+    ///
+    /// \param severity Severity of the message being output.
+    /// \param message Text of the message to be output.
+    void output(const Severity& severity, const std::string& message);
+
     /// \brief Copy Constructor
     ///
     /// Disabled (marked private) as it makes no sense to copy the logger -
@@ -219,15 +236,14 @@ private:
 
     /// \brief Initialize Implementation
     ///
-    /// Returns the logger pointer.  If not yet set, the underlying
-    /// implementation class is initialized.\n
-    /// \n
-    /// The reason for this indirection is to avoid the "static initialization
-    /// fiacso", whereby we cannot rely on the order of static initializations.
-    /// The main problem is the root logger name - declared statically - which
-    /// is referenced by various loggers.  By deferring a reference to it until
-    /// after the program starts executing - by which time the root name object
-    /// will be initialized - we avoid this problem.
+    /// Returns the logger pointer.  If not yet set, the implementation class is
+    /// initialized.
+    ///
+    /// The main reason for this is to allow loggers to be declared statically
+    /// before the underlying logging system is initialized.  However, any
+    /// attempt to access a logging method on any logger before initialization -
+    /// regardless of whether is is statically or automatically declared -  will
+    /// cause a "LoggingNotInitialized" exception to be thrown.
     ///
     /// \return Returns pointer to implementation
     LoggerImpl* getLoggerPtr() {
@@ -242,7 +258,6 @@ private:
 
     LoggerImpl*     loggerptr_;     ///< Pointer to the underlying logger
     std::string     name_;          ///< Copy of the logger name
-    bool            infunc_;        ///< Copy of the infunc argument
 };
 
 } // namespace log

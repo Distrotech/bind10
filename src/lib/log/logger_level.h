@@ -12,8 +12,14 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#ifndef __LOGGER_LEVELS_H
-#define __LOGGER_LEVELS_H
+#ifndef __LOGGER_LEVEL_H
+#define __LOGGER_LEVEL_H
+
+#include <string>
+
+#if defined(_WIN32) && defined(ERROR)
+#undef ERROR
+#endif
 
 namespace isc {
 namespace log {
@@ -26,10 +32,6 @@ namespace log {
 /// N.B. The order of the levels - DEBUG less than INFO less that WARN etc. is
 /// implicitly assumed in several implementations.  They must not be changed.
 
-#if defined(_WIN32) && defined(ERROR)
-#undef ERROR
-#endif
-
 typedef enum {
     DEFAULT = 0,    // Default to logging level of the parent
     DEBUG = 1,
@@ -40,7 +42,39 @@ typedef enum {
     NONE = 6    // Disable logging
 } Severity;
 
+/// Minimum/maximum debug levels.
+
+const int MIN_DEBUG_LEVEL = 0;
+const int MAX_DEBUG_LEVEL = 99;
+
+/// \brief Log level structure
+///
+/// A simple pair structure that provides suitable names for the members.  It
+/// holds a combination of logging severity and debug level.
+struct Level {
+    Severity    severity;   ///< Logging severity
+    int         dbglevel;   ///< Debug level
+
+    Level(Severity sev = DEFAULT, int dbg = MIN_DEBUG_LEVEL) :
+        severity(sev), dbglevel(dbg)
+    {}
+
+    // Default assignment and copy constructor is appropriate
+};
+
+/// \brief Returns the isc::log::Severity value represented by the given string
+///
+/// This must be one of the strings "DEBUG", "INFO", "WARN", "ERROR", "FATAL" or
+/// "NONE". (Case is not important, but the string most not contain leading or
+/// trailing spaces.)
+///
+/// \param sev_str The string representing severity value
+///
+/// \return The severity. If the string is not recognized, an error will be
+///         logged and the string will return  isc::log::INFO.
+isc::log::Severity getSeverity(const std::string& sev_str);
+
 }   // namespace log
 }   // namespace isc
 
-#endif // __LOGGER_LEVELS_H
+#endif // __LOGGER_LEVEL_H

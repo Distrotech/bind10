@@ -17,21 +17,30 @@
 
 #include <log/logger.h>
 #include <log/logger_impl.h>
+#include <log/logger_name.h>
+#include <log/logger_support.h>
 #include <log/message_dictionary.h>
 #include <log/message_types.h>
-#include <log/root_logger_name.h>
 
 #include <util/strutil.h>
+
+#if defined(_WIN32) && defined(ERROR)
+#undef ERROR
+#endif
 
 using namespace std;
 
 namespace isc {
 namespace log {
 
-// Initialize Logger implementation.  Does not check whether the implementation
-// has already been initialized - that was done by the caller (getLoggerPtr()).
+// Initialize underlying logger, but only if logging has been initialized.
 void Logger::initLoggerImpl() {
-    loggerptr_ = new LoggerImpl(name_, infunc_);
+    if (isLoggingInitialized()) {
+        loggerptr_ = new LoggerImpl(name_);
+    } else {
+        isc_throw(LoggingNotInitialized, "attempt to access logging function "
+                  "before logging has been initialized");
+    }
 }
 
 // Destructor.
@@ -75,6 +84,14 @@ Logger::getDebugLevel() {
     return (getLoggerPtr()->getDebugLevel());
 }
 
+// Effective debug level (only relevant if messages of severity DEBUG are being
+// logged).
+
+int
+Logger::getEffectiveDebugLevel() {
+    return (getLoggerPtr()->getEffectiveDebugLevel());
+}
+
 // Check on the current severity settings
 
 bool
@@ -112,64 +129,65 @@ Logger::isFatalEnabled() {
 // Output methods
 
 void
-Logger::debug(int dbglevel, const isc::log::MessageID ident, ...) {
+Logger::output(const Severity& severity, const std::string& message) {
+    getLoggerPtr()->outputRaw(severity, message);
+}
+
+Logger::Formatter
+Logger::debug(int dbglevel, const isc::log::MessageID& ident) {
     if (isDebugEnabled(dbglevel)) {
-        va_list ap;
-        va_start(ap, ident);
-        getLoggerPtr()->debug(ident, ap);
-        va_end(ap);
+        return (Formatter(DEBUG, getLoggerPtr()->lookupMessage(ident),
+                          this));
+    } else {
+        return (Formatter());
     }
 }
 
-void
-Logger::info(const isc::log::MessageID ident, ...) {
+Logger::Formatter
+Logger::info(const isc::log::MessageID& ident) {
     if (isInfoEnabled()) {
-        va_list ap;
-        va_start(ap, ident);
-        getLoggerPtr()->info(ident, ap);
-        va_end(ap);
+        return (Formatter(INFO, getLoggerPtr()->lookupMessage(ident),
+                          this));
+    } else {
+        return (Formatter());
     }
 }
 
-void
-Logger::warn(const isc::log::MessageID ident, ...) {
+Logger::Formatter
+Logger::warn(const isc::log::MessageID& ident) {
     if (isWarnEnabled()) {
-        va_list ap;
-        va_start(ap, ident);
-        getLoggerPtr()->warn(ident, ap);
-        va_end(ap);
+        return (Formatter(WARN, getLoggerPtr()->lookupMessage(ident),
+                          this));
+    } else {
+        return (Formatter());
     }
 }
 
-void
-Logger::error(const isc::log::MessageID ident, ...) {
+Logger::Formatter
+Logger::error(const isc::log::MessageID& ident) {
     if (isErrorEnabled()) {
-        va_list ap;
-        va_start(ap, ident);
-        getLoggerPtr()->error(ident, ap);
-        va_end(ap);
+        return (Formatter(ERROR, getLoggerPtr()->lookupMessage(ident),
+                          this));
+    } else {
+        return (Formatter());
     }
 }
 
-void
-Logger::fatal(const isc::log::MessageID ident, ...) {
+Logger::Formatter
+Logger::fatal(const isc::log::MessageID& ident) {
     if (isFatalEnabled()) {
-        va_list ap;
-        va_start(ap, ident);
-        getLoggerPtr()->fatal(ident, ap);
-        va_end(ap);
+        return (Formatter(FATAL, getLoggerPtr()->lookupMessage(ident),
+                          this));
+    } else {
+        return (Formatter());
     }
 }
 
-bool Logger::operator==(Logger& other) {
+// Comparison (testing only)
+
+bool
+Logger::operator==(Logger& other) {
     return (*getLoggerPtr() == *other.getLoggerPtr());
-}
-
-// Protected methods (used for testing)
-
-void
-Logger::reset() {
-    LoggerImpl::reset();
 }
 
 } // namespace log

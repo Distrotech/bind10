@@ -137,6 +137,18 @@ public:
 };
 
 ///
+/// \brief A generic exception that is thrown when a function is
+/// not implemented.
+///
+/// This may be due to unfinished implementation or in case the
+/// function isn't even planned to be provided for that situation.
+class NotImplemented : public Exception {
+public:
+    NotImplemented(const char* file, size_t line, const char* what) :
+        isc::Exception(file, line, what) {}
+};
+
+///
 /// A shortcut macro to insert known values into exception arguments.
 ///
 /// It allows the \c stream argument to be part of a statement using an
@@ -157,7 +169,6 @@ public:
 /// this is defined as a macro.  The convenience for the ostream is a secondary
 /// purpose (if that were the only possible reason we should rather avoid
 /// using a macro).
-/// Avoid C4127 warning: conditional expression is constant
 #ifdef _MSC_VER
 #define isc_throw(type, stream) \
     __pragma(warning(push)) \
@@ -176,6 +187,29 @@ public:
         throw type(__FILE__, __LINE__, oss__.str().c_str()); \
     } while (1)
 #endif
+
+///
+/// Similar as isc_throw, but allows the exception to have one additional
+/// parameter (the stream/text goes first)
+#ifdef _MSC_VER
+#define isc_throw_1(type, stream, param1) \
+    __pragma(warning(push)) \
+    __pragma(warning(disable: 4127)) \
+    do { \
+        std::ostringstream oss__; \
+        oss__ << stream; \
+        throw type(__FILE__, __LINE__, oss__.str().c_str(), param1); \
+    } while (1) \
+    __pragma(warning(pop))
+#else
+#define isc_throw_1(type, stream, param1) \
+    do { \
+        std::ostringstream oss__; \
+        oss__ << stream; \
+        throw type(__FILE__, __LINE__, oss__.str().c_str(), param1); \
+    } while (1)
+#endif
+
 }
 #endif // __EXCEPTIONS_H
 
