@@ -23,7 +23,7 @@
     <ClCompile Include="..\..\getopt.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\lib\log\tests\logger_support_test.cc">
+    <ClCompile Include="..\..\..\src\lib\log\tests\logger_example.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

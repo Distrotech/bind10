@@ -16,7 +16,7 @@
 #include <string>
 #include <gtest/gtest.h>
 
-#include <log/messagedef.h>
+#include <log/log_messages.h>
 #include <log/message_dictionary.h>
 #include <log/message_exception.h>
 #include <log/message_reader.h>
@@ -68,8 +68,8 @@ TEST_F(MessageReaderTest, BlanksAndComments) {
     EXPECT_NO_THROW(reader_.processLine(" \n "));
     EXPECT_NO_THROW(reader_.processLine("# This is a comment"));
     EXPECT_NO_THROW(reader_.processLine("\t\t # Another comment"));
-    EXPECT_NO_THROW(reader_.processLine("  + A description line"));
-    EXPECT_NO_THROW(reader_.processLine("#+ A comment"));
+    EXPECT_NO_THROW(reader_.processLine("  A description line"));
+    EXPECT_NO_THROW(reader_.processLine("# A comment"));
     EXPECT_NO_THROW(reader_.processLine("  +# A description line"));
 
     // ... and (b) nothing gets added to either the map or the not-added section.
@@ -97,6 +97,15 @@ processLineException(MessageReader& reader, const char* what,
     }
 }
 
+// Check that it recognises invalid directives
+
+TEST_F(MessageReaderTest, InvalidDirectives) {
+
+    // Check that a "$" with nothing else generates an error
+    processLineException(reader_, "$", LOG_UNRECOGNISED_DIRECTIVE);
+    processLineException(reader_, "$xyz", LOG_UNRECOGNISED_DIRECTIVE);
+}
+
 // Check that it can parse a prefix
 
 TEST_F(MessageReaderTest, Prefix) {
@@ -104,30 +113,32 @@ TEST_F(MessageReaderTest, Prefix) {
     // Check that no $PREFIX is present
     EXPECT_EQ(string(""), reader_.getPrefix());
 
-    // Check that a $PREFIX directive with no argument generates an error.
-    processLineException(reader_, "$PREFIX", MSG_PRFNOARG);
+    // Check that a $PREFIX directive with no argument is OK
+    EXPECT_NO_THROW(reader_.processLine("$PREFIX"));
 
     // Check a $PREFIX with multiple arguments is invalid
-    processLineException(reader_, "$prefix A B", MSG_PRFEXTRARG);
+    processLineException(reader_, "$prefix A B", LOG_PREFIX_EXTRA_ARGS);
 
     // Prefixes should be alphanumeric (with underscores) and not start
     // with a number.
-    processLineException(reader_, "$prefix ab[cd", MSG_PRFINVARG);
-    processLineException(reader_, "$prefix 123", MSG_PRFINVARG);
-    processLineException(reader_, "$prefix 1ABC", MSG_PRFINVARG);
+    processLineException(reader_, "$prefix ab[cd", LOG_PREFIX_INVALID_ARG);
+    processLineException(reader_, "$prefix 123", LOG_PREFIX_INVALID_ARG);
+    processLineException(reader_, "$prefix 1ABC", LOG_PREFIX_INVALID_ARG);
 
     // A valid prefix should be accepted
     EXPECT_NO_THROW(reader_.processLine("$PREFIX   dlm__"));
-    EXPECT_EQ(string("DLM__"), reader_.getPrefix());
+    EXPECT_EQ(string("dlm__"), reader_.getPrefix());
 
     // And check that the parser fails on invalid prefixes...
-    processLineException(reader_, "$prefix 1ABC", MSG_PRFINVARG);
-
-    // ... and rejects another valid one
-    processLineException(reader_, "$PREFIX ABC", MSG_DUPLPRFX);
+    processLineException(reader_, "$prefix 1ABC", LOG_PREFIX_INVALID_ARG);
 
     // Check that we can clear the prefix as well
     reader_.clearPrefix();
+    EXPECT_EQ(string(""), reader_.getPrefix());
+
+    EXPECT_NO_THROW(reader_.processLine("$PREFIX   dlm__"));
+    EXPECT_EQ(string("dlm__"), reader_.getPrefix());
+    EXPECT_NO_THROW(reader_.processLine("$PREFIX"));
     EXPECT_EQ(string(""), reader_.getPrefix());
 }
 
@@ -139,13 +150,13 @@ TEST_F(MessageReaderTest, Namespace) {
     EXPECT_EQ(string(""), reader_.getNamespace());
 
     // Check that a $NAMESPACE directive with no argument generates an error.
-    processLineException(reader_, "$NAMESPACE", MSG_NSNOARG);
+    processLineException(reader_, "$NAMESPACE", LOG_NAMESPACE_NO_ARGS);
 
     // Check a $NAMESPACE with multiple arguments is invalid
-    processLineException(reader_, "$namespace A B", MSG_NSEXTRARG);
+    processLineException(reader_, "$namespace A B", LOG_NAMESPACE_EXTRA_ARGS);
 
     // Namespaces should be alphanumeric (with underscores and colons)
-    processLineException(reader_, "$namespace ab[cd", MSG_NSINVARG);
+    processLineException(reader_, "$namespace ab[cd", LOG_NAMESPACE_INVALID_ARG);
 
     // A valid $NAMESPACE should be accepted
     EXPECT_NO_THROW(reader_.processLine("$NAMESPACE isc"));
@@ -165,7 +176,7 @@ TEST_F(MessageReaderTest, Namespace) {
     EXPECT_EQ(string("::"), reader_.getNamespace());
 
     // ... and that another $NAMESPACE is rejected
-    processLineException(reader_, "$NAMESPACE ABC", MSG_DUPLNS);
+    processLineException(reader_, "$NAMESPACE ABC", LOG_DUPLICATE_NAMESPACE);
 }
 
 // Check that it can parse a line
@@ -173,8 +184,8 @@ TEST_F(MessageReaderTest, Namespace) {
 TEST_F(MessageReaderTest, ValidMessageAddDefault) {
 
     // Add a couple of valid messages
-    reader_.processLine("GLOBAL1\t\tthis is message global one\n");
-    reader_.processLine("GLOBAL2 this is message global two");
+    reader_.processLine("% GLOBAL1\t\tthis is message global one\n");
+    reader_.processLine("%GLOBAL2 this is message global two");
 
     // ... and check them
     EXPECT_EQ(string("this is message global one"),
@@ -191,9 +202,9 @@ TEST_F(MessageReaderTest, ValidMessageAddDefault) {
 TEST_F(MessageReaderTest, ValidMessageAdd) {
 
     // Add a couple of valid messages
-    reader_.processLine("GLOBAL1\t\tthis is message global one\n",
+    reader_.processLine("%GLOBAL1\t\tthis is message global one\n",
         MessageReader::ADD);
-    reader_.processLine("GLOBAL2 this is message global two",
+    reader_.processLine("% GLOBAL2 this is message global two",
         MessageReader::ADD);
 
     // ... and check them
@@ -214,9 +225,9 @@ TEST_F(MessageReaderTest, ValidMessageReplace) {
     dictionary_->add("GLOBAL2", "original global2 message");
 
     // Replace a couple of valid messages
-    reader_.processLine("GLOBAL1\t\tthis is message global one\n",
+    reader_.processLine("% GLOBAL1\t\tthis is message global one\n",
         MessageReader::REPLACE);
-    reader_.processLine("GLOBAL2 this is message global two",
+    reader_.processLine("% GLOBAL2 this is message global two",
         MessageReader::REPLACE);
 
     // ... and check them
@@ -237,14 +248,14 @@ TEST_F(MessageReaderTest, ValidMessageReplace) {
 TEST_F(MessageReaderTest, Overflows) {
 
     // Add a couple of valid messages
-    reader_.processLine("GLOBAL1\t\tthis is message global one\n");
-    reader_.processLine("GLOBAL2 this is message global two");
+    reader_.processLine("% GLOBAL1\t\tthis is message global one\n");
+    reader_.processLine("% GLOBAL2 this is message global two");
 
     // Add a duplicate in ADD mode.
-    reader_.processLine("GLOBAL1\t\tthis is a replacement for global one");
+    reader_.processLine("% GLOBAL1\t\tthis is a replacement for global one");
 
     // Replace a non-existent one in REPLACE mode
-    reader_.processLine("LOCAL\t\tthis is a new message",
+    reader_.processLine("% LOCAL\t\tthis is a new message",
         MessageReader::REPLACE);
 
     // Check what is in the dictionary.

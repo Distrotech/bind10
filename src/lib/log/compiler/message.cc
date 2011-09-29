@@ -30,12 +30,14 @@
 #include <util/filename.h>
 #include <util/strutil.h>
 
+#include <log/log_messages.h>
 #include <log/message_dictionary.h>
 #include <log/message_exception.h>
 #include <log/message_reader.h>
-#include <log/messagedef.h>
 
 #include <log/logger.h>
+
+#include <boost/foreach.hpp>
 
 using namespace std;
 using namespace isc::log;
@@ -43,6 +45,7 @@ using namespace isc::util;
 
 static const char* VERSION = "1.0-0";
 
+/// \file log/compiler/message.cc
 /// \brief Message Compiler
 ///
 /// \b Overview<BR>
@@ -52,20 +55,19 @@ static const char* VERSION = "1.0-0";
 /// \li A .cc file containing code that adds the messages to the program's
 /// message dictionary at start-up time.
 ///
-/// Alternatively, the program can produce a .py file that contains the
-/// message definitions.
-///
-
 /// \b Invocation<BR>
 /// The program is invoked with the command:
 ///
-/// <tt>message [-v | -h | \<message-file\>]</tt>
+/// <tt>message [-v | -h | -p | -d <dir> | <message-file>]</tt>
 ///
-/// It reads the message file and writes out two files of the same name but with
-/// extensions of .h and .cc.
+/// It reads the message file and writes out two files of the same
+/// name in the current working directory (unless -d is used) but
+/// with extensions of .h and .cc, or .py if -p is used.
 ///
-/// \-v causes it to print the version number and exit. \-h prints a help
-/// message (and exits).
+/// -v causes it to print the version number and exit. -h prints a help
+/// message (and exits). -p sets the output to python. -d <dir> will make
+/// it write the output file(s) to dir instead of current working
+/// directory
 
 
 /// \brief Print Version
@@ -84,10 +86,12 @@ version() {
 void
 usage() {
     cout <<
-        "Usage: message [-h] [-v] <message-file>\n" <<
+        "Usage: message [-h] [-v] [-p] [-d dir] <message-file>\n" <<
         "\n" <<
         "-h       Print this message and exit\n" <<
         "-v       Print the program version and exit\n" <<
+        "-p       Output python source instead of C++ ones\n" <<
+        "-d <dir> Place output files in given directory\n" <<
         "\n" <<
         "<message-file> is the name of the input message file.\n";
 }
@@ -109,7 +113,7 @@ currentTime() {
 
     // Convert to string and strip out the trailing newline
     string current_time = buffer;
-    return isc::util::str::trim(current_time);
+    return (isc::util::str::trim(current_time));
 }
 
 
@@ -130,7 +134,7 @@ sentinel(Filename& file) {
     string ext = file.extension();
     string sentinel_text = "__" + name + "_" + ext.substr(1);
     isc::util::str::uppercase(sentinel_text);
-    return sentinel_text;
+    return (sentinel_text);
 }
 
 
@@ -157,7 +161,7 @@ quoteString(const string& instring) {
         outstring += instring[i];
     }
 
-    return outstring;
+    return (outstring);
 }
 
 
@@ -180,7 +184,7 @@ sortedIdentifiers(MessageDictionary& dictionary) {
     }
     sort(ident.begin(), ident.end());
 
-    return ident;
+    return (ident);
 }
 
 
@@ -210,7 +214,7 @@ splitNamespace(string ns) {
 
     // ... and return the vector of namespace components split on the single
     // colon.
-    return isc::util::str::tokens(ns, ":");
+    return (isc::util::str::tokens(ns, ":"));
 }
 
 
@@ -222,7 +226,7 @@ writeOpeningNamespace(ostream& output, const vector<string>& ns) {
     if (!ns.empty()) {
 
         // Output namespaces in correct order
-        for (unsigned int i = 0; i < ns.size(); ++i) {
+        for (int i = 0; i < ns.size(); ++i) {
             output << "namespace " << ns[i] << " {\n";
         }
         output << "\n";
@@ -243,6 +247,52 @@ writeClosingNamespace(ostream& output, const vector<string>& ns) {
     }
 }
 
+/// \breif Write python file
+///
+/// Writes the python file containing the symbol definitions as module level
+/// constants. These are objects which register themself at creation time,
+/// so they can be replaced by dictionary later.
+///
+/// \param file Name of the message file. The source code is written to a file
+///     file of the same name but with a .py suffix.
+/// \param dictionary The dictionary holding the message definitions.
+/// \param output_directory if not null NULL, output files are written
+///     to the given directory. If NULL, they are written to the current
+///     working directory.
+///
+/// \note We don't use the namespace as in C++. We don't need it, because
+///     python file/module works as implicit namespace as well.
+
+void
+writePythonFile(const string& file, MessageDictionary& dictionary,
+                const char* output_directory)
+{
+    Filename message_file(file);
+    Filename python_file(Filename(message_file.name()).useAsDefault(".py"));
+    if (output_directory != NULL) {
+        python_file.setDirectory(output_directory);
+    }
+
+    // Open the file for writing
+    ofstream pyfile(python_file.fullName().c_str());
+
+    // Write the comment and imports
+    pyfile <<
+        "# File created from " << message_file.fullName() << " on " <<
+            currentTime() << "\n" <<
+        "\n" <<
+        "import isc.log\n" <<
+        "\n";
+
+    vector<string> idents(sortedIdentifiers(dictionary));
+    BOOST_FOREACH(const string& ident, idents) {
+        pyfile << ident << " = isc.log.create_message(\"" <<
+            ident << "\", \"" << quoteString(dictionary.getText(ident)) <<
+            "\")\n";
+    }
+
+    pyfile.close();
+}
 
 /// \brief Write Header File
 ///
@@ -253,17 +303,22 @@ writeClosingNamespace(ostream& output, const vector<string>& ns) {
 ///
 /// \param file Name of the message file.  The header file is written to a
 /// file of the same name but with a .h suffix.
-/// \param prefix Prefix string to use in symbols
 /// \param ns Namespace in which the definitions are to be placed.  An empty
 /// string indicates no namespace.
 /// \param dictionary Dictionary holding the message definitions.
+/// \param output_directory if not null NULL, output files are written
+///     to the given directory. If NULL, they are written to the current
+///     working directory.
 
 void
-writeHeaderFile(const string& file, const string& prefix,
-        const vector<string>& ns_components, MessageDictionary& dictionary)
+writeHeaderFile(const string& file, const vector<string>& ns_components,
+                MessageDictionary& dictionary, const char* output_directory)
 {
     Filename message_file(file);
-    Filename header_file(message_file.useAsDefault(".h"));
+    Filename header_file(Filename(message_file.name()).useAsDefault(".h"));
+    if (output_directory != NULL) {
+        header_file.setDirectory(output_directory);
+    }
 
     // Text to use as the sentinels.
     string sentinel_text = sentinel(header_file);
@@ -271,52 +326,46 @@ writeHeaderFile(const string& file, const string& prefix,
     // Open the output file for writing
     ofstream hfile(header_file.fullName().c_str());
 
-    try {
-        if (hfile.fail()) {
-            throw MessageException(MSG_OPNMSGOUT, header_file.fullName(),
-                strerror(errno));
-        }
-
-        // Write the header preamble.  If there is an error, we'll pick it up
-        // after the last write.
-
-        hfile <<
-            "// File created from " << message_file.fullName() << " on " <<
-                currentTime() << "\n" <<
-             "\n" <<
-             "#ifndef " << sentinel_text << "\n" <<
-             "#define "  << sentinel_text << "\n" <<
-             "\n" <<
-             "#include <log/message_types.h>\n" <<
-             "\n";
-
-        // Write the message identifiers, bounded by a namespace declaration
-        writeOpeningNamespace(hfile, ns_components);
-
-        vector<string> idents = sortedIdentifiers(dictionary);
-        for (vector<string>::const_iterator j = idents.begin();
-            j != idents.end(); ++j) {
-            hfile << "extern const isc::log::MessageID " << prefix << *j << ";\n";
-        }
-        hfile << "\n";
-
-        writeClosingNamespace(hfile, ns_components);
-
-        // ... and finally the postamble
-        hfile << "#endif // " << sentinel_text << "\n";
-
-        // Report errors (if any) and exit
-        if (hfile.fail()) {
-            throw MessageException(MSG_MSGWRTERR, header_file.fullName(),
-                strerror(errno));
-        }
-
-        hfile.close();
+    if (hfile.fail()) {
+        throw MessageException(LOG_OPEN_OUTPUT_FAIL, header_file.fullName(),
+            strerror(errno));
     }
-    catch (MessageException&) {
-        hfile.close();
-        throw;
+
+    // Write the header preamble.  If there is an error, we'll pick it up
+    // after the last write.
+
+    hfile <<
+        "// File created from " << message_file.fullName() << " on " <<
+            currentTime() << "\n" <<
+         "\n" <<
+         "#ifndef " << sentinel_text << "\n" <<
+         "#define "  << sentinel_text << "\n" <<
+         "\n" <<
+         "#include <log/message_types.h>\n" <<
+         "\n";
+
+    // Write the message identifiers, bounded by a namespace declaration
+    writeOpeningNamespace(hfile, ns_components);
+
+    vector<string> idents = sortedIdentifiers(dictionary);
+    for (vector<string>::const_iterator j = idents.begin();
+        j != idents.end(); ++j) {
+        hfile << "extern const isc::log::MessageID " << *j << ";\n";
     }
+    hfile << "\n";
+
+    writeClosingNamespace(hfile, ns_components);
+
+    // ... and finally the postamble
+    hfile << "#endif // " << sentinel_text << "\n";
+
+    // Report errors (if any) and exit
+    if (hfile.fail()) {
+        throw MessageException(LOG_WRITE_ERROR, header_file.fullName(),
+            strerror(errno));
+    }
+
+    hfile.close();
 }
 
 
@@ -354,86 +403,93 @@ replaceNonAlphaNum(char c) {
 /// optimisation is done at link-time, not compiler-time.  In this it _may_
 /// decide to remove the initializer object because of a lack of references
 /// to it.  But until BIND-10 is ported to Windows, we won't know.
-
+///
+/// \param file Name of the message file.  The header file is written to a
+/// file of the same name but with a .h suffix.
+/// \param ns Namespace in which the definitions are to be placed.  An empty
+/// string indicates no namespace.
+/// \param dictionary Dictionary holding the message definitions.
+/// \param output_directory if not null NULL, output files are written
+///     to the given directory. If NULL, they are written to the current
+///     working directory.
 void
-writeProgramFile(const string& file, const string& prefix,
-    const vector<string>& ns_components, MessageDictionary& dictionary)
+writeProgramFile(const string& file, const vector<string>& ns_components,
+                 MessageDictionary& dictionary,
+                 const char* output_directory)
 {
     Filename message_file(file);
-    Filename program_file(message_file.useAsDefault(".cc"));
+    Filename program_file(Filename(message_file.name()).useAsDefault(".cc"));
+    if (output_directory) {
+        program_file.setDirectory(output_directory);
+    }
 
     // Open the output file for writing
     ofstream ccfile(program_file.fullName().c_str());
-    try {
-        if (ccfile.fail()) {
-            throw MessageException(MSG_OPNMSGOUT, program_file.fullName(),
-                strerror(errno));
-        }
 
-        // Write the preamble.  If there is an error, we'll pick it up after
-        // the last write.
-
-        ccfile <<
-            "// File created from " << message_file.fullName() << " on " <<
-                currentTime() << "\n" <<
-             "\n" <<
-             "#include <cstddef>\n" <<
-             "#include <log/message_types.h>\n" <<
-             "#include <log/message_initializer.h>\n" <<
-             "\n";
-
-        // Declare the message symbols themselves.
-
-        writeOpeningNamespace(ccfile, ns_components);
-
-        vector<string> idents = sortedIdentifiers(dictionary);
-        for (vector<string>::const_iterator j = idents.begin();
-            j != idents.end(); ++j) {
-            ccfile << "extern const isc::log::MessageID " << prefix << *j <<
-                " = \"" << *j << "\";\n";
-        }
-        ccfile << "\n";
-
-        writeClosingNamespace(ccfile, ns_components);
-
-        // Now the code for the message initialization.
-
-        ccfile <<
-             "namespace {\n" <<
-             "\n" <<
-             "const char* values[] = {\n";
-
-        // Output the identifiers and the associated text.
-        idents = sortedIdentifiers(dictionary);
-        for (vector<string>::const_iterator i = idents.begin();
-            i != idents.end(); ++i) {
-                ccfile << "    \"" << *i << "\", \"" <<
-                    quoteString(dictionary.getText(*i)) << "\",\n";
-        }
-
-
-        // ... and the postamble
-        ccfile <<
-            "    NULL\n" <<
-            "};\n" <<
-            "\n" <<
-            "const isc::log::MessageInitializer initializer(values);\n" <<
-            "\n" <<
-            "} // Anonymous namespace\n" <<
-            "\n";
-
-        // Report errors (if any) and exit
-        if (ccfile.fail()) {
-            throw MessageException(MSG_MSGWRTERR, program_file.fullName(),
-                strerror(errno));
-        }
-
-        ccfile.close();
+    if (ccfile.fail()) {
+        throw MessageException(LOG_OPEN_OUTPUT_FAIL, program_file.fullName(),
+            strerror(errno));
     }
-    catch (MessageException&) {
-        ccfile.close();
-        throw;
+
+    // Write the preamble.  If there is an error, we'll pick it up after
+    // the last write.
+
+    ccfile <<
+        "// File created from " << message_file.fullName() << " on " <<
+            currentTime() << "\n" <<
+         "\n" <<
+         "#include <cstddef>\n" <<
+         "#include <log/message_types.h>\n" <<
+         "#include <log/message_initializer.h>\n" <<
+         "\n";
+
+    // Declare the message symbols themselves.
+
+    writeOpeningNamespace(ccfile, ns_components);
+
+    vector<string> idents = sortedIdentifiers(dictionary);
+    for (vector<string>::const_iterator j = idents.begin();
+        j != idents.end(); ++j) {
+        ccfile << "extern const isc::log::MessageID " << *j <<
+            " = \"" << *j << "\";\n";
     }
+    ccfile << "\n";
+
+    writeClosingNamespace(ccfile, ns_components);
+
+    // Now the code for the message initialization.
+
+    ccfile <<
+         "namespace {\n" <<
+         "\n" <<
+         "const char* values[] = {\n";
+
+    // Output the identifiers and the associated text.
+    idents = sortedIdentifiers(dictionary);
+    for (vector<string>::const_iterator i = idents.begin();
+        i != idents.end(); ++i) {
+            ccfile << "    \"" << *i << "\", \"" <<
+                quoteString(dictionary.getText(*i)) << "\",\n";
+    }
+
+
+    // ... and the postamble
+    ccfile <<
+        "    NULL\n" <<
+        "};\n" <<
+        "\n" <<
+        "const isc::log::MessageInitializer initializer(values);\n" <<
+        "\n" <<
+        "} // Anonymous namespace\n" <<
+        "\n";
+
+    // Report errors (if any) and exit
+    if (ccfile.fail()) {
+        throw MessageException(LOG_WRITE_ERROR, program_file.fullName(),
+            strerror(errno));
+    }
+
+    ccfile.close();
 }
 
 
@@ -473,24 +529,35 @@ warnDuplicates(MessageReader& reader) {
 int
 main(int argc, char* argv[]) {
 
-    const char* soptions = "hv";               // Short options
+    const char* soptions = "hvpd:";               // Short options
 
     optind = 1;             // Ensure we start a new scan
     int  opt;               // Value of the option
 
+    bool doPython = false;
+    const char *output_directory = NULL;
+
     while ((opt = getopt(argc, argv, soptions)) != -1) {
         switch (opt) {
+            case 'd':
+                output_directory = optarg;
+                break;
+
+            case 'p':
+                doPython = true;
+                break;
+
             case 'h':
                 usage();
-                return 0;
+                return (0);
 
             case 'v':
                 version();
-                return 0;
+                return (0);
 
             default:
                 // A message will have already been output about the error.
-                return 1;
+                return (1);
         }
     }
 
@@ -498,11 +565,11 @@ main(int argc, char* argv[]) {
     if (optind < (argc - 1)) {
         cout << "Error: excess arguments in command line\n";
         usage();
-        return 1;
+        return (1);
     } else if (optind >= argc) {
         cout << "Error: missing message file\n";
         usage();
-        return 1;
+        return (1);
     }
     string message_file = argv[optind];
 
@@ -515,36 +582,50 @@ main(int argc, char* argv[]) {
         MessageReader reader(&dictionary);
         reader.readFile(message_file);
 
-        // Get the namespace into which the message definitions will be put and
-        // split it into components.
-        vector<string> ns_components = splitNamespace(reader.getNamespace());
+        if (doPython) {
+            // Warn in case of ignored directives
+            if (!reader.getNamespace().empty()) {
+                cerr << "Python mode, ignoring the $NAMESPACE directive" <<
+                    endl;
+            }
 
-        // Write the header file.
-        writeHeaderFile(message_file, reader.getPrefix(), ns_components,
-            dictionary);
+            // Write the whole python file
+            writePythonFile(message_file, dictionary, output_directory);
+        } else {
+            // Get the namespace into which the message definitions will be put and
+            // split it into components.
+            vector<string> ns_components =
+                splitNamespace(reader.getNamespace());
 
-        // Write the file that defines the message symbols and text
-        writeProgramFile(message_file, reader.getPrefix(), ns_components,
-            dictionary);
+            // Write the header file.
+            writeHeaderFile(message_file, ns_components, dictionary,
+                            output_directory);
 
+            // Write the file that defines the message symbols and text
+            writeProgramFile(message_file, ns_components, dictionary,
+                             output_directory);
+        }
 
         // Finally, warn of any duplicates encountered.
         warnDuplicates(reader);
     }
-    catch (MessageException& e) {
+    catch (const MessageException& e) {
         // Create an error message from the ID and the text
         MessageDictionary& global = MessageDictionary::globalDictionary();
         string text = e.id();
         text += ", ";
         text += global.getText(e.id());
-
         // Format with arguments
-        text = isc::util::str::format(text, e.arguments());
+        vector<string> args(e.arguments());
+        for (size_t i(0); i < args.size(); ++ i) {
+            replacePlaceholder(&text, args[i], i + 1);
+        }
+
         cerr << text << "\n";
 
-        return 1;
+        return (1);
     }
 
-    return 0;
+    return (0);
 
 }

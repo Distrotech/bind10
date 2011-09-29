@@ -10,19 +10,26 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\lib\acl\dns.h" />
+    <ClInclude Include="..\..\..\src\lib\acl\dnsname_check.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\lib\acl\dns.cc" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{0723DEB6-E2C3-4082-91E5-0F8F4B0649F6}</ProjectGuid>
+    <ProjectGuid>{EB54F7B8-FAEF-4348-989C-D4E6B42CEFB1}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>liblog_rtitest</RootNamespace>
+    <RootNamespace>libdnsacl</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
@@ -38,39 +45,24 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
     <OutDir>$(Configuration)\</OutDir>
-    <TargetName>logger_support_test</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LinkIncremental>false</LinkIncremental>
     <OutDir>$(Configuration)\</OutDir>
-    <TargetName>logger_support_test</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>$(OutDir)logger_support_test$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libutil.lib;liblog.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libutil\Debug;..\liblog\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
-    <PostBuildEvent>
-      <Command>copy Debug\logger_support_test.exe ..\..\..\src\lib\log\tests</Command>
-    </PostBuildEvent>
-    <PreBuildEvent>
-      <Command>cd ..\..\..\src\lib\log\tests
-copy run_time_init_test.sh.win32 run_time_init_test.sh
-</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -79,35 +71,17 @@ copy run_time_init_test.sh.win32 run_time_init_test.sh
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <OutputFile>$(OutDir)logger_support_test$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libutil.lib;liblog.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libutil\Release;..\liblog\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
-    <PostBuildEvent>
-      <Command>copy Release\logger_support_test.exe ..\..\..\src\lib\log\tests</Command>
-    </PostBuildEvent>
-    <PreBuildEvent>
-      <Command>cd ..\..\..\src\lib\log\tests
-copy run_time_init_test.sh.win32 run_time_init_test.sh
-</Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\getopt.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\src\lib\log\tests\logger_support_test.cc" />
-    <ClCompile Include="..\..\getopt.cc" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -12,14 +12,18 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#include <gtest/gtest.h>
-#include <util/unittests/run_all.h>
+#ifndef __TEMPDIR_H
+#define __TEMPDIR_H
 
-#include <log/logger_support.h>
+/// \brief Define temporary directory
+///
+/// Defines the temporary directory in which temporary files used by the
+/// unit tests are created.
 
-int
-main(int argc, char* argv[]) {
-    ::testing::InitGoogleTest(&argc, argv);
-    isc::log::initLogger();
-    return (isc::util::unittests::run_all());
+#include <string>
+
+namespace {
+std::string TEMP_DIR("@builddir@");
 }
+
+#endif // __TEMPDIR_H

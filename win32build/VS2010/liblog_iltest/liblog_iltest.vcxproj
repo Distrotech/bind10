@@ -10,26 +10,10 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\src\lib\log\tests\logger_level_impl_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\log\tests\logger_level_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\log\tests\logger_manager_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\log\tests\logger_name_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\log\tests\logger_specification_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\log\tests\logger_support_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\log\tests\logger_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\log\tests\log_formatter_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\log\tests\message_dictionary_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\log\tests\message_initializer_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\log\tests\message_initializer_unittest_2.cc" />
-    <ClCompile Include="..\..\..\src\lib\log\tests\message_reader_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\log\tests\output_option_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\log\tests\run_unittests.cc" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{9F69DE07-D285-4B5C-8528-DF975C59ED3B}</ProjectGuid>
+    <ProjectGuid>{D85833AC-23A9-4710-9911-8AAEC4BF6E8F}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>liblog_tests</RootNamespace>
+    <RootNamespace>liblog_iltest</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -54,67 +38,66 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(Configuration)\</OutDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <TargetName>run_unittests</TargetName>
     <LinkIncremental>true</LinkIncremental>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(Configuration)\</OutDir>
+    <TargetName>init_logger_test</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <TargetName>run_unittests</TargetName>
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(Configuration)\</OutDir>
+    <TargetName>init_logger_test</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\log;..\..\..\..\log4cplus\include;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;liblog.lib;log4cplusSD.lib;gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libexceptions\Debug;..\libutil\Debug;..\libutil_unittests\Debug;..\liblog\Debug;..\..\..\..\log4cplus\md10\Debug;..\..\..\..\gtest\md10\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <OutputFile>$(OutDir)init_logger_test$(TargetExt)</OutputFile>
+      <AdditionalLibraryDirectories>..\libexceptions\Debug;..\libutil\Debug;..\liblog\Debug;..\..\..\..\log4cplus\md10\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;liblog.lib;log4cplusSD.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PreBuildEvent>
+    <PostBuildEvent>
       <Command>cd ..\..\..\src\lib\log\tests
-copy tempdir.h.win32 tempdir.h
+copy init_logger_test.sh.win32 init_logger_test.sh
 </Command>
-    </PreBuildEvent>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\log;..\..\..\..\log4cplus\include;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;liblog.lib;log4cplusS.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libexceptions\Release;..\libutil\Release;..\libutil_unittests\Release;..\liblog\Release;..\..\..\..\log4cplus\md10\Release;..\..\..\..\gtest\md10\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <OutputFile>$(OutDir)init_logger_test$(TargetExt)</OutputFile>
+      <AdditionalLibraryDirectories>..\libexceptions\Release;..\libutil\Release;..\liblog\Release;..\..\..\..\log4cplus\md10\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;liblog.lib;log4cplusS.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PreBuildEvent>
+    <PostBuildEvent>
       <Command>cd ..\..\..\src\lib\log\tests
-copy tempdir.h.win32 tempdir.h
+copy init_logger_test.sh.win32 init_logger_test.sh
 </Command>
-    </PreBuildEvent>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\lib\log\tests\init_logger_test.cc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
