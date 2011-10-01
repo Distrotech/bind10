@@ -14,6 +14,7 @@
 
 #include <config.h>
 #include <cc/session_config.h>
+#include <cc/logger.h>
 
 #include <stdint.h>
 
@@ -50,9 +51,6 @@
 
 #include <cc/data.h>
 #include <cc/session.h>
-
-#ifdef _WIN32
-#endif
 
 using namespace std;
 using namespace isc::cc;
@@ -130,6 +128,7 @@ private:
 void
 SessionImpl::establish(const char& socket_file) {
     try {
+        LOG_DEBUG(logger, DBG_TRACE_BASIC, CC_ESTABLISH).arg(&socket_file);
 #ifndef _WIN32
         asio::local::stream_protocol::endpoint ep(&socket_file);
 #else
@@ -146,7 +145,9 @@ SessionImpl::establish(const char& socket_file) {
         asio::ip::tcp::endpoint ep(addr, port);
 #endif
         socket_.connect(ep, error_);
+        LOG_DEBUG(logger, DBG_TRACE_BASIC, CC_ESTABLISHED);
     } catch(const asio::system_error& se) {
+        LOG_FATAL(logger, CC_CONN_ERROR).arg(se.what());
         isc_throw(SessionError, se.what());
 #ifdef _WIN32
     } catch(const boost::bad_lexical_cast&) {
@@ -154,6 +155,7 @@ SessionImpl::establish(const char& socket_file) {
 #endif
     }
     if (error_) {
+        LOG_FATAL(logger, CC_NO_MSGQ).arg(error_.message());
         isc_throw(SessionError, "Unable to connect to message queue: " <<
                   error_.message());
     }
@@ -161,6 +163,7 @@ SessionImpl::establish(const char& socket_file) {
 
 void
 SessionImpl::disconnect() {
+    LOG_DEBUG(logger, DBG_TRACE_BASIC, CC_DISCONNECT);
     socket_.close();
     data_length_ = 0;
 }
@@ -170,6 +173,7 @@ SessionImpl::writeData(const void* data, size_t datalen) {
     try {
         asio::write(socket_, asio::buffer(data, datalen));
     } catch (const asio::system_error& asio_ex) {
+        LOG_FATAL(logger, CC_WRITE_ERROR).arg(asio_ex.what());
         isc_throw(SessionError, "ASIO write failed: " << asio_ex.what());
     }
 }
@@ -181,6 +185,7 @@ SessionImpl::readDataLength() {
     if (ret_len == 0) {
         readData(&data_length_, sizeof(data_length_));
         if (data_length_ == 0) {
+            LOG_ERROR(logger, CC_LENGTH_NOT_READY);
             isc_throw(SessionError, "ASIO read: data length is not ready");
         }
         ret_len = ntohl(data_length_);
@@ -229,9 +234,11 @@ SessionImpl::readData(void* data, size_t datalen) {
         // asio::error_code evaluates to false if there was no error
         if (*read_result) {
             if (*read_result == asio::error::operation_aborted) {
+                LOG_ERROR(logger, CC_TIMEOUT);
                 isc_throw(SessionTimeout,
                           "Timeout while reading data from cc session");
             } else {
+                LOG_ERROR(logger, CC_READ_ERROR).arg(read_result->message());
                 isc_throw(SessionError,
                           "Error while reading data from cc session: " <<
                           read_result->message());
@@ -240,6 +247,7 @@ SessionImpl::readData(void* data, size_t datalen) {
     } catch (const asio::system_error& asio_ex) {
         // to hide ASIO specific exceptions, we catch them explicitly
         // and convert it to SessionError.
+        LOG_FATAL(logger, CC_READ_EXCEPTION).arg(asio_ex.what());
         isc_throw(SessionError, "ASIO read failed: " << asio_ex.what());
     }
 }
@@ -263,10 +271,12 @@ SessionImpl::internalRead(const asio::error_code& error,
         assert(bytes_transferred == sizeof(data_length_));
         data_length_ = ntohl(data_length_);
         if (data_length_ == 0) {
+            LOG_ERROR(logger, CC_ZERO_LENGTH);
             isc_throw(SessionError, "Invalid message length (0)");
         }
         user_handler_();
     } else {
+        LOG_ERROR(logger, CC_ASYNC_READ_FAILED);
         isc_throw(SessionError, "asynchronous read failed");
     }
 }
@@ -285,6 +295,7 @@ Session::disconnect() {
 
 void
 Session::startRead(boost::function<void()> read_callback) {
+    LOG_DEBUG(logger, DBG_TRACE_DETAILED, CC_START_READ);
     impl_->startRead(read_callback);
 }
 
@@ -404,6 +415,7 @@ Session::recvmsg(ConstElementPtr& env, ConstElementPtr& msg,
 
     unsigned short header_length = ntohs(header_length_net);
     if (header_length > length || length < 2) {
+        LOG_ERROR(logger, CC_INVALID_LENGTHS).arg(length).arg(header_length);
         isc_throw(SessionError, "Length parameters invalid: total=" << length
                   << ", header=" << header_length);
     }
@@ -447,6 +459,7 @@ Session::recvmsg(ConstElementPtr& env, ConstElementPtr& msg,
 
 void
 Session::subscribe(std::string group, std::string instance) {
+    LOG_DEBUG(logger, DBG_TRACE_DETAILED, CC_SUBSCRIBE).arg(group);
     ElementPtr env = Element::createMap();
 
     env->set("type", Element::create("subscribe"));
@@ -458,6 +471,7 @@ Session::subscribe(std::string group, std::string instance) {
 
 void
 Session::unsubscribe(std::string group, std::string instance) {
+    LOG_DEBUG(logger, DBG_TRACE_DETAILED, CC_UNSUBSCRIBE).arg(group);
     ElementPtr env = Element::createMap();
 
     env->set("type", Element::create("unsubscribe"));
@@ -471,6 +485,8 @@ int
 Session::group_sendmsg(ConstElementPtr msg, std::string group,
                        std::string instance, std::string to)
 {
+    LOG_DEBUG(logger, DBG_TRACE_DETAILED, CC_GROUP_SEND).arg(msg->str()).
+        arg(group);
     ElementPtr env = Element::createMap();
     long int nseq = ++impl_->sequence_;
     
@@ -490,11 +506,21 @@ bool
 Session::group_recvmsg(ConstElementPtr& envelope, ConstElementPtr& msg,
                        bool nonblock, int seq)
 {
-    return (recvmsg(envelope, msg, nonblock, seq));
+    LOG_DEBUG(logger, DBG_TRACE_DETAILED, CC_GROUP_RECEIVE);
+    bool result(recvmsg(envelope, msg, nonblock, seq));
+    if (result) {
+        LOG_DEBUG(logger, DBG_TRACE_DETAILED, CC_GROUP_RECEIVED).
+            arg(envelope->str()).arg(msg->str());
+    } else {
+        LOG_DEBUG(logger, DBG_TRACE_DETAILED, CC_NO_MESSAGE);
+    }
+    return (result);
 }
 
 int
 Session::reply(ConstElementPtr envelope, ConstElementPtr newmsg) {
+    LOG_DEBUG(logger, DBG_TRACE_DETAILED, CC_REPLY).arg(envelope->str()).
+        arg(newmsg->str());
     ElementPtr env = Element::createMap();
     long int nseq = ++impl_->sequence_;
     
@@ -518,6 +544,7 @@ Session::hasQueuedMsgs() const {
 
 void
 Session::setTimeout(size_t milliseconds) {
+    LOG_DEBUG(logger, DBG_TRACE_DETAILED, CC_SET_TIMEOUT).arg(milliseconds);
     impl_->setTimeout(milliseconds);
 }
 

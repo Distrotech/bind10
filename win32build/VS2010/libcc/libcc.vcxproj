@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -11,12 +11,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\lib\cc\cc_messages.h" />
     <ClInclude Include="..\..\..\src\lib\cc\data.h" />
+    <ClInclude Include="..\..\..\src\lib\cc\logger.h" />
     <ClInclude Include="..\..\..\src\lib\cc\session.h" />
     <ClInclude Include="..\..\..\src\lib\cc\session_config.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\lib\cc\cc_messages.cc" />
     <ClCompile Include="..\..\..\src\lib\cc\data.cc" />
+    <ClCompile Include="..\..\..\src\lib\cc\logger.cc" />
     <ClCompile Include="..\..\..\src\lib\cc\session.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -68,6 +72,8 @@
     <PreBuildEvent>
       <Command>cd ..\..\..\src\lib\cc
 copy session_config.h.win32 session_config.h
+..\..\..\win32build\VS2010\liblog_compiler\Release\message.exe cc_messages.mes
+
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -91,6 +97,8 @@ copy session_config.h.win32 session_config.h
     <PreBuildEvent>
       <Command>cd ..\..\..\src\lib\cc
 copy session_config.h.win32 session_config.h
+..\..\..\win32build\VS2010\liblog_compiler\Release\message.exe cc_messages.mes
+
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>

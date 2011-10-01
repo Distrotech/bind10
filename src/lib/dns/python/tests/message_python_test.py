@@ -21,6 +21,7 @@ import unittest
 import os
 from pydnspp import *
 from testutil import *
+from pyunittests_util import fix_current_time
 
 # helper functions for tests taken from c++ unittests
 if "TESTDATA_PATH" in os.environ:
@@ -31,7 +32,7 @@ else:
 def factoryFromFile(message, file):
     data = read_wire_data(file)
     message.from_wire(data)
-    pass
+    return data
 
 # we don't have direct comparison for rrsets right now (should we?
 # should go in the cpp version first then), so also no direct list
@@ -43,6 +44,15 @@ def compare_rrset_list(list1, list2):
         if str(list1[i]) != str(list2[i]):
             return False
     return True
+
+# These are used for TSIG + TC tests
+LONG_TXT1 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde";
+
+LONG_TXT2 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456";
+
+LONG_TXT3 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01";
+
+LONG_TXT4 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0";
 
 # a complete message taken from cpp tests, for testing towire and totext
 def create_message():
@@ -62,10 +72,12 @@ def create_message():
     message_render.add_rrset(Message.SECTION_ANSWER, rrset)
     return message_render
 
-
 class MessageTest(unittest.TestCase):
 
     def setUp(self):
+        # make sure we don't use faked time unless explicitly do so in tests
+        fix_current_time(None)
+
         self.p = Message(Message.PARSE)
         self.r = Message(Message.RENDER)
 
@@ -81,6 +93,12 @@ class MessageTest(unittest.TestCase):
 
         self.bogus_section = Message.SECTION_ADDITIONAL + 1
         self.bogus_below_section = Message.SECTION_QUESTION - 1
+        self.tsig_key = TSIGKey("www.example.com:SFuWd/q99SzF8Yzd1QbB9g==")
+        self.tsig_ctx = TSIGContext(self.tsig_key)
+
+    def tearDown(self):
+        # reset any faked current time setting (it would affect other tests)
+        fix_current_time(None)
 
     def test_init(self):
         self.assertRaises(TypeError, Message, -1)
@@ -277,12 +295,118 @@ class MessageTest(unittest.TestCase):
         self.assertRaises(InvalidMessageOperation, self.r.to_wire,
                           MessageRenderer())
 
+    def __common_tsigmessage_setup(self, flags=[Message.HEADERFLAG_RD],
+                                   rrtype=RRType("A"), answer_data=None):
+        self.r.set_opcode(Opcode.QUERY())
+        self.r.set_rcode(Rcode.NOERROR())
+        for flag in flags:
+            self.r.set_header_flag(flag)
+        if answer_data is not None:
+            rrset = RRset(Name("www.example.com"), RRClass("IN"),
+                          rrtype, RRTTL(86400))
+            for rdata in answer_data:
+                rrset.add_rdata(Rdata(rrtype, RRClass("IN"), rdata))
+            self.r.add_rrset(Message.SECTION_ANSWER, rrset)
+        self.r.add_question(Question(Name("www.example.com"),
+                                     RRClass("IN"), rrtype))
+
+    def __common_tsig_checks(self, expected_file):
+        renderer = MessageRenderer()
+        self.r.to_wire(renderer, self.tsig_ctx)
+        self.assertEqual(read_wire_data(expected_file), renderer.get_data())
+
+    def test_to_wire_with_tsig(self):
+        fix_current_time(0x4da8877a)
+        self.r.set_qid(0x2d65)
+        self.__common_tsigmessage_setup()
+        self.__common_tsig_checks("message_toWire2.wire")
+
+    def test_to_wire_with_edns_tsig(self):
+        fix_current_time(0x4db60d1f)
+        self.r.set_qid(0x6cd)
+        self.__common_tsigmessage_setup()
+        edns = EDNS()
+        edns.set_udp_size(4096)
+        self.r.set_edns(edns)
+        self.__common_tsig_checks("message_toWire3.wire")
+
+    def test_to_wire_tsig_truncation(self):
+        fix_current_time(0x4e179212)
+        data = factoryFromFile(self.p, "message_fromWire17.wire")
+        self.assertEqual(TSIGError.NOERROR,
+                         self.tsig_ctx.verify(self.p.get_tsig_record(), data))
+        self.r.set_qid(0x22c2)
+        self.__common_tsigmessage_setup([Message.HEADERFLAG_QR,
+                                         Message.HEADERFLAG_AA,
+                                         Message.HEADERFLAG_RD],
+                                        RRType("TXT"),
+                                        [LONG_TXT1, LONG_TXT2])
+        self.__common_tsig_checks("message_toWire4.wire")
+
+    def test_to_wire_tsig_truncation2(self):
+        fix_current_time(0x4e179212)
+        data = factoryFromFile(self.p, "message_fromWire17.wire")
+        self.assertEqual(TSIGError.NOERROR,
+                         self.tsig_ctx.verify(self.p.get_tsig_record(), data))
+        self.r.set_qid(0x22c2)
+        self.__common_tsigmessage_setup([Message.HEADERFLAG_QR,
+                                         Message.HEADERFLAG_AA,
+                                         Message.HEADERFLAG_RD],
+                                        RRType("TXT"),
+                                        [LONG_TXT1, LONG_TXT3])
+        self.__common_tsig_checks("message_toWire4.wire")
+
+    def test_to_wire_tsig_truncation3(self):
+        self.r.set_opcode(Opcode.QUERY())
+        self.r.set_rcode(Rcode.NOERROR())
+        for i in range(1, 68):
+            self.r.add_question(Question(Name("www.example.com"),
+                                         RRClass("IN"), RRType(i)))
+        renderer = MessageRenderer()
+        self.r.to_wire(renderer, self.tsig_ctx)
+
+        self.p.from_wire(renderer.get_data())
+        self.assertTrue(self.p.get_header_flag(Message.HEADERFLAG_TC))
+        self.assertEqual(66, self.p.get_rr_count(Message.SECTION_QUESTION))
+        self.assertNotEqual(None, self.p.get_tsig_record())
+
+    def test_to_wire_tsig_no_truncation(self):
+        fix_current_time(0x4e17b38d)
+        data = factoryFromFile(self.p, "message_fromWire18.wire")
+        self.assertEqual(TSIGError.NOERROR,
+                         self.tsig_ctx.verify(self.p.get_tsig_record(), data))
+        self.r.set_qid(0xd6e2)
+        self.__common_tsigmessage_setup([Message.HEADERFLAG_QR,
+                                         Message.HEADERFLAG_AA,
+                                         Message.HEADERFLAG_RD],
+                                        RRType("TXT"),
+                                        [LONG_TXT1, LONG_TXT4])
+        self.__common_tsig_checks("message_toWire5.wire")
+
+    def test_to_wire_tsig_length_errors(self):
+        renderer = MessageRenderer()
+        renderer.set_length_limit(84) # 84 = expected TSIG length - 1
+        self.__common_tsigmessage_setup()
+        self.assertRaises(TSIGContextError,
+                          self.r.to_wire, renderer, self.tsig_ctx)
+
+        renderer.clear()
+        self.r.clear(Message.RENDER)
+        renderer.set_length_limit(86) # 86 = expected TSIG length + 1
+        self.__common_tsigmessage_setup()
+        self.assertRaises(TSIGContextError,
+                          self.r.to_wire, renderer, self.tsig_ctx)
+
+        # skip the last test of the corresponding C++ test: it requires
+        # subclassing MessageRenderer, which is (currently) not possible
+        # for python.  In any case, it's very unlikely to happen in practice.
+
     def test_to_text(self):
         message_render = create_message()
         
         msg_str =\
 """;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 4149
-;; flags: qr aa rd ; QUESTION: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 0
+;; flags: qr aa rd; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 0
 
 ;; QUESTION SECTION:
 ;test.example.com. IN A
@@ -387,7 +511,54 @@ test.example.com. 3600 IN A 192.0.2.2
                           factoryFromFile,
                           message_parse,
                           "message_fromWire9")
-    
+
+    def test_from_wire_with_tsig(self):
+        # Initially there should be no TSIG
+        self.assertEqual(None, self.p.get_tsig_record())
+
+        # getTSIGRecord() is only valid in the parse mode.
+        self.assertRaises(InvalidMessageOperation, self.r.get_tsig_record)
+
+        factoryFromFile(self.p, "message_toWire2.wire")
+        tsig_rr = self.p.get_tsig_record()
+        self.assertEqual(Name("www.example.com"), tsig_rr.get_name())
+        self.assertEqual(85, tsig_rr.get_length())
+        self.assertEqual(TSIGKey.HMACMD5_NAME,
+                         tsig_rr.get_rdata().get_algorithm())
+
+        # If we clear the message for reuse, the recorded TSIG will be cleared.
+        self.p.clear(Message.PARSE)
+        self.assertEqual(None, self.p.get_tsig_record())
+
+    def test_from_wire_with_tsigcompressed(self):
+        # Mostly same as fromWireWithTSIG, but the TSIG owner name is
+        # compressed.
+        factoryFromFile(self.p, "message_fromWire12.wire");
+        tsig_rr = self.p.get_tsig_record()
+        self.assertEqual(Name("www.example.com"), tsig_rr.get_name())
+        # len(www.example.com) = 17, but when fully compressed, the length is
+        # 2 bytes.  So the length of the record should be 15 bytes shorter.
+        self.assertEqual(70, tsig_rr.get_length())
+
+    def test_from_wire_with_badtsig(self):
+        # Multiple TSIG RRs
+        self.assertRaises(DNSMessageFORMERR, factoryFromFile,
+                          self.p, "message_fromWire13.wire")
+        self.p.clear(Message.PARSE)
+
+        # TSIG in the answer section (must be in additional)
+        self.assertRaises(DNSMessageFORMERR, factoryFromFile,
+                          self.p, "message_fromWire14.wire")
+        self.p.clear(Message.PARSE)
+
+        # TSIG is not the last record.
+        self.assertRaises(DNSMessageFORMERR, factoryFromFile,
+                          self.p, "message_fromWire15.wire")
+        self.p.clear(Message.PARSE)
+
+        # Unexpected RR Class (this will fail in constructing TSIGRecord)
+        self.assertRaises(DNSMessageFORMERR, factoryFromFile,
+                          self.p, "message_fromWire16.wire")
 
 if __name__ == '__main__':
     unittest.main()

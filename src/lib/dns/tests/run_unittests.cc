@@ -13,14 +13,18 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <gtest/gtest.h>
+#include <util/unittests/run_all.h>
 
+#include <util/unittests/testdata.h>
 #include <dns/tests/unittest_util.h>
 
 int
 main(int argc, char* argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
     isc::UnitTestUtil::addDataPath(TEST_DATA_SRCDIR);
+    isc::util::unittests::addTestDataPath(TEST_DATA_SRCDIR);
     isc::UnitTestUtil::addDataPath(TEST_DATA_BUILDDIR);
+    isc::util::unittests::addTestDataPath(TEST_DATA_BUILDDIR);
 
-    return (RUN_ALL_TESTS());
+    return (isc::util::unittests::run_all());
 }

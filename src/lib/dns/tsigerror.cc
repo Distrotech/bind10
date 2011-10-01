@@ -24,9 +24,6 @@
 
 namespace isc {
 namespace dns {
-
-const int TSIGError::MAX_RCODE_FOR_TSIGERROR = 15;
-
 namespace {
 const char* const tsigerror_text[] = {
     "BADSIG",
@@ -50,6 +47,17 @@ TSIGError::toText() const {
     } else {
         return (boost::lexical_cast<std::string>(code_));
     }
+}
+
+Rcode
+TSIGError::toRcode() const {
+    if (code_ <= MAX_RCODE_FOR_TSIGERROR) {
+        return (Rcode(code_));
+    }
+    if (code_ > BAD_TIME_CODE) {
+        return (Rcode::SERVFAIL());
+    }
+    return (Rcode::NOTAUTH());
 }
 
 std::ostream&

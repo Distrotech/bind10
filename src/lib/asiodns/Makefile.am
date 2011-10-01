@@ -8,12 +8,17 @@ AM_CPPFLAGS += -I$(top_srcdir)/src/lib/util -I$(top_builddir)/src/lib/util
 
 AM_CXXFLAGS = $(B10_CXXFLAGS)
 
-CLEANFILES = *.gcno *.gcda
+CLEANFILES = *.gcno *.gcda asiodns_messages.h asiodns_messages.cc
+
+# Define rule to build logging source files from message file
+asiodns_messages.h asiodns_messages.cc: asiodns_messages.mes
+	$(top_builddir)/src/lib/log/compiler/message $(top_srcdir)/src/lib/asiodns/asiodns_messages.mes
+
+BUILT_SOURCES = asiodns_messages.h asiodns_messages.cc
 
 lib_LTLIBRARIES = libasiodns.la
 libasiodns_la_SOURCES = dns_answer.h
 libasiodns_la_SOURCES += asiodns.h
-libasiodns_la_SOURCES += asiodef.cc asiodef.h
 libasiodns_la_SOURCES += dns_lookup.h
 libasiodns_la_SOURCES += dns_server.h
 libasiodns_la_SOURCES += dns_service.cc dns_service.h
@@ -21,7 +26,9 @@ libasiodns_la_SOURCES += tcp_server.cc tcp_server.h
 libasiodns_la_SOURCES += udp_server.cc udp_server.h
 libasiodns_la_SOURCES += io_fetch.cc io_fetch.h
 
-EXTRA_DIST = asiodef.msg
+nodist_libasiodns_la_SOURCES = asiodns_messages.cc asiodns_messages.h
+
+EXTRA_DIST = asiodns_messages.mes
 
 # Note: the ordering matters: -Wno-... must follow -Wextra (defined in
 # B10_CXXFLAGS)

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -59,9 +59,9 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libdns++.lib;liblog.lib;libasiolink.lib;libasiodns.lib;gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;libcryptolink.lib;libdns++.lib;liblog.lib;libasiolink.lib;libasiodns.lib;botan.lib;log4cplusSD.lib;gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>..\libexceptions\Debug;..\libutil\Debug;..\libdns++\Debug;..\liblog\Debug;..\libasiolink\Debug;..\libasiodns\Debug;..\..\..\..\gtest\md10\Debug;%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\libexceptions\Debug;..\libutil\Debug;..\libutil_unittests\Debug;..\libcryptolink\Debug;..\libdns++\Debug;..\liblog\Debug;..\libasiolink\Debug;..\libasiodns\Debug;..\..\..\..\botan\md10\Debug;..\..\..\..\log4cplus\md10\Debug;..\..\..\..\gtest\md10\Debug;%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -81,8 +81,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libdns++.lib;liblog.lib;libasiolink.lib;libasiodns.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libexceptions\Release;..\libutil\Release;..\libdns++\Release;..\liblog\Release;..\libasiolink\Release;..\libasiodns\Release;..\..\..\..\gtest\md10\Release;%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;libcryptolink.lib;libdns++.lib;liblog.lib;libasiolink.lib;libasiodns.lib;botan.lib;log4cplusS.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\libexceptions\Release;..\libutil\Release;..\libutil_unittests\Release;..\libcryptolink\Release;..\libdns++\Release;..\liblog\Release;..\libasiolink\Release;..\libasiodns\Release;..\..\..\..\botan\md10\Release;..\..\..\..\log4cplus\md10\Release;..\..\..\..\gtest\md10\Release;%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

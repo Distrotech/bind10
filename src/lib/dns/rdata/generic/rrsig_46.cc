@@ -246,5 +246,10 @@ RRSIG::compare(const Rdata& other) const {
     }
 }
 
+const RRType&
+RRSIG::typeCovered() const {
+    return (impl_->covered_);
+}
+
 // END_RDATA_NAMESPACE
 // END_ISC_NAMESPACE

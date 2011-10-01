@@ -12,12 +12,6 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-// 
-// todo: generalize this and make it into a specific API for all modules
-//       to use (i.e. connect to cc, send config and commands, get config,
-//               react on config change announcements)
-//
-
 #include <config.h>
 
 #include <stdexcept>
@@ -28,11 +22,15 @@
 #else
 #include <sys/time.h>
 #endif
+#include <ctype.h>
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
+#include <algorithm>
 #include <cerrno>
+#include <fstream>
+#include <iostream>
+#include <set>
+#include <sstream>
+#include <string>
 
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
@@ -42,7 +40,13 @@
 #include <cc/session.h>
 #include <exceptions/exceptions.h>
 
+#include <config/config_log.h>
 #include <config/ccsession.h>
+
+#include <log/logger_support.h>
+#include <log/logger_specification.h>
+#include <log/logger_manager.h>
+#include <log/logger_name.h>
 
 using namespace std;
 
@@ -160,26 +164,257 @@ parseCommand(ConstElementPtr& arg, ConstElementPtr command) {
     }
 }
 
+namespace {
+// Temporary workaround functions for missing functionality in
+// getValue() (main problem described in ticket #993)
+// This returns either the value set for the given relative id,
+// or its default value
+// (intentially defined here so this interface does not get
+// included in ConfigData as it is)
+ConstElementPtr getValueOrDefault(ConstElementPtr config_part,
+                                  const std::string& relative_id,
+                                  const ConfigData& config_data,
+                                  const std::string& full_id) {
+    if (config_part->contains(relative_id)) {
+        return config_part->get(relative_id);
+    } else {
+        return config_data.getDefaultValue(full_id);
+    }
+}
+
+// Prefix name with "b10-".
+//
+// In BIND 10, modules have names taken from the .spec file, which are typically
+// names starting with a capital letter (e.g. "Resolver", "Auth" etc.).  The
+// names of the associated binaries are derived from the module names, being
+// prefixed "b10-" and having the first letter of the module name lower-cased
+// (e.g. "b10-resolver", "b10-auth").  (It is a required convention that there
+// be this relationship between the names.)
+//
+// Within the binaries the root loggers are named after the binaries themselves.
+// (The reason for this is that the name of the logger is included in the
+// message logged, so making it clear which message comes from which BIND 10
+// process.) As logging is configured using module names, the configuration code
+// has to match these with the corresponding logger names. This function
+// converts a module name to a root logger name by lowercasing the first letter
+// of the module name and prepending "b10-".
+//
+// \param instring String to convert.  (This may be empty, in which case
+//        "b10-" will be returned.)
+//
+// \return Converted string.
+std::string
+b10Prefix(const std::string& instring) {
+    std::string result = instring;
+    if (!result.empty()) {
+        result[0] = tolower(result[0]);
+    }
+    return (std::string("b10-") + result);
+}
+
+// Reads a output_option subelement of a logger configuration,
+// and sets the values thereing to the given OutputOption struct,
+// or defaults values if they are not provided (from config_data).
+void
+readOutputOptionConf(isc::log::OutputOption& output_option,
+                     ConstElementPtr output_option_el,
+                     const ConfigData& config_data)
+{
+    ConstElementPtr destination_el = getValueOrDefault(output_option_el,
+                                    "destination", config_data,
+                                    "loggers/output_options/destination");
+    output_option.destination = isc::log::getDestination(destination_el->stringValue());
+    ConstElementPtr output_el = getValueOrDefault(output_option_el,
+                                    "output", config_data,
+                                    "loggers/output_options/output");
+    if (output_option.destination == isc::log::OutputOption::DEST_CONSOLE) {
+        output_option.stream = isc::log::getStream(output_el->stringValue());
+    } else if (output_option.destination == isc::log::OutputOption::DEST_FILE) {
+        output_option.filename = output_el->stringValue();
+    } else if (output_option.destination == isc::log::OutputOption::DEST_SYSLOG) {
+        output_option.facility = output_el->stringValue();
+    }
+    output_option.flush = getValueOrDefault(output_option_el,
+                              "flush", config_data,
+                              "loggers/output_options/flush")->boolValue();
+    output_option.maxsize = getValueOrDefault(output_option_el,
+                                "maxsize", config_data,
+                                "loggers/output_options/maxsize")->intValue();
+    output_option.maxver = getValueOrDefault(output_option_el,
+                               "maxver", config_data,
+                               "loggers/output_options/maxver")->intValue();
+}
+
+// Reads a full 'loggers' configuration, and adds the loggers therein
+// to the given vector, fills in blanks with defaults from config_data
+void
+readLoggersConf(std::vector<isc::log::LoggerSpecification>& specs,
+                ConstElementPtr logger,
+                const ConfigData& config_data)
+{
+    // Read name, adding prefix as required.
+    std::string lname = logger->get("name")->stringValue();
+
+    ConstElementPtr severity_el = getValueOrDefault(logger,
+                                      "severity", config_data,
+                                      "loggers/severity");
+    isc::log::Severity severity = isc::log::getSeverity(
+                                      severity_el->stringValue());
+    int dbg_level = getValueOrDefault(logger, "debuglevel",
+                                      config_data,
+                                      "loggers/debuglevel")->intValue();
+    bool additive = getValueOrDefault(logger, "additive", config_data,
+                                      "loggers/additive")->boolValue();
+
+    isc::log::LoggerSpecification logger_spec(
+        lname, severity, dbg_level, additive
+    );
+
+    if (logger->contains("output_options")) {
+        BOOST_FOREACH(ConstElementPtr output_option_el,
+                      logger->get("output_options")->listValue()) {
+            // create outputoptions
+            isc::log::OutputOption output_option;
+            readOutputOptionConf(output_option,
+                                 output_option_el,
+                                 config_data);
+            logger_spec.addOutputOption(output_option);
+        }
+    }
+
+    specs.push_back(logger_spec);
+}
+
+// Copies the map for a logger, changing the name of the logger in the process.
+// This is used because the map being copied is "const", so in order to
+// change the name we need to create a new one.
+//
+// \param cur_logger Logger being copied.
+// \param new_name New value of the "name" element at the top level.
+//
+// \return Pointer to the map with the updated element.
+ConstElementPtr
+copyLogger(ConstElementPtr& cur_logger, const std::string& new_name) {
+
+    // Since we'll only be updating one first-level element and subsequent
+    // use won't change the contents of the map, a shallow map copy is enough.
+    ElementPtr new_logger(Element::createMap());
+    new_logger->setValue(cur_logger->mapValue());
+    new_logger->set("name", Element::create(new_name));
+
+    return (new_logger);
+}
+
+
+} // end anonymous namespace
+
+
+ConstElementPtr
+getRelatedLoggers(ConstElementPtr loggers) {
+    // Keep a list of names for easier lookup later
+    std::set<std::string> our_names;
+    const std::string& root_name = isc::log::getRootLoggerName();
+
+    ElementPtr result = isc::data::Element::createList();
+
+    BOOST_FOREACH(ConstElementPtr cur_logger, loggers->listValue()) {
+        // Need to add the b10- prefix to names ready from the spec file.
+        const std::string cur_name = cur_logger->get("name")->stringValue();
+        const std::string mod_name = b10Prefix(cur_name);
+        if (mod_name == root_name || mod_name.find(root_name + ".") == 0) {
+
+            // Note this name so that we don't add a wildcard that matches it.
+            our_names.insert(mod_name);
+
+            // We want to store the logger with the modified name (i.e. with
+            // the b10- prefix).  As we are dealing with const loggers, we
+            // store a modified copy of the data.
+            result->add(copyLogger(cur_logger, mod_name));
+            LOG_DEBUG(config_logger, DBG_CONFIG_PROCESS, CONFIG_LOG_EXPLICIT)
+                      .arg(cur_name);
+
+        } else if (!cur_name.empty() && (cur_name[0] != '*')) {
+            // Not a wildcard logger and we are ignoring it.
+            LOG_DEBUG(config_logger, DBG_CONFIG_PROCESS,
+                      CONFIG_LOG_IGNORE_EXPLICIT).arg(cur_name);
+        }
+    }
+
+    // Now find the wildcard names (the one that start with "*").
+    BOOST_FOREACH(ConstElementPtr cur_logger, loggers->listValue()) {
+        std::string cur_name = cur_logger->get("name")->stringValue();
+        // If name is '*', or starts with '*.', replace * with root
+        // logger name.
+        if (cur_name == "*" || cur_name.length() > 1 &&
+            cur_name[0] == '*' && cur_name[1] == '.') {
+
+            // Substitute the "*" with the root name
+            std::string mod_name = cur_name;
+            mod_name.replace(0, 1, root_name);
+
+            // Now add it to the result list, but only if a logger with
+            // that name was not configured explicitly.
+            if (our_names.find(mod_name) == our_names.end()) {
+
+                // We substitute the name here, but as we are dealing with
+                // consts, we need to copy the data.
+                result->add(copyLogger(cur_logger, mod_name));
+                LOG_DEBUG(config_logger, DBG_CONFIG_PROCESS,
+                          CONFIG_LOG_WILD_MATCH).arg(cur_name);
+
+            } else if (!cur_name.empty() && (cur_name[0] == '*')) {
+                // Is a wildcard and we are ignoring it (because the wildcard
+                // expands to a specification that we already encountered when
+                // processing explicit names).
+                LOG_DEBUG(config_logger, DBG_CONFIG_PROCESS,
+                          CONFIG_LOG_IGNORE_WILD).arg(cur_name);
+            }
+        }
+    }
+    return (result);
+}
+
+void
+default_logconfig_handler(const std::string& module_name,
+                          ConstElementPtr new_config,
+                          const ConfigData& config_data) {
+    config_data.getModuleSpec().validateConfig(new_config, true);
+
+    std::vector<isc::log::LoggerSpecification> specs;
+
+    if (new_config->contains("loggers")) {
+        ConstElementPtr loggers = getRelatedLoggers(new_config->get("loggers"));
+        BOOST_FOREACH(ConstElementPtr logger,
+                      loggers->listValue()) {
+            readLoggersConf(specs, logger, config_data);
+        }
+    }
+
+    isc::log::LoggerManager logger_manager;
+    logger_manager.process(specs.begin(), specs.end());
+}
+
+
 ModuleSpec
 ModuleCCSession::readModuleSpecification(const std::string& filename) {
     std::ifstream file;
     ModuleSpec module_spec;
-    
+
     // this file should be declared in a @something@ directive
     file.open(filename.c_str());
     if (!file) {
-        cout << "error opening " << filename << ": " << strerror(errno) << endl;
-        exit(1);
+        LOG_ERROR(config_logger, CONFIG_OPEN_FAIL).arg(filename).arg(strerror(errno));
+        isc_throw(CCSessionInitError, strerror(errno));
     }
 
     try {
         module_spec = moduleSpecFromFile(file, true);
     } catch (const JSONError& pe) {
-        cout << "Error parsing module specification file: " << pe.what() << endl;
-        exit(1);
+        LOG_ERROR(config_logger, CONFIG_JSON_PARSE).arg(filename).arg(pe.what());
+        isc_throw(CCSessionInitError, pe.what());
     } catch (const ModuleSpecError& dde) {
-        cout << "Error reading module specification file: " << dde.what() << endl;
-        exit(1);
+        LOG_ERROR(config_logger, CONFIG_MOD_SPEC_FORMAT).arg(filename).arg(dde.what());
+        isc_throw(CCSessionInitError, dde.what());
     }
     file.close();
     return (module_spec);
@@ -201,8 +436,11 @@ ModuleCCSession::ModuleCCSession(
     isc::data::ConstElementPtr(*config_handler)(
         isc::data::ConstElementPtr new_config),
     isc::data::ConstElementPtr(*command_handler)(
-        const std::string& command, isc::data::ConstElementPtr args)
+        const std::string& command, isc::data::ConstElementPtr args),
+    bool start_immediately,
+    bool handle_logging
     ) :
+    started_(false),
     session_(session)
 {
     module_specification_ = readModuleSpecification(spec_file_name);
@@ -214,10 +452,8 @@ ModuleCCSession::ModuleCCSession(
 
     session_.establish(NULL);
     session_.subscribe(module_name_, "*");
-    //session_.subscribe("Boss", "*");
-    //session_.subscribe("statistics", "*");
-    // send the data specification
 
+    // send the data specification
     ConstElementPtr spec_msg = createCommand("module_spec",
                                              module_specification_.getFullSpec());
     unsigned int seq = session_.group_sendmsg(spec_msg, "ConfigManager");
@@ -227,9 +463,10 @@ ModuleCCSession::ModuleCCSession(
     int rcode;
     ConstElementPtr err = parseAnswer(rcode, answer);
     if (rcode != 0) {
-        std::cerr << "[" << module_name_ << "] Error in specification: " << answer << std::endl;
+        LOG_ERROR(config_logger, CONFIG_MOD_SPEC_REJECT).arg(answer->str());
+        isc_throw(CCSessionInitError, answer->str());
     }
-    
+
     setLocalConfig(Element::fromJSON("{}"));
     // get any stored configuration from the manager
     if (config_handler_) {
@@ -240,12 +477,32 @@ ModuleCCSession::ModuleCCSession(
         if (rcode == 0) {
             handleConfigUpdate(new_config);
         } else {
-            std::cerr << "[" << module_name_ << "] Error getting config: " << new_config << std::endl;
+            LOG_ERROR(config_logger, CONFIG_GET_FAIL).arg(new_config->str());
+            isc_throw(CCSessionInitError, answer->str());
         }
+    }
+
+    // Keep track of logging settings automatically
+    if (handle_logging) {
+        addRemoteConfig("Logging", default_logconfig_handler, false);
+    }
+
+    if (start_immediately) {
+        start();
+    }
+
+}
+
+void
+ModuleCCSession::start() {
+    if (started_) {
+        isc_throw(CCSessionError, "Module CC session already started");
     }
 
     // register callback for asynchronous read
     session_.startRead(boost::bind(&ModuleCCSession::startCheck, this));
+
+    started_ = true;
 }
 
 /// Validates the new config values, if they are correct,
@@ -335,7 +592,7 @@ int
 ModuleCCSession::checkCommand() {
     ConstElementPtr cmd, routing, data;
     if (session_.group_recvmsg(routing, data, true)) {
-        
+
         /* ignore result messages (in case we're out of sync, to prevent
          * pingpongs */
         if (data->getType() != Element::map || data->contains("result")) {
@@ -352,35 +609,79 @@ ModuleCCSession::checkCommand() {
                 answer = checkModuleCommand(cmd_str, target_module, arg);
             }
         } catch (const CCSessionError& re) {
-            // TODO: Once we have logging and timeouts, we should not
-            // answer here (potential interference)
-            answer = createAnswer(1, re.what());
+            LOG_ERROR(config_logger, CONFIG_CCSESSION_MSG).arg(re.what());
+        } catch (const std::exception& stde) {
+            // No matter what unexpected error happens, we do not want
+            // to crash because of an incoming event, so we log the
+            // exception and continue to run
+            LOG_ERROR(config_logger, CONFIG_CCSESSION_MSG_INTERNAL).arg(stde.what());
         }
         if (!isNull(answer)) {
             session_.reply(routing, answer);
         }
     }
-    
+
     return (0);
 }
 
-std::string
-ModuleCCSession::addRemoteConfig(const std::string& spec_file_name) {
-    ModuleSpec rmod_spec = readModuleSpecification(spec_file_name);
-    std::string module_name = rmod_spec.getFullSpec()->get("module_name")->stringValue();
-    ConfigData rmod_config = ConfigData(rmod_spec);
-    session_.subscribe(module_name);
+ModuleSpec
+ModuleCCSession::fetchRemoteSpec(const std::string& module, bool is_filename) {
+    if (is_filename) {
+        // It is a filename, simply load it.
+        return (readModuleSpecification(module));
+    } else {
+        // It's module name, request it from config manager
 
-    // Get the current configuration values for that module
-    ConstElementPtr cmd = Element::fromJSON("{ \"command\": [\"get_config\", {\"module_name\":\"" + module_name + "\"} ] }");
-    unsigned int seq = session_.group_sendmsg(cmd, "ConfigManager");
+        // Send the command
+        ConstElementPtr cmd(createCommand("get_module_spec",
+                            Element::fromJSON("{\"module_name\": \"" + module +
+                                              "\"}")));
+        unsigned int seq = session_.group_sendmsg(cmd, "ConfigManager");
+        ConstElementPtr env, answer;
+        session_.group_recvmsg(env, answer, false, seq);
+        int rcode;
+        ConstElementPtr spec_data = parseAnswer(rcode, answer);
+        if (rcode == 0 && spec_data) {
+            // received OK, construct the spec out of it
+            ModuleSpec spec = ModuleSpec(spec_data);
+            if (module != spec.getModuleName()) {
+                // It's a different module!
+                isc_throw(CCSessionError, "Module name mismatch");
+            }
+            return (spec);
+        } else {
+            isc_throw(CCSessionError, "Error getting config for " +
+                      module + ": " + answer->str());
+        }
+    }
+}
+
+std::string
+ModuleCCSession::addRemoteConfig(const std::string& spec_name,
+                                 void (*handler)(const std::string& module,
+                                                 ConstElementPtr,
+                                                 const ConfigData&),
+                                 bool spec_is_filename)
+{
+    // First get the module name, specification and default config
+    const ModuleSpec rmod_spec(fetchRemoteSpec(spec_name, spec_is_filename));
+    const std::string module_name(rmod_spec.getModuleName());
+    ConfigData rmod_config(rmod_spec);
+
+    // Get the current configuration values from config manager
+    ConstElementPtr cmd(createCommand("get_config",
+                        Element::fromJSON("{\"module_name\": \"" +
+                                          module_name + "\"}")));
+    const unsigned int seq = session_.group_sendmsg(cmd, "ConfigManager");
 
     ConstElementPtr env, answer;
     session_.group_recvmsg(env, answer, false, seq);
     int rcode;
     ConstElementPtr new_config = parseAnswer(rcode, answer);
+    ElementPtr local_config;
     if (rcode == 0 && new_config) {
-        ElementPtr local_config = rmod_config.getLocalConfig();
+        // Merge the received config into existing local config
+        local_config = rmod_config.getLocalConfig();
         isc::data::merge(local_config, new_config);
         rmod_config.setLocalConfig(local_config);
     } else {
@@ -389,6 +690,13 @@ ModuleCCSession::addRemoteConfig(const std::string& spec_file_name) {
 
     // all ok, add it
     remote_module_configs_[module_name] = rmod_config;
+    if (handler) {
+        remote_module_handlers_[module_name] = handler;
+        handler(module_name, local_config, rmod_config);
+    }
+
+    // Make sure we get updates in future
+    session_.subscribe(module_name);
     return (module_name);
 }
 
@@ -399,6 +707,7 @@ ModuleCCSession::removeRemoteConfig(const std::string& module_name) {
     it = remote_module_configs_.find(module_name);
     if (it != remote_module_configs_.end()) {
         remote_module_configs_.erase(it);
+        remote_module_handlers_.erase(module_name);
         session_.unsubscribe(module_name);
     }
 }
@@ -428,6 +737,11 @@ ModuleCCSession::updateRemoteConfig(const std::string& module_name,
     if (it != remote_module_configs_.end()) {
         ElementPtr rconf = (*it).second.getLocalConfig();
         isc::data::merge(rconf, new_config);
+        std::map<std::string, RemoteHandler>::iterator hit =
+            remote_module_handlers_.find(module_name);
+        if (hit != remote_module_handlers_.end()) {
+            hit->second(module_name, new_config, it->second);
+        }
     }
 }
 

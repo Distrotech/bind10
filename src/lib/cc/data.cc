@@ -57,13 +57,6 @@ Element::toWire(std::ostream& ss) const {
     toJSON(ss);
 }
 
-//
-// The following methods are effectively empty, and their parameters are
-// unused.  To silence compilers that warn unused function parameters,
-// we specify a (compiler dependent) special keyword when available.
-// It's defined in config.h, and to avoid including this header file from
-// installed files we define the methods here.
-//
 bool
 Element::getValue(long int&) {
     return (false);
@@ -459,7 +452,9 @@ from_stringstream_map(std::istream &in, const std::string& file, int& line,
     ElementPtr map = Element::createMap();
     skip_chars(in, " \t\n", line, pos);
     char c = in.peek();
-    if (c == '}') {
+    if (c == EOF) {
+        throwJSONError(std::string("Unterminated map, <string> or } expected"), file, line, pos);
+    } else if (c == '}') {
         // empty map, skip closing curly
         c = in.get();
     } else {
@@ -520,6 +515,8 @@ Element::nameToType(const std::string& type_name) {
     } else if (type_name == "list") {
         return (Element::list);
     } else if (type_name == "map") {
+        return (Element::map);
+    } else if (type_name == "named_set") {
         return (Element::map);
     } else if (type_name == "null") {
         return (Element::null);
@@ -788,11 +785,11 @@ StringElement::equals(const Element& other) const {
 bool
 ListElement::equals(const Element& other) const {
     if (other.getType() == Element::list) {
-        const unsigned int s = size();
+        const int s = size();
         if (s != other.size()) {
             return (false);
         }
-        for (unsigned int i = 0; i < s; ++i) {
+        for (int i = 0; i < s; ++i) {
             if (!get(i)->equals(*other.get(i))) {
                 return (false);
             }
@@ -851,15 +848,12 @@ removeIdentical(ElementPtr a, ConstElementPtr b) {
         isc_throw(TypeError, "Non-map Elements passed to removeIdentical");
     }
 
- again:
     const std::map<std::string, ConstElementPtr>& m = a->mapValue();
     for (std::map<std::string, ConstElementPtr>::const_iterator it = m.begin();
          it != m.end() ; ++it) {
         if (b->contains((*it).first)) {
             if (a->get((*it).first)->equals(*b->get((*it).first))) {
                 a->remove((*it).first);
-                // temporary fix
-                goto again;
             }
         }
     }

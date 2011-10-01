@@ -13,16 +13,17 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <gtest/gtest.h>
+#include <util/unittests/run_all.h>
 
-#include <log/root_logger_name.h>
+#include <log/logger_support.h>
 #include <dns/tests/unittest_util.h>
 
 int
 main(int argc, char* argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);         // Initialize Google test
-    isc::log::setRootLoggerName("unittest");        // Set a root logger name
+    isc::log::initLogger();                         // Initialize logging
     isc::UnitTestUtil::addDataPath(TEST_DATA_DIR);  // Add location of test data
 
-    return (RUN_ALL_TESTS());
+    return (isc::util::unittests::run_all());
 }

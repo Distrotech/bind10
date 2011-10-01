@@ -15,6 +15,8 @@
 #include <config.h>
 
 #include <gtest/gtest.h>
+#include <util/unittests/run_all.h>
+#include <log/logger_support.h>
 
 #include <dns/tests/unittest_util.h>
 
@@ -22,5 +24,7 @@ int
 main(int argc, char* argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
 
-    return (RUN_ALL_TESTS());
+    isc::log::initLogger();
+
+    return (isc::util::unittests::run_all());
 }

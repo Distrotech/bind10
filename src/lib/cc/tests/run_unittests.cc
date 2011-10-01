@@ -19,20 +19,22 @@
 #endif
 
 #include <gtest/gtest.h>
-
-#include <dns/tests/unittest_util.h>
+#include <util/unittests/run_all.h>
+#include <log/logger_support.h>
 
 int
 main(int argc, char* argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
 
+    isc::log::initLogger();
+
 #ifdef _WIN32
     WSADATA wsaData;
     WSAStartup(MAKEWORD(2,2), &wsaData);
-    int ret = RUN_ALL_TESTS();
+    int ret = isc::util::unittests::run_all();
     WSACleanup();
     return (ret);
 #else
-    return (RUN_ALL_TESTS());
+    return (isc::util::unittests::run_all());
 #endif
 }
