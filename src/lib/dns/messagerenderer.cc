@@ -49,6 +49,9 @@ struct NameCompressNode {
     uint16_t pos_;
     /// The length of the corresponding name.
     uint16_t len_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    NameCompressNode& operator=(NameCompressNode const&);
 };
 
 ///

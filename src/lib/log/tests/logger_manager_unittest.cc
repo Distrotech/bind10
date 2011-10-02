@@ -128,10 +128,10 @@ public:
             isc_throw(Exception, "Unable to obtain unique filename");
         }
         close(filenum);
+#endif
 
         return (string(tname.get()));
     }
-#endif
 
 private:
     LoggerSpecification     spec_;      // Specification for this file logger

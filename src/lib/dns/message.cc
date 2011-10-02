@@ -221,6 +221,9 @@ struct RenderSection {
     AbstractMessageRenderer& renderer_;
     const bool partial_ok_;
     bool truncated_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    RenderSection& operator=(RenderSection const&);
 };
 }
 
@@ -637,7 +640,7 @@ int
 MessageImpl::parseQuestion(InputBuffer& buffer) {
     unsigned int added = 0;
 
-    for (unsigned int count = 0;
+    for (int count = 0;
          count < counts_[Message::SECTION_QUESTION];
          ++count) {
         const Name name(buffer);
@@ -673,6 +676,9 @@ struct MatchRR : public unary_function<RRsetPtr, bool> {
     const Name& name_;
     const RRType& rrtype_;
     const RRClass& rrclass_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    MatchRR& operator=(MatchRR const&);
 };
 }
 
@@ -712,7 +718,7 @@ MessageImpl::parseSection(const Message::Section section,
 
     unsigned int added = 0;
 
-    for (unsigned int count = 0; count < counts_[section]; ++count) {
+    for (int count = 0; count < counts_[section]; ++count) {
         // We need to remember the start position for TSIG processing
         const size_t start_position = buffer.getPosition();
 
@@ -818,6 +824,9 @@ struct SectionFormatter {
     }
     const Message::Section section_;
     string& output_;
+private:
+    // silence MSVC warning C4512: assignment operator could not be generated
+    SectionFormatter& operator=(SectionFormatter const&);
 };
 }
 

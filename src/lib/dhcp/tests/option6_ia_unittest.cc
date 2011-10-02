@@ -159,7 +159,7 @@ TEST_F(Option6IATest, suboptions_pack) {
     ASSERT_EQ(4, sub1->len());
     ASSERT_EQ(48, ia->len());
 
-    char expected[] = {
+    unsigned char expected[] = {
         D6O_IA_NA/256, D6O_IA_NA%256, // type
         0, 44, // length
         0x13, 0x57, 0x9a, 0xce, // iaid
@@ -191,7 +191,7 @@ TEST_F(Option6IATest, suboptions_pack) {
 TEST_F(Option6IATest, suboptions_unpack) {
 
 
-    char expected[] = {
+    unsigned char expected[] = {
         D6O_IA_NA/256, D6O_IA_NA%256, // type
         0, 28, // length
         0x13, 0x57, 0x9a, 0xce, // iaid

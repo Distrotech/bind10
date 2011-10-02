@@ -163,7 +163,7 @@ TEST_F(OptionTest, suboptions1) {
     EXPECT_EQ(9, opt3->len());
     EXPECT_EQ(20, opt1->len());
 
-    char expected[] = {
+    unsigned char expected[] = {
         0xff, 0xff, 0, 16, 100, 101, 102,
         0, 7, 0, 5, 103, 104, 105, 106, 107,
         0, 13, 0, 0 // no data at all
@@ -203,7 +203,7 @@ TEST_F(OptionTest, suboptions2) {
     // opt2 len = 4 (just header) + len(opt3)
     // opt1 len = 7 + len(opt2)
 
-    char expected[] = {
+    unsigned char expected[] = {
         0xff, 0xff, 0, 16, 100, 101, 102,
         0, 13, 0, 9,
         0, 7, 0, 5, 103, 104, 105, 106, 107,

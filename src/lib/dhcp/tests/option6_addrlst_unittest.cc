@@ -42,7 +42,7 @@ public:
 
 TEST_F(Option6AddrLstTest, basic) {
 
-    char sampledata[] = {
+    unsigned char sampledata[] = {
         // 2001:db8:1::dead:beef
         0x20, 0x01, 0x0d, 0xb8, 0x00, 0x01, 0, 0,
         0, 0, 0, 0, 0xde, 0xad, 0xbe, 0xef,
@@ -56,7 +56,7 @@ TEST_F(Option6AddrLstTest, basic) {
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
     };
 
-    char expected1[] = {
+    unsigned char expected1[] = {
         D6O_NAME_SERVERS/256, D6O_NAME_SERVERS%256,//type
         0, 16, // len = 16 (1 address)
         0x20, 0x01, 0x0d, 0xb8, 0x00, 0x01, 0, 0,
@@ -64,7 +64,7 @@ TEST_F(Option6AddrLstTest, basic) {
 
     };
 
-    char expected2[] = {
+    unsigned char expected2[] = {
         D6O_SIP_SERVERS_ADDR/256, D6O_SIP_SERVERS_ADDR%256,
         0, 32, // len = 32 (2 addresses)
         // 2001:db8:1::dead:beef
@@ -80,7 +80,7 @@ TEST_F(Option6AddrLstTest, basic) {
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
     };
 
-    char expected3[] = {
+    unsigned char expected3[] = {
         D6O_NIS_SERVERS/256, D6O_NIS_SERVERS%256,
         0, 48,
         // 2001:db8:1::dead:beef
