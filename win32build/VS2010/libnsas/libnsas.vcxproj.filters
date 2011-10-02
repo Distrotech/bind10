@@ -63,6 +63,9 @@
     <ClInclude Include="..\..\..\src\lib\nsas\zone_entry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\nsas\nsas_messages.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\nsas\address_entry.cc">
@@ -87,6 +90,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\lib\nsas\zone_entry.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\nsas\nsas_messages.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

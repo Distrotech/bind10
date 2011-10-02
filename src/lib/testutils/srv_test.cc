@@ -77,9 +77,13 @@ SrvTestBase::createDataFromFile(const char* const datafile,
 
 void
 SrvTestBase::createRequestPacket(Message& message,
-                                 const int protocol)
+                                 const int protocol, TSIGContext* context)
 {
-    message.toWire(request_renderer);
+    if (context == NULL) {
+        message.toWire(request_renderer);
+    } else {
+        message.toWire(request_renderer, *context);
+    }
 
     delete io_message;
 
@@ -95,7 +99,7 @@ SrvTestBase::createRequestPacket(Message& message,
 // Unsupported requests.  Should result in NOTIMP.
 void
 SrvTestBase::unsupportedRequest() {
-    for (unsigned int i = 0; i < 16; ++i) {
+    for (int i = 0; i < 16; ++i) {
         // set Opcode to 'i', which iterators over all possible codes except
         // the standard query and notify 
         if (i == isc::dns::Opcode::QUERY().getCode() ||

@@ -52,7 +52,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;TEST_DATA_DIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/datasrc/tests/testdata";_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;TEST_DATA_DIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/datasrc/tests/testdata";TEST_DATA_BUILDDIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/datasrc/tests/testdata";_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\..\gtest\include;%BOOST%;C:\sqlite3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
@@ -60,8 +60,8 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;libcryptolink.lib;libdns++.lib;libcc.lib;libtestutils.lib;libdatasrc.lib;botan.lib;gtestd.lib;sqlite3.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libexceptions\Debug;..\libutil\Debug;..\libutil_unittests\Debug;..\libcryptolink\Debug;..\libdns++\Debug;..\libcc\Debug;..\libtestutils\Debug;..\libdatasrc\Debug;..\..\..\..\botan\md10\Debug;..\..\..\..\gtest\md10\Debug;C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;liblog.lib;libcryptolink.lib;libdns++.lib;libcc.lib;libtestutils.lib;libdatasrc.lib;botan.lib;log4cplusSD.lib;gtestd.lib;sqlite3.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\libexceptions\Debug;..\libutil\Debug;..\libutil_unittests\Debug;..\liblog\Debug;..\libcryptolink\Debug;..\libdns++\Debug;..\libcc\Debug;..\libtestutils\Debug;..\libdatasrc\Debug;..\..\..\..\botan\md10\Debug;..\..\..\..\log4cplus\md10\Debug;..\..\..\..\gtest\md10\Debug;C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -71,7 +71,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;TEST_DATA_DIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/datasrc/tests/testdata";NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;TEST_DATA_DIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/datasrc/tests/testdata";TEST_DATA_BUILDDIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/datasrc/tests/testdata";NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\..\gtest\include;%BOOST%;C:\sqlite3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
@@ -81,8 +81,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;libcryptolink.lib;libdns++.lib;libcc.lib;libtestutils.lib;libdatasrc.lib;botan.lib;gtest.lib;sqlite3.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libexceptions\Release;..\libutil\Release;..\libutil_unittests\Release;..\libcryptolink\Release;..\libdns++\Release;..\libcc\Release;..\libtestutils\Release;..\libdatasrc\Release;..\..\..\..\botan\md10\Release;..\..\..\..\gtest\md10\Release;C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;liblog.lib;libcryptolink.lib;libdns++.lib;libcc.lib;libtestutils.lib;libdatasrc.lib;botan.lib;log4cplusS.lib;gtest.lib;sqlite3.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\libexceptions\Release;..\libutil\Release;..\libutil_unittests\Release;..\liblog\Release;..\libcryptolink\Release;..\libdns++\Release;..\libcc\Release;..\libtestutils\Release;..\libdatasrc\Release;..\..\..\..\botan\md10\Release;..\..\..\..\log4cplus\md10\Release;..\..\..\..\gtest\md10\Release;C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -91,11 +91,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\cache_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\datasrc\tests\client_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\datasrc\tests\database_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\datasrc_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\datasrc\tests\logger_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\memory_datasrc_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\query_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\rbtree_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\run_unittests.cc" />
+    <ClCompile Include="..\..\..\src\lib\datasrc\tests\sqlite3_accessor_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\sqlite3_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\static_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\test_datasrc.cc" />

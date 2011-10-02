@@ -15,12 +15,14 @@
 # NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
 # WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-PYTHON_EXEC=${PYTHON_EXEC:-@PYTHON@}
+PYTHON_EXEC=${PYTHON_EXEC:-/usr/bin/python}
 export PYTHON_EXEC
 
-TEST_PATH=@abs_top_srcdir@/src/lib/python/isc/log/tests
-PYTHONPATH=@abs_top_srcdir@/src/lib/python:@abs_top_builddir@/src/lib/python
+NOTIFY_OUT_PATH=c:/cygwin/home/fdupont/bind10.trac826/src/lib/python/isc/notify/tests
+
+PYTHONPATH=c:/cygwin/home/fdupont/bind10.trac826/src/lib/python
 export PYTHONPATH
 
-cd ${TEST_PATH}
-exec ${PYTHON_EXEC} -O log_test.py $*
+cd ${BIND10_PATH}
+${PYTHON_EXEC} -O ${NOTIFY_OUT_PATH}/notify_out_test.py $*
+

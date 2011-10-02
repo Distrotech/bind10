@@ -43,7 +43,7 @@ public:
     {}
     unsigned int run() {
 #ifdef _WIN32
-        Sleep((sleep_time_.tv_sec * 1000) + (sleep_time_.tv_nsec / 1000));
+        Sleep((sleep_time_.tv_sec * 1000) + (sleep_time_.tv_nsec / 1000000));
 #else
         nanosleep(&sleep_time_, NULL);
 #endif

@@ -7,7 +7,7 @@ AM_CPPFLAGS += $(SQLITE_CFLAGS)
 
 AM_CXXFLAGS = $(B10_CXXFLAGS)
 
-CLEANFILES = *.gcno *.gcda
+CLEANFILES = *.gcno *.gcda datasrc_messages.h datasrc_messages.cc
 
 lib_LTLIBRARIES = libdatasrc.la
 libdatasrc_la_SOURCES = data_source.h data_source.cc
@@ -20,3 +20,20 @@ libdatasrc_la_SOURCES += zonetable.h zonetable.cc
 libdatasrc_la_SOURCES += memory_datasrc.h memory_datasrc.cc
 libdatasrc_la_SOURCES += zone.h
 libdatasrc_la_SOURCES += result.h
+libdatasrc_la_SOURCES += logger.h logger.cc
+libdatasrc_la_SOURCES += client.h iterator.h
+libdatasrc_la_SOURCES += database.h database.cc
+libdatasrc_la_SOURCES += sqlite3_accessor.h sqlite3_accessor.cc
+nodist_libdatasrc_la_SOURCES = datasrc_messages.h datasrc_messages.cc
+
+libdatasrc_la_LIBADD = $(top_builddir)/src/lib/exceptions/libexceptions.la
+libdatasrc_la_LIBADD += $(top_builddir)/src/lib/dns/libdns++.la
+libdatasrc_la_LIBADD += $(top_builddir)/src/lib/log/liblog.la
+libdatasrc_la_LIBADD += $(top_builddir)/src/lib/cc/libcc.la
+libdatasrc_la_LIBADD += $(SQLITE_LIBS)
+
+BUILT_SOURCES = datasrc_messages.h datasrc_messages.cc
+datasrc_messages.h datasrc_messages.cc: Makefile datasrc_messages.mes
+	$(top_builddir)/src/lib/log/compiler/message $(top_srcdir)/src/lib/datasrc/datasrc_messages.mes
+
+EXTRA_DIST = datasrc_messages.mes

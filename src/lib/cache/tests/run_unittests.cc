@@ -15,8 +15,11 @@
 #include <config.h>
 
 #include <gtest/gtest.h>
+#include <util/unittests/run_all.h>
 
 #include <dns/tests/unittest_util.h>
+
+#include <log/logger_support.h>
 
 int
 main(int argc, char* argv[]) {
@@ -24,5 +27,7 @@ main(int argc, char* argv[]) {
     isc::UnitTestUtil::addDataPath(TEST_DATA_SRCDIR);
     isc::UnitTestUtil::addDataPath(TEST_DATA_BUILDDIR);
 
-    return (RUN_ALL_TESTS());
+    isc::log::initLogger();
+
+    return (isc::util::unittests::run_all());
 }

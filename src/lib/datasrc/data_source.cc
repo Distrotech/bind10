@@ -25,6 +25,7 @@
 #include <datasrc/cache.h>
 #include <datasrc/data_source.h>
 #include <datasrc/query.h>
+#include <datasrc/logger.h>
 
 #include <util/encode/base32hex.h>
 #include <util/hash/sha1.h>
@@ -97,7 +98,7 @@ class ZoneInfo {
 public:
     ZoneInfo(DataSrc* ts,
              const isc::dns::Name& n,
-             const isc::dns::RRClass& c, 
+             const isc::dns::RRClass& c,
              const isc::dns::RRType& t = isc::dns::RRType::ANY()) :
         top_source_(ts),
         dsm_(((t == RRType::DS() && n.getLabelCount() != 1)
@@ -137,6 +138,8 @@ getAdditional(Query& q, ConstRRsetPtr rrset) {
         const Rdata& rd(it->getCurrent());
         if (rrset->getType() == RRType::NS()) {
             const generic::NS& ns = dynamic_cast<const generic::NS&>(rd);
+            LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_QUERY_GET_NS_ADDITIONAL).
+                arg(ns.getNSName()).arg(rrset->getName());
             q.tasks().push(QueryTaskPtr(
                                new QueryTask(q, ns.getNSName(),
                                              Message::SECTION_ADDITIONAL,
@@ -144,6 +147,8 @@ getAdditional(Query& q, ConstRRsetPtr rrset) {
                                              QueryTask::GETADDITIONAL)));
         } else if (rrset->getType() == RRType::MX()) {
             const generic::MX& mx = dynamic_cast<const generic::MX&>(rd);
+            LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_QUERY_GET_MX_ADDITIONAL).
+                arg(mx.getMXName()).arg(rrset->getName());
             q.tasks().push(QueryTaskPtr(
                                new QueryTask(q, mx.getMXName(),
                                              Message::SECTION_ADDITIONAL,
@@ -157,11 +162,14 @@ getAdditional(Query& q, ConstRRsetPtr rrset) {
 // understand DNAME
 void
 synthesizeCname(QueryTaskPtr task, RRsetPtr rrset, RRsetList& target) {
+    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_QUERY_SYNTH_CNAME).
+        arg(rrset->getName());
     RdataIteratorPtr it = rrset->getRdataIterator();
 
     // More than one DNAME RR in the RRset is illegal, so we only have
     // to process the first one.
     if (it->isLast()) {
+        logger.error(DATASRC_QUERY_EMPTY_DNAME).arg(rrset->getName());
         return;
     }
 
@@ -185,16 +193,20 @@ synthesizeCname(QueryTaskPtr task, RRsetPtr rrset, RRsetList& target) {
 // to by a CNAME record
 void
 chaseCname(Query& q, QueryTaskPtr task, RRsetPtr rrset) {
+    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_QUERY_FOLLOW_CNAME).
+        arg(rrset->getName());
     RdataIteratorPtr it = rrset->getRdataIterator();
 
     // More than one CNAME RR in the RRset is illegal, so we only have
     // to process the first one.
     if (it->isLast()) {
+        logger.error(DATASRC_QUERY_EMPTY_CNAME).arg(rrset->getName());
         return;
     }
 
     // Stop chasing CNAMES after 16 lookups, to prevent loops
     if (q.tooMany()) {
+        logger.error(DATASRC_QUERY_TOO_MANY_CNAMES).arg(rrset->getName());
         return;
     }
 
@@ -208,6 +220,8 @@ chaseCname(Query& q, QueryTaskPtr task, RRsetPtr rrset) {
 // Check the cache for data which can answer the current query task.
 bool
 checkCache(QueryTask& task, RRsetList& target) {
+    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_QUERY_CHECK_CACHE).
+        arg(task.qname).arg(task.qtype);
     HotCache& cache = task.q.getCache();
     RRsetList rrsets;
     RRsetPtr rrset;
@@ -220,6 +234,9 @@ checkCache(QueryTask& task, RRsetList& target) {
         // ANY queries must be handled by the low-level data source,
         // or the results won't be guaranteed to be complete
         if (task.qtype == RRType::ANY() || task.qclass == RRClass::ANY()) {
+            LOG_DEBUG(logger, DBG_TRACE_DATA,
+                      DATASRC_QUERY_NO_CACHE_ANY_SIMPLE).arg(task.qname).
+                arg(task.qtype).arg(task.qclass);
             break;
         }
 
@@ -249,6 +266,8 @@ checkCache(QueryTask& task, RRsetList& target) {
 
     case QueryTask::AUTH_QUERY:         // Find exact RRset or CNAME
         if (task.qtype == RRType::ANY() || task.qclass == RRClass::ANY()) {
+            LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_QUERY_NO_CACHE_ANY_AUTH).
+                arg(task.qname).arg(task.qtype).arg(task.qclass);
             break;
         }
 
@@ -367,6 +386,8 @@ DataSrc::Result
 doQueryTask(QueryTask& task, ZoneInfo& zoneinfo, RRsetList& target) {
     HotCache& cache = task.q.getCache();
     RRsetPtr rrset;
+    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_DO_QUERY).arg(task.qname).
+        arg(task.qtype);
 
     // First off, make sure at least we have a matching zone in some data
     // source.  We must do this before checking the cache, because it can
@@ -377,11 +398,14 @@ doQueryTask(QueryTask& task, ZoneInfo& zoneinfo, RRsetList& target) {
     const Name* const zonename = zoneinfo.getEnclosingZone();
     if (ds == NULL) {
         task.flags |= DataSrc::NO_SUCH_ZONE;
+        logger.info(DATASRC_QUERY_NO_ZONE).arg(task.qname).arg(task.qclass);
         return (DataSrc::SUCCESS);
     }
 
     // Then check the cache for matching data
     if (checkCache(task, target)) {
+        LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_QUERY_CACHED).
+            arg(task.qname).arg(task.qtype);
         return (DataSrc::SUCCESS);
     }
 
@@ -392,10 +416,13 @@ doQueryTask(QueryTask& task, ZoneInfo& zoneinfo, RRsetList& target) {
     DataSrc::Result result;
     switch (task.op) {
     case QueryTask::SIMPLE_QUERY:
+        LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_QUERY_IS_SIMPLE).
+            arg(task.qname).arg(task.qtype);
         result = ds->findExactRRset(task.qname, task.qclass, task.qtype,
                                     target, task.flags, zonename);
 
         if (result != DataSrc::SUCCESS) {
+            logger.error(DATASRC_QUERY_SIMPLE_FAIL).arg(result);
             return (result);
         }
 
@@ -417,10 +444,13 @@ doQueryTask(QueryTask& task, ZoneInfo& zoneinfo, RRsetList& target) {
         return (result);
 
     case QueryTask::AUTH_QUERY:
+        LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_QUERY_IS_AUTH).
+            arg(task.qname).arg(task.qtype);
         result = ds->findRRset(task.qname, task.qclass, task.qtype,
                                target, task.flags, zonename);
 
         if (result != DataSrc::SUCCESS) {
+            logger.error(DATASRC_QUERY_AUTH_FAIL).arg(result);
             return (result);
         }
 
@@ -453,10 +483,16 @@ doQueryTask(QueryTask& task, ZoneInfo& zoneinfo, RRsetList& target) {
 
     case QueryTask::GLUE_QUERY:
     case QueryTask::NOGLUE_QUERY:
+        LOG_DEBUG(logger, DBG_TRACE_DATA, task.op == QueryTask::GLUE_QUERY ?
+                     DATASRC_QUERY_IS_GLUE : DATASRC_QUERY_IS_NOGLUE).
+            arg(task.qname).arg(task.qtype);
         result = ds->findAddrs(task.qname, task.qclass, target,
                                task.flags, zonename);
 
         if (result != DataSrc::SUCCESS) {
+            logger.error(task.op == QueryTask::GLUE_QUERY ?
+                         DATASRC_QUERY_GLUE_FAIL : DATASRC_QUERY_NOGLUE_FAIL).
+                arg(result);
             return (result);
         }
 
@@ -482,10 +518,13 @@ doQueryTask(QueryTask& task, ZoneInfo& zoneinfo, RRsetList& target) {
         return (result);
 
     case QueryTask::REF_QUERY:
+        LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_QUERY_IS_REF).
+            arg(task.qname).arg(task.qtype);
         result = ds->findReferral(task.qname, task.qclass, target,
                                  task.flags, zonename);
 
         if (result != DataSrc::SUCCESS) {
+            logger.error(DATASRC_QUERY_REF_FAIL).arg(result);
             return (result);
         }
 
@@ -519,6 +558,7 @@ doQueryTask(QueryTask& task, ZoneInfo& zoneinfo, RRsetList& target) {
     }
 
     // Not reached
+    logger.error(DATASRC_QUERY_INVALID_OP);
     return (DataSrc::ERROR);
 }
 
@@ -530,6 +570,8 @@ inline void
 addToMessage(Query& q, const Message::Section sect, RRsetPtr rrset,
              bool no_dnssec = false)
 {
+    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_QUERY_ADD_RRSET).
+        arg(rrset->getName()).arg(rrset->getType());
     Message& m = q.message();
     if (no_dnssec) {
         if (rrset->getType() == RRType::RRSIG() ||
@@ -548,6 +590,7 @@ addToMessage(Query& q, const Message::Section sect, RRsetPtr rrset,
 // Copy referral information into the authority section of a message
 inline void
 copyAuth(Query& q, RRsetList& auth) {
+    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_QUERY_COPY_AUTH);
     BOOST_FOREACH(RRsetPtr rrset, auth) {
         if (rrset->getType() == RRType::DNAME()) {
             continue;
@@ -585,6 +628,9 @@ refQuery(const Query& q, const Name& name, ZoneInfo& zoneinfo,
 // they'll be handled in a normal lookup in the zone.
 inline bool
 hasDelegation(Query& q, QueryTaskPtr task, ZoneInfo& zoneinfo) {
+    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_QUERY_DELEGATION).
+        arg(task->qname);
+
     const Name* const zonename = zoneinfo.getEnclosingZone();
     if (zonename == NULL) {
         if (task->state == QueryTask::GETANSWER) {
@@ -650,6 +696,7 @@ addSOA(Query& q, ZoneInfo& zoneinfo) {
     RRsetList soa;
 
     const Name* const zonename = zoneinfo.getEnclosingZone();
+    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_QUERY_ADD_SOA).arg(*zonename);
     QueryTask newtask(q, *zonename, RRType::SOA(), QueryTask::SIMPLE_QUERY);
     RETERR(doQueryTask(newtask, zoneinfo, soa));
     if (newtask.flags != 0) {
@@ -663,6 +710,7 @@ addSOA(Query& q, ZoneInfo& zoneinfo) {
 
 inline DataSrc::Result
 addNSEC(Query& q, const Name& name, ZoneInfo& zoneinfo) {
+    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_QUERY_ADD_NSEC).arg(name);
     RRsetList nsec;
 
     QueryTask newtask(q, name, RRType::NSEC(), QueryTask::SIMPLE_QUERY); 
@@ -679,9 +727,11 @@ inline DataSrc::Result
 getNsec3(Query& q, ZoneInfo& zoneinfo, string& hash, RRsetPtr& target) {
     const DataSrc* ds = zoneinfo.getDataSource();
     const Name* const zonename = zoneinfo.getEnclosingZone();
+    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_QUERY_ADD_NSEC3).arg(*zonename);
 
     if (ds == NULL) {
         q.message().setRcode(Rcode::SERVFAIL());
+        logger.error(DATASRC_QUERY_NO_DS_NSEC3).arg(*zonename);
         return (DataSrc::ERROR);
     }
 
@@ -784,6 +834,7 @@ proveNX(Query& q, QueryTaskPtr task, ZoneInfo& zoneinfo, const bool wildcard) {
             const DataSrc* ds = zoneinfo.getDataSource();
             if (ds == NULL) {
                 m.setRcode(Rcode::SERVFAIL());
+                logger.error(DATASRC_QUERY_NO_DS_NSEC).arg(*zonename);
                 return (DataSrc::ERROR);
             }
             ds->findPreviousName(task->qname, nsecname, zonename);
@@ -812,6 +863,7 @@ proveNX(Query& q, QueryTaskPtr task, ZoneInfo& zoneinfo, const bool wildcard) {
 // Attempt a wildcard lookup
 inline DataSrc::Result
 tryWildcard(Query& q, QueryTaskPtr task, ZoneInfo& zoneinfo, bool& found) {
+    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_QUERY_WILDCARD).arg(task->qname);
     Message& m = q.message();
     DataSrc::Result result;
     found = false;
@@ -865,6 +917,8 @@ tryWildcard(Query& q, QueryTaskPtr task, ZoneInfo& zoneinfo, bool& found) {
             result = proveNX(q, task, zoneinfo, true);
             if (result != DataSrc::SUCCESS) {
                 m.setRcode(Rcode::SERVFAIL());
+                logger.error(DATASRC_QUERY_WILDCARD_PROVE_NX_FAIL).
+                    arg(task->qname).arg(result);
                 return (DataSrc::ERROR);
             }
         }
@@ -887,6 +941,8 @@ tryWildcard(Query& q, QueryTaskPtr task, ZoneInfo& zoneinfo, bool& found) {
 
             RRsetList auth;
             if (!refQuery(q, *zonename, zoneinfo, auth)) {
+                logger.error(DATASRC_QUERY_WILDCARD_REFERRAL).arg(task->qname).
+                    arg(result);
                 return (DataSrc::ERROR);
             }
 
@@ -902,6 +958,8 @@ tryWildcard(Query& q, QueryTaskPtr task, ZoneInfo& zoneinfo, bool& found) {
 // 
 void
 DataSrc::doQuery(Query& q) {
+    LOG_DEBUG(logger, DBG_TRACE_BASIC, DATASRC_QUERY_PROCESS).arg(q.qname()).
+        arg(q.qtype()).arg(q.qclass());
     Message& m = q.message();
     vector<RRsetPtr> additional;
 
@@ -919,6 +977,7 @@ DataSrc::doQuery(Query& q) {
         // Can't query directly for RRSIG.
         if (task->qtype == RRType::RRSIG()) {
             m.setRcode(Rcode::REFUSED());
+            logger.warn(DATASRC_QUERY_RRSIG).arg(task->qname);
             return;
         }
 
@@ -926,6 +985,7 @@ DataSrc::doQuery(Query& q) {
         if (task->op == QueryTask::SIMPLE_QUERY ||
             task->op == QueryTask::REF_QUERY) {
             m.setRcode(Rcode::SERVFAIL());
+            logger.error(DATASRC_QUERY_MISPLACED_TASK);
             return;
         }
 
@@ -945,6 +1005,7 @@ DataSrc::doQuery(Query& q) {
         result = doQueryTask(*task, zoneinfo, data);
         if (result != SUCCESS) {
             m.setRcode(Rcode::SERVFAIL());
+            logger.error(DATASRC_QUERY_TASK_FAIL).arg(result);
             return;
         }
 
@@ -954,6 +1015,7 @@ DataSrc::doQuery(Query& q) {
         if (task->flags == NO_SUCH_ZONE) {
             if (task->state == QueryTask::GETANSWER) {
                 m.setRcode(Rcode::REFUSED());
+                // No need to log it here, it was already logged in doQueryTask
                 return;
             }
             continue;
@@ -995,6 +1057,7 @@ DataSrc::doQuery(Query& q) {
                     RRsetList auth;
                     if (!refQuery(q, Name(*zonename), zoneinfo, auth) ||
                         !findRRsetFromList(auth, RRType::NS())) {
+                        logger.error(DATASRC_QUERY_MISSING_NS).arg(*zonename);
                         isc_throw(DataSourceError,
                                   "NS RR not found in " << *zonename << "/" <<
                                   q.qclass());
@@ -1019,10 +1082,12 @@ DataSrc::doQuery(Query& q) {
                 continue;
 
             default:
+                logger.error(DATASRC_UNEXPECTED_QUERY_STATE);
                 isc_throw (Unexpected, "unexpected query state");
             }
         } else if (result == ERROR || result == NOT_IMPLEMENTED) {
             m.setRcode(Rcode::SERVFAIL());
+            logger.error(DATASRC_QUERY_FAIL);
             return;
         } else if ((task->flags & CNAME_FOUND) != 0) {
             // The qname node contains a CNAME.  Add a new task to the
@@ -1040,6 +1105,7 @@ DataSrc::doQuery(Query& q) {
                 m.setHeaderFlag(Message::HEADERFLAG_AA, false);
                 if (!refQuery(q, task->qname, zoneinfo, auth)) {
                     m.setRcode(Rcode::SERVFAIL());
+                    logger.error(DATASRC_QUERY_BAD_REFERRAL).arg(task->qname);
                     return;
                 }
                 BOOST_FOREACH (RRsetPtr rrset, auth) {
@@ -1071,6 +1137,7 @@ DataSrc::doQuery(Query& q) {
             result = tryWildcard(q, task, zoneinfo, wildcard_found);
             if (result != SUCCESS) {
                 m.setRcode(Rcode::SERVFAIL());
+                logger.error(DATASRC_QUERY_WILDCARD_FAIL).arg(task->qname);
                 return;
             }
 
@@ -1092,6 +1159,7 @@ DataSrc::doQuery(Query& q) {
 
                 result = addSOA(q, zoneinfo);
                 if (result != SUCCESS) {
+                    logger.error(DATASRC_QUERY_MISSING_SOA).arg(*zonename);
                     isc_throw(DataSourceError,
                               "SOA RR not found in " << *zonename <<
                               "/" << q.qclass());
@@ -1108,6 +1176,7 @@ DataSrc::doQuery(Query& q) {
                 result = proveNX(q, task, zoneinfo, false);
                 if (result != DataSrc::SUCCESS) {
                     m.setRcode(Rcode::SERVFAIL());
+                    logger.error(DATASRC_QUERY_PROVE_NX_FAIL).arg(task->qname);
                     return;
                 }
             }
@@ -1116,6 +1185,7 @@ DataSrc::doQuery(Query& q) {
         } else {
             // Should never be reached!
             m.setRcode(Rcode::SERVFAIL());
+            logger.error(DATASRC_QUERY_UNKNOWN_RESULT);
             return;
         }
     }
@@ -1211,7 +1281,10 @@ DataSrc::findReferral(const Name& qname, const RRClass& qclass,
 
 void
 MetaDataSrc::addDataSrc(ConstDataSrcPtr data_src) {
+    LOG_DEBUG(logger, DBG_TRACE_BASIC, DATASRC_META_ADD);
     if (getClass() != RRClass::ANY() && data_src->getClass() != getClass()) {
+        logger.error(DATASRC_META_ADD_CLASS_MISMATCH).
+            arg(data_src->getClass()).arg(getClass());
         isc_throw(Unexpected, "class mismatch");
     }
 
@@ -1220,6 +1293,7 @@ MetaDataSrc::addDataSrc(ConstDataSrcPtr data_src) {
 
 void
 MetaDataSrc::removeDataSrc(ConstDataSrcPtr data_src) {
+    LOG_DEBUG(logger, DBG_TRACE_BASIC, DATASRC_META_REMOVE);
     std::vector<ConstDataSrcPtr>::iterator it, itr;
     for (it = data_sources.begin(); it != data_sources.end(); ++it) {
         if (*it == data_src) {

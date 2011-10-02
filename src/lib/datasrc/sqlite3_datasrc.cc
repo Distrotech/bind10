@@ -12,18 +12,23 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
 #include <string>
 #include <sstream>
 
 #include <sqlite3.h>
 
 #include <datasrc/sqlite3_datasrc.h>
+#include <datasrc/logger.h>
 
 #include <dns/rrttl.h>
 #include <dns/rdata.h>
 #include <dns/rdataclass.h>
 #include <dns/rrset.h>
 #include <dns/rrsetlist.h>
+
+#define SQLITE_SCHEMA_VERSION 1
 
 using namespace std;
 using namespace isc::dns;
@@ -75,6 +80,8 @@ const char* const SCHEMA_LIST[] = {
     "CREATE INDEX nsec3_byhash ON nsec3 (hash)",
     NULL
 };
+
+const char* const q_version_str = "SELECT version FROM schema_version";
 
 const char* const q_zone_str = "SELECT id FROM zones WHERE name=?1";
 
@@ -227,6 +234,8 @@ Sqlite3DataSrc::findRecords(const Name& name, const RRType& rdtype,
                             RRsetList& target, const Name* zonename,
                             const Mode mode, uint32_t& flags) const
 {
+    LOG_DEBUG(logger, DBG_TRACE_DETAILED, DATASRC_SQLITE_FINDREC).arg(name).
+        arg(rdtype);
     flags = 0;
     int zone_id = (zonename == NULL) ? findClosest(name, NULL) :
         findClosest(*zonename, NULL);
@@ -251,7 +260,7 @@ Sqlite3DataSrc::findRecords(const Name& name, const RRType& rdtype,
         }
         break;
     }
-    
+
     sqlite3_reset(query);
     sqlite3_clear_bindings(query);
 
@@ -292,7 +301,7 @@ Sqlite3DataSrc::findRecords(const Name& name, const RRType& rdtype,
     //
     sqlite3_reset(dbparameters->q_count_);
     sqlite3_clear_bindings(dbparameters->q_count_);
-    
+
     rc = sqlite3_bind_int(dbparameters->q_count_, 1, zone_id);
     if (rc != SQLITE_OK) {
         isc_throw(Sqlite3Error, "Could not bind zone ID " << zone_id <<
@@ -345,12 +354,16 @@ Sqlite3DataSrc::findClosest(const Name& name, unsigned int* position) const {
 
 void
 Sqlite3DataSrc::findClosestEnclosure(DataSrcMatch& match) const {
+    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_SQLITE_ENCLOSURE).
+        arg(match.getName());
     if (match.getClass() != getClass() && match.getClass() != RRClass::ANY()) {
         return;
     }
 
     unsigned int position;
     if (findClosest(match.getName(), &position) == -1) {
+        LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_SQLITE_ENCLOSURE_NOT_FOUND)
+                  .arg(match.getName());
         return;
     }
 
@@ -362,9 +375,11 @@ Sqlite3DataSrc::findPreviousName(const Name& qname,
                                  Name& target,
                                  const Name* zonename) const
 {
+    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_SQLITE_PREVIOUS).arg(qname);
     const int zone_id = (zonename == NULL) ?
         findClosest(qname, NULL) : findClosest(*zonename, NULL);
     if (zone_id < 0) {
+        LOG_ERROR(logger, DATASRC_SQLITE_PREVIOUS_NO_ZONE).arg(qname.toText());
         return (ERROR);
     }
     
@@ -402,8 +417,11 @@ Sqlite3DataSrc::findCoveringNSEC3(const Name& zonename,
                                   string& hashstr,
                                   RRsetList& target) const
 {
+    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_SQLITE_FIND_NSEC3).
+        arg(zonename).arg(hashstr);
     const int zone_id = findClosest(zonename, NULL);
     if (zone_id < 0) {
+        LOG_ERROR(logger, DATASRC_SQLITE_FIND_NSEC3_NO_ZONE).arg(zonename);
         return (ERROR);
     }
 
@@ -484,7 +502,11 @@ Sqlite3DataSrc::findRRset(const Name& qname,
                           uint32_t& flags,
                           const Name* zonename) const
 {
+    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_SQLITE_FIND).arg(qname).
+        arg(qtype);
     if (qclass != getClass() && qclass != RRClass::ANY()) {
+        LOG_ERROR(logger, DATASRC_SQLITE_FIND_BAD_CLASS).arg(getClass()).
+            arg(qclass);
         return (ERROR);
     }
     findRecords(qname, qtype, target, zonename, NORMAL, flags);
@@ -499,7 +521,11 @@ Sqlite3DataSrc::findExactRRset(const Name& qname,
                                uint32_t& flags,
                                const Name* zonename) const
 {
+    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_SQLITE_FINDEXACT).arg(qname).
+        arg(qtype);
     if (qclass != getClass() && qclass != RRClass::ANY()) {
+        LOG_ERROR(logger, DATASRC_SQLITE_FINDEXACT_BAD_CLASS).arg(getClass()).
+            arg(qclass);
         return (ERROR);
     }
     findRecords(qname, qtype, target, zonename, NORMAL, flags);
@@ -523,7 +549,10 @@ Sqlite3DataSrc::findAddrs(const Name& qname,
                           uint32_t& flags,
                           const Name* zonename) const
 {
+    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_SQLITE_FINDADDRS).arg(qname);
     if (qclass != getClass() && qclass != RRClass::ANY()) {
+        LOG_ERROR(logger, DATASRC_SQLITE_FINDADDRS_BAD_CLASS).arg(getClass()).
+            arg(qclass);
         return (ERROR);
     }
     findRecords(qname, RRType::ANY(), target, zonename, ADDRESS, flags);
@@ -537,8 +566,11 @@ Sqlite3DataSrc::findReferral(const Name& qname,
                              uint32_t& flags,
                              const Name* zonename) const
 {
+    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_SQLITE_FINDREF).arg(qname);
     if (qclass != getClass() && qclass != RRClass::ANY()) {
-            return (ERROR);
+        LOG_ERROR(logger, DATASRC_SQLITE_FINDREF_BAD_CLASS).arg(getClass()).
+            arg(qclass);
+        return (ERROR);
     }
     findRecords(qname, RRType::ANY(), target, zonename, DELEGATION, flags);
     return (SUCCESS);
@@ -546,9 +578,12 @@ Sqlite3DataSrc::findReferral(const Name& qname,
 
 Sqlite3DataSrc::Sqlite3DataSrc() :
     dbparameters(new Sqlite3Parameters)
-{}
+{
+    LOG_DEBUG(logger, DBG_TRACE_BASIC, DATASRC_SQLITE_CREATE);
+}
 
 Sqlite3DataSrc::~Sqlite3DataSrc() {
+    LOG_DEBUG(logger, DBG_TRACE_BASIC, DATASRC_SQLITE_DESTROY);
     if (dbparameters->db_ != NULL) {
         close();
     }
@@ -624,28 +659,94 @@ prepare(sqlite3* const db, const char* const statement) {
     return (prepared);
 }
 
-void
-checkAndSetupSchema(Sqlite3Initializer* initializer) {
-    sqlite3* const db = initializer->params_.db_;
+// small function to sleep for 0.1 seconds, needed when waiting for
+// exclusive database locks (which should only occur on startup, and only
+// when the database has not been created yet)
+void do_sleep() {
+#ifdef _WIN32
+    Sleep(100);
+#else
+    struct timespec req;
+    req.tv_sec = 0;
+    req.tv_nsec = 100000000;
+    nanosleep(&req, NULL);
+#endif
+}
 
+// returns the schema version if the schema version table exists
+// returns -1 if it does not
+int check_schema_version(sqlite3* db) {
     sqlite3_stmt* prepared = NULL;
-    if (sqlite3_prepare_v2(db, "SELECT version FROM schema_version", -1,
-                           &prepared, NULL) == SQLITE_OK &&
-        sqlite3_step(prepared) == SQLITE_ROW) {
-        initializer->params_.version_ = sqlite3_column_int(prepared, 0);
-        sqlite3_finalize(prepared);
-    } else {
-        if (prepared != NULL) {
-            sqlite3_finalize(prepared);
+    // At this point in time, the database might be exclusively locked, in
+    // which case even prepare() will return BUSY, so we may need to try a
+    // few times
+    for (size_t i = 0; i < 50; ++i) {
+        int rc = sqlite3_prepare_v2(db, q_version_str, -1, &prepared, NULL);
+        if (rc == SQLITE_ERROR) {
+            // this is the error that is returned when the table does not
+            // exist
+            return (-1);
+        } else if (rc == SQLITE_OK) {
+            break;
+        } else if (rc != SQLITE_BUSY || i == 50) {
+            isc_throw(Sqlite3Error, "Unable to prepare version query: "
+                        << rc << " " << sqlite3_errmsg(db));
         }
+        do_sleep();
+    }
+    if (sqlite3_step(prepared) != SQLITE_ROW) {
+        isc_throw(Sqlite3Error,
+                    "Unable to query version: " << sqlite3_errmsg(db));
+    }
+    int version = sqlite3_column_int(prepared, 0);
+    sqlite3_finalize(prepared);
+    return (version);
+}
+
+// return db version
+int create_database(sqlite3* db) {
+    // try to get an exclusive lock. Once that is obtained, do the version
+    // check *again*, just in case this process was racing another
+    //
+    // try for 5 secs (50*0.1)
+    int rc;
+    logger.info(DATASRC_SQLITE_SETUP);
+    for (size_t i = 0; i < 50; ++i) {
+        rc = sqlite3_exec(db, "BEGIN EXCLUSIVE TRANSACTION", NULL, NULL,
+                            NULL);
+        if (rc == SQLITE_OK) {
+            break;
+        } else if (rc != SQLITE_BUSY || i == 50) {
+            isc_throw(Sqlite3Error, "Unable to acquire exclusive lock "
+                        "for database creation: " << sqlite3_errmsg(db));
+        }
+        do_sleep();
+    }
+    int schema_version = check_schema_version(db);
+    if (schema_version == -1) {
         for (int i = 0; SCHEMA_LIST[i] != NULL; ++i) {
             if (sqlite3_exec(db, SCHEMA_LIST[i], NULL, NULL, NULL) !=
                 SQLITE_OK) {
                 isc_throw(Sqlite3Error,
-                          "Failed to set up schema " << SCHEMA_LIST[i]);
+                        "Failed to set up schema " << SCHEMA_LIST[i]);
             }
         }
+        sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, NULL);
+        return (SQLITE_SCHEMA_VERSION);
+    } else {
+        return (schema_version);
     }
+}
+
+void
+checkAndSetupSchema(Sqlite3Initializer* initializer) {
+    sqlite3* const db = initializer->params_.db_;
+
+    int schema_version = check_schema_version(db);
+    if (schema_version != SQLITE_SCHEMA_VERSION) {
+        schema_version = create_database(db);
+    }
+    initializer->params_.version_ = schema_version;
 
     initializer->params_.q_zone_ = prepare(db, q_zone_str);
     initializer->params_.q_record_ = prepare(db, q_record_str);
@@ -664,6 +765,7 @@ checkAndSetupSchema(Sqlite3Initializer* initializer) {
 //
 void
 Sqlite3DataSrc::open(const string& name) {
+    LOG_DEBUG(logger, DBG_TRACE_BASIC, DATASRC_SQLITE_OPEN).arg(name);
     if (dbparameters->db_ != NULL) {
         isc_throw(DataSourceError, "Duplicate SQLite open with " << name);
     }
@@ -683,6 +785,7 @@ Sqlite3DataSrc::open(const string& name) {
 //
 DataSrc::Result
 Sqlite3DataSrc::close(void) {
+    LOG_DEBUG(logger, DBG_TRACE_BASIC, DATASRC_SQLITE_CLOSE);
     if (dbparameters->db_ == NULL) {
         isc_throw(DataSourceError,
                   "SQLite data source is being closed before open");

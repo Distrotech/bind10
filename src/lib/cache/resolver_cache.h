@@ -76,6 +76,9 @@ public:
 ///
 /// \note Public interaction with the cache should be through ResolverCache,
 /// not directly with this one. (TODO: make this private/hidden/local to the .cc?)
+///
+/// \todo The resolver cache class should provide the interfaces for
+///       loading, dumping and resizing.
 class ResolverClassCache {
 public:
     /// \brief Default Constructor.
@@ -194,6 +197,7 @@ private:
 
     /// \brief cache the SOA rrset parsed from the negative response message.
     RRsetCachePtr negative_soa_cache_;
+
     // silence MSVC warning C4512: assignment operator could not be generated
     ResolverClassCache& operator=(ResolverClassCache const&);
 };
@@ -301,23 +305,6 @@ public:
     /// \overload
     ///
     bool update(const isc::dns::ConstRRsetPtr& rrset_ptr);
-
-    /// \name Cache Serialization
-    //@{
-    /// \brief Dump the cache content to one file.
-    ///
-    /// \param file_name file to write to
-    ///
-    /// \todo It should can be dumped to one configured database.
-    void dump(const std::string& file_name);
-
-    /// \brief Load the cache from one file.
-    ///
-    /// \param file to load from
-    ///
-    /// \todo It should can be loaded from one configured database.
-    void load(const std::string& file_name);
-    //@}
 
 private:
     /// \brief Returns the class-specific subcache

@@ -28,7 +28,13 @@ import tempfile
 import json
 import errno
 from isc.cc import data
-from isc.config import ccsession, config_data
+from isc.config import ccsession, config_data, module_spec
+from isc.util.file import path_search
+import bind10_config
+import isc.log
+from isc.log_messages.cfgmgr_messages import *
+
+logger = isc.log.Logger("cfgmgr")
 
 class ConfigManagerDataReadError(Exception):
     """This exception is thrown when there is an error while reading
@@ -89,7 +95,7 @@ class ConfigManagerData:
                 elif file_config['version'] == 1:
                     # only format change, no other changes necessary
                     file_config['version'] = 2
-                    print("[b10-cfgmgr] Updating configuration database version from 1 to 2")
+                    logger.info(CFGMGR_AUTOMATIC_CONFIG_DATABASE_UPDATE, 1, 2)
                     config.data = file_config
                 else:
                     if config_data.BIND10_CONFIG_DATA_VERSION > file_config['version']:
@@ -131,12 +137,9 @@ class ConfigManagerData:
             else:
                 os.rename(filename, self.db_filename)
         except IOError as ioe:
-            # TODO: log this (level critical)
-            print("[b10-cfgmgr] Unable to write configuration file; configuration not stored: " + str(ioe))
-            # TODO: debug option to keep file?
+            logger.error(CFGMGR_IOERROR_WHILE_WRITING_CONFIGURATION, ioe)
         except OSError as ose:
-            # TODO: log this (level critical)
-            print("[b10-cfgmgr] Unable to write configuration file; configuration not stored: " + str(ose))
+            logger.error(CFGMGR_OSERROR_WHILE_WRITING_CONFIGURATION, ose)
         try:
             if filename and os.path.exists(filename):
                 os.remove(filename)
@@ -182,6 +185,20 @@ class ConfigManager:
         self.cc.group_subscribe("ConfigManager")
         self.cc.group_subscribe("Boss", "ConfigManager")
         self.running = False
+        # As a core module, CfgMgr is different than other modules,
+        # as it does not use a ModuleCCSession, and hence needs
+        # to handle logging config on its own
+        self.log_config_data = config_data.ConfigData(
+            isc.config.module_spec_from_file(
+                path_search('logging.spec',
+                bind10_config.PLUGIN_PATHS)))
+        # store the logging 'module' name for easier reference
+        self.log_module_name = self.log_config_data.get_module_spec().get_module_name()
+
+    def check_logging_config(self, config):
+        if self.log_module_name in config:
+            ccsession.default_logconfig_handler(config[self.log_module_name],
+                                                self.log_config_data)
 
     def notify_boss(self):
         """Notifies the Boss module that the Config Manager is running"""
@@ -214,7 +231,7 @@ class ConfigManager:
            is returned"""
         if module_name:
             if module_name in self.module_specs:
-                return self.module_specs[module_name]
+                return self.module_specs[module_name].get_full_spec()
             else:
                 # TODO: log error?
                 return {}
@@ -250,12 +267,26 @@ class ConfigManager:
                 commands[module_name] = self.module_specs[module_name].get_commands_spec()
         return commands
 
+    def get_statistics_spec(self, name = None):
+        """Returns a dict containing 'module_name': statistics_spec for
+           all modules. If name is specified, only that module will
+           be included"""
+        statistics = {}
+        if name:
+            if name in self.module_specs:
+                statistics[name] = self.module_specs[name].get_statistics_spec()
+        else:
+            for module_name in self.module_specs.keys():
+                statistics[module_name] = self.module_specs[module_name].get_statistics_spec()
+        return statistics
+
     def read_config(self):
         """Read the current configuration from the file specificied at init()"""
         try:
             self.config = ConfigManagerData.read_from_file(self.data_path,
                                                            self.\
                                                            database_filename)
+            self.check_logging_config(self.config.data);
         except ConfigManagerDataEmpty:
             # ok, just start with an empty config
             self.config = ConfigManagerData(self.data_path,
@@ -272,7 +303,12 @@ class ConfigManager:
             if type(cmd) == dict:
                 if 'module_name' in cmd and cmd['module_name'] != '':
                     module_name = cmd['module_name']
-                    answer = ccsession.create_answer(0, self.get_module_spec(module_name))
+                    spec = self.get_module_spec(cmd['module_name'])
+                    if type(spec) != type({}):
+                        # this is a ModuleSpec object.  Extract the
+                        # internal spec.
+                        spec = spec.get_full_spec()
+                    answer = ccsession.create_answer(0, spec)
                 else:
                     answer = ccsession.create_answer(1, "Bad module_name in get_module_spec command")
             else:
@@ -357,6 +393,9 @@ class ConfigManager:
                 answer, env = self.cc.group_recvmsg(False, seq)
             except isc.cc.SessionTimeout:
                 answer = ccsession.create_answer(1, "Timeout waiting for answer from " + module_name)
+            except isc.cc.SessionError as se:
+                logger.error(CFGMGR_BAD_UPDATE_RESPONSE_FROM_MODULE, module_name, se)
+                answer = ccsession.create_answer(1, "Unable to parse response from " + module_name + ": " + str(se))
         if answer:
             rcode, val = ccsession.parse_answer(answer)
             if rcode == 0:
@@ -383,6 +422,8 @@ class ConfigManager:
                         got_error = True
                         err_list.append(val)
         if not got_error:
+            # if Logging config is in there, update our config as well
+            self.check_logging_config(cmd);
             self.write_config()
             return ccsession.create_answer(0)
         else:
@@ -429,6 +470,8 @@ class ConfigManager:
         if cmd:
             if cmd == ccsession.COMMAND_GET_COMMANDS_SPEC:
                 answer = ccsession.create_answer(0, self.get_commands_spec())
+            elif cmd == ccsession.COMMAND_GET_STATISTICS_SPEC:
+                answer = ccsession.create_answer(0, self.get_statistics_spec())
             elif cmd == ccsession.COMMAND_GET_MODULE_SPEC:
                 answer = self._handle_get_module_spec(arg)
             elif cmd == ccsession.COMMAND_GET_CONFIG:
@@ -436,8 +479,6 @@ class ConfigManager:
             elif cmd == ccsession.COMMAND_SET_CONFIG:
                 answer = self._handle_set_config(arg)
             elif cmd == ccsession.COMMAND_SHUTDOWN:
-                # TODO: logging
-                #print("[b10-cfgmgr] Received shutdown command")
                 self.running = False
                 answer = ccsession.create_answer(0)
             elif cmd == ccsession.COMMAND_MODULE_SPEC:

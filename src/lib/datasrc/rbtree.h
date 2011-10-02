@@ -292,18 +292,27 @@ private:
 
 
 // This is only to support NULL nodes.
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4355)
+#endif
+
 template <typename T>
 RBNode<T>::RBNode() :
+    parent_(this),
+    left_(this),
+    right_(this),
     color_(BLACK),
     // dummy name, the value doesn't matter:
     name_(isc::dns::Name::ROOT_NAME()),
+    down_(this),
     flags_(0)
 {
-    parent_ = this;
-    left_ = this;
-    right_ = this;
-    down_ = this;
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 template <typename T>
 RBNode<T>::RBNode(const isc::dns::Name& name) :
@@ -704,9 +713,9 @@ public:
     /// \brief Find with callback and node chain.
     ///
     /// This version of \c find() is specifically designed for the backend
-    /// of the \c MemoryZone class, and implements all necessary features
-    /// for that purpose.  Other applications shouldn't need these additional
-    /// features, and should normally use the simpler versions.
+    /// of the \c InMemoryZoneFinder class, and implements all necessary
+    /// features for that purpose.  Other applications shouldn't need these
+    /// additional features, and should normally use the simpler versions.
     ///
     /// This version of \c find() calls the callback whenever traversing (on
     /// the way from root down the tree) a marked node on the way down through

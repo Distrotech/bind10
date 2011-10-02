@@ -22,6 +22,8 @@ import os
 from isc.config.ccsession import *
 from isc.config.config_data import BIND10_CONFIG_DATA_VERSION
 from unittest_fakesession import FakeModuleCCSession, WouldBlockForever
+import bind10_config
+import isc.log
 
 class TestHelperFunctions(unittest.TestCase):
     def test_parse_answer(self):
@@ -106,8 +108,11 @@ class TestModuleCCSession(unittest.TestCase):
     def spec_file(self, file):
         return self.data_path + os.sep + file
         
-    def create_session(self, spec_file_name, config_handler = None, command_handler = None, cc_session = None):
-        return ModuleCCSession(self.spec_file(spec_file_name), config_handler, command_handler, cc_session)
+    def create_session(self, spec_file_name, config_handler = None,
+                       command_handler = None, cc_session = None):
+        return ModuleCCSession(self.spec_file(spec_file_name),
+                               config_handler, command_handler,
+                               cc_session, False)
 
     def test_init(self):
         fake_session = FakeModuleCCSession()
@@ -213,6 +218,31 @@ class TestModuleCCSession(unittest.TestCase):
         fake_session.group_sendmsg({'result': [ 0 ]}, "Spec2")
         fake_session.group_sendmsg({'result': [ 1, "just an error" ]}, "Spec2")
         mccs.start()
+        self.assertEqual(len(fake_session.message_queue), 2)
+
+        self.assertEqual({'command': ['module_spec', mccs.specification._module_spec]},
+                         fake_session.get_message('ConfigManager', None))
+        self.assertEqual({'command': ['get_config', {'module_name': 'Spec2'}]},
+                         fake_session.get_message('ConfigManager', None))
+
+    def test_start5(self):
+        fake_session = FakeModuleCCSession()
+        mccs = self.create_session("spec2.spec", None, None, fake_session)
+        mccs.set_config_handler(self.my_config_handler_ok)
+        self.assertEqual(len(fake_session.message_queue), 0)
+        fake_session.group_sendmsg(None, 'Spec2')
+        fake_session.group_sendmsg(None, 'Spec2')
+        self.assertRaises(ModuleCCSessionError, mccs.start)
+        self.assertEqual(len(fake_session.message_queue), 2)
+        self.assertEqual({'command': ['module_spec', mccs.specification._module_spec]},
+                         fake_session.get_message('ConfigManager', None))
+        self.assertEqual({'command': ['get_config', {'module_name': 'Spec2'}]},
+                         fake_session.get_message('ConfigManager', None))
+
+        self.assertEqual(len(fake_session.message_queue), 0)
+        fake_session.group_sendmsg({'result': [ 0 ]}, "Spec2")
+        fake_session.group_sendmsg({'result': [ 0, {"Wrong": True} ]}, "Spec2")
+        self.assertRaises(ModuleCCSessionError, mccs.start)
         self.assertEqual(len(fake_session.message_queue), 2)
 
         self.assertEqual({'command': ['module_spec', mccs.specification._module_spec]},
@@ -579,7 +609,43 @@ class TestModuleCCSession(unittest.TestCase):
         self.assertEqual(len(fake_session.message_queue), 1)
         mccs.check_command()
         self.assertEqual(len(fake_session.message_queue), 0)
-        
+
+    def test_logconfig_handler(self):
+        # test whether default_logconfig_handler reacts nicely to
+        # bad data. We assume the actual logger output is tested
+        # elsewhere
+        self.assertRaises(TypeError, default_logconfig_handler);
+        self.assertRaises(TypeError, default_logconfig_handler, 1);
+
+        spec = isc.config.module_spec_from_file(
+            path_search('logging.spec', bind10_config.PLUGIN_PATHS))
+        config_data = ConfigData(spec)
+
+        self.assertRaises(TypeError, default_logconfig_handler, 1, config_data)
+
+        default_logconfig_handler({}, config_data)
+
+        # Wrong data should not raise, but simply not be accepted
+        # This would log a lot of errors, so we may want to suppress that later
+        default_logconfig_handler({ "bad_data": "indeed" }, config_data)
+        default_logconfig_handler({ "bad_data": 1}, config_data)
+        default_logconfig_handler({ "bad_data": 1123 }, config_data)
+        default_logconfig_handler({ "bad_data": True }, config_data)
+        default_logconfig_handler({ "bad_data": False }, config_data)
+        default_logconfig_handler({ "bad_data": 1.1 }, config_data)
+        default_logconfig_handler({ "bad_data": [] }, config_data)
+        default_logconfig_handler({ "bad_data": [[],[],[[1, 3, False, "foo" ]]] },
+                                  config_data)
+        default_logconfig_handler({ "bad_data": [ 1, 2, { "b": { "c": "d" } } ] },
+                                  config_data)
+
+        # Try a correct config
+        log_conf = {"loggers":
+                       [{"name": "b10-xfrout", "output_options":
+                           [{"output": "/tmp/bind10.log",
+                                       "destination": "file",
+                                       "flush": True}]}]}
+        default_logconfig_handler(log_conf, config_data)
 
 class fakeData:
     def decode(self):
@@ -629,6 +695,12 @@ class TestUIModuleCCSession(unittest.TestCase):
         fake_conn.set_get_answer('/config_data', { 'version': BIND10_CONFIG_DATA_VERSION })
         return UIModuleCCSession(fake_conn)
 
+    def create_uccs_named_set(self, fake_conn):
+        module_spec = isc.config.module_spec_from_file(self.spec_file("spec32.spec"))
+        fake_conn.set_get_answer('/module_spec', { module_spec.get_module_name(): module_spec.get_full_spec()})
+        fake_conn.set_get_answer('/config_data', { 'version': BIND10_CONFIG_DATA_VERSION })
+        return UIModuleCCSession(fake_conn)
+
     def test_init(self):
         fake_conn = fakeUIConn()
         fake_conn.set_get_answer('/module_spec', {})
@@ -649,12 +721,14 @@ class TestUIModuleCCSession(unittest.TestCase):
     def test_add_remove_value(self):
         fake_conn = fakeUIConn()
         uccs = self.create_uccs2(fake_conn)
+
         self.assertRaises(isc.cc.data.DataNotFoundError, uccs.add_value, 1, "a")
         self.assertRaises(isc.cc.data.DataNotFoundError, uccs.add_value, "no_such_item", "a")
         self.assertRaises(isc.cc.data.DataNotFoundError, uccs.add_value, "Spec2/item1", "a")
         self.assertRaises(isc.cc.data.DataNotFoundError, uccs.remove_value, 1, "a")
         self.assertRaises(isc.cc.data.DataNotFoundError, uccs.remove_value, "no_such_item", "a")
         self.assertRaises(isc.cc.data.DataNotFoundError, uccs.remove_value, "Spec2/item1", "a")
+
         self.assertEqual({}, uccs._local_changes)
         uccs.add_value("Spec2/item5", "foo")
         self.assertEqual({'Spec2': {'item5': ['a', 'b', 'foo']}}, uccs._local_changes)
@@ -664,10 +738,37 @@ class TestUIModuleCCSession(unittest.TestCase):
         uccs.remove_value("Spec2/item5", "foo")
         uccs.add_value("Spec2/item5", "foo")
         self.assertEqual({'Spec2': {'item5': ['foo']}}, uccs._local_changes)
-        uccs.add_value("Spec2/item5", "foo")
+        self.assertRaises(isc.cc.data.DataAlreadyPresentError,
+                          uccs.add_value, "Spec2/item5", "foo")
         self.assertEqual({'Spec2': {'item5': ['foo']}}, uccs._local_changes)
+        self.assertRaises(isc.cc.data.DataNotFoundError,
+                          uccs.remove_value, "Spec2/item5[123]", None)
         uccs.remove_value("Spec2/item5[0]", None)
         self.assertEqual({'Spec2': {'item5': []}}, uccs._local_changes)
+        uccs.add_value("Spec2/item5", None);
+        self.assertEqual({'Spec2': {'item5': ['']}}, uccs._local_changes)
+
+    def test_add_remove_value_named_set(self):
+        fake_conn = fakeUIConn()
+        uccs = self.create_uccs_named_set(fake_conn)
+        value, status = uccs.get_value("/Spec32/named_set_item")
+        self.assertEqual({'a': 1, 'b': 2}, value)
+        uccs.add_value("/Spec32/named_set_item", "foo")
+        value, status = uccs.get_value("/Spec32/named_set_item")
+        self.assertEqual({'a': 1, 'b': 2, 'foo': 3}, value)
+
+        uccs.remove_value("/Spec32/named_set_item", "a")
+        uccs.remove_value("/Spec32/named_set_item", "foo")
+        value, status = uccs.get_value("/Spec32/named_set_item")
+        self.assertEqual({'b': 2}, value)
+
+        self.assertRaises(isc.cc.data.DataNotFoundError,
+                          uccs.set_value,
+                          "/Spec32/named_set_item/no_such_item",
+                          4)
+        self.assertRaises(isc.cc.data.DataNotFoundError,
+                          uccs.remove_value, "/Spec32/named_set_item",
+                          "no_such_item")
 
     def test_commit(self):
         fake_conn = fakeUIConn()
@@ -677,5 +778,6 @@ class TestUIModuleCCSession(unittest.TestCase):
         uccs.commit()
 
 if __name__ == '__main__':
+    isc.log.init("bind10")
     unittest.main()
 

@@ -21,12 +21,11 @@ import time
 import socket
 from isc.datasrc import sqlite3_ds
 from isc.notify import notify_out, SOCK_DATA
+import isc.log
 
 # our fake socket, where we can read and insert messages
 class MockSocket():
-    def __init__(self, family, type):
-        self.family = family
-        self.type = type
+    def __init__(self):
         self._local_sock, self._remote_sock = socket.socketpair()
 
     def connect(self, to):
@@ -51,12 +50,16 @@ class MockSocket():
         return self._remote_sock
 
 # We subclass the ZoneNotifyInfo class we're testing here, only
-# to override the prepare_notify_out() method.
+# to override the create_socket() method.
 class MockZoneNotifyInfo(notify_out.ZoneNotifyInfo):
-    def prepare_notify_out(self):
-        super().prepare_notify_out();
+    def create_socket(self, addrinfo):
+        super().create_socket(addrinfo)
+        # before replacing the underlying socket, remember the address family
+        # of the original socket so that tests can check that.
+        self.sock_family = self._sock.family
         self._sock.close()
-        self._sock = MockSocket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._sock = MockSocket()
+        return self._sock
 
 class TestZoneNotifyInfo(unittest.TestCase):
     def setUp(self):
@@ -64,11 +67,12 @@ class TestZoneNotifyInfo(unittest.TestCase):
 
     def test_prepare_finish_notify_out(self):
         self.info.prepare_notify_out()
-        self.assertNotEqual(self.info._sock, None)
+        self.assertNotEqual(self.info.notify_timeout, None)
         self.assertIsNone(self.info._notify_current)
 
         self.info.finish_notify_out()
         self.assertEqual(self.info._sock, None)
+        self.assertEqual(self.info.notify_timeout, None)
 
     def test_set_next_notify_target(self):
         self.info.notify_slaves.append(('127.0.0.1', 53))
@@ -76,7 +80,6 @@ class TestZoneNotifyInfo(unittest.TestCase):
         self.info.prepare_notify_out()
         self.assertEqual(self.info.get_current_notify_target(), ('127.0.0.1', 53))
 
-        self.assertEqual('127.0.0.1#53', notify_out.addr_to_str(('127.0.0.1', 53)))
         self.info.set_next_notify_target()
         self.assertEqual(self.info.get_current_notify_target(), ('1.1.1.1', 5353))
         self.info.set_next_notify_target()
@@ -99,36 +102,56 @@ class TestNotifyOut(unittest.TestCase):
         self._notify._notify_infos[('example.org.', 'IN')] = MockZoneNotifyInfo('example.org.', 'IN')
         self._notify._notify_infos[('example.org.', 'CH')] = MockZoneNotifyInfo('example.org.', 'CH')
 
-        info = self._notify._notify_infos[('example.net.', 'IN')]
-        info.notify_slaves.append(('127.0.0.1', 53))
-        info.notify_slaves.append(('1.1.1.1', 5353))
+        net_info = self._notify._notify_infos[('example.net.', 'IN')]
+        net_info.notify_slaves.append(('127.0.0.1', 53))
+        net_info.notify_slaves.append(('1.1.1.1', 5353))
+        com_info = self._notify._notify_infos[('example.com.', 'IN')]
+        com_info.notify_slaves.append(('1.1.1.1', 5353))
+        com_ch_info = self._notify._notify_infos[('example.com.', 'CH')]
+        com_ch_info.notify_slaves.append(('1.1.1.1', 5353))
 
     def tearDown(self):
         self._db_file.close()
         os.unlink(self._db_file.name)
 
     def test_send_notify(self):
+        notify_out._MAX_NOTIFY_NUM = 2
+
+        self._notify._nonblock_event.clear()
         self._notify.send_notify('example.net')
+        self.assertTrue(self._notify._nonblock_event.isSet())
         self.assertEqual(self._notify.notify_num, 1)
-        self.assertEqual(self._notify._notifying_zones[0], ('example.net.','IN'))
+        self.assertEqual(self._notify._notifying_zones[0], ('example.net.', 'IN'))
 
         self._notify.send_notify('example.com')
         self.assertEqual(self._notify.notify_num, 2)
-        self.assertEqual(self._notify._notifying_zones[1], ('example.com.','IN'))
+        self.assertEqual(self._notify._notifying_zones[1], ('example.com.', 'IN'))
 
-        notify_out._MAX_NOTIFY_NUM = 3
+        # notify_num is equal to MAX_NOTIFY_NUM, append it to waiting_zones list.
+        self._notify._nonblock_event.clear()
         self._notify.send_notify('example.com', 'CH')
-        self.assertEqual(self._notify.notify_num, 3)
-        self.assertEqual(self._notify._notifying_zones[2], ('example.com.','CH'))
-
-        self._notify.send_notify('example.org.')
-        self.assertEqual(self._notify._waiting_zones[0], ('example.org.', 'IN'))
-        self._notify.send_notify('example.org.')
+        # add waiting zones won't set nonblock_event.
+        self.assertFalse(self._notify._nonblock_event.isSet())
+        self.assertEqual(self._notify.notify_num, 2)
         self.assertEqual(1, len(self._notify._waiting_zones))
 
-        self._notify.send_notify('example.org.', 'CH')
+        # zone_id is already in notifying_zones list, append it to waiting_zones list.
+        self._notify.send_notify('example.net')
         self.assertEqual(2, len(self._notify._waiting_zones))
-        self.assertEqual(self._notify._waiting_zones[1], ('example.org.', 'CH'))
+        self.assertEqual(self._notify._waiting_zones[1], ('example.net.', 'IN'))
+
+        # zone_id is already in waiting_zones list, skip it.
+        self._notify.send_notify('example.net')
+        self.assertEqual(2, len(self._notify._waiting_zones))
+
+        # has no slave masters, skip it.
+        self._notify.send_notify('example.org.', 'CH')
+        self.assertEqual(self._notify.notify_num, 2)
+        self.assertEqual(2, len(self._notify._waiting_zones))
+
+        self._notify.send_notify('example.org.')
+        self.assertEqual(self._notify.notify_num, 2)
+        self.assertEqual(2, len(self._notify._waiting_zones))
 
     def test_wait_for_notify_reply(self):
         self._notify.send_notify('example.net.')
@@ -139,6 +162,11 @@ class TestNotifyOut(unittest.TestCase):
         replied_zones, timeout_zones = self._notify._wait_for_notify_reply()
         self.assertEqual(len(replied_zones), 0)
         self.assertEqual(len(timeout_zones), 2)
+
+        # Trigger timeout events to "send" notifies via a mock socket
+        for zone in timeout_zones:
+            self._notify._zone_notify_handler(timeout_zones[zone],
+                                              notify_out._EVENT_TIMEOUT)
 
         # Now make one socket be readable
         self._notify._notify_infos[('example.net.', 'IN')].notify_timeout = time.time() + 10
@@ -171,6 +199,7 @@ class TestNotifyOut(unittest.TestCase):
         self._notify.send_notify('example.net.')
         self._notify.send_notify('example.com.')
         notify_out._MAX_NOTIFY_NUM = 2
+        # zone example.org. has no slave servers.
         self._notify.send_notify('example.org.')
         self._notify.send_notify('example.com.', 'CH')
 
@@ -179,48 +208,71 @@ class TestNotifyOut(unittest.TestCase):
         self.assertEqual(0, info.notify_try_num)
         self.assertEqual(info.get_current_notify_target(), ('1.1.1.1', 5353))
         self.assertEqual(2, self._notify.notify_num)
+        self.assertEqual(1, len(self._notify._waiting_zones))
 
         self._notify._notify_next_target(info)
         self.assertEqual(0, info.notify_try_num)
         self.assertIsNone(info.get_current_notify_target())
         self.assertEqual(2, self._notify.notify_num)
-        self.assertEqual(1, len(self._notify._waiting_zones))
+        self.assertEqual(0, len(self._notify._waiting_zones))
 
         example_com_info = self._notify._notify_infos[('example.com.', 'IN')]
         self._notify._notify_next_target(example_com_info)
-        self.assertEqual(2, self._notify.notify_num)
-        self.assertEqual(2, len(self._notify._notifying_zones))
+        self.assertEqual(1, self._notify.notify_num)
+        self.assertEqual(1, len(self._notify._notifying_zones))
+        self.assertEqual(0, len(self._notify._waiting_zones))
 
     def test_handle_notify_reply(self):
-        self.assertEqual(notify_out._BAD_REPLY_PACKET, self._notify._handle_notify_reply(None, b'badmsg'))
+        fake_address = ('192.0.2.1', 53)
+        self.assertEqual(notify_out._BAD_REPLY_PACKET, self._notify._handle_notify_reply(None, b'badmsg', fake_address))
         example_com_info = self._notify._notify_infos[('example.com.', 'IN')]
         example_com_info.notify_msg_id = 0X2f18
 
         # test with right notify reply message
         data = b'\x2f\x18\xa0\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07example\03com\x00\x00\x06\x00\x01'
-        self.assertEqual(notify_out._REPLY_OK, self._notify._handle_notify_reply(example_com_info, data))
+        self.assertEqual(notify_out._REPLY_OK, self._notify._handle_notify_reply(example_com_info, data, fake_address))
 
         # test with unright query id
         data = b'\x2e\x18\xa0\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07example\03com\x00\x00\x06\x00\x01'
-        self.assertEqual(notify_out._BAD_QUERY_ID, self._notify._handle_notify_reply(example_com_info, data))
+        self.assertEqual(notify_out._BAD_QUERY_ID, self._notify._handle_notify_reply(example_com_info, data, fake_address))
 
         # test with unright query name
         data = b'\x2f\x18\xa0\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07example\03net\x00\x00\x06\x00\x01'
-        self.assertEqual(notify_out._BAD_QUERY_NAME, self._notify._handle_notify_reply(example_com_info, data))
+        self.assertEqual(notify_out._BAD_QUERY_NAME, self._notify._handle_notify_reply(example_com_info, data, fake_address))
 
         # test with unright opcode
         data = b'\x2f\x18\x80\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07example\03com\x00\x00\x06\x00\x01'
-        self.assertEqual(notify_out._BAD_OPCODE, self._notify._handle_notify_reply(example_com_info, data))
+        self.assertEqual(notify_out._BAD_OPCODE, self._notify._handle_notify_reply(example_com_info, data, fake_address))
 
         # test with unright qr
         data = b'\x2f\x18\x10\x10\x00\x01\x00\x00\x00\x00\x00\x00\x07example\03com\x00\x00\x06\x00\x01'
-        self.assertEqual(notify_out._BAD_QR, self._notify._handle_notify_reply(example_com_info, data))
+        self.assertEqual(notify_out._BAD_QR, self._notify._handle_notify_reply(example_com_info, data, fake_address))
 
-    def test_send_notify_message_udp(self):
+    def test_send_notify_message_udp_ipv4(self):
         example_com_info = self._notify._notify_infos[('example.net.', 'IN')]
         example_com_info.prepare_notify_out()
-        ret = self._notify._send_notify_message_udp(example_com_info, ('1.1.1.1', 53))
+        ret = self._notify._send_notify_message_udp(example_com_info,
+                                                    ('192.0.2.1', 53))
         self.assertTrue(ret)
+        self.assertEqual(socket.AF_INET, example_com_info.sock_family)
+
+    def test_send_notify_message_udp_ipv6(self):
+        example_com_info = self._notify._notify_infos[('example.net.', 'IN')]
+        ret = self._notify._send_notify_message_udp(example_com_info,
+                                                    ('2001:db8::53', 53))
+        self.assertTrue(ret)
+        self.assertEqual(socket.AF_INET6, example_com_info.sock_family)
+
+    def test_send_notify_message_with_bogus_address(self):
+        example_com_info = self._notify._notify_infos[('example.net.', 'IN')]
+
+        # As long as the underlying data source validates RDATA this shouldn't
+        # happen, but right now it's not actually the case.  Even if the
+        # data source does its job, it's prudent to confirm the behavior for
+        # an unexpected case.
+        ret = self._notify._send_notify_message_udp(example_com_info,
+                                                    ('invalid', 53))
+        self.assertFalse(ret)
 
     def test_zone_notify_handler(self):
         old_send_msg = self._notify._send_notify_message_udp
@@ -248,6 +300,15 @@ class TestNotifyOut(unittest.TestCase):
         example_net_info.notify_try_num = notify_out._MAX_NOTIFY_TRY_NUM
         self._notify._zone_notify_handler(example_net_info, notify_out._EVENT_NONE)
         self.assertNotEqual(cur_tgt, example_net_info._notify_current)
+
+        cur_tgt = example_net_info._notify_current
+        example_net_info.create_socket('127.0.0.1')
+        # dns message, will result in bad_qid, but what we are testing
+        # here is whether handle_notify_reply is called correctly
+        example_net_info._sock.remote_end().send(b'\x2f\x18\xa0\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07example\03com\x00\x00\x06\x00\x01')
+        self._notify._zone_notify_handler(example_net_info, notify_out._EVENT_READ)
+        self.assertNotEqual(cur_tgt, example_net_info._notify_current)
+
 
     def _example_net_data_reader(self):
         zone_data = [
@@ -302,7 +363,7 @@ class TestNotifyOut(unittest.TestCase):
 
     def test_prepare_select_info(self):
         timeout, valid_fds, notifying_zones = self._notify._prepare_select_info()
-        self.assertEqual(notify_out._IDLE_SLEEP_TIME, timeout)
+        self.assertEqual(None, timeout)
         self.assertListEqual([], valid_fds)
 
         self._notify._notify_infos[('example.net.', 'IN')]._sock = 1
@@ -326,10 +387,36 @@ class TestNotifyOut(unittest.TestCase):
     def test_shutdown(self):
         thread = self._notify.dispatcher()
         self.assertTrue(thread.is_alive())
+        # nonblock_event won't be setted since there are no notifying zones.
+        self.assertFalse(self._notify._nonblock_event.isSet())
+
+        # set nonblock_event manually
+        self._notify._nonblock_event.set()
+        # nonblock_event will be cleared soon since there are no notifying zones.
+        while (self._notify._nonblock_event.isSet()):
+            pass
+
+        # send notify
+        example_net_info = self._notify._notify_infos[('example.net.', 'IN')]
+        example_net_info.notify_slaves = [('127.0.0.1', 53)]
+        example_net_info.create_socket('127.0.0.1')
+        self._notify.send_notify('example.net')
+        self.assertTrue(self._notify._nonblock_event.isSet())
+        # set notify_try_num to _MAX_NOTIFY_TRY_NUM, zone 'example.net' will be removed
+        # from notifying zones soon and nonblock_event will be cleared since there is no 
+        # notifying zone left.
+        example_net_info.notify_try_num = notify_out._MAX_NOTIFY_TRY_NUM
+        while (self._notify._nonblock_event.isSet()):
+            pass
+
+        self.assertFalse(self._notify._nonblock_event.isSet())
         self._notify.shutdown()
+        # nonblock_event should have been setted to stop waiting.
+        self.assertTrue(self._notify._nonblock_event.isSet())
         self.assertFalse(thread.is_alive())
 
 if __name__== "__main__":
+    isc.log.init("bind10")
     unittest.main()
 
 

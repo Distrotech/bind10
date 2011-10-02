@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT(bind10-devel, 20110322, bind10-dev@isc.org)
+AC_INIT(bind10-devel, 20110809, bind10-dev@isc.org)
 AC_CONFIG_SRCDIR(README)
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS([config.h])
@@ -12,6 +12,12 @@ AC_PROG_CXX
 
 # Libtool configuration
 #
+
+# libtool cannot handle spaces in paths, so exit early if there is one
+if [ test `echo $PWD | grep -c ' '` != "0"  ]; then
+    AC_MSG_ERROR([BIND 10 cannot be built in a directory that contains spaces, because of libtool limitations. Please change the directory name, or use a symbolic link that does not contain spaces.])
+fi
+
 # On FreeBSD (and probably some others), clang++ does not meet an autoconf
 # assumption in identifying libtool configuration regarding shared library:
 # the configure script will execute "$CC -shared $CFLAGS/$CXXFLAGS -v" and
@@ -139,6 +145,26 @@ else
 	AC_SUBST(pkgpyexecdir)
 fi
 
+# We need to store the default pyexecdir in a separate variable so that
+# we can specify in Makefile.am the install directory of various BIND 10
+# python scripts and loadable modules; in Makefile.am we cannot replace
+# $(pyexecdir) using itself, e.g, this doesn't work:
+# pyexecdir = $(pyexecdir)/isc/some_module
+# The separate variable makes this setup possible as follows:
+# pyexecdir = $(PYTHON_SITEPKG_DIR)/isc/some_module
+PYTHON_SITEPKG_DIR=${pyexecdir}
+AC_SUBST(PYTHON_SITEPKG_DIR)
+
+# This will be commonly used in various Makefile.am's that need to generate
+# python log messages.
+PYTHON_LOGMSGPKG_DIR="\$(top_builddir)/src/lib/python/isc/log_messages"
+AC_SUBST(PYTHON_LOGMSGPKG_DIR)
+
+# This is python package paths commonly used in python tests.  See
+# README of log_messages for why it's included.
+COMMON_PYTHON_PATH="\$(abs_top_builddir)/src/lib/python/isc/log_messages:\$(abs_top_srcdir)/src/lib/python:\$(abs_top_builddir)/src/lib/python"
+AC_SUBST(COMMON_PYTHON_PATH)
+
 # Check for python development environments
 if test -x ${PYTHON}-config; then
 	PYTHON_INCLUDES=`${PYTHON}-config --includes`
@@ -260,6 +286,8 @@ B10_CXXFLAGS="-Wall -Wextra -Wwrite-strings -Woverloaded-virtual -Wno-sign-compa
 case "$host" in
 *-solaris*)
 	MULTITHREADING_FLAG=-pthreads
+	# In Solaris, IN6ADDR_ANY_INIT and IN6ADDR_LOOPBACK_INIT need -Wno-missing-braces
+	B10_CXXFLAGS="$B10_CXXFLAGS -Wno-missing-braces"
 	;;
 *)
 	MULTITHREADING_FLAG=-pthread
@@ -279,6 +307,35 @@ namespace isc {class Bar {Foo foo_;};} ],,
 	 B10_CXXFLAGS="$B10_CXXFLAGS -Werror"],
 	[AC_MSG_RESULT(yes)])
 CXXFLAGS="$CXXFLAGS_SAVED"
+
+# Python 3.2 has an unused parameter in one of its headers. This
+# has been reported, but not fixed as of yet, so we check if we need
+# to set -Wno-unused-parameter.
+if test $werror_ok = 1; then
+	CPPFLAGS_SAVED="$CPPFLAGS"
+	CPPFLAGS=${PYTHON_INCLUDES}
+	CXXFLAGS_SAVED="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS $B10_CXXFLAGS -Werror"
+	AC_MSG_CHECKING([whether we need -Wno-unused-parameter for python])
+	AC_TRY_COMPILE(
+		[#include <Python.h>],
+		[],
+		[AC_MSG_RESULT(no)],
+		[
+		CXXFLAGS="$CXXFLAGS -Wno-unused-parameter"
+		AC_TRY_COMPILE([#include <Python.h>],
+		[],
+		[AC_MSG_RESULT(yes)
+		 PYTHON_CXXFLAGS="${PYTHON_CXXFLAGS} -Wno-unused-parameter"
+		 AC_SUBST(PYTHON_CXXFLAGS)
+		],
+		[AC_MSG_ERROR([Can't compile against Python.h])]
+                )
+                ]
+	)
+	CXXFLAGS="$CXXFLAGS_SAVED"
+	CPPFLAGS="$CPPFLAGS_SAVED"
+fi
 
 fi				dnl GXX = yes
 
@@ -380,7 +437,7 @@ AC_ARG_WITH([botan],
   AC_HELP_STRING([--with-botan=PATH],
     [specify exact directory of Botan library]),
     [botan_path="$withval"])
-if test "${botan_path}" == "no" ; then
+if test "${botan_path}" = "no" ; then
     AC_MSG_ERROR([Need botan for libcryptolink])
 fi
 if test "${botan_path}" != "yes" ; then
@@ -410,7 +467,16 @@ if test -x "${BOTAN_CONFIG}" ; then
         for flag in ${BOTAN_LDFLAGS}; do
                 BOTAN_RPATH="${BOTAN_RPATH} `echo $flag | sed -ne 's/^\(\-L\)/-R/p'`"
         done
-        AC_SUBST(BOTAN_RPATH)
+	AC_SUBST(BOTAN_RPATH)
+
+	# According to the libtool manual, it should be sufficient if we
+	# specify the "-R libdir" in our wrapper library of botan (no other
+	# programs will need libbotan directly); "libdir" should be added to
+	# the program's binary image.  But we've seen in our build environments
+	# that (some versions of?) libtool doesn't propagate -R as documented,
+	# and it caused a linker error at run time.  To work around this, we
+	# also add the rpath to the global LDFLAGS.
+        LDFLAGS="$BOTAN_RPATH $LDFLAGS"
     fi
 
     AC_SUBST(BOTAN_LDFLAGS)
@@ -419,7 +485,7 @@ fi
 
 CPPFLAGS_SAVED=$CPPFLAGS
 CPPFLAGS="$BOTAN_INCLUDES $CPPFLAGS"
-LDFLAGS_SAVED=$LDFLAGS
+LDFLAGS_SAVED="$LDFLAGS"
 LDFLAGS="$BOTAN_LDFLAGS $LDFLAGS"
 
 AC_CHECK_HEADERS([botan/botan.h],,AC_MSG_ERROR([Missing required header files.]))
@@ -435,6 +501,55 @@ AC_LINK_IFELSE(
         [AC_MSG_RESULT([checking for Botan library... no])
          AC_MSG_ERROR([Needs Botan library 1.8 or higher])]
 )
+CPPFLAGS=$CPPFLAGS_SAVED
+LDFLAGS=$LDFLAGS_SAVED
+
+# Check for log4cplus
+log4cplus_path="yes"
+AC_ARG_WITH([log4cplus],
+  AC_HELP_STRING([--with-log4cplus=PATH],
+    [specify exact directory of log4cplus library and headers]),
+    [log4cplus_path="$withval"])
+if test "${log4cplus_path}" = "no" ; then
+    AC_MSG_ERROR([Need log4cplus])
+elif test "${log4cplus_path}" != "yes" ; then
+  LOG4CPLUS_INCLUDES="-I${log4cplus_path}/include"
+  LOG4CPLUS_LDFLAGS="-L${log4cplus_path}/lib"
+else
+# If not specified, try some common paths.
+	log4cplusdirs="/usr/local /usr/pkg /opt /opt/local"
+	for d in $log4cplusdirs
+	do
+		if test -f $d/include/log4cplus/logger.h; then
+			LOG4CPLUS_INCLUDES="-I$d/include"
+			LOG4CPLUS_LDFLAGS="-L$d/lib"
+			break
+		fi
+	done
+fi
+
+LOG4CPLUS_LDFLAGS="$LOG4CPLUS_LDFLAGS -llog4cplus $MULTITHREADING_FLAG"
+
+AC_SUBST(LOG4CPLUS_LDFLAGS)
+AC_SUBST(LOG4CPLUS_INCLUDES)
+
+CPPFLAGS_SAVED=$CPPFLAGS
+CPPFLAGS="$LOG4CPLUS_INCLUDES $CPPFLAGS"
+LDFLAGS_SAVED="$LDFLAGS"
+LDFLAGS="$LOG4CPLUS_LDFLAGS $LDFLAGS"
+
+AC_CHECK_HEADERS([log4cplus/logger.h],,AC_MSG_ERROR([Missing required header files.]))
+AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([#include <log4cplus/logger.h>
+                         ],
+                         [using namespace log4cplus;
+                          Logger logger = Logger::getInstance("main");
+                         ])],
+        [AC_MSG_RESULT([checking for log4cplus library... yes])],
+        [AC_MSG_RESULT([checking for log4cplus library... no])
+         AC_MSG_ERROR([Needs log4cplus library])]
+)
+
 CPPFLAGS=$CPPFLAGS_SAVED
 LDFLAGS=$LDFLAGS_SAVED
 
@@ -677,6 +792,7 @@ AC_CONFIG_FILES([Makefile
                  src/bin/bindctl/tests/Makefile
                  src/bin/cfgmgr/Makefile
                  src/bin/cfgmgr/plugins/Makefile
+                 src/bin/cfgmgr/plugins/tests/Makefile
                  src/bin/cfgmgr/tests/Makefile
                  src/bin/host/Makefile
                  src/bin/loadzone/Makefile
@@ -687,6 +803,8 @@ AC_CONFIG_FILES([Makefile
                  src/bin/auth/Makefile
                  src/bin/auth/tests/Makefile
                  src/bin/auth/benchmarks/Makefile
+                 src/bin/dhcp6/Makefile
+                 src/bin/dhcp6/tests/Makefile
                  src/bin/resolver/Makefile
                  src/bin/resolver/tests/Makefile
                  src/bin/sockcreator/Makefile
@@ -703,6 +821,8 @@ AC_CONFIG_FILES([Makefile
                  src/bin/stats/tests/isc/cc/Makefile
                  src/bin/stats/tests/isc/config/Makefile
                  src/bin/stats/tests/isc/util/Makefile
+                 src/bin/stats/tests/isc/log/Makefile
+                 src/bin/stats/tests/isc/log_messages/Makefile
                  src/bin/stats/tests/testdata/Makefile
                  src/bin/stats/tests/http/Makefile
                  src/bin/usermgr/Makefile
@@ -719,21 +839,28 @@ AC_CONFIG_FILES([Makefile
                  src/lib/cc/tests/Makefile
                  src/lib/python/Makefile
                  src/lib/python/isc/Makefile
+                 src/lib/python/isc/acl/Makefile
+                 src/lib/python/isc/acl/tests/Makefile
                  src/lib/python/isc/util/Makefile
                  src/lib/python/isc/util/tests/Makefile
                  src/lib/python/isc/datasrc/Makefile
                  src/lib/python/isc/datasrc/tests/Makefile
+                 src/lib/python/isc/dns/Makefile
                  src/lib/python/isc/cc/Makefile
                  src/lib/python/isc/cc/tests/Makefile
                  src/lib/python/isc/config/Makefile
                  src/lib/python/isc/config/tests/Makefile
                  src/lib/python/isc/log/Makefile
                  src/lib/python/isc/log/tests/Makefile
+                 src/lib/python/isc/log_messages/Makefile
+                 src/lib/python/isc/log_messages/work/Makefile
                  src/lib/python/isc/net/Makefile
                  src/lib/python/isc/net/tests/Makefile
                  src/lib/python/isc/notify/Makefile
                  src/lib/python/isc/notify/tests/Makefile
                  src/lib/python/isc/testutils/Makefile
+                 src/lib/python/isc/bind10/Makefile
+                 src/lib/python/isc/bind10/tests/Makefile
                  src/lib/config/Makefile
                  src/lib/config/tests/Makefile
                  src/lib/config/tests/testdata/Makefile
@@ -749,6 +876,7 @@ AC_CONFIG_FILES([Makefile
                  src/lib/exceptions/tests/Makefile
                  src/lib/datasrc/Makefile
                  src/lib/datasrc/tests/Makefile
+                 src/lib/datasrc/tests/testdata/Makefile
                  src/lib/xfr/Makefile
                  src/lib/log/Makefile
                  src/lib/log/compiler/Makefile
@@ -765,9 +893,12 @@ AC_CONFIG_FILES([Makefile
                  src/lib/server_common/tests/Makefile
                  src/lib/util/Makefile
                  src/lib/util/io/Makefile
-                 src/lib/util/io/tests/Makefile
                  src/lib/util/unittests/Makefile
+                 src/lib/util/python/Makefile
+                 src/lib/util/pyunittests/Makefile
                  src/lib/util/tests/Makefile
+                 src/lib/acl/Makefile
+                 src/lib/acl/tests/Makefile
                  tests/Makefile
                  tests/system/Makefile
                  tests/tools/Makefile
@@ -797,15 +928,7 @@ AC_OUTPUT([doc/version.ent
            src/bin/zonemgr/run_b10-zonemgr.sh
            src/bin/stats/stats.py
            src/bin/stats/stats_httpd.py
-           src/bin/stats/stats.spec
-           src/bin/stats/stats-httpd.spec
-           src/bin/stats/stats-httpd-xml.tpl
-           src/bin/stats/stats-httpd-xsd.tpl
-           src/bin/stats/stats-httpd-xsl.tpl
-           src/bin/stats/run_b10-stats.sh
-           src/bin/stats/run_b10-stats-httpd.sh
-           src/bin/stats/tests/stats_test
-           src/bin/bind10/bind10.py
+           src/bin/bind10/bind10_src.py
            src/bin/bind10/run_bind10.sh
            src/bin/bind10/tests/bind10_test.py
            src/bin/bindctl/run_bindctl.sh
@@ -822,18 +945,27 @@ AC_OUTPUT([doc/version.ent
            src/bin/msgq/run_msgq.sh
            src/bin/auth/auth.spec.pre
            src/bin/auth/spec_config.h.pre
+           src/bin/dhcp6/spec_config.h.pre
            src/bin/tests/process_rename_test.py
            src/lib/config/tests/data_def_unittests_config.h
            src/lib/python/isc/config/tests/config_test
            src/lib/python/isc/cc/tests/cc_test
-           src/lib/python/isc/log/tests/log_test
            src/lib/python/isc/notify/tests/notify_out_test
+           src/lib/python/isc/log/tests/log_console.py
+           src/lib/python/isc/log_messages/work/__init__.py
            src/lib/dns/gen-rdatacode.py
            src/lib/python/bind10_config.py
-           src/lib/dns/tests/testdata/gen-wiredata.py
            src/lib/cc/session_config.h.pre
            src/lib/cc/tests/session_unittests_config.h
-           src/lib/log/tests/run_time_init_test.sh
+           src/lib/log/tests/console_test.sh
+           src/lib/log/tests/destination_test.sh
+           src/lib/log/tests/init_logger_test.sh
+           src/lib/log/tests/local_file_test.sh
+           src/lib/log/tests/severity_test.sh
+           src/lib/log/tests/tempdir.h
+           src/lib/util/python/mkpywrapper.py
+           src/lib/util/python/gen_wiredata.py
+           src/lib/server_common/tests/data_path.h
            tests/system/conf.sh
            tests/system/glue/setup.sh
            tests/system/glue/nsx1/b10-config.db
@@ -843,9 +975,6 @@ AC_OUTPUT([doc/version.ent
            chmod +x src/bin/xfrin/run_b10-xfrin.sh
            chmod +x src/bin/xfrout/run_b10-xfrout.sh
            chmod +x src/bin/zonemgr/run_b10-zonemgr.sh
-           chmod +x src/bin/stats/tests/stats_test
-           chmod +x src/bin/stats/run_b10-stats.sh
-           chmod +x src/bin/stats/run_b10-stats-httpd.sh
            chmod +x src/bin/bind10/run_bind10.sh
            chmod +x src/bin/cmdctl/tests/cmdctl_test
            chmod +x src/bin/xfrin/tests/xfrin_test
@@ -860,8 +989,14 @@ AC_OUTPUT([doc/version.ent
            chmod +x src/bin/msgq/run_msgq.sh
            chmod +x src/bin/msgq/tests/msgq_test
            chmod +x src/lib/dns/gen-rdatacode.py
-           chmod +x src/lib/dns/tests/testdata/gen-wiredata.py
-           chmod +x src/lib/log/tests/run_time_init_test.sh
+           chmod +x src/lib/log/tests/console_test.sh
+           chmod +x src/lib/log/tests/destination_test.sh
+           chmod +x src/lib/log/tests/init_logger_test.sh
+           chmod +x src/lib/log/tests/local_file_test.sh
+           chmod +x src/lib/log/tests/severity_test.sh
+           chmod +x src/lib/util/python/mkpywrapper.py
+           chmod +x src/lib/util/python/gen_wiredata.py
+           chmod +x src/lib/python/isc/log/tests/log_console.py
            chmod +x tests/system/conf.sh
           ])
 AC_OUTPUT
@@ -884,14 +1019,18 @@ Flags:
   DEFS:          $DEFS
   CPPFLAGS:      $CPPFLAGS
   CXXFLAGS:      $CXXFLAGS
+  LDFLAGS:       $LDFLAGS
   B10_CXXFLAGS:  $B10_CXXFLAGS
 dnl includes too
   Python:        ${PYTHON_INCLUDES}
+                 ${PYTHON_CXXFLAGS}
                  ${PYTHON_LDFLAGS}
                  ${PYTHON_LIB}
   Boost:         ${BOOST_INCLUDES}
   Botan:         ${BOTAN_INCLUDES}
                  ${BOTAN_LDFLAGS}
+  Log4cplus:     ${LOG4CPLUS_INCLUDES}
+                 ${LOG4CPLUS_LDFLAGS}
   SQLite:        $SQLITE_CFLAGS
                  $SQLITE_LIBS
 

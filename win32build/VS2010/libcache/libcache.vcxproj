@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -12,7 +12,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\lib\cache\cache_entry_key.h" />
+    <ClInclude Include="..\..\..\src\lib\cache\cache_messages.h" />
     <ClInclude Include="..\..\..\src\lib\cache\local_zone_data.h" />
+    <ClInclude Include="..\..\..\src\lib\cache\logger.h" />
     <ClInclude Include="..\..\..\src\lib\cache\message_cache.h" />
     <ClInclude Include="..\..\..\src\lib\cache\message_entry.h" />
     <ClInclude Include="..\..\..\src\lib\cache\message_utility.h" />
@@ -23,7 +25,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\cache\cache_entry_key.cc" />
+    <ClCompile Include="..\..\..\src\lib\cache\cache_messages.cc" />
     <ClCompile Include="..\..\..\src\lib\cache\local_zone_data.cc" />
+    <ClCompile Include="..\..\..\src\lib\cache\logger.cc" />
     <ClCompile Include="..\..\..\src\lib\cache\message_cache.cc" />
     <ClCompile Include="..\..\..\src\lib\cache\message_entry.cc" />
     <ClCompile Include="..\..\..\src\lib\cache\message_utility.cc" />
@@ -78,6 +82,11 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PreBuildEvent>
+      <Command>cd ..\..\..\src\lib\cache
+..\..\..\win32build\VS2010\liblog_compiler\Release\message.exe cache_messages.mes
+</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -96,6 +105,11 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PreBuildEvent>
+      <Command>cd ..\..\..\src\lib\cache
+..\..\..\win32build\VS2010\liblog_compiler\Release\message.exe cache_messages.mes
+</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
