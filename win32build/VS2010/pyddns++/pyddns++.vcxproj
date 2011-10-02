@@ -13,7 +13,8 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{13D541BC-8365-42F7-840F-A117CA0413DD}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>libdns_python</RootNamespace>
+    <RootNamespace>pyddnspp</RootNamespace>
+    <ProjectName>pyddns++</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -54,7 +55,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBDNS_PYTHON_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;PYDDNSPP_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns\python;%BOOST%;C:\Python32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
@@ -62,8 +63,8 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)pydnspp_d.pyd</OutputFile>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libcryptolink.lib;libdns++.lib;botan.lib;python32_d.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libexceptions\Debug;..\libutil\Debug;..\libcryptolink\Debug;..\libdns++\Debug;..\..\..\..\botan\md10\Debug;C:\Python32\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libcryptolink.lib;libdns++.lib;libdns++_python.lib;botan.lib;python32_d.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\libexceptions\Debug;..\libutil\Debug;..\libcryptolink\Debug;..\libdns++\Debug;..\libdns++_python\Debug;..\..\..\..\botan\md10\Debug;C:\Python32\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
       <Command>cd ..\..\..\src\lib\python
@@ -78,7 +79,7 @@ copy bind10_config.py.win32 bind10_config.py
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBDNS_PYTHON_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;PYDDNSPP_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns\python;%BOOST%;C:\Python32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
@@ -88,8 +89,8 @@ copy bind10_config.py.win32 bind10_config.py
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)pydnspp.pyd</OutputFile>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libcryptolink.lib;libdns++.lib;botan.lib;python32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libexceptions\Release;..\libutil\Release;..\libcryptolink\Release;..\libdns++\Release;..\..\..\..\botan\md10\Release;C:\Python32\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libcryptolink.lib;libdns++.lib;libdns++_python.lib;botan.lib;python32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\libexceptions\Release;..\libutil\Release;..\libcryptolink\Release;..\libdns++\Release;..\libdns++_python\Release;..\..\..\..\botan\md10\Release;C:\Python32\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
       <Command>cd ..\..\..\src\lib\python
@@ -98,47 +99,7 @@ copy bind10_config.py.win32 bind10_config.py
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\lib\dns\python\edns_python.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\messagerenderer_python.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\message_python.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\name_python.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\opcode_python.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\pydnspp_common.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\pydnspp_towire.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\question_python.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\rcode_python.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\rdata_python.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\rrclass_python.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\rrset_python.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\rrttl_python.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\rrtype_python.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\tsigerror_python.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\tsigkey_python.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\tsigrecord_python.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\tsig_python.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\tsig_rdata_python.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\src\lib\dns\python\edns_python.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\python\messagerenderer_python.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\python\message_python.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\python\name_python.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\python\opcode_python.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\python\pydnspp.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\python\pydnspp_common.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\python\question_python.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\python\rcode_python.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\python\rdata_python.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\python\rrclass_python.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\python\rrset_python.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\python\rrttl_python.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\python\rrtype_python.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\python\tsigerror_python.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\python\tsigerror_python_inc.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\python\tsigkey_python.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\python\tsigrecord_python.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\python\tsig_python.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\python\tsig_rdata_python.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

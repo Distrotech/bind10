@@ -36,7 +36,8 @@ What is needed:
   tried to factorize the (in)convenience with gtest. Note its
   config phase requires a python2)
 
- - log4cplus (in the future)
+ - log4cplus (compiled from sources in the same style...
+  Note WIN32 disables syslog support)
 
 How to compile google test:
 
@@ -62,6 +63,9 @@ Where I put things (hardwired paths):
 
  - <home>\botan\include and <home>\botan\md{9,10}\{Debug,Release}
    (--disable-shared to get static libs, no DLL)
+
+ - <home>\log4cplus\include and <home>\log4cplus\md{9,10}\{Debug,Release}
+   (tested only for VS 2010 / md10)
 
  - "C:\Program Files\boost\boost_1_44" (the include and
   sometimes the libraries (in lib, called by the auto_link) too)
