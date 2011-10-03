@@ -1,6 +1,4 @@
-#! /bin/sh
-
-# Copyright (C) 2010, 2011  Internet Systems Consortium.
+# Copyright (C) 2011  Internet Systems Consortium.
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -15,17 +13,6 @@
 # NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
 # WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-PYTHON_EXEC=${PYTHON_EXEC:-@PYTHON@}
-export PYTHON_EXEC
-
-PYTHONPATH=@abs_top_builddir@/src/lib/python:@abs_top_srcdir@/src/bin/stats:@abs_top_srcdir@/src/bin/stats/tests
-export PYTHONPATH
-
-B10_FROM_SOURCE=@abs_top_srcdir@
-export B10_FROM_SOURCE
-
-TEST_PATH=@abs_top_srcdir@/src/bin/stats/tests
-
-cd ${TEST_PATH}
-${PYTHON_EXEC} -O b10-stats_test.py $*
-${PYTHON_EXEC} -O b10-stats-httpd_test.py $*
+'''
+This is a fake package that acts as a forwarder to the real package.
+'''

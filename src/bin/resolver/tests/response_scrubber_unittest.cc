@@ -14,16 +14,19 @@
 
 // $Id$
 
+#include <config.h>
+
+#include <stdint.h>
 #include <string>
 #include <iostream>
 
 #include <gtest/gtest.h>
 
-#include <config.h>
-
 #include <asiolink/io_endpoint.h>
 #include <asiolink/io_address.h>
+#ifndef _WIN32
 #include <netinet/in.h>
+#endif
 
 #include <dns/name.h>
 #include <dns/opcode.h>
@@ -66,6 +69,12 @@ public:
 
     virtual short getFamily() const {
         return address_.getFamily();
+    }
+
+    // This is completely dummy and unused.  Define it just for build.
+    virtual const struct sockaddr& getSockAddr() const {
+        static struct sockaddr sa;
+        return (sa);
     }
 
 private:

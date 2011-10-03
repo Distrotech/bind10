@@ -24,12 +24,16 @@ from optparse import OptionParser, OptionValueError
 from collections import defaultdict
 from isc.config.ccsession import ModuleCCSession, create_answer
 from isc.cc import Session, SessionError
-# Note: Following lines are removed in b10-stats	#@@REMOVED@@
-if __name__ == 'stats':					#@@REMOVED@@
-    try:						#@@REMOVED@@
-        from fake_time import time, strftime, gmtime	#@@REMOVED@@
-    except ImportError:					#@@REMOVED@@
-        pass						#@@REMOVED@@
+
+import isc.log
+from isc.log_messages.stats_messages import *
+
+isc.log.init("b10-stats")
+logger = isc.log.Logger("stats")
+
+# Some constants for debug levels, these should be removed when we
+# have #1074
+DBG_STATS_MESSAGING = 30
 
 # for setproctitle
 import isc.util.process
@@ -39,13 +43,15 @@ isc.util.process.rename()
 # from a directory relative to that, otherwise we use the ones
 # installed on the system
 if "B10_FROM_SOURCE" in os.environ:
-    SPECFILE_LOCATION = os.environ["B10_FROM_SOURCE"] + os.sep + \
-        "src" + os.sep + "bin" + os.sep + "stats" + os.sep + "stats.spec"
+    BASE_LOCATION = os.environ["B10_FROM_SOURCE"] + os.sep + \
+        "src" + os.sep + "bin" + os.sep + "stats"
 else:
     PREFIX = "@prefix@"
     DATAROOTDIR = "@datarootdir@"
-    SPECFILE_LOCATION = "@datadir@" + os.sep + "@PACKAGE@" + os.sep + "stats.spec"
-    SPECFILE_LOCATION = SPECFILE_LOCATION.replace("${datarootdir}", DATAROOTDIR).replace("${prefix}", PREFIX)
+    BASE_LOCATION = "@datadir@" + os.sep + "@PACKAGE@"
+    BASE_LOCATION = BASE_LOCATION.replace("${datarootdir}", DATAROOTDIR).replace("${prefix}", PREFIX)
+SPECFILE_LOCATION = BASE_LOCATION + os.sep + "stats.spec"
+SCHEMA_SPECFILE_LOCATION = BASE_LOCATION + os.sep + "stats-schema.spec"
 
 class Singleton(type):
     """
@@ -147,9 +153,8 @@ class SessionSubject(Subject, metaclass=Singleton):
     """
     A concrete subject class which creates CC session object
     """
-    def __init__(self, session=None, verbose=False):
+    def __init__(self, session=None):
         Subject.__init__(self)
-        self.verbose = verbose
         self.session=session
         self.running = False
 
@@ -169,9 +174,8 @@ class CCSessionListener(Listener):
     A concrete listener class which creates SessionSubject object and
     ModuleCCSession object
     """
-    def __init__(self, subject, verbose=False):
+    def __init__(self, subject):
         Listener.__init__(self, subject)
-        self.verbose = verbose
         self.session = subject.session
         self.boot_time = get_datetime()
 
@@ -184,8 +188,7 @@ class CCSessionListener(Listener):
         self.session = self.subject.session = self.cc_session._session
 
         # initialize internal data
-        self.config_spec = self.cc_session.get_module_spec().get_config_spec()
-        self.stats_spec = self.config_spec
+        self.stats_spec = isc.config.module_spec_from_file(SCHEMA_SPECFILE_LOCATION).get_config_spec()
         self.stats_data = self.initialize_data(self.stats_spec)
 
         # add event handler invoked via SessionSubject object
@@ -208,8 +211,15 @@ class CCSessionListener(Listener):
                 kwargs = self.initialize_data(cmd["command_args"])
                 self.add_event(Callback(name=name, callback=callback, args=(), kwargs=kwargs))
             except AttributeError as ae:
-                sys.stderr.write("[b10-stats] Caught undefined command while parsing spec file: "
-                                 +str(cmd["command_name"])+"\n")
+                logger.error(STATS_UNKNOWN_COMMAND_IN_SPEC, cmd["command_name"])
+
+    def _update_stats_data(self, args):
+        # 'args' must be dictionary type
+        if isinstance(args, dict) and isinstance(args.get('stats_data'), dict):
+            self.stats_data.update(args['stats_data'])
+
+        # overwrite "stats.LastUpdateTime"
+        self.stats_data['stats.last_update_time'] = get_datetime()
 
     def start(self):
         """
@@ -222,11 +232,17 @@ class CCSessionListener(Listener):
         self.stats_data['stats.lname'] = self.session.lname
         self.cc_session.start()
         # request Bob to send statistics data
-        if self.verbose:
-            sys.stdout.write("[b10-stats] request Bob to send statistics data\n")
-        cmd = isc.config.ccsession.create_command("sendstats", None)
+        logger.debug(DBG_STATS_MESSAGING, STATS_SEND_REQUEST_BOSS)
+        cmd = isc.config.ccsession.create_command("getstats", None)
         seq = self.session.group_sendmsg(cmd, 'Boss')
-        self.session.group_recvmsg(True, seq)
+        try:
+            answer, env = self.session.group_recvmsg(False, seq)
+            if answer:
+                rcode, arg = isc.config.ccsession.parse_answer(answer)
+                if rcode == 0:
+                    self._update_stats_data(arg)
+        except isc.cc.session.SessionTimeout:
+            pass
 
     def stop(self):
         """
@@ -244,8 +260,8 @@ class CCSessionListener(Listener):
         """
         handle a configure from the cc channel
         """
-        if self.verbose:
-            sys.stdout.write("[b10-stats] newconfig received: "+str(new_config)+"\n")
+        logger.debug(DBG_STATS_MESSAGING, STATS_RECEIVED_NEW_CONFIG,
+                     new_config)
 
         # do nothing currently
         return create_answer(0)
@@ -267,8 +283,7 @@ class CCSessionListener(Listener):
         """
         handle shutdown command
         """
-        if self.verbose:
-            sys.stdout.write("[b10-stats] 'shutdown' command received\n")
+        logger.info(STATS_RECEIVED_SHUTDOWN_COMMAND)
         self.subject.running = False
         return create_answer(0)
 
@@ -276,27 +291,20 @@ class CCSessionListener(Listener):
         """
         handle set command
         """
-        if self.verbose:
-            sys.stdout.write("[b10-stats] 'set' command received, args: "+str(args)+"\n")
-
-        # 'args' must be dictionary type
-        self.stats_data.update(args['stats_data'])
-
-        # overwrite "stats.LastUpdateTime"
-        self.stats_data['stats.last_update_time'] = get_datetime()
-
+        self._update_stats_data(args)
         return create_answer(0)
 
     def command_remove(self, args, stats_item_name=''):
         """
         handle remove command
         """
-        if self.verbose:
-            sys.stdout.write("[b10-stats] 'remove' command received, args: "+str(args)+"\n")
 
         # 'args' must be dictionary type
         if args and args['stats_item_name'] in self.stats_data:
             stats_item_name = args['stats_item_name']
+
+        logger.debug(DBG_STATS_MESSAGING, STATS_RECEIVED_REMOVE_COMMAND,
+                     stats_item_name)
 
         # just remove one item
         self.stats_data.pop(stats_item_name)
@@ -307,8 +315,6 @@ class CCSessionListener(Listener):
         """
         handle show command
         """
-        if self.verbose:
-            sys.stdout.write("[b10-stats] 'show' command received, args: "+str(args)+"\n")
 
         # always overwrite 'report_time' and 'stats.timestamp'
         # if "show" command invoked
@@ -318,16 +324,21 @@ class CCSessionListener(Listener):
         # if with args
         if args and args['stats_item_name'] in self.stats_data:
             stats_item_name = args['stats_item_name']
+            logger.debug(DBG_STATS_MESSAGING,
+                         STATS_RECEIVED_SHOW_NAME_COMMAND,
+                         stats_item_name)
             return create_answer(0, {stats_item_name: self.stats_data[stats_item_name]})
 
+        logger.debug(DBG_STATS_MESSAGING,
+                     STATS_RECEIVED_SHOW_ALL_COMMAND)
         return create_answer(0, self.stats_data)
 
     def command_reset(self, args):
         """
         handle reset command
         """
-        if self.verbose:
-            sys.stdout.write("[b10-stats] 'reset' command received\n")
+        logger.debug(DBG_STATS_MESSAGING,
+                     STATS_RECEIVED_RESET_COMMAND)
 
         # re-initialize internal variables
         self.stats_data = self.initialize_data(self.stats_spec)
@@ -344,8 +355,7 @@ class CCSessionListener(Listener):
         """
         handle status command
         """
-        if self.verbose:
-            sys.stdout.write("[b10-stats] 'status' command received\n")
+        logger.debug(DBG_STATS_MESSAGING, STATS_RECEIVED_STATUS_COMMAND)
         # just return "I'm alive."
         return create_answer(0, "I'm alive.")
 
@@ -353,9 +363,7 @@ class CCSessionListener(Listener):
         """
         handle an unknown command
         """
-        if self.verbose:
-            sys.stdout.write("[b10-stats] Unknown command received: '"
-                             + str(command) + "'\n")
+        logger.error(STATS_RECEIVED_UNKNOWN_COMMAND, command)
         return create_answer(1, "Unknown command: '"+str(command)+"'")
 
 
@@ -402,20 +410,21 @@ def main(session=None):
         parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
                       help="display more about what is going on")
         (options, args) = parser.parse_args()
-        subject = SessionSubject(session=session, verbose=options.verbose)
-        listener = CCSessionListener(subject, verbose=options.verbose)
+        if options.verbose:
+            isc.log.init("b10-stats", "DEBUG", 99)
+        subject = SessionSubject(session=session)
+        listener = CCSessionListener(subject)
         subject.start()
         while subject.running:
             subject.check()
         subject.stop()
 
-    except OptionValueError:
-        sys.stderr.write("[b10-stats] Error parsing options\n")
+    except OptionValueError as ove:
+        logger.fatal(STATS_BAD_OPTION_VALUE, ove)
     except SessionError as se:
-        sys.stderr.write("[b10-stats] Error creating Stats module, "
-              + "is the command channel daemon running?\n")
+        logger.fatal(STATS_CC_SESSION_ERROR, se)
     except KeyboardInterrupt as kie:
-        sys.stderr.write("[b10-stats] Interrupted, exiting\n")
+        logger.info(STATS_STOPPED_BY_KEYBOARD)
 
 if __name__ == "__main__":
     main()

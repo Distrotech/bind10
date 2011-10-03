@@ -18,10 +18,12 @@ endif
 
 pkglibexecdir = $(libexecdir)/@PACKAGE@
 
-CLEANFILES = *.gcno *.gcda resolver.spec spec_config.h
+CLEANFILES  = *.gcno *.gcda
+CLEANFILES += resolver.spec spec_config.h
+CLEANFILES += resolver_messages.cc resolver_messages.h
 
 man_MANS = b10-resolver.8
-EXTRA_DIST = $(man_MANS) b10-resolver.xml
+EXTRA_DIST = $(man_MANS) b10-resolver.xml resolver_messages.mes
 
 if ENABLE_MAN
 
@@ -36,16 +38,29 @@ resolver.spec: resolver.spec.pre
 spec_config.h: spec_config.h.pre
 	$(SED) -e "s|@@LOCALSTATEDIR@@|$(localstatedir)|" spec_config.h.pre >$@
 
-BUILT_SOURCES = spec_config.h 
+# Define rule to build logging source files from message file
+resolver_messages.h resolver_messages.cc: resolver_messages.mes
+	$(top_builddir)/src/lib/log/compiler/message $(top_srcdir)/src/bin/resolver/resolver_messages.mes
+
+
+BUILT_SOURCES = spec_config.h resolver_messages.cc resolver_messages.h
+
 pkglibexec_PROGRAMS = b10-resolver
 b10_resolver_SOURCES = resolver.cc resolver.h
+b10_resolver_SOURCES += resolver_log.cc resolver_log.h
 b10_resolver_SOURCES += response_scrubber.cc response_scrubber.h
 b10_resolver_SOURCES += $(top_builddir)/src/bin/auth/change_user.h
 b10_resolver_SOURCES += $(top_builddir)/src/bin/auth/common.h
 b10_resolver_SOURCES += main.cc
+
+nodist_b10_resolver_SOURCES = resolver_messages.cc resolver_messages.h
+
+
 b10_resolver_LDADD =  $(top_builddir)/src/lib/dns/libdns++.la
 b10_resolver_LDADD += $(top_builddir)/src/lib/config/libcfgclient.la
 b10_resolver_LDADD += $(top_builddir)/src/lib/cc/libcc.la
+b10_resolver_LDADD += $(top_builddir)/src/lib/util/libutil.la
+b10_resolver_LDADD += $(top_builddir)/src/lib/acl/libdnsacl.la
 b10_resolver_LDADD += $(top_builddir)/src/lib/exceptions/libexceptions.la
 b10_resolver_LDADD += $(top_builddir)/src/lib/asiodns/libasiodns.la
 b10_resolver_LDADD += $(top_builddir)/src/lib/asiolink/libasiolink.la

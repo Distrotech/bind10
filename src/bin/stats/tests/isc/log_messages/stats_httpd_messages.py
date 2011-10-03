@@ -1,5 +1,3 @@
-#! /bin/sh
-
 # Copyright (C) 2011  Internet Systems Consortium.
 #
 # Permission to use, copy, modify, and distribute this software for any
@@ -15,19 +13,4 @@
 # NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
 # WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-PYTHON_EXEC=${PYTHON_EXEC:-@PYTHON@}
-export PYTHON_EXEC
-
-PYTHONPATH=@abs_top_builddir@/src/lib/python
-export PYTHONPATH
-
-BIND10_MSGQ_SOCKET_FILE=@abs_top_builddir@/msgq_socket
-export BIND10_MSGQ_SOCKET_FILE
-
-STATS_PATH=@abs_top_builddir@/src/bin/stats
-
-B10_FROM_SOURCE=@abs_top_srcdir@
-export B10_FROM_SOURCE
-
-cd ${STATS_PATH}
-exec ${PYTHON_EXEC} -O b10-stats-httpd "$@"
+from work.stats_httpd_messages import *

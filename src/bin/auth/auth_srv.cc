@@ -20,6 +20,7 @@
 #include <cassert>
 #include <iostream>
 #include <vector>
+#include <memory>
 
 #include <boost/bind.hpp>
 
@@ -43,6 +44,7 @@
 #include <dns/rrset.h>
 #include <dns/rrttl.h>
 #include <dns/message.h>
+#include <dns/tsig.h>
 
 #include <datasrc/query.h>
 #include <datasrc/data_source.h>
@@ -57,6 +59,7 @@
 #include <auth/auth_srv.h>
 #include <auth/query.h>
 #include <auth/statistics.h>
+#include <auth/auth_log.h>
 
 using namespace std;
 
@@ -73,6 +76,7 @@ using namespace isc::xfr;
 using namespace isc::asiolink;
 using namespace isc::asiodns;
 using namespace isc::server_common::portconfig;
+using boost::shared_ptr;
 
 class AuthSrvImpl {
 private:
@@ -85,11 +89,14 @@ public:
     isc::data::ConstElementPtr setDbFile(isc::data::ConstElementPtr config);
 
     bool processNormalQuery(const IOMessage& io_message, MessagePtr message,
-                            OutputBufferPtr buffer);
+                            OutputBufferPtr buffer,
+                            auto_ptr<TSIGContext> tsig_context);
     bool processAxfrQuery(const IOMessage& io_message, MessagePtr message,
-                          OutputBufferPtr buffer);
+                          OutputBufferPtr buffer,
+                          auto_ptr<TSIGContext> tsig_context);
     bool processNotify(const IOMessage& io_message, MessagePtr message,
-                       OutputBufferPtr buffer);
+                       OutputBufferPtr buffer,
+                       auto_ptr<TSIGContext> tsig_context);
 
     IOService io_service_;
 
@@ -98,12 +105,11 @@ public:
 
     /// These members are public because AuthSrv accesses them directly.
     ModuleCCSession* config_session_;
-    bool verbose_mode_;
     AbstractSession* xfrin_session_;
 
     /// In-memory data source.  Currently class IN only for simplicity.
-    const RRClass memory_datasrc_class_;
-    AuthSrv::MemoryDataSrcPtr memory_datasrc_;
+    const RRClass memory_client_class_;
+    AuthSrv::InMemoryClientPtr memory_client_;
 
     /// Hot spot cache
     isc::datasrc::HotCache cache_;
@@ -116,6 +122,9 @@ public:
 
     /// Addresses we listen on
     AddressList listen_addresses_;
+
+    /// The TSIG keyring
+    const shared_ptr<TSIGKeyRing>* keyring_;
 private:
     std::string db_file_;
 
@@ -134,11 +143,12 @@ private:
 
 AuthSrvImpl::AuthSrvImpl(const bool use_cache,
                          AbstractXfroutClient& xfrout_client) :
-    config_session_(NULL), verbose_mode_(false),
+    config_session_(NULL),
     xfrin_session_(NULL),
-    memory_datasrc_class_(RRClass::IN()),
+    memory_client_class_(RRClass::IN()),
     statistics_timer_(io_service_),
-    counters_(verbose_mode_),
+    counters_(),
+    keyring_(NULL),
     xfrout_connected_(false),
     xfrout_client_(xfrout_client)
 {
@@ -241,7 +251,9 @@ public:
 
 void
 makeErrorMessage(MessagePtr message, OutputBufferPtr buffer,
-                 const Rcode& rcode, const bool verbose_mode)
+                 const Rcode& rcode, 
+                 std::auto_ptr<TSIGContext> tsig_context =
+                 std::auto_ptr<TSIGContext>())
 {
     // extract the parameters that should be kept.
     // XXX: with the current implementation, it's not easy to set EDNS0
@@ -272,23 +284,14 @@ makeErrorMessage(MessagePtr message, OutputBufferPtr buffer,
     message->setRcode(rcode);
 
     MessageRenderer renderer(*buffer);
-    message->toWire(renderer);
-
-    if (verbose_mode) {
-        cerr << "[b10-auth] sending an error response (" <<
-            renderer.getLength() << " bytes):\n" << message->toText() << endl;
+    if (tsig_context.get() != NULL) {
+        message->toWire(renderer, *tsig_context);
+    } else {
+        message->toWire(renderer);
     }
+    LOG_DEBUG(auth_logger, DBG_AUTH_MESSAGES, AUTH_SEND_ERROR_RESPONSE)
+              .arg(renderer.getLength()).arg(*message);
 }
-}
-
-void
-AuthSrv::setVerbose(const bool on) {
-    impl_->verbose_mode_ = on;
-}
-
-bool
-AuthSrv::getVerbose() const {
-    return (impl_->verbose_mode_);
 }
 
 IOService&
@@ -326,37 +329,34 @@ AuthSrv::getConfigSession() const {
     return (impl_->config_session_);
 }
 
-AuthSrv::MemoryDataSrcPtr
-AuthSrv::getMemoryDataSrc(const RRClass& rrclass) {
+AuthSrv::InMemoryClientPtr
+AuthSrv::getInMemoryClient(const RRClass& rrclass) {
     // XXX: for simplicity, we only support the IN class right now.
-    if (rrclass != impl_->memory_datasrc_class_) {
+    if (rrclass != impl_->memory_client_class_) {
         isc_throw(InvalidParameter,
                   "Memory data source is not supported for RR class "
                   << rrclass);
     }
-    return (impl_->memory_datasrc_);
+    return (impl_->memory_client_);
 }
 
 void
-AuthSrv::setMemoryDataSrc(const isc::dns::RRClass& rrclass,
-                          MemoryDataSrcPtr memory_datasrc)
+AuthSrv::setInMemoryClient(const isc::dns::RRClass& rrclass,
+                           InMemoryClientPtr memory_client)
 {
     // XXX: see above
-    if (rrclass != impl_->memory_datasrc_class_) {
+    if (rrclass != impl_->memory_client_class_) {
         isc_throw(InvalidParameter,
                   "Memory data source is not supported for RR class "
                   << rrclass);
+    } else if (!impl_->memory_client_ && memory_client) {
+        LOG_DEBUG(auth_logger, DBG_AUTH_OPS, AUTH_MEM_DATASRC_ENABLED)
+                  .arg(rrclass);
+    } else if (impl_->memory_client_ && !memory_client) {
+        LOG_DEBUG(auth_logger, DBG_AUTH_OPS, AUTH_MEM_DATASRC_DISABLED)
+                  .arg(rrclass);
     }
-    if (impl_->verbose_mode_) {
-        if (!impl_->memory_datasrc_ && memory_datasrc) {
-            cerr << "[b10-auth] Memory data source is enabled for class "
-                 << rrclass << endl;
-        } else if (impl_->memory_datasrc_ && !memory_datasrc) {
-            cerr << "[b10-auth] Memory data source is disabled for class "
-                 << rrclass << endl;
-        }
-    }
-    impl_->memory_datasrc_ = memory_datasrc;
+    impl_->memory_client_ = memory_client;
 }
 
 uint32_t
@@ -376,18 +376,13 @@ AuthSrv::setStatisticsTimerInterval(uint32_t interval) {
     }
     if (interval == 0) {
         impl_->statistics_timer_.cancel();
+        LOG_DEBUG(auth_logger, DBG_AUTH_OPS, AUTH_STATS_TIMER_DISABLED);
     } else {
         impl_->statistics_timer_.setup(boost::bind(&AuthSrv::submitStatistics,
                                                    this),
                                        interval * 1000);
-    }
-    if (impl_->verbose_mode_) {
-        if (interval == 0) {
-            cerr << "[b10-auth] Disabled statistics timer" << endl;
-        } else {
-            cerr << "[b10-auth] Set statistics timer to " << interval
-                 << " seconds" << endl;
-        }
+        LOG_DEBUG(auth_logger, DBG_AUTH_OPS, AUTH_STATS_TIMER_SET)
+                  .arg(interval);
     }
 }
 
@@ -404,17 +399,13 @@ AuthSrv::processMessage(const IOMessage& io_message, MessagePtr message,
 
         // Ignore all responses.
         if (message->getHeaderFlag(Message::HEADERFLAG_QR)) {
-            if (impl_->verbose_mode_) {
-                cerr << "[b10-auth] received unexpected response, ignoring"
-                     << endl;
-            }
+            LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_RESPONSE_RECEIVED);
             server->resume(false);
             return;
         }
     } catch (const Exception& ex) {
-        if (impl_->verbose_mode_) {
-            cerr << "[b10-auth] DNS packet exception: " << ex.what() << endl;
-        }
+        LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_HEADER_PARSE_FAIL)
+                  .arg(ex.what());
         server->resume(false);
         return;
     }
@@ -423,52 +414,63 @@ AuthSrv::processMessage(const IOMessage& io_message, MessagePtr message,
         // Parse the message.
         message->fromWire(request_buffer);
     } catch (const DNSProtocolError& error) {
-        if (impl_->verbose_mode_) {
-            cerr << "[b10-auth] returning " <<  error.getRcode().toText()
-                 << ": " << error.what() << endl;
-        }
-        makeErrorMessage(message, buffer, error.getRcode(),
-                         impl_->verbose_mode_);
+        LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_PACKET_PROTOCOL_ERROR)
+                  .arg(error.getRcode().toText()).arg(error.what());
+        makeErrorMessage(message, buffer, error.getRcode());
         server->resume(true);
         return;
     } catch (const Exception& ex) {
-        if (impl_->verbose_mode_) {
-            cerr << "[b10-auth] returning SERVFAIL: " << ex.what() << endl;
-        }
-        makeErrorMessage(message, buffer, Rcode::SERVFAIL(),
-                         impl_->verbose_mode_);
+        LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_PACKET_PARSE_ERROR)
+                  .arg(ex.what());
+        makeErrorMessage(message, buffer, Rcode::SERVFAIL());
         server->resume(true);
         return;
     } // other exceptions will be handled at a higher layer.
 
-    if (impl_->verbose_mode_) {
-        cerr << "[b10-auth] received a message:\n" << message->toText() << endl;
-    }
+    LOG_DEBUG(auth_logger, DBG_AUTH_MESSAGES, AUTH_PACKET_RECEIVED)
+              .arg(message->toText());
 
     // Perform further protocol-level validation.
+    // TSIG first
+    // If this is set to something, we know we need to answer with TSIG as well
+    std::auto_ptr<TSIGContext> tsig_context;
+    const TSIGRecord* tsig_record(message->getTSIGRecord());
+    TSIGError tsig_error(TSIGError::NOERROR());
+
+    // Do we do TSIG?
+    // The keyring can be null if we're in test
+    if (impl_->keyring_ != NULL && tsig_record != NULL) {
+        tsig_context.reset(new TSIGContext(tsig_record->getName(),
+                                           tsig_record->getRdata().
+                                                getAlgorithm(),
+                                           **impl_->keyring_));
+        tsig_error = tsig_context->verify(tsig_record, io_message.getData(),
+                                          io_message.getDataSize());
+    }
 
     bool sendAnswer = true;
-    if (message->getOpcode() == Opcode::NOTIFY()) {
-        sendAnswer = impl_->processNotify(io_message, message, buffer);
+    if (tsig_error != TSIGError::NOERROR()) {
+        makeErrorMessage(message, buffer, tsig_error.toRcode(), tsig_context);
+    } else if (message->getOpcode() == Opcode::NOTIFY()) {
+        sendAnswer = impl_->processNotify(io_message, message, buffer,
+                                          tsig_context);
     } else if (message->getOpcode() != Opcode::QUERY()) {
-        if (impl_->verbose_mode_) {
-            cerr << "[b10-auth] unsupported opcode" << endl;
-        }
-        makeErrorMessage(message, buffer, Rcode::NOTIMP(),
-                         impl_->verbose_mode_);
+        LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_UNSUPPORTED_OPCODE)
+                  .arg(message->getOpcode().toText());
+        makeErrorMessage(message, buffer, Rcode::NOTIMP(), tsig_context);
     } else if (message->getRRCount(Message::SECTION_QUESTION) != 1) {
-        makeErrorMessage(message, buffer, Rcode::FORMERR(),
-                         impl_->verbose_mode_);
+        makeErrorMessage(message, buffer, Rcode::FORMERR(), tsig_context);
     } else {
         ConstQuestionPtr question = *message->beginQuestion();
         const RRType &qtype = question->getType();
         if (qtype == RRType::AXFR()) {
-            sendAnswer = impl_->processAxfrQuery(io_message, message, buffer);
+            sendAnswer = impl_->processAxfrQuery(io_message, message, buffer,
+                                                 tsig_context);
         } else if (qtype == RRType::IXFR()) {
-            makeErrorMessage(message, buffer, Rcode::NOTIMP(),
-                             impl_->verbose_mode_);
+            makeErrorMessage(message, buffer, Rcode::NOTIMP(), tsig_context);
         } else {
-            sendAnswer = impl_->processNormalQuery(io_message, message, buffer);
+            sendAnswer = impl_->processNormalQuery(io_message, message, buffer,
+                                                   tsig_context);
         }
     }
 
@@ -477,7 +479,8 @@ AuthSrv::processMessage(const IOMessage& io_message, MessagePtr message,
 
 bool
 AuthSrvImpl::processNormalQuery(const IOMessage& io_message, MessagePtr message,
-                                OutputBufferPtr buffer)
+                                OutputBufferPtr buffer,
+                                auto_ptr<TSIGContext> tsig_context)
 {
     ConstEDNSPtr remote_edns = message->getEDNS();
     const bool dnssec_ok = remote_edns && remote_edns->getDNSSECAwareness();
@@ -502,20 +505,17 @@ AuthSrvImpl::processNormalQuery(const IOMessage& io_message, MessagePtr message,
         // If a memory data source is configured call the separate
         // Query::process()
         const ConstQuestionPtr question = *message->beginQuestion();
-        if (memory_datasrc_ && memory_datasrc_class_ == question->getClass()) {
+        if (memory_client_ && memory_client_class_ == question->getClass()) {
             const RRType& qtype = question->getType();
             const Name& qname = question->getName();
-            auth::Query(*memory_datasrc_, qname, qtype, *message).process();
+            auth::Query(*memory_client_, qname, qtype, *message).process();
         } else {
             datasrc::Query query(*message, cache_, dnssec_ok);
             data_sources_.doQuery(query);
         }
     } catch (const Exception& ex) {
-        if (verbose_mode_) {
-            cerr << "[b10-auth] Internal error, returning SERVFAIL: " <<
-                ex.what() << endl;
-        }
-        makeErrorMessage(message, buffer, Rcode::SERVFAIL(), verbose_mode_);
+        LOG_ERROR(auth_logger, AUTH_PROCESS_FAIL).arg(ex.what());
+        makeErrorMessage(message, buffer, Rcode::SERVFAIL());
         return (true);
     }
 
@@ -523,29 +523,28 @@ AuthSrvImpl::processNormalQuery(const IOMessage& io_message, MessagePtr message,
     const bool udp_buffer =
         (io_message.getSocket().getProtocol() == IPPROTO_UDP);
     renderer.setLengthLimit(udp_buffer ? remote_bufsize : 65535);
-    message->toWire(renderer);
-
-    if (verbose_mode_) {
-        cerr << "[b10-auth] sending a response ("
-             << renderer.getLength()
-             << " bytes):\n" << message->toText() << endl;
+    if (tsig_context.get() != NULL) {
+        message->toWire(renderer, *tsig_context);
+    } else {
+        message->toWire(renderer);
     }
+    LOG_DEBUG(auth_logger, DBG_AUTH_MESSAGES, AUTH_SEND_NORMAL_RESPONSE)
+              .arg(renderer.getLength()).arg(message->toText());
 
     return (true);
 }
 
 bool
 AuthSrvImpl::processAxfrQuery(const IOMessage& io_message, MessagePtr message,
-                              OutputBufferPtr buffer)
+                              OutputBufferPtr buffer,
+                              auto_ptr<TSIGContext> tsig_context)
 {
     // Increment query counter.
     incCounter(io_message.getSocket().getProtocol());
 
     if (io_message.getSocket().getProtocol() == IPPROTO_UDP) {
-        if (verbose_mode_) {
-            cerr << "[b10-auth] AXFR query over UDP isn't allowed" << endl;
-        }
-        makeErrorMessage(message, buffer, Rcode::FORMERR(), verbose_mode_);
+        LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_AXFR_UDP);
+        makeErrorMessage(message, buffer, Rcode::FORMERR(), tsig_context);
         return (true);
     }
 
@@ -568,11 +567,9 @@ AuthSrvImpl::processAxfrQuery(const IOMessage& io_message, MessagePtr message,
             xfrout_connected_ = false;
         }
 
-        if (verbose_mode_) {
-            cerr << "[b10-auth] Error in handling XFR request: " << err.what()
-                 << endl;
-        }
-        makeErrorMessage(message, buffer, Rcode::SERVFAIL(), verbose_mode_);
+        LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_AXFR_ERROR)
+                  .arg(err.what());
+        makeErrorMessage(message, buffer, Rcode::SERVFAIL(), tsig_context);
         return (true);
     }
 
@@ -581,25 +578,22 @@ AuthSrvImpl::processAxfrQuery(const IOMessage& io_message, MessagePtr message,
 
 bool
 AuthSrvImpl::processNotify(const IOMessage& io_message, MessagePtr message, 
-                           OutputBufferPtr buffer)
+                           OutputBufferPtr buffer,
+                           std::auto_ptr<TSIGContext> tsig_context)
 {
     // The incoming notify must contain exactly one question for SOA of the
     // zone name.
     if (message->getRRCount(Message::SECTION_QUESTION) != 1) {
-        if (verbose_mode_) {
-                cerr << "[b10-auth] invalid number of questions in notify: "
-                     << message->getRRCount(Message::SECTION_QUESTION) << endl;
-        }
-        makeErrorMessage(message, buffer, Rcode::FORMERR(), verbose_mode_);
+        LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_NOTIFY_QUESTIONS)
+                  .arg(message->getRRCount(Message::SECTION_QUESTION));
+        makeErrorMessage(message, buffer, Rcode::FORMERR(), tsig_context);
         return (true);
     }
     ConstQuestionPtr question = *message->beginQuestion();
     if (question->getType() != RRType::SOA()) {
-        if (verbose_mode_) {
-                cerr << "[b10-auth] invalid question RR type in notify: "
-                     << question->getType() << endl;
-        }
-        makeErrorMessage(message, buffer, Rcode::FORMERR(), verbose_mode_);
+        LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_NOTIFY_RRTYPE)
+                  .arg(question->getType().toText());
+        makeErrorMessage(message, buffer, Rcode::FORMERR(), tsig_context);
         return (true);
     }
 
@@ -615,10 +609,7 @@ AuthSrvImpl::processNotify(const IOMessage& io_message, MessagePtr message,
     // silent about such cases, but there doesn't seem to be anything we can
     // improve at the primary server side by sending an error anyway.
     if (xfrin_session_ == NULL) {
-        if (verbose_mode_) {
-            cerr << "[b10-auth] "
-                "session interface for xfrin is not available" << endl;
-        }
+        LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_NO_XFRIN);
         return (false);
     }
 
@@ -644,16 +635,12 @@ AuthSrvImpl::processNotify(const IOMessage& io_message, MessagePtr message,
         int rcode;
         parsed_answer = parseAnswer(rcode, answer);
         if (rcode != 0) {
-            if (verbose_mode_) {
-                cerr << "[b10-auth] failed to notify Zonemgr: "
-                     << parsed_answer->str() << endl;
-            }
+            LOG_ERROR(auth_logger, AUTH_ZONEMGR_ERROR)
+                      .arg(parsed_answer->str());
             return (false);
         }
     } catch (const Exception& ex) {
-        if (verbose_mode_) {
-            cerr << "[b10-auth] failed to notify Zonemgr: " << ex.what() << endl;
-        }
+        LOG_ERROR(auth_logger, AUTH_ZONEMGR_COMMS).arg(ex.what());
         return (false);
     }
 
@@ -662,7 +649,11 @@ AuthSrvImpl::processNotify(const IOMessage& io_message, MessagePtr message,
     message->setRcode(Rcode::NOERROR());
 
     MessageRenderer renderer(*buffer);
-    message->toWire(renderer);
+    if (tsig_context.get() != NULL) {
+        message->toWire(renderer, *tsig_context);
+    } else {
+        message->toWire(renderer);
+    }
     return (true);
 }
 
@@ -709,10 +700,7 @@ AuthSrvImpl::setDbFile(ConstElementPtr config) {
     } else {
         return (answer);
     }
-
-    if (verbose_mode_) {
-        cerr << "[b10-auth] Data source database file: " << db_file_ << endl;
-    }
+    LOG_DEBUG(auth_logger, DBG_AUTH_OPS, AUTH_DATA_SOURCE).arg(db_file_);
 
     // create SQL data source
     // Note: the following step is tricky to be exception-safe and to ensure
@@ -742,9 +730,7 @@ AuthSrv::updateConfig(ConstElementPtr new_config) {
         }
         return (impl_->setDbFile(new_config));
     } catch (const isc::Exception& error) {
-        if (impl_->verbose_mode_) {
-            cerr << "[b10-auth] error: " << error.what() << endl;
-        }
+        LOG_ERROR(auth_logger, AUTH_CONFIG_UPDATE_FAIL).arg(error.what());
         return (isc::config::createAnswer(1, error.what()));
     }
 }
@@ -771,4 +757,9 @@ AuthSrv::setListenAddresses(const AddressList& addresses) {
 void
 AuthSrv::setDNSService(isc::asiodns::DNSService& dnss) {
     dnss_ = &dnss;
+}
+
+void
+AuthSrv::setTSIGKeyRing(const shared_ptr<TSIGKeyRing>* keyring) {
+    impl_->keyring_ = keyring;
 }

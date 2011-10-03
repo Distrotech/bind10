@@ -57,13 +57,9 @@ class TestHttpHandler(unittest.TestCase):
     """Tests for HttpHandler class"""
 
     def setUp(self):
-        self.verbose = True
-        self.stats_httpd = stats_httpd.StatsHttpd(self.verbose)
+        self.stats_httpd = stats_httpd.StatsHttpd()
         self.assertTrue(type(self.stats_httpd.httpd) is list)
         self.httpd = self.stats_httpd.httpd
-        for ht in self.httpd:
-            self.assertTrue(ht.verbose)
-        self.stats_httpd.cc_session.verbose = False
 
     def test_do_GET(self):
         for ht in self.httpd:
@@ -155,21 +151,6 @@ class TestHttpHandler(unittest.TestCase):
         handler.do_HEAD()
         self.assertEqual(handler.response.code, 404)
 
-    def test_log_message(self):
-        for ht in self.httpd:
-            self._test_log_message(ht._handler)
-
-    def _test_log_message(self, handler):
-        # switch write_log function
-        handler.server.log_writer = handler.response._write_log
-        log_message = 'ABCDEFG'
-        handler.log_message("%s", log_message)
-        self.assertEqual(handler.response.log, 
-                         "[b10-stats-httpd] %s - - [%s] %s\n" %
-                         (handler.address_string(),
-                          handler.log_date_time_string(),
-                          log_message))
-
 class TestHttpServerError(unittest.TestCase):
     """Tests for HttpServerError exception"""
 
@@ -183,12 +164,9 @@ class TestHttpServer(unittest.TestCase):
     """Tests for HttpServer class"""
 
     def test_httpserver(self):
-        self.verbose = True
-        self.stats_httpd = stats_httpd.StatsHttpd(self.verbose)
-        self.stats_httpd.cc_session.verbose = False
+        self.stats_httpd = stats_httpd.StatsHttpd()
         for ht in self.stats_httpd.httpd:
             self.assertTrue(ht.server_address in self.stats_httpd.http_addrs)
-            self.assertEqual(ht.verbose, self.verbose)
             self.assertEqual(ht.xml_handler, self.stats_httpd.xml_handler)
             self.assertEqual(ht.xsd_handler, self.stats_httpd.xsd_handler)
             self.assertEqual(ht.xsl_handler, self.stats_httpd.xsl_handler)
@@ -209,17 +187,14 @@ class TestStatsHttpd(unittest.TestCase):
     """Tests for StatsHttpd class"""
 
     def setUp(self):
-        self.verbose = True
         fake_socket._CLOSED = False
         fake_socket.has_ipv6 = True
-        self.stats_httpd = stats_httpd.StatsHttpd(self.verbose)
-        self.stats_httpd.cc_session.verbose = False
+        self.stats_httpd = stats_httpd.StatsHttpd()
 
     def tearDown(self):
         self.stats_httpd.stop()
 
     def test_init(self):
-        self.assertTrue(self.stats_httpd.verbose)
         self.assertFalse(self.stats_httpd.mccs.get_socket()._closed)
         self.assertEqual(self.stats_httpd.mccs.get_socket().fileno(),
                          id(self.stats_httpd.mccs.get_socket()))
@@ -317,8 +292,7 @@ class TestStatsHttpd(unittest.TestCase):
         self.stats_httpd.cc_session.group_sendmsg(
             { 'command': [ "shutdown" ] }, "StatsHttpd")
         self.stats_httpd.start()
-        self.stats_httpd = stats_httpd.StatsHttpd(self.verbose)
-        self.stats_httpd.cc_session.verbose = False
+        self.stats_httpd = stats_httpd.StatsHttpd()
         self.assertRaises(
             fake_select.error, self.stats_httpd.start)
 
@@ -427,6 +401,95 @@ class TestStatsHttpd(unittest.TestCase):
                 dict(listen_on=[dict(address="1.2.3.4",port=543210)]))
             )
         self.assertEqual(ret, 1)
+
+    def test_xml_handler(self):
+        orig_get_stats_data = stats_httpd.StatsHttpd.get_stats_data
+        stats_httpd.StatsHttpd.get_stats_data = lambda x: {'foo':'bar'}
+        xml_body1 = stats_httpd.StatsHttpd().open_template(
+            stats_httpd.XML_TEMPLATE_LOCATION).substitute(
+            xml_string='<foo>bar</foo>',
+            xsd_namespace=stats_httpd.XSD_NAMESPACE,
+            xsd_url_path=stats_httpd.XSD_URL_PATH,
+            xsl_url_path=stats_httpd.XSL_URL_PATH)
+        xml_body2 = stats_httpd.StatsHttpd().xml_handler()
+        self.assertEqual(type(xml_body1), str)
+        self.assertEqual(type(xml_body2), str)
+        self.assertEqual(xml_body1, xml_body2)
+        stats_httpd.StatsHttpd.get_stats_data = lambda x: {'bar':'foo'}
+        xml_body2 = stats_httpd.StatsHttpd().xml_handler()
+        self.assertNotEqual(xml_body1, xml_body2)
+        stats_httpd.StatsHttpd.get_stats_data = orig_get_stats_data
+
+    def test_xsd_handler(self):
+        orig_get_stats_spec = stats_httpd.StatsHttpd.get_stats_spec
+        stats_httpd.StatsHttpd.get_stats_spec = lambda x: \
+            [{
+                "item_name": "foo",
+                "item_type": "string",
+                "item_optional": False,
+                "item_default": "bar",
+                "item_description": "foo is bar",
+                "item_title": "Foo"
+               }]
+        xsd_body1 = stats_httpd.StatsHttpd().open_template(
+            stats_httpd.XSD_TEMPLATE_LOCATION).substitute(
+            xsd_string='<all>' \
+                + '<element maxOccurs="1" minOccurs="1" name="foo" type="string">' \
+                + '<annotation><appinfo>Foo</appinfo>' \
+                + '<documentation>foo is bar</documentation>' \
+                + '</annotation></element></all>',
+            xsd_namespace=stats_httpd.XSD_NAMESPACE)
+        xsd_body2 = stats_httpd.StatsHttpd().xsd_handler()
+        self.assertEqual(type(xsd_body1), str)
+        self.assertEqual(type(xsd_body2), str)
+        self.assertEqual(xsd_body1, xsd_body2)
+        stats_httpd.StatsHttpd.get_stats_spec = lambda x: \
+            [{
+                "item_name": "bar",
+                "item_type": "string",
+                "item_optional": False,
+                "item_default": "foo",
+                "item_description": "bar is foo",
+                "item_title": "bar"
+               }]
+        xsd_body2 = stats_httpd.StatsHttpd().xsd_handler()
+        self.assertNotEqual(xsd_body1, xsd_body2)
+        stats_httpd.StatsHttpd.get_stats_spec = orig_get_stats_spec
+
+    def test_xsl_handler(self):
+        orig_get_stats_spec = stats_httpd.StatsHttpd.get_stats_spec
+        stats_httpd.StatsHttpd.get_stats_spec = lambda x: \
+            [{
+                "item_name": "foo",
+                "item_type": "string",
+                "item_optional": False,
+                "item_default": "bar",
+                "item_description": "foo is bar",
+                "item_title": "Foo"
+               }]
+        xsl_body1 = stats_httpd.StatsHttpd().open_template(
+            stats_httpd.XSL_TEMPLATE_LOCATION).substitute(
+            xsl_string='<xsl:template match="*"><tr>' \
+                + '<td class="title" title="foo is bar">Foo</td>' \
+                + '<td><xsl:value-of select="foo" /></td>' \
+                + '</tr></xsl:template>',
+            xsd_namespace=stats_httpd.XSD_NAMESPACE)
+        xsl_body2 = stats_httpd.StatsHttpd().xsl_handler()
+        self.assertEqual(type(xsl_body1), str)
+        self.assertEqual(type(xsl_body2), str)
+        self.assertEqual(xsl_body1, xsl_body2)
+        stats_httpd.StatsHttpd.get_stats_spec = lambda x: \
+            [{
+                "item_name": "bar",
+                "item_type": "string",
+                "item_optional": False,
+                "item_default": "foo",
+                "item_description": "bar is foo",
+                "item_title": "bar"
+               }]
+        xsl_body2 = stats_httpd.StatsHttpd().xsl_handler()
+        self.assertNotEqual(xsl_body1, xsl_body2)
+        stats_httpd.StatsHttpd.get_stats_spec = orig_get_stats_spec
 
     def test_for_without_B10_FROM_SOURCE(self):
         # just lets it go through the code without B10_FROM_SOURCE env

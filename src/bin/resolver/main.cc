@@ -14,11 +14,16 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <getopt.h>
+#include <ws2tcpip.h>
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#endif
 #include <stdlib.h>
 #include <errno.h>
 
@@ -43,8 +48,10 @@
 
 #include <xfr/xfrout_client.h>
 
+#ifndef _WIN32
 #include <auth/change_user.h>
 #include <auth/common.h>
+#endif
 
 #include <resolver/spec_config.h>
 #include <resolver/resolver.h>
@@ -52,13 +59,14 @@
 #include <cache/resolver_cache.h>
 #include <nsas/nameserver_address_store.h>
 
-#include <log/dummylog.h>
+#include <log/logger_support.h>
+#include <log/logger_level.h>
+#include "resolver_log.h"
 
 using namespace std;
 using namespace isc::cc;
 using namespace isc::config;
 using namespace isc::data;
-using isc::log::dlog;
 using namespace isc::asiodns;
 using namespace isc::asiolink;
 
@@ -79,7 +87,7 @@ my_command_handler(const string& command, ConstElementPtr args) {
     ConstElementPtr answer = createAnswer();
 
     if (command == "print_message") {
-        cout << args << endl;
+        LOG_INFO(resolver_logger, RESOLVER_PRINT_COMMAND).arg(args);
         /* let's add that message to our answer as well */
         answer = createAnswer(0, args);
     } else if (command == "shutdown") {
@@ -100,7 +108,7 @@ usage() {
 
 int
 main(int argc, char* argv[]) {
-    isc::log::dprefix = "b10-resolver";
+    bool verbose = false;
     int ch;
     const char* uid = NULL;
 
@@ -110,7 +118,7 @@ main(int argc, char* argv[]) {
             uid = optarg;
             break;
         case 'v':
-            isc::log::denabled = true;
+            verbose = true;
             break;
         case '?':
         default:
@@ -122,13 +130,23 @@ main(int argc, char* argv[]) {
         usage();
     }
 
-    if (isc::log::denabled) { // Show the command line
-        string cmdline("Command line:");
-        for (int i = 0; i < argc; ++ i) {
-            cmdline = cmdline + " " + argv[i];
-        }
-        dlog(cmdline);
+#ifdef _WIN32
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2,2), &wsaData);
+#endif
+
+    // Until proper logging comes along, initialize the logging with the
+    // temporary initLogger() code.  If verbose, we'll use maximum verbosity.
+    isc::log::initLogger("b10-resolver",
+                         (verbose ? isc::log::DEBUG : isc::log::INFO),
+                         isc::log::MAX_DEBUG_LEVEL, NULL);
+
+    // Print the starting message
+    string cmdline = argv[0];
+    for (int i = 1; i < argc; ++ i) {
+        cmdline = cmdline + " " + argv[i];
     }
+    LOG_INFO(resolver_logger, RESOLVER_STARTING).arg(cmdline);
 
     int ret = 0;
 
@@ -144,7 +162,7 @@ main(int argc, char* argv[]) {
         }
 
         resolver = boost::shared_ptr<Resolver>(new Resolver());
-        dlog("Server created.");
+        LOG_DEBUG(resolver_logger, RESOLVER_DBG_INIT, RESOLVER_CREATED);
 
         SimpleCallback* checkin = resolver->getCheckinProvider();
         DNSLookup* lookup = resolver->getDNSLookupProvider();
@@ -197,33 +215,41 @@ main(int argc, char* argv[]) {
         
         DNSService dns_service(io_service, checkin, lookup, answer);
         resolver->setDNSService(dns_service);
-        dlog("IOService created.");
+        LOG_DEBUG(resolver_logger, RESOLVER_DBG_INIT, RESOLVER_SERVICE_CREATED);
 
         cc_session = new Session(io_service.get_io_service());
-        dlog("Configuration session channel created.");
-
         config_session = new ModuleCCSession(specfile, *cc_session,
                                              my_config_handler,
                                              my_command_handler);
-        dlog("Configuration channel established.");
+        LOG_DEBUG(resolver_logger, RESOLVER_DBG_INIT, RESOLVER_CONFIG_CHANNEL);
 
+#ifndef _WIN32
         // FIXME: This does not belong here, but inside Boss
         if (uid != NULL) {
             changeUser(uid);
         }
+#endif
 
         resolver->setConfigSession(config_session);
-        dlog("Config loaded");
+        // Install all initial configurations.  If loading configuration
+        // fails, it will be logged, but we start the server anyway, giving
+        // the user a second chance to correct the configuration.
+        resolver->updateConfig(config_session->getFullConfig());
+        LOG_DEBUG(resolver_logger, RESOLVER_DBG_INIT, RESOLVER_CONFIG_LOADED);
 
-        dlog("Server started.");
+        LOG_INFO(resolver_logger, RESOLVER_STARTED);
         io_service.run();
     } catch (const std::exception& ex) {
-        dlog(string("Server failed: ") + ex.what(),true);
+        LOG_FATAL(resolver_logger, RESOLVER_FAILED).arg(ex.what());
         ret = 1;
     }
 
     delete config_session;
     delete cc_session;
 
+    LOG_INFO(resolver_logger, RESOLVER_SHUTDOWN);
+#ifdef _WIN32
+    WSACleanup();
+#endif
     return (ret);
 }

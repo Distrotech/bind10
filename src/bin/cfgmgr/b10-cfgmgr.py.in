@@ -17,7 +17,7 @@
 
 import sys; sys.path.append ('@@PYTHONPATH@@')
 
-from isc.config.cfgmgr import ConfigManager, ConfigManagerDataReadError
+import bind10_config
 from isc.cc import SessionError
 import isc.util.process
 import signal
@@ -25,27 +25,17 @@ import os
 from optparse import OptionParser
 import glob
 import os.path
+import isc.log
+isc.log.init("b10-cfgmgr")
+from isc.config.cfgmgr import ConfigManager, ConfigManagerDataReadError, logger
+from isc.log_messages.cfgmgr_messages import *
 
 isc.util.process.rename()
 
-# If B10_FROM_SOURCE is set in the environment, we use data files
-# from a directory relative to the value of that variable, or, if defined,
-# relative to the value of B10_FROM_SOURCE_LOCALSTATEDIR.  Otherwise
-# we use the ones installed on the system.
-# B10_FROM_SOURCE_LOCALSTATEDIR is specifically intended to be used for
-# tests where we want to use variuos types of configuration within the test
-# environment.  (We may want to make it even more generic so that the path is
-# passed from the boss process)
-if "B10_FROM_SOURCE" in os.environ:
-    if "B10_FROM_SOURCE_LOCALSTATEDIR" in os.environ:
-        DATA_PATH = os.environ["B10_FROM_SOURCE_LOCALSTATEDIR"]
-    else:
-        DATA_PATH = os.environ["B10_FROM_SOURCE"]
-    PLUGIN_PATHS = [DATA_PATH + '/src/bin/cfgmgr/plugins']
-else:
-    PREFIX = "@prefix@"
-    DATA_PATH = "@localstatedir@/@PACKAGE@".replace("${prefix}", PREFIX)
-    PLUGIN_PATHS = ["@prefix@/share/@PACKAGE@/config_plugins"]
+# Import some paths from our configuration
+DATA_PATH = bind10_config.DATA_PATH
+PLUGIN_PATHS = bind10_config.PLUGIN_PATHS
+PREFIX = bind10_config.PREFIX
 DEFAULT_CONFIG_FILE = "b10-config.db"
 
 cm = None
@@ -104,13 +94,12 @@ def main():
         cm.notify_boss()
         cm.run()
     except SessionError as se:
-        print("[b10-cfgmgr] Error creating config manager, "
-              "is the command channel daemon running?")
+        logger.fatal(CFGMGR_CC_SESSION_ERROR, se)
         return 1
     except KeyboardInterrupt as kie:
-        print("[b10-cfgmgr] Interrupted, exiting")
+        logger.info(CFGMGR_STOPPED_BY_KEYBOARD)
     except ConfigManagerDataReadError as cmdre:
-        print("[b10-cfgmgr] " + str(cmdre))
+        logger.fatal(CFGMGR_DATA_READ_ERROR, cmdre)
         return 2
     return 0
 

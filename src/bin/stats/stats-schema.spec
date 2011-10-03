@@ -1,7 +1,7 @@
 {
   "module_spec": {
     "module_name": "Stats",
-    "module_description": "Stats daemon",
+    "module_description": "Statistics data schema",
     "config_data": [
       {
         "item_name": "report_time",
@@ -54,8 +54,7 @@
         "item_optional": false,
         "item_default": 0.0,
         "item_title": "stats.Timestamp",
-        "item_description": "A current time stamp since epoch time (1970-01-01T00:00:00Z)",
-        "item_format": "second"
+        "item_description": "A current time stamp since epoch time (1970-01-01T00:00:00Z)"
       },
       {
         "item_name": "stats.lname",
@@ -82,59 +81,6 @@
         "item_description": "A number of total query counts which all auth servers receive over UDP since they started initially"
       }
     ],
-    "commands": [
-      {
-        "command_name": "status",
-        "command_description": "identify whether stats module is alive or not",
-        "command_args": []
-      },
-      {
-        "command_name": "show",
-        "command_description": "show the specified/all statistics data",
-        "command_args": [
-          {
-            "item_name": "stats_item_name",
-            "item_type": "string",
-            "item_optional": true,
-            "item_default": ""
-          }
-        ]
-      },
-      {
-        "command_name": "set",
-        "command_description": "set the value of specified name in statistics data",
-        "command_args": [
-          {
-            "item_name": "stats_data",
-            "item_type": "map",
-            "item_optional": false,
-            "item_default": {},
-            "map_item_spec": []
-          }
-        ]
-      },
-      {
-        "command_name": "remove",
-        "command_description": "remove the specified name from statistics data",
-        "command_args": [
-          {
-            "item_name": "stats_item_name",
-            "item_type": "string",
-            "item_optional": false,
-            "item_default": ""
-          }
-        ]
-      },
-      {
-        "command_name": "reset",
-        "command_description": "reset all statistics data to default values except for several constant names",
-        "command_args": []
-      },
-      {
-        "command_name": "shutdown",
-        "command_description": "Shut down the stats module",
-        "command_args": []
-      }
-    ]
+    "commands": []
   }
 }
