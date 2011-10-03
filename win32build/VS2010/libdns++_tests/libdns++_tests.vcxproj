@@ -52,7 +52,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;TEST_DATA_SRCDIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/dns/tests/testdata";TEST_DATA_BUILDDIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/dns/tests/testdata";_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;TEST_DATA_SRCDIR="%BIND10HOME%/src/lib/dns/tests/testdata";TEST_DATA_BUILDDIR="%BIND10HOME%/src/lib/dns/tests/testdata";_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\util;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
@@ -63,8 +63,118 @@
       <AdditionalLibraryDirectories>..\libexceptions\Debug;..\libutil\Debug;..\libutil_unittests\Debug;..\libcryptolink\Debug;..\libdns++\Debug;..\..\..\..\gtest\md10\Debug;..\..\..\..\botan\md10\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
-      <Command>
-      </Command>
+      <Command>cd ..\..\..\src\lib\dns\tests\testdata
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o edns_toWire1.wire edns_toWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o edns_toWire2.wire edns_toWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o edns_toWire3.wire edns_toWire3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o edns_toWire4.wire edns_toWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire10.wire message_fromWire10.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire11.wire message_fromWire11.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire12.wire message_fromWire12.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire13.wire message_fromWire13.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire14.wire message_fromWire14.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire15.wire message_fromWire15.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire16.wire message_fromWire16.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire17.wire message_fromWire17.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire18.wire message_fromWire18.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire19.wire message_fromWire19.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire20.wire message_fromWire20.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire21.wire message_fromWire21.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire22.wire message_fromWire22.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_toText1.wire message_toText1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_toText2.wire message_toText2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_toText3.wire message_toText3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_toWire2.wire message_toWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_toWire3.wire message_toWire3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_toWire4.wire message_toWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_toWire5.wire message_toWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o name_toWire5.wire name_toWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o name_toWire6.wire name_toWire6.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_afsdb_fromWire1.wire rdata_afsdb_fromWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_afsdb_fromWire2.wire rdata_afsdb_fromWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_afsdb_fromWire3.wire rdata_afsdb_fromWire3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_afsdb_fromWire4.wire rdata_afsdb_fromWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_afsdb_fromWire5.wire rdata_afsdb_fromWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_afsdb_toWire1.wire rdata_afsdb_toWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_afsdb_toWire2.wire rdata_afsdb_toWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdatafields1.wire rdatafields1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdatafields2.wire rdatafields2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdatafields3.wire rdatafields3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdatafields4.wire rdatafields4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdatafields5.wire rdatafields5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdatafields6.wire rdatafields6.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_fromWire1.wire rdata_minfo_fromWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_fromWire2.wire rdata_minfo_fromWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_fromWire3.wire rdata_minfo_fromWire3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_fromWire4.wire rdata_minfo_fromWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_fromWire5.wire rdata_minfo_fromWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_fromWire6.wire rdata_minfo_fromWire6.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_toWire1.wire rdata_minfo_toWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_toWire2.wire rdata_minfo_toWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_toWireUncompressed1.wire rdata_minfo_toWireUncompressed1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_toWireUncompressed2.wire rdata_minfo_toWireUncompressed2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire10.wire rdata_nsec3_fromWire10.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire11.wire rdata_nsec3_fromWire11.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire12.wire rdata_nsec3_fromWire12.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire13.wire rdata_nsec3_fromWire13.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire14.wire rdata_nsec3_fromWire14.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire15.wire rdata_nsec3_fromWire15.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire1.wire rdata_nsec3_fromWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire2.wire rdata_nsec3_fromWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire4.wire rdata_nsec3_fromWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire5.wire rdata_nsec3_fromWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire6.wire rdata_nsec3_fromWire6.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire7.wire rdata_nsec3_fromWire7.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire8.wire rdata_nsec3_fromWire8.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire9.wire rdata_nsec3_fromWire9.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec_fromWire10.wire rdata_nsec_fromWire10.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec_fromWire4.wire rdata_nsec_fromWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec_fromWire5.wire rdata_nsec_fromWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec_fromWire6.wire rdata_nsec_fromWire6.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec_fromWire7.wire rdata_nsec_fromWire7.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec_fromWire8.wire rdata_nsec_fromWire8.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec_fromWire9.wire rdata_nsec_fromWire9.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_rp_fromWire1.wire rdata_rp_fromWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_rp_fromWire2.wire rdata_rp_fromWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_rp_fromWire3.wire rdata_rp_fromWire3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_rp_fromWire4.wire rdata_rp_fromWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_rp_fromWire5.wire rdata_rp_fromWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_rp_fromWire6.wire rdata_rp_fromWire6.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_rp_toWire1.wire rdata_rp_toWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_rp_toWire2.wire rdata_rp_toWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_rrsig_fromWire2.wire rdata_rrsig_fromWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_soa_toWireUncompressed.wire rdata_soa_toWireUncompressed.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_fromWire1.wire rdata_tsig_fromWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_fromWire2.wire rdata_tsig_fromWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_fromWire3.wire rdata_tsig_fromWire3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_fromWire4.wire rdata_tsig_fromWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_fromWire5.wire rdata_tsig_fromWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_fromWire6.wire rdata_tsig_fromWire6.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_fromWire7.wire rdata_tsig_fromWire7.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_fromWire8.wire rdata_tsig_fromWire8.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_fromWire9.wire rdata_tsig_fromWire9.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_toWire1.wire rdata_tsig_toWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_toWire2.wire rdata_tsig_toWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_toWire3.wire rdata_tsig_toWire3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_toWire4.wire rdata_tsig_toWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_toWire5.wire rdata_tsig_toWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_txt_fromWire2.wire rdata_txt_fromWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_txt_fromWire3.wire rdata_txt_fromWire3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_txt_fromWire4.wire rdata_txt_fromWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_txt_fromWire5.wire rdata_txt_fromWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsigrecord_toWire1.wire tsigrecord_toWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsigrecord_toWire2.wire tsigrecord_toWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify10.wire tsig_verify10.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify1.wire tsig_verify1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify2.wire tsig_verify2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify3.wire tsig_verify3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify4.wire tsig_verify4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify5.wire tsig_verify5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify6.wire tsig_verify6.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify7.wire tsig_verify7.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify8.wire tsig_verify8.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify9.wire tsig_verify9.spec
+</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -74,7 +184,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;TEST_DATA_SRCDIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/dns/tests/testdata";TEST_DATA_BUILDDIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/dns/tests/testdata";NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;TEST_DATA_SRCDIR="%BIND10HOME%/src/lib/dns/tests/testdata";TEST_DATA_BUILDDIR="%BIND10HOME%/src/lib/dns/tests/testdata";NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\util;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
@@ -87,8 +197,118 @@
       <AdditionalLibraryDirectories>..\libexceptions\Release;..\libutil\Release;..\libutil_unittests\Release;..\libcryptolink\Release;..\libdns++\Release;..\..\..\..\gtest\md10\Release;..\..\..\..\botan\md10\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
-      <Command>
-      </Command>
+      <Command>cd ..\..\..\src\lib\dns\tests\testdata
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o edns_toWire1.wire edns_toWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o edns_toWire2.wire edns_toWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o edns_toWire3.wire edns_toWire3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o edns_toWire4.wire edns_toWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire10.wire message_fromWire10.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire11.wire message_fromWire11.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire12.wire message_fromWire12.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire13.wire message_fromWire13.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire14.wire message_fromWire14.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire15.wire message_fromWire15.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire16.wire message_fromWire16.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire17.wire message_fromWire17.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire18.wire message_fromWire18.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire19.wire message_fromWire19.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire20.wire message_fromWire20.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire21.wire message_fromWire21.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_fromWire22.wire message_fromWire22.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_toText1.wire message_toText1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_toText2.wire message_toText2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_toText3.wire message_toText3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_toWire2.wire message_toWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_toWire3.wire message_toWire3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_toWire4.wire message_toWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o message_toWire5.wire message_toWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o name_toWire5.wire name_toWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o name_toWire6.wire name_toWire6.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_afsdb_fromWire1.wire rdata_afsdb_fromWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_afsdb_fromWire2.wire rdata_afsdb_fromWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_afsdb_fromWire3.wire rdata_afsdb_fromWire3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_afsdb_fromWire4.wire rdata_afsdb_fromWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_afsdb_fromWire5.wire rdata_afsdb_fromWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_afsdb_toWire1.wire rdata_afsdb_toWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_afsdb_toWire2.wire rdata_afsdb_toWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdatafields1.wire rdatafields1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdatafields2.wire rdatafields2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdatafields3.wire rdatafields3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdatafields4.wire rdatafields4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdatafields5.wire rdatafields5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdatafields6.wire rdatafields6.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_fromWire1.wire rdata_minfo_fromWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_fromWire2.wire rdata_minfo_fromWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_fromWire3.wire rdata_minfo_fromWire3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_fromWire4.wire rdata_minfo_fromWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_fromWire5.wire rdata_minfo_fromWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_fromWire6.wire rdata_minfo_fromWire6.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_toWire1.wire rdata_minfo_toWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_toWire2.wire rdata_minfo_toWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_toWireUncompressed1.wire rdata_minfo_toWireUncompressed1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_minfo_toWireUncompressed2.wire rdata_minfo_toWireUncompressed2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire10.wire rdata_nsec3_fromWire10.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire11.wire rdata_nsec3_fromWire11.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire12.wire rdata_nsec3_fromWire12.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire13.wire rdata_nsec3_fromWire13.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire14.wire rdata_nsec3_fromWire14.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire15.wire rdata_nsec3_fromWire15.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire1.wire rdata_nsec3_fromWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire2.wire rdata_nsec3_fromWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire4.wire rdata_nsec3_fromWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire5.wire rdata_nsec3_fromWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire6.wire rdata_nsec3_fromWire6.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire7.wire rdata_nsec3_fromWire7.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire8.wire rdata_nsec3_fromWire8.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec3_fromWire9.wire rdata_nsec3_fromWire9.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec_fromWire10.wire rdata_nsec_fromWire10.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec_fromWire4.wire rdata_nsec_fromWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec_fromWire5.wire rdata_nsec_fromWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec_fromWire6.wire rdata_nsec_fromWire6.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec_fromWire7.wire rdata_nsec_fromWire7.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec_fromWire8.wire rdata_nsec_fromWire8.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_nsec_fromWire9.wire rdata_nsec_fromWire9.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_rp_fromWire1.wire rdata_rp_fromWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_rp_fromWire2.wire rdata_rp_fromWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_rp_fromWire3.wire rdata_rp_fromWire3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_rp_fromWire4.wire rdata_rp_fromWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_rp_fromWire5.wire rdata_rp_fromWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_rp_fromWire6.wire rdata_rp_fromWire6.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_rp_toWire1.wire rdata_rp_toWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_rp_toWire2.wire rdata_rp_toWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_rrsig_fromWire2.wire rdata_rrsig_fromWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_soa_toWireUncompressed.wire rdata_soa_toWireUncompressed.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_fromWire1.wire rdata_tsig_fromWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_fromWire2.wire rdata_tsig_fromWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_fromWire3.wire rdata_tsig_fromWire3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_fromWire4.wire rdata_tsig_fromWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_fromWire5.wire rdata_tsig_fromWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_fromWire6.wire rdata_tsig_fromWire6.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_fromWire7.wire rdata_tsig_fromWire7.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_fromWire8.wire rdata_tsig_fromWire8.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_fromWire9.wire rdata_tsig_fromWire9.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_toWire1.wire rdata_tsig_toWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_toWire2.wire rdata_tsig_toWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_toWire3.wire rdata_tsig_toWire3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_toWire4.wire rdata_tsig_toWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_tsig_toWire5.wire rdata_tsig_toWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_txt_fromWire2.wire rdata_txt_fromWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_txt_fromWire3.wire rdata_txt_fromWire3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_txt_fromWire4.wire rdata_txt_fromWire4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o rdata_txt_fromWire5.wire rdata_txt_fromWire5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsigrecord_toWire1.wire tsigrecord_toWire1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsigrecord_toWire2.wire tsigrecord_toWire2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify10.wire tsig_verify10.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify1.wire tsig_verify1.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify2.wire tsig_verify2.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify3.wire tsig_verify3.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify4.wire tsig_verify4.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify5.wire tsig_verify5.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify6.wire tsig_verify6.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify7.wire tsig_verify7.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify8.wire tsig_verify8.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify9.wire tsig_verify9.spec
+</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

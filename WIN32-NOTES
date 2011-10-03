@@ -13,7 +13,8 @@ What is needed:
  - python >= 3.1 (I got Cpython 3.2 MSI from python.org,
   note the pre-built python can give C++ runtime issue with
   an incompatible Visual Studio, and botan wants a version 2
-  for configuration)
+  for configuration. Current python has no socket.inet_ntop /
+  socket.inet_pton or _d.lib, so I recommend to recompile it)
 
  - perl (the Windows native one)
 
@@ -39,6 +40,13 @@ What is needed:
  - log4cplus (compiled from sources in the same style...
   Note WIN32 disables syslog support)
 
+Environment variables:
+ (for VS2010 now)
+
+ - BOOST -> C:\Program Files\boost\boost_1_44
+
+ - BIND10HOME -> c:/cygwin/home/dupont/bind10.trac826
+
 How to compile google test:
 
  - remove the /MD -> /MT line in the CMakeLists.txt, use cmake
@@ -51,10 +59,36 @@ How to compile google test:
 
  - msvc gives the gtestd.lib (in place of gtest.lib) for the debug version
 
+How to recompile python:
+
+ - solution file is in PCbuild/pcbuild.sln
+
+ - patch socketmodule.h with:
+
+#else /* MS_WINDOWS */
+# define NTDDI_VERSION NTDDI_WIN7
+# define WINVER _WIN32_WINNT_WIN7
+# define _WIN32_WINNT _WIN32_WINNT_WIN7
+# include <ws2tcpip.h>
+/* VC6 is shipped with old platform headers, and does not have MSTcpIP.h
+ * Separate SDKs have all the functions we want, but older ones don't have
+ * any version information.
+ * I use SIO_GET_MULTICAST_FILTER to detect a decent SDK.
+ */
+# ifdef SIO_GET_MULTICAST_FILTER
+#  include <MSTcpIP.h> /* for SIO_RCVALL */
+#  define HAVE_ADDRINFO
+#  define HAVE_SOCKADDR_STORAGE
+#  define HAVE_GETADDRINFO
+#  define HAVE_GETNAMEINFO
+#  define HAVE_INET_NTOP
+#  define HAVE_INET_PTON
+#  define ENABLE_IPV6
+# else
+
 Where I put things (hardwired paths):
 
- - <home>\bind10.trac826 for bind10
-  (wired in dns tests preprocessor defines)
+ - <home>\bind10.trac826 for bind10 (BIND10HOME environment variable)
 
  - <home>\gtest\include
 
@@ -68,11 +102,14 @@ Where I put things (hardwired paths):
    (tested only for VS 2010 / md10)
 
  - "C:\Program Files\boost\boost_1_44" (the include and
-  sometimes the libraries (in lib, called by the auto_link) too)
+  sometimes the libraries (in lib, called by the auto_link) too,
+  BOOST environment variable)
 
  - C:\Python32 (update your PATH, same for perl)
 
- - C:\sqlite3 (don't forget to copy the DLL in a place in the PATH)
+ - C:\sqlite3 (don't forget to copy the DLL in a place in the PATH,
+  on Window7 I can't get the permissions right but it works with a copy
+  in the current directory?)
 
 How to compile:
 
@@ -118,3 +155,14 @@ Random notes (for porting new code):
   not < 0), errno -> WSAGetLastError()
  - different declarations: send, recv, 
  - WSAStartup/WSACleanup in main()
+
+Test status: (unittests failures)
+ log: LoggerManagerTest* (2) (+crash in debug)
+ cfgclient: LogConfigTest (1)
+ acl: RequestCheckTest (3) IPAddress (2)
+ bench: BenchMarkTest (1) (too long?)
+ asiolink: IOEndpointTest.getSockAddr (debug crash)
+ asiodns: IOFetchTest (19)
+ cc: Element.removeIdentical (debug crash)
+ resolve: *imeout* (+crash in debug)
+ b10-dhcp6: interface stuff?

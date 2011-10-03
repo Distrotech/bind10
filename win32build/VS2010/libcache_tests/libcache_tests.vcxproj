@@ -52,7 +52,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;TEST_DATA_SRCDIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/cache/tests/testdata";TEST_DATA_BUILDDIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/cache/tests/testdata";_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;TEST_DATA_SRCDIR="%BIND10HOME%/src/lib/cache/tests/testdata";TEST_DATA_BUILDDIR="%BIND10HOME%/src/lib/cache/tests/testdata";_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>CompileAsCpp</CompileAs>
       <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\cache;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -71,7 +71,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;TEST_DATA_SRCDIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/cache/tests/testdata";TEST_DATA_BUILDDIR="c:/cygwin/home/fdupont/bind10.trac826/src/lib/cache/tests/testdata";NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;TEST_DATA_SRCDIR="%BIND10HOME%/src/lib/cache/tests/testdata";TEST_DATA_BUILDDIR="%BIND10HOME%/src/lib/cache/tests/testdata";NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>CompileAsCpp</CompileAs>
       <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\cache;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>

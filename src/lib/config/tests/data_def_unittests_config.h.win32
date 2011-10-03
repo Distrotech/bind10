@@ -13,4 +13,4 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 // #define TEST_DATA_PATH "@abs_srcdir@/testdata"
-#define LOG_SPEC_FILE "c:/cygwin/home/fdupont/bind10.trac826/src/bin/cfgmgr/plugins/logging.spec"
+#define LOG_SPEC_FILE BIND10HOME "/src/bin/cfgmgr/plugins/logging.spec"

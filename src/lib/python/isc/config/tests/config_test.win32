@@ -18,12 +18,12 @@
 PYTHON_EXEC=${PYTHON_EXEC:-/usr/bin/python}
 export PYTHON_EXEC
 
-CONFIG_PATH=c:/cygwin/home/fdupont/bind10.trac826/src/lib/python/isc/config/tests
+CONFIG_PATH=$BIND10HOME/src/lib/python/isc/config/tests
 
-PYTHONPATH=c:/cygwin/home/fdupont/bind10.trac826/src/lib/python
+PYTHONPATH=$BIND10HOME/src/lib/python
 export PYTHONPATH
 
-CONFIG_TESTDATA_PATH=c:/cygwin/home/fdupont/bind10.trac826/src/lib/config/testdata
+CONFIG_TESTDATA_PATH=$BIND10HOME/src/lib/config/testdata
 export CONFIG_TESTDATA_PATH
 
 cd ${BIND10_PATH}

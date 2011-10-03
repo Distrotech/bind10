@@ -23,7 +23,7 @@
 #include <string>
 
 namespace {
-std::string TEMP_DIR("c:/cygwin/home/fdupont/bind10.trac826/src/lib/log/tests");
+std::string TEMP_DIR(BIND10HOME "/bind10.trac826/src/lib/log/tests");
 }
 
 #endif // __TEMPDIR_H
