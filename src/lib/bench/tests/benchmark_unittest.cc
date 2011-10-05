@@ -100,7 +100,7 @@ TEST(BenchMarkTest, run) {
     struct timeval check_begin, check_end;
     gettimeofday(&check_begin, NULL);
 #ifdef _WIN32
-    Sleep((sleep_timespec.tv_sec * 1000) + (sleep_timespec.tv_nsec / 1000));
+    Sleep((sleep_timespec.tv_sec * 1000) + (sleep_timespec.tv_nsec / 1000000));
 #else
     nanosleep(&sleep_timespec, 0);
 #endif

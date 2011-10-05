@@ -38,8 +38,7 @@ using namespace isc::dns;
 using namespace isc::util;
 using namespace isc::dns::rdata;
 
-/// put the right #ifdef here
-#if !defined(_MSC_VER) && !defined(__GNUC__)
+#ifndef _MSC_VER
 const uint8_t EDNS::SUPPORTED_VERSION;
 #endif
 

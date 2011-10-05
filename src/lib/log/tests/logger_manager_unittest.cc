@@ -121,7 +121,7 @@ public:
         // Create file, close and delete it, and store the name for later.
         // There is still a race condition here, albeit a small one.
 #ifdef _WIN32
-	_mktemp_s(tname.get(), filename.size());
+        _mktemp_s(tname.get(), filename.size() + 1);
 #else
         int filenum = mkstemp(tname.get());
         if (filenum == -1) {

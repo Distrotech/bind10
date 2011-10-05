@@ -157,12 +157,7 @@ Random notes (for porting new code):
  - WSAStartup/WSACleanup in main()
 
 Test status: (unittests failures)
- log: LoggerManagerTest* (2) (+crash in debug)
- cfgclient: LogConfigTest (1)
- acl: RequestCheckTest (3) IPAddress (2)
- bench: BenchMarkTest (1) (too long?)
- asiolink: IOEndpointTest.getSockAddr (debug crash)
- asiodns: IOFetchTest (19)
- cc: Element.removeIdentical (debug crash)
- resolve: *imeout* (+crash in debug)
- b10-dhcp6: interface stuff?
+ cfgclient: LogConfigTest (1) (environment related???)
+ resolve: *imeout* (+crash in debug, double delete? temporary fix...)
+ b10-dhcp6: can't work as Windows has no loopback interface...
+

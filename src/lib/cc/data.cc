@@ -848,12 +848,15 @@ removeIdentical(ElementPtr a, ConstElementPtr b) {
         isc_throw(TypeError, "Non-map Elements passed to removeIdentical");
     }
 
+ again:
     const std::map<std::string, ConstElementPtr>& m = a->mapValue();
     for (std::map<std::string, ConstElementPtr>::const_iterator it = m.begin();
          it != m.end() ; ++it) {
         if (b->contains((*it).first)) {
             if (a->get((*it).first)->equals(*b->get((*it).first))) {
                 a->remove((*it).first);
+		// temporary fix
+		goto again;
             }
         }
     }

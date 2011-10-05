@@ -25,6 +25,7 @@
     <ClInclude Include="..\..\..\src\lib\nsas\nameserver_entry.h" />
     <ClInclude Include="..\..\..\src\lib\nsas\nsas_entry.h" />
     <ClInclude Include="..\..\..\src\lib\nsas\nsas_entry_compare.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\nsas_log.h" />
     <ClInclude Include="..\..\..\src\lib\nsas\nsas_messages.h" />
     <ClInclude Include="..\..\..\src\lib\nsas\nsas_types.h" />
     <ClInclude Include="..\..\..\src\lib\nsas\zone_entry.h" />
@@ -37,6 +38,7 @@
     <ClCompile Include="..\..\..\src\lib\nsas\nameserver_address.cc" />
     <ClCompile Include="..\..\..\src\lib\nsas\nameserver_address_store.cc" />
     <ClCompile Include="..\..\..\src\lib\nsas\nameserver_entry.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\nsas_log.cc" />
     <ClCompile Include="..\..\..\src\lib\nsas\nsas_messages.cc" />
     <ClCompile Include="..\..\..\src\lib\nsas\zone_entry.cc" />
   </ItemGroup>

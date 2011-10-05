@@ -12,18 +12,15 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#ifndef __TEMPDIR_H
-#define __TEMPDIR_H
+/// Defines the logger used by the NSAS
 
-/// \brief Define temporary directory
-///
-/// Defines the temporary directory in which temporary files used by the
-/// unit tests are created.
+#include "nsas/nsas_log.h"
 
-#include <string>
+namespace isc {
+namespace nsas {
 
-namespace {
-std::string TEMP_DIR(BIND10HOME "/src/lib/log/tests");
-}
+isc::log::Logger nsas_logger("nsas");
 
-#endif // __TEMPDIR_H
+} // namespace nsas
+} // namespace isc
+
