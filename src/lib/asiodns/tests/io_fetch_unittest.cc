@@ -45,7 +45,7 @@
 
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable: 4351, 4355)
+#pragma warning(disable: 4351 4355)
 #endif
 
 using namespace asio;

@@ -45,7 +45,7 @@ ERROR [bind10.log] LOG_DUPLICATE_MESSAGE_ID duplicate message ID (error) in comp
 FATAL [bind10.log] LOG_NO_MESSAGE_ID line fatal: message definition line found without a message ID
 .
 B10_LOGGER_DESTINATION=stdout B10_LOGGER_SEVERITY=DEBUG B10_LOGGER_DBGLEVEL=99 ./init_logger_test.exe | \
-    cut -d' ' -f3- | diff $tempfile -
+    cut -d' ' -f3- | diff -b $tempfile -
 passfail $?
 
 echo -n  "   - severity=DEBUG, dbglevel=50: "
@@ -58,7 +58,7 @@ ERROR [bind10.log] LOG_DUPLICATE_MESSAGE_ID duplicate message ID (error) in comp
 FATAL [bind10.log] LOG_NO_MESSAGE_ID line fatal: message definition line found without a message ID
 .
 B10_LOGGER_DESTINATION=stdout B10_LOGGER_SEVERITY=DEBUG B10_LOGGER_DBGLEVEL=50 ./init_logger_test.exe | \
-    cut -d' ' -f3- | diff $tempfile -
+    cut -d' ' -f3- | diff -b $tempfile -
 passfail $?
 
 echo -n  "   - severity=WARN: "
@@ -68,7 +68,7 @@ ERROR [bind10.log] LOG_DUPLICATE_MESSAGE_ID duplicate message ID (error) in comp
 FATAL [bind10.log] LOG_NO_MESSAGE_ID line fatal: message definition line found without a message ID
 .
 B10_LOGGER_DESTINATION=stdout B10_LOGGER_SEVERITY=WARN ./init_logger_test.exe | \
-    cut -d' ' -f3- | diff $tempfile -
+    cut -d' ' -f3- | diff -b $tempfile -
 passfail $?
 
 echo "2. Checking that B10_LOGGER_DESTINATION works"
@@ -79,19 +79,19 @@ FATAL [bind10.log] LOG_NO_MESSAGE_ID line fatal: message definition line found w
 .
 rm -f $destfile
 B10_LOGGER_SEVERITY=FATAL B10_LOGGER_DESTINATION=stdout ./init_logger_test.exe 1> $destfile
-cut -d' ' -f3- $destfile | diff $tempfile -
+cut -d' ' -f3- $destfile | diff -b $tempfile -
 passfail $?
 
 echo -n  "   - stderr: "
 rm -f $destfile
 B10_LOGGER_SEVERITY=FATAL B10_LOGGER_DESTINATION=stderr ./init_logger_test.exe 2> $destfile
-cut -d' ' -f3- $destfile | diff $tempfile -
+cut -d' ' -f3- $destfile | diff -b $tempfile -
 passfail $?
 
 echo -n  "   - file: "
 rm -f $destfile
 B10_LOGGER_SEVERITY=FATAL B10_LOGGER_DESTINATION=$destfile ./init_logger_test.exe
-cut -d' ' -f3- $destfile | diff $tempfile -
+cut -d' ' -f3- $destfile | diff -b $tempfile -
 passfail $?
 
 # Note: can't automatically test syslog output.

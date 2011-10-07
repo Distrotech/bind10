@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -72,7 +72,7 @@
     <PreBuildEvent>
       <Command>cd ..\..\..\src\lib\cc
 copy session_config.h.win32 session_config.h
-..\..\..\win32build\VS2010\liblog_compiler\Release\message.exe cc_messages.mes
+..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe cc_messages.mes
 
 </Command>
     </PreBuildEvent>
@@ -97,7 +97,7 @@ copy session_config.h.win32 session_config.h
     <PreBuildEvent>
       <Command>cd ..\..\..\src\lib\cc
 copy session_config.h.win32 session_config.h
-..\..\..\win32build\VS2010\liblog_compiler\Release\message.exe cc_messages.mes
+..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe cc_messages.mes
 
 </Command>
     </PreBuildEvent>

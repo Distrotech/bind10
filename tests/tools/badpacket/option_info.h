@@ -74,8 +74,13 @@ public:
     /// flags field command options.  Not all members of the structure are
     /// relevant to all options.
     struct Parameter {
+#ifdef _WIN32
+        char            short_form;     // Short form of the command switch
+        char*           long_form;      // Long form of the command switch
+#else
         const char      short_form;     // Short form of the command switch
         const char*     long_form;      // Long form of the command switch
+#endif
         int             word;           // Byte offset of word in message header
         uint16_t        mask;           // Bit mask of field in the flags word
         int             offset;         // Offset of field in flags word

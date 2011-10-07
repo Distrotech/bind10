@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -60,7 +60,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)b10-host.exe</OutputFile>
-      <AdditionalLibraryDirectories>..\libexceptions\Debug;..\libutil\Debug;..\libcryptolink\Debug;..\libdns++\Debug;..\..\..\..\botan\md10\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\libcryptolink\$(Configuration);..\libdns++\$(Configuration);..\..\..\..\botan\md10\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libexceptions.lib;libutil.lib;libcryptolink.lib;libdns++.lib;botan.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -81,7 +81,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)b10-host.exe</OutputFile>
-      <AdditionalLibraryDirectories>..\libexceptions\Release;..\libutil\Release;..\libcryptolink\Release;..\libdns++\Release;..\..\..\..\botan\md10\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\libcryptolink\$(Configuration);..\libdns++\$(Configuration);..\..\..\..\botan\md10\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libexceptions.lib;libutil.lib;libcryptolink.lib;libdns++.lib;botan.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

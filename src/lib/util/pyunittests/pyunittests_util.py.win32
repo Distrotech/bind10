@@ -1,0 +1,6 @@
+"""fake pyunittests_util module"""
+
+import pydnspp
+
+fix_current_time = pydnspp.fix_current_time
+

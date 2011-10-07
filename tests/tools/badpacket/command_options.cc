@@ -18,7 +18,7 @@
 #include <vector>
 
 #include <boost/lexical_cast.hpp>
-#include <getopt.h>
+#include <getopt_long.h>
 
 #include "exceptions/exceptions.h"
 #include "util/strutil.h"

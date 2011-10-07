@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -62,7 +62,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)datasrc.pyd</OutputFile>
-      <AdditionalLibraryDirectories>..\libexceptions\Debug;..\libutil\Debug;..\liblog\Debug;..\libcryptolink\Debug;..\libdns++\Debug;..\libdns++_python\Debug;..\libdatasrc\Debug;..\..\..\..\botan\md10\Debug;..\..\..\..\log4cplus\md10\Debug;C:\Python32\libs;C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\liblog\$(Configuration);..\libcryptolink\$(Configuration);..\libdns++\$(Configuration);..\libdns++_python\$(Configuration);..\libdatasrc\$(Configuration);..\..\..\..\botan\md10\$(Configuration);..\..\..\..\log4cplus\md10\$(Configuration);C:\Python32\libs;C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libexceptions.lib;libutil.lib;liblog.lib;libcryptolink.lib;libdns++.lib;libdns++_python.lib;libdatasrc.lib;botan.lib;log4cplusSD.lib;sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -83,7 +83,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)datasrc.pyd</OutputFile>
-      <AdditionalLibraryDirectories>..\libexceptions\Release;..\libutil\Release;..\liblog\Release;..\libcryptolink\Release;..\libdns++\Release;..\libdns++_python\Release;..\libdatasrc\Release;..\..\..\..\botan\md10\Release;..\..\..\..\log4cplus\md10\Release;C:\Python32\libs;C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\liblog\$(Configuration);..\libcryptolink\$(Configuration);..\libdns++\$(Configuration);..\libdns++_python\$(Configuration);..\libdatasrc\$(Configuration);..\..\..\..\botan\md10\$(Configuration);..\..\..\..\log4cplus\md10\$(Configuration);C:\Python32\libs;C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libexceptions.lib;libutil.lib;liblog.lib;libcryptolink.lib;libdns++.lib;libdns++_python.lib;libdatasrc.lib;botan.lib;log4cplusS.lib;sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
