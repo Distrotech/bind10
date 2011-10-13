@@ -2,7 +2,7 @@
 
 Administrator Reference for BIND 10
 
-   This is the reference guide for BIND 10 version 20110809.
+   This is the reference guide for BIND 10 version 20111014.
 
    Copyright (c) 2010-2011 Internet Systems Consortium, Inc.
 
@@ -12,7 +12,7 @@ Administrator Reference for BIND 10
    Consortium (ISC). It includes DNS libraries and modular components for
    controlling authoritative and recursive DNS servers.
 
-   This is the reference guide for BIND 10 version 20110809. The most
+   This is the reference guide for BIND 10 version 20111014. The most
    up-to-date version of this document (in PDF, HTML, and plain text
    formats), along with other documents for BIND 10, can be found at
    http://bind10.isc.org/docs.
@@ -124,7 +124,7 @@ Chapter 1. Introduction
 
   Note
 
-   This guide covers the experimental prototype of BIND 10 version 20110809.
+   This guide covers the experimental prototype of BIND 10 version 20111014.
 
   Note
 
