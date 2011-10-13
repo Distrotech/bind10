@@ -158,6 +158,5 @@ Random notes (for porting new code):
 
 Test status: (unittests failures)
  cfgclient: LogConfigTest (1) (environment related???)
- resolve: *imeout* (+crash in debug, double delete? temporary fix...)
  b10-dhcp6: can't work as Windows has no loopback interface...
 
