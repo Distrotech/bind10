@@ -16,9 +16,8 @@
 #define IFACE_MGR_H
 
 #include <list>
-#include <boost/shared_ptr.hpp>
-#include <asiolink/io_address.h>
-#include <dhcp/pkt6.h>
+#include "asiolink/io_address.h"
+#include "dhcp6/pkt6.h"
 
 namespace isc {
 
@@ -61,8 +60,8 @@ namespace isc {
 
         void printIfaces(std::ostream& out = std::cout);
 
-        bool send(boost::shared_ptr<Pkt6> pkt);
-        boost::shared_ptr<Pkt6> receive();
+        bool send(Pkt6& pkt);
+        Pkt6* receive();
 
         // don't use private, we need derived classes in tests
     protected:

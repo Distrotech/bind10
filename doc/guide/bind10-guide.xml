@@ -41,9 +41,10 @@
       </para>
       <para>
         This is the reference guide for BIND 10 version &__VERSION__;.
-	The most up-to-date version of this document, along with
-	other documents for BIND 10, can be found at <ulink
-	url="http://bind10.isc.org/docs"/>.  </para> </abstract>
+	The most up-to-date version of this document (in PDF, HTML,
+	and plain text formats), along with other documents for
+	BIND 10, can be found at <ulink url="http://bind10.isc.org/docs"/>.
+	</para> </abstract>
 
       <releaseinfo>This is the reference guide for BIND 10 version
         &__VERSION__;.</releaseinfo>
@@ -1257,21 +1258,80 @@ TODO
     <para>
       Incoming zones are transferred using the <command>b10-xfrin</command>
       process which is started by <command>bind10</command>.
-      When received, the zone is stored in the BIND 10
-      data store, and its records can be served by
+      When received, the zone is stored in the corresponding BIND 10
+      data source, and its records can be served by
       <command>b10-auth</command>.
       In combination with <command>b10-zonemgr</command> (for
       automated SOA checks), this allows the BIND 10 server to
       provide <quote>secondary</quote> service.
     </para>
 
+    <para>
+      The <command>b10-xfrin</command> process supports both AXFR and
+      IXFR.  Due to some implementation limitations of the current
+      development release, however, it only tries AXFR by default,
+      and care should be taken to enable IXFR.
+    </para>
+<!-- TODO: http://bind10.isc.org/ticket/1279 -->
+
     <note><simpara>
-     The current development release of BIND 10 only supports
-     AXFR. (IXFR is not supported.)
-
-<!-- TODO: sqlite3 data source only? -->
-
+     In the current development release of BIND 10, incoming zone
+     transfers are only available for SQLite3-based data sources,
+     that is, they don't work for an in-memory data source.
     </simpara></note>
+
+    <section>
+      <title>Configuration for Incoming Zone Transfers</title>
+      <para>
+	In practice, you need to specify a list of secondary zones to
+	enable incoming zone transfers for these zones (you can still
+	trigger a zone transfer manually, without a prior configuration
+	(see below)).
+      </para>
+
+      <para>
+	For example, to enable zone transfers for a zone named "example.com"
+	(whose master address is assumed to be 2001:db8::53 here),
+	run the following at the <command>bindctl</command> prompt:
+
+      <screen>&gt; <userinput>config add Xfrin/zones</userinput>
+&gt; <userinput>config set Xfrin/zones[0]/name "<option>example.com</option>"</userinput>
+&gt; <userinput>config set Xfrin/zones[0]/master_addr "<option>2001:db8::53</option>"</userinput>
+&gt; <userinput>config commit</userinput></screen>
+
+      (We assume there has been no zone configuration before).
+      </para>
+    </section>
+
+    <section>
+      <title>Enabling IXFR</title>
+      <para>
+        As noted above, <command>b10-xfrin</command> uses AXFR for
+        zone transfers by default.  To enable IXFR for zone transfers
+        for a particular zone, set the <userinput>use_ixfr</userinput>
+        configuration parameter to <userinput>true</userinput>.
+        In the above example of configuration sequence, you'll need
+        to add the following before performing <userinput>commit</userinput>:
+      <screen>&gt; <userinput>config set Xfrin/zones[0]/use_ixfr true</userinput></screen>
+      </para>
+
+<!-- TODO: http://bind10.isc.org/ticket/1279 -->
+      <note><simpara>
+      One reason why IXFR is disabled by default in the current
+      release is because it does not support automatic fallback from IXFR to
+      AXFR when it encounters a primary server that doesn't support
+      outbound IXFR (and, not many existing implementations support
+      it).  Another, related reason is that it does not use AXFR even
+      if it has no knowledge about the zone (like at the very first
+      time the secondary server is set up).  IXFR requires the
+      "current version" of the zone, so obviously it doesn't work
+      in this situation and AXFR is the only workable choice.
+      The current release of <command>b10-xfrin</command> does not
+      make this selection automatically.
+      These features will be implemented in a near future
+      version, at which point we will enable IXFR by default.
+      </simpara></note>
+    </section>
 
 <!-- TODO:
 
@@ -1284,13 +1344,18 @@ what if a NOTIFY is sent?
 
 -->
 
-    <para>
-       To manually trigger a zone transfer to retrieve a remote zone,
-       you may use the <command>bindctl</command> utility.
-       For example, at the <command>bindctl</command> prompt run:
+    <section>
+      <title>Trigger an Incoming Zone Transfer Manually</title>
 
-       <screen>&gt; <userinput>Xfrin retransfer zone_name="<option>foo.example.org</option>" master=<option>192.0.2.99</option></userinput></screen>
-    </para>
+      <para>
+	To manually trigger a zone transfer to retrieve a remote zone,
+	you may use the <command>bindctl</command> utility.
+	For example, at the <command>bindctl</command> prompt run:
+
+	<screen>&gt; <userinput>Xfrin retransfer zone_name="<option>foo.example.org</option>" master=<option>192.0.2.99</option></userinput></screen>
+      </para>
+    </section>
+
 
 <!-- TODO: can that retransfer be used to identify a new zone? -->
 <!-- TODO: what if doesn't exist at that master IP? -->
@@ -1522,24 +1587,30 @@ then change those defaults with config set Resolver/forward_addresses[0]/address
 
     <para>
 
-       This stats daemon provides commands to identify if it is running,
-       show specified or all statistics data, set values, remove data,
-       and reset data.
+       This stats daemon provides commands to identify if it is
+       running, show specified or all statistics data, show specified
+       or all statistics data schema, and set specified statistics
+       data.
 
        For example, using <command>bindctl</command>:
 
        <screen>
 &gt; <userinput>Stats show</userinput>
 {
-    "auth.queries.tcp": 1749,
-    "auth.queries.udp": 867868,
-    "bind10.boot_time": "2011-01-20T16:59:03Z",
-    "report_time": "2011-01-20T17:04:06Z",
-    "stats.boot_time": "2011-01-20T16:59:05Z",
-    "stats.last_update_time": "2011-01-20T17:04:05Z",
-    "stats.lname": "4d3869d9_a@jreed.example.net",
-    "stats.start_time": "2011-01-20T16:59:05Z",
-    "stats.timestamp": 1295543046.823504
+    "Auth": {
+        "queries.tcp": 1749,
+        "queries.udp": 867868
+    },
+    "Boss": {
+        "boot_time": "2011-01-20T16:59:03Z"
+    },
+    "Stats": {
+        "boot_time": "2011-01-20T16:59:05Z",
+        "last_update_time": "2011-01-20T17:04:05Z",
+        "lname": "4d3869d9_a@jreed.example.net",
+        "report_time": "2011-01-20T17:04:06Z",
+        "timestamp": 1295543046.823504
+    }
 }
        </screen>
     </para>

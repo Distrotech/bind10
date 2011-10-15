@@ -152,6 +152,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libcfgclient_tests", "libcf
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "liblog", "liblog\liblog.vcxproj", "{AEF3DFFE-B566-4E6A-B299-B59B81022C06}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2844FDFB-A0A1-4FA4-A654-15D69CC717DD} = {2844FDFB-A0A1-4FA4-A654-15D69CC717DD}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "liblog_tests", "liblog_tests\liblog_tests.vcxproj", "{9F69DE07-D285-4B5C-8528-DF975C59ED3B}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -277,7 +280,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libdatasrc_tests", "libdata
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libserver_common", "libserver_common\libserver_common.vcxproj", "{66C9A5EC-514B-4BDC-AC74-ED4CB465CAAF}"
 	ProjectSection(ProjectDependencies) = postProject
-		{EB54F7B8-FAEF-4348-989C-D4E6B42CEFB1} = {EB54F7B8-FAEF-4348-989C-D4E6B42CEFB1}
+		{32624520-5341-471B-B88D-2599DBCDABF5} = {32624520-5341-471B-B88D-2599DBCDABF5}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libserver_common_tests", "libserver_common_tests\libserver_common_tests.vcxproj", "{D09B618B-D0E4-468D-A4BD-E204B4344C18}"
@@ -333,7 +336,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pydutil_io", "pydutil_io\py
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxfr", "libxfr\libxfr.vcxproj", "{761E7D88-6CCB-4E41-9F1E-6C1FBBD062F5}"
 	ProjectSection(ProjectDependencies) = postProject
-		{33927325-C9B5-4FE6-B69F-318433AFF4BD} = {33927325-C9B5-4FE6-B69F-318433AFF4BD}
+		{EB54F7B8-FAEF-4348-989C-D4E6B42CEFB1} = {EB54F7B8-FAEF-4348-989C-D4E6B42CEFB1}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libdhcp", "libdhcp\libdhcp.vcxproj", "{F27BC0D0-A334-4DC0-9DC9-880D5DA74524}"
@@ -365,7 +368,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "b10-dhcp6_tests", "b10-dhcp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libacl", "libacl\libacl.vcxproj", "{635B804D-1B52-433E-9ECD-84F507FDB1F1}"
 	ProjectSection(ProjectDependencies) = postProject
-		{32624520-5341-471B-B88D-2599DBCDABF5} = {32624520-5341-471B-B88D-2599DBCDABF5}
+		{33927325-C9B5-4FE6-B69F-318433AFF4BD} = {33927325-C9B5-4FE6-B69F-318433AFF4BD}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libdnsacl", "libdnsacl\libdnsacl.vcxproj", "{EB54F7B8-FAEF-4348-989C-D4E6B42CEFB1}"

@@ -788,11 +788,11 @@ TEST_F(RecursiveQueryTest, forwardQueryTimeout) {
     Question question(Name("example.net"), RRClass::IN(), RRType::A());
     OutputBufferPtr buffer(new OutputBuffer(0));
     MessagePtr answer(new Message(Message::RENDER));
-    Message *query_message = new Message(Message::RENDER);
-    isc::resolve::initResponseMessage(question, *query_message);
+    Message query_message(Message::RENDER);
+    isc::resolve::initResponseMessage(question, query_message);
 
     boost::shared_ptr<MockResolverCallback> callback(new MockResolverCallback(&server));
-    query.forward(ConstMessagePtr(query_message), answer, buffer, &server, callback);
+    query.forward(ConstMessagePtr(&query_message), answer, buffer, &server, callback);
     // Run the test
     io_service_->run();
     EXPECT_EQ(callback->result, MockResolverCallback::FAILURE);
@@ -823,11 +823,11 @@ TEST_F(RecursiveQueryTest, forwardClientTimeout) {
                          1000, 10, 4000, 4);
     Question q(Name("example.net"), RRClass::IN(), RRType::A());
     OutputBufferPtr buffer(new OutputBuffer(0));
-    Message *query_message = new Message(Message::RENDER);
-    isc::resolve::initResponseMessage(q, *query_message);
+    Message query_message(Message::RENDER);
+    isc::resolve::initResponseMessage(q, query_message);
 
     boost::shared_ptr<MockResolverCallback> callback(new MockResolverCallback(&server));
-    query.forward(ConstMessagePtr(query_message), answer, buffer, &server, callback);
+    query.forward(ConstMessagePtr(&query_message), answer, buffer, &server, callback);
     // Run the test
     io_service_->run();
     EXPECT_EQ(callback->result, MockResolverCallback::FAILURE);
@@ -858,11 +858,11 @@ TEST_F(RecursiveQueryTest, forwardLookupTimeout) {
     Question question(Name("example.net"), RRClass::IN(), RRType::A());
     OutputBufferPtr buffer(new OutputBuffer(0));
 
-    Message *query_message = new Message(Message::RENDER);
-    isc::resolve::initResponseMessage(question, *query_message);
+    Message query_message(Message::RENDER);
+    isc::resolve::initResponseMessage(question, query_message);
 
     boost::shared_ptr<MockResolverCallback> callback(new MockResolverCallback(&server));
-    query.forward(ConstMessagePtr(query_message), answer, buffer, &server, callback);
+    query.forward(ConstMessagePtr(&query_message), answer, buffer, &server, callback);
     // Run the test
     io_service_->run();
     EXPECT_EQ(callback->result, MockResolverCallback::FAILURE);
@@ -893,11 +893,11 @@ TEST_F(RecursiveQueryTest, lowtimeouts) {
     Question question(Name("example.net"), RRClass::IN(), RRType::A());
     OutputBufferPtr buffer(new OutputBuffer(0));
 
-    Message *query_message = new Message(Message::RENDER);
-    isc::resolve::initResponseMessage(question, *query_message);
+    Message query_message(Message::RENDER);
+    isc::resolve::initResponseMessage(question, query_message);
 
     boost::shared_ptr<MockResolverCallback> callback(new MockResolverCallback(&server));
-    query.forward(ConstMessagePtr(query_message), answer, buffer, &server, callback);
+    query.forward(ConstMessagePtr(&query_message), answer, buffer, &server, callback);
     // Run the test
     io_service_->run();
     EXPECT_EQ(callback->result, MockResolverCallback::FAILURE);

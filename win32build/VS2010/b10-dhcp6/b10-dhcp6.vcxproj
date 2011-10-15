@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -94,14 +94,17 @@ copy spec_config.h.win32 spec_config.h
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\bin\dhcp6\dhcp6.h" />
     <ClInclude Include="..\..\..\src\bin\dhcp6\dhcp6_srv.h" />
     <ClInclude Include="..\..\..\src\bin\dhcp6\iface_mgr.h" />
+    <ClInclude Include="..\..\..\src\bin\dhcp6\pkt6.h" />
     <ClInclude Include="..\..\getopt.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\bin\dhcp6\dhcp6_srv.cc" />
     <ClCompile Include="..\..\..\src\bin\dhcp6\iface_mgr.cc" />
     <ClCompile Include="..\..\..\src\bin\dhcp6\main.cc" />
+    <ClCompile Include="..\..\..\src\bin\dhcp6\pkt6.cc" />
     <ClCompile Include="..\..\getopt.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

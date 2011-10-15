@@ -983,8 +983,10 @@ public:
         client_timer.cancel();
         if (outstanding_events_ > 0) {
             return;
+#ifndef _MSC_VER
         } else {
             delete this;
+#endif
         }
     }
 

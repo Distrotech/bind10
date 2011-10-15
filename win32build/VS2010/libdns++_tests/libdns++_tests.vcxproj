@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -328,9 +328,10 @@ python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify9.wire tsi
     <ClCompile Include="..\..\..\src\lib\dns\tests\rdatafields_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_afsdb_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_cname_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_dhcid_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_dname_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_dnskey_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_ds_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_ds_like_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_hinfo_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_in_aaaa_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_in_a_unittest.cc" />
@@ -349,7 +350,7 @@ python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o tsig_verify9.wire tsi
     <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_soa_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_srv_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_tsig_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_txt_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_txt_like_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\tests\rdata_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\tests\rrclass_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\tests\rrparamregistry_unittest.cc" />

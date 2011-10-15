@@ -15,14 +15,7 @@
 #ifndef DHCPV6_SRV_H
 #define DHCPV6_SRV_H
 
-#include <boost/shared_ptr.hpp>
-#include <dhcp/pkt6.h>
-#include <dhcp/option.h>
 #include <iostream>
-
-namespace test {
-class Dhcpv6SrvTest_Solicit_basic_Test;
-}
 
 namespace isc {
     class Dhcpv6Srv {
@@ -32,14 +25,6 @@ namespace isc {
         Dhcpv6Srv(const Dhcpv6Srv& src);
         Dhcpv6Srv& operator=(const Dhcpv6Srv& src);
 
-        boost::shared_ptr<isc::dhcp::Option> getServerID();
-
-        // this method sets server-identifier. it loads it from a file or
-        // generates using interface link-layer addresses (EUI-64)
-        bool setServerID();
-
-        boost::shared_ptr<isc::dhcp::Option> serverid_;
-
     public:
         // default constructor
         Dhcpv6Srv();
@@ -48,30 +33,7 @@ namespace isc {
         bool run();
 
     protected:
-        boost::shared_ptr<Pkt6>
-        processSolicit(boost::shared_ptr<Pkt6> solicit);
-
-        boost::shared_ptr<Pkt6>
-        processRequest(boost::shared_ptr<Pkt6> solicit);
-
-        boost::shared_ptr<Pkt6>
-        processRenew(boost::shared_ptr<Pkt6> solicit);
-
-        boost::shared_ptr<Pkt6>
-        processRebind(boost::shared_ptr<Pkt6> solicit);
-
-        boost::shared_ptr<Pkt6>
-        processConfirm(boost::shared_ptr<Pkt6> solicit);
-
-        boost::shared_ptr<Pkt6>
-        processRelease(boost::shared_ptr<Pkt6> solicit);
-
-        boost::shared_ptr<Pkt6>
-        processDecline(boost::shared_ptr<Pkt6> solicit);
-
         bool shutdown;
-
-        friend class test::Dhcpv6SrvTest_Solicit_basic_Test;
     };
 };
 

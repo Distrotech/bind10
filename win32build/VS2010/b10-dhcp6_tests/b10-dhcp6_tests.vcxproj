@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -52,7 +52,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;TEST_DATA_DIR="%BIND10HOME%/src/lib/testutils/testdata";TEST_DATA_BUILDDIR="%BIND10HOME%src/bin/dhcp6/tests";_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\bin;..\..\..\ext\asio;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
@@ -71,7 +71,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;TEST_DATA_DIR="%BIND10HOME%/src/lib/testutils/testdata";TEST_DATA_BUILDDIR="%BIND10HOME%src/bin/dhcp6/tests";NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\bin;..\..\..\ext\asio;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
@@ -88,13 +88,16 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\src\bin\dhcp6\dhcp6_srv.h" />
     <ClInclude Include="..\..\..\src\bin\dhcp6\iface_mgr.h" />
+    <ClInclude Include="..\..\..\src\bin\dhcp6\pkt6.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\bin\dhcp6\dhcp6_srv.cc" />
     <ClCompile Include="..\..\..\src\bin\dhcp6\iface_mgr.cc" />
+    <ClCompile Include="..\..\..\src\bin\dhcp6\pkt6.cc" />
     <ClCompile Include="..\..\..\src\bin\dhcp6\tests\dhcp6_srv_unittest.cc" />
     <ClCompile Include="..\..\..\src\bin\dhcp6\tests\dhcp6_unittests.cc" />
     <ClCompile Include="..\..\..\src\bin\dhcp6\tests\iface_mgr_unittest.cc" />
+    <ClCompile Include="..\..\..\src\bin\dhcp6\tests\pkt6_unittest.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

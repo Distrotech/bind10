@@ -21,12 +21,11 @@
 #else
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <net/if.h>
 #endif
 
-#include <dhcp/dhcp6.h>
-#include <dhcp6/iface_mgr.h>
-#include <exceptions/exceptions.h>
+#include "dhcp6/iface_mgr.h"
+#include "dhcp6/dhcp6.h"
+#include "exceptions/exceptions.h"
 
 using namespace std;
 using namespace isc;
@@ -41,7 +40,7 @@ void
 IfaceMgr::instanceCreate() {
     if (instance_) {
         // no need to do anything. Instance is already created.
-        // Who called it again anyway? Uh oh. Had to be us, as 
+        // Who called it again anyway? Uh oh. Had to be us, as
         // this is private method.
         return;
     }
@@ -97,7 +96,7 @@ IfaceMgr::IfaceMgr() {
         if (!openSockets()) {
             isc_throw(Unexpected, "Failed to open/bind sockets.");
         }
-    } catch (std::exception& ex) {
+    } catch (const std::exception& ex) {
         cout << "IfaceMgr creation failed:" << ex.what() << endl;
 
         // TODO Uncomment this (or call LOG_FATAL) once
@@ -144,7 +143,7 @@ IfaceMgr::detectIfaces() {
         iface.addrs_.push_back(addr);
         ifaces_.push_back(iface);
         interfaces.close();
-    } catch (std::exception& ex) {
+    } catch (const std::exception& ex) {
         // TODO: deallocate whatever memory we used
         // not that important, since this function is going to be
         // thrown away as soon as we get proper interface detection
@@ -181,7 +180,6 @@ IfaceMgr::openSockets() {
                 return (false);
             }
 #endif
-
             sendsock_ = sock;
 
             sock = openSocket(iface->name_,
@@ -249,7 +247,7 @@ IfaceMgr::getIface(const std::string& ifname) {
 
 
 /**
- * Opens UDP/IPv6 socket and binds it to specific address, interface nad port.
+ * Opens UDP/IPv6 socket and binds it to specific address, interface and port.
  *
  * @param ifname name of the interface
  * @param addr address to be bound.
@@ -263,27 +261,22 @@ int
 IfaceMgr::openSocket(const std::string& ifname,
                      const IOAddress& addr,
                      int port) {
-    struct sockaddr_storage name;
-    int name_len;
-    struct sockaddr_in6 *addr6;
+    struct sockaddr_in6 addr6;
 
     cout << "Creating socket on " << ifname << "/" << addr.toText()
          << "/port=" << port << endl;
 
-    memset(&name, 0, sizeof(name));
-    addr6 = (struct sockaddr_in6 *)&name;
-    addr6->sin6_family = AF_INET6;
-    addr6->sin6_port = htons(port);
-    addr6->sin6_scope_id = if_nametoindex(ifname.c_str());
+    memset(&addr6, 0, sizeof(addr6));
+    addr6.sin6_family = AF_INET6;
+    addr6.sin6_port = htons(port);
+    addr6.sin6_scope_id = if_nametoindex(ifname.c_str());
 
-    memcpy(&addr6->sin6_addr,
+    memcpy(&addr6.sin6_addr,
            addr.getAddress().to_v6().to_bytes().data(),
-           sizeof(addr6->sin6_addr));
-
+           sizeof(addr6.sin6_addr));
 #ifdef HAVE_SA_LEN
-    addr6->sin6_len = sizeof(*addr6);
+    addr6->sin6_len = sizeof(addr6);
 #endif
-    name_len = sizeof(*addr6);
 
     // TODO: use sockcreator once it becomes available
 
@@ -300,6 +293,7 @@ IfaceMgr::openSocket(const std::string& ifname,
         return (-1);
     }
 #endif
+
     /* Set the REUSEADDR option so that we don't fail to start if
        we're being restarted. */
     int flag = 1;
@@ -316,22 +310,20 @@ IfaceMgr::openSocket(const std::string& ifname,
     }
 
 #ifdef _WIN32
-    if (::bind(sock, (struct sockaddr *)&name, name_len) < 0) {
+    if (::bind(sock, (struct sockaddr *)&addr6, sizeof(addr6)) < 0) {
         cout << "Failed to bind socket " << sock << " to " << addr.toText()
              << "/port=" << port << endl;
         closesocket(sock);
         return (INVALID_SOCKET);
     }
 #else
-    if (bind(sock, (struct sockaddr *)&name, name_len) < 0) {
+    if (bind(sock, (struct sockaddr *)&addr6, sizeof(addr6)) < 0) {
         cout << "Failed to bind socket " << sock << " to " << addr.toText()
              << "/port=" << port << endl;
         close(sock);
         return (-1);
     }
 #endif
-
-
 #ifdef IPV6_RECVPKTINFO
     /* RFC3542 - a new way */
     if (setsockopt(sock, IPPROTO_IPV6, IPV6_RECVPKTINFO,
@@ -431,7 +423,7 @@ const std::string & mcast) {
  * @return True, if transmission was successful. False otherwise.
  */
 bool
-IfaceMgr::send(boost::shared_ptr<Pkt6> pkt) {
+IfaceMgr::send(Pkt6 &pkt) {
 #ifdef _WIN32
     WSAMSG m;
     WSABUF v;
@@ -459,17 +451,17 @@ IfaceMgr::send(boost::shared_ptr<Pkt6> pkt) {
     sockaddr_in6 to;
     memset(&to, 0, sizeof(to));
     to.sin6_family = AF_INET6;
-    to.sin6_port = htons(pkt->remote_port_);
+    to.sin6_port = htons(pkt.remote_port_);
     memcpy(&to.sin6_addr,
-           pkt->remote_addr_.getAddress().to_v6().to_bytes().data(),
+           pkt.remote_addr_.getAddress().to_v6().to_bytes().data(),
            16);
-    to.sin6_scope_id = pkt->ifindex_;
+    to.sin6_scope_id = pkt.ifindex_;
 
 #ifdef _WIN32
     m.name = (struct sockaddr *)&to;
     m.namelen = sizeof(to);
 #else
-    m.msg_name = (struct sockaddr *)&to;
+    m.msg_name = &to;
     m.msg_namelen = sizeof(to);
 #endif
 
@@ -479,13 +471,13 @@ IfaceMgr::send(boost::shared_ptr<Pkt6> pkt) {
      * of data to send, so we declare a single vector entry.)
      */
 #ifdef _WIN32
-    v.buf = (char *) &pkt->data_[0];
-    v.len = pkt->data_len_;
+    v.buf = (char *) &pkt.data_[0];
+    v.len = pkt.data_len_;
     m.lpBuffers = &v;
     m.dwBufferCount = 1;
 #else
-    v.iov_base = (char *) &pkt->data_[0];
-    v.iov_len = pkt->data_len_;
+    v.iov_base = (char *) &pkt.data_[0];
+    v.iov_len = pkt.data_len_;
     m.msg_iov = &v;
     m.msg_iovlen = 1;
 #endif
@@ -507,7 +499,7 @@ IfaceMgr::send(boost::shared_ptr<Pkt6> pkt) {
     cmsg->cmsg_len = WSA_CMSG_LEN(sizeof(*pktinfo));
     pktinfo = (struct in6_pktinfo *)WSA_CMSG_DATA(cmsg);
     memset(pktinfo, 0, sizeof(*pktinfo));
-    pktinfo->ipi6_ifindex = pkt->ifindex_;
+    pktinfo->ipi6_ifindex = pkt.ifindex_;
     m.Control.len = cmsg->cmsg_len;
 #else
     m.msg_control = control_buf_;
@@ -518,7 +510,7 @@ IfaceMgr::send(boost::shared_ptr<Pkt6> pkt) {
     cmsg->cmsg_len = CMSG_LEN(sizeof(*pktinfo));
     pktinfo = (struct in6_pktinfo *)CMSG_DATA(cmsg);
     memset(pktinfo, 0, sizeof(*pktinfo));
-    pktinfo->ipi6_ifindex = pkt->ifindex_;
+    pktinfo->ipi6_ifindex = pkt.ifindex_;
     m.msg_controllen = cmsg->cmsg_len;
 #endif
 
@@ -536,10 +528,10 @@ IfaceMgr::send(boost::shared_ptr<Pkt6> pkt) {
     }
     cout << "Sent " << result << " bytes." << endl;
 
-    cout << "Sent " << pkt->data_len_ << " bytes over "
-         << pkt->iface_ << "/" << pkt->ifindex_ << " interface: "
-         << " dst=" << pkt->remote_addr_.toText()
-         << ", src=" << pkt->local_addr_.toText()
+    cout << "Sent " << pkt.data_len_ << " bytes over "
+         << pkt.iface_ << "/" << pkt.ifindex_ << " interface: "
+         << " dst=" << pkt.remote_addr_.toText()
+         << ", src=" << pkt.local_addr_.toText()
          << endl;
 
     return (result >= 0);
@@ -555,7 +547,7 @@ IfaceMgr::send(boost::shared_ptr<Pkt6> pkt) {
  *
  * @return Object prepresenting received packet.
  */
-boost::shared_ptr<Pkt6>
+Pkt6*
 IfaceMgr::receive() {
 #ifdef _WIN32
     GUID WSARecvMsg_GUID = WSAID_WSARECVMSG;
@@ -570,12 +562,12 @@ IfaceMgr::receive() {
 #ifdef _WIN32
     WSACMSGHDR *cmsg;
 #else
-    struct cmsghdr *cmsg;
+    struct cmsghdr* cmsg;
 #endif
     struct in6_pktinfo* pktinfo;
     struct sockaddr_in6 from;
     struct in6_addr to_addr;
-    boost::shared_ptr<Pkt6> pkt;
+    Pkt6* pkt;
     char addr_str[INET6_ADDRSTRLEN];
 
     try {
@@ -586,10 +578,10 @@ IfaceMgr::receive() {
         // we use larger buffer. This buffer limit is checked
         // during reception (see iov_len below), so we are
         // safe
-        pkt = boost::shared_ptr<Pkt6>(new Pkt6(65536));
-    } catch (std::exception&) {
+        pkt = new Pkt6(65536);
+    } catch (const std::exception&) {
         cout << "Failed to create new packet." << endl;
-        return (boost::shared_ptr<Pkt6>()); // NULL
+        return (0);
     }
 
     memset(control_buf_, 0, control_buf_len_);
@@ -624,7 +616,7 @@ IfaceMgr::receive() {
     m.lpBuffers = &v;
     m.dwBufferCount = 1;
 #else
-    v.iov_base = (char *)&pkt->data_[0];
+    v.iov_base = (char*)&pkt->data_[0];
     v.iov_len = pkt->data_len_;
     m.msg_iov = &v;
     m.msg_iovlen = 1;
@@ -695,16 +687,17 @@ IfaceMgr::receive() {
         }
         if (!found_pktinfo) {
             cout << "Unable to find pktinfo" << endl;
-            return (boost::shared_ptr<Pkt6>()); // NULL
+            delete pkt;
+            return (0);
         }
     } else {
         cout << "Failed to receive data." << endl;
-        return (boost::shared_ptr<Pkt6>()); // NULL
+        delete pkt;
+        return (0);
     }
 
     // That's ugly.
     // TODO add IOAddress constructor that will take struct in6_addr*
-    // TODO: there's from_bytes() method added in IOAddress. Use it!
 #ifdef _WIN32
 #define DECONST (void *)
 #else
@@ -713,7 +706,6 @@ IfaceMgr::receive() {
     inet_ntop(AF_INET6, DECONST &to_addr, addr_str,INET6_ADDRSTRLEN);
     pkt->local_addr_ = IOAddress(string(addr_str));
 
-    // TODO: there's from_bytes() method added in IOAddress. Use it!
     inet_ntop(AF_INET6, DECONST &from.sin6_addr, addr_str, INET6_ADDRSTRLEN);
     pkt->remote_addr_ = IOAddress(string(addr_str));
 
@@ -725,7 +717,8 @@ IfaceMgr::receive() {
     } else {
         cout << "Received packet over unknown interface (ifindex="
              << pkt->ifindex_ << ")." << endl;
-        return (boost::shared_ptr<Pkt6>()); // NULL
+        delete pkt;
+        return (0);
     }
 
     pkt->data_len_ = result;

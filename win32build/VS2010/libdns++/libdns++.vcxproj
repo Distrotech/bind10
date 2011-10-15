@@ -24,8 +24,10 @@
     <ClInclude Include="..\..\..\src\lib\dns\rdata.h" />
     <ClInclude Include="..\..\..\src\lib\dns\rdataclass.h" />
     <ClInclude Include="..\..\..\src\lib\dns\rdatafields.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\rdata\generic\detail\ds_like.h" />
     <ClInclude Include="..\..\..\src\lib\dns\rdata\generic\detail\nsec_bitmap.h" />
     <ClInclude Include="..\..\..\src\lib\dns\rdata\generic\detail\txt_like.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\rdata\generic\dlv_32769.h" />
     <ClInclude Include="..\..\..\src\lib\dns\rrclass.h" />
     <ClInclude Include="..\..\..\src\lib\dns\rrparamregistry.h" />
     <ClInclude Include="..\..\..\src\lib\dns\rrset.h" />

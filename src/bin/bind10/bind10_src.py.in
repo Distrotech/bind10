@@ -85,7 +85,7 @@ isc.util.process.rename(sys.argv[0])
 # number, and the overall BIND 10 version number (set in configure.ac).
 VERSION = "bind10 20110223 (BIND 10 @PACKAGE_VERSION@)"
 
-# This is for bind10.boottime of stats module
+# This is for boot_time of Boss
 _BASETIME = time.gmtime()
 
 class RestartSchedule:
@@ -308,9 +308,11 @@ class BoB:
         return process_list
 
     def _get_stats_data(self):
-        return { "stats_data": {
-                    'bind10.boot_time': time.strftime('%Y-%m-%dT%H:%M:%SZ', _BASETIME)
-               }}
+        return { "owner": "Boss",
+                 "data": { 'boot_time':
+                               time.strftime('%Y-%m-%dT%H:%M:%SZ', _BASETIME)
+                           }
+                 }
 
     def command_handler(self, command, args):
         logger.debug(DBG_COMMANDS, BIND10_RECEIVED_COMMAND, command)
@@ -325,15 +327,22 @@ class BoB:
                 answer = isc.config.ccsession.create_answer(0, self._get_stats_data())
             elif command == "sendstats":
                 # send statistics data to the stats daemon immediately
-                cmd = isc.config.ccsession.create_command(
-                    'set', self._get_stats_data())
-                seq = self.cc_session.group_sendmsg(cmd, 'Stats')
-                # Consume the answer, in case it becomes a orphan message.
-                try:
-                    self.cc_session.group_recvmsg(False, seq)
-                except isc.cc.session.SessionTimeout:
-                    pass
-                answer = isc.config.ccsession.create_answer(0)
+                stats_data = self._get_stats_data()
+                valid = self.ccs.get_module_spec().validate_statistics(
+                    True, stats_data["data"])
+                if valid:
+                    cmd = isc.config.ccsession.create_command('set', stats_data)
+                    seq = self.cc_session.group_sendmsg(cmd, 'Stats')
+                    # Consume the answer, in case it becomes a orphan message.
+                    try:
+                        self.cc_session.group_recvmsg(False, seq)
+                    except isc.cc.session.SessionTimeout:
+                        pass
+                    answer = isc.config.ccsession.create_answer(0)
+                else:
+                    logger.fatal(BIND10_INVALID_STATISTICS_DATA);
+                    answer = isc.config.ccsession.create_answer(
+                        1, "specified statistics data is invalid")
             elif command == "ping":
                 answer = isc.config.ccsession.create_answer(0, "pong")
             elif command == "show_processes":
@@ -570,6 +579,22 @@ class BoB:
         self.start_simple("b10-xfrout", c_channel_env)
 
     def start_xfrin(self, c_channel_env):
+        # XXX: a quick-hack workaround.  xfrin will implicitly use dynamically
+        # loadable data source modules, which will be installed in $(libdir).
+        # On some OSes (including MacOS X and *BSDs) the main process (python)
+        # cannot find the modules unless they are located in a common shared
+        # object path or a path in the (DY)LD_LIBRARY_PATH.  We should seek
+        # a cleaner solution, but for a short term workaround we specify the
+        # path here, unconditionally, and without even bothering which
+        # environment variable should be used.
+        if not "B10_FROM_SOURCE" in os.environ:
+            cur_path = os.getenv('DYLD_LIBRARY_PATH')
+            cur_path = '' if cur_path is None else ':' + cur_path
+            c_channel_env['DYLD_LIBRARY_PATH'] = "@@LIBDIR@@" + cur_path
+
+            cur_path = os.getenv('LD_LIBRARY_PATH')
+            cur_path = '' if cur_path is None else ':' + cur_path
+            c_channel_env['LD_LIBRARY_PATH'] = "@@LIBDIR@@" + cur_path
         self.start_simple("b10-xfrin", c_channel_env)
 
     def start_zonemgr(self, c_channel_env):
