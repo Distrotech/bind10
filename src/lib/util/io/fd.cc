@@ -33,7 +33,7 @@ write_data(const int fd, const void *buffer_v, const size_t length) {
     // Just keep writing until all is written
     while (rest) {
         ssize_t written(write(fd, buffer, rest));
-        if (rest == -1) {
+        if (written == -1) {
             if (errno == EINTR) { // Just keep going
                 continue;
             } else {
@@ -53,13 +53,13 @@ read_data(const int fd, void *buffer_v, const size_t length) {
     size_t rest(length), already(0);
     while (rest) { // Stil something to read
         ssize_t amount(read(fd, buffer, rest));
-        if (rest == -1) {
+        if (amount == -1) {
             if (errno == EINTR) { // Continue on interrupted call
                 continue;
             } else {
                 return -1;
             }
-        } else if (amount) {
+        } else if (amount != 0) {
             already += amount;
             rest -= amount;
             buffer += amount;
