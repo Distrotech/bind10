@@ -64,7 +64,7 @@
       <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\libutil_unittests\$(Configuration);..\liblog\$(Configuration);..\libcryptolink\$(Configuration);..\libdns++\$(Configuration);..\libcc\$(Configuration);..\libtestutils\$(Configuration);..\libdatasrc\$(Configuration);..\..\..\..\botan\md10\$(Configuration);..\..\..\..\log4cplus\md10\$(Configuration);..\..\..\..\gtest\md10\$(Configuration);C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
-      <Command>..\..\..\src\lib\datasrc\tests\testdata
+      <Command>cd ..\..\..\src\lib\datasrc\tests\testdata
 copy rwtest.sqlite3 rwtest.sqlite3.copied
 </Command>
     </PreBuildEvent>
@@ -90,7 +90,7 @@ copy rwtest.sqlite3 rwtest.sqlite3.copied
       <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\libutil_unittests\$(Configuration);..\liblog\$(Configuration);..\libcryptolink\$(Configuration);..\libdns++\$(Configuration);..\libcc\$(Configuration);..\libtestutils\$(Configuration);..\libdatasrc\$(Configuration);..\..\..\..\botan\md10\$(Configuration);..\..\..\..\log4cplus\md10\$(Configuration);..\..\..\..\gtest\md10\$(Configuration);C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
-      <Command>..\..\..\src\lib\datasrc\tests\testdata
+      <Command>cd ..\..\..\src\lib\datasrc\tests\testdata
 copy rwtest.sqlite3 rwtest.sqlite3.copied
 </Command>
     </PreBuildEvent>
