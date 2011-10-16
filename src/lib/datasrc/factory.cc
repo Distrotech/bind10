@@ -33,9 +33,9 @@ namespace datasrc {
 
 LibraryContainer::LibraryContainer(const std::string& name) {
 #ifdef _WIN32
-    if (strcmp(name.c_str(), "sqlite3") == 0)
+    if (strcmp(name.c_str(), "sqlite3_ds.so") == 0)
         ds_lib_ = 1;
-    else if (strcmp(name.c_str(), "memory") == 0)
+    else if (strcmp(name.c_str(), "memory_ds.so") == 0)
         ds_lib_ = 2;
     else {
         isc_throw(DataSourceLibraryError,

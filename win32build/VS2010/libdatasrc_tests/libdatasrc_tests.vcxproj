@@ -63,6 +63,11 @@
       <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;liblog.lib;libcryptolink.lib;libdns++.lib;libcc.lib;libtestutils.lib;libdatasrc.lib;botan.lib;log4cplusSD.lib;gtestd.lib;sqlite3.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\libutil_unittests\$(Configuration);..\liblog\$(Configuration);..\libcryptolink\$(Configuration);..\libdns++\$(Configuration);..\libcc\$(Configuration);..\libtestutils\$(Configuration);..\libdatasrc\$(Configuration);..\..\..\..\botan\md10\$(Configuration);..\..\..\..\log4cplus\md10\$(Configuration);..\..\..\..\gtest\md10\$(Configuration);C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PreBuildEvent>
+      <Command>..\..\..\src\lib\datasrc\tests\testdata
+copy rwtest.sqlite3 rwtest.sqlite3.copied
+</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -84,6 +89,11 @@
       <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;liblog.lib;libcryptolink.lib;libdns++.lib;libcc.lib;libtestutils.lib;libdatasrc.lib;botan.lib;log4cplusS.lib;gtest.lib;sqlite3.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\libutil_unittests\$(Configuration);..\liblog\$(Configuration);..\libcryptolink\$(Configuration);..\libdns++\$(Configuration);..\libcc\$(Configuration);..\libtestutils\$(Configuration);..\libdatasrc\$(Configuration);..\..\..\..\botan\md10\$(Configuration);..\..\..\..\log4cplus\md10\$(Configuration);..\..\..\..\gtest\md10\$(Configuration);C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PreBuildEvent>
+      <Command>..\..\..\src\lib\datasrc\tests\testdata
+copy rwtest.sqlite3 rwtest.sqlite3.copied
+</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\lib\datasrc\tests\test_datasrc.h" />
