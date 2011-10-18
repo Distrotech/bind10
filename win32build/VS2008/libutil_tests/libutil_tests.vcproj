@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\exceptions;..\..\..\src\lib\utils;..\..\..\..\gtest\include;&quot;C:\Program Files\boost\boost_1_44&quot;"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\exceptions;..\..\..\src\lib\utils;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -62,10 +62,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="false"
-				AdditionalDependencies="libexceptions.lib libutil.lib gtestd.lib"
+				AdditionalDependencies="libexceptions.lib libutil.lib libutil_io.lib libutil_unittests.lib gtestd.lib"
 				OutputFile="$(OutDir)\run_unittests.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\libexceptions\Debug;..\libutil\Debug;..\..\..\..\gtest\md9\Debug"
+				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_io\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -119,7 +119,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\exceptions;..\..\..\src\lib\utils;..\..\..\..\gtest\include;&quot;C:\Program Files\boost\boost_1_44&quot;"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\exceptions;..\..\..\src\lib\utils;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -139,10 +139,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="false"
-				AdditionalDependencies="libexceptions.lib libutil.lib gtest.lib"
+				AdditionalDependencies="libexceptions.lib libutil.lib libutil_io.lib libutil_unittests.lib gtest.lib"
 				OutputFile="$(OutDir)\run_unittests.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\libexceptions\Release;..\libutil\Release;..\..\..\..\gtest\md9\Release"
+				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_io\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -190,6 +190,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\util\tests\buffer_unittest.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\util\tests\fd_tests.cc"
 				>
 			</File>
 			<File

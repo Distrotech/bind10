@@ -30,6 +30,9 @@
     <ClInclude Include="..\..\..\src\bin\dhcp6\pkt6.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\bin\dhcp6\spec_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\bin\dhcp6\dhcp6_srv.cc">

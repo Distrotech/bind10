@@ -25,6 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cd ..\..\..\src\lib\log\tests&#x0D;&#x0A;copy tempdir.h.win32 tempdir.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -41,8 +42,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\log;..\..\..\..\gtest\include;&quot;C:\Program Files\boost\boost_1_44&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\log;..\..\..\..\log4cplus\include;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;"
+				PreprocessorDefinitions="BIND10HOME=\&quot;$(BIND10HOME)\&quot;"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -62,10 +63,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="false"
-				AdditionalDependencies="libutil.lib liblog.lib gtestd.lib"
+				AdditionalDependencies="libexceptions.lib libutil.lib libutil_unittests.lib liblog.lib log4cplusSD.lib gtestd.lib"
 				OutputFile="$(OutDir)\run_unittests.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\libutil\Debug;..\liblog\Debug;..\..\..\..\gtest\md9\Debug"
+				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -102,6 +103,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cd ..\..\..\src\lib\log\tests&#x0D;&#x0A;copy tempdir.h.win32 tempdir.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -119,8 +121,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\log;..\..\..\..\gtest\include;&quot;C:\Program Files\boost\boost_1_44&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\log;..\..\..\..\log4cplus\include;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;"
+				PreprocessorDefinitions="BIND10HOME=\&quot;$(BIND10HOME)\&quot;"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -139,10 +141,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="false"
-				AdditionalDependencies="libutil.lib liblog.lib gtest.lib"
+				AdditionalDependencies="libexceptions.lib libutil.lib libutil_unittests.lib liblog.lib log4cplusS.lib gtest.lib"
 				OutputFile="$(OutDir)\run_unittests.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\libutil\Release;..\liblog\Release;..\..\..\..\gtest\md9\Release"
+				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -181,6 +183,34 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\..\..\src\lib\log\tests\log_formatter_unittest.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\tests\logger_level_impl_unittest.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\tests\logger_level_unittest.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\tests\logger_manager_unittest.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\tests\logger_name_unittest.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\tests\logger_specification_unittest.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\tests\logger_support_unittest.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\log\tests\logger_unittest.cc"
 				>
 			</File>
@@ -198,10 +228,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\log\tests\message_reader_unittest.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\log\tests\root_logger_name_unittest.cc"
 				>
 			</File>
 			<File

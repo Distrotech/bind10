@@ -25,6 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cd ..\..\..\src\lib\resolve&#x0D;&#x0A;..\..\..\win32build\VS2008\liblog_compiler\$(ConfigurationName)\message.exe resolve_messages.mes&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -41,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\ext\asio;..\..\..\ext\coroutine;&quot;C:\Program Files\boost\boost_1_44&quot;"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\ext\asio;..\..\..\ext\coroutine;&quot;$(BOOST)&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -88,6 +89,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cd ..\..\..\src\lib\resolve&#x0D;&#x0A;..\..\..\win32build\VS2008\liblog_compiler\$(ConfigurationName)\message.exe resolve_messages.mes&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -105,7 +107,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\ext\asio;..\..\..\ext\coroutine;&quot;C:\Program Files\boost\boost_1_44&quot;"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\ext\asio;..\..\..\ext\coroutine;&quot;$(BOOST)&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -159,6 +161,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\resolve\resolve_log.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\resolve\resolve_messages.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\resolve\resolver_callback.cc"
 				>
 			</File>
@@ -178,6 +188,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\resolve\resolve.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\resolve\resolve_log.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\resolve\resolve_messages.h"
 				>
 			</File>
 			<File

@@ -25,6 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cd ..\..\..\src\lib\config&#x0D;&#x0A;..\..\..\win32build\VS2008\liblog_compiler\$(ConfigurationName)\message.exe config_messages.mes&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -41,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\cc;..\..\..\src\lib\config;&quot;C:\Program Files\boost\boost_1_44&quot;"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\cc;..\..\..\src\lib\config;&quot;$(BOOST)&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -88,6 +89,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cd ..\..\..\src\lib\config&#x0D;&#x0A;..\..\..\win32build\VS2008\liblog_compiler\$(ConfigurationName)\message.exe config_messages.mes&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -105,7 +107,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\cc;..\..\..\src\lib\config;&quot;C:\Program Files\boost\boost_1_44&quot;"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\cc;..\..\..\src\lib\config;&quot;$(BOOST)&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -159,7 +161,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\config\config_log.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\config\config_messages.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\config\module_spec.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\strptime.cc"
 				>
 			</File>
 		</Filter>
@@ -177,7 +191,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\config\config_log.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\config\config_messages.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\config\module_spec.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\strptime.h"
 				>
 			</File>
 		</Filter>

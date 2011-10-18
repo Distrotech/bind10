@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd ..\..\..\src\lib\cc&#x0D;&#x0A;copy session_config.h.win32 session_config.h&#x0D;&#x0A;"
+				CommandLine="cd ..\..\..\src\lib\cc&#x0D;&#x0A;copy session_config.h.win32 session_config.h&#x0D;&#x0A;..\..\..\win32build\VS2008\liblog_compiler\$(ConfigurationName)\message.exe cc_messages.mes"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\ext\asio;&quot;C:\Program Files\boost\boost_1_44&quot;"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\ext\asio;&quot;$(BOOST)&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -89,7 +89,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd ..\..\..\src\lib\cc&#x0D;&#x0A;copy session_config.h.win32 session_config.h&#x0D;&#x0A;"
+				CommandLine="cd ..\..\..\src\lib\cc&#x0D;&#x0A;copy session_config.h.win32 session_config.h&#x0D;&#x0A;..\..\..\win32build\VS2008\liblog_compiler\$(ConfigurationName)\message.exe cc_messages.mes"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -107,7 +107,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\ext\asio;&quot;C:\Program Files\boost\boost_1_44&quot;"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\ext\asio;&quot;$(BOOST)&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -153,7 +153,15 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\..\..\src\lib\cc\cc_messages.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\cc\data.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\cc\logger.cc"
 				>
 			</File>
 			<File
@@ -167,7 +175,15 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\..\src\lib\cc\cc_messages.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\cc\data.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\cc\logger.h"
 				>
 			</File>
 			<File

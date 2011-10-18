@@ -25,6 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cd ..\..\..\src\lib\datasrc\tests\testdata&#x0D;&#x0A;copy rwtest.sqlite3 rwtest.sqlite3.copied&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -41,8 +42,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\..\gtest\include;&quot;C:\Program Files\boost\boost_1_44&quot;;C:\sqlite3"
-				PreprocessorDefinitions="TEST_DATA_DIR=\&quot;c:/cygwin/home/fdupont/bind10.trac826/src/lib/datasrc/tests/testdata\&quot;"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;;C:\sqlite3"
+				PreprocessorDefinitions="TEST_DATA_DIR=\&quot;$(BIND10HOME)/src/lib/datasrc/tests/testdata\&quot;;TEST_DATA_BUILDDIR=\&quot;$(BIND10HOME)/src/lib/datasrc/tests/testdata\&quot;"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -62,10 +63,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="false"
-				AdditionalDependencies="libexceptions.lib libutil.lib libdns++.lib libcc.lib libtestutils.lib libdatasrc.lib gtestd.lib sqlite3.lib ws2_32.lib"
+				AdditionalDependencies="libexceptions.lib libutil.lib libutil_unittests.lib liblog.lib libcryptolink.lib libdns++.lib libcc.lib libtestutils.lib libdatasrc.lib log4cplusSD.lib botan.lib gtestd.lib sqlite3.lib ws2_32.lib"
 				OutputFile="$(OutDir)\run_unittests.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\libexceptions\Debug;..\libutil\Debug;&quot;..\libdns++\Debug&quot;;..\libcc\Debug;..\libtestutils\Debug;..\libdatasrc\Debug;..\..\..\..\gtest\md9\Debug;C:\sqlite3"
+				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\libcryptolink\$(ConfigurationName)&quot;;&quot;..\libdns++\$(ConfigurationName)&quot;;&quot;..\libcc\$(ConfigurationName)&quot;;&quot;..\libtestutils\$(ConfigurationName)&quot;;&quot;..\libdatasrc\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\botan\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;;C:\sqlite3"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -102,6 +103,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cd ..\..\..\src\lib\datasrc\tests\testdata&#x0D;&#x0A;copy rwtest.sqlite3 rwtest.sqlite3.copied&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -119,8 +121,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\..\gtest\include;&quot;C:\Program Files\boost\boost_1_44&quot;;C:\sqlite3"
-				PreprocessorDefinitions="TEST_DATA_DIR=\&quot;c:/cygwin/home/fdupont/bind10.trac826/src/lib/datasrc/tests/testdata\&quot;"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;;C:\sqlite3"
+				PreprocessorDefinitions="TEST_DATA_DIR=\&quot;$(BIND10HOME)/src/lib/datasrc/tests/testdata\&quot;;TEST_DATA_BUILDDIR=\&quot;$(BIND10HOME)/src/lib/datasrc/tests/testdata\&quot;"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -139,10 +141,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="false"
-				AdditionalDependencies="libexceptions.lib libutil.lib libdns++.lib libcc.lib libtestutils.lib libdatasrc.lib gtest.lib sqlite3.lib ws2_32.lib"
+				AdditionalDependencies="libexceptions.lib libutil.lib libutil_unittests.lib liblog.lib libcryptolink.lib libdns++.lib libcc.lib libtestutils.lib libdatasrc.lib log4cplusS.lib botan.lib gtest.lib sqlite3.lib ws2_32.lib"
 				OutputFile="$(OutDir)\run_unittests.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\libexceptions\Release;..\libutil\Release;&quot;..\libdns++\Release&quot;;..\libcc\Release;..\libtestutils\Release;..\libdatasrc\Release;..\..\..\..\gtest\md9\Release;C:\sqlite3"
+				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\libcryptolink\$(ConfigurationName)&quot;;&quot;..\libdns++\$(ConfigurationName)&quot;;&quot;..\libcc\$(ConfigurationName)&quot;;&quot;..\libtestutils\$(ConfigurationName)&quot;;&quot;..\libdatasrc\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\botan\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;;C:\sqlite3"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -185,7 +187,23 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\datasrc\tests\client_unittest.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\tests\database_unittest.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\datasrc\tests\datasrc_unittest.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\tests\factory_unittest.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\tests\logger_unittest.cc"
 				>
 			</File>
 			<File
@@ -202,6 +220,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\datasrc\tests\run_unittests.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\tests\sqlite3_accessor_unittest.cc"
 				>
 			</File>
 			<File

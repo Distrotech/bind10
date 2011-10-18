@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -16,6 +16,7 @@
     <ClInclude Include="..\..\..\src\lib\resolve\resolver_callback.h" />
     <ClInclude Include="..\..\..\src\lib\resolve\resolver_interface.h" />
     <ClInclude Include="..\..\..\src\lib\resolve\resolve_log.h" />
+    <ClInclude Include="..\..\..\src\lib\resolve\resolve_messages.h" />
     <ClInclude Include="..\..\..\src\lib\resolve\response_classifier.h" />
   </ItemGroup>
   <ItemGroup>

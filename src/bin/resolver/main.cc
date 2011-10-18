@@ -17,6 +17,7 @@
 #ifdef _WIN32
 #include <getopt.h>
 #include <ws2tcpip.h>
+#include <mswsock.h>
 #else
 #include <sys/types.h>
 #include <sys/socket.h>

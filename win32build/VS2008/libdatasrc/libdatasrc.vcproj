@@ -25,6 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cd ..\..\..\src\lib\datasrc&#x0D;&#x0A;..\..\..\win32build\VS2008\liblog_compiler\$(ConfigurationName)\message.exe datasrc_messages.mes&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -41,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;&quot;C:\Program Files\boost\boost_1_44&quot;;C:\sqlite3"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;&quot;$(BOOST)&quot;;C:\sqlite3"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -88,6 +89,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cd ..\..\..\src\lib\datasrc&#x0D;&#x0A;..\..\..\win32build\VS2008\liblog_compiler\$(ConfigurationName)\message.exe datasrc_messages.mes&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -105,7 +107,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;&quot;C:\Program Files\boost\boost_1_44&quot;;C:\sqlite3"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;&quot;$(BOOST)&quot;;C:\sqlite3"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -159,11 +161,31 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\datasrc\database.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\datasrc_messages.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\factory.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\logger.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\datasrc\memory_datasrc.cc"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\datasrc\query.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\sqlite3_accessor.cc"
 				>
 			</File>
 			<File
@@ -189,7 +211,31 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\datasrc\client.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\datasrc\data_source.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\database.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\datasrc_messages.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\factory.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\iterator.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\logger.h"
 				>
 			</File>
 			<File
@@ -206,6 +252,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\datasrc\result.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\sqlite3_accessor.h"
 				>
 			</File>
 			<File

@@ -98,6 +98,7 @@ copy spec_config.h.win32 spec_config.h
     <ClInclude Include="..\..\..\src\bin\dhcp6\dhcp6_srv.h" />
     <ClInclude Include="..\..\..\src\bin\dhcp6\iface_mgr.h" />
     <ClInclude Include="..\..\..\src\bin\dhcp6\pkt6.h" />
+    <ClInclude Include="..\..\..\src\bin\dhcp6\spec_config.h" />
     <ClInclude Include="..\..\getopt.h" />
   </ItemGroup>
   <ItemGroup>

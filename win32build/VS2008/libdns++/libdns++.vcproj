@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\util;..\..\..\src\lib\dns;&quot;C:\Program Files\boost\boost_1_44&quot;"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\util;..\..\..\src\lib\dns;&quot;$(BOOST)&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -107,7 +107,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\util;..\..\..\src\lib\dns;&quot;C:\Program Files\boost\boost_1_44&quot;"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\util;..\..\..\src\lib\dns;&quot;$(BOOST)&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -152,6 +152,10 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
+			<File
+				RelativePath="..\..\..\src\lib\dns\character_string.cc"
+				>
+			</File>
 			<File
 				RelativePath="..\..\..\src\lib\dns\edns.cc"
 				>
@@ -240,12 +244,24 @@
 				RelativePath="..\..\..\src\lib\dns\tsigkey.cc"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\lib\dns\tsigrecord.cc"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath="..\..\..\src\lib\dns\character_string.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\dns\rdata\generic\detail\ds_like.h"
+				>
+			</File>
 			<File
 				RelativePath="..\..\..\src\lib\dns\edns.h"
 				>
@@ -332,6 +348,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\dns\tsigkey.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\dns\tsigrecord.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\dns\rdata\generic\detail\txt_like.h"
 				>
 			</File>
 		</Filter>

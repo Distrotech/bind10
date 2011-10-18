@@ -15,7 +15,10 @@
 #include <config.h>
 
 #include <stdint.h>
-#ifndef _WIN32
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#else
 #include <netinet/in.h>
 #endif
 

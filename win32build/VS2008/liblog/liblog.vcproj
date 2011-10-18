@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\log;&quot;C:\Program Files\boost\boost_1_44&quot;"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\log;..\..\..\..\log4cplus\include;&quot;$(BOOST)&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -105,7 +105,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\log;&quot;C:\Program Files\boost\boost_1_44&quot;"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\log;..\..\..\..\log4cplus\include;&quot;$(BOOST)&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -155,6 +155,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\log\log_formatter.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\log_messages.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\log\logger.cc"
 				>
 			</File>
@@ -163,15 +171,39 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\log\logger_level.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\logger_level_impl.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\logger_manager.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\logger_manager_impl.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\logger_name.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\log\logger_support.cc"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\lib\log\message_dictionary.cc"
+				RelativePath="..\..\..\src\lib\log\logger_unittest_support.cc"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\lib\log\message_exception.cc"
+				RelativePath="..\..\..\src\lib\log\logimpl_messages.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\message_dictionary.cc"
 				>
 			</File>
 			<File
@@ -183,11 +215,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\lib\log\messagedef.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\log\root_logger_name.cc"
+				RelativePath="..\..\..\src\lib\log\output_option.cc"
 				>
 			</File>
 		</Filter>
@@ -197,11 +225,15 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\..\src\lib\log\debug_levels.h"
+				RelativePath="..\..\..\src\lib\log\dummylog.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\lib\log\dummylog.h"
+				RelativePath="..\..\..\src\lib\log\log_formatter.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\log_messages.h"
 				>
 			</File>
 			<File
@@ -213,11 +245,43 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\lib\log\logger_levels.h"
+				RelativePath="..\..\..\src\lib\log\logger_level.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\logger_level_impl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\logger_manager.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\logger_manager_impl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\logger_name.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\logger_specification.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\log\logger_support.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\logger_unittest_support.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\logimpl_messages.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\macros.h"
 				>
 			</File>
 			<File
@@ -241,11 +305,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\lib\log\messagedef.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\log\root_logger_name.h"
+				RelativePath="..\..\..\src\lib\log\output_option.h"
 				>
 			</File>
 		</Filter>

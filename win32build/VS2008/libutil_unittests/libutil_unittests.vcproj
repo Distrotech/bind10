@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\..\gtest\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -105,7 +105,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\..\gtest\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -158,6 +158,14 @@
 				RelativePath="..\..\..\src\lib\util\unittests\newhook.cc"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\lib\util\unittests\run_all.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\util\unittests\testdata.cc"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -174,6 +182,18 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\util\unittests\resolver.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\util\unittests\run_all.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\util\unittests\testdata.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\util\unittests\textdata.h"
 				>
 			</File>
 		</Filter>

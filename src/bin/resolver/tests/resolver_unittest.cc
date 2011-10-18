@@ -16,6 +16,7 @@
 
 #ifdef _WIN32
 #include <ws2tcpip.h>
+#include <mswsock.h>
 #endif
 
 #include <string>

@@ -1749,7 +1749,8 @@ TYPED_TEST(DatabaseClientTest, getOrigin) {
     if (this->is_mock_) {
         EXPECT_EQ(READONLY_ZONE_ID, finder->zone_id());
     }
-    EXPECT_EQ(this->zname_, finder->getOrigin());
+    bool test(this->zname_ == finder->getOrigin());
+    EXPECT_EQ(test, true);
 }
 
 TYPED_TEST(DatabaseClientTest, updaterFinder) {
