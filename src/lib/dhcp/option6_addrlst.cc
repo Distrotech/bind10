@@ -19,33 +19,32 @@
 #include <arpa/inet.h>
 #endif
 #include <sstream>
-#include <exceptions/exceptions.h>
+#include "exceptions/exceptions.h"
 
-#include <dhcp/libdhcp.h>
-#include <dhcp/option6_addrlst.h>
-#include <dhcp/dhcp6.h>
-#include <asiolink/io_address.h>
+#include "asiolink/io_address.h"
+#include "util/io_utilities.h"
+#include "dhcp/libdhcp.h"
+#include "dhcp/option6_addrlst.h"
+#include "dhcp/dhcp6.h"
 
 using namespace std;
 using namespace isc;
 using namespace isc::dhcp;
 using namespace isc::asiolink;
-
+using namespace isc::util;
 
 Option6AddrLst::Option6AddrLst(unsigned short type,
-                               std::vector<isc::asiolink::IOAddress>& addrs)
-    :Option(V6, type) {
-    addrs_ = addrs;
+                               const AddressContainer& addrs)
+    :Option(V6, type), addrs_(addrs) {
 }
 
 Option6AddrLst::Option6AddrLst(unsigned short type,
-                               isc::asiolink::IOAddress addr)
-    :Option(V6, type) {
-    addrs_.push_back(addr);
+                               const isc::asiolink::IOAddress& addr)
+    :Option(V6, type), addrs_(1,addr) {
 }
 
 Option6AddrLst::Option6AddrLst(unsigned short type,
-                               boost::shared_array<char> buf,
+                               boost::shared_array<uint8_t> buf,
                                unsigned int buf_len,
                                unsigned int offset,
                                unsigned int option_len)
@@ -54,18 +53,18 @@ Option6AddrLst::Option6AddrLst(unsigned short type,
 }
 
 void
-Option6AddrLst::setAddress(isc::asiolink::IOAddress addr) {
+Option6AddrLst::setAddress(const isc::asiolink::IOAddress& addr) {
     addrs_.clear();
     addrs_.push_back(addr);
 }
 
 void
-Option6AddrLst::setAddresses(std::vector<isc::asiolink::IOAddress>& addrs) {
+Option6AddrLst::setAddresses(const AddressContainer& addrs) {
     addrs_ = addrs;
 }
 
 unsigned int
-Option6AddrLst::pack(boost::shared_array<char> buf,
+Option6AddrLst::pack(boost::shared_array<uint8_t>& buf,
                     unsigned int buf_len,
                     unsigned int offset) {
     if (len() > buf_len) {
@@ -73,29 +72,32 @@ Option6AddrLst::pack(boost::shared_array<char> buf,
                   << ", buffer=" << buf_len << ": too small buffer.");
     }
 
-    *(uint16_t*)&buf[offset] = htons(type_);
-    offset += 2;
-    *(uint16_t*)&buf[offset] = htons(len()-4); // len() returns complete option
-    // length. len field contains length without 4-byte option header
-    offset += 2;
+    writeUint16(type_, &buf[offset]);
+    offset += sizeof(uint16_t);
 
-    for (std::vector<IOAddress>::const_iterator addr=addrs_.begin();
+    // len() returns complete option length.
+    // len field contains length without 4-byte option header
+    writeUint16(len() - OPTION6_HDR_LEN, &buf[offset]);
+    offset += sizeof(uint16_t);
+
+    // this wrapping is *ugly*. I wish there was a a
+    for (AddressContainer::const_iterator addr=addrs_.begin();
          addr!=addrs_.end();
          ++addr) {
         memcpy(&buf[offset],
                addr->getAddress().to_v6().to_bytes().data(),
-               16);
-        offset += 16;
+               V6ADDRESS_LEN);
+        offset += V6ADDRESS_LEN;
     }
 
     return offset;
 }
 
 unsigned int
-Option6AddrLst::unpack(boost::shared_array<char> buf,
-                  unsigned int buf_len,
-                  unsigned int offset,
-                  unsigned int option_len) {
+Option6AddrLst::unpack(const boost::shared_array<uint8_t>& buf,
+                       unsigned int buf_len,
+                       unsigned int offset,
+                       unsigned int option_len) {
     if (offset+option_len > buf_len) {
         isc_throw(OutOfRange, "Option " << type_
                   << " truncated.");
@@ -122,7 +124,7 @@ std::string Option6AddrLst::toText(int indent /* =0 */) {
 
     tmp << "type=" << type_ << " " << addrs_.size() << "addr(s): ";
 
-    for (AddrsContainer::const_iterator addr=addrs_.begin();
+    for (AddressContainer::const_iterator addr=addrs_.begin();
          addr!=addrs_.end();
          ++addr) {
         tmp << addr->toText() << " ";
@@ -132,5 +134,5 @@ std::string Option6AddrLst::toText(int indent /* =0 */) {
 
 unsigned short Option6AddrLst::len() {
 
-    return (4 /* DHCPv6 option header len */ + addrs_.size()*16);
+    return (OPTION6_HDR_LEN + addrs_.size()*16);
 }

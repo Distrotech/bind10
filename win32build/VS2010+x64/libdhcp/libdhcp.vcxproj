@@ -19,12 +19,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\lib\dhcp\dhcp4.h" />
     <ClInclude Include="..\..\..\src\lib\dhcp\dhcp6.h" />
     <ClInclude Include="..\..\..\src\lib\dhcp\libdhcp.h" />
     <ClInclude Include="..\..\..\src\lib\dhcp\option.h" />
     <ClInclude Include="..\..\..\src\lib\dhcp\option6_addrlst.h" />
     <ClInclude Include="..\..\..\src\lib\dhcp\option6_ia.h" />
     <ClInclude Include="..\..\..\src\lib\dhcp\option6_iaaddr.h" />
+    <ClInclude Include="..\..\..\src\lib\dhcp\pkt4.h" />
     <ClInclude Include="..\..\..\src\lib\dhcp\pkt6.h" />
   </ItemGroup>
   <ItemGroup>
@@ -33,6 +35,7 @@
     <ClCompile Include="..\..\..\src\lib\dhcp\option6_addrlst.cc" />
     <ClCompile Include="..\..\..\src\lib\dhcp\option6_ia.cc" />
     <ClCompile Include="..\..\..\src\lib\dhcp\option6_iaaddr.cc" />
+    <ClCompile Include="..\..\..\src\lib\dhcp\pkt4.cc" />
     <ClCompile Include="..\..\..\src\lib\dhcp\pkt6.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

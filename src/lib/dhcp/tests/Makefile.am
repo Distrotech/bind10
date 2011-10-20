@@ -22,6 +22,7 @@ libdhcp_unittests_SOURCES += ../option6_ia.h ../option6_ia.cc option6_ia_unittes
 libdhcp_unittests_SOURCES += ../option6_addrlst.h ../option6_addrlst.cc option6_addrlst_unittest.cc
 libdhcp_unittests_SOURCES += ../option.h ../option.cc option_unittest.cc
 libdhcp_unittests_SOURCES += ../pkt6.h ../pkt6.cc pkt6_unittest.cc
+libdhcp_unittests_SOURCES += ../pkt4.h ../pkt4.cc pkt4_unittest.cc
 
 libdhcp_unittests_CPPFLAGS = $(AM_CPPFLAGS) $(GTEST_INCLUDES) $(LOG4CPLUS_INCLUDES)
 libdhcp_unittests_LDFLAGS  = $(AM_LDFLAGS)  $(GTEST_LDFLAGS)
@@ -34,11 +35,9 @@ libdhcp_unittests_CXXFLAGS += -Wno-unused-variable
 endif
 libdhcp_unittests_LDADD  = $(GTEST_LDADD)
 libdhcp_unittests_LDADD += $(top_builddir)/src/lib/log/liblog.la
-libdhcp_unittests_LDADD += $(top_builddir)/src/lib/util/unittests/libutil_unittests.la
 libdhcp_unittests_LDADD += $(top_builddir)/src/lib/util/libutil.la
 libdhcp_unittests_LDADD += $(top_builddir)/src/lib/asiolink/libasiolink.la
 libdhcp_unittests_LDADD += $(top_builddir)/src/lib/exceptions/libexceptions.la
-libdhcp_unittests_LDADD += $(top_builddir)/src/lib/util/unittests/libutil_unittests.la
 endif
 
 noinst_PROGRAMS = $(TESTS)

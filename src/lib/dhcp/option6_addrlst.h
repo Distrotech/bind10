@@ -16,8 +16,8 @@
 #define OPTION6_ADDRLST_H_
 
 #include <vector>
-#include <asiolink/io_address.h>
-#include <dhcp/option.h>
+#include "asiolink/io_address.h"
+#include "dhcp/option.h"
 
 namespace isc {
 namespace dhcp {
@@ -29,9 +29,9 @@ namespace dhcp {
 ///
 class Option6AddrLst: public Option {
 
-
 public:
-    typedef std::vector<isc::asiolink::IOAddress> AddrsContainer;
+    /// a container for (IPv6) addresses
+    typedef std::vector<isc::asiolink::IOAddress> AddressContainer;
 
     /// @brief Constructor used during option generation.
     ///
@@ -39,7 +39,7 @@ public:
     /// @param addrs vector of addresses to be stored
     ///
     Option6AddrLst(unsigned short type,
-                   AddrsContainer& addrs);
+                   const AddressContainer& addrs);
 
     /// @brief Simplified constructor for a single address
     ///
@@ -47,7 +47,7 @@ public:
     /// @param addr a single address to be stored
     ///
     Option6AddrLst(unsigned short type,
-                   isc::asiolink::IOAddress addr);
+                   const isc::asiolink::IOAddress& addr);
 
     /// @brief Constructor used for parsing received option
     ///
@@ -57,7 +57,7 @@ public:
     /// @param offset offset to beginning of option data
     /// @param len length of option data
     ///
-    Option6AddrLst(unsigned short type, boost::shared_array<char> buf,
+    Option6AddrLst(unsigned short type, boost::shared_array<uint8_t> buf,
                    unsigned int buf_len,
                    unsigned int offset,
                    unsigned int len);
@@ -71,7 +71,7 @@ public:
     /// @return offset to the next unused char (just after stored option)
     ///
     unsigned int
-    pack(boost::shared_array<char> buf, unsigned int buf_len,
+    pack(boost::shared_array<uint8_t>& buf, unsigned int buf_len,
          unsigned int offset);
 
     /// @brief Parses received data
@@ -84,7 +84,7 @@ public:
     /// @return offset to the next unparsed char (just after parsed option)
     ///
     virtual unsigned int
-    unpack(boost::shared_array<char> buf,
+    unpack(const boost::shared_array<uint8_t>& buf,
            unsigned int buf_len,
            unsigned int offset,
            unsigned int parse_len);
@@ -95,13 +95,13 @@ public:
     ///
     /// @param addr a single address to be added
     ///
-    void setAddress(isc::asiolink::IOAddress addr);
+    void setAddress(const isc::asiolink::IOAddress& addr);
 
     /// @brief Sets list of addresses.
     ///
     /// @param addrs a vector of addresses to be added
     ///
-    void setAddresses(std::vector<isc::asiolink::IOAddress>& addrs);
+    void setAddresses(const AddressContainer& addrs);
 
     /// @brief Returns vector with addresses.
     ///
@@ -111,14 +111,14 @@ public:
     ///
     /// @return vector with addresses
     ///
-    AddrsContainer
+    AddressContainer
     getAddresses() { return addrs_; };
 
     // returns data length (data length + DHCPv4/DHCPv6 option header)
     virtual unsigned short len();
 
 protected:
-    AddrsContainer addrs_;
+    AddressContainer addrs_;
 };
 
 } // isc::dhcp namespace

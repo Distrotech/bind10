@@ -15,7 +15,6 @@
 #include <config.h>
 #include <iostream>
 #include <sstream>
-#include <boost/shared_ptr.hpp>
 
 #ifdef _WIN32
 #include <ws2tcpip.h>
@@ -24,10 +23,13 @@
 #endif
 #include <gtest/gtest.h>
 
-#include <dhcp/dhcp6.h>
-#include <dhcp/option.h>
-#include <dhcp/option6_ia.h>
-#include <dhcp/option6_iaaddr.h>
+#include <boost/shared_array.hpp>
+#include <boost/shared_ptr.hpp>
+
+#include "dhcp/dhcp6.h"
+#include "dhcp/option.h"
+#include "dhcp/option6_ia.h"
+#include "dhcp/option6_iaaddr.h"
 
 using namespace std;
 using namespace isc;
@@ -43,28 +45,27 @@ public:
 
 TEST_F(Option6IATest, basic) {
 
-    boost::shared_array<char> simple_buf(new char[128]);
-    for (int i=0; i<128; i++)
+    boost::shared_array<uint8_t> simple_buf(new uint8_t[128]);
+    for (int i = 0; i < 128; i++)
         simple_buf[i] = 0;
-    simple_buf[0]=0xa1; // iaid
-    simple_buf[1]=0xa2;
-    simple_buf[2]=0xa3;
-    simple_buf[3]=0xa4;
+    simple_buf[0] = 0xa1; // iaid
+    simple_buf[1] = 0xa2;
+    simple_buf[2] = 0xa3;
+    simple_buf[3] = 0xa4;
 
-    simple_buf[4]=0x81; // T1
-    simple_buf[5]=0x02;
-    simple_buf[6]=0x03;
-    simple_buf[7]=0x04;
+    simple_buf[4] = 0x81; // T1
+    simple_buf[5] = 0x02;
+    simple_buf[6] = 0x03;
+    simple_buf[7] = 0x04;
 
-    simple_buf[8]=0x84; // T2
-    simple_buf[9]=0x03;
-    simple_buf[10]=0x02;
-    simple_buf[11]=0x01;
+    simple_buf[8] = 0x84; // T2
+    simple_buf[9] = 0x03;
+    simple_buf[10] = 0x02;
+    simple_buf[11] = 0x01;
 
     // create an option
     // unpack() is called from constructor
-    Option6IA* opt = new Option6IA(Option::V6,
-                                   D6O_IA_NA,
+    Option6IA* opt = new Option6IA(D6O_IA_NA,
                                    simple_buf,
                                    128,
                                    0,
@@ -110,16 +111,17 @@ TEST_F(Option6IATest, basic) {
                           (simple_buf[74] << 8) +
                           (simple_buf[75]) );
 
-    delete opt;
+    EXPECT_NO_THROW(
+        delete opt;
+    );
 }
 
 TEST_F(Option6IATest, simple) {
-    boost::shared_array<char> simple_buf(new char[128]);
-    for (int i=0; i<128; i++)
+    boost::shared_array<uint8_t> simple_buf(new uint8_t[128]);
+    for (int i = 0; i < 128; i++)
         simple_buf[i] = 0;
 
-    Option6IA * ia = new Option6IA(Option::V6, D6O_IA_NA,
-                                   1234);
+    Option6IA * ia = new Option6IA(D6O_IA_NA, 1234);
     ia->setT1(2345);
     ia->setT2(3456);
 
@@ -128,20 +130,21 @@ TEST_F(Option6IATest, simple) {
     EXPECT_EQ(2345, ia->getT1());
     EXPECT_EQ(3456, ia->getT2());
 
-    delete ia;
+    EXPECT_NO_THROW(
+        delete ia;
+    );
 }
 
 // test if option can build suboptions
 TEST_F(Option6IATest, suboptions_pack) {
-    boost::shared_array<char> buf(new char[128]);
+    boost::shared_array<uint8_t> buf(new uint8_t[128]);
     for (int i=0; i<128; i++)
         buf[i] = 0;
     buf[0] = 0xff;
     buf[1] = 0xfe;
     buf[2] = 0xfc;
 
-    Option6IA * ia = new Option6IA(Option::V6, D6O_IA_NA,
-                                   0x13579ace);
+    Option6IA * ia = new Option6IA(D6O_IA_NA, 0x13579ace);
     ia->setT1(0x2345);
     ia->setT2(0x3456);
 
@@ -159,7 +162,7 @@ TEST_F(Option6IATest, suboptions_pack) {
     ASSERT_EQ(4, sub1->len());
     ASSERT_EQ(48, ia->len());
 
-    unsigned char expected[] = {
+    uint8_t expected[] = {
         D6O_IA_NA/256, D6O_IA_NA%256, // type
         0, 44, // length
         0x13, 0x57, 0x9a, 0xce, // iaid
@@ -184,14 +187,16 @@ TEST_F(Option6IATest, suboptions_pack) {
 
     EXPECT_EQ(0, memcmp(&buf[10], expected, 48));
 
-    delete ia;
+    EXPECT_NO_THROW(
+        delete ia;
+    );
 }
 
 // test if option can parse suboptions
 TEST_F(Option6IATest, suboptions_unpack) {
 
 
-    unsigned char expected[] = {
+    uint8_t expected[] = {
         D6O_IA_NA/256, D6O_IA_NA%256, // type
         0, 28, // length
         0x13, 0x57, 0x9a, 0xce, // iaid
@@ -211,18 +216,19 @@ TEST_F(Option6IATest, suboptions_unpack) {
         0, 0 // len
     };
 
-    boost::shared_array<char> buf(new char[128]);
-    for (int i=0; i<128; i++)
+    boost::shared_array<uint8_t> buf(new uint8_t[128]);
+    for (int i = 0; i < 128; i++)
         buf[i] = 0;
     memcpy(&buf[0], expected, 48);
 
-    Option6IA * ia;
+    Option6IA* ia = 0;
     EXPECT_NO_THROW({
-            ia = new Option6IA(Option::V6, D6O_IA_NA,
-                               buf, 128, 4, 44);
-    });
+        ia = new Option6IA(D6O_IA_NA, buf, 128, 4, 44);
 
-    cout << "Parsed option:" << endl << ia->toText() << endl;
+        // let's limit verbosity of this test
+        // cout << "Parsed option:" << endl << ia->toText() << endl;
+    });
+    ASSERT_TRUE(ia);
 
     EXPECT_EQ(D6O_IA_NA, ia->getType());
     EXPECT_EQ(0x13579ace, ia->getIAID());
@@ -244,18 +250,18 @@ TEST_F(Option6IATest, suboptions_unpack) {
 
     // checks for dummy option
     subopt = ia->getOption(0xcafe);
-    ASSERT_FALSE(subopt == boost::shared_ptr<Option>()); // non-NULL
+    ASSERT_TRUE(subopt); // should be non-NULL
 
     EXPECT_EQ(0xcafe, subopt->getType());
     EXPECT_EQ(4, subopt->len());
     EXPECT_EQ(NULL, subopt->getData());
 
     subopt = ia->getOption(1); // get option 1
-    ASSERT_EQ(subopt, boost::shared_ptr<Option>()); // NULL
+    ASSERT_FALSE(subopt); // should be NULL
 
-    delete ia;
+    EXPECT_NO_THROW(
+        delete ia;
+    );
 }
-
-
 
 }

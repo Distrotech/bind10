@@ -23,8 +23,8 @@
 #endif
 #include <gtest/gtest.h>
 
-#include <dhcp/libdhcp.h>
-
+#include "dhcp/libdhcp.h"
+#include "config.h"
 
 using namespace std;
 using namespace isc;
@@ -37,18 +37,20 @@ public:
     }
 };
 
-TEST_F(LibDhcpTest, basic) {
-    // dummy test
-
-    EXPECT_EQ(LibDHCP::version(), PACKAGE_VERSION);
-}
+static const uint8_t packed[] = {
+    0, 12, 0, 5, 100, 101, 102, 103, 104, // opt1 (9 bytes)
+    0, 13, 0, 3, 105, 106, 107, // opt2 (7 bytes)
+    0, 14, 0, 2, 108, 109, // opt3 (6 bytes)
+    1,  0, 0, 4, 110, 111, 112, 113, // opt4 (8 bytes)
+    1,  1, 0, 1, 114 // opt5 (5 bytes)
+};
 
 TEST_F(LibDhcpTest, packOptions6) {
-    boost::shared_array<char> buf(new char[512]);
-    isc::dhcp::Option::Option6Lst opts; // list of options
+    boost::shared_array<uint8_t> buf(new uint8_t[512]);
+    isc::dhcp::Option::Option6Collection opts; // list of options
 
     // generate content for options
-    for (int i=0;i<64;i++) {
+    for (int i = 0; i < 64; i++) {
         buf[i]=i+100;
     }
 
@@ -57,14 +59,6 @@ TEST_F(LibDhcpTest, packOptions6) {
     boost::shared_ptr<Option> opt3(new Option(Option::V6, 14, buf, 8, 2));
     boost::shared_ptr<Option> opt4(new Option(Option::V6,256, buf,10, 4));
     boost::shared_ptr<Option> opt5(new Option(Option::V6,257, buf,14, 1));
-
-    char expected[] = {
-        0, 12, 0, 5, 100, 101, 102, 103, 104, // opt1
-        0, 13, 0, 3, 105, 106, 107, // opt2
-        0, 14, 0, 2, 108, 109, // opt3
-        1,  0, 0, 4, 110, 111, 112, 113, // opt4
-        1,  1, 0, 1, 114
-    };
 
     opts.insert(pair<int, boost::shared_ptr<Option> >(opt1->getType(), opt1));
     opts.insert(pair<int, boost::shared_ptr<Option> >(opt1->getType(), opt2));
@@ -77,28 +71,20 @@ TEST_F(LibDhcpTest, packOptions6) {
          offset = LibDHCP::packOptions6(buf, 512, 100, opts);
     });
     EXPECT_EQ(135, offset); // options should take 35 bytes
-    EXPECT_EQ(0, memcmp(&buf[100], expected, 35) );
+    EXPECT_EQ(0, memcmp(&buf[100], packed, 35) );
 }
 
 TEST_F(LibDhcpTest, unpackOptions6) {
 
     // just couple of random options
-    char packed[] = {
-        0, 12, 0, 5, 100, 101, 102, 103, 104, // opt1 (9 bytes)
-        0, 13, 0, 3, 105, 106, 107, // opt2 (7 bytes)
-        0, 14, 0, 2, 108, 109, // opt3 (6 bytes)
-        1,  0, 0, 4, 110, 111, 112, 113, // opt4 (8 bytes)
-        1,  1, 0, 1, 114 // opt5 (5 bytes)
-    };
     // Option is used as a simple option implementation
     // More advanced uses are validated in tests dedicated for
     // specific derived classes.
-
-    isc::dhcp::Option::Option6Lst options; // list of options
+    isc::dhcp::Option::Option6Collection options; // list of options
 
     // we can't use packed directly, as shared_array would try to
     // free it eventually
-    boost::shared_array<char> buf(new char[512]);
+    boost::shared_array<uint8_t> buf(new uint8_t[512]);
     memcpy(&buf[0], packed, 35);
 
     unsigned int offset;
@@ -109,8 +95,8 @@ TEST_F(LibDhcpTest, unpackOptions6) {
     EXPECT_EQ(35, offset); // parsed first 35 bytes (offset 0..34)
     EXPECT_EQ(options.size(), 5); // there should be 5 options
 
-    isc::dhcp::Option::Option6Lst::const_iterator x = options.find(12);
-    ASSERT_FALSE(x == options.end()); // option 12 should exist
+    isc::dhcp::Option::Option6Collection::const_iterator x = options.find(12);
+    ASSERT_FALSE(x == options.end()); // option 1 should exist
     EXPECT_EQ(12, x->second->getType());  // this should be option 12
     ASSERT_EQ(9, x->second->len()); // it should be of length 9
     EXPECT_EQ(0, memcmp(x->second->getData(), packed+4, 5)); // data len=5

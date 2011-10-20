@@ -12,16 +12,16 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#include <config.h>
+#include "config.h"
 
 #include <boost/shared_array.hpp>
 #include <boost/shared_ptr.hpp>
-#include <dhcp/libdhcp.h>
-#include <dhcp/dhcp6.h>
+#include "dhcp/libdhcp.h"
+#include "dhcp/dhcp6.h"
 
-#include <dhcp/option.h>
-#include <dhcp/option6_ia.h>
-#include <dhcp/option6_iaaddr.h>
+#include "dhcp/option.h"
+#include "dhcp/option6_ia.h"
+#include "dhcp/option6_iaaddr.h"
 
 using namespace std;
 using namespace isc::dhcp;
@@ -29,15 +29,11 @@ using namespace isc::dhcp;
 // static array with factories for options
 std::map<unsigned short, Option::Factory*> LibDHCP::v6factories_;
 
-std::string
-LibDHCP::version() {
-    return PACKAGE_VERSION;
-}
-
 unsigned int
-LibDHCP::unpackOptions6(boost::shared_array<char> buf, unsigned int buf_len,
+LibDHCP::unpackOptions6(const boost::shared_array<uint8_t> buf,
+                        unsigned int buf_len,
                         unsigned int offset, unsigned int parse_len,
-                        isc::dhcp::Option::Option6Lst& options) {
+                        isc::dhcp::Option::Option6Collection& options) {
     if (offset + parse_len > buf_len) {
         isc_throw(OutOfRange, "Option parse failed. Tried to parse "
                   << parse_len << " bytes at offset " << offset
@@ -45,12 +41,10 @@ LibDHCP::unpackOptions6(boost::shared_array<char> buf, unsigned int buf_len,
     }
     unsigned int end = offset + parse_len;
 
-    while (offset<end) {
-        unsigned int opt_type = static_cast<unsigned char>(buf[offset])*256
-            + static_cast<unsigned char>(buf[offset+1]);
+    while (offset +4 <= end) {
+        uint16_t opt_type = buf[offset]*256 + buf[offset+1];
         offset += 2;
-        unsigned int opt_len = static_cast<unsigned char>(buf[offset]*256)
-            + static_cast<unsigned char>(buf[offset+1]);
+        uint16_t opt_len = buf[offset]*256 + buf[offset+1];
         offset += 2;
 
         if (offset + opt_len > end ) {
@@ -62,8 +56,7 @@ LibDHCP::unpackOptions6(boost::shared_array<char> buf, unsigned int buf_len,
         case D6O_IA_NA:
         case D6O_IA_PD:
             // cout << "Creating Option6IA" << endl;
-            opt = boost::shared_ptr<Option>(new Option6IA(Option::V6,
-                                                          opt_type,
+            opt = boost::shared_ptr<Option>(new Option6IA(opt_type,
                                                           buf, buf_len,
                                                           offset,
                                                           opt_len));
@@ -92,12 +85,12 @@ LibDHCP::unpackOptions6(boost::shared_array<char> buf, unsigned int buf_len,
 }
 
 unsigned int
-LibDHCP::packOptions6(boost::shared_array<char> data,
+LibDHCP::packOptions6(boost::shared_array<uint8_t> data,
                       unsigned int data_len,
                       unsigned int offset,
-                      isc::dhcp::Option::Option6Lst& options) {
+                      const isc::dhcp::Option::Option6Collection& options) {
     try {
-        for (isc::dhcp::Option::Option6Lst::iterator it = options.begin();
+        for (isc::dhcp::Option::Option6Collection::const_iterator it = options.begin();
              it != options.end();
              ++it) {
             unsigned short opt_len = (*it).second->len();
@@ -108,9 +101,9 @@ LibDHCP::packOptions6(boost::shared_array<char> data,
             offset = (*it).second->pack(data, data_len, offset);
         }
     }
-    catch (Exception e) {
-        cout << "Packet build failed." << endl;
-        return (-1);
+    catch (const Exception&) {
+        cout << "Packet build failed (Option build failed)." << endl;
+        throw;
     }
     return (offset);
 }

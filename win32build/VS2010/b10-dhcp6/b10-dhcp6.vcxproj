@@ -94,10 +94,8 @@ copy spec_config.h.win32 spec_config.h
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\bin\dhcp6\dhcp6.h" />
     <ClInclude Include="..\..\..\src\bin\dhcp6\dhcp6_srv.h" />
     <ClInclude Include="..\..\..\src\bin\dhcp6\iface_mgr.h" />
-    <ClInclude Include="..\..\..\src\bin\dhcp6\pkt6.h" />
     <ClInclude Include="..\..\..\src\bin\dhcp6\spec_config.h" />
     <ClInclude Include="..\..\getopt.h" />
   </ItemGroup>
@@ -105,7 +103,6 @@ copy spec_config.h.win32 spec_config.h
     <ClCompile Include="..\..\..\src\bin\dhcp6\dhcp6_srv.cc" />
     <ClCompile Include="..\..\..\src\bin\dhcp6\iface_mgr.cc" />
     <ClCompile Include="..\..\..\src\bin\dhcp6\main.cc" />
-    <ClCompile Include="..\..\..\src\bin\dhcp6\pkt6.cc" />
     <ClCompile Include="..\..\getopt.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

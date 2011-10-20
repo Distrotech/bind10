@@ -198,14 +198,6 @@
 				RelativePath="..\..\..\src\bin\dhcp6\tests\iface_mgr_unittest.cc"
 				>
 			</File>
-			<File
-				RelativePath="..\..\..\src\bin\dhcp6\pkt6.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\bin\dhcp6\tests\pkt6_unittest.cc"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -218,10 +210,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\bin\dhcp6\iface_mgr.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\bin\dhcp6\pkt6.h"
 				>
 			</File>
 		</Filter>

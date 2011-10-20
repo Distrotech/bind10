@@ -62,7 +62,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="false"
-				AdditionalDependencies="libexceptions.lib libutil.lib libutil_io.lib libutil_unittests.lib gtestd.lib"
+				AdditionalDependencies="libexceptions.lib libutil.lib libutil_io.lib libutil_unittests.lib gtestd.lib ws2_32.lib"
 				OutputFile="$(OutDir)\run_unittests.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_io\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;"
@@ -139,7 +139,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="false"
-				AdditionalDependencies="libexceptions.lib libutil.lib libutil_io.lib libutil_unittests.lib gtest.lib"
+				AdditionalDependencies="libexceptions.lib libutil.lib libutil_io.lib libutil_unittests.lib gtest.lib ws2_32.lib"
 				OutputFile="$(OutDir)\run_unittests.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_io\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;"

@@ -27,7 +27,7 @@
 #include <exceptions/exceptions.h>
 #include <asiolink/io_address.h>
 #include <asiolink/io_error.h>
-
+#include <boost/static_assert.hpp>
 
 using namespace asio;
 using asio::ip::udp;
@@ -59,23 +59,23 @@ IOAddress::toText() const {
 }
 
 IOAddress
-IOAddress::from_bytes(short family, const char* data) {
-    static char addr_str[INET6_ADDRSTRLEN];
+IOAddress::from_bytes(short family, const uint8_t* data) {
     if (data == NULL) {
         isc_throw(BadValue, "NULL pointer received.");
-    }
+    } else
     if ( (family != AF_INET) && (family != AF_INET6) ) {
         isc_throw(BadValue, "Invalid family type. Only AF_INET and AF_INET6"
                   << "are supported");
     }
 
+    BOOST_STATIC_ASSERT(INET6_ADDRSTRLEN >= INET_ADDRSTRLEN);
+    char addr_str[INET6_ADDRSTRLEN];
 #ifdef _WIN32
 #define DECONST (void *)
 #else
 #define DECONST
 #endif
-
-    inet_ntop(family, DECONST data, addr_str,INET6_ADDRSTRLEN);
+    inet_ntop(family, DECONST data, addr_str, INET6_ADDRSTRLEN);
     return IOAddress(string(addr_str));
 }
 

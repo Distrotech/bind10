@@ -15,6 +15,8 @@
 #ifndef __IO_ADDRESS_H
 #define __IO_ADDRESS_H 1
 
+#include <stdint.h>
+
 // IMPORTANT NOTE: only very few ASIO headers files can be included in
 // this file.  In particular, asio.hpp should never be included here.
 // See the description of the namespace below.
@@ -30,6 +32,12 @@
 
 namespace isc {
 namespace asiolink {
+
+    /// Defines length of IPv6 address.
+    const static size_t V6ADDRESS_LEN = 16;
+
+    /// Defines length of IPv4 address.
+    const static size_t V4ADDRESS_LEN = 4;
 
 /// \brief The \c IOAddress class represents an IP addresses (version
 /// agnostic)
@@ -97,7 +105,7 @@ public:
     ///
     /// \return Created IOAddress object
     static IOAddress
-    from_bytes(short family, const char* data);
+    from_bytes(short family, const uint8_t* data);
 
     /// \brief Compare addresses for equality
     ///

@@ -196,20 +196,12 @@
 				RelativePath="..\..\..\src\bin\dhcp6\main.cc"
 				>
 			</File>
-			<File
-				RelativePath="..\..\..\src\bin\dhcp6\pkt6.cc"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath="..\..\..\src\bin\dhcp6\dhcp6.h"
-				>
-			</File>
 			<File
 				RelativePath="..\..\..\src\bin\dhcp6\dhcp6_srv.h"
 				>
@@ -220,10 +212,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\bin\dhcp6\iface_mgr.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\bin\dhcp6\pkt6.h"
 				>
 			</File>
 			<File

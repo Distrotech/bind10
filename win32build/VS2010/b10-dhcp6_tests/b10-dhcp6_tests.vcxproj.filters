@@ -21,9 +21,6 @@
     <ClInclude Include="..\..\..\src\bin\dhcp6\iface_mgr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\bin\dhcp6\pkt6.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\bin\dhcp6\dhcp6_srv.cc">
@@ -39,12 +36,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\bin\dhcp6\tests\iface_mgr_unittest.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\bin\dhcp6\tests\pkt6_unittest.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\bin\dhcp6\pkt6.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

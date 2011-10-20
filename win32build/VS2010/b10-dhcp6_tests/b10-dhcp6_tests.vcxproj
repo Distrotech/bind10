@@ -88,16 +88,13 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\src\bin\dhcp6\dhcp6_srv.h" />
     <ClInclude Include="..\..\..\src\bin\dhcp6\iface_mgr.h" />
-    <ClInclude Include="..\..\..\src\bin\dhcp6\pkt6.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\bin\dhcp6\dhcp6_srv.cc" />
     <ClCompile Include="..\..\..\src\bin\dhcp6\iface_mgr.cc" />
-    <ClCompile Include="..\..\..\src\bin\dhcp6\pkt6.cc" />
     <ClCompile Include="..\..\..\src\bin\dhcp6\tests\dhcp6_srv_unittest.cc" />
     <ClCompile Include="..\..\..\src\bin\dhcp6\tests\dhcp6_unittests.cc" />
     <ClCompile Include="..\..\..\src\bin\dhcp6\tests\iface_mgr_unittest.cc" />
-    <ClCompile Include="..\..\..\src\bin\dhcp6\tests\pkt6_unittest.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
