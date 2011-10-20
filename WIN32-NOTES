@@ -39,9 +39,13 @@ What is needed:
   config phase requires a python2)
 
  - log4cplus (compiled from sources in the same style...
-  Note WIN32 disables syslog support)
+  Note WIN32 disables syslog support. In VS2010 solution/project
+  files are required, the subversion URL is
+  https://log4cplus.svn.sourceforge.net/svnroot/log4cplus
+  and the PRODUCTION_1_0_x branch includes a msvc10 directory)
 
-Environment variables:
+Environment variables (with examples):
+
  - BOOST -> C:\Program Files\boost\boost_1_44
 
  - BIND10HOME -> c:/cygwin/home/dupont/bind10.trac826
