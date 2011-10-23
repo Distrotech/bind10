@@ -16,7 +16,6 @@
 
 #include "rrset_cache.h"
 #include "logger.h"
-#include <ctime>
 #include <string>
 #include <nsas/nsas_entry_compare.h>
 #include <nsas/hash_table.h>

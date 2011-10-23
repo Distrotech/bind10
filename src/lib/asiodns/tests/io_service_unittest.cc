@@ -13,7 +13,6 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <config.h>
-#include <stdint.h>
 #include <gtest/gtest.h>
 
 #include <asio.hpp>

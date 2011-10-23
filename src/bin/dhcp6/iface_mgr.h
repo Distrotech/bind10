@@ -15,7 +15,6 @@
 #ifndef IFACE_MGR_H
 #define IFACE_MGR_H
 
-#include <stdint.h>
 #include <list>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_array.hpp>

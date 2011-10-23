@@ -14,7 +14,6 @@
 
 #include <config.h>
 #include <string>
-#include <time.h>
 #include <gtest/gtest.h>
 #include <cache/cache_entry_key.h>
 #include <cache/rrset_entry.h>

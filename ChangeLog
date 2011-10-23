@@ -1,3 +1,20 @@
+301.	[func]		stephen
+	Add system test for IXFR over TCP.
+	(Trac #1213, git 68ee3818bcbecebf3e6789e81ea79d551a4ff3e8)
+
+300.	[func]*		tomek
+	libdhcp: DHCP packet library was implemented. Currently it handles
+	packet reception, option parsing, option generation and output
+	packet building. Generic and specialized classes for several
+	DHCPv6 options (IA_NA, IAADDR, address-list) are available. A
+	simple code was added that leverages libdhcp. It is a skeleton
+	DHCPv6 server. It receives incoming SOLICIT and REQUEST messages
+	and responds with proper ADVERTISE and REPLY. Note that since
+	LeaseManager is not implemented, server assigns the same
+	hardcoded lease for every client. This change removes existing
+	DHCPv6 echo server as it was only a proof of concept code.
+	(Trac #1186, git 67ea6de047d4dbd63c25fe7f03f5d5cc2452ad7d)
+
 299.	[build]		jreed
 	Do not install the libfake_session, libtestutils, or libbench
 	libraries. They are used by tests within the source tree.

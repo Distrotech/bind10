@@ -119,7 +119,7 @@ C:\cygwin\home\dupont\bind10.trac826\src\lib\dns/rdata/generic/detail/txt_like.h
               Type=isc::dns::rdata::generic::SPF,
               typeCode=99
           ]
-          ..\..\..\src\lib\dns\rdataclass.cc(3536) : see reference to class template instantiation 'isc::dns::rdata::generic::TXTLikeImpl<Type,typeCode>' being compiled
+          ..\..\..\src\lib\dns\rdataclass.cc(3541) : see reference to class template instantiation 'isc::dns::rdata::generic::TXTLikeImpl<Type,typeCode>' being compiled
           with
           [
               Type=isc::dns::rdata::generic::SPF,
@@ -132,7 +132,7 @@ C:\cygwin\home\dupont\bind10.trac826\src\lib\dns/rdata/generic/detail/txt_like.h
               Type=isc::dns::rdata::generic::TXT,
               typeCode=16
           ]
-          ..\..\..\src\lib\dns\rdataclass.cc(3662) : see reference to class template instantiation 'isc::dns::rdata::generic::TXTLikeImpl<Type,typeCode>' being compiled
+          ..\..\..\src\lib\dns\rdataclass.cc(3667) : see reference to class template instantiation 'isc::dns::rdata::generic::TXTLikeImpl<Type,typeCode>' being compiled
           with
           [
               Type=isc::dns::rdata::generic::TXT,
@@ -347,10 +347,11 @@ c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\utility(163): war
 ------ Build started: Project: libdhcp, Configuration: Release Win32 ------
   libdhcp.cc
   option.cc
-..\..\..\src\lib\dhcp\option.cc(73): warning C4244: '=' : conversion from 'unsigned short' to 'char', possible loss of data
+..\..\..\src\lib\dhcp\option.cc(76): warning C4244: '=' : conversion from 'unsigned short' to 'uint8_t', possible loss of data
   option6_addrlst.cc
   option6_ia.cc
   option6_iaaddr.cc
+  pkt4.cc
   pkt6.cc
   libdhcp.vcxproj -> C:\cygwin\home\dupont\bind10.trac826\win32build\VS2010\libdhcp\Release\libdhcp.lib
 ------ Build started: Project: b10-dhcp6, Configuration: Release Win32 ------
@@ -362,7 +363,6 @@ c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\utility(163): war
           c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\stdlib.h(433) : see declaration of 'getenv'
 ..\..\..\src\bin\dhcp6\main.cc(107): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
           c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\stdlib.h(433) : see declaration of 'getenv'
-  pkt6.cc
   getopt.cc
   Generating code
   Finished generating code
@@ -438,53 +438,11 @@ C:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1449): warning C4018: '<' : si
   libdhcp_unittest.cc
   option6_addrlst_unittest.cc
   option6_iaaddr_unittest.cc
-..\..\..\src\lib\dhcp\tests\option6_iaaddr_unittest.cc(49): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\option6_iaaddr_unittest.cc(52): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\option6_iaaddr_unittest.cc(53): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\option6_iaaddr_unittest.cc(54): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\option6_iaaddr_unittest.cc(55): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\option6_iaaddr_unittest.cc(60): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\option6_iaaddr_unittest.cc(62): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\option6_iaaddr_unittest.cc(63): warning C4309: '=' : truncation of constant value
   option6_ia_unittest.cc
-..\..\..\src\lib\dhcp\tests\option6_ia_unittest.cc(49): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\option6_ia_unittest.cc(50): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\option6_ia_unittest.cc(51): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\option6_ia_unittest.cc(52): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\option6_ia_unittest.cc(54): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\option6_ia_unittest.cc(59): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\option6_ia_unittest.cc(139): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\option6_ia_unittest.cc(140): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\option6_ia_unittest.cc(141): warning C4309: '=' : truncation of constant value
+..\..\..\src\lib\dhcp\tests\option6_ia_unittest.cc(231): warning C4800: 'isc::dhcp::Option6IA *' : forcing value to bool 'true' or 'false' (performance warning)
   option_unittest.cc
-..\..\..\src\lib\dhcp\tests\option_unittest.cc(102): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\option_unittest.cc(103): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\option_unittest.cc(104): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\option_unittest.cc(105): warning C4309: '=' : truncation of constant value
+  pkt4_unittest.cc
   pkt6_unittest.cc
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(67): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(68): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(68): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(71): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(71): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(71): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(72): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(72): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(72): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(72): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(73): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(75): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(78): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(78): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(78): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(79): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(79): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(79): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(79): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(80): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(82): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(84): warning C4309: '=' : truncation of constant value
-..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc(85): warning C4309: '=' : truncation of constant value
   run_unittests.cc
   Generating code
   Finished generating code
@@ -497,9 +455,9 @@ C:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1449): warning C4018: '<' : si
   resolver_cache_unittest.cc
   rrset_cache_unittest.cc
   rrset_entry_unittest.cc
-..\..\..\src\lib\cache\tests\rrset_entry_unittest.cc(114): warning C4244: 'initializing' : conversion from 'time_t' to 'uint32_t', possible loss of data
+..\..\..\src\lib\cache\tests\rrset_entry_unittest.cc(113): warning C4244: 'initializing' : conversion from 'time_t' to 'uint32_t', possible loss of data
 C:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1449): warning C4018: '<' : signed/unsigned mismatch
-          ..\..\..\src\lib\cache\tests\rrset_entry_unittest.cc(103) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperLT<uint32_t,int>(const char *,const char *,const T1 &,const T2 &)' being compiled
+          ..\..\..\src\lib\cache\tests\rrset_entry_unittest.cc(102) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperLT<uint32_t,int>(const char *,const char *,const T1 &,const T2 &)' being compiled
           with
           [
               T1=uint32_t,
@@ -607,11 +565,11 @@ C:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1453): warning C4018: '>' : si
 ------ Build started: Project: b10-dhcp6_tests, Configuration: Release Win32 ------
   dhcp6_srv.cc
   iface_mgr.cc
-  pkt6.cc
   dhcp6_srv_unittest.cc
   dhcp6_unittests.cc
   iface_mgr_unittest.cc
-  pkt6_unittest.cc
+..\..\..\src\bin\dhcp6\tests\iface_mgr_unittest.cc(108): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+          c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\stdio.h(371) : see declaration of 'sprintf'
   Generating code
   Finished generating code
   b10-dhcp6_tests.vcxproj -> C:\cygwin\home\dupont\bind10.trac826\win32build\VS2010\b10-dhcp6_tests\Release\dhcp6_unittests.exe
@@ -646,12 +604,6 @@ C:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1453): warning C4018: '>' : si
 ------ Build started: Project: libasiolink_tests, Configuration: Release Win32 ------
   interval_timer_unittest.cc
   io_address_unittest.cc
-..\..\..\src\lib\asiolink\tests\io_address_unittest.cc(68): warning C4309: 'initializing' : truncation of constant value
-..\..\..\src\lib\asiolink\tests\io_address_unittest.cc(69): warning C4309: 'initializing' : truncation of constant value
-..\..\..\src\lib\asiolink\tests\io_address_unittest.cc(69): warning C4309: 'initializing' : truncation of constant value
-..\..\..\src\lib\asiolink\tests\io_address_unittest.cc(69): warning C4309: 'initializing' : truncation of constant value
-..\..\..\src\lib\asiolink\tests\io_address_unittest.cc(69): warning C4309: 'initializing' : truncation of constant value
-..\..\..\src\lib\asiolink\tests\io_address_unittest.cc(71): warning C4309: 'initializing' : truncation of constant value
   io_endpoint_unittest.cc
   io_socket_unittest.cc
   run_unittests.cc
@@ -926,7 +878,6 @@ C:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1449): warning C4018: '<' : si
   cache_unittest.cc
   client_unittest.cc
   database_unittest.cc
-..\..\..\src\lib\datasrc\tests\database_unittest.cc(333): warning C4018: '<' : signed/unsigned mismatch
   datasrc_unittest.cc
   factory_unittest.cc
   logger_unittest.cc

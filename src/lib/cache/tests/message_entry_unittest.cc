@@ -12,7 +12,6 @@
 
 #include <config.h>
 #include <string>
-#include <time.h>
 #include <gtest/gtest.h>
 #include <dns/tests/unittest_util.h>
 #include <dns/message.h>

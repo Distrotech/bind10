@@ -15,8 +15,6 @@
 
 #include <config.h>
 
-#include <time.h>
-
 #include <nsas/nsas_entry_compare.h>
 #include <nsas/hash_table.h>
 #include <nsas/hash_deleter.h>
