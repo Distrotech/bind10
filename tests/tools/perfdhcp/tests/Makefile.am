@@ -14,7 +14,6 @@ TESTS =
 if HAVE_GTEST
 TESTS += run_unittests
 run_unittests_SOURCES  = run_unittests.cc
-run_unittests_SOURCES += cloptions_unittest.cc
 run_unittests_SOURCES += sendreceive_unittest.cc
 run_unittests_SOURCES += $(top_builddir)/tests/tools/perfdhcp/cloptions.cc
 run_unittests_SOURCES += $(top_builddir)/tests/tools/perfdhcp/procconf.cc
