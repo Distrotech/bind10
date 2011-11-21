@@ -119,11 +119,11 @@ perfdhcp [-hv] [-4|-6] [-r<rate>] [-n<num-request>] [-p<test-period>]\n\
         } else {
             if (v6) {
                 fprintf(stderr,
-                        "%s: Use -l to specify an interface name.\n\%s\n",
+                        "%s: Use -l to specify an interface name.\n%s\n",
                         PROGNAME, usage);
             }
             else {
-                fprintf(stderr, "%s: Must specify a DHCP server.\n\%s\n",
+                fprintf(stderr, "%s: Must specify a DHCP server.\n%s\n",
                         PROGNAME, usage);
             }
             return(2);
@@ -133,7 +133,7 @@ perfdhcp [-hv] [-4|-6] [-r<rate>] [-n<num-request>] [-p<test-period>]\n\
         server = argv[0];
         break;
     default:
-        fprintf(stderr, "%s: Too many arguments.\n\%s\n", PROGNAME, usage);
+        fprintf(stderr, "%s: Too many arguments.\n%s\n", PROGNAME, usage);
         return(2);
     }
     return(1);

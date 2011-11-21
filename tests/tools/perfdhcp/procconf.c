@@ -276,8 +276,9 @@ addOptVal(const char* value, const confvar_t* varDesc,
  * On error, a string describing the error is stored in the global errmsg and
  * -1 is returned.
  */
+
 static int
-procCmdLineArgs(int* argc, const char** argv[], const confvar_t optConf[],
+procCmdLineArgs(int* argc, const char*** argv, const confvar_t optConf[],
                 confval** perOptRecordsFirst, confval** perOptRecordsLast) {
     char* p;
     extern char* optarg;    /* For getopt */
@@ -308,7 +309,9 @@ procCmdLineArgs(int* argc, const char** argv[], const confvar_t optConf[],
 
     *p = '\0';
     optind = 1;
-    while ((optchar = getopt(*argc, *argv, optstr)) != -1)
+    // The reality is that getopt does *not* modify the strings,
+    // and GNU getopt *does* modify the pointers!
+    while ((optchar = getopt(*argc, (char* const *)*argv, optstr)) != -1)
     {
         int ind;
         int ret;
@@ -370,7 +373,7 @@ procCmdLineArgs(int* argc, const char** argv[], const confvar_t optConf[],
  * On error, a message describing the problem.
  */
 const char*
-procOpts(int* argc, const char** argv[], const confvar_t optConf[],
+procOpts(int* argc, char const*** argv, const confvar_t optConf[],
          confdata_t* confdata, const char name[],
          const char usage[]) {
     /*

@@ -120,7 +120,7 @@ typedef struct {
  * On error, a message describing the problem.
  */
 const char*
-procOpts(int* argc, const char** argv[], const confvar_t optConf[],
+procOpts(int* argc, char const*** argv, const confvar_t optConf[],
          confdata_t* confdata, const char name[],
          const char usage[]);
 
