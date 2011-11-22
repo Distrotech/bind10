@@ -20,11 +20,13 @@
 #include "cloptions.h"
 #include "dkdebug.h"
 
-static void printHelp(const char* progName, const char* usage);
+static void printHelp(const char* progname, const char* usage);
 static void initialize(void);
 
 // The current version information
-const char* VERSION = "perfdhcp v1.0 2011-10-30";
+static const char* VERSION = "perfdhcp v1.0 2011-10-30";
+
+const char* PROGNAME = "perfdhcp";    // Program name, for messages
 
 static int v6 = 0;                      // DHCPv6 operation (-6)
 static int initialOnly = 0;             // Do only initial exchange (-i)
@@ -52,13 +54,13 @@ perfdhcp [-hv] [-4|-6] [-r<rate>] [-n<num-request>] [-p<test-period>]\n\
     int v4 = 0;                 /* DHCPv4 operation explicitly requested */
     const char* msg;            /* Failure message from procOpts() */
     int help = 0;               /* Help requested */
-    int versionReq = 0;         /* Version requested */
-    const char* diagStr = NULL; /* Diagnostics requested (-x) */
+    int version_req = 0;         /* Version requested */
+    const char* diagstr = NULL; /* Diagnostics requested (-x) */
 
     /* option descriptions */
     confvar_t optConf[] = {
         { 'h', NULL,        CF_SWITCH,    &help,        1 },
-        { 'v', NULL,        CF_SWITCH,    &versionReq,  1 },
+        { 'v', NULL,        CF_SWITCH,    &version_req,  1 },
         { '4', NULL,        CF_SWITCH,    &v4,          1 },
         { '6', NULL,        CF_SWITCH,    &v6,          1 },
         { 'i', NULL,        CF_SWITCH,    &initialOnly, 1 },
@@ -68,7 +70,7 @@ perfdhcp [-hv] [-4|-6] [-r<rate>] [-n<num-request>] [-p<test-period>]\n\
         { 'd', NULL,        CF_POS_FLOAT, &dropTime,    0 },
         { 'p', NULL,        CF_POS_FLOAT, &testPeriod,  0 },
         { 'D', NULL,        CF_NE_STRING, &maxDropOpt,  0 },
-        { 'x', NULL,        CF_STRING,    &diagStr,     0 },
+        { 'x', NULL,        CF_STRING,    &diagstr,     0 },
         { '\0', NULL,       CF_ENDLIST,   NULL,         0 }
     };
 
@@ -85,7 +87,7 @@ perfdhcp [-hv] [-4|-6] [-r<rate>] [-n<num-request>] [-p<test-period>]\n\
     /* Process command line options */
     msg = procOpts(&argc, &argv, optConf, NULL, PROGNAME, NULL);
     if (msg != NULL) {
-        fprintf(stderr, "%s: %s\n", PROGNAME, msg);
+        reporterr("%s", msg);
         return(2);
     }
 
@@ -93,22 +95,20 @@ perfdhcp [-hv] [-4|-6] [-r<rate>] [-n<num-request>] [-p<test-period>]\n\
         printHelp(PROGNAME, usage);
         return(0);
     }
-    if (versionReq) {
+    if (version_req) {
         printf("%s\n", VERSION);
         return(0);
     }
-    if (diagStr != NULL) {
+    if (diagstr != NULL) {
         char c;
-        if ((c = dk_setup(diagStr, diagLetters)) != '\0') {
-            fprintf(stderr,
-                    "%s: Invalid selector character given with -x: '%c'\n",
-                    PROGNAME, c);
+        if ((c = dk_setup(diagstr, diagLetters)) != '\0') {
+            reporterr("Invalid selector character given with -x: '%c'", c);
             return(2);
         }
     }
 
     if (v4 && v6) {
-        fprintf(stderr, "%s: Must not give -4 and -6 together.\n", PROGNAME);
+        reporterr("Must not give -4 and -6 together.");
         return(2);
     }
     switch (argc) {
@@ -117,13 +117,11 @@ perfdhcp [-hv] [-4|-6] [-r<rate>] [-n<num-request>] [-p<test-period>]\n\
             server = "all";
         } else {
             if (v6) {
-                fprintf(stderr,
-                        "%s: Use -l to specify an interface name.\n\%s\n",
-                        PROGNAME, usage);
+                reporterr("Use -l to specify an interface name.\n%s", usage);
+                return(2);
             }
             else {
-                fprintf(stderr, "%s: Must specify a DHCP server.\n\%s\n",
-                        PROGNAME, usage);
+                reporterr("Must specify a DHCP server.\n%s", usage);
             }
             return(2);
         }
@@ -132,7 +130,7 @@ perfdhcp [-hv] [-4|-6] [-r<rate>] [-n<num-request>] [-p<test-period>]\n\
         server = argv[0];
         break;
     default:
-        fprintf(stderr, "%s: Too many arguments.\n\%s\n", PROGNAME, usage);
+        reporterr("Too many arguments.\n%s", usage);
         return(2);
     }
     return(1);
@@ -156,7 +154,7 @@ initialize(void) {
 }
 
 static void
-printHelp(const char* progName, const char* usage) {
+printHelp(const char* progname, const char* usage) {
     printf(
         "%s: Execute a performance test against a DHCP server.\n\
 %s\n\
@@ -190,8 +188,8 @@ Options:\n\
     routed to the server is used.\n\
     For DHCPv6 operation, specify the name of the network interface via\n\
     which exchanges are initiated.  This must be specified unless a server\n\
-    name is given, in which case the interface through which traffic would\n\
-    normally be routed to the server is used.\n\
+    name is given, in which case it defaults to the interface through which\n\
+    traffic would normally be routed to the server.\n\
 -r<rate>: Initiate <rate> DORA/SARR (or if -i is given, DO/SA) exchanges per\n\
     second.  A periodic report is generated showing the number of exchanges\n\
     which were not completed, as well as the average response latency.  The\n\
@@ -210,7 +208,7 @@ The remaining options are used only in conjunction with -r:\n\
     been lost.  The value is given in seconds and may contain a fractional\n\
     component.  The default is 1 second.\n\
 -D<max-drop>: Abort the test if more than <max-drop> requests have been\n\
-    dropped.  Use -D0 to abort if even a single request has been dropped. \n\
+    dropped.  Use -D0 to abort if even a single request has been dropped.\n\
     If <max-drop> includes the suffix \"%%\", it specifies a maximum\n\
     percentage of requests that may be dropped before abort.  In this\n\
     case, testing of the threshold begins after 10 requests have been\n\
@@ -230,7 +228,7 @@ The exit status is:\n\
 2 if an error is found in the command line arguments.\n\
 3 if there are no general failures in operation, but one or more exchanges\n\
   are not successfully completed.\n",
-        progName, usage);
+        progname, usage);
 }
 
 int

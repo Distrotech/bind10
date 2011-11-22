@@ -22,6 +22,10 @@
 #ifndef PROCCONF_H
 #define PROCCONF_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <limits.h> /* for UINT_MAX */
 
 /*
@@ -94,19 +98,22 @@ typedef struct {
 /*
  * Input variables:
  * argc, argv: Command line data.
- * optConf[]: Option description structures.  The array should end with an
+ * optconf[]: Option description structures.  The array should end with an
  *    element with a type of CF_ENDLIST.
  * name: Name of program, for messages.
  * usage: Usage message.  If non-null, on error a message is printed to stderr
  *    and the program exits.
  *
  * Output variables:
- * The processed option values are stored in confdata.
+ * If confdata is not null, the processed option values are stored in
+ * confdata.
  * A pointer to the start of the values for each option is stored in
  * confdata->optVals[].values at the same offset as the option appears in
  * confdata[].
- * For any option for option characters/indexes have been used,
+ * For any option for which an option character/index has been used,
  * confdata->map[index] is set to the same data.
+ * Option values are stored at the value given by any confvar that has a
+ * non-null address.
  * After processing, argc will have been adjusted to be the number of
  * non-option arguments and argv will have been adjusted to start with the
  * first non-option argument.
@@ -116,7 +123,7 @@ typedef struct {
  * On error, a message describing the problem.
  */
 const char*
-procOpts(int* argc, const char** argv[], const confvar_t optConf[],
+procOpts(int* argc, char const*** argv, const confvar_t optconf[],
          confdata_t* confdata, const char name[],
          const char usage[]);
 
@@ -124,5 +131,9 @@ procOpts(int* argc, const char** argv[], const confvar_t optConf[],
  * Free the malloced data stored in confdata elements by ProcOpts()
  */
 void confdataFree(confdata_t *confdata);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

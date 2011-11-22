@@ -16,15 +16,16 @@
 #include <gtest/gtest.h>
 
 #include "../cloptions.h"
-#include "../perfdhcp.h"
+#include "../netio.h"
 
-TEST(SendReceiveTest, do) {
+TEST(SendReceiveTest, v4) {
+    // Invoke command line processor to set up for IPv4 operation, localhost
     const char* argv[] = { "perfdhcp", "127.0.0.1" };
-    const char message[] = "This is a test";
-    char buf[sizeof(message)];
+    const char message[] = "This is a test for IPv4";
+    char buf[1024];
     int numOctets;
 
-    EXPECT_EQ(1, procArgs(2, argv));
+    EXPECT_EQ(1, procArgs(sizeof(argv)/sizeof(char *), argv));
     dhcpSetup("20942", NULL, "20942");
     EXPECT_EQ(1, dhcpSend((const unsigned char*)message, sizeof(message)));
     numOctets = dhcpReceive(buf, sizeof(buf));
@@ -32,4 +33,23 @@ TEST(SendReceiveTest, do) {
     if (numOctets == sizeof(message)) {
         EXPECT_STREQ(message, buf);
     }
+    netShutdown();
+}
+
+TEST(SendReceiveTest, v6) {
+    // Invoke command line processor to set up for IPv6 operation, localhost
+    const char* argv[] = { "perfdhcp", "-6", "::1" };
+    const char message[] = "This is a test for IPv6";
+    char buf[1024];
+    int numOctets;
+
+    EXPECT_EQ(1, procArgs(sizeof(argv)/sizeof(char *), argv));
+    dhcpSetup("20942", NULL, "20942");
+    EXPECT_EQ(1, dhcpSend((const unsigned char*)message, sizeof(message)));
+    numOctets = dhcpReceive(buf, sizeof(buf));
+    EXPECT_EQ(sizeof(message), numOctets);
+    if (numOctets == sizeof(message)) {
+        EXPECT_STREQ(message, buf);
+    }
+    netShutdown();
 }

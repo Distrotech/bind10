@@ -27,79 +27,99 @@
 #include <errno.h>
 #include <time.h>
 #include "perfdhcp.h"
+#include "netio.h"
+#include "misc.h"
 #include "cloptions.h"
 #include "dkdebug.h"
 #include "dhcp.h"
 #define FLEXIBLE_ARRAY_MEMBER 500
 #include "dhcp6.h"
 
-static int socketSetup(int addr_fam, const char* localAddr, const char* port,
+static int socketSetup(int addr_fam, const char* local_addr, const char* port,
                        const char* type, struct sockaddr_storage* l_addr);
-static struct addrinfo* getAddrs(int addr_fam, const char* hostname,
+static struct addrinfo* getAddresses(int addr_fam, const char* hostname,
                                  const char* port);
 static void printAddrInfo(FILE* f, const struct addrinfo* addr);
 static char* addrAndPortToNames(const struct sockaddr_storage* addr, char* buf,
                                 size_t bufsize);
 static void printSockaddr6Info(FILE* f, const struct sockaddr_in6* sa);
+static int getLinkLocalAddr(const char if_name[], struct sockaddr_storage* addr);
 
 #define ADDR_NAME_BUFSIZE (NI_MAXHOST + 30)
 
 static struct sockaddr_storage send_laddr;     // send socket local end details
 static struct sockaddr_storage recv_laddr;     // recv socket local end details
-static int send_fd = -1, recv_fd = -1;         // Sockets for DHCP server comm
-static struct addrinfo* server_addr;           // DHCP server address
+static int send_fd = -1;     // Socket on which to send messages to DHCP server
+static recv_fd = -1;      // Socket on which to receive messages to DHCP server
+static struct addrinfo* server_addr = NULL;    // DHCP server address
 
 /*
  * Set up network communications to talk to a DHCP server.
- * This sets up sockets and sets the globals used by dhcpSend().
+ * This sets up sockets and sets the file-scoped variables used by dhcpSend().
  *
- * Input variables:
- * sendPort is the local port from which to send communications.
- * recvPort is the local port on which to listen for communications.
- *     If null, the receive socket is made the same as the send socket.
- * serverPort is the port on the server to communicate with.
- *
- * Globals (see above):
+ * File-scoped variables:
  * Sets: server_addr, send_fd, send_laddr, recv_fd and recv_laddr.
  */
 void
-dhcpSetup(const char* sendPort, const char* recvPort, const char *serverPort) {
-    const char* localAddr = getLocalName();
-    int v6 = isV6();
-    int family = v6 ? AF_INET6 : AF_INET;
+dhcpSetup(const char* send_port, const char* recv_port, const char *server_port) {
+    const char* local_addr = NULL;       // Local name to bind to
+    const char* interface_name = NULL;   // Interface to get link-local address from
+    int family = isV6() ? AF_INET6 : AF_INET;
 
-    if (!isV6() && localAddr == NULL) {
-        localAddr = "0.0.0.0";
+    if (isV6()) {
+        interface_name = getLocalName();     
+        if (interface_name != NULL) {
+            getLinkLocalAddr(interface_name, &send_laddr);
+            memcpy(&recv_laddr, &send_laddr, sizeof(recv_laddr));
+            // Do not set local_addr, so that socketSetup() will take
+            // address etc. from send_laddr.
+        } else {
+            local_addr = "::";   // IPv6 anylocal
+        }
+    } else {
+        local_addr = getLocalName();     
+        if (local_addr == NULL) {
+            local_addr = "0.0.0.0";
+        }
     }
-    send_fd = socketSetup(family, localAddr, sendPort, "Send",
+    send_fd = socketSetup(family, local_addr, send_port, "Send",
                           &send_laddr);
-    if (recvPort == NULL) {
+    if (recv_port == NULL) {
         recv_fd = send_fd;
         memcpy(&recv_laddr, &send_laddr, sizeof(recv_laddr));
 
     } else {
-        recv_fd = socketSetup(family, localAddr, recvPort, "Recv",
+        recv_fd = socketSetup(family, local_addr, recv_port, "Recv",
                               &recv_laddr);
     }
-    server_addr = getAddrs(family, getServer(), serverPort);
+    server_addr = getAddresses(family, getServer(), server_port);
+}
+
+/*
+ * Shut down connections opened by dhcpSetup()
+ */
+void
+netShutdown(void) {
+    if (send_fd != -1) {
+        close(send_fd);
+    }
+    if (recv_fd != -1 && recv_fd != send_fd) {
+        close(recv_fd);
+    }
+    recv_fd = send_fd = -1;
+    if (server_addr != NULL) {
+        freeaddrinfo(server_addr);
+        server_addr = NULL;
+    }
 }
 
 /*
  * dhcpSend: Send a DHCP packet.
  *
- * Input variables:
- * dhcp_packet: DHCP message to send.
- * num_octets: Size of message.
- *
- * Globals:
+ * File-scoped variables:
  * send_fd: Socket to send message on.
  * server_addr: Remote address to send message to.
  * send_laddr: Local address of socket, for informational messages only.
- *
- * Return value:
- * If the send succeeds, 1.
- * If it fails (in full or part), an error message is printed to stderr and 0
- * is returned.
  */
 int
 dhcpSend(const unsigned char* msg, size_t num_octets) {
@@ -109,7 +129,7 @@ dhcpSend(const unsigned char* msg, size_t num_octets) {
 
     if (dk_set(DK_MSG)) {
         fprintf(stderr,
-                "Sending %zu octets to socket fd %u, local %s remote %s",
+                "Sending %zu octets to socket fd %u, local %s remote %s\n",
                 num_octets, send_fd,
                 addrAndPortToNames((struct sockaddr_storage*)&send_laddr,
                                    addrbuf, sizeof(addrbuf)),
@@ -119,12 +139,11 @@ dhcpSend(const unsigned char* msg, size_t num_octets) {
     num_written = sendto(send_fd, msg, num_octets, 0, server_addr->ai_addr,
                          sizeof(struct sockaddr_storage));
     if (num_written < 0) {
-        fprintf(stderr, "%s: Send failed: %s\n", PROGNAME, strerror(errno));
+        reporterr("Send failed: %s", strerror(errno));
         return (0);
     }
     if ((size_t) num_written != num_octets) {
-        fprintf(stderr, "%s: Only %zd of %zu octets written\n", PROGNAME,
-                num_written, num_octets);
+        reporterr("Only %zd of %zu octets written", num_written, num_octets);
         return (0);
     }
     return (1);
@@ -133,53 +152,40 @@ dhcpSend(const unsigned char* msg, size_t num_octets) {
 /*
  * dhcpReceive: Receive a DHCP packet.
  *
- * Input variables:
- *
- * If msgsize is nonzero, it gives the size of the receive buffer.  If it is
- * zero, the reeive buffer is taken to have the size of either a hdcpv6_packet
- * or a dhcp_packet, depending on whether v6 operation is in effect.
- *
- * Globals:
+ * File-scoped variables:
  * recv_fd is the socket to receive on.
  * recv_laddr is the socket's address, solely for informational messages.
  *
- * If the receive fails, an error message is printed to stderr.
- *
- * Output variables:
- * msg points to storage for the received message.
- *
- * Return value:
- * The return value from recvfrom: -1 on error, 0 if remote closed, else the
- * number of octets received.
  */
 int
 dhcpReceive(void* msg, size_t msgsize) {
-    ssize_t octetsReceived;             // Number of octets received
-    struct sockaddr_storage sourceAddr; // Address of sender
-    socklen_t addrSize;                 // size of above
+    ssize_t octets_received;             // Number of octets received
+    struct sockaddr_storage source_addr; // Address of sender
+    socklen_t addrsize;                 // size of above
     char addrbuf[ADDR_NAME_BUFSIZE];    // For informational messages
 
     if (dk_set(DK_SOCK)) {
-        fprintf(stderr, "Waiting for response on socket fd %u, %s", recv_fd,
+        fprintf(stderr, "Waiting for response on socket fd %u, %s\n", recv_fd,
                  addrAndPortToNames(&recv_laddr, addrbuf, sizeof(addrbuf)));
     }
-    addrSize = sizeof(sourceAddr);
-    if (msgsize == 0)
+    addrsize = sizeof(source_addr);
+    if (msgsize == 0) {
         msgsize = isV6() ? sizeof(struct dhcpv6_packet) :
                 sizeof(struct dhcp_packet);
-    octetsReceived = recvfrom(recv_fd, msg, msgsize, 0,
-                              (struct sockaddr*)&sourceAddr, &addrSize);
+    }
+    octets_received = recvfrom(recv_fd, msg, msgsize, 0,
+                              (struct sockaddr*)&source_addr, &addrsize);
     if (dk_set(DK_MSG)) {
-        fprintf(stderr, "Got %zd octets from fd %u, %s", octetsReceived,
+        fprintf(stderr, "Got %zd octets from fd %u, %s\n", octets_received,
                 recv_fd,
-                addrAndPortToNames(&sourceAddr, addrbuf, sizeof(addrbuf)));
+                addrAndPortToNames(&source_addr, addrbuf, sizeof(addrbuf)));
     }
-    if (octetsReceived < 0) {
-        fprintf(stderr, "%s: Receive failed: %s\n", PROGNAME, strerror(errno));
-    } else if (octetsReceived == 0) {
-        fprintf(stderr, "%s: Remote closed connection.\n", PROGNAME);
+    if (octets_received < 0) {
+        reporterr("Receive failed: %s", strerror(errno));
+    } else if (octets_received == 0) {
+        reporterr("Remote closed connection.");
     }
-    return (octetsReceived);
+    return (octets_received);
 }
 
 /*
@@ -189,9 +195,10 @@ dhcpReceive(void* msg, size_t msgsize) {
  *
  * Input variables:
  * addr_fam is the address family to use, e.g. AF_INET
- * localAddr is the local address to bind to.
+ * local_addr is the local address to bind to.
  * If it is null and the address family is AF_INET6, the local address, flow
- *     info, and scope are instead taken from l_addr.
+ *     info, and scope are instead taken from l_addr.  This allows the flow
+ *     info and scope to be specified.
  *
  * port is the port to bind to.
  *
@@ -206,18 +213,20 @@ dhcpReceive(void* msg, size_t msgsize) {
  * 1.
  */
 static int
-socketSetup(int addr_fam, const char* localAddr, const char* port,
+socketSetup(int addr_fam, const char* local_addr, const char* port,
             const char* type, struct sockaddr_storage* l_addr) {
     char addrbuf[ADDR_NAME_BUFSIZE];    // Buffer for error messages
     int net_fd;                         // Socket
     struct addrinfo* addrs;             // Port and possibly local addr
 
-    addrs = getAddrs(addr_fam, localAddr, port);
-    if (addr_fam == AF_INET6 && localAddr == NULL) {
+    addrs = getAddresses(addr_fam, local_addr, port);
+    if (addr_fam == AF_INET6 && local_addr == NULL) {
         if (dk_set(DK_SOCK)) {
             fprintf(stderr, "local address:\n");
             printSockaddr6Info(stderr, (struct sockaddr_in6*)l_addr);
         }
+
+        // Get the local address, flow info, and scope from l_addr
         memcpy(&((struct sockaddr_in6*)addrs->ai_addr)->sin6_addr,
                &((struct sockaddr_in6*)l_addr)->sin6_addr,
                sizeof(struct in6_addr));
@@ -227,21 +236,19 @@ socketSetup(int addr_fam, const char* localAddr, const char* port,
             ((struct sockaddr_in6*)l_addr)->sin6_scope_id;
     }
     if (dk_set(DK_SOCK)) {
-        printAddrInfo(stderr, addrs);
         fprintf(stderr, "Creating socket from addrinfo:\n");
         printAddrInfo(stderr, addrs);
     }
     net_fd = socket(addrs->ai_family, addrs->ai_socktype, addrs->ai_protocol);
     if (net_fd < 0) {
-        fprintf(stderr, "%s: socket creation failed: %s\n", PROGNAME,
-                strerror(errno));
+        reporterr("socket creation failed: %s", strerror(errno));
         exit(1);
     }
     if (bind(net_fd, addrs->ai_addr, addrs->ai_addrlen) == -1) {
         int s_errno = errno;
-        fprintf(stderr, "%s: Could not bind to %s: %s\n", PROGNAME,
-                addrAndPortToNames((struct sockaddr_storage*)addrs->ai_addr,
-                addrbuf, sizeof(addrbuf)), strerror(s_errno));
+        reporterr("Could not bind to %s: %s", addrAndPortToNames((struct
+                  sockaddr_storage*)addrs->ai_addr, addrbuf, sizeof(addrbuf)),
+                  strerror(s_errno));
         exit(1);
     }
     if (dk_set(DK_SOCK)) {
@@ -255,25 +262,23 @@ socketSetup(int addr_fam, const char* localAddr, const char* port,
 }
 
 /*
- * getAddrs: generate an addrinfo list from a given hostname and UDP port.
+ * getAddresses: generate an addrinfo list from a given hostname and UDP port.
  * If getaddrinfo() fails for any reason with the provided information, an
  * error message is printed to stderr and the program exits with status 2.
  *
  * Input variables:
- * hostname: The host name to look up.  This can be either a name or an IPv4
- *     dotted-quad address, or null to not fill in the address.
+ * hostname: The host name to look up.  This can be a name, an IPv4 dotted-quad
+ *     address, an IPv6 hexadecimal address, or null to not fill in the
+ *     address.
  * port: The port to include in addrinfo.  This can be either a service name or
  *     an ASCII decimal number, or null to not fill in the port number.
- *
- * Globals:
- * PROGNAME, for error messages.
  *
  * Return value:
  * A pointer to the addrinfo list.  This must be freed by the caller with
  * freeaddrinfo().
  */
 static struct addrinfo*
-getAddrs(int addr_fam, const char* hostname, const char* port) {
+getAddresses(int addr_fam, const char* hostname, const char* port) {
     struct addrinfo* ai;        // list produced by getaddrinfo
     struct addrinfo hints;      // hints for getaddrinfo
     int ret;                    // return value from getaddrinfo
@@ -288,9 +293,9 @@ getAddrs(int addr_fam, const char* hostname, const char* port) {
         /*
          * getaddrinfo as tested returns error if lookup fails,
          * but the man page doesn't quite promise that.
-         * But be extra sure we always have an answer if we return.
+         * Be extra sure we always have an answer if we return.
          */
-        fprintf(stderr, "%s: getaddrinfo: %s/%s: %s\n", PROGNAME,
+        reporterr("getaddrinfo: host %s port %s: %s",
                 hostname == NULL ? "" : hostname, port == NULL ? "" : port,
                 ret != 0 ? gai_strerror(ret) : "hostname/port lookup failure");
         exit(2);
@@ -369,4 +374,42 @@ printSockaddr6Info(FILE* f, const struct sockaddr_in6* sa) {
             sa->sin6_family, sa->sin6_flowinfo, sa->sin6_scope_id,
             addrAndPortToNames((struct sockaddr_storage*)sa, addrbuf,
                                sizeof(addrbuf)));
+}
+
+/*
+ * Find the link-local address for an interface.
+ *
+ * Input variables:
+ * if_name is the name of the interface to search for.
+ *
+ * Output variables:
+ * The link-local address for the interface is stored in addr.
+ *
+ * Return value:
+ * 1 on success, 0 if no link-local address is found.
+ *
+ * If retrieval of the interface address list fails, an error message is
+ * printed and the program is exited with status 2.
+ */
+static int
+getLinkLocalAddr(const char if_name[], struct sockaddr_storage* addr) {
+    struct ifaddrs* ifaddr;     // interface address list
+    struct ifaddrs* ifa;        // For iterating through above
+
+    if (getifaddrs(&ifaddr) == -1) {
+        reporterr("Could not get interface addresses: %s", strerror(errno));
+        exit(2);
+    }
+
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr->sa_family == AF_INET6 && strcmp(ifa->ifa_name, if_name) == 0 &&
+                (ntohs(((struct sockaddr_in6*)ifa->ifa_addr)->sin6_addr.__in6_u.__u6_addr16[0]) & 0xffc0) == 0xfe80) {
+            break;
+        }
+    }
+    if (ifa != NULL) {
+        memcpy(addr, ifa->ifa_addr, sizeof(struct sockaddr_storage));
+    }
+    freeifaddrs(ifaddr);
+    return (ifa != NULL);
 }

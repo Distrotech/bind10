@@ -15,7 +15,6 @@
  */
 
 #include <string.h>
-#include <malloc.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -34,9 +33,9 @@ static const char* pc_usage;
 
 /*
  * error: printf-style interface to print an error message or write it into
- * global errmsg.  If a usage message has been given (the indicator that errors
- * should be handled internally), the message is printed to stderr and the
- * program is exited.  If not, it is written into errmsg.
+ * file-scoped variable errmsg.  If a usage message has been given (the
+ * indicator that errors should be handled internally), the message is printed
+ * to stderr and the program is exited.  If not, it is written into errmsg.
  * Input variables:
  * errtype is the error type.  If USAGE_ERROR, the program's usage is included
  *     in error messages, and the exit status is 2; otherwise the exit status
@@ -81,19 +80,19 @@ pc_malloc(size_t size) {
  * option.  This is a front end for error(); see its usage for details.
  * Input variables:
  * expected: A description of what was expected for the value.
- * varDesc: The descriptor for the option.
+ * vardesc: The descriptor for the option.
  * value: The value that was given with the option.
  * detail: If non-null, additional detail to append regardign the problem.
  */
 static void
-opterror(const char* expected, const char* value, const confvar_t* varDesc,
+opterror(const char* expected, const char* value, const confvar_t* vardesc,
          const char* detail) {
     if (detail == NULL) {
         detail = "";
     }
     error(USAGE_ERROR,
           "Invalid value given for option -%c: expected %s, got: %s%s",
-          varDesc->outind, expected, value, detail);
+          vardesc->outind, expected, value, detail);
 }
 
 /*
@@ -104,7 +103,7 @@ opterror(const char* expected, const char* value, const confvar_t* varDesc,
  * Input variables:
  * value is the string value assigned to the option, for options that take
  *     values.
- * varDesc is the description structure for this option.
+ * vardesc is the description structure for this option.
  *
  * Output variables:
  * The option data is stored in a malloced confval structure, which is appended
@@ -118,11 +117,11 @@ opterror(const char* expected, const char* value, const confvar_t* varDesc,
  * Return value:
  * 0 if option was ignored.
  * 1 if option was processed & added to option chain.
- * On error, a string describing the error is stored in the global errmsg and
- * -1 is returned.
+ * On error, a string describing the error is stored in the file-scoped
+ * variable errmsg and -1 is returned.
  */
 static int
-addOptVal(const char* value, const confvar_t* varDesc,
+addOptVal(const char* value, const confvar_t* vardesc,
           confval** first, confval** last) {
     const void* addr;           /* address, if any at which to store value */
     confval data;               /* data for this option/value */
@@ -132,11 +131,11 @@ addOptVal(const char* value, const confvar_t* varDesc,
     int err;                    /* bad numeric value found? */
 
     /* if first instance of this option, store result to given addr */
-    addr = seen ? NULL : varDesc->addr;
-    switch (varDesc->type) {
+    addr = seen ? NULL : vardesc->addr;
+    switch (vardesc->type) {
     case CF_CHAR:
         if (strlen(value) > 1) {    /* length 0 is OK; gives null char */
-            opterror("a single character", value, varDesc, NULL);
+            opterror("a single character", value, vardesc, NULL);
             return(-1);
         }
         data.value.charval = *value;
@@ -146,8 +145,8 @@ addOptVal(const char* value, const confvar_t* varDesc,
         break;
     case CF_STRING:
     case CF_NE_STRING:
-        if (varDesc->type == CF_NE_STRING && *value == '\0') {
-            opterror("a non-empty string", value, varDesc, NULL);
+        if (vardesc->type == CF_NE_STRING && *value == '\0') {
+            opterror("a non-empty string", value, vardesc, NULL);
             return(-1);
         }
         data.value.string = value;
@@ -162,21 +161,21 @@ addOptVal(const char* value, const confvar_t* varDesc,
         errno = 0;
         data.value.intval = strtol(value, &ptr, 0);
         if (errno == ERANGE) {
-            opterror("an integer", value, varDesc,
+            opterror("an integer", value, vardesc,
                      " (out of range)");
             return(-1);
         }
         err = *value == '\0' || *ptr != '\0';
-        switch (varDesc->type) {
+        switch (vardesc->type) {
         case CF_INT:
             if (err) {
-                opterror("an integer", value, varDesc, NULL);
+                opterror("an integer", value, vardesc, NULL);
                 return(-1);
             }
             break;
         case CF_NON_NEG_INT:
             if (err || data.value.intval < 0) {
-                opterror("a non-negative integer", value, varDesc,
+                opterror("a non-negative integer", value, vardesc,
                          NULL);
                 return(-1);
             }
@@ -184,7 +183,7 @@ addOptVal(const char* value, const confvar_t* varDesc,
             break;
         case CF_POS_INT:
             if (err || data.value.intval <= 0) {
-                opterror("a positive integer", value, varDesc, NULL);
+                opterror("a positive integer", value, vardesc, NULL);
                 return(-1);
             }
             data.value.nnint = data.value.intval;
@@ -204,27 +203,27 @@ addOptVal(const char* value, const confvar_t* varDesc,
         errno = 0;
         data.value.floatval = strtod(value, &ptr);
         if (errno == ERANGE) {
-            opterror("a number", value, varDesc, " (out of range)");
+            opterror("a number", value, vardesc, " (out of range)");
             return(-1);
         }
         err = *value == '\0' || *ptr != '\0';
-        switch (varDesc->type) {
+        switch (vardesc->type) {
         case CF_FLOAT:
             if (err) {
-                opterror("a number", value, varDesc, NULL);
+                opterror("a number", value, vardesc, NULL);
                 return(-1);
             }
             break;
         case CF_NON_NEG_FLOAT:
             if (err || data.value.floatval < 0) {
-                opterror("a non-negative number", value, varDesc,
+                opterror("a non-negative number", value, vardesc,
                          NULL);
                 return(-1);
             }
             break;
         case CF_POS_FLOAT:
             if (err || data.value.floatval <= 0) {
-                opterror("a positive number", value, varDesc, NULL);
+                opterror("a positive number", value, vardesc, NULL);
                 return(-1);
             }
             break;
@@ -237,10 +236,10 @@ addOptVal(const char* value, const confvar_t* varDesc,
         }
         break;
     case CF_SWITCH:
-        data.value.switchval = varDesc->value;
+        data.value.switchval = vardesc->value;
         value = "1";    /* for debugging */
         if (addr != NULL) {
-            *(int*)addr = varDesc->value;
+            *(int*)addr = vardesc->value;
         }
         break;
     case CF_ENDLIST:
@@ -265,7 +264,7 @@ addOptVal(const char* value, const confvar_t* varDesc,
 /*
  * Input variables:
  * argc, argv: Command line data.
- * optConf[]: Option description structures.
+ * optconf[]: Option description structures.
  *
  * Output variables:
  * See addOptVal().
@@ -274,42 +273,45 @@ addOptVal(const char* value, const confvar_t* varDesc,
  *
  * Return value:
  * On success, the number of options processed.
- * On error, a string describing the error is stored in the global errmsg and
- * -1 is returned.
+ * On error, a string describing the error is stored in the file-scoped
+ * variable errmsg and -1 is returned.
  */
+
 static int
-procCmdLineArgs(int* argc, const char** argv[], const confvar_t optConf[],
-                confval** perOptRecordsFirst, confval** perOptRecordsLast) {
+procCmdLineArgs(int* argc, const char*** argv, const confvar_t optconf[],
+                confval** per_opt_records_first, confval** per_opt_records_last) {
     char* p;
     extern char* optarg;    /* For getopt */
     extern int optind;      /* For getopt */
     extern int optopt;      /* For getopt */
     char optstr[514];       /* List of option chars, for getopt */
-    unsigned optCharToConf[256];        /* Map option char/num to confvar */
+    unsigned optchar_to_conf[256];        /* Map option char/num to confvar */
     int optchar;            /* value returned by getopt() */
     int confNum;       /* to iterate over confvars */
     int count = 0;          /* number of options processed */
 
     p = optstr;
     *(p++) = ':';
-    for (confNum = 0; optConf[confNum].type != CF_ENDLIST; confNum++) {
-        unsigned outind = optConf[confNum].outind;
+    for (confNum = 0; optconf[confNum].type != CF_ENDLIST; confNum++) {
+        unsigned outind = optconf[confNum].outind;
         if (outind < 256 && isprint(outind)) {
             *(p++) = (char)outind;
-            switch (optConf[confNum].type) {
+            switch (optconf[confNum].type) {
             case CF_SWITCH:
                 break;
             default:
                 *(p++) = ':';
                 break;
             }
-            optCharToConf[outind] = confNum;
+            optchar_to_conf[outind] = confNum;
         }
     }
 
     *p = '\0';
     optind = 1;
-    while ((optchar = getopt(*argc, const_cast<char**>(*argv), optstr)) != -1)
+    // The reality is that getopt does *not* modify the strings,
+    // and GNU getopt *does* modify the pointers!
+    while ((optchar = getopt(*argc, (char* const *)*argv, optstr)) != -1)
     {
         int ind;
         int ret;
@@ -321,10 +323,10 @@ procCmdLineArgs(int* argc, const char** argv[], const confvar_t optConf[],
             error(USAGE_ERROR, "No value given for option -%c", optopt);
             return(-1);
         }
-        ind = optCharToConf[optchar];
-        switch (ret = addOptVal(optarg, &optConf[ind],
-                                &perOptRecordsFirst[ind],
-                                &perOptRecordsLast[ind])) {
+        ind = optchar_to_conf[optchar];
+        switch (ret = addOptVal(optarg, &optconf[ind],
+                                &per_opt_records_first[ind],
+                                &per_opt_records_last[ind])) {
         case 1:
             count++;
             break;
@@ -340,38 +342,16 @@ procCmdLineArgs(int* argc, const char** argv[], const confvar_t optConf[],
 }
 
 /*
- * Input variables:
- * argc, argv: Command line data.
- * optConf[]: Option description structures.
- * name: Name of program, for messages.
- * usage: Usage message.  If non-null, on error a message is printed to stderr
- *    and the program exits.
+ * Process a set of command line arguments.
  *
- * Output variables:
- * Option values are stored at the value given by any confvar that has a
- * non-null address. 
- * If confdatda is not null, the processed option values are stored in
- * confdata.
- * A pointer to the start of the values for each option is stored in
- * confdata->optVals[].values at the same offset as the option appears in
- * confdata[].
- * For any option for option characters/indexes that have been used,
- * confdata->map[index] is set to the same data.
- * After processing, argc will have been adjusted to be the number of
- * non-option arguments and argv will have been adjusted to start with the
- * first non-option argument.
  * The malloced data structures returned in confdata are:
  *   optVals
  *   optVals[0].values
  *   If any option characters/indexes are used, map.  If not used, this will be
  *     a null pointer.
- *
- * Return value:
- * On success, NULL.
- * On error, a message describing the problem.
  */
 const char*
-procOpts(int* argc, const char** argv[], const confvar_t optConf[],
+procOpts(int* argc, char const*** argv, const confvar_t optconf[],
          confdata_t* confdata, const char name[],
          const char usage[]) {
     /*
@@ -380,49 +360,49 @@ procOpts(int* argc, const char** argv[], const confvar_t optConf[],
      * (each) per option, used to maintain/return the list of values seen for
      * that option (see the description of first & last in addOptVal()
      */
-    confval** perOptRecordsFirst;
-    confval** perOptRecordsLast;
+    confval** per_opt_records_first;
+    confval** per_opt_records_last;
 
-    /* Number of configuration options given in optConf */
-    unsigned numConf;
-    unsigned maxOptIndex = 0;   /* The highest option index number seen */
+    /* Number of configuration options given in optconf */
+    unsigned numconf;
+    unsigned maxoptindex = 0;   /* The highest option index number seen */
     /* number of option instances + assignments given */
-    int numOptsFound;
-    int optNum;    /* to iterate through the possible options */
+    int numoptsfound;
+    int optnum;    /* to iterate through the possible options */
     int i;         /* index into the global list of option value structures */
-    confval** valuePointers;    /* global list of value structures */
+    confval** value_pointers;    /* global list of value structures */
 
     pc_name = name;
     pc_usage = usage;
-    for (numConf = 0; optConf[numConf].type != CF_ENDLIST; numConf++) {
-        unsigned outind = optConf[numConf].outind;
+    for (numconf = 0; optconf[numconf].type != CF_ENDLIST; numconf++) {
+        unsigned outind = optconf[numconf].outind;
 
-        if ((outind & ~CF_NOTFLAG) > maxOptIndex) {
-            maxOptIndex = outind & ~CF_NOTFLAG;
+        if ((outind & ~CF_NOTFLAG) > maxoptindex) {
+            maxoptindex = outind & ~CF_NOTFLAG;
         }
     }
-    if (numConf == 0) {
+    if (numconf == 0) {
         error(INTERNAL_ERROR, "Empty confvar list");
         return(errmsg);
     }
-    if ((perOptRecordsFirst = (confval**)pc_malloc(sizeof(confval*) * numConf))
-            == NULL || (perOptRecordsLast =
-            (confval**)pc_malloc(sizeof(confval*) * numConf)) == NULL) {
+    if ((per_opt_records_first = (confval**)pc_malloc(sizeof(confval*) * numconf))
+            == NULL || (per_opt_records_last =
+            (confval**)pc_malloc(sizeof(confval*) * numconf)) == NULL) {
         return(errmsg);
     }
 
-    numOptsFound = procCmdLineArgs(argc, argv, optConf, perOptRecordsFirst,
-                                   perOptRecordsLast);
-    free(perOptRecordsLast);
-    perOptRecordsLast = NULL;
+    numoptsfound = procCmdLineArgs(argc, argv, optconf, per_opt_records_first,
+                                   per_opt_records_last);
+    free(per_opt_records_last);
+    per_opt_records_last = NULL;
 
-    if (numOptsFound < 0)
+    if (numoptsfound < 0)
     {
-        free(perOptRecordsFirst);
+        free(per_opt_records_first);
         return(errmsg);
     }
     if (confdata == NULL) {
-        free(perOptRecordsFirst);
+        free(per_opt_records_first);
         return NULL;
     }
 
@@ -430,44 +410,44 @@ procOpts(int* argc, const char** argv[], const confvar_t optConf[],
      * All options have been read & initial processing done.
      * An array of pointers is now generated for the options.
      */
-    if ((valuePointers =
-            (confval**)pc_malloc(sizeof(confval*) * numOptsFound)) == NULL ||
+    if ((value_pointers =
+            (confval**)pc_malloc(sizeof(confval*) * numoptsfound)) == NULL ||
             (confdata->optVals =
-            (cf_option*)pc_malloc(sizeof(cf_option) * numConf)) == NULL) {
+            (cf_option*)pc_malloc(sizeof(cf_option) * numconf)) == NULL) {
         return(errmsg);
     }
     /* If option characters / indexes are used, allocate a map for them */
-    if (maxOptIndex == 0) {
+    if (maxoptindex == 0) {
 	confdata->map = NULL;
     } else {
         if ((confdata->map = (cf_option**)pc_malloc(sizeof(cf_option) *
-             (maxOptIndex+1))) == NULL) {
+             (maxoptindex+1))) == NULL) {
             return(errmsg);
         }
     }
 
     /*
      * Store the linked lists of option values into arrays.
-     * Pointers to all option instances are stored in valuePointers,
+     * Pointers to all option instances are stored in value_pointers,
      * with the values for each particular option being contiguous.
      */
     i = 0;
-    for (optNum = 0; optNum < numConf; optNum++) {
-        unsigned outind = optConf[optNum].outind;
+    for (optnum = 0; optnum < numconf; optnum++) {
+        unsigned outind = optconf[optnum].outind;
         confval* optval;
 
-        confdata->optVals[optNum].num = 0;
-        confdata->optVals[optNum].values = &valuePointers[i];
+        confdata->optVals[optnum].num = 0;
+        confdata->optVals[optnum].values = &value_pointers[i];
         if (outind != 0) {
-            confdata->map[outind & ~CF_NOTFLAG] = &confdata->optVals[optNum];
+            confdata->map[outind & ~CF_NOTFLAG] = &confdata->optVals[optnum];
         }
-        for (optval = perOptRecordsFirst[optNum]; optval != NULL;
+        for (optval = per_opt_records_first[optnum]; optval != NULL;
                  optval = optval->next) {
-            confdata->optVals[optNum].num++;
-            valuePointers[i++] = optval;
+            confdata->optVals[optnum].num++;
+            value_pointers[i++] = optval;
         }
     }
-    free(perOptRecordsFirst);
+    free(per_opt_records_first);
     return(NULL);
 }
 

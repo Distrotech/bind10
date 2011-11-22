@@ -14,28 +14,16 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef PERFDHCP_H
-#define PERFDHCP_H
+#include <stdarg.h>
+#include <stdio.h>
+#include "perfdhcp.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+void reporterr(const char* format, ...) {
+     va_list ap;
 
-/*
- * The masks associated with keyletters, used in dkdesc structures for setup
- * and passed in the diag_req argument to the output/test functions to
- * determine which diagnostics they are enabled for.
- */
-enum {
-    DK_SOCK   = 1,
-    DK_MSG    = 2,
-    DK_PACKET = 4
-};
-
-extern const char* PROGNAME;    // Program name, for messages
-
-#ifdef __cplusplus
+     va_start(ap, format);
+     fprintf(stderr, "%s: ", PROGNAME);
+     vfprintf(stderr, format, ap);
+     fprintf(stderr, "\n");
+     va_end(ap);
 }
-#endif
-
-#endif
