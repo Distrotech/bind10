@@ -9,6 +9,7 @@ AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
 AC_PROG_CXX
+AM_PROG_CC_C_O
 
 # Libtool configuration
 #
@@ -936,6 +937,8 @@ AC_CONFIG_FILES([Makefile
                  tests/tools/Makefile
                  tests/tools/badpacket/Makefile
                  tests/tools/badpacket/tests/Makefile
+                 tests/tools/perfdhcp/Makefile
+                 tests/tools/perfdhcp/tests/Makefile
                ])
 AC_OUTPUT([doc/version.ent
            compatcheck/sqlite3-difftbl-check.py
