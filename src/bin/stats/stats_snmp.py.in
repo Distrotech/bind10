@@ -1,0 +1,212 @@
+#!@PYTHON@ -u
+
+# Copyright (C) 2011  Internet Systems Consortium.
+#
+# Permission to use, copy, modify, and distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND INTERNET SYSTEMS CONSORTIUM
+# DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL
+# INTERNET SYSTEMS CONSORTIUM BE LIABLE FOR ANY SPECIAL, DIRECT,
+# INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
+# FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+# NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+# WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+"""
+snmpd.conf pass_persist script for SNMP interface of BIND 10 statistics
+"""
+
+import sys; sys.path.append ('@@PYTHONPATH@@')
+import os, select, bisect, signal
+from optparse import OptionParser, OptionValueError
+
+import isc.config
+import isc.util.process
+
+# Assign this process name
+isc.util.process.rename()
+
+def oid2str(oid):
+    """Converts tuple-type oid into str-type oid"""
+    return'.'.join(['',] + [ str(s) for s in oid ])
+
+def str2oid(oid):
+    """Converts str-type oid into tuple-type oid"""
+    return tuple([ int(i) for i in oid.split('.')[1:] ])
+
+# BASE OID
+BASE_OID = str2oid(".1.3.6.1.4.1.2021.255")
+
+class StatsSnmp:
+    """The main class of Net-SNMP pass_persist script for SNMP
+    interface of BIND 10 statistics"""
+
+    def __init__(self):
+        self.running = False
+        self.cc_session = isc.cc.Session()
+        self.requested_get = False
+        self.requested_getnext = False
+
+    def send_command(self, command_name, module_name='Stats', params=None):
+        nonblock = False
+        command = isc.config.ccsession.create_command(command_name, params)
+        seq = self.cc_session.group_sendmsg(command, module_name)
+        try:
+            (answer, env) = self.cc_session.group_recvmsg(nonblock, seq)
+            if answer:
+                (rcode, value) =  isc.config.ccsession.parse_answer(answer)
+                if rcode == 0:
+                    return value
+                else:
+                    raise StatsSnmpError('stats module error: ' + str(value))
+        except isc.cc.SessionTimeout as errt:
+            raise StatsSnmpError('cc session timed out: ' + str(err))
+
+    def get_stats_spec(self):
+        return self.send_command('showschema')
+
+    def get_stats_data(self):
+        return self.send_command('show')
+
+    def getMibdata(self):
+        """Get mib data"""
+        def conv_spec2oid(spec, data, oid):
+            """ Convert spec data into the hash data with the keys of
+            oid. oid must be tuple """
+            i = 0
+            retspec = {}
+            ndata = None
+            if type(spec) is dict : # bottom level
+                if 'item_name' in spec and 'item_type' in spec:
+                    ndata = data
+                    if ndata is None:
+                        ndata = spec['item_default']
+                    if spec['item_type'] == 'map':
+                        nspec = spec['map_item_spec']
+                        noid = oid[:] + (i,)
+                        retspec.update(conv_spec2oid(nspec, ndata, oid))
+                    elif spec['item_type'] == 'list':
+                        nspec = spec['list_item_spec']
+                        noid = oid[:] + (i,)
+                        j = 0
+                        for d in ndata:
+                            retspec.update(
+                                dict([ (k[:]+(j,), v)
+                                       for (k, v) in conv_spec2oid(nspec, d, noid).items() ])
+                                )
+                            j = j + 1
+                    else:
+                        ntype = spec['item_type']
+                        if ntype == 'real':
+                            ntype = 'timeticks'
+                        elif ntype != 'integer':
+                            ntype = 'string'
+                        retspec.update({ oid : {
+                                'type' : ntype,
+                                'value' : ndata }})
+                else: # top level
+                    for (k,v) in sorted(spec.items()):
+                        noid = oid[:] + (i,)
+                        retspec.update(conv_spec2oid(v, data[k], noid))
+                        i = i + 1
+            elif type(spec) is list: # second level
+                # spec.sort()
+                for n in spec:
+                    noid = oid[:] + (i,)
+                    if n['item_name'] in data:
+                        ndata = data[n['item_name']]
+                    retspec.update(conv_spec2oid(n, ndata, noid))
+                    i = i + 1
+            return retspec
+
+        return conv_spec2oid(
+            self.get_stats_spec(),
+            self.get_stats_data(),
+            BASE_OID)
+
+    def process_command(self, command):
+        """processes requested commands"""
+        def returnPONG() :
+            return "PONG\n"
+        def returnNONE() :
+            return "NONE\n"
+        def returnMIBData(oid, otype, ovalue) :
+            return "%s\n%s\n%s\n" % (oid, otype, ovalue)
+        if command == "get":
+            self.requested_get = True
+            return ""
+        elif command == "getnext":
+            self.requested_getnext = True
+            return ""
+        elif self.requested_get:
+            oid = str2oid(command)
+            mib = self.getMibdata()
+            if oid in mib.keys():
+                retval = returnMIBData(oid2str(oid), mib[oid]['type'],  mib[oid]['value'])
+            else:
+                retval = returnNONE()
+        elif self.requested_getnext:
+            oid = str2oid(command)
+            mib = self.getMibdata()
+            oidlist = sorted(mib.keys())
+            oidindex = bisect.bisect(oidlist, oid)
+            if oidindex < len(oidlist):
+                oid = oidlist[oidindex]
+                retval = returnMIBData(oid2str(oid), mib[oid]['type'],  mib[oid]['value'])
+            else:
+                 retval = returnNONE()
+        elif command == "PING":
+            retval = returnPONG()
+        else:
+            retval = returnNONE()
+        self.requested_get = False
+        self.requested_getnext = False
+        return retval
+
+    def start(self):
+        """Starts StatsSnmp objects to run. Waiting for client
+        requests by using select.select functions"""
+        self.running = True
+        while self.running:
+            (rfd, wfd, xfd) = select.select([sys.stdin], [], [])
+            for fd in rfd:
+                while True:
+                    line = fd.readline()
+                    if line == '':
+                        self.running = False
+                        break
+                    else:
+                        sys.stdout.write(self.process_command(line.strip()))
+
+def usage():
+    BINDIR = "@@BINDIR@@"
+    sys.exit("""# b10-stats-snmp works together with the net-snmp agent. Add the
+# following directive pass_persist into the end of your snmpd.conf and
+# make the snmpd process reload. And then you will receive the result like
+# following if you install ISC-BIND10-MIB.txt into the proper place
+# and you execute the snmpwalk command.
+#   # ./b10-stats-snmp --help 2>>/etc/snmp/snmpd.conf
+#   # kill -HUP `cat /var/run/snmpd.pid`
+#   # snmpwalk -c public -v1 localhost ISC-BIND10-MIB::statistics
+#   ISC-BIND10-MIB::authQueriestcp = INTEGER: 2
+#   ISC-BIND10-MIB::authQueriesudp = INTEGER: 1
+#   ISC-BIND10-MIB::bossBoottime = STRING: 2011-12-02T10:23:07Z
+#   ISC-BIND10-MIB::statsReporttime = STRING: 2011-12-02T10:24:28Z
+#   ISC-BIND10-MIB::statsBoottime = STRING: 2011-12-02T10:23:09Z
+#   ISC-BIND10-MIB::statsLastupdatetime = STRING: 2011-12-02T10:24:09Z
+#   ISC-BIND10-MIB::statsTimestamp = Timeticks: (1322821468) 153 days, 2:30:14.68
+#   ISC-BIND10-MIB::statsLname = STRING: xxxx@foo
+#   End of MIB
+pass_persist .1.3.6.1.4.1.2021.255 %s/b10-stats-snmp""" % BINDIR)
+
+if __name__ == "__main__":
+    try:
+        if len(sys.argv) > 1: usage()
+        signal_handler = lambda x,y: sys.exit(1)
+        signal.signal(signal.SIGTERM, signal_handler)
+        StatsSnmp().start()
+    except KeyboardInterrupt as kie:
+        sys.exit(1)

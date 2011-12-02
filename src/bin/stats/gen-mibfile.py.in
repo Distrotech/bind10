@@ -1,0 +1,144 @@
+#!@PYTHON@
+
+# Copyright (C) 2011  Internet Systems Consortium.
+#
+# Permission to use, copy, modify, and distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND INTERNET SYSTEMS CONSORTIUM
+# DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL
+# INTERNET SYSTEMS CONSORTIUM BE LIABLE FOR ANY SPECIAL, DIRECT,
+# INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
+# FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+# NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+# WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+"""
+MIB file generator for BIND 10 statistics
+"""
+
+import sys
+import os, fileinput, string
+from optparse import OptionParser, OptionValueError
+import isc.config
+
+# MIB File locations
+MIB_TEMPLATE_LOCATION = "@abs_top_srcdir@" + os.sep + "src" + os.sep \
+    + "bin" + os.sep + "stats" + os.sep + "ISC-BIND10-MIB-txt.tpl"
+MIB_FILE_LOCATION = "@abs_top_builddir@" + os.sep + "src" + os.sep \
+    + "bin" + os.sep + "stats" + os.sep + "ISC-BIND10-MIB.txt"
+
+class MibfileGenerator:
+    "Class for generation of MIB definition"
+    def __init__(self):
+        self.stats_spec = {}
+
+    def readfiles(self, *spec_files):
+        """Reads multiple spec files"""
+        for sf in spec_files:
+            spec = isc.config.module_spec_from_file(sf)
+            self.stats_spec.update(
+                { spec.get_module_name() : spec.get_statistics_spec() })
+
+    def generate(self):
+        """Generate MIB-definition format from spec"""
+        self.owner_name = ''
+        def conv_spec2mib(spec, parent, num=0):
+            """ Convert spec data into the mib definition"""
+            i = 0
+            retval = ""
+            definition = """%%s OBJECT-TYPE
+  SYNTAX       %%s
+  MAX-ACCESS   %s
+  STATUS       current
+  DESCRIPTION  "%%s"
+  ::= { %%s %%s }
+
+"""
+            def get_type(arg):
+                ntype = 'DisplayString'
+                if arg == 'real':
+                    ntype = 'TimeTicks'
+                elif arg == 'integer':
+                    ntype = 'Integer32'
+                return ntype
+            def normalize_name(name):
+                # concatenate the prefix of module name and the capitalized item name
+                nname = self.owner_name + name.capitalize()
+                # remove special characters
+                nname = nname.replace('.', '')
+                nname = nname.replace('_', '')
+                return nname
+
+            if type(spec) is dict : # bottom level
+                if 'item_name' in spec and 'item_type' in spec:
+                    nname = normalize_name(spec['item_name'])
+                    ndesc = spec['item_description'] if 'item_description' in  spec else ''
+                    if spec['item_type'] == 'map':
+                        nname = "%sEntry" % nname
+                        nnamecap = str(nname[0]).upper() + nname[1:]
+                        nspec = spec['map_item_spec']
+                        retval = retval + ( definition % 'not-accessible' ) \
+                            % (nname,  nnamecap, ndesc, parent, num)
+                        retval = retval + "%s ::= SEQUENCE {\n" % nnamecap
+                        for j in range(0, len(nspec)):
+                            retval = retval + "  %s  %s" \
+                                % (normalize_name(nspec[j]['item_name']),
+                                   get_type(nspec[j]['item_type']))
+                            if j < len(nspec) - 1:
+                                retval = retval + ",\n"
+                            else:
+                                retval = retval + "\n"
+                        retval = retval + "}\n\n"
+                        retval = retval + conv_spec2mib(nspec, nname, num)
+                    elif spec['item_type'] == 'list':
+                        nname = "%sTable" % nname
+                        nspec = spec['list_item_spec']
+                        nnname = normalize_name(spec['list_item_spec']['item_name'])
+                        nnname = str(nnname[0]).upper() + nnname[1:]
+                        retval = retval + ( definition % 'not-accessible' ) \
+                            % (nname, 'SEQUENCE OF %sEntry' % nnname, ndesc, parent, num)
+                        retval = retval + conv_spec2mib(nspec, nname)
+                    else:
+                        ntype = get_type(spec['item_type'])
+                        retval = retval + ( definition % 'read-only' ) % (nname, ntype, ndesc, parent, num)
+                else: # top level
+                    for (k,v) in sorted(spec.items()):
+                        self.owner_name = k
+                        self.owner_name = self.owner_name.lower()
+                        retval = retval + "%s OBJECT IDENTIFIER ::= { statistics %s }\n\n" % (self.owner_name, i)
+                        retval = retval + conv_spec2mib(v, self.owner_name)
+                        i = i + 1
+            elif type(spec) is list: # second level
+                for n in spec:
+                    stra = conv_spec2mib(n, parent, i)
+                    try:
+                        retval = retval + stra
+                    except TypeError:
+                        sys.stderr.write(stra)
+                        raise
+                    i = i + 1
+            return retval
+
+        tempfile = open(MIB_TEMPLATE_LOCATION, 'r')
+        lines = tempfile.readlines()
+        lines = "".join(lines)
+        tempfile.close()
+        return string.Template(lines).substitute(
+            mib_string=conv_spec2mib(self.stats_spec, 'statistics'))
+
+if __name__ == "__main__":
+    try:
+        parser = OptionParser(usage="%prog input ..")
+        (options, args) = parser.parse_args()
+        if len(args) == 0:
+            parser.error("no specfiles specified")
+        g = MibfileGenerator()
+        g.readfiles(*args)
+        f = open(MIB_FILE_LOCATION, "w")
+        f.write(g.generate())
+        f.close()
+    except KeyboardInterrupt as kie:
+        sys.exit(1)

@@ -3,6 +3,7 @@ SUBDIRS = tests
 pkglibexecdir = $(libexecdir)/@PACKAGE@
 
 pkglibexec_SCRIPTS = b10-stats b10-stats-httpd
+bin_SCRIPTS = b10-stats-snmp
 
 b10_statsdir = $(pkgdatadir)
 b10_stats_DATA = stats.spec stats-httpd.spec
@@ -12,8 +13,16 @@ nodist_pylogmessage_PYTHON = $(PYTHON_LOGMSGPKG_DIR)/work/stats_messages.py
 nodist_pylogmessage_PYTHON += $(PYTHON_LOGMSGPKG_DIR)/work/stats_httpd_messages.py
 pylogmessagedir = $(pyexecdir)/isc/log_messages/
 
+MIBFILE = ISC-BIND10-MIB.txt
+
+mibfiledir = $(datadir)/snmp/mibs
+mibfile_DATA = $(MIBFILE)
+
 CLEANFILES = b10-stats stats.pyc
 CLEANFILES += b10-stats-httpd stats_httpd.pyc
+CLEANFILES += b10-stats-snmp stats_snmp.pyc
+CLEANFILES += gen-mibfile.pyc
+CLEANFILES += $(MIBFILE)
 CLEANFILES += $(PYTHON_LOGMSGPKG_DIR)/work/stats_messages.py
 CLEANFILES += $(PYTHON_LOGMSGPKG_DIR)/work/stats_messages.pyc
 CLEANFILES += $(PYTHON_LOGMSGPKG_DIR)/work/stats_httpd_messages.py
@@ -24,6 +33,11 @@ EXTRA_DIST = $(man_MANS) b10-stats.xml b10-stats-httpd.xml
 EXTRA_DIST += stats.spec stats-httpd.spec
 EXTRA_DIST += stats-httpd-xml.tpl stats-httpd-xsd.tpl stats-httpd-xsl.tpl
 EXTRA_DIST += stats_messages.mes stats_httpd_messages.mes
+EXTRA_DIST += ISC-BIND10-MIB-txt.tpl
+
+SPECFILES = $(srcdir)/stats.spec
+SPECFILES += $(top_srcdir)/src/bin/bind10/bob.spec
+SPECFILES += $(top_builddir)/src/bin/auth/auth.spec
 
 if ENABLE_MAN
 
@@ -51,6 +65,14 @@ b10-stats: stats.py $(PYTHON_LOGMSGPKG_DIR)/work/stats_messages.py
 b10-stats-httpd: stats_httpd.py $(PYTHON_LOGMSGPKG_DIR)/work/stats_httpd_messages.py
 	$(SED) -e "s|@@PYTHONPATH@@|@pyexecdir@|" stats_httpd.py >$@
 	chmod a+x $@
+
+b10-stats-snmp: stats_snmp.py
+	$(SED) -e "s|@@PYTHONPATH@@|@pyexecdir@|" \
+	       -e "s|@@BINDIR@@|@bindir@|" stats_snmp.py >$@
+	chmod a+x $@
+
+$(MIBFILE): $(srcdir)/ISC-BIND10-MIB-txt.tpl $(SPECFILES)
+	PYTHONPATH=$(COMMON_PYTHON_PATH) ./gen-mibfile.py $(SPECFILES)
 
 CLEANDIRS = __pycache__
 
