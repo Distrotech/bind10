@@ -71,6 +71,9 @@ class StatsSnmp:
     def get_stats_data(self):
         return self.send_command('show')
 
+    # TODO: All lists of data and schema are always loaded via the CC
+    # session even though the OID is specified.  That should be fixed
+    # in order to avoid unneeded extra loads.
     def getMibdata(self):
         """Get mib data"""
         def conv_spec2oid(spec, data, oid):
