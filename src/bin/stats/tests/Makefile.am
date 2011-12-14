@@ -1,5 +1,6 @@
 PYCOVERAGE_RUN = @PYCOVERAGE_RUN@
-PYTESTS = b10-stats_test.py b10-stats-httpd_test.py
+PYTESTS = b10-stats_test.py b10-stats-httpd_test.py \
+	b10-stats-snmp_test.py gen-mibfile_test.py
 EXTRA_DIST = $(PYTESTS) test_utils.py
 CLEANFILES = test_utils.pyc
 
@@ -26,6 +27,13 @@ endif
 	CONFIG_TESTDATA_PATH=$(abs_top_srcdir)/src/lib/config/tests/testdata \
 	$(PYCOVERAGE_RUN) $(abs_srcdir)/$$pytest || exit ; \
 	done
+	echo Checking MIB file ; \
+	SNMPTRANSLATE=`which snmptranslate` ; \
+	if test "$${SNMPTRANSLATE}" ; then \
+	  "$${SNMPTRANSLATE}" \
+	    -M "$(builddir)/..:/usr/share/snmp/mibs:/usr/local/share/snmp/mibs" \
+	    -Tp "ISC-BIND10-MIB::statistics" || exit ; \
+	fi
 
 CLEANDIRS = __pycache__
 
