@@ -58,14 +58,14 @@ class RRset;
 ///
 /// This type is commonly used as an argument of various functions defined
 /// in this library in order to handle RRsets in a polymorphic manner.
-typedef boost::shared_ptr<RRset> RRsetPtr;
+typedef boost::shared_ptr<AbstractRRset> RRsetPtr;
 
 /// \brief A pointer-like type pointing to an (immutable) \c RRset
 /// object.
 ///
 /// This type is commonly used as an argument of various functions defined
 /// in this library in order to handle RRsets in a polymorphic manner.
-typedef boost::shared_ptr<const RRset> ConstRRsetPtr;
+typedef boost::shared_ptr<const AbstractRRset> ConstRRsetPtr;
 
 /// \brief A pointer-like type point to an \c RdataIterator object.
 typedef boost::shared_ptr<RdataIterator> RdataIteratorPtr;
@@ -400,6 +400,13 @@ public:
     /// object.
     virtual RdataIteratorPtr getRdataIterator() const = 0;
     //@}
+
+    // XIX: temporary workaround
+    virtual RRsetPtr getRRsig() const = 0; 
+    virtual void addRRsig(const rdata::RdataPtr rdata) = 0;
+    virtual void addRRsig(AbstractRRset& sig) = 0;
+    virtual void addRRsig(RRsetPtr sigs) = 0;
+    virtual void removeRRsig() = 0;
 };
 
 /// \brief The \c RdataIterator class is an abstract base class that
@@ -702,7 +709,7 @@ public:
     }
 
     /// \brief Adds an RRSIG RRset to this RRset
-    void addRRsig(AbstractRRset& sigs) {
+    virtual void addRRsig(AbstractRRset& sigs) {
         RdataIteratorPtr it = sigs.getRdataIterator();
 
         if (!rrsig_) {

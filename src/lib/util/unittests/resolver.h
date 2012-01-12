@@ -153,7 +153,7 @@ class TestResolver : public isc::resolve::ResolverInterface {
         /// Sends a simple answer to a query.
         /// 1) Provide index of a query and the address(es) to pass.
         /// 2) Provide index of query and components of address to pass.
-        void answer(size_t index, isc::dns::RRsetPtr& set) {
+        void answer(size_t index, isc::dns::RRsetPtr set) {
             if (index >= requests.size()) {
                 throw NoSuchRequest();
             }

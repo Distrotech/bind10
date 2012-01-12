@@ -109,7 +109,7 @@ private:
     /// \param rrset The RRset (i.e., NS or MX rrset) which require additional
     /// processing.
     void addAdditional(isc::datasrc::ZoneFinder& zone,
-                       const isc::dns::RRset& rrset);
+                       const isc::dns::AbstractRRset& rrset);
 
     /// \brief Find address records for a specified name.
     ///

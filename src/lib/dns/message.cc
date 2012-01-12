@@ -114,7 +114,7 @@ public:
     static const unsigned int NUM_SECTIONS = 4; // TODO: revisit this design
     int counts_[NUM_SECTIONS];   // TODO: revisit this definition
     vector<QuestionPtr> questions_;
-    vector<RRsetPtr> rrsets_[NUM_SECTIONS];
+    vector<boost::shared_ptr<AbstractRRset> > rrsets_[NUM_SECTIONS];
     ConstEDNSPtr edns_;
     ConstTSIGRecordPtr tsig_rr_;
 
