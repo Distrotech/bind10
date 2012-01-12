@@ -16,6 +16,7 @@
 #define __MEMORY_DATA_SOURCE_H 1
 
 #include <string>
+#include <vector>
 
 #include <boost/noncopyable.hpp>
 
@@ -73,6 +74,9 @@ public:
     virtual FindResult find(const isc::dns::Name& name,
                             const isc::dns::RRType& type,
                             const FindOptions options = FIND_DEFAULT);
+
+    virtual void findAdditional(const isc::dns::AbstractRRset& rrset,
+                                std::vector<isc::dns::ConstRRsetPtr>& results);
 
     /// \brief Version of find that returns all types at once
     ///

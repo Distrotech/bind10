@@ -170,7 +170,8 @@ public:
         datasrc_client_(datasrc_client), qname_(qname), qtype_(qtype),
         response_(response), dnssec_(dnssec),
         dnssec_opt_(dnssec ?  isc::datasrc::ZoneFinder::FIND_DNSSEC :
-                    isc::datasrc::ZoneFinder::FIND_DEFAULT)
+                    isc::datasrc::ZoneFinder::FIND_DEFAULT),
+        additionals_(4)
     {}
 
     /// Process the query.
@@ -251,6 +252,7 @@ private:
     isc::dns::Message& response_;
     const bool dnssec_;
     const isc::datasrc::ZoneFinder::FindOptions dnssec_opt_;
+    std::vector<isc::dns::ConstRRsetPtr> additionals_;
 };
 
 }

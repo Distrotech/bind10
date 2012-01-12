@@ -13,6 +13,7 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <map>
+#include <vector>
 #include <cassert>
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
@@ -20,7 +21,10 @@
 
 #include <exceptions/exceptions.h>
 
+#include <util/buffer.h>
+
 #include <dns/name.h>
+#include <dns/rdataclass.h>
 #include <dns/rrclass.h>
 #include <dns/rrsetlist.h>
 #include <dns/masterload.h>
@@ -36,6 +40,7 @@
 
 using namespace std;
 using namespace isc::dns;
+using namespace isc::dns::rdata;
 using namespace isc::data;
 
 namespace isc {
@@ -54,12 +59,57 @@ namespace {
  * critical place and map has better interface for the lookups, so we use
  * that.
  */
-typedef map<RRType, ConstRRsetPtr> Domain;
+class RBNodeRRset;
+typedef boost::shared_ptr<const RBNodeRRset> ConstRBNodeRRsetPtr;
+typedef boost::shared_ptr<RBNodeRRset> RBNodeRRsetPtr;
+typedef map<RRType, RBNodeRRsetPtr> Domain;
 typedef Domain::value_type DomainPair;
 typedef boost::shared_ptr<Domain> DomainPtr;
 // The tree stores domains
 typedef RBTree<Domain> DomainTree;
 typedef RBNode<Domain> DomainNode;
+
+class RBNodeRRset : public AbstractRRset {
+public:
+    RBNodeRRset(ConstRRsetPtr rrset) : rrset_(rrset) {}
+    virtual ~RBNodeRRset() {}
+    virtual unsigned int getRdataCount() const {
+        return (rrset_->getRdataCount());
+    }
+    virtual const Name& getName() const { return (rrset_->getName()); }
+    virtual const RRClass& getClass() const { return (rrset_->getClass()); }
+    virtual const RRType& getType() const { return (rrset_->getType()); }
+    virtual const RRTTL& getTTL() const { return (rrset_->getTTL()); }
+    virtual void setName(const Name&) {}   // we don't support this
+    // we don't support this for now
+    virtual void setTTL(const RRTTL&) {}
+    virtual string toText() const { return (rrset_->toText()); }
+    virtual unsigned int toWire(AbstractMessageRenderer& renderer) const {
+        return (rrset_->toWire(renderer));
+    }
+    virtual unsigned int toWire(util::OutputBuffer& buffer) const {
+        return (rrset_->toWire(buffer));
+    }
+    virtual void addRdata(rdata::ConstRdataPtr) {
+        // don't support it for now
+    }
+    virtual void addRdata(const rdata::Rdata&) {
+        // don't support it for now
+    }
+    virtual RdataIteratorPtr getRdataIterator() const {
+        return (rrset_->getRdataIterator());
+    }
+    virtual RRsetPtr getRRsig() const { return (RRsetPtr()); }
+    virtual void addRRsig(const rdata::RdataPtr) {}
+    virtual void addRRsig(AbstractRRset&) {}
+    virtual void addRRsig(RRsetPtr) {}
+    virtual void removeRRsig() {}
+
+private:
+    ConstRRsetPtr rrset_;
+public:                         // for convenience
+    vector<DomainNode*> additionals_;
+};
 }
 
 // Private data and hidden methods of InMemoryZoneFinder
@@ -235,7 +285,9 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
      * access is without the impl_-> and it will get inlined anyway.
      */
     // Implementation of InMemoryZoneFinder::add
-    result::Result add(const ConstRRsetPtr& rrset, DomainTree* domains) {
+    result::Result add(const ConstRRsetPtr& rrset, DomainTree* domains,
+                       vector<RBNodeRRsetPtr>* need_additionals)
+    {
         // Sanitize input.  This will cause an exception to be thrown
         // if the input RRset is empty.
         addValidation(rrset);
@@ -275,7 +327,8 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
         contextCheck(rrset, domain);
 
         // Try inserting the rrset there
-        if (domain->insert(DomainPair(rrset->getType(), rrset)).second) {
+        RBNodeRRsetPtr noderrset(new RBNodeRRset(rrset));
+        if (domain->insert(DomainPair(rrset->getType(), noderrset)).second) {
             // Ok, we just put it in
 
             // If this RRset creates a zone cut at this node, mark the node
@@ -286,6 +339,12 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
             // If it is DNAME, we have a callback as well here
             } else if (rrset->getType() == RRType::DNAME()) {
                 node->setFlag(DomainNode::FLAG_CALLBACK);
+            }
+
+            if (need_additionals != NULL &&
+                (rrset->getType() == RRType::NS() ||
+                 rrset->getType() == RRType::MX())) {
+                need_additionals->push_back(noderrset);
             }
 
             return (result::SUCCESS);
@@ -299,18 +358,19 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
      * Same as above, but it checks the return value and if it already exists,
      * it throws.
      */
-    void addFromLoad(const ConstRRsetPtr& set, DomainTree* domains) {
-            switch (add(set, domains)) {
-                case result::EXIST:
-                    LOG_ERROR(logger, DATASRC_MEM_DUP_RRSET).
-                        arg(set->getName()).arg(set->getType());
-                    isc_throw(dns::MasterLoadError, "Duplicate rrset: " <<
-                        set->toText());
-                case result::SUCCESS:
-                    return;
-                default:
-                    assert(0);
-            }
+    void addFromLoad(const ConstRRsetPtr& set, DomainTree* domains,
+                     vector<RBNodeRRsetPtr>* need_additionals) {
+        switch (add(set, domains, need_additionals)) {
+        case result::EXIST:
+            LOG_ERROR(logger, DATASRC_MEM_DUP_RRSET).
+                arg(set->getName()).arg(set->getType());
+            isc_throw(dns::MasterLoadError, "Duplicate rrset: " <<
+                      set->toText());
+        case result::SUCCESS:
+            return;
+        default:
+            assert(0);
+        }
     }
 
     // Maintain intermediate data specific to the search context used in
@@ -641,9 +701,32 @@ InMemoryZoneFinder::findAll(const Name& name,
     return (impl_->find(name, RRType::ANY(), &target, options));
 }
 
+void
+InMemoryZoneFinder::findAdditional(
+    const isc::dns::AbstractRRset& rrset,
+    std::vector<isc::dns::ConstRRsetPtr>& results)
+{
+    const RBNodeRRset& rbrrset = dynamic_cast<const RBNodeRRset&>(rrset);
+    for (vector<DomainNode*>::const_iterator it = rbrrset.additionals_.begin();
+         it != rbrrset.additionals_.end();
+         ++it) {
+        if ((*it) == NULL || (*it)->isEmpty()) {
+            continue;
+        }
+        Domain::const_iterator found = (*it)->getData()->find(RRType::A());
+        if (found != (*it)->getData()->end()) {
+            results.push_back(found->second);
+        }
+        found = (*it)->getData()->find(RRType::AAAA());
+        if (found != (*it)->getData()->end()) {
+            results.push_back(found->second);
+        }
+    }
+}
+
 result::Result
 InMemoryZoneFinder::add(const ConstRRsetPtr& rrset) {
-    return (impl_->add(rrset, &impl_->domains_));
+    return (impl_->add(rrset, &impl_->domains_, NULL));
 }
 
 
@@ -652,9 +735,45 @@ InMemoryZoneFinder::load(const string& filename) {
     LOG_DEBUG(logger, DBG_TRACE_BASIC, DATASRC_MEM_LOAD).arg(getOrigin()).
         arg(filename);
     // Load it into a temporary tree
+    vector<RBNodeRRsetPtr> need_additionals;
     DomainTree tmp;
     masterLoad(filename.c_str(), getOrigin(), getClass(),
-        boost::bind(&InMemoryZoneFinderImpl::addFromLoad, impl_, _1, &tmp));
+               boost::bind(&InMemoryZoneFinderImpl::addFromLoad, impl_, _1,
+                           &tmp, &need_additionals));
+    for (vector<RBNodeRRsetPtr>::iterator it =
+             need_additionals.begin();
+         it != need_additionals.end();
+         ++it) {
+        if ((*it)->getType() == RRType::NS()) {
+            RdataIteratorPtr rdata_iterator = (*it)->getRdataIterator();
+            for (; !rdata_iterator->isLast(); rdata_iterator->next()) {
+                const generic::NS& ns = dynamic_cast<const generic::NS&>(
+                    rdata_iterator->getCurrent());
+                DomainNode* node = NULL;
+                if (tmp.find(ns.getNSName(), &node) ==
+                    DomainTree::EXACTMATCH &&
+                    !node->isEmpty()) {
+                    (*it)->additionals_.push_back(node);
+                } else {
+                    (*it)->additionals_.push_back(NULL);
+                }
+            }
+        } else if ((*it)->getType() == RRType::MX()) {
+            RdataIteratorPtr rdata_iterator = (*it)->getRdataIterator();
+            for (; !rdata_iterator->isLast(); rdata_iterator->next()) {
+                const generic::MX& ns = dynamic_cast<const generic::MX&>(
+                    rdata_iterator->getCurrent());
+                DomainNode* node = NULL;
+                if (tmp.find(ns.getMXName(), &node) ==
+                    DomainTree::EXACTMATCH &&
+                    !node->isEmpty()) {
+                    (*it)->additionals_.push_back(node);
+                } else {
+                    (*it)->additionals_.push_back(NULL);
+                }
+            }
+        }
+    }
     // If it went well, put it inside
     impl_->file_name_ = filename;
     tmp.swap(impl_->domains_);

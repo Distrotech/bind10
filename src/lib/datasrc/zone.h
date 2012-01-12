@@ -15,6 +15,8 @@
 #ifndef __ZONE_H
 #define __ZONE_H 1
 
+#include <vector>
+
 #include <dns/rrset.h>
 #include <dns/rrsetlist.h>
 
@@ -285,6 +287,10 @@ public:
                             const isc::dns::RRType& type,
                             const FindOptions options
                             = FIND_DEFAULT) = 0;
+
+    virtual void findAdditional(const isc::dns::AbstractRRset&,
+                                std::vector<isc::dns::ConstRRsetPtr>&)
+    {}
 
     ///
     /// \brief Finds all RRsets in the given name.

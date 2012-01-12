@@ -26,6 +26,7 @@
 
 #include <auth/query.h>
 
+using std::vector;
 using namespace isc::dns;
 using namespace isc::datasrc;
 using namespace isc::dns::rdata;
@@ -35,17 +36,15 @@ namespace auth {
 
 void
 Query::addAdditional(ZoneFinder& zone, const AbstractRRset& rrset) {
-    RdataIteratorPtr rdata_iterator(rrset.getRdataIterator());
-    for (; !rdata_iterator->isLast(); rdata_iterator->next()) {
-        const Rdata& rdata(rdata_iterator->getCurrent());
-        if (rrset.getType() == RRType::NS()) {
-            // Need to perform the search in the "GLUE OK" mode.
-            const generic::NS& ns = dynamic_cast<const generic::NS&>(rdata);
-            addAdditionalAddrs(zone, ns.getNSName(), ZoneFinder::FIND_GLUE_OK);
-        } else if (rrset.getType() == RRType::MX()) {
-            const generic::MX& mx(dynamic_cast<const generic::MX&>(rdata));
-            addAdditionalAddrs(zone, mx.getMXName());
-        }
+    additionals_.clear();
+    zone.findAdditional(rrset, additionals_);
+    for (vector<ConstRRsetPtr>::const_iterator it =
+             additionals_.begin();
+         it != additionals_.end();
+         ++it) {
+        response_.addRRset(Message::SECTION_ADDITIONAL,
+                           boost::const_pointer_cast<AbstractRRset>(*it),
+                           dnssec_);
     }
 }
 
