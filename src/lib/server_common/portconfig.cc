@@ -85,7 +85,7 @@ namespace {
 vector<string> current_sockets;
 
 void
-setAddresses(DNSService& service, const AddressList& addresses) {
+setAddresses(DNSService& service, const AddressList& addresses, bool sync) {
     service.clearServers();
     BOOST_FOREACH(const string& token, current_sockets) {
         socketRequestor().releaseSocket(token);
@@ -115,7 +115,7 @@ setAddresses(DNSService& service, const AddressList& addresses) {
                                                 "dummy_app"));
         current_sockets.push_back(udp.second);
         if (!test_mode) {
-            service.addServerUDPFromFD(udp.first, af);
+            service.addServerUDPFromFD(udp.first, af, sync);
         }
     }
 }
@@ -125,7 +125,8 @@ setAddresses(DNSService& service, const AddressList& addresses) {
 void
 installListenAddresses(const AddressList& newAddresses,
                        AddressList& addressStore,
-                       isc::asiodns::DNSService& service)
+                       isc::asiodns::DNSService& service,
+                       bool sync)
 {
     try {
         LOG_DEBUG(logger, DBG_TRACE_BASIC, SRVCOMM_SET_LISTEN);
@@ -133,7 +134,7 @@ installListenAddresses(const AddressList& newAddresses,
             LOG_DEBUG(logger, DBG_TRACE_VALUES, SRVCOMM_ADDRESS_VALUE).
                 arg(addr.first).arg(addr.second);
         }
-        setAddresses(service, newAddresses);
+        setAddresses(service, newAddresses, sync);
         addressStore = newAddresses;
     }
     catch (const exception& e) {
@@ -152,13 +153,13 @@ installListenAddresses(const AddressList& newAddresses,
          */
         LOG_ERROR(logger, SRVCOMM_ADDRESS_FAIL).arg(e.what());
         try {
-            setAddresses(service, addressStore);
+            setAddresses(service, addressStore, sync);
         } catch (const exception& e2) {
             LOG_FATAL(logger, SRVCOMM_ADDRESS_UNRECOVERABLE).arg(e2.what());
             // If we can't set the new ones, nor the old ones, at least
             // releasing everything should work. If it doesn't, there isn't
             // anything else we could do.
-            setAddresses(service, AddressList());
+            setAddresses(service, AddressList(), sync);
             addressStore.clear();
         }
         //Anyway the new configure has problem, we need to notify configure

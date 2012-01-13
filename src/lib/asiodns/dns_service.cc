@@ -71,6 +71,7 @@ public:
     IOService& io_service_;
 
     typedef boost::shared_ptr<UDPServer> UDPServerPtr;
+    typedef boost::shared_ptr<UDPSyncServer> UDPSyncServerPtr;
     typedef boost::shared_ptr<TCPServer> TCPServerPtr;
     typedef boost::shared_ptr<DNSServer> DNSServerPtr;
     std::vector<DNSServerPtr> servers_;
@@ -200,8 +201,14 @@ void DNSService::addServerTCPFromFD(int fd, int af) {
     impl_->addServerFromFD<DNSServiceImpl::TCPServerPtr, TCPServer>(fd, af);
 }
 
-void DNSService::addServerUDPFromFD(int fd, int af) {
-    impl_->addServerFromFD<DNSServiceImpl::UDPServerPtr, UDPServer>(fd, af);
+void DNSService::addServerUDPFromFD(int fd, int af, bool sync) {
+    if (sync) {
+        impl_->addServerFromFD<DNSServiceImpl::UDPSyncServerPtr,
+            UDPSyncServer>(fd, af);
+    } else {
+        impl_->addServerFromFD<DNSServiceImpl::UDPServerPtr, UDPServer>(
+            fd, af);
+    }
 }
 
 void

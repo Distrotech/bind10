@@ -120,7 +120,8 @@ parseAddresses(isc::data::ConstElementPtr addresses,
 void
 installListenAddresses(const AddressList& newAddresses,
                        AddressList& addressStore,
-                       asiodns::DNSService& dnsService);
+                       asiodns::DNSService& dnsService,
+		       bool sync = false);
 
 }
 }

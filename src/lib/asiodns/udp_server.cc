@@ -17,6 +17,8 @@
 #include <unistd.h>             // for some IPC/network system calls
 #include <errno.h>
 
+#include <boost/bind.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <boost/shared_array.hpp>
 
 #include <config.h>
@@ -35,6 +37,7 @@
 
 using namespace asio;
 using asio::ip::udp;
+using boost::scoped_ptr;
 using isc::log::dlog;
 
 using namespace std;
@@ -346,6 +349,114 @@ UDPServer::resume(const bool done) {
 bool
 UDPServer::hasAnswer() {
     return (data_->done_);
+}
+
+struct UDPSyncServer::UDPSyncServerImpl {
+    UDPSyncServerImpl(UDPSyncServer* server, io_service& io, int fd, int af,
+                      DNSLookup* lookup) :
+        server_(server),
+        io_(io),
+        socket_(io_),
+        udp_socket_(new UDPSocket<DummyIOCallback>(socket_)),
+        lookup_callback_(lookup),
+        request_message_(new Message(Message::PARSE)),
+        response_buffer_(new OutputBuffer(MAX_LENGTH)),
+        done_(false)
+    {
+        if (af != AF_INET && af != AF_INET6) {
+            isc_throw(InvalidParameter,
+                      "Address family must be either AF_INET "
+                      "or AF_INET6, not " << af);
+        }
+        socket_.assign(af == AF_INET6 ? udp::v6() : udp::v4(), fd);
+    }
+    static const size_t MAX_LENGTH = 4096;
+
+    UDPSyncServer* server_;
+    io_service& io_;
+    ip::udp::socket socket_;
+    scoped_ptr<UDPSocket<DummyIOCallback> > udp_socket_;
+    DNSLookup* lookup_callback_;
+    MessagePtr request_message_;
+    MessagePtr empty_answer_message_; // we don't use this
+    OutputBufferPtr response_buffer_;
+    bool done_;
+    ip::udp::endpoint sender_endpoint_;
+    uint8_t input_data_[MAX_LENGTH];
+
+    void startRecv() {
+        socket_.async_receive_from(
+            buffer(input_data_, MAX_LENGTH), sender_endpoint_,
+            boost::bind(&UDPSyncServerImpl::handleRequest, this,
+                        placeholders::error,
+                        placeholders::bytes_transferred));
+    }
+    void handleRequest(const asio::error_code& error,
+                       size_t bytes_recvd);
+};
+
+void
+UDPSyncServer::UDPSyncServerImpl::handleRequest(const asio::error_code& error,
+                                                size_t bytes_recvd)
+{
+    if (error) {
+        using namespace asio::error;
+        if (error.value() != would_block && error.value() != try_again &&
+            error.value() != interrupted) {
+            return;
+        }
+    } else if (bytes_recvd > 0) {
+        request_message_->clear(Message::PARSE);
+        UDPEndpoint udp_endpoint_(sender_endpoint_);
+        IOMessage io_message(input_data_, bytes_recvd,
+                             *udp_socket_, udp_endpoint_);
+        done_ = false;
+        (*lookup_callback_)(io_message, request_message_,
+                            empty_answer_message_, response_buffer_, server_);
+        if (done_) {
+            socket_.send_to(buffer(response_buffer_->getData(),
+                                   response_buffer_->getLength()),
+                            sender_endpoint_);
+        }
+    }
+    startRecv();
+}
+
+UDPSyncServer::UDPSyncServer(io_service&,
+                             const asio::ip::address&,
+                             const uint16_t,
+                             SimpleCallback*,
+                             DNSLookup*, DNSAnswer*) :
+    impl_(NULL)
+{}
+
+UDPSyncServer::UDPSyncServer(io_service& io, int fd, int af,
+                             SimpleCallback*, DNSLookup* lookup, DNSAnswer*) :
+    impl_(new UDPSyncServerImpl(this, io, fd, af, lookup))
+{}
+
+UDPSyncServer::~UDPSyncServer() {
+    delete impl_;
+}
+
+void
+UDPSyncServer::resume(const bool done) {
+    impl_->done_ = done;
+}
+
+bool
+UDPSyncServer::hasAnswer() {
+    return (impl_->done_);
+}
+
+void
+UDPSyncServer::stop() {
+    impl_->socket_.close();
+}
+
+void
+UDPSyncServer::operator()(asio::error_code, size_t) {
+    impl_->startRecv();
 }
 
 } // namespace asiodns

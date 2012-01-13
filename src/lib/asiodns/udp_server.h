@@ -117,6 +117,37 @@ private:
     boost::shared_ptr<Data> data_;
 };
 
+class UDPSyncServer : public DNSServer {
+public:
+    UDPSyncServer(asio::io_service& io_service,
+                  const asio::ip::address& addr, const uint16_t port,
+                  isc::asiolink::SimpleCallback* checkin,
+                  DNSLookup* lookup, DNSAnswer* answer);
+    UDPSyncServer(asio::io_service& io_service, int fd, int af,
+                  isc::asiolink::SimpleCallback* checkin,
+                  DNSLookup* lookup, DNSAnswer* answer);
+    virtual ~UDPSyncServer();
+    virtual void operator()(asio::error_code ec = asio::error_code(),
+                            size_t length = 0);
+    virtual void asyncLookup() {}
+    virtual void stop();
+    virtual void resume(const bool done);
+    virtual bool hasAnswer();
+    virtual int value() { return (0); } // return dummy value
+    virtual DNSServer* clone() { return (NULL); }
+
+private:
+    void handleRequest(const asio::error_code& error, size_t bytes_recvd);
+
+private:
+    struct UDPSyncServerImpl;
+    UDPSyncServerImpl* impl_;
+};
+
 } // namespace asiodns
 } // namespace isc
 #endif // __UDP_SERVER_H
+
+// Local Variables:
+// mode: c++
+// End:

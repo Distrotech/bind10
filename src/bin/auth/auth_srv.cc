@@ -23,6 +23,7 @@
 #include <memory>
 
 #include <boost/bind.hpp>
+#include <boost/scoped_ptr.hpp>
 
 #include <asiolink/asiolink.h>
 
@@ -62,6 +63,7 @@
 #include <auth/auth_log.h>
 
 using namespace std;
+using boost::scoped_ptr;
 
 using namespace isc;
 using namespace isc::cc;
@@ -87,6 +89,13 @@ public:
     ~AuthSrvImpl();
     isc::data::ConstElementPtr setDbFile(isc::data::ConstElementPtr config);
 
+    MessageRenderer& getMessageRenderer(OutputBuffer& buffer) {
+        if (!renderer_) {
+            renderer_.reset(new MessageRenderer(buffer));
+        }
+        return (*renderer_);
+    }
+
     bool processNormalQuery(const IOMessage& io_message, MessagePtr message,
                             OutputBufferPtr buffer,
                             auto_ptr<TSIGContext> tsig_context);
@@ -98,6 +107,9 @@ public:
                        auto_ptr<TSIGContext> tsig_context);
 
     IOService io_service_;
+
+    /// Placeholder of message renderer
+    scoped_ptr<MessageRenderer> renderer_;
 
     /// Currently non-configurable, but will be.
     static const uint16_t DEFAULT_LOCAL_UDPSIZE = 4096;
@@ -184,11 +196,10 @@ public:
     MessageLookup(AuthSrv* srv) : server_(srv) {}
     virtual void operator()(const IOMessage& io_message,
                             MessagePtr message,
-                            MessagePtr answer_message,
+                            MessagePtr,
                             OutputBufferPtr buffer,
                             DNSServer* server) const
     {
-        (void) answer_message;
         server_->processMessage(io_message, message, buffer, server);
     }
 private:
@@ -529,7 +540,8 @@ AuthSrvImpl::processNormalQuery(const IOMessage& io_message, MessagePtr message,
         return (true);
     }
 
-    MessageRenderer renderer(*buffer);
+    MessageRenderer& renderer = getMessageRenderer(*buffer);
+    renderer.clear();
     const bool udp_buffer =
         (io_message.getSocket().getProtocol() == IPPROTO_UDP);
     renderer.setLengthLimit(udp_buffer ? remote_bufsize : 65535);
@@ -777,7 +789,7 @@ AuthSrv::getListenAddresses() const {
 
 void
 AuthSrv::setListenAddresses(const AddressList& addresses) {
-    installListenAddresses(addresses, impl_->listen_addresses_, *dnss_);
+    installListenAddresses(addresses, impl_->listen_addresses_, *dnss_, true);
 }
 
 void
