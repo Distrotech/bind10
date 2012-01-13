@@ -710,9 +710,6 @@ InMemoryZoneFinder::findAdditional(
     for (vector<DomainNode*>::const_iterator it = rbrrset.additionals_.begin();
          it != rbrrset.additionals_.end();
          ++it) {
-        if ((*it) == NULL || (*it)->isEmpty()) {
-            continue;
-        }
         Domain::const_iterator found = (*it)->getData()->find(RRType::A());
         if (found != (*it)->getData()->end()) {
             results.push_back(found->second);
@@ -754,8 +751,6 @@ InMemoryZoneFinder::load(const string& filename) {
                     DomainTree::EXACTMATCH &&
                     !node->isEmpty()) {
                     (*it)->additionals_.push_back(node);
-                } else {
-                    (*it)->additionals_.push_back(NULL);
                 }
             }
         } else if ((*it)->getType() == RRType::MX()) {
@@ -768,8 +763,6 @@ InMemoryZoneFinder::load(const string& filename) {
                     DomainTree::EXACTMATCH &&
                     !node->isEmpty()) {
                     (*it)->additionals_.push_back(node);
-                } else {
-                    (*it)->additionals_.push_back(NULL);
                 }
             }
         }
