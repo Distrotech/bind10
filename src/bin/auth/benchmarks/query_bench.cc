@@ -16,6 +16,7 @@
 
 #include <stdlib.h>
 
+#include <stdexcept>
 #include <iostream>
 #include <vector>
 
@@ -268,6 +269,7 @@ main(int argc, char* argv[]) {
     cout << "  Query data: file=" << query_data_file << " (" << queries.size()
          << " queries)" << endl << endl;
 
+    try {
     switch (datasrc_type) {
     case SQLITE3:
         cout << "Benchmark enabling Hot Spot Cache with unlimited slots "
@@ -300,6 +302,7 @@ main(int argc, char* argv[]) {
                                             message, buffer));
         break;
     }
+    } catch (const std::exception& ex) { cout << ex.what() << endl; }
 
     return (0);
 }

@@ -551,24 +551,15 @@ Name::equals(const Name& other) const {
         return (false);
     }
 
-    for (unsigned int l = labelcount_, pos = 0; l > 0; --l) {
-        unsigned char count = ndata_[pos];
-        if (count != other.ndata_[pos]) {
+    // As long as the data was originally validated as (part of) a name,
+    // label length must never be a capital ascii character, so we can
+    // simply compare them after converting to lower characters.
+    for (int i = 0; i < length_; ++i) {
+        if (maptolower[static_cast<unsigned char>(ndata_[i])] !=
+            maptolower[static_cast<unsigned char>(other.ndata_[i])]) {
             return (false);
         }
-        ++pos;
-
-        while (count-- > 0) {
-            unsigned char label1 = ndata_[pos];
-            unsigned char label2 = other.ndata_[pos];
-
-            if (maptolower[label1] != maptolower[label2]) {
-                return (false);
-            }
-            ++pos;
-        }
     }
-
     return (true);
 }
 
@@ -735,6 +726,218 @@ Name::downcase() {
     }
 
     return (*this);
+}
+
+void
+Name::setLabelSequence(LabelSequence& sequence) const {
+    // XXX: the use of ndata_.data() is probably not a good idea.
+    // we should perhaps consider changing the type of ndata to a plain
+    // vector or something.
+    const void* p = ndata_.data();
+    sequence.set(length_, static_cast<const unsigned char*>(p),
+                 offsets_.size(), &offsets_[0]);
+}
+
+NameComparisonResult
+LabelSequence::compare(const LabelSequence& other) const {
+    // XXX code duplicate with Name::compare()
+    unsigned int nlabels = 0;
+    unsigned int l1 = offsetlen_;
+    unsigned int l2 = other.offsetlen_;
+    const int ldiff = static_cast<int>(l1) - static_cast<int>(l2);
+    unsigned int l = (ldiff < 0) ? l1 : l2;
+
+    while (l > 0) {
+        --l;
+        --l1;
+        --l2;
+
+        size_t pos1 = offsets_[l1];
+        const unsigned int count1 = ndata_[nbeg_ + pos1];
+
+        pos1++;
+        size_t pos2 = other.offsets_[l2];
+        const unsigned int count2 = other.ndata_[other.nbeg_ + pos2++];
+
+        assert(count1 <= Name::MAX_LABELLEN && count2 <= Name::MAX_LABELLEN);
+
+        const int cdiff = static_cast<int>(count1) - static_cast<int>(count2);
+        unsigned int count = (cdiff < 0) ? count1 : count2;
+
+        while (count > 0) {
+            const unsigned char label1 = ndata_[nbeg_ + pos1];
+            const unsigned char label2 = other.ndata_[other.nbeg_ + pos2];
+
+            const int chdiff = static_cast<int>(maptolower[label1]) -
+                static_cast<int>(maptolower[label2]);
+            if (chdiff != 0) {
+                return (NameComparisonResult(
+                            chdiff, nlabels,
+                            nlabels > 0 ?
+                            NameComparisonResult::COMMONANCESTOR :
+                            NameComparisonResult::NONE));
+            }
+            --count;
+            ++pos1;
+            ++pos2;
+        }
+        if (cdiff != 0) {
+            return (NameComparisonResult(
+                        cdiff, nlabels,
+                        nlabels > 0 ?
+                        NameComparisonResult::COMMONANCESTOR :
+                        NameComparisonResult::NONE));
+        }
+        ++nlabels;
+    }
+
+    if (ldiff < 0) {
+        return (NameComparisonResult(ldiff, nlabels,
+                                     NameComparisonResult::SUPERDOMAIN));
+    } else if (ldiff > 0) {
+        return (NameComparisonResult(ldiff, nlabels,
+                                     NameComparisonResult::SUBDOMAIN));
+    }
+    return (NameComparisonResult(ldiff, nlabels, NameComparisonResult::EQUAL));
+}
+
+void
+LabelSequence::set(const unsigned char nlen, const unsigned char* ndata,
+                   const unsigned char offsetlen, const unsigned char* offsets)
+{
+    // XXX: we should validate the parameters
+    nbeg_ = 0;
+    nlen_ = nlen;
+    ndata_ = ndata;
+    obeg_ = 0;
+    offsetlen_ = offsetlen;
+    offsets_ = offsets;
+}
+
+void
+LabelSequence::set(const unsigned char* const data) {
+    // set from the "native" binary format of sequence.
+    nbeg_ = 0;
+    obeg_ = 0;
+    const unsigned char* cp = data;
+    nlen_ = *cp++;
+    ndata_ = cp;
+    cp += nlen_;
+    offsetlen_ = *cp++;
+    offsets_ = cp;
+}
+
+void
+LabelSequence::toWire(OutputBuffer& buffer) const {
+    assert(nlen_ != 0);
+    buffer.writeUint8(static_cast<uint8_t>(nlen_));
+    buffer.writeData(&ndata_[nbeg_], nlen_);
+    buffer.writeUint8(static_cast<uint8_t>(offsetlen_));
+    if (offsets_[0] > 0) {            // need to adjust the offsets
+        vector<unsigned char> new_offsets(offsets_, offsets_ + offsetlen_);
+        for (int i = 0; i < offsetlen_; ++i) { // XXX: use algorithm
+            new_offsets[i] -= offsets_[0];
+        }
+        buffer.writeData(&new_offsets[0], offsetlen_);
+    } else {
+        buffer.writeData(&offsets_[0], offsetlen_);
+    }
+}
+
+void
+LabelSequence::split(int labels) {
+    assert(nlen_ != 0 && labels != 0 &&
+           labels < (int)offsetlen_ && -labels < (int)offsetlen_);
+    if (labels > 0) {
+        obeg_ += labels;
+        offsets_ += labels;
+        nlen_ -= (&ndata_[offsets_[0]] - &ndata_[nbeg_]);
+        nbeg_ = offsets_[0];
+        offsetlen_ -= labels;
+    } else {
+        labels = -labels;   // # of trailing labels excluded
+        offsetlen_ -= labels;
+        nlen_ = &ndata_[offsets_[offsetlen_]] - &ndata_[nbeg_];
+    }
+}
+
+void
+LabelSequence::split(LabelSequence& prefix, LabelSequence& suffix,
+                     const int labels) const
+{
+    assert(nlen_ != 0 && labels != 0 &&
+           labels < static_cast<int>(offsetlen_) &&
+           -labels < static_cast<int>(offsetlen_));
+    suffix = *this;
+    prefix = *this;
+    if (labels > 0) {
+        prefix.split(-(offsetlen_ - labels));
+        suffix.split(labels);
+    } else {
+        suffix.split(offsetlen_ + labels);
+        prefix.split(labels);
+    }
+}
+
+unsigned int
+LabelSequence::getHash(bool) const {
+    unsigned int length = nlen_;
+    if (length > 16) {
+        length = 16;
+    }
+
+    /*
+     * This hash function is similar to the one Ousterhout
+     * uses in Tcl. (Borrowed from BIND 9)
+     */
+    unsigned int h = 0;
+    const unsigned char* s = &ndata_[nbeg_];
+    while (length > 0) {
+        const unsigned char c = maptolower[*s];
+        h += ( h << 3 ) + c;
+        ++s;
+        --length;
+    }
+
+    return (h);
+}
+
+bool
+LabelSequence::equals(const LabelSequence& other, bool case_sensitive) const {
+    if (nlen_ != other.nlen_ || offsetlen_ != other.offsetlen_) {
+        return (false);
+    }
+    if (case_sensitive) {
+        return (memcmp(&ndata_[nbeg_], &other.ndata_[other.nbeg_], nlen_)
+                == 0);
+    }
+    // As long as the data was originally validated as (part of) a name,
+    // label length must never be a capital ascii character, so we can
+    // simply compare them after converting to lower characters.
+    for (int i = 0; i < nlen_; ++i) {
+        if (maptolower[ndata_[nbeg_ + i]] !=
+            maptolower[other.ndata_[other.nbeg_ + i]]) {
+            return (false);
+        }
+    }
+
+    return (true);
+}
+
+string
+LabelSequence::toText() const {
+    assert(nlen_ != 0);
+    vector<unsigned char> placeholder(ndata_ + nbeg_, ndata_ + nbeg_ + nlen_);
+    bool omit_final_dot = false;
+
+    if (ndata_[offsets_[offsetlen_ - 1]] != '\0') {
+        // ensure the data is null terminated
+        placeholder.push_back('\0');
+        omit_final_dot = true;
+    }
+
+    InputBuffer b(&placeholder[0], placeholder.size());
+    return (Name(b, false).toText(omit_final_dot));
 }
 
 std::ostream&

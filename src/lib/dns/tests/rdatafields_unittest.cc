@@ -59,8 +59,10 @@ protected:
 
 const uint8_t in_a_data[] = { 192, 0, 2, 1 };
 // binary representation of example.com.
-const uint8_t ns_data[] = { 0x07, 0x65, 0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65,
-                            0x03, 0x63, 0x6f, 0x6d, 0x00 };
+const uint8_t ns_data[] = { 13,
+                            0x07, 0x65, 0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65,
+                            0x03, 0x63, 0x6f, 0x6d, 0x00,
+                            3, 7, 3, 0 };
 
 //
 // IN/A RDATA: fixed length, single data field
@@ -109,7 +111,8 @@ RdataFieldsTest::constructCommonTestsNS(const RdataFields& fields) {
     EXPECT_EQ(sizeof(RdataFields::FieldSpec), fields.getFieldSpecDataSize());
     EXPECT_EQ(1, fields.getFieldCount());
     EXPECT_EQ(RdataFields::COMPRESSIBLE_NAME, fields.getFieldSpec(0).type);
-    EXPECT_EQ(ns_name.getLength(), fields.getFieldSpec(0).len);
+    EXPECT_EQ(2 + ns_name.getLength() + ns_name.getLabelCount(),
+              fields.getFieldSpec(0).len);
 
     expected_wire.clear();
     UnitTestUtil::readWireData("rdatafields1.wire", expected_wire);
@@ -138,6 +141,14 @@ TEST_F(RdataFieldsTest, constructFromParamsNS) {
                                       sizeof(ns_data));
     const RdataFields fields_ns(&spec, sizeof(spec), ns_data, sizeof(ns_data));
     constructCommonTestsNS(fields_ns);
+}
+
+TEST_F(RdataFieldsTest, getRdataNS) {
+    const RdataFields::FieldSpec spec(RdataFields::COMPRESSIBLE_NAME,
+                                      sizeof(ns_data));
+    const RdataFields fields_ns(&spec, sizeof(spec), ns_data, sizeof(ns_data));
+    EXPECT_EQ(0, fields_ns.getRdata(RRClass::IN(), RRType::NS())->
+              compare(generic::NS(ns_name)));
 }
 
 //
@@ -193,6 +204,8 @@ RdataFieldsTest::constructCommonTestsRRSIG(const RdataFields& fields) {
     // - 18-byte data field (from the "type covered" field to "key tag" field)
     // - an incompressible name field (for the signer's name field).
     //   this is a variable length field.  In this test it's a 13-byte field.
+    //   it should have been converted to the LabelSequence wire format,
+    //   which should be 18 bytes.
     // - a variable-length data field for the signature.  In this tests
     //   it's a 15-byte field.
     EXPECT_EQ(3 * sizeof(RdataFields::FieldSpec),
@@ -201,7 +214,7 @@ RdataFieldsTest::constructCommonTestsRRSIG(const RdataFields& fields) {
     EXPECT_EQ(RdataFields::DATA, fields.getFieldSpec(0).type);
     EXPECT_EQ(18, fields.getFieldSpec(0).len);
     EXPECT_EQ(RdataFields::INCOMPRESSIBLE_NAME, fields.getFieldSpec(1).type);
-    EXPECT_EQ(13, fields.getFieldSpec(1).len);
+    EXPECT_EQ(18, fields.getFieldSpec(1).len);
     EXPECT_EQ(RdataFields::DATA, fields.getFieldSpec(2).type);
     EXPECT_EQ(15, fields.getFieldSpec(2).len);
 
@@ -244,7 +257,7 @@ TEST_F(RdataFieldsTest, constructFromParamsRRSIG) {
 
     const RdataFields::FieldSpec specs[] = {
         RdataFields::FieldSpec(RdataFields::DATA, 18),
-        RdataFields::FieldSpec(RdataFields::INCOMPRESSIBLE_NAME, 13),
+        RdataFields::FieldSpec(RdataFields::INCOMPRESSIBLE_NAME, 18),
         RdataFields::FieldSpec(RdataFields::DATA, 15)
     };
     const RdataFields fields(specs, sizeof(specs), &fields_wire[0],

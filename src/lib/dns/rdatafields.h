@@ -324,6 +324,9 @@ public:
     /// This method never throws an exception.
     const void* getData() const { return (data_); }
 
+    rdata::ConstRdataPtr getRdata(const RRClass& rrclass, const RRType& rrtype)
+        const;
+
     /// \brief Return the number of bytes the buffer returned by
     ///      getFieldSpecData() will occupy.
     ///

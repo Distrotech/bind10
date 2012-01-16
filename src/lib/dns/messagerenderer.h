@@ -22,6 +22,7 @@ namespace isc {
 namespace dns {
 // forward declarations
 class Name;
+class LabelSequence;
 
 /// \brief The \c AbstractMessageRenderer class is an abstract base class
 /// that provides common interfaces for rendering a DNS message into a buffer
@@ -296,6 +297,8 @@ public:
     /// \param name A \c Name object to be written.
     /// \param compress A boolean indicating whether to enable name compression.
     virtual void writeName(const Name& name, bool compress = true) = 0;
+    virtual void writeName(const LabelSequence& sequence,
+                           bool compress = true) = 0;
     //@}
 };
 
@@ -330,7 +333,13 @@ public:
     virtual void setCompressMode(CompressMode mode);
     virtual void clear();
     virtual void writeName(const Name& name, bool compress = true);
+    virtual void writeName(const LabelSequence& labelsequence,
+                           bool compress = true);
 private:
+    // helper private method
+    void writeName(const LabelSequence& labelsequence, bool compress,
+                   const Name* name);
+
     struct MessageRendererImpl;
     MessageRendererImpl* impl_;
 };

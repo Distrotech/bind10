@@ -89,10 +89,17 @@ public:
             RdataFields::INCOMPRESSIBLE_NAME;
         // TODO: When we get rid of need for getBuffer, we can output the name
         // to a buffer and then write the buffer inside
-        name.toWire(getBuffer());
+        LabelSequence sequence;
+        name.setLabelSequence(sequence);
+        sequence.toWire(getBuffer());
         fields_.push_back(RdataFields::FieldSpec(field_type,
-                                                 name.getLength()));
+                                                 2 + sequence.getDataLength() +
+                                                 sequence.getOffsetLength()));
         last_data_pos_ = getLength();
+    }
+    virtual void writeName(const LabelSequence&, bool) {
+        // XXX: left unimplemented for brevity
+        assert(false);
     }
 
     virtual void clear() {
@@ -194,6 +201,15 @@ RdataFields::getFieldSpec(const unsigned int field_id) const {
     return (fields_[field_id]);
 }
 
+rdata::ConstRdataPtr
+RdataFields::getRdata(const RRClass& rrclass, const RRType& rrtype) const {
+    OutputBuffer obuffer(data_length_);
+    toWire(obuffer);
+    InputBuffer ibuffer(obuffer.getData(), obuffer.getLength());
+    return (rdata::createRdata(rrtype, rrclass, ibuffer,
+                               obuffer.getLength()));
+}
+
 void
 RdataFields::toWire(AbstractMessageRenderer& renderer) const {
     size_t offset = 0;
@@ -202,12 +218,9 @@ RdataFields::toWire(AbstractMessageRenderer& renderer) const {
         if (fields_[i].type == DATA) {
             renderer.writeData(data_ + offset, fields_[i].len);
         } else {
-            // XXX: this is inefficient.  Even if it's quite likely the
-            // data is a valid wire representation of a name we parse
-            // it to construct the Name object in the generic mode.
-            // This should be improved in a future version.
-            InputBuffer buffer(data_ + offset, fields_[i].len);
-            renderer.writeName(Name(buffer),
+            LabelSequence sequence;
+            sequence.set(data_ + offset);
+            renderer.writeName(sequence,
                                fields_[i].type == COMPRESSIBLE_NAME);
         }
         offset += fields_[i].len;
@@ -216,7 +229,18 @@ RdataFields::toWire(AbstractMessageRenderer& renderer) const {
 
 void
 RdataFields::toWire(OutputBuffer& buffer) const {
-    buffer.writeData(data_, data_length_);
+    size_t offset = 0;
+
+    for (unsigned int i = 0; i < nfields_; ++i) {
+        if (fields_[i].type == DATA) {
+            buffer.writeData(data_ + offset, fields_[i].len);
+        } else {
+            LabelSequence sequence;
+            sequence.set(data_ + offset);
+            buffer.writeData(sequence.getData(), sequence.getDataLength());
+        }
+        offset += fields_[i].len;
+    }
 }
 } // end of namespace rdata
 } // end of namespace dns

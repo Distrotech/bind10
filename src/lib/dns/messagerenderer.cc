@@ -15,130 +15,17 @@
 #include <cctype>
 #include <cassert>
 #include <set>
+#include <vector>
 
 #include <util/buffer.h>
 #include <dns/name.h>
 #include <dns/messagerenderer.h>
 
+using namespace std;
 using namespace isc::util;
 
 namespace isc {
 namespace dns {
-
-namespace {     // hide internal-only names from the public namespaces
-///
-/// \brief The \c NameCompressNode class represents a pointer to a name
-/// rendered in the internal buffer for the \c MessageRendererImpl object.
-///
-/// A \c MessageRendererImpl object maintains a set of the \c NameCompressNode
-/// objects, and searches the set for the position of the longest match
-/// (ancestor) name against each new name to be rendered into the buffer.
-struct NameCompressNode {
-    NameCompressNode(const MessageRenderer& renderer,
-                     const OutputBuffer& buffer, const size_t pos,
-                     const size_t len) :
-        renderer_(renderer), buffer_(buffer), pos_(pos), len_(len) {}
-    /// The renderer that performs name compression using the node.
-    /// This is kept in each node to detect the compression mode
-    /// (case-sensitive or not) in the comparison functor (\c NameCompare).
-    const MessageRenderer& renderer_;
-    /// The buffer in which the corresponding name is rendered.
-    const OutputBuffer& buffer_;
-    /// The position (offset from the beginning) in the buffer where the
-    /// name starts.
-    uint16_t pos_;
-    /// The length of the corresponding name.
-    uint16_t len_;
-};
-
-///
-/// \brief The \c NameCompare class is a functor that gives ordering among
-/// \c NameCompressNode objects stored in \c MessageRendererImpl::nodeset_.
-///
-/// Its only public method as a functor, \c operator(), gives the ordering
-/// between two \c NameCompressNode objects in terms of equivalence, that is,
-/// returns whether one is "less than" the other.
-/// For our purpose we only need to distinguish two different names, so the
-/// ordering is different from the canonical DNS name order used in DNSSEC;
-/// basically, it gives the case-insensitive ordering of the two names as their
-/// textual representation.
-struct NameCompare : public std::binary_function<NameCompressNode,
-                                                 NameCompressNode,
-                                                 bool> {
-    ///
-    /// Returns true if n1 < n2 as a result of case-insensitive comparison;
-    /// otherwise return false.
-    ///
-    /// The name corresponding to \c n1 or \c n2 may be compressed, in which
-    /// case we must follow the compression pointer in the associated buffer.
-    /// The helper private method \c nextPosition() gives the position in the
-    /// buffer for the next character, taking into account compression.
-    ///
-    bool operator()(const NameCompressNode& n1,
-                    const NameCompressNode& n2) const
-    {
-        if (n1.len_ < n2.len_) {
-            return (true);
-        } else if (n1.len_ > n2.len_) {
-            return (false);
-        }
-
-        const bool case_sensitive =
-            (n1.renderer_.getCompressMode() == MessageRenderer::CASE_SENSITIVE);
-
-        uint16_t pos1 = n1.pos_;
-        uint16_t pos2 = n2.pos_;
-        uint16_t l1 = 0;
-        uint16_t l2 = 0;
-        for (uint16_t i = 0; i < n1.len_; i++, pos1++, pos2++) {
-            pos1 = nextPosition(n1.buffer_, pos1, l1);
-            pos2 = nextPosition(n2.buffer_, pos2, l2);
-            if (case_sensitive) {
-                if (n1.buffer_[pos1] < n2.buffer_[pos2]) {
-                    return (true);
-                } else if (n1.buffer_[pos1] > n2.buffer_[pos2]) {
-                    return (false);
-                }
-            } else {
-                if (tolower(n1.buffer_[pos1]) < tolower(n2.buffer_[pos2])) {
-                    return (true);
-                } else if (tolower(n1.buffer_[pos1]) >
-                           tolower(n2.buffer_[pos2])) {
-                    return (false);
-                }
-            }
-        }
-
-        return (false);
-    }
-
-private:
-    uint16_t nextPosition(const OutputBuffer& buffer,
-                          uint16_t pos, uint16_t& llen) const
-    {
-        if (llen == 0) {
-            size_t i = 0;
-
-            while ((buffer[pos] & Name::COMPRESS_POINTER_MARK8) ==
-                   Name::COMPRESS_POINTER_MARK8) {
-                pos = (buffer[pos] & ~Name::COMPRESS_POINTER_MARK8) *
-                    256 + buffer[pos + 1];
-
-                // This loop should stop as long as the buffer has been
-                // constructed validly and the search/insert argument is based
-                // on a valid name, which is an assumption for this class.
-                // But we'll abort if a bug could cause an infinite loop.
-                i += 2;
-                assert(i < Name::MAX_WIRE);
-            }
-            llen = buffer[pos];
-        } else {
-            --llen;
-        }
-        return (pos);
-    }
-};
-}
 
 ///
 /// \brief The \c MessageRendererImpl class is the actual implementation of
@@ -148,19 +35,65 @@ private:
 /// members of this class only within the implementation source file.
 ///
 struct MessageRenderer::MessageRendererImpl {
+    static const size_t BUCKETS = 64;
+    static const size_t RESERVED_ITEMS = 16;
+    static const uint16_t NO_OFFSET = 65535; // used as a marker of 'not found'
+
+    struct OffsetItem {
+        OffsetItem(const LabelSequence labels_param, uint16_t offset_param) :
+            labels(labels_param), offset(offset_param)
+        {}
+        LabelSequence labels;
+        uint16_t offset;
+    };
+
     /// \brief Constructor from an output buffer.
     ///
     MessageRendererImpl() :
-        nbuffer_(Name::MAX_WIRE), msglength_limit_(512),
-        truncated_(false), compress_mode_(MessageRenderer::CASE_INSENSITIVE)
-    {}
-    /// A local working buffer to convert each given name into wire format.
-    /// This could be a local variable of the \c writeName() method, but
-    /// we keep it in the class so that we can reuse it and avoid construction
-    /// overhead.
-    OutputBuffer nbuffer_;
-    /// A set of compression pointers.
-    std::set<NameCompressNode, NameCompare> nodeset_;
+        msglength_limit_(512), truncated_(false),
+        compress_mode_(MessageRenderer::CASE_INSENSITIVE)
+    {
+        for (size_t i = 0; i < BUCKETS; ++i) {
+            table_[i].reserve(RESERVED_ITEMS);
+        }
+        names_.reserve(BUCKETS);
+    }
+
+    struct SequenceComp {
+        SequenceComp(const LabelSequence& target, bool case_sensitive) :
+            target_(target), case_sensitive_(case_sensitive)
+        {}
+        bool operator()(const OffsetItem& item) const {
+            return (item.labels.equals(target_, case_sensitive_));
+        }
+    private:
+        const LabelSequence& target_;
+        bool case_sensitive_;
+    };
+
+    uint16_t findOffset(const LabelSequence& sequence) const {
+        const bool case_sensitive = (compress_mode_ ==
+                                     MessageRenderer::CASE_SENSITIVE);
+        const size_t bucket = (sequence.getHash(case_sensitive) % BUCKETS);
+        vector<OffsetItem>::const_reverse_iterator found =
+            find_if(table_[bucket].rbegin(), table_[bucket].rend(),
+                    SequenceComp(sequence, case_sensitive));
+        if (found != table_[bucket].rend()) {
+            return (found->offset);
+        }
+        return (NO_OFFSET);
+    }
+
+    void addOffset(const LabelSequence& sequence, uint16_t offset) {
+        const bool case_sensitive = (compress_mode_ ==
+                                     MessageRenderer::CASE_SENSITIVE);
+        const size_t bucket = (sequence.getHash(case_sensitive) % BUCKETS);
+        table_[bucket].push_back(OffsetItem(sequence, offset));
+    }
+
+    void writeName(const LabelSequence& sequence0, const bool compress,
+                   const Name* name);
+
     /// The maximum length of rendered data that can fit without
     /// truncation.
     uint16_t msglength_limit_;
@@ -169,6 +102,9 @@ struct MessageRenderer::MessageRendererImpl {
     bool truncated_;
     /// The name compression mode.
     CompressMode compress_mode_;
+
+    vector<OffsetItem> table_[BUCKETS];
+    vector<Name> names_;
 };
 
 MessageRenderer::MessageRenderer(OutputBuffer& buffer) :
@@ -183,11 +119,25 @@ MessageRenderer::~MessageRenderer() {
 void
 MessageRenderer::clear() {
     AbstractMessageRenderer::clear();
-    impl_->nbuffer_.clear();
-    impl_->nodeset_.clear();
     impl_->msglength_limit_ = 512;
     impl_->truncated_ = false;
     impl_->compress_mode_ = CASE_INSENSITIVE;
+
+    for (size_t i = 0; i < MessageRendererImpl::BUCKETS; ++i) {
+        if (impl_->table_[i].size() > MessageRendererImpl::RESERVED_ITEMS) {
+            impl_->table_[i].reserve(MessageRendererImpl::RESERVED_ITEMS);
+            vector<MessageRendererImpl::OffsetItem>(impl_->table_[i].begin(),
+                                                    impl_->table_[i].end()).
+                swap(impl_->table_[i]);
+        }
+        impl_->table_[i].clear();
+    }
+    if (impl_->names_.size() > MessageRendererImpl::BUCKETS) {
+        impl_->names_.reserve(MessageRendererImpl::BUCKETS);
+        vector<Name>(impl_->names_.begin(), impl_->names_.end()).
+            swap(impl_->names_);
+    }
+    impl_->names_.clear();
 }
 
 size_t
@@ -221,56 +171,85 @@ MessageRenderer::setCompressMode(const CompressMode mode) {
 }
 
 void
-MessageRenderer::writeName(const Name& name, const bool compress) {
-    impl_->nbuffer_.clear();
-    name.toWire(impl_->nbuffer_);
+MessageRenderer::writeName(const LabelSequence& sequence0,
+                           const bool compress, const Name* name)
+{
+    LabelSequence sequence = sequence0; // we need to modify it internally
+    const unsigned int labels = sequence.getOffsetLength();
 
     unsigned int i;
-    std::set<NameCompressNode, NameCompare>::const_iterator notfound =
-        impl_->nodeset_.end();
-    std::set<NameCompressNode, NameCompare>::const_iterator n = notfound;
-
-    // Find the longest ancestor name in the rendered set that matches the
-    // given name.
-    for (i = 0; i < impl_->nbuffer_.getLength(); i += impl_->nbuffer_[i] + 1) {
-        // skip the trailing null label
-        if (impl_->nbuffer_[i] == 0) {
-            continue;
-        }
-        n = impl_->nodeset_.find(NameCompressNode(*this, impl_->nbuffer_, i,
-                                                  impl_->nbuffer_.getLength() -
-                                                  i));
-        if (n != notfound) {
+    uint16_t ptr_offset = MessageRendererImpl::NO_OFFSET;
+    for (i = 0; i < labels; ++i) {
+        if (sequence.getDataLength() == 1) { // trailing dot.
+            ++i;
             break;
         }
+        ptr_offset = impl_->findOffset(sequence);
+        if (ptr_offset != MessageRendererImpl::NO_OFFSET) {
+            break;
+        }
+        sequence.split(1);
     }
 
     // Record the current offset before extending the buffer.
-    const size_t offset = getLength();
+    size_t offset = getLength();
     // Write uncompress part...
-    writeData(impl_->nbuffer_.getData(),
-              compress ? i : impl_->nbuffer_.getLength());
-    if (compress && n != notfound) {
+    if (compress) {
+        if (i > 0) {
+            sequence = sequence0;
+            if (i < labels) {
+                sequence.split(-(labels - i));
+            }
+            writeData(&sequence.getData()[sequence.getOffsets()[0]],
+                      sequence.getDataLength());
+        }
+    } else {
+        writeData(sequence.getData(), sequence0.getDataLength());
+    }
+    if (compress && ptr_offset != MessageRendererImpl::NO_OFFSET) {
         // ...and compression pointer if available.
-        uint16_t pointer = (*n).pos_;
-        pointer |= Name::COMPRESS_POINTER_MARK16;
-        writeUint16(pointer);
+        ptr_offset |= Name::COMPRESS_POINTER_MARK16;
+        writeUint16(ptr_offset);
     }
 
-    // Finally, add to the set the newly rendered name and its ancestors that
+    // Finally, add the newly rendered name and its ancestors that
     // have not been in the set.
-    for (unsigned int j = 0; j < i; j += impl_->nbuffer_[j] + 1) {
-        if (impl_->nbuffer_[j] == 0) {
-            continue;
+    if (i > 0) {
+        if (name != NULL) {
+            impl_->names_.push_back(*name);
+            impl_->names_.back().setLabelSequence(sequence);
+        } else {
+            sequence = sequence0;
         }
-        if (offset + j > Name::MAX_COMPRESS_POINTER) {
-            break;
-        }
-        impl_->nodeset_.insert(NameCompressNode(*this, getBuffer(),
-                                                offset + j,
-                                                impl_->nbuffer_.getLength() -
-                                                j));
+
+        unsigned int j = 0;
+        do {
+            const size_t llen =
+                sequence.getData()[sequence.getOffsets()[0]] + 1;
+            if (llen == 1) {        // root name.  no need to store it.
+                break;
+            }
+            if (offset > Name::MAX_COMPRESS_POINTER) {
+                break;
+            }
+            impl_->addOffset(sequence, offset);
+            offset += llen;
+            sequence.split(1);
+        } while (++j < i);
     }
+}
+
+void
+MessageRenderer::writeName(const LabelSequence& sequence, const bool compress)
+{
+    writeName(sequence, compress, NULL);
+}
+
+void
+MessageRenderer::writeName(const Name& name, const bool compress) {
+    LabelSequence sequence;
+    name.setLabelSequence(sequence);
+    writeName(sequence, compress, &name);
 }
 
 void

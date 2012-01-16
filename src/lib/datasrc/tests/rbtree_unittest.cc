@@ -87,15 +87,22 @@ TEST_F(RBTreeTest, setGetData) {
     EXPECT_EQ(11, *(rbtnode->getData()));
 }
 
+void
+checkNameData(const string& expected_txt, const unsigned char* actual) {
+    LabelSequence sequence;
+    sequence.set(actual);
+    EXPECT_EQ(expected_txt, sequence.toText());
+}
+
 TEST_F(RBTreeTest, insertNames) {
     EXPECT_EQ(RBTree<int>::ALREADYEXISTS, rbtree.insert(Name("d.e.f"),
                                                         &rbtnode));
-    EXPECT_EQ(Name("d.e.f"), rbtnode->getName());
+    checkNameData("d.e.f", rbtnode->getNameData());
     EXPECT_EQ(13, rbtree.getNodeCount());
 
     //insert not exist node
     EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(Name("."), &rbtnode));
-    EXPECT_EQ(Name("."), rbtnode->getName());
+    checkNameData(".", rbtnode->getNameData());
     EXPECT_EQ(14, rbtree.getNodeCount());
 
     EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(Name("example.com"), &rbtnode));
@@ -108,24 +115,24 @@ TEST_F(RBTreeTest, insertNames) {
 
     // split the node "d.e.f"
     EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(Name("k.e.f"), &rbtnode));
-    EXPECT_EQ(Name("k"), rbtnode->getName());
+    checkNameData("k", rbtnode->getNameData());
     EXPECT_EQ(17, rbtree.getNodeCount());
 
     // split the node "g.h"
     EXPECT_EQ(RBTree<int>::ALREADYEXISTS, rbtree.insert(Name("h"), &rbtnode));
-    EXPECT_EQ(Name("h"), rbtnode->getName());
+    checkNameData("h", rbtnode->getNameData());
     EXPECT_EQ(18, rbtree.getNodeCount());
 
     // add child domain
     EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(Name("m.p.w.y.d.e.f"), &rbtnode));
-    EXPECT_EQ(Name("m"), rbtnode->getName());
+    checkNameData("m", rbtnode->getNameData());
     EXPECT_EQ(19, rbtree.getNodeCount());
     EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(Name("n.p.w.y.d.e.f"), &rbtnode));
-    EXPECT_EQ(Name("n"), rbtnode->getName());
+    checkNameData("n", rbtnode->getNameData());
     EXPECT_EQ(20, rbtree.getNodeCount());
 
     EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(Name("l.a"), &rbtnode));
-    EXPECT_EQ(Name("l"), rbtnode->getName());
+    checkNameData("l", rbtnode->getNameData());
     EXPECT_EQ(21, rbtree.getNodeCount());
 
     EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(Name("r.d.e.f"), &rbtnode));
@@ -152,7 +159,7 @@ TEST_F(RBTreeTest, findName) {
     // find const rbtnode
     // exact match
     EXPECT_EQ(RBTree<int>::EXACTMATCH, rbtree.find(Name("a"), &crbtnode));
-    EXPECT_EQ(Name("a"), crbtnode->getName());
+    checkNameData("a", crbtnode->getNameData());
 
     // not found
     EXPECT_EQ(RBTree<int>::NOTFOUND, rbtree.find(Name("d.e.f"), &crbtnode));
@@ -168,13 +175,13 @@ TEST_F(RBTreeTest, findName) {
 
     // partial match
     EXPECT_EQ(RBTree<int>::PARTIALMATCH, rbtree.find(Name("m.b"), &crbtnode));
-    EXPECT_EQ(Name("b"), crbtnode->getName());
+    checkNameData("b", crbtnode->getNameData());
     EXPECT_EQ(RBTree<int>::PARTIALMATCH,
               rbtree_expose_empty_node.find(Name("m.d.e.f"), &crbtnode));
 
     // find rbtnode
     EXPECT_EQ(RBTree<int>::EXACTMATCH, rbtree.find(Name("q.w.y.d.e.f"), &rbtnode));
-    EXPECT_EQ(Name("q"), rbtnode->getName());
+    checkNameData("q", rbtnode->getNameData());
 }
 
 TEST_F(RBTreeTest, findError) {
@@ -491,8 +498,8 @@ TEST_F(RBTreeTest, dumpTree) {
     std::ostringstream str;
     std::ostringstream str2;
     rbtree.dumpTree(str);
-    str2 << "tree has 13 node(s)\nb. (black)\n     a. (black)\n          NULL\n          NULL\n     d.e.f. (black)[invisible] \n          begin down from d.e.f.\n          w.y. (black)[invisible] \n               begin down from w.y.\n               p. (black)\n                    o. (red)\n                         NULL\n                         NULL\n                    q. (red)\n                         NULL\n                         NULL\n               end down from w.y.\n               x. (red)\n                    NULL\n                    NULL\n               z. (red)\n                    begin down from z.\n                    j. (black)\n                         NULL\n                         NULL\n                    end down from z.\n                    NULL\n                    NULL\n          end down from d.e.f.\n          c. (red)\n               NULL\n               NULL\n          g.h. (red)\n               begin down from g.h.\n               i. (black)\n                    NULL\n                    NULL\n               end down from g.h.\n               NULL\n               NULL\n";
-    EXPECT_EQ(str.str(), str2.str());
+    str2 << "tree has 13 node(s)\nb. (black)\n     a. (black)\n          NULL\n          NULL\n     d.e.f. (black)[invisible] \n          begin down from d.e.f.\n          w.y (black)[invisible] \n               begin down from w.y.\n               p (black)\n                    o (red)\n                         NULL\n                         NULL\n                    q (red)\n                         NULL\n                         NULL\n               end down from w.y.\n               x (red)\n                    NULL\n                    NULL\n               z (red)\n                    begin down from z.\n                    j (black)\n                         NULL\n                         NULL\n                    end down from z.\n                    NULL\n                    NULL\n          end down from d.e.f.\n          c. (red)\n               NULL\n               NULL\n          g.h. (red)\n               begin down from g.h.\n               i (black)\n                    NULL\n                    NULL\n               end down from g.h.\n               NULL\n               NULL\n";
+    EXPECT_EQ(str2.str(), str.str());
 }
 
 TEST_F(RBTreeTest, swap) {

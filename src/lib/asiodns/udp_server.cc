@@ -418,6 +418,36 @@ UDPSyncServer::UDPSyncServerImpl::handleRequest(const asio::error_code& error,
                                    response_buffer_->getLength()),
                             sender_endpoint_);
         }
+#if 0                           // experimental for benchmark
+        const int s = socket_.native();
+        asio::socket_base::non_blocking_io command(false);
+        socket_.io_control(command);
+        struct sockaddr_storage ss;
+        struct sockaddr* sa;
+        sa = (struct sockaddr*)&ss;
+        while (true) {
+            socklen_t from_len = sizeof(ss);
+            const int cc = recvfrom(s, input_data_, sizeof(input_data_), 0,
+                                    sa, &from_len);
+            if (cc < 0) {
+                cout << "recfrom failed: " << strerror(errno) << endl;
+            }
+            assert(cc > 0);
+
+            request_message_->clear(Message::PARSE);
+            UDPEndpoint udp_endpoint_(sender_endpoint_);
+            IOMessage io_message(input_data_, cc,
+                                 *udp_socket_, udp_endpoint_);
+            done_ = false;
+            (*lookup_callback_)(io_message, request_message_,
+                                empty_answer_message_, response_buffer_,
+                                server_);
+            if (done_) {
+                sendto(s, response_buffer_->getData(),
+                       response_buffer_->getLength(), 0, sa, from_len);
+            }
+        }
+#endif
     }
     startRecv();
 }

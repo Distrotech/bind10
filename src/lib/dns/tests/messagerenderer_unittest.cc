@@ -161,7 +161,7 @@ TEST_F(MessageRendererTest, writeRootName) {
     expected.writeUint8(0);     // root name
     example_name.toWire(expected);
 
-    renderer.writeName(Name("."));
+    renderer.writeName(Name::ROOT_NAME());
     renderer.writeName(example_name);
     EXPECT_PRED_FORMAT4(UnitTestUtil::matchWireData,
                         static_cast<const uint8_t*>(buffer.getData()),

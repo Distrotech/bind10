@@ -25,6 +25,7 @@
 
 #include <exceptions/exceptions.h>
 
+#include <util/buffer.h>
 #include <dns/name.h>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
@@ -32,30 +33,10 @@
 #include <ostream>
 #include <algorithm>
 #include <cassert>
+#include <cstring>
 
 namespace isc {
 namespace datasrc {
-
-namespace helper {
-
-/// \brief Helper function to remove the base domain from super domain.
-///
-/// The precondition of this function is the super_name contains the
-/// sub_name so
-/// \code Name a("a.b.c");
-/// Name b("b.c");
-/// Name c = a - b;
-/// \endcode
-/// c will contain "a".
-///
-/// \note Functions in this namespace is not intended to be used outside of
-///     RBTree implementation.
-inline isc::dns::Name
-operator-(const isc::dns::Name& super_name, const isc::dns::Name& sub_name) {
-    return (super_name.split(0, super_name.getLabelCount() -
-                             sub_name.getLabelCount()));
-}
-}
 
 /// Forward declare RBTree class here is convinent for following friend
 /// class declare inside RBNode and RBTreeNodeChain
@@ -105,7 +86,7 @@ private:
     ///
     /// \param name The *relative* domain name (if this will live inside
     ///     a.b.c and is called d.e.a.b.c, then you pass d.e).
-    RBNode(const isc::dns::Name& name);
+    RBNode(const isc::dns::LabelSequence& sequence);
     //@}
 
 public:
@@ -148,13 +129,13 @@ public:
 
     /// \name Getter functions.
     //@{
-    /// \brief Return the name of current node.
+    /// \brief Return the name data of current node.
     ///
     /// It's relative to its containing node.
     ///
     /// To get the absolute name of one node, the node path from the top node
     /// to current node has to be recorded.
-    const isc::dns::Name& getName() const { return (name_); }
+    const unsigned char* getNameData() const { return (namedata_); }
 
     /// \brief Return the data stored in this node.
     ///
@@ -269,7 +250,8 @@ private:
     //@}
 
     /// \brief Relative name of the node.
-    isc::dns::Name     name_;
+    unsigned int namelen_;
+    const unsigned char* namedata_;
     /// \brief Data stored here.
     NodeDataPtr       data_;
 
@@ -300,7 +282,7 @@ RBNode<T>::RBNode() :
     right_(NULL),
     color_(BLACK),
     // dummy name, the value doesn't matter:
-    name_(isc::dns::Name::ROOT_NAME()),
+    namedata_(NULL),
     down_(NULL),
     flags_(0)
 {
@@ -312,20 +294,26 @@ RBNode<T>::RBNode() :
 }
 
 template <typename T>
-RBNode<T>::RBNode(const isc::dns::Name& name) :
+RBNode<T>::RBNode(const isc::dns::LabelSequence& sequence) :
     parent_(NULL_NODE()),
     left_(NULL_NODE()),
     right_(NULL_NODE()),
     color_(RED),
-    name_(name),
+    namedata_(NULL),
     down_(NULL_NODE()),
     flags_(0)
 {
+    isc::util::OutputBuffer buffer(2 + sequence.getDataLength() +
+                                   sequence.getOffsetLength());
+    sequence.toWire(buffer);
+    unsigned char* p = new unsigned char[buffer.getLength()];
+    std::memcpy(p, buffer.getData(), buffer.getLength());
+    namedata_ = p;
 }
-
 
 template <typename T>
 RBNode<T>::~RBNode() {
+    delete namedata_;
 }
 
 template <typename T>
@@ -481,15 +469,26 @@ public:
                       "chain");
         }
 
-        const RBNode<T>* top_node = top();
-        isc::dns::Name absolute_name = top_node->getName();
-        int node_count = node_count_ - 1;
+        unsigned char absname_buf[isc::dns::Name::MAX_WIRE];
+        unsigned char* cp = absname_buf;
+        size_t buflen = sizeof(absname_buf);
+        isc::dns::LabelSequence sequence;
+        int node_count = node_count_;
         while (node_count > 0) {
-            top_node = nodes_[node_count - 1];
-            absolute_name = absolute_name.concatenate(top_node->getName());
+            const RBNode<T>* top_node = nodes_[node_count - 1];
+            sequence.set(top_node->getNameData());
+            size_t seqlen = sequence.getDataLength();
+            assert(seqlen <= buflen);
+            memcpy(cp, sequence.getData(), seqlen);
+            cp += seqlen;
+            buflen -= seqlen;
+
             --node_count;
         }
-        return (absolute_name);
+        assert(cp < absname_buf + sizeof(absname_buf));
+
+        isc::util::InputBuffer b(absname_buf, cp - absname_buf);
+        return (isc::dns::Name(b));
     }
 
 private:
@@ -910,7 +909,8 @@ private:
     /// node, old node will hold the base name, new node will be the down node
     /// of old node, new node will hold the sub_name, the data
     /// of old node will be move into new node, and old node became non-terminal
-    void nodeFission(RBNode<T>& node, const isc::dns::Name& sub_name);
+    void nodeFission(RBNode<T>& node,
+                     const isc::dns::LabelSequence& base_sequence);
     //@}
 
     RBNode<T>*  NULLNODE;
@@ -976,19 +976,23 @@ RBTree<T>::find(const isc::dns::Name& target_name,
                 bool (*callback)(const RBNode<T>&, CBARG),
                 CBARG callback_arg) const
 {
-    using namespace helper;
-
     if (!node_path.isEmpty()) {
         isc_throw(isc::BadValue, "RBTree::find is given a non empty chain");
     }
 
+    // search_sequence is a dname label sequence being sought in each tree
+    // level.
+    isc::dns::LabelSequence search_sequence;
+    target_name.setLabelSequence(search_sequence);
+
     RBNode<T>* node = root_;
     Result ret = NOTFOUND;
-    isc::dns::Name name = target_name;
 
+    isc::dns::LabelSequence current_sequence;
     while (node != NULLNODE) {
         node_path.last_compared_ = node;
-        node_path.last_comparison_ = name.compare(node->name_);
+        current_sequence.set(node->namedata_);
+        node_path.last_comparison_ = search_sequence.compare(current_sequence);
         const isc::dns::NameComparisonResult::NameRelation relation =
             node_path.last_comparison_.getRelation();
 
@@ -999,38 +1003,27 @@ RBTree<T>::find(const isc::dns::Name& target_name,
                 ret = EXACTMATCH;
             }
             break;
-        } else {
+        } else if (relation == isc::dns::NameComparisonResult::NONE) {
+            node = (node_path.last_comparison_.getOrder() < 0) ?
+                node->left_ : node->right_;
+        } else if (relation == isc::dns::NameComparisonResult::SUBDOMAIN) {
             const int common_label_count =
                 node_path.last_comparison_.getCommonLabels();
-            // If the common label count is 1, there is no common label between
-            // the two names, except the trailing "dot".  In this case the two
-            // sequences of labels have essentially no hierarchical
-            // relationship in terms of matching, so we should continue the
-            // binary search.  One important exception is when the node
-            // represents the root name ("."), in which case the comparison
-            // result must indeed be considered subdomain matching. (We use
-            // getLength() to check if the name is root, which is an equivalent
-            // but cheaper way).
-            if (common_label_count == 1 && node->name_.getLength() != 1) {
-                node = (node_path.last_comparison_.getOrder() < 0) ?
-                    node->left_ : node->right_;
-            } else if (relation == isc::dns::NameComparisonResult::SUBDOMAIN) {
-                if (needsReturnEmptyNode_ || !node->isEmpty()) {
-                    ret = PARTIALMATCH;
-                    *target = node;
-                    if (callback != NULL &&
-                        node->getFlag(RBNode<T>::FLAG_CALLBACK)) {
-                        if ((callback)(*node, callback_arg)) {
-                            break;
-                        }
+            if (needsReturnEmptyNode_ || !node->isEmpty()) {
+                ret = PARTIALMATCH;
+                *target = node;
+                if (callback != NULL &&
+                    node->getFlag(RBNode<T>::FLAG_CALLBACK)) {
+                    if ((callback)(*node, callback_arg)) {
+                        break;
                     }
                 }
-                node_path.push(node);
-                name = name - node->name_;
-                node = node->down_;
-            } else {
-                break;
             }
+            node_path.push(node);
+            search_sequence.split(-common_label_count);
+            node = node->down_;
+        } else {
+            break;
         }
     }
 
@@ -1085,16 +1078,19 @@ RBTree<T>::nextNode(RBTreeNodeChain<T>& node_path) const {
 template <typename T>
 typename RBTree<T>::Result
 RBTree<T>::insert(const isc::dns::Name& target_name, RBNode<T>** new_node) {
-    using namespace helper;
     RBNode<T>* parent = NULLNODE;
     RBNode<T>* current = root_;
     RBNode<T>* up_node = NULLNODE;
+    isc::dns::LabelSequence sequence;
+    target_name.setLabelSequence(sequence);
     isc::dns::Name name = target_name;
 
     int order = -1;
     while (current != NULLNODE) {
+        isc::dns::LabelSequence current_sequence;
+        current_sequence.set(current->namedata_);
         const isc::dns::NameComparisonResult compare_result =
-            name.compare(current->name_);
+            sequence.compare(current_sequence);
         const isc::dns::NameComparisonResult::NameRelation relation =
             compare_result.getRelation();
         if (relation == isc::dns::NameComparisonResult::EQUAL) {
@@ -1102,32 +1098,29 @@ RBTree<T>::insert(const isc::dns::Name& target_name, RBNode<T>** new_node) {
                 *new_node = current;
             }
             return (ALREADYEXISTS);
+        } else if (relation == isc::dns::NameComparisonResult::NONE) {
+            parent = current;
+            order = compare_result.getOrder();
+            current = order < 0 ? current->left_ : current->right_;
+        } else if (relation == isc::dns::NameComparisonResult::SUBDOMAIN) {
+            // insert sub domain to sub tree
+            parent = NULLNODE;
+            up_node = current;
+            sequence.split(-current_sequence.getOffsetLength());
+            current = current->down_;
         } else {
-            const int common_label_count = compare_result.getCommonLabels();
-            // Note: see find() for the check of getLength().
-            if (common_label_count == 1 && current->name_.getLength() != 1) {
-                parent = current;
-                order = compare_result.getOrder();
-                current = order < 0 ? current->left_ : current->right_;
-            } else {
-                // insert sub domain to sub tree
-                if (relation == isc::dns::NameComparisonResult::SUBDOMAIN) {
-                    parent = NULLNODE;
-                    up_node = current;
-                    name = name - current->name_;
-                    current = current->down_;
-                } else {
-                    // The number of labels in common is fewer
-                    // than the number of labels at the current
-                    // node, so the current node must be adjusted
-                    // to have just the common suffix, and a down
-                    // pointer made to a new tree.
-                    const isc::dns::Name common_ancestor = name.split(
-                        name.getLabelCount() - common_label_count,
-                        common_label_count);
-                    nodeFission(*current, common_ancestor);
-                }
-            }
+            assert(relation ==
+                   isc::dns::NameComparisonResult::COMMONANCESTOR ||
+                   relation == isc::dns::NameComparisonResult::SUPERDOMAIN);
+
+            // The number of labels in common is fewer
+            // than the number of labels at the current
+            // node, so the current node must be adjusted
+            // to have just the common suffix, and a down
+            // pointer made to a new tree.
+            current_sequence.split(current_sequence.getOffsetLength() -
+                                   compare_result.getCommonLabels());
+            nodeFission(*current, current_sequence);
         }
     }
 
@@ -1136,7 +1129,7 @@ RBTree<T>::insert(const isc::dns::Name& target_name, RBNode<T>** new_node) {
     // using auto_ptr here is avoid memory leak in case of exceptoin raised
     // after the RBNode creation, if we can make sure no exception will be
     // raised until the end of the function, we can remove it for optimization
-    std::auto_ptr<RBNode<T> > node(new RBNode<T>(name));
+    std::auto_ptr<RBNode<T> > node(new RBNode<T>(sequence));
     node->parent_ = parent;
     if (parent == NULLNODE) {
         *current_root = node.get();
@@ -1161,13 +1154,22 @@ RBTree<T>::insert(const isc::dns::Name& target_name, RBNode<T>** new_node) {
 
 template <typename T>
 void
-RBTree<T>::nodeFission(RBNode<T>& node, const isc::dns::Name& base_name) {
-    using namespace helper;
-    const isc::dns::Name sub_name = node.name_ - base_name;
+RBTree<T>::nodeFission(RBNode<T>& node,
+                       const isc::dns::LabelSequence& base_sequence) {
+    isc::dns::LabelSequence child_sequence;
+    child_sequence.set(node.namedata_);
+    child_sequence.split(-base_sequence.getOffsetLength());
     // using auto_ptr here is to avoid memory leak in case of exception raised
     // after the RBNode creation
-    std::auto_ptr<RBNode<T> > down_node(new RBNode<T>(sub_name));
-    node.name_ = base_name;
+    std::auto_ptr<RBNode<T> > down_node(new RBNode<T>(child_sequence));
+    isc::util::OutputBuffer buffer(2 + base_sequence.getDataLength() +
+                                   base_sequence.getOffsetLength());
+    base_sequence.toWire(buffer);
+    unsigned char* p = new unsigned char[buffer.getLength()];
+    std::memcpy(p, buffer.getData(), buffer.getLength());
+    delete node.namedata_;
+    node.namedata_ = p;
+
     // the rest of this function should be exception free so that it keeps
     // consistent behavior (i.e., a weak form of strong exception guarantee)
     // even if code after the call to this function throws an exception.
@@ -1298,16 +1300,18 @@ RBTree<T>::dumpTreeHelper(std::ostream& os, const RBNode<T>* node,
     }
 
     indent(os, depth);
-    os << node->name_.toText() << " ("
-              << ((node->color_ == RBNode<T>::BLACK) ? "black" : "red") << ")";
+    isc::dns::LabelSequence sequence;
+    sequence.set(node->namedata_);
+    os << sequence.toText() << " ("
+       << ((node->color_ == RBNode<T>::BLACK) ? "black" : "red") << ")";
     os << ((node->isEmpty()) ? "[invisible] \n" : "\n");
 
     if (node->down_ != NULLNODE) {
         indent(os, depth + 1);
-        os << "begin down from " << node->name_.toText() << "\n";
+        os << "begin down from " << sequence.toText() << "\n";
         dumpTreeHelper(os, node->down_, depth + 1);
         indent(os, depth + 1);
-        os << "end down from " << node->name_.toText() << "\n";
+        os << "end down from " << sequence.toText() << "\n";
     }
     dumpTreeHelper(os, node->left_, depth + 1);
     dumpTreeHelper(os, node->right_, depth + 1);

@@ -24,7 +24,9 @@
 #include <util/buffer.h>
 
 #include <dns/name.h>
+#include <dns/messagerenderer.h>
 #include <dns/rdataclass.h>
+#include <dns/rdatafields.h>
 #include <dns/rrclass.h>
 #include <dns/rrsetlist.h>
 #include <dns/masterload.h>
@@ -71,46 +73,168 @@ typedef RBNode<Domain> DomainNode;
 
 class RBNodeRRset : public AbstractRRset {
 public:
-    RBNodeRRset(ConstRRsetPtr rrset) : rrset_(rrset) {}
-    virtual ~RBNodeRRset() {}
+    RBNodeRRset(ConstRRsetPtr rrset);
+    virtual ~RBNodeRRset();
     virtual unsigned int getRdataCount() const {
-        return (rrset_->getRdataCount());
+        return (rdatacount_);
     }
-    virtual const Name& getName() const { return (rrset_->getName()); }
-    virtual const RRClass& getClass() const { return (rrset_->getClass()); }
-    virtual const RRType& getType() const { return (rrset_->getType()); }
-    virtual const RRTTL& getTTL() const { return (rrset_->getTTL()); }
+    virtual const Name& getName() const { return (name_); }
+    virtual const RRClass& getClass() const { return (rrclass_); }
+    virtual const RRType& getType() const { return (rrtype_); }
+    virtual const RRTTL& getTTL() const { return (rrttl_); }
     virtual void setName(const Name&) {}   // we don't support this
     // we don't support this for now
     virtual void setTTL(const RRTTL&) {}
-    virtual string toText() const { return (rrset_->toText()); }
-    virtual unsigned int toWire(AbstractMessageRenderer& renderer) const {
-        return (rrset_->toWire(renderer));
-    }
-    virtual unsigned int toWire(util::OutputBuffer& buffer) const {
-        return (rrset_->toWire(buffer));
-    }
+    //virtual string toText() const { return (rrset_->toText()); }
+    virtual string toText() const { return (""); }
+    virtual unsigned int toWire(AbstractMessageRenderer& renderer) const;
+    virtual unsigned int toWire(util::OutputBuffer& buffer) const;
     virtual void addRdata(rdata::ConstRdataPtr) {
         // don't support it for now
     }
     virtual void addRdata(const rdata::Rdata&) {
         // don't support it for now
     }
-    virtual RdataIteratorPtr getRdataIterator() const {
-        return (rrset_->getRdataIterator());
-    }
+    virtual RdataIteratorPtr getRdataIterator() const;
     virtual RRsetPtr getRRsig() const { return (RRsetPtr()); }
     virtual void addRRsig(const rdata::RdataPtr) {}
     virtual void addRRsig(AbstractRRset&) {}
     virtual void addRRsig(RRsetPtr) {}
     virtual void removeRRsig() {}
 
+    template <typename T>
+    inline unsigned int rrsetToWire(T& output, const size_t limit) const;
+
 private:
-    ConstRRsetPtr rrset_;
+    struct RdataFieldsInfo {
+        unsigned char* spec_ptr_;
+        unsigned char* data_ptr_;
+        uint16_t spec_size_;
+        uint16_t data_length_;
+    };
+
+    const Name name_;
+    const RRClass rrclass_;
+    const RRType rrtype_;
+    const RRTTL rrttl_;
+    const unsigned int rdatacount_;
+    RdataFieldsInfo* rdatalist_;
 public:                         // for convenience
     vector<DomainNode*> additionals_;
 };
+
+RBNodeRRset::RBNodeRRset(ConstRRsetPtr rrset) :
+    name_(rrset->getName()), rrclass_(rrset->getClass()),
+    rrtype_(rrset->getType()), rrttl_(rrset->getTTL()),
+    rdatacount_(rrset->getRdataCount())
+{
+    // for brevity in experiments, ignore exception safety below.
+    rdatalist_ = new RdataFieldsInfo[rdatacount_];
+    RdataIteratorPtr it = rrset->getRdataIterator();
+    for (unsigned int i = 0; !it->isLast(); it->next(), ++i) {
+        RdataFields fields(it->getCurrent());
+        size_t len;
+        len = fields.getFieldSpecDataSize();
+        assert(len <= 0xffff);
+        rdatalist_[i].spec_size_ = len;
+        rdatalist_[i].spec_ptr_ = new unsigned char[rdatalist_[i].spec_size_];
+        memcpy(rdatalist_[i].spec_ptr_, fields.getFieldSpecData(),
+               rdatalist_[i].spec_size_);
+        len = fields.getDataLength();
+        assert(len <= 0xffff);
+        rdatalist_[i].data_length_ = len;
+        rdatalist_[i].data_ptr_ =
+            new unsigned char[rdatalist_[i].data_length_];
+        memcpy(rdatalist_[i].data_ptr_, fields.getData(),
+               rdatalist_[i].data_length_);
+    }
 }
+
+RBNodeRRset::~RBNodeRRset() {
+    for (unsigned int i = 0; i < rdatacount_; ++i) {
+        delete rdatalist_[i].spec_ptr_;
+        delete rdatalist_[i].data_ptr_;
+    }
+    delete rdatalist_;
+}
+
+template <typename T>
+inline unsigned int
+RBNodeRRset::rrsetToWire(T& output, const size_t limit) const {
+    unsigned int n = 0;
+    assert(rdatacount_ > 0); // This should be ensured in this file
+
+    for (unsigned int i = 0; i < rdatacount_; ++i, ++n) {
+        const size_t pos0 = output.getLength();
+        assert(pos0 < 65536);
+
+        name_.toWire(output);
+        rrtype_.toWire(output);
+        rrclass_.toWire(output);
+        rrttl_.toWire(output);
+
+        const size_t pos = output.getLength();
+        output.skip(sizeof(uint16_t)); // leave the space for RDLENGTH
+        RdataFields(rdatalist_[i].spec_ptr_, rdatalist_[i].spec_size_,
+                    rdatalist_[i].data_ptr_, rdatalist_[i].data_length_).
+            toWire(output);
+        output.writeUint16At(output.getLength() - pos - sizeof(uint16_t), pos);
+
+        if (limit > 0 && output.getLength() > limit) {
+            // truncation is needed
+            output.trim(output.getLength() - pos0);
+            return (n);
+        }
+    }
+
+    return (n);
+}
+
+unsigned int
+RBNodeRRset::toWire(util::OutputBuffer& buffer) const {
+    return (rrsetToWire<util::OutputBuffer>(buffer, 0));
+}
+
+unsigned int
+RBNodeRRset::toWire(AbstractMessageRenderer& renderer) const {
+    const unsigned int rrs_written = rrsetToWire<AbstractMessageRenderer>(
+        renderer, renderer.getLengthLimit());
+    if (rdatacount_ > rrs_written) {
+        renderer.setTruncated();
+    }
+    return (rrs_written);
+}
+
+class RBNodeRdataIterator : public RdataIterator {
+private:
+    RBNodeRdataIterator() {}
+public:
+    RBNodeRdataIterator(const vector<rdata::ConstRdataPtr>& datavector) :
+        datavector_(datavector), it_(datavector_.begin())
+    {}
+    virtual ~RBNodeRdataIterator() {}
+    virtual void first() { it_ = datavector_.begin(); }
+    virtual void next() { ++it_; }
+    virtual const rdata::Rdata& getCurrent() const { return (**it_); }
+    virtual bool isLast() const { return (it_ == datavector_.end()); }
+private:
+    const std::vector<rdata::ConstRdataPtr> datavector_;
+    vector<rdata::ConstRdataPtr>::const_iterator it_;
+};
+
+RdataIteratorPtr
+RBNodeRRset::getRdataIterator() const {
+    vector<rdata::ConstRdataPtr> rdata_vector;
+    for (unsigned int i = 0; i < rdatacount_; ++i) {
+        rdata_vector.push_back(RdataFields(rdatalist_[i].spec_ptr_,
+                                           rdatalist_[i].spec_size_,
+                                           rdatalist_[i].data_ptr_,
+                                           rdatalist_[i].data_length_).
+                               getRdata(rrclass_, rrtype_));
+    }
+    return (RdataIteratorPtr(new RBNodeRdataIterator(rdata_vector)));
+}
+} // end of unnamed namespace
 
 // Private data and hidden methods of InMemoryZoneFinder
 struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
@@ -569,8 +693,7 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
                      * will not get here at all.
                      */
                     if (node_path.getLastComparisonResult().getRelation() ==
-                        NameComparisonResult::COMMONANCESTOR && node_path.
-                        getLastComparisonResult().getCommonLabels() > 1) {
+                        NameComparisonResult::COMMONANCESTOR) {
                         LOG_DEBUG(logger, DBG_TRACE_DATA,
                                      DATASRC_MEM_WILDCARD_CANCEL).arg(name);
                         return (FindResult(NXDOMAIN, ConstRRsetPtr()));
