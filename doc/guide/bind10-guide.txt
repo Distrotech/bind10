@@ -4,7 +4,7 @@ Administrator Reference for BIND 10
 
    This is the reference guide for BIND 10 version 20120119.
 
-   Copyright (c) 2010-2011 Internet Systems Consortium, Inc.
+   Copyright (c) 2010-2012 Internet Systems Consortium, Inc.
 
    Abstract
 
