@@ -171,7 +171,8 @@ TEST_F(IfaceMgrTest, ifaceClass) {
 
 // TODO: Implement getPlainMac() test as soon as interface detection
 // is implemented.
-TEST_F(IfaceMgrTest, getIface) {
+// TODO: temporarily disabled, see ticket #1569
+TEST_F(IfaceMgrTest, DISABLED_getIface) {
 
     createLoInterfacesTxt();
 
