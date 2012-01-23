@@ -23,6 +23,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/select.h>
+#include <sys/time.h>
+#include <sys/types.h>
 
 #include <boost/lexical_cast.hpp>
 
@@ -50,9 +53,22 @@ using namespace std;
 
 void usage() {
     cout <<
-"logger_support_test [-h | [logger_spec] [[logger_spec]...]]\n"
+"logger_support_test [-h | [-n num] [-t ms] [-i ident]\n"
+"                    [logger_spec] [[logger_spec]...]]\n"
 "\n"
 "     -h            Print this message and exit\n"
+"\n"
+"     -i ident      Ident is a bit mask in which the least signficant bit\n"
+"                   set causes one set of messages to be printed and the\n"
+"                   next-least-significant set causes the other to be\n"
+"                   printed.  Both LS bits being zero results in an error.\n"
+"                   The default is to print both sets.  This is an aid to\n"
+"                   tests where multiple processes are logging\n"
+"                   simultaneously.\n"
+"     -n num        Print num sets of the messages.  The default is 1.\n"
+"     -t ms         Wait ms milliseconds between each set of messages. The\n"
+"                   default is to print the sets of messages as fast as\n"
+"                   possible.\n"
 "\n"
 "The rest of the command line comprises the set of logger specifications.\n"
 "Each specification is of the form:\n"
@@ -100,6 +116,19 @@ void usage() {
 
 }
 
+// Sleep for less than one second
+int msleep(int ms) {
+    if (ms > 0) {
+        struct timeval delay;
+        delay.tv_sec = ms / 1000;
+        delay.tv_usec = 1000 * (ms % 1000);
+
+        return (select(0, static_cast<fd_set*>(0), static_cast<fd_set*>(0),
+                       static_cast<fd_set*>(0), &delay));
+    }
+    return (0);
+}
+
 
 // The program sets the attributes on the root logger and logs a set of
 // messages.  Looking at the output determines whether the program worked.
@@ -112,6 +141,9 @@ int main(int argc, char** argv) {
     bool                f_found = false;    // Set true if "-f" found
     bool                y_found = false;    // Set true if "-y" found
     int                 option;             // For getopt() processing
+    int                 set_ident = 3;      // For message set processing
+    int                 num_sets = 1;       // Number of sets of messages
+    int                 interval = 0;       // Interval between message sets
     OutputOption        def_opt;            // Default output option - used
                                             //    for initialization
     LoggerSpecification cur_spec(ROOT_NAME);// Current specification
@@ -137,7 +169,7 @@ int main(int argc, char** argv) {
     // the "sw_found" flag is set when a switch is completey processed. The
     // processing of "-l" will only add information for a previous logger to
     // the list if this flag is set.
-    while ((option = getopt(argc, argv, "hc:d:f:l:m:s:y:z:")) != -1) {
+    while ((option = getopt(argc, argv, "hc:d:f:i:l:m:n:s:t:y:z:")) != -1) {
         switch (option) {
         case 'c':   // Console output
             // New output spec.  If one was currently active, add it to the
@@ -186,6 +218,17 @@ int main(int argc, char** argv) {
             usage();
             return (0);
 
+        case 'i':   // Debug level
+            set_ident = boost::lexical_cast<int>(optarg);
+            if (set_ident < 0) {
+                std::cerr << "Message set identification must be positive\n";
+                return (1);
+            } else if ((set_ident & 3) == 0) {
+                std::cerr << "Must select at least one set of messages\n";
+                return (1);
+            }
+            break;
+
         case 'l':   // Logger
             // If a current specification is active, add the last output option
             // to it, add it to the list and reset.  A specification is active
@@ -215,10 +258,18 @@ int main(int argc, char** argv) {
                 return (1);
             }
             try {
-                cur_opt.maxsize = boost::lexical_cast<unsigned int>(optarg);
+                cur_opt.maxver = boost::lexical_cast<unsigned int>(optarg);
             } catch (boost::bad_lexical_cast&) {
                 std::cerr << "Maximum version (-m) argument must be a positive "
                              "integer\n";
+                return (1);
+            }
+            break;
+
+        case 'n':   // Number of sets of messages
+            num_sets = boost::lexical_cast<int>(optarg);
+            if (num_sets <= 0) {
+                std::cerr << "Must specify a positive number of message sets\n";
                 return (1);
             }
             break;
@@ -227,6 +278,15 @@ int main(int argc, char** argv) {
             severity = optarg;
             isc::util::str::uppercase(severity);
             cur_spec.setSeverity(getSeverity(severity));
+            break;
+
+        case 't':   // Interval between sets
+            interval = boost::lexical_cast<int>(optarg);
+            if (interval < 0) {
+                std::cerr << "Interval between message sets must be zero"
+                             " or positive\n";
+                return (1);
+            }
             break;
 
         case 'y':   // Syslog output
@@ -280,26 +340,43 @@ int main(int argc, char** argv) {
         LoggerManager::readLocalMessageFile(argv[optind]);
     }
 
-    // Log a few messages to different loggers.
+    // Initialize the loggers we will need
+
     isc::log::Logger logger_ex(ROOT_NAME);
     isc::log::Logger logger_alpha("alpha");
     isc::log::Logger logger_beta("beta");
 
-    LOG_FATAL(logger_ex, LOG_WRITE_ERROR).arg("test1").arg("42");
-    LOG_ERROR(logger_ex, LOG_READING_LOCAL_FILE).arg("dummy/file");
-    LOG_WARN(logger_ex, LOG_BAD_STREAM).arg("example");
-    LOG_WARN(logger_alpha, LOG_READ_ERROR).arg("a.txt").arg("dummy reason");
-    LOG_INFO(logger_alpha, LOG_INPUT_OPEN_FAIL).arg("example.msg").arg("dummy reason");
-    LOG_DEBUG(logger_ex, 0, LOG_READING_LOCAL_FILE).arg("example/0");
-    LOG_DEBUG(logger_ex, 24, LOG_READING_LOCAL_FILE).arg("example/24");
-    LOG_DEBUG(logger_ex, 25, LOG_READING_LOCAL_FILE).arg("example/25");
-    LOG_DEBUG(logger_ex, 26, LOG_READING_LOCAL_FILE).arg("example/26");
-    LOG_FATAL(logger_beta, LOG_BAD_SEVERITY).arg("beta_fatal");
-    LOG_ERROR(logger_beta, LOG_BAD_DESTINATION).arg("beta_error");
-    LOG_WARN(logger_beta, LOG_BAD_STREAM).arg("beta_warn");
-    LOG_INFO(logger_beta, LOG_READ_ERROR).arg("beta").arg("info");
-    LOG_DEBUG(logger_beta, 25, LOG_BAD_SEVERITY).arg("beta/25");
-    LOG_DEBUG(logger_beta, 26, LOG_BAD_SEVERITY).arg("beta/26");
+    for (unsigned int i = 0; i < num_sets; ++i) {
+        // Wait a bit (if we need to)
+        if (i > 0) {
+            (void) msleep(interval);
+        }
+
+        // Log a few messages to different loggers.
+
+        if ((set_ident & 1) != 0) {
+            LOG_FATAL(logger_ex, LOG_WRITE_ERROR).arg("test1").arg("42");
+            LOG_ERROR(logger_ex, LOG_READING_LOCAL_FILE).arg("dummy/file");
+            LOG_WARN(logger_ex, LOG_BAD_STREAM).arg("example");
+            LOG_WARN(logger_alpha, LOG_READ_ERROR).arg("a.txt")
+                     .arg("dummy reason");
+            LOG_INFO(logger_alpha, LOG_INPUT_OPEN_FAIL).arg("example.msg")
+                     .arg("dummy reason");
+        }
+
+        if ((set_ident & 2) != 0) {
+            LOG_DEBUG(logger_ex, 0, LOG_READING_LOCAL_FILE).arg("example/0");
+            LOG_DEBUG(logger_ex, 24, LOG_READING_LOCAL_FILE).arg("example/24");
+            LOG_DEBUG(logger_ex, 25, LOG_READING_LOCAL_FILE).arg("example/25");
+            LOG_DEBUG(logger_ex, 26, LOG_READING_LOCAL_FILE).arg("example/26");
+            LOG_FATAL(logger_beta, LOG_BAD_SEVERITY).arg("beta_fatal");
+            LOG_ERROR(logger_beta, LOG_BAD_DESTINATION).arg("beta_error");
+            LOG_WARN(logger_beta, LOG_BAD_STREAM).arg("beta_warn");
+            LOG_INFO(logger_beta, LOG_READ_ERROR).arg("beta").arg("info");
+            LOG_DEBUG(logger_beta, 25, LOG_BAD_SEVERITY).arg("beta/25");
+            LOG_DEBUG(logger_beta, 26, LOG_BAD_SEVERITY).arg("beta/26");
+        }
+    }
 
     return (0);
 }
