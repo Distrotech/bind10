@@ -61,11 +61,30 @@ public:
     // name, then subsequently its NSEC.
     ConstRRsetPtr getNoWildcardNSEC();
 
+    // Called for NXDOMAIN/NXRRSET cases and return NSEC/NSEC3 RRsets
+    // for the corresponding DNSSEC proof.  It (will) consist of small helper
+    // private methods for specific cases (NSEC or NSEC3, NXDOMAIN or NXRRSET).
+    //
+    // - NSEC3 + NXDOMAIN
+    //   Default version: use findNSEC3() to get closest encloser proof, use
+    //     the result to identify the possible wildcard, and use findNSEC3()
+    //     to get proof for its non-existence.
+    //   Optimized in-memory version: it should know the closest encloser in
+    //     the original search.  get corresponding NSEC3 directly, construct
+    //     next closer and wildcard from the closest encloser, calculate hash
+    //     and get the covering NSEC3.
+    void getNegativeProof(vector<ConstRRsetPtr>& proofs);
+
 private:
     void getAdditionalAddrs(const Name& name,
                             const vector<RRType>& requested_types,
                             vector<ConstRRsetPtr>& result,
                             ZoneFinder::FindOptions options);
+
+    uint8_t getClosestEncloserProof(const Name& name,
+                                    vector<ConstRRsetPtr>& proofs,
+                                    bool exact_ok, bool add_closest = true);
+    ConstRRsetPtr getNSEC3ForName(const Name& name, bool match);
 
 private:
     ZoneFinder& finder;
@@ -154,6 +173,67 @@ FindContext::getNoWildcardNSEC() {
 
     return (fresult.rrset);
 }
+
+void
+FindContext::getNegativeProof(vector<ConstRRsetPtr>& proofs) {
+    switch (code) {
+    case ZoneFinder::NXDOMAIN: { // should eventually go to a method
+        // Firstly get the NSEC3 proves for Closest Encloser Proof
+        // See Section 7.2.1 of RFC 5155.
+        const uint8_t closest_labels =
+            getClosestEncloserProof(qname, proofs, false);
+        // Next, construct the wildcard name at the closest encloser, i.e.,
+        // '*' followed by the closest encloser, and get NSEC3 for it.
+        const Name wildname(Name("*").concatenate(
+                                qname.split(qname.getLabelCount() -
+                                             closest_labels)));
+        proofs.push_back(getNSEC3ForName(wildname, false));
+        break;
+    }
+    default:
+        assert(false);
+    }
+}
+
+uint8_t
+FindContext::getClosestEncloserProof(const Name& name,
+                                     vector<ConstRRsetPtr>& proofs,
+                                     bool exact_ok, bool add_closest)
+{
+    const ZoneFinder::FindNSEC3Result result = finder.findNSEC3(name, true);
+
+    // Validity check (see the method description).  Note that a completely
+    // broken findNSEC3 implementation could even return NULL RRset in
+    // closest_proof.  We don't explicitly check such case; addRRset() will
+    // throw an exception, and it will be converted to SERVFAIL at the caller.
+    if (!exact_ok && !result.next_proof) {
+        isc_throw(isc::auth::Query::BadNSEC3,
+                  "Matching NSEC3 found for a non existent name: " << name);
+    }
+
+    if (add_closest) {
+        proofs.push_back(result.closest_proof);
+    }
+    if (result.next_proof) {
+        proofs.push_back(result.next_proof);
+    }
+    return (result.closest_labels);
+}
+
+ConstRRsetPtr
+FindContext::getNSEC3ForName(const Name& name, bool match) {
+    const ZoneFinder::FindNSEC3Result result = finder.findNSEC3(name, false);
+
+    // See the comment for addClosestEncloserProof().  We don't check a
+    // totally bogus case where closest_proof is NULL here.
+    if (match != result.matched) {
+        isc_throw(isc::auth::Query::BadNSEC3, "Unexpected "
+                  << (result.matched ? "matching" : "covering")
+                  << " NSEC3 found for " << name);
+    }
+    return (result.closest_proof);
+}
+
 } // namespace datasrc
 } // namespace isc
 
@@ -431,6 +511,25 @@ Query::addAuthAdditional(ZoneFinder& finder) {
 }
 
 namespace {
+class RRsetInserter {
+public:
+    RRsetInserter(Message& msg, Message::Section section, bool dnssec) :
+        msg_(msg), section_(section), dnssec_(dnssec)
+    {}
+    void operator()(const ConstRRsetPtr& rrset) {
+        msg_.addRRset(section_,
+                      boost::const_pointer_cast<AbstractRRset>(rrset),
+                      dnssec_);
+    }
+
+private:
+    Message& msg_;
+    const Message::Section section_;
+    const bool dnssec_;
+};
+}
+
+namespace {
 // A simple wrapper for DataSourceClient::findZone().  Normally we can simply
 // check the closest zone to the qname, but for type DS query we need to
 // look into the parent zone.  Nevertheless, if there is no "parent" (i.e.,
@@ -617,7 +716,12 @@ Query::process() {
                 if (db_result.isNSECSigned() && db_result.rrset) {
                     addNXDOMAINProofByNSEC(ctx);
                 } else if (db_result.isNSEC3Signed()) {
-                    addNXDOMAINProofByNSEC3(zfinder);
+                    vector<ConstRRsetPtr> proofs;
+                    ctx.getNegativeProof(proofs);
+                    for_each(proofs.begin(), proofs.end(),
+                             RRsetInserter(response_,
+                                           Message::SECTION_AUTHORITY,
+                                           dnssec_));
                 }
             }
             break;
