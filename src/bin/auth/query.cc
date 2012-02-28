@@ -12,12 +12,6 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#include <algorithm>            // for std::max
-#include <vector>
-#include <boost/foreach.hpp>
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
-
 #include <dns/message.h>
 #include <dns/rcode.h>
 #include <dns/rdataclass.h>
@@ -26,66 +20,117 @@
 
 #include <auth/query.h>
 
+#include <algorithm>            // for std::max
+#include <vector>
+#include <boost/foreach.hpp>
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
+
+using namespace std;
 using namespace isc::dns;
 using namespace isc::datasrc;
 using namespace isc::dns::rdata;
 
 namespace isc {
-namespace auth {
+namespace datasrc {
+class FindContext {
+public:
+    FindContext(ZoneFinder& finder_param,
+                ZoneFinder::Result code_param,
+                ConstRRsetPtr rrset_param, bool dnssec_param) :
+        code(code_param), rrset(rrset_param), finder(finder_param),
+        dnssec(dnssec_param)
+    {}
+    const ZoneFinder::Result code;
+    const ConstRRsetPtr rrset;
+
+    // Find 'additional' RRsets based on the find() result.
+    void getAdditional(const vector<RRType>& requested_types,
+                       vector<ConstRRsetPtr>& result);
+
+private:
+    void getAdditionalAddrs(const Name& name,
+                            const vector<RRType>& requested_types,
+                            vector<ConstRRsetPtr>& result,
+                            ZoneFinder::FindOptions options);
+
+private:
+    ZoneFinder& finder;
+    const bool dnssec;
+};
 
 void
-Query::addAdditional(ZoneFinder& zone, const AbstractRRset& rrset) {
-    RdataIteratorPtr rdata_iterator(rrset.getRdataIterator());
+FindContext::getAdditional(const vector<RRType>& requested_types,
+                           vector<ConstRRsetPtr>& result)
+{
+    RdataIteratorPtr rdata_iterator(rrset->getRdataIterator());
+    ZoneFinder::FindOptions options = ZoneFinder::FIND_DEFAULT;
+    if (dnssec) {
+        options = options | ZoneFinder::FIND_DNSSEC;
+    }
     for (; !rdata_iterator->isLast(); rdata_iterator->next()) {
         const Rdata& rdata(rdata_iterator->getCurrent());
-        if (rrset.getType() == RRType::NS()) {
+
+        if (rrset->getType() == RRType::NS()) {
             // Need to perform the search in the "GLUE OK" mode.
             const generic::NS& ns = dynamic_cast<const generic::NS&>(rdata);
-            addAdditionalAddrs(zone, ns.getNSName(), ZoneFinder::FIND_GLUE_OK);
-        } else if (rrset.getType() == RRType::MX()) {
+            getAdditionalAddrs(ns.getNSName(), requested_types, result,
+                               options | ZoneFinder::FIND_GLUE_OK);
+        } else if (rrset->getType() == RRType::MX()) {
             const generic::MX& mx(dynamic_cast<const generic::MX&>(rdata));
-            addAdditionalAddrs(zone, mx.getMXName());
+            getAdditionalAddrs(mx.getMXName(), requested_types, result,
+                               options);
         }
     }
 }
 
 void
-Query::addAdditionalAddrs(ZoneFinder& zone, const Name& qname,
-                          const ZoneFinder::FindOptions options)
+FindContext::getAdditionalAddrs(const Name& name,
+                                const vector<RRType>& requested_types,
+                                vector<ConstRRsetPtr>& result_rrsets,
+                                ZoneFinder::FindOptions options)
 {
     // Out of zone name
-    NameComparisonResult result = zone.getOrigin().compare(qname);
-    if ((result.getRelation() != NameComparisonResult::SUPERDOMAIN) &&
-        (result.getRelation() != NameComparisonResult::EQUAL))
+    const NameComparisonResult cmp = finder.getOrigin().compare(name);
+    if ((cmp.getRelation() != NameComparisonResult::SUPERDOMAIN) &&
+        (cmp.getRelation() != NameComparisonResult::EQUAL)) {
         return;
-
-    // Omit additional data which has already been provided in the answer
-    // section from the additional.
-    //
-    // All the address rrset with the owner name of qname have been inserted
-    // into ANSWER section.
-    if (qname_ == qname && qtype_ == RRType::ANY())
-        return;
-
-    // Find A rrset
-    if (qname_ != qname || qtype_ != RRType::A()) {
-        ZoneFinder::FindResult a_result = zone.find(qname, RRType::A(),
-                                                    options | dnssec_opt_);
-        if (a_result.code == ZoneFinder::SUCCESS) {
-            response_.addRRset(Message::SECTION_ADDITIONAL,
-                    boost::const_pointer_cast<AbstractRRset>(a_result.rrset), dnssec_);
-        }
     }
 
-    // Find AAAA rrset
-    if (qname_ != qname || qtype_ != RRType::AAAA()) {
-        ZoneFinder::FindResult aaaa_result = zone.find(qname, RRType::AAAA(),
-                                                       options | dnssec_opt_);
-        if (aaaa_result.code == ZoneFinder::SUCCESS) {
-            response_.addRRset(Message::SECTION_ADDITIONAL,
-                    boost::const_pointer_cast<AbstractRRset>(aaaa_result.rrset),
-                    dnssec_);
+    vector<RRType>::const_iterator it = requested_types.begin();
+    vector<RRType>::const_iterator it_end = requested_types.end();
+    for (; it != it_end; ++it) {
+        ZoneFinder::FindResult result = finder.find(name, *it, options);
+        if (result.code == ZoneFinder::SUCCESS) {
+            result_rrsets.push_back(result.rrset);
         }
+    }
+}
+} // namespace datasrc
+} // namespace isc
+
+namespace isc {
+namespace auth {
+
+void
+Query::addAdditional(FindContext& ctx) {
+    vector<RRType> needed_types;
+    needed_types.push_back(RRType::A());
+    needed_types.push_back(RRType::AAAA());
+
+    vector<ConstRRsetPtr> additionals;
+    ctx.getAdditional(needed_types, additionals);
+
+    vector<ConstRRsetPtr>::const_iterator it = additionals.begin();
+    vector<ConstRRsetPtr>::const_iterator it_end = additionals.end();
+    for (; it != it_end; ++it) {
+        if ((qtype_ == (*it)->getType() || qtype_ == RRType::ANY()) &&
+            qname_ == (*it)->getName()) {
+            continue;
+        }
+        response_.addRRset(Message::SECTION_ADDITIONAL,
+                           boost::const_pointer_cast<AbstractRRset>(*it),
+                           dnssec_);
     }
 }
 
@@ -351,9 +396,11 @@ Query::addAuthAdditional(ZoneFinder& finder) {
                 finder.getOrigin().toText());
     } else {
         response_.addRRset(Message::SECTION_AUTHORITY,
-            boost::const_pointer_cast<AbstractRRset>(ns_result.rrset), dnssec_);
+            boost::const_pointer_cast<AbstractRRset>(ns_result.rrset),
+                           dnssec_);
         // Handle additional for authority section
-        addAdditional(finder, *ns_result.rrset);
+        FindContext ctx(finder, ns_result.code, ns_result.rrset, dnssec_);
+        addAdditional(ctx);
     }
 }
 
@@ -414,6 +461,8 @@ Query::process() {
                            dnssec_opt_);
     }
     ZoneFinder::FindResult db_result(find());
+    FindContext ctx(zfinder, db_result.code, db_result.rrset, dnssec_);
+
     switch (db_result.code) {
         case ZoneFinder::DNAME: {
             // First, put the dname into the answer
@@ -484,16 +533,19 @@ Query::process() {
                 // into answer section.
                 BOOST_FOREACH(ConstRRsetPtr rrset, target) {
                     response_.addRRset(Message::SECTION_ANSWER,
-                        boost::const_pointer_cast<AbstractRRset>(rrset), dnssec_);
+                        boost::const_pointer_cast<AbstractRRset>(rrset),
+                                       dnssec_);
                     // Handle additional for answer section
-                    addAdditional(*result.zone_finder, *rrset.get());
+                    FindContext ctx_any(zfinder, db_result.code, rrset,
+                                        dnssec_);
+                    addAdditional(ctx_any);
                 }
             } else {
                 response_.addRRset(Message::SECTION_ANSWER,
                     boost::const_pointer_cast<AbstractRRset>(db_result.rrset),
                     dnssec_);
                 // Handle additional for answer section
-                addAdditional(*result.zone_finder, *db_result.rrset);
+                addAdditional(ctx);
             }
             // If apex NS records haven't been provided in the answer
             // section, insert apex NS records into the authority section
@@ -530,7 +582,7 @@ Query::process() {
             if (dnssec_) {
                 addDS(*result.zone_finder, db_result.rrset->getName());
             }
-            addAdditional(*result.zone_finder, *db_result.rrset);
+            addAdditional(ctx);
             break;
         case ZoneFinder::NXDOMAIN:
             response_.setRcode(Rcode::NXDOMAIN());

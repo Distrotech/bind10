@@ -27,6 +27,7 @@ class RRset;
 
 namespace datasrc {
 class DataSourceClient;
+class FindContext;              // defined in query.cc for now
 }
 
 namespace auth {
@@ -143,8 +144,7 @@ private:
     /// query is to be found.
     /// \param rrset The RRset (i.e., NS or MX rrset) which require additional
     /// processing.
-    void addAdditional(isc::datasrc::ZoneFinder& zone,
-                       const isc::dns::AbstractRRset& rrset);
+    void addAdditional(isc::datasrc::FindContext& ctx);
 
     /// \brief Find address records for a specified name.
     ///
