@@ -36,10 +36,11 @@ namespace datasrc {
 class FindContext {
 public:
     FindContext(ZoneFinder& finder_param,
+                const Name& qname_param,
                 ZoneFinder::Result code_param,
                 ConstRRsetPtr rrset_param, bool dnssec_param) :
-        code(code_param), rrset(rrset_param), finder(finder_param),
-        dnssec(dnssec_param)
+        code(code_param), rrset(rrset_param),
+        finder(finder_param), qname(qname_param), dnssec(dnssec_param)
     {}
     const ZoneFinder::Result code;
     const ConstRRsetPtr rrset;
@@ -47,6 +48,18 @@ public:
     // Find 'additional' RRsets based on the find() result.
     void getAdditional(const vector<RRType>& requested_types,
                        vector<ConstRRsetPtr>& result);
+
+    // Called for NXDOMAIN + NSEC-signed case.  Return an NSEC that proves
+    // there's no matching wildcard for the original qname.
+    //
+    // Default version: construct the best possible wildcard name from qname
+    // and the NSEC that proves non-existent of the name, and internally calls
+    // find(NSEC) for that name.
+    //
+    // Optimized in-memory version: it should know the closest encloser in
+    // the previous search and can identify the wildcard name and its previous
+    // name, then subsequently its NSEC.
+    ConstRRsetPtr getNoWildcardNSEC();
 
 private:
     void getAdditionalAddrs(const Name& name,
@@ -56,6 +69,7 @@ private:
 
 private:
     ZoneFinder& finder;
+    const Name& qname;
     const bool dnssec;
 };
 
@@ -106,6 +120,40 @@ FindContext::getAdditionalAddrs(const Name& name,
         }
     }
 }
+
+ConstRRsetPtr
+FindContext::getNoWildcardNSEC() {
+    // Next, identify the best possible wildcard name that would match
+    // the query name.  It's the longer common suffix with the qname
+    // between the owner or the next domain of the NSEC that proves NXDOMAIN,
+    // prefixed by the wildcard label, "*".  For example, for query name
+    // a.b.example.com, if the NXDOMAIN NSEC is
+    // b.example.com. NSEC c.example.com., the longer suffix is b.example.com.,
+    // and the best possible wildcard is *.b.example.com.  If the NXDOMAIN
+    // NSEC is a.example.com. NSEC c.b.example.com., the longer suffix
+    // is the next domain of the NSEC, and we get the same wildcard name.
+    const int qlabels = qname.getLabelCount();
+    const int olabels = qname.compare(rrset->getName()).getCommonLabels();
+    const int nlabels = qname.compare(
+        dynamic_cast<const generic::NSEC&>(rrset->getRdataIterator()->
+                                           getCurrent()).
+        getNextName()).getCommonLabels();
+    const int common_labels = std::max(olabels, nlabels);
+    const Name wildname(Name("*").concatenate(qname.split(qlabels -
+                                                          common_labels)));
+
+    // Confirm the wildcard doesn't exist (this should result in NXDOMAIN;
+    // otherwise we shouldn't have got NXDOMAIN for the original query in
+    // the first place).
+    const ZoneFinder::FindResult fresult =
+        finder.find(wildname, RRType::NSEC(), ZoneFinder::FIND_DNSSEC);
+    if (fresult.code != ZoneFinder::NXDOMAIN || !fresult.rrset ||
+        fresult.rrset->getRdataCount() == 0) {
+        return (ConstRRsetPtr());
+    }
+
+    return (fresult.rrset);
+}
 } // namespace datasrc
 } // namespace isc
 
@@ -154,7 +202,7 @@ Query::addSOA(ZoneFinder& finder) {
 }
 
 // Note: unless the data source client implementation or the zone content
-// is broken, 'nsec' should be a valid NSEC RR.  Likewise, the call to
+// is broken, 'ctx.rrset' should be a valid NSEC RR.  Likewise, the call to
 // find() in this method should result in NXDOMAIN and an NSEC RR that proves
 // the non existent of matching wildcard.  If these assumptions aren't met
 // due to a buggy data source implementation or a broken zone, we'll let
@@ -162,41 +210,18 @@ Query::addSOA(ZoneFinder& finder) {
 // either an SERVFAIL response or just ignoring the query.  We at least prevent
 // a complete crash due to such broken behavior.
 void
-Query::addNXDOMAINProofByNSEC(ZoneFinder& finder, ConstRRsetPtr nsec) {
-    if (nsec->getRdataCount() == 0) {
+Query::addNXDOMAINProofByNSEC(FindContext& ctx) {
+    if (ctx.rrset->getRdataCount() == 0) {
         isc_throw(BadNSEC, "NSEC for NXDOMAIN is empty");
     }
 
     // Add the NSEC proving NXDOMAIN to the authority section.
     response_.addRRset(Message::SECTION_AUTHORITY,
-                       boost::const_pointer_cast<AbstractRRset>(nsec), dnssec_);
+                       boost::const_pointer_cast<AbstractRRset>(ctx.rrset),
+                       dnssec_);
 
-    // Next, identify the best possible wildcard name that would match
-    // the query name.  It's the longer common suffix with the qname
-    // between the owner or the next domain of the NSEC that proves NXDOMAIN,
-    // prefixed by the wildcard label, "*".  For example, for query name
-    // a.b.example.com, if the NXDOMAIN NSEC is
-    // b.example.com. NSEC c.example.com., the longer suffix is b.example.com.,
-    // and the best possible wildcard is *.b.example.com.  If the NXDOMAIN
-    // NSEC is a.example.com. NSEC c.b.example.com., the longer suffix
-    // is the next domain of the NSEC, and we get the same wildcard name.
-    const int qlabels = qname_.getLabelCount();
-    const int olabels = qname_.compare(nsec->getName()).getCommonLabels();
-    const int nlabels = qname_.compare(
-        dynamic_cast<const generic::NSEC&>(nsec->getRdataIterator()->
-                                           getCurrent()).
-        getNextName()).getCommonLabels();
-    const int common_labels = std::max(olabels, nlabels);
-    const Name wildname(Name("*").concatenate(qname_.split(qlabels -
-                                                           common_labels)));
-
-    // Confirm the wildcard doesn't exist (this should result in NXDOMAIN;
-    // otherwise we shouldn't have got NXDOMAIN for the original query in
-    // the first place).
-    const ZoneFinder::FindResult fresult =
-        finder.find(wildname, RRType::NSEC(), dnssec_opt_);
-    if (fresult.code != ZoneFinder::NXDOMAIN || !fresult.rrset ||
-        fresult.rrset->getRdataCount() == 0) {
+    ConstRRsetPtr wnsec = ctx.getNoWildcardNSEC();
+    if (!wnsec) {
         isc_throw(BadNSEC, "Unexpected result for wildcard NXDOMAIN proof");
     }
 
@@ -205,9 +230,9 @@ Query::addNXDOMAINProofByNSEC(ZoneFinder& finder, ConstRRsetPtr nsec) {
     // Note: name comparison is relatively expensive.  When we are at the
     // stage of performance optimization, we should consider optimizing this
     // for some optimized data source implementations.
-    if (nsec->getName() != fresult.rrset->getName()) {
+    if (ctx.rrset->getName() != wnsec->getName()) {
         response_.addRRset(Message::SECTION_AUTHORITY,
-                           boost::const_pointer_cast<AbstractRRset>(fresult.rrset),
+                           boost::const_pointer_cast<AbstractRRset>(wnsec),
                            dnssec_);
     }
 }
@@ -399,7 +424,8 @@ Query::addAuthAdditional(ZoneFinder& finder) {
             boost::const_pointer_cast<AbstractRRset>(ns_result.rrset),
                            dnssec_);
         // Handle additional for authority section
-        FindContext ctx(finder, ns_result.code, ns_result.rrset, dnssec_);
+        FindContext ctx(finder, finder.getOrigin(), ns_result.code,
+                        ns_result.rrset, dnssec_);
         addAdditional(ctx);
     }
 }
@@ -461,7 +487,7 @@ Query::process() {
                            dnssec_opt_);
     }
     ZoneFinder::FindResult db_result(find());
-    FindContext ctx(zfinder, db_result.code, db_result.rrset, dnssec_);
+    FindContext ctx(zfinder, qname_, db_result.code, db_result.rrset, dnssec_);
 
     switch (db_result.code) {
         case ZoneFinder::DNAME: {
@@ -536,7 +562,7 @@ Query::process() {
                         boost::const_pointer_cast<AbstractRRset>(rrset),
                                        dnssec_);
                     // Handle additional for answer section
-                    FindContext ctx_any(zfinder, db_result.code, rrset,
+                    FindContext ctx_any(zfinder, qname_, db_result.code, rrset,
                                         dnssec_);
                     addAdditional(ctx_any);
                 }
@@ -589,7 +615,7 @@ Query::process() {
             addSOA(*result.zone_finder);
             if (dnssec_) {
                 if (db_result.isNSECSigned() && db_result.rrset) {
-                    addNXDOMAINProofByNSEC(zfinder, db_result.rrset);
+                    addNXDOMAINProofByNSEC(ctx);
                 } else if (db_result.isNSEC3Signed()) {
                     addNXDOMAINProofByNSEC3(zfinder);
                 }
