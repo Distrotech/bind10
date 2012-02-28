@@ -31,16 +31,41 @@ using namespace isc::dns;
 using namespace isc::datasrc;
 using namespace isc::dns::rdata;
 
+// Commonly used helper callback object for vector<ConstRRsetPtr> to
+// insert them to (the specified section of) a message.
+namespace {
+class RRsetInserter {
+public:
+    RRsetInserter(Message& msg, Message::Section section, bool dnssec) :
+        msg_(msg), section_(section), dnssec_(dnssec)
+    {}
+    void operator()(const ConstRRsetPtr& rrset) {
+        msg_.addRRset(section_,
+                      boost::const_pointer_cast<AbstractRRset>(rrset),
+                      dnssec_);
+    }
+
+private:
+    Message& msg_;
+    const Message::Section section_;
+    const bool dnssec_;
+};
+}
+
 namespace isc {
 namespace datasrc {
 class FindContext {
 public:
     FindContext(ZoneFinder& finder_param,
                 const Name& qname_param,
-                ZoneFinder::Result code_param,
+                RRType qtype_param,
+                const ZoneFinder::FindResult& result_param,
                 ConstRRsetPtr rrset_param, bool dnssec_param) :
-        code(code_param), rrset(rrset_param),
-        finder(finder_param), qname(qname_param), dnssec(dnssec_param)
+        code(result_param.code), rrset(rrset_param),
+        finder(finder_param), qname(qname_param), qtype(qtype_param),
+        dnssec(dnssec_param), nsec_signed(result_param.isNSECSigned()),
+        nsec3_signed(result_param.isNSEC3Signed()),
+        wildcard(result_param.isWildcard())
     {}
     const ZoneFinder::Result code;
     const ConstRRsetPtr rrset;
@@ -73,6 +98,13 @@ public:
     //     the original search.  get corresponding NSEC3 directly, construct
     //     next closer and wildcard from the closest encloser, calculate hash
     //     and get the covering NSEC3.
+    // - NSEC3 + NXRRSET (no wildcard)
+    //   Default version: use findNSEC3() to get either closest encloser proof
+    //     (optout DS case) or matching NSEC3.
+    //   Optimized in-memory version: it knows the corresponding rbtnode
+    //     for the qanem.  Get the hash value from it and get its NSEC3.
+    //     If it doesn't exist and qtype was DS, search the tree back toward
+    //     the root until it finds a matching NSEC3.
     void getNegativeProof(vector<ConstRRsetPtr>& proofs);
 
 private:
@@ -89,7 +121,11 @@ private:
 private:
     ZoneFinder& finder;
     const Name& qname;
+    const RRType qtype;
     const bool dnssec;
+    const bool nsec_signed;
+    const bool nsec3_signed;
+    const bool wildcard;
 };
 
 void
@@ -188,8 +224,20 @@ FindContext::getNegativeProof(vector<ConstRRsetPtr>& proofs) {
                                 qname.split(qname.getLabelCount() -
                                              closest_labels)));
         proofs.push_back(getNSEC3ForName(wildname, false));
-        break;
     }
+        break;
+    case ZoneFinder::NXRRSET:
+        if (nsec3_signed && !wildcard) {
+            if (qtype == RRType::DS()) {
+                // RFC 5155, Section 7.2.4.  Add either NSEC3 for the qname or
+                // closest (provable) encloser proof in case of optout.
+                getClosestEncloserProof(qname, proofs, true);
+            } else {
+                // RFC 5155, Section 7.2.3.  Just add NSEC3 for the qname.
+                proofs.push_back(getNSEC3ForName(qname, true));
+            }
+        }
+        break;
     default:
         assert(false);
     }
@@ -436,7 +484,7 @@ Query::addWildcardNXRRSETProof(ZoneFinder& finder, ConstRRsetPtr nsec) {
 }
 
 void
-Query::addDS(ZoneFinder& finder, const Name& dname) {
+Query::addDS(FindContext& ctx, ZoneFinder& finder, const Name& dname) {
     ZoneFinder::FindResult ds_result =
         finder.find(dname, RRType::DS(), dnssec_opt_);
     if (ds_result.code == ZoneFinder::SUCCESS) {
@@ -446,7 +494,7 @@ Query::addDS(ZoneFinder& finder, const Name& dname) {
                            dnssec_);
     } else if (ds_result.code == ZoneFinder::NXRRSET &&
                ds_result.isNSECSigned()) {
-        addNXRRsetProof(finder, ds_result);
+        addNXRRsetProof(ctx, finder, ds_result);
     } else if (ds_result.code == ZoneFinder::NXRRSET &&
                ds_result.isNSEC3Signed()) {
         // Add no DS proof with NSEC3 as specified in RFC 5155 Section 7.2.7.
@@ -458,9 +506,11 @@ Query::addDS(ZoneFinder& finder, const Name& dname) {
 }
 
 void
-Query::addNXRRsetProof(ZoneFinder& finder,
+Query::addNXRRsetProof(FindContext& ctx, ZoneFinder& finder,
                        const ZoneFinder::FindResult& db_result)
 {
+    vector<ConstRRsetPtr> proofs;
+
     if (db_result.isNSECSigned() && db_result.rrset) {
         response_.addRRset(Message::SECTION_AUTHORITY,
                            boost::const_pointer_cast<AbstractRRset>(
@@ -470,14 +520,10 @@ Query::addNXRRsetProof(ZoneFinder& finder,
             addWildcardNXRRSETProof(finder, db_result.rrset);
         }
     } else if (db_result.isNSEC3Signed() && !db_result.isWildcard()) {
-        if (qtype_ == RRType::DS()) {
-            // RFC 5155, Section 7.2.4.  Add either NSEC3 for the qname or
-            // closest (provable) encloser proof in case of optout.
-            addClosestEncloserProof(finder, qname_, true);
-        } else {
-            // RFC 5155, Section 7.2.3.  Just add NSEC3 for the qname.
-            addNSEC3ForName(finder, qname_, true);
-        }
+        ctx.getNegativeProof(proofs);
+        for_each(proofs.begin(), proofs.end(),
+                 RRsetInserter(response_, Message::SECTION_AUTHORITY,
+                               dnssec_));
     } else if (db_result.isNSEC3Signed() && db_result.isWildcard()) {
         // Case for RFC 5155 Section 7.2.5: add closest encloser proof for the
         // qname, construct the matched wildcard name and add NSEC3 for it.
@@ -504,29 +550,10 @@ Query::addAuthAdditional(ZoneFinder& finder) {
             boost::const_pointer_cast<AbstractRRset>(ns_result.rrset),
                            dnssec_);
         // Handle additional for authority section
-        FindContext ctx(finder, finder.getOrigin(), ns_result.code,
-                        ns_result.rrset, dnssec_);
+        FindContext ctx(finder, finder.getOrigin(), RRType::NS(),
+                        ns_result, ns_result.rrset, dnssec_);
         addAdditional(ctx);
     }
-}
-
-namespace {
-class RRsetInserter {
-public:
-    RRsetInserter(Message& msg, Message::Section section, bool dnssec) :
-        msg_(msg), section_(section), dnssec_(dnssec)
-    {}
-    void operator()(const ConstRRsetPtr& rrset) {
-        msg_.addRRset(section_,
-                      boost::const_pointer_cast<AbstractRRset>(rrset),
-                      dnssec_);
-    }
-
-private:
-    Message& msg_;
-    const Message::Section section_;
-    const bool dnssec_;
-};
 }
 
 namespace {
@@ -586,7 +613,8 @@ Query::process() {
                            dnssec_opt_);
     }
     ZoneFinder::FindResult db_result(find());
-    FindContext ctx(zfinder, qname_, db_result.code, db_result.rrset, dnssec_);
+    FindContext ctx(zfinder, qname_, qtype_, db_result, db_result.rrset,
+                    dnssec_);
 
     switch (db_result.code) {
         case ZoneFinder::DNAME: {
@@ -661,8 +689,8 @@ Query::process() {
                         boost::const_pointer_cast<AbstractRRset>(rrset),
                                        dnssec_);
                     // Handle additional for answer section
-                    FindContext ctx_any(zfinder, qname_, db_result.code, rrset,
-                                        dnssec_);
+                    FindContext ctx_any(zfinder, qname_, RRType::ANY(),
+                                        db_result, rrset, dnssec_);
                     addAdditional(ctx_any);
                 }
             } else {
@@ -705,7 +733,7 @@ Query::process() {
             // If DNSSEC is requested, see whether there is a DS
             // record for this delegation.
             if (dnssec_) {
-                addDS(*result.zone_finder, db_result.rrset->getName());
+                addDS(ctx, *result.zone_finder, db_result.rrset->getName());
             }
             addAdditional(ctx);
             break;
@@ -728,7 +756,7 @@ Query::process() {
         case ZoneFinder::NXRRSET:
             addSOA(*result.zone_finder);
             if (dnssec_) {
-                addNXRRsetProof(zfinder, db_result);
+                addNXRRsetProof(ctx, zfinder, db_result);
             }
             break;
         default:
@@ -763,9 +791,11 @@ Query::processDSAtChild() {
     addSOA(*zresult.zone_finder);
     const ZoneFinder::FindResult ds_result =
         zresult.zone_finder->find(qname_, RRType::DS(), dnssec_opt_);
+    FindContext ctx(*zresult.zone_finder, qname_, RRType::DS(),
+                    ds_result, ds_result.rrset, dnssec_);
     if (ds_result.code == ZoneFinder::NXRRSET) {
         if (dnssec_) {
-            addNXRRsetProof(*zresult.zone_finder, ds_result);
+            addNXRRsetProof(ctx, *zresult.zone_finder, ds_result);
         }
     }
 

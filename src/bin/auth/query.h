@@ -84,7 +84,8 @@ private:
     ///                  record.
     /// \param finder The ZoneFinder where the delegation was found
     /// \param ds_name The name of the delegation RRset
-    void addDS(isc::datasrc::ZoneFinder& finder,
+    void addDS(isc::datasrc::FindContext& ctx,
+               isc::datasrc::ZoneFinder& finder,
                const isc::dns::Name& ds_name);
 
     /// \brief Adds NSEC(3) denial proof for the given NXRRset result
@@ -96,8 +97,9 @@ private:
     /// \param finder The ZoneFinder that was used to search for the missing
     ///               data
     /// \param db_result The ZoneFinder::FindResult returned by find()
-    void addNXRRsetProof(isc::datasrc::ZoneFinder& finder,
-        const isc::datasrc::ZoneFinder::FindResult& db_result);
+    void addNXRRsetProof(isc::datasrc::FindContext& ctx,
+                         isc::datasrc::ZoneFinder& finder,
+                         const isc::datasrc::ZoneFinder::FindResult& db_result);
 
     /// Add NSEC RRs that prove an NXDOMAIN result.
     ///
