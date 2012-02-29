@@ -397,6 +397,9 @@ FindContext::getNoWildcardNSEC() {
 
 void
 FindContext::getNegativeProof(vector<ConstRRsetPtr>& proofs) {
+    if (!dnssec) {
+        return;
+    }
     switch (code) {
     case ZoneFinder::NXDOMAIN: { // should eventually go to a method
         if (nsec_signed) {
@@ -464,6 +467,10 @@ FindContext::getNXDOMAINProofByNSEC(vector<ConstRRsetPtr>& proofs) {
 
 void
 FindContext::getWildcardProof(vector<ConstRRsetPtr>& proofs) {
+    if (!dnssec ||
+        (code != ZoneFinder::SUCCESS && code != ZoneFinder::CNAME)) {
+        return;
+    }
     if (nsec_signed) {
         // Case for RFC4035 Section 3.1.3.3.
         //
@@ -492,6 +499,9 @@ FindContext::getWildcardProof(vector<ConstRRsetPtr>& proofs) {
 
 void
 FindContext::getDelegationProof(vector<ConstRRsetPtr>& proofs) {
+    if (!dnssec) {
+        return;
+    }
     ZoneFinder::FindResult ds_result =
         finder.find(rrset->getName(), RRType::DS(), ZoneFinder::FIND_DNSSEC);
     FindContext ds_ctx(finder, rrset->getName(), RRType::DS(),
@@ -699,12 +709,6 @@ Query::process() {
              * So, just put it there.
              */
             answers.push_back(db_result.rrset);
-
-            // If the answer is a result of wildcard substitution,
-            // add a proof that there's no closer name.
-            if (dnssec_ && db_result.isWildcard()) {
-                ctx.getWildcardProof(authorities);
-            }
             break;
         case ZoneFinder::SUCCESS:
             if (!qtype_is_any) {
@@ -717,18 +721,14 @@ Query::process() {
             // section, insert apex NS records into the authority section
             // and AAAA/A RRS of each of the NS RDATA into the additional
             // section.
-            if (qname_ != result.zone_finder->getOrigin() ||
+            // Checking the findZone() is a lightweight check to see if
+            // qname is the zone origin.
+            if (result.code != result::SUCCESS ||
                 db_result.code != ZoneFinder::SUCCESS ||
                 (qtype_ != RRType::NS() && !qtype_is_any))
             {
                 authorities.push_back(ctx.getAtOrigin(RRType::NS()));
                 getAdditional(qname_, qtype_, ctx, additionals);
-            }
-
-            // If the answer is a result of wildcard substitution,
-            // add a proof that there's no closer name.
-            if (dnssec_ && db_result.isWildcard()) {
-                ctx.getWildcardProof(authorities);
             }
             break;
         case ZoneFinder::DELEGATION:
@@ -743,20 +743,17 @@ Query::process() {
             response_.setHeaderFlag(Message::HEADERFLAG_AA, false);
             authorities.push_back(db_result.rrset);
             getAdditional(qname_, qtype_, ctx, additionals);
+
             // If DNSSEC is requested, see whether there is a DS
             // record for this delegation.
-            if (dnssec_) {
-                ctx.getDelegationProof(authorities);
-            }
+            ctx.getDelegationProof(authorities);
             break;
         case ZoneFinder::NXDOMAIN:
             response_.setRcode(Rcode::NXDOMAIN());
             // Fall-through
         case ZoneFinder::NXRRSET:
             authorities.push_back(ctx.getAtOrigin(RRType::SOA()));
-            if (dnssec_) {
-                ctx.getNegativeProof(authorities);
-            }
+            ctx.getNegativeProof(authorities);
             break;
         default:
             // This is basically a bug of the data source implementation,
@@ -765,6 +762,10 @@ Query::process() {
             isc_throw(isc::NotImplemented, "Unknown result code");
             break;
     }
+
+    // If the answer is a result of wildcard substitution,
+    // add a proof that there's no closer name.
+    ctx.getWildcardProof(authorities);
 
     for_each(answers.begin(), answers.end(),
              RRsetInserter(response_, Message::SECTION_ANSWER, dnssec_));
@@ -802,7 +803,7 @@ Query::processDSAtChild() {
     FindContext ctx(*zresult.zone_finder, qname_, RRType::DS(),
                     ds_result, ds_result.rrset, dnssec_);
     authorities.push_back(ctx.getAtOrigin(RRType::SOA()));
-    if (ds_result.code == ZoneFinder::NXRRSET && dnssec_) {
+    if (ds_result.code == ZoneFinder::NXRRSET) {
         ctx.getNegativeProof(authorities);
     }
     for_each(authorities.begin(), authorities.end(),
