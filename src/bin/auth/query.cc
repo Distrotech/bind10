@@ -153,6 +153,22 @@ public:
     //   getNegativeProof().
     void getDelegationProof(vector<ConstRRsetPtr>& proofs);
 
+    // Called for DNAME case.  (Somehow) construct the synthesized CNAME
+    // for the qname with the DNAME.  Return Rcode of NOERROR() normally,
+    // but YXDOMAIN() if CNAME cannot be constructed because the name would
+    // be too long.
+    //
+    // Default version: extract the DNAME RDATA, construct the synthesized
+    //   cname by splitting and concatinating labels, create a new standard
+    //   CNAME RRset and sets its (only) RDATA to the created cname.
+    // Optimized in-memory version: construct the synthesized cname
+    //   essentially same way, but possibly more efficiently exploiting the
+    //   internal representation of the in-memory RDATA (without involving
+    //   expensive name splitting and concatinating).  To avoid resource
+    //   allocation it might use some pool of "free (and empty)" internal
+    //   RRset.
+    Rcode getSynthesizedCNAME(vector<ConstRRsetPtr>& proofs);
+
 private:
     void getAdditionalAddrs(const Name& name,
                             const vector<RRType>& requested_types,
@@ -176,6 +192,48 @@ private:
     const bool nsec3_signed;
     const bool wildcard;
 };
+
+Rcode
+FindContext::getSynthesizedCNAME(vector<ConstRRsetPtr>& records) {
+    /*
+     * Empty DNAME should never get in, as it is impossible to
+     * create one in master file.
+     *
+     * FIXME: Other way to prevent this should be done
+     */
+    assert(rrset->getRdataCount() > 0);
+    // Get the data of DNAME
+    const rdata::generic::DNAME& dname(
+        dynamic_cast<const rdata::generic::DNAME&>(
+            rrset->getRdataIterator()->getCurrent()));
+    // The yet unmatched prefix dname
+    const Name prefix(qname.split(0, qname.getLabelCount() -
+                                  rrset->getName().getLabelCount()));
+    // If we put it together, will it be too long?
+    // (The prefix contains trailing ., which will be removed
+    if (prefix.getLength() - Name::ROOT_NAME().getLength() +
+        dname.getDname().getLength() > Name::MAX_WIRE) {
+        /*
+         * In case the synthesized name is too long, section 4.1
+         * of RFC 2672 mandates we return YXDOMAIN.
+         */
+        return (Rcode::YXDOMAIN());
+    }
+    // The new CNAME we are creating (it will be unsigned even
+    // with DNSSEC, the DNAME is signed and it can be validated
+    // by that)
+    RRsetPtr cname(new RRset(qname, rrset->getClass(),
+                             RRType::CNAME(), rrset->getTTL()));
+
+    // Construct the new target by replacing the end
+    cname->addRdata(generic::CNAME(qname.split(0,
+                                               qname.getLabelCount() -
+                                               rrset->getName().
+                                               getLabelCount()).
+                                   concatenate(dname.getDname())));
+    records.push_back(cname);
+    return (Rcode::NOERROR());
+}
 
 void
 FindContext::getAdditional(const vector<RRType>& requested_types,
@@ -612,6 +670,7 @@ Query::process() {
     response_.setRcode(Rcode::NOERROR());
     std::vector<ConstRRsetPtr> target;
     boost::function0<ZoneFinder::FindResult> find;
+    vector<ConstRRsetPtr> answers;
     vector<ConstRRsetPtr> proofs;
     const bool qtype_is_any = (qtype_ == RRType::ANY());
     if (qtype_is_any) {
@@ -628,45 +687,14 @@ Query::process() {
     switch (db_result.code) {
         case ZoneFinder::DNAME: {
             // First, put the dname into the answer
-            response_.addRRset(Message::SECTION_ANSWER,
-                boost::const_pointer_cast<AbstractRRset>(db_result.rrset),
-                dnssec_);
-            /*
-             * Empty DNAME should never get in, as it is impossible to
-             * create one in master file.
-             *
-             * FIXME: Other way to prevent this should be done
-             */
-            assert(db_result.rrset->getRdataCount() > 0);
-            // Get the data of DNAME
-            const rdata::generic::DNAME& dname(
-                dynamic_cast<const rdata::generic::DNAME&>(
-                db_result.rrset->getRdataIterator()->getCurrent()));
-            // The yet unmatched prefix dname
-            const Name prefix(qname_.split(0, qname_.getLabelCount() -
-                db_result.rrset->getName().getLabelCount()));
-            // If we put it together, will it be too long?
-            // (The prefix contains trailing ., which will be removed
-            if (prefix.getLength() - Name::ROOT_NAME().getLength() +
-                dname.getDname().getLength() > Name::MAX_WIRE) {
-                /*
-                 * In case the synthesized name is too long, section 4.1
-                 * of RFC 2672 mandates we return YXDOMAIN.
-                 */
-                response_.setRcode(Rcode::YXDOMAIN());
-                return;
+            answers.push_back(db_result.rrset);
+            const Rcode rcode = ctx.getSynthesizedCNAME(answers);
+            if (rcode != Rcode::NOERROR()) {
+                response_.setRcode(rcode);
             }
-            // The new CNAME we are creating (it will be unsigned even
-            // with DNSSEC, the DNAME is signed and it can be validated
-            // by that)
-            RRsetPtr cname(new RRset(qname_, db_result.rrset->getClass(),
-                RRType::CNAME(), db_result.rrset->getTTL()));
-            // Construct the new target by replacing the end
-            cname->addRdata(rdata::generic::CNAME(qname_.split(0,
-                qname_.getLabelCount() -
-                db_result.rrset->getName().getLabelCount()).
-                concatenate(dname.getDname())));
-            response_.addRRset(Message::SECTION_ANSWER, cname, dnssec_);
+            for_each(answers.begin(), answers.end(),
+                     RRsetInserter(response_, Message::SECTION_ANSWER,
+                                   dnssec_));
             break;
         }
         case ZoneFinder::CNAME:
