@@ -88,48 +88,10 @@ private:
                isc::datasrc::ZoneFinder& finder,
                const isc::dns::Name& ds_name);
 
-    /// \brief Adds NSEC(3) denial proof for the given NXRRset result
-    ///
-    /// If available, NSEC or NSEC3 records are added to the authority
-    /// section (depending on whether isNSECSigned() or isNSEC3Signed()
-    /// returns true).
-    ///
-    /// \param finder The ZoneFinder that was used to search for the missing
-    ///               data
-    /// \param db_result The ZoneFinder::FindResult returned by find()
-    void addNXRRsetProof(isc::datasrc::FindContext& ctx,
-                         isc::datasrc::ZoneFinder& finder,
-                         const isc::datasrc::ZoneFinder::FindResult& db_result);
-
     /// Add NSEC RRs that prove an NXDOMAIN result.
     ///
     /// This corresponds to Section 3.1.3.2 of RFC 4035.
     void addNXDOMAINProofByNSEC(isc::datasrc::FindContext& ctx);
-
-    /// Add NSEC3 RRs that prove an NXDOMAIN result.
-    ///
-    /// This corresponds to Section 7.2.2 of RFC 5155.
-    void addNXDOMAINProofByNSEC3(isc::datasrc::ZoneFinder& finder);
-
-    /// Add NSEC or NSEC3 RRs that prove a wildcard answer is the best one.
-    ///
-    /// This corresponds to Section 3.1.3.3 of RFC 4035 and Section 7.2.6
-    /// of RFC5155.
-    void addWildcardProof(
-        isc::datasrc::ZoneFinder& finder,
-        const isc::datasrc::ZoneFinder::FindResult& dbResult);
-
-    /// \brief Adds one NSEC RR proved no matched QNAME,one NSEC RR proved no
-    /// matched <QNAME,QTYPE> through wildcard extension.
-    ///
-    /// Add NSEC RRs that prove an WILDCARD_NXRRSET result.
-    /// This corresponds to Section 3.1.3.4 of RFC 4035.
-    /// \param finder The ZoneFinder through which the authority data for the
-    /// query is to be found.
-    /// \param nsec The RRset (NSEC RR) which proved that there is no matched 
-    /// <QNAME,QTTYPE>.
-    void addWildcardNXRRSETProof(isc::datasrc::ZoneFinder& finder,
-                                 isc::dns::ConstRRsetPtr nsec);
 
     /// \brief Look up additional data (i.e., address records for the names
     /// included in NS or MX records) and add them to the additional section.
