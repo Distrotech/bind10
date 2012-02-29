@@ -2,7 +2,7 @@
 
 Administrator Reference for BIND 10
 
-   This is the reference guide for BIND 10 version 20120127.
+   This is the reference guide for BIND 10 version 20120301.
 
    Copyright (c) 2010-2012 Internet Systems Consortium, Inc.
 
@@ -14,7 +14,7 @@ Administrator Reference for BIND 10
    for controlling authoritative and recursive DNS servers, and experimental
    DHCPv4 and DHCPv6 servers.
 
-   This is the reference guide for BIND 10 version 20120127. The most
+   This is the reference guide for BIND 10 version 20120301. The most
    up-to-date version of this document (in PDF, HTML, and plain text
    formats), along with other documents for BIND 10, can be found at
    http://bind10.isc.org/docs.
@@ -172,7 +172,7 @@ Chapter 1. Introduction
    DNS. BIND 10 provides a EDNS0- and DNSSEC-capable authoritative DNS server
    and a caching recursive name server which also provides forwarding.
 
-   This guide covers the experimental prototype of BIND 10 version 20120127.
+   This guide covers the experimental prototype of BIND 10 version 20120301.
 
 1.1. Supported Platforms
 
@@ -591,7 +591,7 @@ Chapter 3. Starting BIND10 with bind10
 
    This system allows you to start the same component multiple times (by
    including it in the configuration with different names, but the same
-   process setting). However, the rest of the system doesn't expect such
+   process setting). However, the rest of the system doesn't expect such a
    situation, so it would probably not do what you want. Such support is yet
    to be implemented.
 
@@ -601,8 +601,8 @@ Chapter 3. Starting BIND10 with bind10
    mistakes. You could turn off the b10-cmdctl, but then you couldn't change
    it back the usual way, as it would require it to be running (you would
    have to find and edit the configuration directly). Also, some modules
-   might have dependencies -- b10-stats-httpd need b10-stats, b10-xfrout
-   needs the b10-auth to be running, etc.
+   might have dependencies: b10-stats-httpd needs b10-stats, b10-xfrout needs
+   b10-auth to be running, etc.
 
    In short, you should think twice before disabling something here.
 
