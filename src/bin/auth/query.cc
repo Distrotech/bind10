@@ -138,6 +138,21 @@ public:
     //       for the covering NSEC3.
     void getWildcardProof(vector<ConstRRsetPtr>& proofs);
 
+    // Called for DELEGATION case.  Return either DS (if it's signed
+    // delegation), NSEC/NSEC3 (if unsigned delegation and the parent is
+    // signed with NSEC/NSEC3).
+    //
+    // Default versiopn: internally calls find() for the delegation name/DS.
+    //   On SUCCESS return the answer RRset; On NXRRSET + NSEC (and if NSEC
+    //   returned), return the returned (NSEC) RRset; On NXRRSET + NSEC3,
+    //   call findNSEC3() recursive mode for the delegation name, and return
+    //   exact or closest encloser proof.
+    // Optimized in-memory version: it should know the rbtree node for the
+    //   delegation point.  If it has DS, return it; if not but it has NSEC,
+    //   return it; otherwise same as NSEC3 + NXRRSET (no wild) case for
+    //   getNegativeProof().
+    void getDelegationProof(vector<ConstRRsetPtr>& proofs);
+
 private:
     void getAdditionalAddrs(const Name& name,
                             const vector<RRType>& requested_types,
@@ -340,6 +355,28 @@ FindContext::getWildcardProof(vector<ConstRRsetPtr>& proofs) {
 }
 
 void
+FindContext::getDelegationProof(vector<ConstRRsetPtr>& proofs) {
+    ZoneFinder::FindResult ds_result =
+        finder.find(rrset->getName(), RRType::DS(), ZoneFinder::FIND_DNSSEC);
+    FindContext ds_ctx(finder, rrset->getName(), RRType::DS(),
+                       ds_result, ds_result.rrset, dnssec);
+    if (ds_result.code == ZoneFinder::SUCCESS) {
+        proofs.push_back(ds_result.rrset);
+    } else if (ds_result.code == ZoneFinder::NXRRSET &&
+               ds_result.isNSECSigned() && ds_result.rrset) {
+        proofs.push_back(ds_result.rrset);
+    } else if (ds_result.code == ZoneFinder::NXRRSET &&
+               ds_result.isNSEC3Signed()) {
+        // Add no DS proof with NSEC3 as specified in RFC 5155 Section 7.2.7.
+        getClosestEncloserProof(rrset->getName(), proofs, true);
+    } else {
+        // Any other case should be an error
+        isc_throw(auth::Query::BadDS,
+                  "Unexpected result for DS lookup for delegation");
+    }
+}
+
+void
 FindContext::getWildcardNXRRSETProof(vector<ConstRRsetPtr>& proofs) {
     if (nsec_signed) {
         // There should be one NSEC RR which was found in the zone to prove
@@ -504,34 +541,6 @@ Query::addNSEC3ForName(ZoneFinder& finder, const Name& name, bool match) {
                        boost::const_pointer_cast<AbstractRRset>(
                            result.closest_proof),
                        dnssec_);
-}
-
-void
-Query::addDS(FindContext& /*ctx*/, ZoneFinder& finder, const Name& dname) {
-    ZoneFinder::FindResult ds_result =
-        finder.find(dname, RRType::DS(), dnssec_opt_);
-    FindContext ds_ctx(finder, dname, RRType::DS(),
-                       ds_result, ds_result.rrset, dnssec_);
-    if (ds_result.code == ZoneFinder::SUCCESS) {
-        response_.addRRset(Message::SECTION_AUTHORITY,
-                           boost::const_pointer_cast<AbstractRRset>(
-                               ds_result.rrset),
-                           dnssec_);
-    } else if (ds_result.code == ZoneFinder::NXRRSET &&
-               ds_result.isNSECSigned()) {
-        vector<ConstRRsetPtr> proofs;
-        ds_ctx.getNegativeProof(proofs);
-        for_each(proofs.begin(), proofs.end(),
-                 RRsetInserter(response_, Message::SECTION_AUTHORITY,
-                               dnssec_));
-    } else if (ds_result.code == ZoneFinder::NXRRSET &&
-               ds_result.isNSEC3Signed()) {
-        // Add no DS proof with NSEC3 as specified in RFC 5155 Section 7.2.7.
-        addClosestEncloserProof(finder, dname, true);
-    } else {
-        // Any other case should be an error
-        isc_throw(BadDS, "Unexpected result for DS lookup for delegation");
-    }
 }
 
 void
@@ -736,12 +745,15 @@ Query::process() {
             response_.addRRset(Message::SECTION_AUTHORITY,
                 boost::const_pointer_cast<AbstractRRset>(db_result.rrset),
                 dnssec_);
+            addAdditional(ctx);
             // If DNSSEC is requested, see whether there is a DS
             // record for this delegation.
             if (dnssec_) {
-                addDS(ctx, *result.zone_finder, db_result.rrset->getName());
+                ctx.getDelegationProof(proofs);
+                for_each(proofs.begin(), proofs.end(),
+                         RRsetInserter(response_, Message::SECTION_AUTHORITY,
+                                       dnssec_));
             }
-            addAdditional(ctx);
             break;
         case ZoneFinder::NXDOMAIN:
             response_.setRcode(Rcode::NXDOMAIN());
