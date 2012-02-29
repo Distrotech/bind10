@@ -74,18 +74,6 @@ public:
     void getAdditional(const vector<RRType>& requested_types,
                        vector<ConstRRsetPtr>& result);
 
-    // Called for NXDOMAIN + NSEC-signed case.  Return an NSEC that proves
-    // there's no matching wildcard for the original qname.
-    //
-    // Default version: construct the best possible wildcard name from qname
-    // and the NSEC that proves non-existent of the name, and internally calls
-    // find(NSEC) for that name.
-    //
-    // Optimized in-memory version: it should know the closest encloser in
-    // the previous search and can identify the wildcard name and its previous
-    // name, then subsequently its NSEC.
-    ConstRRsetPtr getNoWildcardNSEC();
-
     // Called for NXDOMAIN/NXRRSET cases and return NSEC/NSEC3 RRsets
     // for the corresponding DNSSEC proof.  It (will) consist of small helper
     // private methods for specific cases (NSEC or NSEC3, NXDOMAIN or NXRRSET).
@@ -99,6 +87,16 @@ public:
     //   Optimized in-memory version: it should know where in the rbtree the
     //     original (non wildcard) search stopped and can use the information
     //     to get the NSEC proof for the non existence of the qname itself.
+    // - NSEC + NXDOMAIN
+    //   find() already returns the NSEC the non existent proof, so it should
+    //   be already efficient.  The ramining issue is the proof that there's
+    //   even no wildcard match.
+    //   Default version: construct the best possible wildcard name from qname
+    //     and the NSEC that proves non-existent of the name, and internally
+    //     calls find(NSEC) for that name.
+    //   Optimized in-memory version: it should know the closest encloser in
+    //     the previous search and can identify the wildcard name and its
+    //     previous name, then subsequently its NSEC.
     //
     // - NSEC3 + NXDOMAIN
     //   Default version: use findNSEC3() to get closest encloser proof, use
@@ -115,6 +113,13 @@ public:
     //     for the qanem.  Get the hash value from it and get its NSEC3.
     //     If it doesn't exist and qtype was DS, search the tree back toward
     //     the root until it finds a matching NSEC3.
+    // - NSEC3 + NXRRSET (wildcard)
+    //   Default version: use findNSEC3() to get the closest encloser proof,
+    //     construct the wildcard name based on the result, and get the NSEC3
+    //     for it.
+    //   Optimized in-memory version: similar to the NSEC3 + NXDOMAIN case.
+    //     But the wildcard name should exist so it could even more optimize
+    //     it by directly getting the wildcard node and its NSEC3.
     void getNegativeProof(vector<ConstRRsetPtr>& proofs);
 
     // Called for SUCCESS/CNAME cases when it's wildcard substitution
@@ -143,7 +148,8 @@ private:
                                     vector<ConstRRsetPtr>& proofs,
                                     bool exact_ok, bool add_closest = true);
     ConstRRsetPtr getNSEC3ForName(const Name& name, bool match);
-
+    void getNXDOMAINProofByNSEC(vector<ConstRRsetPtr>& proofs);
+    ConstRRsetPtr getNoWildcardNSEC();
     void getWildcardNXRRSETProof(vector<ConstRRsetPtr>& proofs);
 
 private:
@@ -242,6 +248,10 @@ void
 FindContext::getNegativeProof(vector<ConstRRsetPtr>& proofs) {
     switch (code) {
     case ZoneFinder::NXDOMAIN: { // should eventually go to a method
+        if (nsec_signed) {
+            getNXDOMAINProofByNSEC(proofs);
+            return;
+        }
         // Firstly get the NSEC3 proves for Closest Encloser Proof
         // See Section 7.2.1 of RFC 5155.
         const uint8_t closest_labels =
@@ -275,6 +285,31 @@ FindContext::getNegativeProof(vector<ConstRRsetPtr>& proofs) {
         assert(false);
     }
 }
+
+void
+FindContext::getNXDOMAINProofByNSEC(vector<ConstRRsetPtr>& proofs) {
+    if (!rrset) {
+        return;
+    }
+    if (rrset->getRdataCount() == 0) {
+        isc_throw(auth::Query::BadNSEC, "NSEC for NXDOMAIN is empty");
+    }
+    proofs.push_back(rrset);
+    ConstRRsetPtr wnsec = getNoWildcardNSEC();
+    if (!wnsec) {
+        isc_throw(auth::Query::BadNSEC,
+                  "Unexpected result for wildcard NXDOMAIN proof");
+    }
+    // Add the (no-) wildcard proof only when it's different from the NSEC
+    // that proves NXDOMAIN; sometimes they can be the same.
+    // Note: name comparison is relatively expensive.  When we are at the
+    // stage of performance optimization, we should consider optimizing this
+    // for some optimized data source implementations.
+    if (rrset->getName() != wnsec->getName()) {
+        proofs.push_back(wnsec);
+    }
+}
+
 
 void
 FindContext::getWildcardProof(vector<ConstRRsetPtr>& proofs) {
@@ -421,42 +456,6 @@ Query::addSOA(ZoneFinder& finder) {
          */
         response_.addRRset(Message::SECTION_AUTHORITY,
             boost::const_pointer_cast<AbstractRRset>(soa_result.rrset), dnssec_);
-    }
-}
-
-// Note: unless the data source client implementation or the zone content
-// is broken, 'ctx.rrset' should be a valid NSEC RR.  Likewise, the call to
-// find() in this method should result in NXDOMAIN and an NSEC RR that proves
-// the non existent of matching wildcard.  If these assumptions aren't met
-// due to a buggy data source implementation or a broken zone, we'll let
-// underlying libdns++ modules throw an exception, which would result in
-// either an SERVFAIL response or just ignoring the query.  We at least prevent
-// a complete crash due to such broken behavior.
-void
-Query::addNXDOMAINProofByNSEC(FindContext& ctx) {
-    if (ctx.rrset->getRdataCount() == 0) {
-        isc_throw(BadNSEC, "NSEC for NXDOMAIN is empty");
-    }
-
-    // Add the NSEC proving NXDOMAIN to the authority section.
-    response_.addRRset(Message::SECTION_AUTHORITY,
-                       boost::const_pointer_cast<AbstractRRset>(ctx.rrset),
-                       dnssec_);
-
-    ConstRRsetPtr wnsec = ctx.getNoWildcardNSEC();
-    if (!wnsec) {
-        isc_throw(BadNSEC, "Unexpected result for wildcard NXDOMAIN proof");
-    }
-
-    // Add the (no-) wildcard proof only when it's different from the NSEC
-    // that proves NXDOMAIN; sometimes they can be the same.
-    // Note: name comparison is relatively expensive.  When we are at the
-    // stage of performance optimization, we should consider optimizing this
-    // for some optimized data source implementations.
-    if (ctx.rrset->getName() != wnsec->getName()) {
-        response_.addRRset(Message::SECTION_AUTHORITY,
-                           boost::const_pointer_cast<AbstractRRset>(wnsec),
-                           dnssec_);
     }
 }
 
@@ -746,19 +745,7 @@ Query::process() {
             break;
         case ZoneFinder::NXDOMAIN:
             response_.setRcode(Rcode::NXDOMAIN());
-            addSOA(*result.zone_finder);
-            if (dnssec_) {
-                if (db_result.isNSECSigned() && db_result.rrset) {
-                    addNXDOMAINProofByNSEC(ctx);
-                } else if (db_result.isNSEC3Signed()) {
-                    ctx.getNegativeProof(proofs);
-                    for_each(proofs.begin(), proofs.end(),
-                             RRsetInserter(response_,
-                                           Message::SECTION_AUTHORITY,
-                                           dnssec_));
-                }
-            }
-            break;
+            // Fall-through
         case ZoneFinder::NXRRSET:
             addSOA(*result.zone_finder);
             if (dnssec_) {

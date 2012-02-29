@@ -88,11 +88,6 @@ private:
                isc::datasrc::ZoneFinder& finder,
                const isc::dns::Name& ds_name);
 
-    /// Add NSEC RRs that prove an NXDOMAIN result.
-    ///
-    /// This corresponds to Section 3.1.3.2 of RFC 4035.
-    void addNXDOMAINProofByNSEC(isc::datasrc::FindContext& ctx);
-
     /// \brief Look up additional data (i.e., address records for the names
     /// included in NS or MX records) and add them to the additional section.
     ///
