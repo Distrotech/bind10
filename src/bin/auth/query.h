@@ -64,51 +64,6 @@ namespace auth {
 /// we keep this name at the moment.
 class Query {
 private:
-
-    /// \brief Adds a SOA.
-    ///
-    /// Adds a SOA of the zone into the authority zone of response_.
-    /// Can throw NoSOA.
-    ///
-    void addSOA(isc::datasrc::ZoneFinder& finder);
-
-    /// \brief Look up additional data (i.e., address records for the names
-    /// included in NS or MX records) and add them to the additional section.
-    ///
-    /// Note: Any additional data which has already been provided in the
-    /// answer section (i.e., if the original query happend to be for the
-    /// address of the DNS server), it should be omitted from the additional.
-    ///
-    /// This method may throw a exception because its underlying methods may
-    /// throw exceptions.
-    ///
-    /// \param zone The ZoneFinder through which the additional data for the
-    /// query is to be found.
-    /// \param rrset The RRset (i.e., NS or MX rrset) which require additional
-    /// processing.
-    void addAdditional(isc::datasrc::FindContext& ctx);
-
-    /// \brief Find address records for a specified name.
-    ///
-    /// Search the specified zone for AAAA/A RRs of each of the NS/MX RDATA
-    /// (domain name), and insert the found ones into the additional section
-    /// if address records are available. By default the search will stop
-    /// once it encounters a zone cut.
-    ///
-    /// Note: we need to perform the search in the "GLUE OK" mode for NS RDATA,
-    /// which means that we should include A/AAAA RRs under a zone cut.
-    /// The glue records must exactly match the name in the NS RDATA, without
-    /// CNAME or wildcard processing.
-    ///
-    /// \param zone The \c ZoneFinder through which the address records is to
-    /// be found.
-    /// \param qname The name in rrset RDATA.
-    /// \param options The search options.
-    void addAdditionalAddrs(isc::datasrc::ZoneFinder& zone,
-                            const isc::dns::Name& qname,
-                            const isc::datasrc::ZoneFinder::FindOptions options
-                            = isc::datasrc::ZoneFinder::FIND_DEFAULT);
-
     /// \brief Process a DS query possible at the child side of zone cut.
     ///
     /// This private method is a subroutine of process(), and is called if

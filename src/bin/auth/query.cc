@@ -67,10 +67,37 @@ public:
         nsec3_signed(result_param.isNSEC3Signed()),
         wildcard(result_param.isWildcard())
     {}
+
+    FindContext(ZoneFinder& finder_param,
+                const Name& qname_param,
+                RRType qtype_param,
+                const ZoneFinder::FindResult& result_param,
+                ConstRRsetPtr rrset_param,
+                vector<ConstRRsetPtr>& rrsets_param, bool dnssec_param) :
+        code(result_param.code), rrset(rrset_param), rrsets(rrsets_param),
+        finder(finder_param), qname(qname_param), qtype(qtype_param),
+        dnssec(dnssec_param), nsec_signed(result_param.isNSECSigned()),
+        nsec3_signed(result_param.isNSEC3Signed()),
+        wildcard(result_param.isWildcard())
+    {}
     const ZoneFinder::Result code;
     const ConstRRsetPtr rrset;
+    vector<ConstRRsetPtr> rrsets; // note: this can't be a ref; we need a copy.
 
-    // Find 'additional' RRsets based on the find() result.
+    // Called when adding 'additional' RRsets based on the context status.
+    // Normally it adds A/AAA corresponding to the RRset identified in the
+    // associated find() call.  When it was type ANY query, it returns
+    // additional RRsets for each RRset in the returned vector.  If
+    // getAtOrigin(RRType::NS()) has been called, it returns additional RRsets
+    // for the result of getAtOrigin() (this is not really clean, hopefully
+    // there's cleaner way).
+    //
+    // Default version: iterate over all RDATAs of the RRset(s) and call
+    //   find(A/AAAA) for the corresponding part of the RDATA (NS name for NS,
+    //   etc).
+    // Optimized in-memory version: it (will) have shortcuts from the RRset
+    //   to the rbt nodes of the corresonding additional RRsets.  It search
+    //   for A/AAAA RRsets in the references nodes and returns them.
     void getAdditional(const vector<RRType>& requested_types,
                        vector<ConstRRsetPtr>& result);
 
@@ -177,6 +204,9 @@ public:
     ConstRRsetPtr getAtOrigin(RRType type);
 
 private:
+    void getAdditionalForRRset(const AbstractRRset& base_rrset,
+                               const vector<RRType>& requested_types,
+                               vector<ConstRRsetPtr>& result);
     void getAdditionalAddrs(const Name& name,
                             const vector<RRType>& requested_types,
                             vector<ConstRRsetPtr>& result,
@@ -272,8 +302,22 @@ void
 FindContext::getAdditional(const vector<RRType>& requested_types,
                            vector<ConstRRsetPtr>& result)
 {
-    const ConstRRsetPtr base_rrset = ns_rrset ? ns_rrset : rrset;
-    RdataIteratorPtr rdata_iterator(base_rrset->getRdataIterator());
+    if (rrset || ns_rrset) {
+        getAdditionalForRRset(ns_rrset ? *ns_rrset : *rrset, requested_types,
+                              result);
+    } else {
+        BOOST_FOREACH(ConstRRsetPtr rrset_in_set, rrsets) {
+            getAdditionalForRRset(*rrset_in_set, requested_types, result);
+        }
+    }
+}
+
+void
+FindContext::getAdditionalForRRset(const AbstractRRset& base_rrset,
+                                   const vector<RRType>& requested_types,
+                                   vector<ConstRRsetPtr>& result)
+{
+    RdataIteratorPtr rdata_iterator(base_rrset.getRdataIterator());
     ZoneFinder::FindOptions options = ZoneFinder::FIND_DEFAULT;
     if (dnssec) {
         options = options | ZoneFinder::FIND_DNSSEC;
@@ -281,12 +325,12 @@ FindContext::getAdditional(const vector<RRType>& requested_types,
     for (; !rdata_iterator->isLast(); rdata_iterator->next()) {
         const Rdata& rdata(rdata_iterator->getCurrent());
 
-        if (base_rrset->getType() == RRType::NS()) {
+        if (base_rrset.getType() == RRType::NS()) {
             // Need to perform the search in the "GLUE OK" mode.
             const generic::NS& ns = dynamic_cast<const generic::NS&>(rdata);
             getAdditionalAddrs(ns.getNSName(), requested_types, result,
                                options | ZoneFinder::FIND_GLUE_OK);
-        } else if (base_rrset->getType() == RRType::MX()) {
+        } else if (base_rrset.getType() == RRType::MX()) {
             const generic::MX& mx(dynamic_cast<const generic::MX&>(rdata));
             getAdditionalAddrs(mx.getMXName(), requested_types, result,
                                options);
@@ -548,7 +592,9 @@ namespace isc {
 namespace auth {
 
 void
-Query::addAdditional(FindContext& ctx) {
+getAdditional(const Name& qname, RRType qtype, FindContext& ctx,
+              vector<ConstRRsetPtr>& results)
+{
     vector<RRType> needed_types;
     needed_types.push_back(RRType::A());
     needed_types.push_back(RRType::AAAA());
@@ -559,13 +605,11 @@ Query::addAdditional(FindContext& ctx) {
     vector<ConstRRsetPtr>::const_iterator it = additionals.begin();
     vector<ConstRRsetPtr>::const_iterator it_end = additionals.end();
     for (; it != it_end; ++it) {
-        if ((qtype_ == (*it)->getType() || qtype_ == RRType::ANY()) &&
-            qname_ == (*it)->getName()) {
+        if ((qtype == (*it)->getType() || qtype == RRType::ANY()) &&
+            qname == (*it)->getName()) {
             continue;
         }
-        response_.addRRset(Message::SECTION_ADDITIONAL,
-                           boost::const_pointer_cast<AbstractRRset>(*it),
-                           dnssec_);
+        results.push_back(*it);
     }
 }
 
@@ -615,20 +659,23 @@ Query::process() {
     // indirectly via delegation).  Look into the zone.
     response_.setHeaderFlag(Message::HEADERFLAG_AA);
     response_.setRcode(Rcode::NOERROR());
-    std::vector<ConstRRsetPtr> target;
     boost::function0<ZoneFinder::FindResult> find;
     vector<ConstRRsetPtr> answers;
     vector<ConstRRsetPtr> authorities;
+    vector<ConstRRsetPtr> additionals;
     const bool qtype_is_any = (qtype_ == RRType::ANY());
     if (qtype_is_any) {
         find = boost::bind(&ZoneFinder::findAll, &zfinder, qname_,
-                           boost::ref(target), dnssec_opt_);
+                           boost::ref(answers), dnssec_opt_);
     } else {
         find = boost::bind(&ZoneFinder::find, &zfinder, qname_, qtype_,
                            dnssec_opt_);
     }
     ZoneFinder::FindResult db_result(find());
-    FindContext ctx(zfinder, qname_, qtype_, db_result, db_result.rrset,
+    FindContext ctx = qtype_is_any ?
+        FindContext(zfinder, qname_, qtype_, db_result, db_result.rrset,
+                    answers, dnssec_) :
+        FindContext(zfinder, qname_, qtype_, db_result, db_result.rrset,
                     dnssec_);
 
     switch (db_result.code) {
@@ -639,9 +686,6 @@ Query::process() {
             if (rcode != Rcode::NOERROR()) {
                 response_.setRcode(rcode);
             }
-            for_each(answers.begin(), answers.end(),
-                     RRsetInserter(response_, Message::SECTION_ANSWER,
-                                   dnssec_));
             break;
         }
         case ZoneFinder::CNAME:
@@ -654,39 +698,21 @@ Query::process() {
              *
              * So, just put it there.
              */
-            response_.addRRset(Message::SECTION_ANSWER,
-                boost::const_pointer_cast<AbstractRRset>(db_result.rrset),
-                dnssec_);
+            answers.push_back(db_result.rrset);
 
             // If the answer is a result of wildcard substitution,
             // add a proof that there's no closer name.
             if (dnssec_ && db_result.isWildcard()) {
                 ctx.getWildcardProof(authorities);
-                for_each(authorities.begin(), authorities.end(),
-                         RRsetInserter(response_, Message::SECTION_AUTHORITY,
-                                       dnssec_));
             }
             break;
         case ZoneFinder::SUCCESS:
-            if (qtype_is_any) {
-                // If quety type is ANY, insert all RRs under the domain
-                // into answer section.
-                BOOST_FOREACH(ConstRRsetPtr rrset, target) {
-                    response_.addRRset(Message::SECTION_ANSWER,
-                        boost::const_pointer_cast<AbstractRRset>(rrset),
-                                       dnssec_);
-                    // Handle additional for answer section
-                    FindContext ctx_any(zfinder, qname_, RRType::ANY(),
-                                        db_result, rrset, dnssec_);
-                    addAdditional(ctx_any);
-                }
-            } else {
-                response_.addRRset(Message::SECTION_ANSWER,
-                    boost::const_pointer_cast<AbstractRRset>(db_result.rrset),
-                    dnssec_);
-                // Handle additional for answer section
-                addAdditional(ctx);
+            if (!qtype_is_any) {
+                answers.push_back(db_result.rrset);
             }
+            // Handle additional for answer section
+            getAdditional(qname_, qtype_, ctx, additionals);
+
             // If apex NS records haven't been provided in the answer
             // section, insert apex NS records into the authority section
             // and AAAA/A RRS of each of the NS RDATA into the additional
@@ -696,7 +722,7 @@ Query::process() {
                 (qtype_ != RRType::NS() && !qtype_is_any))
             {
                 authorities.push_back(ctx.getAtOrigin(RRType::NS()));
-                addAdditional(ctx);
+                getAdditional(qname_, qtype_, ctx, additionals);
             }
 
             // If the answer is a result of wildcard substitution,
@@ -704,9 +730,6 @@ Query::process() {
             if (dnssec_ && db_result.isWildcard()) {
                 ctx.getWildcardProof(authorities);
             }
-            for_each(authorities.begin(), authorities.end(),
-                     RRsetInserter(response_, Message::SECTION_AUTHORITY,
-                                   dnssec_));
             break;
         case ZoneFinder::DELEGATION:
             // If a DS query resulted in delegation, we also need to check
@@ -718,17 +741,12 @@ Query::process() {
             }
 
             response_.setHeaderFlag(Message::HEADERFLAG_AA, false);
-            response_.addRRset(Message::SECTION_AUTHORITY,
-                boost::const_pointer_cast<AbstractRRset>(db_result.rrset),
-                dnssec_);
-            addAdditional(ctx);
+            authorities.push_back(db_result.rrset);
+            getAdditional(qname_, qtype_, ctx, additionals);
             // If DNSSEC is requested, see whether there is a DS
             // record for this delegation.
             if (dnssec_) {
                 ctx.getDelegationProof(authorities);
-                for_each(authorities.begin(), authorities.end(),
-                         RRsetInserter(response_, Message::SECTION_AUTHORITY,
-                                       dnssec_));
             }
             break;
         case ZoneFinder::NXDOMAIN:
@@ -739,9 +757,6 @@ Query::process() {
             if (dnssec_) {
                 ctx.getNegativeProof(authorities);
             }
-            for_each(authorities.begin(), authorities.end(),
-                     RRsetInserter(response_, Message::SECTION_AUTHORITY,
-                                   dnssec_));
             break;
         default:
             // This is basically a bug of the data source implementation,
@@ -750,6 +765,14 @@ Query::process() {
             isc_throw(isc::NotImplemented, "Unknown result code");
             break;
     }
+
+    for_each(answers.begin(), answers.end(),
+             RRsetInserter(response_, Message::SECTION_ANSWER, dnssec_));
+    for_each(authorities.begin(), authorities.end(),
+             RRsetInserter(response_, Message::SECTION_AUTHORITY, dnssec_));
+    for_each(additionals.begin(), additionals.end(),
+             RRsetInserter(response_, Message::SECTION_ADDITIONAL,
+                           dnssec_));
 }
 
 bool
