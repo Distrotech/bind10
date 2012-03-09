@@ -677,121 +677,134 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
         FindState state(options);
         RBTreeNodeChain<Domain> node_path;
         bool rename(false);
-        switch (zone_data_->domains_.find(name, &node, node_path, cutCallback,
-                                          &state)) {
-            case DomainTree::PARTIALMATCH:
-                /*
-                 * In fact, we could use a single variable instead of
-                 * dname_node_ and zonecut_node_. But then we would need
-                 * to distinquish these two cases by something else and
-                 * it seemed little more confusing to me when I wrote it.
-                 *
-                 * Usually at most one of them will be something else than
-                 * NULL (it might happen both are NULL, in which case we
-                 * consider it NOT FOUND). There's one corner case when
-                 * both might be something else than NULL and it is in case
-                 * there's a DNAME under a zone cut and we search in
-                 * glue OK mode ‒ in that case we don't stop on the domain
-                 * with NS and ignore it for the answer, but it gets set
-                 * anyway. Then we find the DNAME and we need to act by it,
-                 * therefore we first check for DNAME and then for NS. In
-                 * all other cases it doesn't matter, as at least one of them
-                 * is NULL.
-                 */
-                if (state.dname_node_ != NULL) {
-                    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_DNAME_FOUND).
-                        arg(state.rrset_->getName());
-                    // We were traversing a DNAME node (and wanted to go
-                    // lower below it), so return the DNAME
-                    return (createFindResult(DNAME,
-                                             prepareRRset(name, state.rrset_,
-                                                          false, options)));
-                }
-                if (state.zonecut_node_ != NULL) {
-                    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_DELEG_FOUND).
-                        arg(state.rrset_->getName());
-                    return (createFindResult(DELEGATION,
-                                             prepareRRset(name, state.rrset_,
-                                                          false, options)));
-                }
-
-                // If the RBTree search stopped at a node for a super domain
-                // of the search name, it means the search name exists in
-                // the zone but is empty.  Treat it as NXRRSET.
-                if (node_path.getLastComparisonResult().getRelation() ==
-                    NameComparisonResult::SUPERDOMAIN) {
-                    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_SUPER_STOP).
-                        arg(name);
-                    return (createFindResult(NXRRSET, ConstRRsetPtr()));
-                }
-
-                /*
-                 * No redirection anywhere. Let's try if it is a wildcard.
-                 *
-                 * The wildcard is checked after the empty non-terminal domain
-                 * case above, because if that one triggers, it means we should
-                 * not match according to 4.3.3 of RFC 1034 (the query name
-                 * is known to exist).
-                 */
-                if (node->getFlag(DOMAINFLAG_WILD)) {
-                    /* Should we cancel this match?
+        if (options & FIND_AT_ORIGIN) {
+            // In case it talks about origin, just give it the origin and don't
+            // search
+            node = zone_data_->origin_data_;
+        } else {
+            switch (zone_data_->domains_.find(name, &node, node_path,
+                                              cutCallback, &state)) {
+                case DomainTree::PARTIALMATCH:
+                    /*
+                     * In fact, we could use a single variable instead of
+                     * dname_node_ and zonecut_node_. But then we would need to
+                     * distinquish these two cases by something else and it
+                     * seemed little more confusing to me when I wrote it.
                      *
-                     * If we compare with some node and get a common ancestor,
-                     * it might mean we are comparing with a non-wildcard node.
-                     * In that case, we check which part is common. If we have
-                     * something in common that lives below the node we got
-                     * (the one above *), then we should cancel the match
-                     * according to section 4.3.3 of RFC 1034 (as the name
-                     * between the wildcard domain and the query name is known
-                     * to exist).
-                     *
-                     * Because the way the tree stores relative names, we will
-                     * have exactly one common label (the ".") in case we have
-                     * nothing common under the node we got and we will get
-                     * more common labels otherwise (yes, this relies on the
-                     * internal RBTree structure, which leaks out through this
-                     * little bit).
-                     *
-                     * If the empty non-terminal node actually exists in the
-                     * tree, then this cancellation is not needed, because we
-                     * will not get here at all.
+                     * Usually at most one of them will be something else than
+                     * NULL (it might happen both are NULL, in which case we
+                     * consider it NOT FOUND). There's one corner case when
+                     * both might be something else than NULL and it is in case
+                     * there's a DNAME under a zone cut and we search in glue
+                     * OK mode ‒ in that case we don't stop on the domain with
+                     * NS and ignore it for the answer, but it gets set anyway.
+                     * Then we find the DNAME and we need to act by it,
+                     * therefore we first check for DNAME and then for NS. In
+                     * all other cases it doesn't matter, as at least one of
+                     * them is NULL.
                      */
-                    if (node_path.getLastComparisonResult().getRelation() ==
-                        NameComparisonResult::COMMONANCESTOR && node_path.
-                        getLastComparisonResult().getCommonLabels() > 1) {
+                    if (state.dname_node_ != NULL) {
                         LOG_DEBUG(logger, DBG_TRACE_DATA,
-                                     DATASRC_MEM_WILDCARD_CANCEL).arg(name);
-                        return (createFindResult(NXDOMAIN, ConstRRsetPtr(),
-                                                 false));
+                                  DATASRC_MEM_DNAME_FOUND).
+                            arg(state.rrset_->getName());
+                        // We were traversing a DNAME node (and wanted to go
+                        // lower below it), so return the DNAME
+                        return (createFindResult(DNAME,
+                                                 prepareRRset(name,
+                                                              state.rrset_,
+                                                              false,
+                                                              options)));
                     }
-                    const Name wildcard(Name("*").concatenate(
-                        node_path.getAbsoluteName()));
-                    DomainTree::Result result =
-                        zone_data_->domains_.find(wildcard, &node);
-                    /*
-                     * Otherwise, why would the DOMAINFLAG_WILD be there if
-                     * there was no wildcard under it?
-                     */
-                    assert(result == DomainTree::EXACTMATCH);
-                    /*
-                     * We have the wildcard node now. Jump below the switch,
-                     * where handling of the common (exact-match) case is.
-                     *
-                     * However, rename it to the searched name.
-                     */
-                    rename = true;
-                    break;
-                }
+                    if (state.zonecut_node_ != NULL) {
+                        LOG_DEBUG(logger, DBG_TRACE_DATA,
+                                  DATASRC_MEM_DELEG_FOUND).
+                            arg(state.rrset_->getName());
+                        return (createFindResult(DELEGATION,
+                                                 prepareRRset(name,
+                                                              state.rrset_,
+                                                              false,
+                                                              options)));
+                    }
 
-                // fall through
-            case DomainTree::NOTFOUND:
-                LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_NOT_FOUND).
-                    arg(name);
-                return (createFindResult(NXDOMAIN, ConstRRsetPtr(), false));
-            case DomainTree::EXACTMATCH: // This one is OK, handle it
-                break;
-            default:
-                assert(0);
+                    // If the RBTree search stopped at a node for a super
+                    // domain of the search name, it means the search name
+                    // exists in the zone but is empty.  Treat it as NXRRSET.
+                    if (node_path.getLastComparisonResult().getRelation() ==
+                        NameComparisonResult::SUPERDOMAIN) {
+                        LOG_DEBUG(logger, DBG_TRACE_DATA,
+                                  DATASRC_MEM_SUPER_STOP).arg(name);
+                        return (createFindResult(NXRRSET, ConstRRsetPtr()));
+                    }
+
+                    /*
+                     * No redirection anywhere. Let's try if it is a wildcard.
+                     *
+                     * The wildcard is checked after the empty non-terminal
+                     * domain case above, because if that one triggers, it
+                     * means we should not match according to 4.3.3 of RFC 1034
+                     * (the query name is known to exist).
+                     */
+                    if (node->getFlag(DOMAINFLAG_WILD)) {
+                        /* Should we cancel this match?
+                         *
+                         * If we compare with some node and get a common
+                         * ancestor, it might mean we are comparing with a
+                         * non-wildcard node.  In that case, we check which
+                         * part is common. If we have something in common that
+                         * lives below the node we got (the one above *), then
+                         * we should cancel the match according to section
+                         * 4.3.3 of RFC 1034 (as the name between the wildcard
+                         * domain and the query name is known to exist).
+                         *
+                         * Because the way the tree stores relative names, we
+                         * will have exactly one common label (the ".") in case
+                         * we have nothing common under the node we got and we
+                         * will get more common labels otherwise (yes, this
+                         * relies on the internal RBTree structure, which leaks
+                         * out through this little bit).
+                         *
+                         * If the empty non-terminal node actually exists in
+                         * the tree, then this cancellation is not needed,
+                         * because we will not get here at all.
+                         */
+                        if (node_path.getLastComparisonResult().getRelation() ==
+                            NameComparisonResult::COMMONANCESTOR && node_path.
+                            getLastComparisonResult().getCommonLabels() > 1) {
+                            LOG_DEBUG(logger, DBG_TRACE_DATA,
+                                      DATASRC_MEM_WILDCARD_CANCEL).arg(name);
+                            return (createFindResult(NXDOMAIN, ConstRRsetPtr(),
+                                                     false));
+                        }
+                        const Name wildcard(Name("*").concatenate(
+                            node_path.getAbsoluteName()));
+                        DomainTree::Result result =
+                            zone_data_->domains_.find(wildcard, &node);
+                        /*
+                         * Otherwise, why would the DOMAINFLAG_WILD be there if
+                         * there was no wildcard under it?
+                         */
+                        assert(result == DomainTree::EXACTMATCH);
+                        /*
+                         * We have the wildcard node now. Jump below the switch,
+                         * where handling of the common (exact-match) case is.
+                         *
+                         * However, rename it to the searched name.
+                         */
+                        rename = true;
+                        break;
+                    }
+
+                    // fall through
+                case DomainTree::NOTFOUND:
+                    LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_NOT_FOUND).
+                        arg(name);
+                    return (createFindResult(NXDOMAIN, ConstRRsetPtr(),
+                                             false));
+                case DomainTree::EXACTMATCH: // This one is OK, handle it
+                    break;
+                default:
+                    assert(0);
+            }
         }
         assert(node != NULL);
 
