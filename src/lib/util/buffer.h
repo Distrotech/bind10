@@ -383,8 +383,8 @@ public:
         // fail, we couldn't catch it.
         //
         // The unproven theory behind this is that throw is heawy enough so it
-        // makes the compiler not to inline this thing. With assert, it is below
-        // the limit, so it is inlined, the assert is optimised out so it
+        // makes the compiler not to inline this thing. With assert, it is
+        // below the limit, so it is inlined, the assert is optimised out so it
         // happens only once before the whole block of accesses, so one access
         // is changed to a single instruction (or, possibly, multiple
         // consecutive accesses changed to a int-based access).
