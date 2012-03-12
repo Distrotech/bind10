@@ -1015,6 +1015,8 @@ TEST_F(QueryTest, exactAddrMatch) {
 TEST_F(QueryTest, apexNSMatch) {
     // find match rrset, omit authority data which has already been provided
     // in the answer section from the authority section.
+    mock_finder->skip_find_at_origin_check_ = true; // Querying the origin
+                                                    // directly
     EXPECT_NO_THROW(Query(memory_client, Name("example.com"), RRType::NS(),
                           response).process());
 
@@ -1040,6 +1042,8 @@ TEST_F(QueryTest, exactAnyMatch) {
 TEST_F(QueryTest, apexAnyMatch) {
     // find match rrset, omit additional data which has already been provided
     // in the answer section from the additional.
+    mock_finder->skip_find_at_origin_check_ = true; // Querying the origin
+                                                    // directly
     EXPECT_NO_THROW(Query(memory_client, Name("example.com"),
                           RRType::ANY(), response).process());
     responseCheck(response, Rcode::NOERROR(), AA_FLAG, 5, 0, 3,
@@ -2091,6 +2095,8 @@ TEST_F(QueryTest, dsAboveDelegationNoData) {
 // when it happens to be sent to the child zone, as described in RFC 4035,
 // section 3.1.4.1. The example is inspired by the B.8. example from the RFC.
 TEST_F(QueryTest, dsBelowDelegation) {
+    mock_finder->skip_find_at_origin_check_ = true; // Querying the origin
+                                                    // directly
     EXPECT_NO_THROW(Query(memory_client, Name("example.com"),
                           RRType::DS(), response, true).process());
 
@@ -2107,6 +2113,8 @@ TEST_F(QueryTest, dsBelowDelegation) {
 // exists in the child zone.  The Query module should still return SOA.
 // In our implementation NSEC/NSEC3 isn't attached in this case.
 TEST_F(QueryTest, dsBelowDelegationWithDS) {
+    mock_finder->skip_find_at_origin_check_ = true; // Querying the origin
+                                                    // directly
     mock_finder->addRecord(zone_ds_txt); // add the DS to the child's apex
     EXPECT_NO_THROW(Query(memory_client, Name("example.com"),
                           RRType::DS(), response, true).process());

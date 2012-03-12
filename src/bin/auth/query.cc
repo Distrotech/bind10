@@ -93,7 +93,8 @@ namespace auth {
 void
 Query::addSOA(ZoneFinder& finder) {
     ZoneFinderContextPtr soa_ctx = finder.find(finder.getOrigin(),
-                                               RRType::SOA(), dnssec_opt_);
+                                               RRType::SOA(), dnssec_opt_ |
+                                               ZoneFinder::FIND_AT_ORIGIN);
     if (soa_ctx->code != ZoneFinder::SUCCESS) {
         isc_throw(NoSOA, "There's no SOA record in zone " <<
             finder.getOrigin().toText());
@@ -347,7 +348,8 @@ Query::addAuthAdditional(ZoneFinder& finder,
 
     // Fill in authority and addtional sections.
     ConstZoneFinderContextPtr ns_context = finder.find(origin, RRType::NS(),
-                                                       dnssec_opt_);
+                                                       dnssec_opt_ |
+         ZoneFinder::FIND_AT_ORIGIN);
 
     // zone origin name should have NS records
     if (ns_context->code != ZoneFinder::SUCCESS) {
