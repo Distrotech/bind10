@@ -633,6 +633,9 @@ ZoneFinderContextPtr
 MockZoneFinder::find(const Name& name, const RRType& type,
                      const FindOptions options)
 {
+    EXPECT_TRUE(name == origin_ || !(options & FIND_AT_ORIGIN)) <<
+        "The FIND_AT_ORIGIN optimisation hint provided when not searching "
+        "origin";
     // Emulating a broken zone: mandatory apex RRs are missing if specifically
     // configured so (which are rare cases).
     if (name == origin_ && type == RRType::SOA() && !has_SOA_) {
