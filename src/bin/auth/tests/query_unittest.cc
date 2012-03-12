@@ -295,7 +295,8 @@ public:
         use_nsec3_(false),
         nsec_name_(origin_),
         nsec3_fake_(NULL),
-        nsec3_name_(NULL)
+        nsec3_name_(NULL),
+        skip_find_at_origin_check_(false)
     {
         stringstream zone_stream;
         zone_stream << soa_txt << zone_ns_txt << ns_addrs_txt <<
@@ -529,6 +530,11 @@ private:
 public:
     // Public, to allow tests looking up the right names for something
     map<Name, string> hash_map_;
+    // Should we skip checking the optimisation flag FIND_AT_ORIGIN is
+    // present if a query for origi comes? It might be useful when doing
+    // a real query against the origin - then the first find would not
+    // have it.
+    bool skip_find_at_origin_check_;
 };
 
 // A helper function that generates a new RRset based on "wild_rrset",
@@ -636,6 +642,9 @@ MockZoneFinder::find(const Name& name, const RRType& type,
     EXPECT_TRUE(name == origin_ || !(options & FIND_AT_ORIGIN)) <<
         "The FIND_AT_ORIGIN optimisation hint provided when not searching "
         "origin";
+
+    EXPECT_TRUE(name != origin_ || options & FIND_AT_ORIGIN ||
+                skip_find_at_origin_check_);
     // Emulating a broken zone: mandatory apex RRs are missing if specifically
     // configured so (which are rare cases).
     if (name == origin_ && type == RRType::SOA() && !has_SOA_) {
