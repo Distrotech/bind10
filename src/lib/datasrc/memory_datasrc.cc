@@ -39,10 +39,12 @@
 #include <utility>
 #include <cctype>
 #include <cassert>
+#include <new>
 
 using namespace std;
 using namespace isc::dns;
 using namespace isc::dns::rdata;
+using boost::shared_ptr;
 using boost::scoped_ptr;
 
 namespace isc {
@@ -54,8 +56,8 @@ namespace {
 // Some type aliases
 
 // RRset specified for this implementation
-typedef boost::shared_ptr<internal::RBNodeRRset> RBNodeRRsetPtr;
-typedef boost::shared_ptr<const internal::RBNodeRRset> ConstRBNodeRRsetPtr;
+typedef shared_ptr<internal::RBNodeRRset> RBNodeRRsetPtr;
+typedef shared_ptr<const internal::RBNodeRRset> ConstRBNodeRRsetPtr;
 
 /*
  * Each domain consists of some RRsets. They will be looked up by the
@@ -70,7 +72,7 @@ typedef boost::shared_ptr<const internal::RBNodeRRset> ConstRBNodeRRsetPtr;
  */
 typedef map<RRType, ConstRBNodeRRsetPtr> Domain;
 typedef Domain::value_type DomainPair;
-typedef boost::shared_ptr<Domain> DomainPtr;
+typedef shared_ptr<Domain> DomainPtr;
 // The tree stores domains
 typedef RBTree<Domain> DomainTree;
 typedef RBNode<Domain> DomainNode;
@@ -429,6 +431,18 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
     // Pool of finder contexts
     scoped_ptr<boost::object_pool<Context> > default_ctx_pool_;
     boost::object_pool<Context>* ctx_pool_;
+    shared_ptr<Context> getContext(ZoneFinder& finder,
+                                   ZoneFinder::FindOptions options,
+                                   const RBNodeResultContext& result)
+    {
+        Context* p = ctx_pool_->construct(finder, options, result);
+        if (p == NULL) {
+            throw bad_alloc();
+        }
+        return (shared_ptr<Context>(
+                    p, boost::bind(&InMemoryZoneFinderImpl::destroyContext,
+                                   this, _1)));
+    }
     void destroyContext(Context* ctx) {
         ctx_pool_->destroy(ctx);
     }
@@ -1220,12 +1234,8 @@ ZoneFinderContextPtr
 InMemoryZoneFinder::find(const Name& name, const RRType& type,
                          const FindOptions options)
 {
-    return (boost::shared_ptr<Context>(
-                impl_->ctx_pool_->construct(
-                    *this, options,
-                    impl_->find(name, type, NULL, options)),
-                boost::bind(&InMemoryZoneFinderImpl::destroyContext, impl_,
-                            _1)));
+    return (impl_->getContext(*this, options,
+                              impl_->find(name, type, NULL, options)));
 }
 
 ZoneFinderContextPtr
@@ -1233,12 +1243,8 @@ InMemoryZoneFinder::findAll(const Name& name,
                             std::vector<ConstRRsetPtr>& target,
                             const FindOptions options)
 {
-    return (boost::shared_ptr<Context>(
-                impl_->ctx_pool_->construct(
-                    *this, options,
-                    impl_->find(name, RRType::ANY(), &target, options)),
-                boost::bind(&InMemoryZoneFinderImpl::destroyContext, impl_,
-                            _1)));
+    return (impl_->getContext(*this, options, impl_->find(name, RRType::ANY(),
+                                                          &target, options)));
 }
 
 ZoneFinder::FindNSEC3Result
@@ -1489,7 +1495,7 @@ InMemoryClient::getZoneCount() const {
 
 result::Result
 InMemoryClient::addZone(ZoneFinderPtr zone_finder) {
-    typedef boost::shared_ptr<InMemoryZoneFinder> InMemoryZoneFinderPtr;
+    typedef shared_ptr<InMemoryZoneFinder> InMemoryZoneFinderPtr;
     InMemoryZoneFinderPtr inmemory_finder =
         boost::dynamic_pointer_cast<InMemoryZoneFinder>(zone_finder);
     if (!inmemory_finder) {
