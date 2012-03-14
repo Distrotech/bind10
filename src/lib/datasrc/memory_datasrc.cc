@@ -413,7 +413,9 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
     // Constructor
     InMemoryZoneFinderImpl(const RRClass& zone_class, const Name& origin) :
         zone_class_(zone_class), origin_(origin),
-        zone_data_(new ZoneData(origin_))
+        zone_data_(new ZoneData(origin_)),
+        default_ctx_pool_(new boost::object_pool<Context>),
+        ctx_pool_(default_ctx_pool_.get())
     {}
 
     // Information about the zone
@@ -423,6 +425,13 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
 
     // The actual zone data
     scoped_ptr<ZoneData> zone_data_;
+
+    // Pool of finder contexts
+    scoped_ptr<boost::object_pool<Context> > default_ctx_pool_;
+    boost::object_pool<Context>* ctx_pool_;
+    void destroyContext(Context* ctx) {
+        ctx_pool_->destroy(ctx);
+    }
 
     // Add the necessary magic for any wildcard contained in 'name'
     // (including itself) to be found in the zone.
@@ -1211,9 +1220,12 @@ ZoneFinderContextPtr
 InMemoryZoneFinder::find(const Name& name, const RRType& type,
                          const FindOptions options)
 {
-    return (ZoneFinderContextPtr(
-                new Context(*this, options, impl_->find(name, type, NULL,
-                                                        options))));
+    return (boost::shared_ptr<Context>(
+                impl_->ctx_pool_->construct(
+                    *this, options,
+                    impl_->find(name, type, NULL, options)),
+                boost::bind(&InMemoryZoneFinderImpl::destroyContext, impl_,
+                            _1)));
 }
 
 ZoneFinderContextPtr
@@ -1221,9 +1233,12 @@ InMemoryZoneFinder::findAll(const Name& name,
                             std::vector<ConstRRsetPtr>& target,
                             const FindOptions options)
 {
-    return (ZoneFinderContextPtr(
-                new Context(*this, options, impl_->find(name, RRType::ANY(),
-                                                        &target, options))));
+    return (boost::shared_ptr<Context>(
+                impl_->ctx_pool_->construct(
+                    *this, options,
+                    impl_->find(name, RRType::ANY(), &target, options)),
+                boost::bind(&InMemoryZoneFinderImpl::destroyContext, impl_,
+                            _1)));
 }
 
 ZoneFinder::FindNSEC3Result
@@ -1438,6 +1453,14 @@ InMemoryZoneFinder::findPreviousName(const isc::dns::Name&) const {
               "yet, can't find previous name");
 }
 
+void
+InMemoryZoneFinder::setContextPool(boost::object_pool<Context>& pool) {
+    if (impl_->default_ctx_pool_) {
+        impl_->default_ctx_pool_.reset();
+    }
+    impl_->ctx_pool_ = &pool;
+}
+
 /// Implementation details for \c InMemoryClient hidden from the public
 /// interface.
 ///
@@ -1449,6 +1472,7 @@ public:
     InMemoryClientImpl() : zone_count(0) {}
     unsigned int zone_count;
     ZoneTable zone_table;
+    boost::object_pool<InMemoryZoneFinder::Context> finderctx_pool;
 };
 
 InMemoryClient::InMemoryClient() : impl_(new InMemoryClientImpl)
@@ -1465,16 +1489,21 @@ InMemoryClient::getZoneCount() const {
 
 result::Result
 InMemoryClient::addZone(ZoneFinderPtr zone_finder) {
-    if (!zone_finder) {
-        isc_throw(InvalidParameter,
-                  "Null pointer is passed to InMemoryClient::addZone()");
+    typedef boost::shared_ptr<InMemoryZoneFinder> InMemoryZoneFinderPtr;
+    InMemoryZoneFinderPtr inmemory_finder =
+        boost::dynamic_pointer_cast<InMemoryZoneFinder>(zone_finder);
+    if (!inmemory_finder) {
+        isc_throw(InvalidParameter, "NULL or incompatible pointer is passed "
+                  "to InMemoryClient::addZone()");
     }
 
     LOG_DEBUG(logger, DBG_TRACE_BASIC, DATASRC_MEM_ADD_ZONE).
-        arg(zone_finder->getOrigin()).arg(zone_finder->getClass().toText());
+        arg(inmemory_finder->getOrigin()).
+        arg(inmemory_finder->getClass().toText());
 
-    const result::Result result = impl_->zone_table.addZone(zone_finder);
+    const result::Result result = impl_->zone_table.addZone(inmemory_finder);
     if (result == result::SUCCESS) {
+        inmemory_finder->setContextPool(impl_->finderctx_pool);
         ++impl_->zone_count;
     }
     return (result);

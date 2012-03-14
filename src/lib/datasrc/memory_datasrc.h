@@ -18,6 +18,7 @@
 #include <string>
 
 #include <boost/noncopyable.hpp>
+#include <boost/pool/object_pool.hpp>
 
 #include <datasrc/zonetable.h>
 #include <datasrc/client.h>
@@ -31,6 +32,7 @@ class RRsetList;
 };
 
 namespace datasrc {
+class InMemoryClient;
 
 /// A derived zone finder class intended to be used with the memory data source.
 ///
@@ -224,6 +226,8 @@ private:
     /// The implementation (and any specialized interface) is completely local
     /// to the InMemoryZoneFinder class, so it's defined as private
     class Context;
+
+    void setContextPool(boost::object_pool<Context>& pool);
 };
 
 /// \brief A data source client that holds all necessary data in memory.
