@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <cstring>
 #include <vector>
+#include <cassert>
 
 #include <string.h>
 
@@ -380,9 +381,18 @@ public:
     /// \param pos The position in the buffer to be returned.
     uint8_t operator[](size_t pos) const
     {
-        if (pos >= size_) {
-            isc_throw(InvalidBufferPosition, "read at invalid position");
-        }
+        // We had an isc_throw with condition here. But this turns out to make
+        // the server around 20% faster regarding QPS. So we think it is worth
+        // the fact that if we really made a coding error that made this assert
+        // fail, we couldn't catch it.
+        //
+        // The unproven theory behind this is that throw is heawy enough so it
+        // makes the compiler not to inline this thing. With assert, it is
+        // below the limit, so it is inlined, the assert is optimised out so it
+        // happens only once before the whole block of accesses, so one access
+        // is changed to a single instruction (or, possibly, multiple
+        // consecutive accesses changed to a int-based access).
+        assert(pos < size_);
         return (buffer_[pos]);
     }
     //@}
