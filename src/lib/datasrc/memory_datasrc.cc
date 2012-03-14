@@ -429,8 +429,17 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
     scoped_ptr<ZoneData> zone_data_;
 
     // Pool of finder contexts
+    // Basically, it's expected to be set by an \c InMemoryClient when
+    // this "finder" is registered to the client.  But some tests directly
+    // create a finder and test its interfaces, so we also need a standalone
+    // ("default") pool.  This should be revised when we overhaul the entire
+    // in-memory implementation.
     scoped_ptr<boost::object_pool<Context> > default_ctx_pool_;
     boost::object_pool<Context>* ctx_pool_;
+    // A wrapper of getting a context pointer from the pool.  Note that
+    // boost::object_pool returns NULL if allocating a new object (when
+    // it's necessary) fails.  To be compatible with 'new', we catch that
+    // case and throw bad_alloc instead.
     shared_ptr<Context> getContext(ZoneFinder& finder,
                                    ZoneFinder::FindOptions options,
                                    const RBNodeResultContext& result)
@@ -1458,6 +1467,8 @@ InMemoryZoneFinder::findPreviousName(const isc::dns::Name&) const {
 
 void
 InMemoryZoneFinder::setContextPool(boost::object_pool<Context>& pool) {
+    // If the finder has a "standalone" pool, free it now.  (see the
+    // note in InMemoryZoneFinderImpl).
     if (impl_->default_ctx_pool_) {
         impl_->default_ctx_pool_.reset();
     }

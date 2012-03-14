@@ -32,7 +32,6 @@ class RRsetList;
 };
 
 namespace datasrc {
-class InMemoryClient;
 
 /// A derived zone finder class intended to be used with the memory data source.
 ///
@@ -227,6 +226,15 @@ private:
     /// to the InMemoryZoneFinder class, so it's defined as private
     class Context;
 
+    /// \brief Set/reset a pool of the finder \c Context objects.
+    ///
+    /// This method is intended to be called from the \c InMemoryClient
+    /// object to which this finder belongs.  The client object is a friend
+    /// class of the finder and can get access to this method.  Still,
+    /// this is not really a clean design; for a longer term we should
+    /// completely hide this trick within the implementation.
+    ///
+    /// \brief pool An object pool of \c Context.
     void setContextPool(boost::object_pool<Context>& pool);
 };
 
