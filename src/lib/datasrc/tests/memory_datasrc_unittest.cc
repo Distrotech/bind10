@@ -57,10 +57,41 @@ protected:
     InMemoryClient memory_client;
 };
 
+// Use a test below to pass an incompatible zone finder to the in-memory client
+class NullZoneFinder : public ZoneFinder {
+public:
+    virtual isc::dns::Name getOrigin() const {
+        isc_throw(isc::Unexpected, "NullZoneFinder method is called");
+    }
+    virtual isc::dns::RRClass getClass() const {
+        isc_throw(isc::Unexpected, "NullZoneFinder method is called");
+    }
+    virtual ZoneFinderContextPtr find(const Name&, const RRType&,
+                                      const FindOptions)
+    {
+        isc_throw(isc::Unexpected, "NullZoneFinder method is called");
+    }
+    virtual ZoneFinderContextPtr findAll(const Name&, vector<ConstRRsetPtr>&,
+                                         const FindOptions)
+    {
+        isc_throw(isc::Unexpected, "NullZoneFinder method is called");
+    }
+    virtual ZoneFinder::FindNSEC3Result findNSEC3(const Name&, bool) {
+        isc_throw(isc::Unexpected, "NullZoneFinder method is called");
+    }
+    virtual Name findPreviousName(const Name&) const {
+        isc_throw(isc::Unexpected, "NullZoneFinder method is called");
+    }
+};
+
 TEST_F(InMemoryClientTest, add_find_Zone) {
     // test add zone
     // Bogus zone (NULL)
     EXPECT_THROW(memory_client.addZone(ZoneFinderPtr()),
+                 isc::InvalidParameter);
+
+    // Incompatible type of finder
+    EXPECT_THROW(memory_client.addZone(ZoneFinderPtr(new NullZoneFinder)),
                  isc::InvalidParameter);
 
     // add zones with different names one by one
