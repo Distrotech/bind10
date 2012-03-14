@@ -440,11 +440,8 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
             throw bad_alloc();
         }
         return (shared_ptr<Context>(
-                    p, boost::bind(&InMemoryZoneFinderImpl::destroyContext,
-                                   this, _1)));
-    }
-    void destroyContext(Context* ctx) {
-        ctx_pool_->destroy(ctx);
+                    p, boost::bind(&boost::object_pool<Context>::destroy,
+                                   ctx_pool_, _1)));
     }
 
     // Add the necessary magic for any wildcard contained in 'name'
