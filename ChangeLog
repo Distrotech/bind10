@@ -1,3 +1,9 @@
+406.	[func]		muks
+	Add a -i/--no-kill-i command-line argument to bind10, which stops
+	it from sending SIGTERM and SIGKILL to other b10 processes when
+	they're shutting down.
+	(Trac #1819, git 048206388a5b4eaadc752b2769b125b073caade2)
+
 405.?	[bug]		jinmei
 	Make sure disabling Boost threads if the default configuration is
 	to disable it for the system.  This fixes a crash and hang up
