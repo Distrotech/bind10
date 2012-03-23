@@ -91,28 +91,28 @@ Logger::getEffectiveDebugLevel() {
 // Check on the current severity settings
 
 bool
-Logger::isDebugEnabled(int dbglevel) {
-    return (getLoggerPtr()->isDebugEnabled(dbglevel));
+Logger::isDebugEnabled(const MessageID& id, int dbglevel) {
+    return (getLoggerPtr()->isDebugEnabled(id, dbglevel));
 }
 
 bool
-Logger::isInfoEnabled() {
-    return (getLoggerPtr()->isInfoEnabled());
+Logger::isInfoEnabled(const MessageID& id) {
+    return (getLoggerPtr()->isInfoEnabled(id));
 }
 
 bool
-Logger::isWarnEnabled() {
-    return (getLoggerPtr()->isWarnEnabled());
+Logger::isWarnEnabled(const MessageID& id) {
+    return (getLoggerPtr()->isWarnEnabled(id));
 }
 
 bool
-Logger::isErrorEnabled() {
-    return (getLoggerPtr()->isErrorEnabled());
+Logger::isErrorEnabled(const MessageID& id) {
+    return (getLoggerPtr()->isErrorEnabled(id));
 }
 
 bool
-Logger::isFatalEnabled() {
-    return (getLoggerPtr()->isFatalEnabled());
+Logger::isFatalEnabled(const MessageID& id) {
+    return (getLoggerPtr()->isFatalEnabled(id));
 }
 
 // Format a message: looks up the message text in the dictionary and formats
@@ -131,7 +131,7 @@ Logger::output(const Severity& severity, const std::string& message) {
 
 Logger::Formatter
 Logger::debug(int dbglevel, const isc::log::MessageID& ident) {
-    if (isDebugEnabled(dbglevel)) {
+    if (isDebugEnabled(ident, dbglevel)) {
         return (Formatter(DEBUG, getLoggerPtr()->lookupMessage(ident),
                           this));
     } else {
@@ -141,7 +141,7 @@ Logger::debug(int dbglevel, const isc::log::MessageID& ident) {
 
 Logger::Formatter
 Logger::info(const isc::log::MessageID& ident) {
-    if (isInfoEnabled()) {
+    if (isInfoEnabled(ident)) {
         return (Formatter(INFO, getLoggerPtr()->lookupMessage(ident),
                           this));
     } else {
@@ -151,7 +151,7 @@ Logger::info(const isc::log::MessageID& ident) {
 
 Logger::Formatter
 Logger::warn(const isc::log::MessageID& ident) {
-    if (isWarnEnabled()) {
+    if (isWarnEnabled(ident)) {
         return (Formatter(WARN, getLoggerPtr()->lookupMessage(ident),
                           this));
     } else {
@@ -161,7 +161,7 @@ Logger::warn(const isc::log::MessageID& ident) {
 
 Logger::Formatter
 Logger::error(const isc::log::MessageID& ident) {
-    if (isErrorEnabled()) {
+    if (isErrorEnabled(ident)) {
         return (Formatter(ERROR, getLoggerPtr()->lookupMessage(ident),
                           this));
     } else {
@@ -171,12 +171,17 @@ Logger::error(const isc::log::MessageID& ident) {
 
 Logger::Formatter
 Logger::fatal(const isc::log::MessageID& ident) {
-    if (isFatalEnabled()) {
+    if (isFatalEnabled(ident)) {
         return (Formatter(FATAL, getLoggerPtr()->lookupMessage(ident),
                           this));
     } else {
         return (Formatter());
     }
+}
+
+std::map<MessageID, bool>&
+Logger::overrides() {
+    return getLoggerPtr()->overrides_;
 }
 
 // Comparison (testing only)

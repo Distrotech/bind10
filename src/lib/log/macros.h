@@ -20,31 +20,31 @@
 
 /// \brief Macro to conveniently test debug output and log it
 #define LOG_DEBUG(LOGGER, LEVEL, MESSAGE) \
-    if (!(LOGGER).isDebugEnabled((LEVEL))) { \
+    if (!(LOGGER).isDebugEnabled((MESSAGE), (LEVEL))) { \
     } else \
         (LOGGER).debug((LEVEL), (MESSAGE))
 
 /// \brief Macro to conveniently test info output and log it
 #define LOG_INFO(LOGGER, MESSAGE) \
-    if (!(LOGGER).isInfoEnabled()) { \
+    if (!(LOGGER).isInfoEnabled((MESSAGE))) { \
     } else \
         (LOGGER).info((MESSAGE))
 
 /// \brief Macro to conveniently test warn output and log it
 #define LOG_WARN(LOGGER, MESSAGE) \
-    if (!(LOGGER).isWarnEnabled()) { \
+    if (!(LOGGER).isWarnEnabled((MESSAGE))) { \
     } else \
         (LOGGER).warn((MESSAGE))
 
 /// \brief Macro to conveniently test error output and log it
 #define LOG_ERROR(LOGGER, MESSAGE) \
-    if (!(LOGGER).isErrorEnabled()) { \
+    if (!(LOGGER).isErrorEnabled((MESSAGE))) { \
     } else \
         (LOGGER).error((MESSAGE))
 
 /// \brief Macro to conveniently test fatal output and log it
 #define LOG_FATAL(LOGGER, MESSAGE) \
-    if (!(LOGGER).isFatalEnabled()) { \
+    if (!(LOGGER).isFatalEnabled((MESSAGE))) { \
     } else \
         (LOGGER).fatal((MESSAGE))
 

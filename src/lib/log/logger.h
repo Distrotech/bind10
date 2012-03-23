@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <string>
 #include <cstring>
+#include <map>
 
 #include <exceptions/exceptions.h>
 #include <log/logger_level.h>
@@ -196,19 +197,21 @@ public:
     /// \param dbglevel Level for which debugging is checked.  Debugging is
     /// enabled only if the logger has DEBUG enabled and if the dbglevel
     /// checked is less than or equal to the debug level set for the logger.
-    virtual bool isDebugEnabled(int dbglevel = MIN_DEBUG_LEVEL);
+    virtual bool isDebugEnabled(const MessageID& ident, int dbglevel = MIN_DEBUG_LEVEL);
 
     /// \brief Is INFO Enabled?
-    virtual bool isInfoEnabled();
+    virtual bool isInfoEnabled(const MessageID& ident);
 
     /// \brief Is WARNING Enabled?
-    virtual bool isWarnEnabled();
+    virtual bool isWarnEnabled(const MessageID& ident);
 
     /// \brief Is ERROR Enabled?
-    virtual bool isErrorEnabled();
+    virtual bool isErrorEnabled(const MessageID& ident);
 
     /// \brief Is FATAL Enabled?
-    virtual bool isFatalEnabled();
+    virtual bool isFatalEnabled(const MessageID& ident);
+
+    std::map<MessageID, bool>& overrides();
 
     /// \brief Output Debug Message
     ///

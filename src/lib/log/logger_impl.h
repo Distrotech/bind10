@@ -121,35 +121,45 @@ public:
     ///         the current effective severity level is not DEBUG.
     virtual int getEffectiveDebugLevel();
 
+private:
+    bool checkEnabled(const log4cplus::LogLevel& level, const MessageID& id) {
+        const std::map<MessageID, bool>::const_iterator it(overrides_.find(id));
+        if (it != overrides_.end()) {
+            return (it->second);
+        } else {
+            return (logger_.isEnabledFor(level));
+        }
+    }
+public:
 
     /// \brief Returns if Debug Message Should Be Output
     ///
     /// \param dbglevel Level for which debugging is checked.  Debugging is
     /// enabled only if the logger has DEBUG enabled and if the dbglevel
     /// checked is less than or equal to the debug level set for the logger.
-    virtual bool isDebugEnabled(int dbglevel = MIN_DEBUG_LEVEL) {
+    virtual bool isDebugEnabled(const MessageID& id, int dbglevel = MIN_DEBUG_LEVEL) {
         Level level(DEBUG, dbglevel);
-        return logger_.isEnabledFor(LoggerLevelImpl::convertFromBindLevel(level));
+        return (checkEnabled(LoggerLevelImpl::convertFromBindLevel(level), id));
     }
 
     /// \brief Is INFO Enabled?
-    virtual bool isInfoEnabled() {
-        return (logger_.isEnabledFor(log4cplus::INFO_LOG_LEVEL));
+    virtual bool isInfoEnabled(const MessageID& id) {
+        return (checkEnabled(log4cplus::INFO_LOG_LEVEL, id));
     }
 
     /// \brief Is WARNING Enabled?
-    virtual bool isWarnEnabled() {
-        return (logger_.isEnabledFor(log4cplus::WARN_LOG_LEVEL));
+    virtual bool isWarnEnabled(const MessageID& id) {
+        return (checkEnabled(log4cplus::WARN_LOG_LEVEL, id));
     }
 
     /// \brief Is ERROR Enabled?
-    virtual bool isErrorEnabled() {
-        return (logger_.isEnabledFor(log4cplus::ERROR_LOG_LEVEL));
+    virtual bool isErrorEnabled(const MessageID& id) {
+        return (checkEnabled(log4cplus::ERROR_LOG_LEVEL, id));
     }
 
     /// \brief Is FATAL Enabled?
-    virtual bool isFatalEnabled() {
-        return (logger_.isEnabledFor(log4cplus::FATAL_LOG_LEVEL));
+    virtual bool isFatalEnabled(const MessageID& id) {
+        return (checkEnabled(log4cplus::FATAL_LOG_LEVEL, id));
     }
 
     /// \brief Raw output
@@ -176,6 +186,7 @@ public:
     bool operator==(const LoggerImpl& other) {
         return (name_ == other.name_);
     }
+    std::map<MessageID, bool> overrides_;
 
 private:
     std::string         name_;              ///< Full name of this logger
