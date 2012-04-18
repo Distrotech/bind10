@@ -300,7 +300,8 @@ public:
         use_nsec3_(false),
         nsec_name_(origin_),
         nsec3_fake_(NULL),
-        nsec3_name_(NULL)
+        nsec3_name_(NULL),
+        skip_find_at_origin_check_(false)
     {
         stringstream zone_stream;
         zone_stream << soa_txt << zone_ns_txt << ns_addrs_txt <<
@@ -534,6 +535,11 @@ private:
 public:
     // Public, to allow tests looking up the right names for something
     map<Name, string> hash_map_;
+    // Should we skip checking the optimisation flag FIND_AT_ORIGIN is
+    // present if a query for origi comes? It might be useful when doing
+    // a real query against the origin - then the first find would not
+    // have it.
+    bool skip_find_at_origin_check_;
 };
 
 // A helper function that generates a new RRset based on "wild_rrset",
@@ -638,6 +644,12 @@ ZoneFinderContextPtr
 MockZoneFinder::find(const Name& name, const RRType& type,
                      const FindOptions options)
 {
+    EXPECT_TRUE(name == origin_ || !(options & FIND_AT_ORIGIN)) <<
+        "The FIND_AT_ORIGIN optimisation hint provided when not searching "
+        "origin";
+
+    EXPECT_TRUE(name != origin_ || options & FIND_AT_ORIGIN ||
+                skip_find_at_origin_check_);
     // Emulating a broken zone: mandatory apex RRs are missing if specifically
     // configured so (which are rare cases).
     if (name == origin_ && type == RRType::SOA() && !has_SOA_) {
@@ -1026,6 +1038,7 @@ TEST_F(QueryTest, exactAddrMatch) {
 TEST_F(QueryTest, apexNSMatch) {
     // find match rrset, omit authority data which has already been provided
     // in the answer section from the authority section.
+    mock_finder->skip_find_at_origin_check_ = true; // Querying the origin
     EXPECT_NO_THROW(query.process(memory_client, Name("example.com"),
                                   RRType::NS(), response));
 
@@ -1051,6 +1064,7 @@ TEST_F(QueryTest, exactAnyMatch) {
 TEST_F(QueryTest, apexAnyMatch) {
     // find match rrset, omit additional data which has already been provided
     // in the answer section from the additional.
+    mock_finder->skip_find_at_origin_check_ = true; // Querying the origin
     EXPECT_NO_THROW(query.process(memory_client, Name("example.com"),
                                   RRType::ANY(), response));
     responseCheck(response, Rcode::NOERROR(), AA_FLAG, 5, 0, 3,
@@ -2121,6 +2135,7 @@ TEST_F(QueryTest, dsAboveDelegationNoData) {
 // when it happens to be sent to the child zone, as described in RFC 4035,
 // section 3.1.4.1. The example is inspired by the B.8. example from the RFC.
 TEST_F(QueryTest, dsBelowDelegation) {
+    mock_finder->skip_find_at_origin_check_ = true; // Querying the origin
     EXPECT_NO_THROW(query.process(memory_client, Name("example.com"),
                                   RRType::DS(), response, true));
 
@@ -2137,6 +2152,8 @@ TEST_F(QueryTest, dsBelowDelegation) {
 // exists in the child zone.  The Query module should still return SOA.
 // In our implementation NSEC/NSEC3 isn't attached in this case.
 TEST_F(QueryTest, dsBelowDelegationWithDS) {
+    mock_finder->skip_find_at_origin_check_ = true; // Querying the origin
+                                                    // directly
     mock_finder->addRecord(zone_ds_txt); // add the DS to the child's apex
     EXPECT_NO_THROW(query.process(memory_client, Name("example.com"),
                                   RRType::DS(), response, true));

@@ -113,7 +113,14 @@ public:
                                 ///< (RRSIG, NSEC, etc.). The implementation
                                 ///< is allowed to include it even if it is
                                 ///< not set.
-        NO_WILDCARD = 4         ///< Do not try wildcard matching.
+        NO_WILDCARD = 4,        ///< Do not try wildcard matching.
+        FIND_AT_ORIGIN = 8      ///< Hint that the search is the origin.
+                                ///< Can be used for optimizations, but can
+                                ///< be safely ignored.
+                                ///< It is the caller's responsibility to
+                                ///< make sure the qname is actually the
+                                ///< origin, the behaviour is undefined
+                                ///< otherwise.
     };
 
 protected:

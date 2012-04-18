@@ -2056,4 +2056,39 @@ TEST_F(InMemoryZoneFinderTest, loadAndFindNSEC3) {
     EXPECT_EQ(Name("q04jkcevqvmu85r014c7dkba38o0ji5r.example"),
               result3.next_proof->getName());
 }
+
+/**
+ * \brief Test searching at the origin.
+ *
+ * Check finding with FIND_AT_ORIGIN works ‒ returns the data under origin
+ * all the time.
+ */
+TEST_F(InMemoryZoneFinderTest, findAtOrigin) {
+    // Fill some data inside
+    // Now put all the data we have there. It should throw nothing
+    EXPECT_NO_THROW(EXPECT_EQ(SUCCESS, zone_finder_.add(rr_ns_)));
+    EXPECT_NO_THROW(EXPECT_EQ(SUCCESS, zone_finder_.add(rr_ns_a_)));
+    EXPECT_NO_THROW(EXPECT_EQ(SUCCESS, zone_finder_.add(rr_ns_aaaa_)));
+    EXPECT_NO_THROW(EXPECT_EQ(SUCCESS, zone_finder_.add(rr_a_)));
+
+    // No matter the qname, this should find the origin node.
+    findTest(origin_, RRType::NS(), ZoneFinder::SUCCESS, true, rr_ns_,
+             ZoneFinder::RESULT_DEFAULT, NULL, ZoneFinder::FIND_AT_ORIGIN);
+    findTest(rr_ns_a_->getName(), RRType::NS(), ZoneFinder::SUCCESS, true,
+             rr_ns_, ZoneFinder::RESULT_DEFAULT, NULL,
+             ZoneFinder::FIND_AT_ORIGIN);
+    EXPECT_NE(origin_, rr_ns_a_->getName());
+
+    // The findAll works the same
+    vector<ConstRRsetPtr> expected_rrsets;
+    expected_rrsets.push_back(rr_ns_);
+    expected_rrsets.push_back(rr_a_);
+    findAllTest(origin_, ZoneFinder::SUCCESS, expected_rrsets,
+                ZoneFinder::RESULT_DEFAULT, NULL, ConstRRsetPtr(),
+                ZoneFinder::FIND_AT_ORIGIN);
+    findAllTest(rr_ns_a_->getName(), ZoneFinder::SUCCESS, expected_rrsets,
+                ZoneFinder::RESULT_DEFAULT, NULL, ConstRRsetPtr(),
+                ZoneFinder::FIND_AT_ORIGIN);
+}
+
 }

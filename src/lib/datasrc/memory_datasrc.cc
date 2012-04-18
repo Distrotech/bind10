@@ -1221,19 +1221,29 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
         LOG_DEBUG(logger, DBG_TRACE_BASIC, DATASRC_MEM_FIND).arg(name).
             arg(type);
 
-        // Get the node.  All other cases than an exact match are handled
-        // in findNode().  We simply construct a result structure and return.
-        const ZoneData::FindNodeResult node_result =
-            zone_data_->findNode<ZoneData::FindNodeResult>(name, options);
-        if (node_result.code != SUCCESS) {
-            return (createFindResult(node_result.code, node_result.rrset));
+        const DomainNode* node(NULL);
+        unsigned flags(0);
+
+        if (options & FIND_AT_ORIGIN) {
+            // In case it talks about origin, just give it the origin and don't
+            // search
+            node = zone_data_->origin_data_;
+        } else {
+            // Get the node.  All other cases than an exact match are handled
+            // in findNode().  We simply construct a result structure and return.
+            const ZoneData::FindNodeResult node_result =
+                zone_data_->findNode<ZoneData::FindNodeResult>(name, options);
+            if (node_result.code != SUCCESS) {
+                return (createFindResult(node_result.code, node_result.rrset));
+            }
+            node = node_result.node;
+            flags = node_result.flags;
         }
 
         // We've found an exact match, may or may not be a result of wildcard.
-        const DomainNode* node = node_result.node;
         assert(node != NULL);
-        const bool rename = ((node_result.flags &
-                              ZoneData::FindNodeResult::FIND_WILDCARD) != 0);
+        const bool rename = ((flags & ZoneData::FindNodeResult::FIND_WILDCARD)
+                             != 0);
 
         // If there is an exact match but the node is empty, it's equivalent
         // to NXRRSET.
