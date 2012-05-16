@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE authors SYSTEM "authors.dtd">
+
+<!--
+   This file is supposed to list all authors and contributors. It's in
+   XML format so that it can easily be used in source code. When
+   changing this file, please keep the alphabetical order.  This file
+   was adapted from GIMP.
+-->
+
+<authors xmlns="http://purl.org/dc/elements/1.1/">
+
+  <contributor role="author">Chen Zhengzhang (Jerry)</contributor>
+  <contributor role="author">Dmitriy Volodin</contributor>
+  <contributor role="author">Evan Hunt</contributor>
+  <contributor role="author">Haidong Wang (Ocean)</contributor>
+  <contributor role="author">Haikuo Zhang</contributor>
+  <contributor role="author">Han Feng</contributor>
+  <contributor role="author">Jelte Jansen</contributor>
+  <contributor role="author">Jeremy C. Reed</contributor>
+  <contributor role="author">Xie Jiagui (Kevin Tes)</contributor>
+  <contributor role="author">Jin Jian</contributor>
+  <contributor role="author">JINMEI Tatuya</contributor>
+  <contributor role="author">Kazunori Fujiwara</contributor>
+  <contributor role="author">Michael Graff</contributor>
+  <contributor role="author">Michal Vaner</contributor>
+  <contributor role="author">Mukund Sivaraman</contributor>
+  <contributor role="author">Naoki Kambe</contributor>
+  <contributor role="author">Shane Kerr</contributor>
+  <contributor role="author">Shen Tingting</contributor>
+  <contributor role="author">Stephen Morris</contributor>
+  <contributor role="author">Yoshitaka Aharen</contributor>
+  <contributor role="author">Zhang Likun</contributor>
+
+</authors>

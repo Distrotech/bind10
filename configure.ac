@@ -966,6 +966,12 @@ AC_SUBST(PERL)
 AC_PATH_PROGS(AWK, gawk awk)
 AC_SUBST(AWK)
 
+# Check for XML tools
+AC_PATH_PROG(XMLLINT, xmllint, no)
+AM_CONDITIONAL(HAVE_XMLLINT, test "x$XMLLINT" != "xno")
+AC_PATH_PROG(XSLTPROC, xsltproc, no)
+AM_CONDITIONAL(HAVE_XSLTPROC, test "x$XSLTPROC" != "xno")
+
 AC_ARG_ENABLE(man, [AC_HELP_STRING([--enable-man],
   [regenerate man pages [default=no]])], enable_man=$enableval, enable_man=no)
 

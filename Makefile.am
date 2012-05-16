@@ -93,6 +93,24 @@ systest:
 	cd tests/system; \
 	sh $(abs_srcdir)/tests/system/runall.sh
 
+# authors generation
+AUTHORS: authors.xml authors.xsl
+if HAVE_XSLTPROC
+	$(AM_V_GEN) $(XSLTPROC) authors.xsl $< > $(@) || rm -f $(@)
+else
+	@echo "*** xsltproc is required to regenerate $(@) ***"; exit 1;
+endif
+
+validate-authors:
+if HAVE_XMLLINT
+	@$(XMLLINT) --noout --path $(srcdir) --valid authors.xml || \
+          ( echo "*** authors.xml IS INVALID ***"; exit 1; )
+endif
+
+all-local: AUTHORS
+
+check-local: validate-authors
+
 #### include external sources in the distributed tarball:
 EXTRA_DIST = ext/asio/README
 EXTRA_DIST += ext/asio/README
@@ -402,6 +420,11 @@ EXTRA_DIST += ext/asio/asio/system_error.hpp
 EXTRA_DIST += ext/asio/asio/deadline_timer.hpp
 EXTRA_DIST += ext/asio/asio/stream_socket_service.hpp
 EXTRA_DIST += ext/coroutine/coroutine.h
+
+EXTRA_DIST += \
+	authors.dtd \
+	authors.xml \
+	authors.xsl
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = dns++.pc

@@ -1,0 +1,40 @@
+BIND 10 AUTHORS
+===============
+
+////
+This file is generated from authors.xml, do not edit it directly.
+////
+
+Coding
+------
+
+The following people have contributed code to BIND 10:
+
+ * Chen Zhengzhang (Jerry)
+ * Dmitriy Volodin
+ * Evan Hunt
+ * Haidong Wang (Ocean)
+ * Haikuo Zhang
+ * Han Feng
+ * Jelte Jansen
+ * Jeremy C. Reed
+ * Xie Jiagui (Kevin Tes)
+ * Jin Jian
+ * JINMEI Tatuya
+ * Kazunori Fujiwara
+ * Michael Graff
+ * Michal Vaner
+ * Mukund Sivaraman
+ * Naoki Kambe
+ * Shane Kerr
+ * Shen Tingting
+ * Stephen Morris
+ * Yoshitaka Aharen
+ * Zhang Likun
+
+
+Documentation
+-------------
+
+The following people have helped to document BIND 10:
+

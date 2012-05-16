@@ -1,0 +1,9 @@
+<!--
+   Simple DTD for BIND 10 authors. This file was adapted from GIMP.
+-->
+
+<!ELEMENT authors (contributor+)>
+<!ATTLIST authors xmlns CDATA #FIXED "http://purl.org/dc/elements/1.1/">
+
+<!ELEMENT contributor (#PCDATA)>
+<!ATTLIST contributor role CDATA #REQUIRED>
