@@ -17,6 +17,7 @@ CLEANFILES += datasrc_config.h
 
 lib_LTLIBRARIES = libdatasrc.la
 libdatasrc_la_SOURCES = data_source.h data_source.cc
+libdatasrc_la_SOURCES += authors.h authors.cc
 libdatasrc_la_SOURCES += static_datasrc.h static_datasrc.cc
 libdatasrc_la_SOURCES += sqlite3_datasrc.h sqlite3_datasrc.cc
 libdatasrc_la_SOURCES += query.h query.cc
@@ -60,3 +61,17 @@ datasrc_messages.h datasrc_messages.cc: Makefile datasrc_messages.mes
 	$(top_builddir)/src/lib/log/compiler/message $(top_srcdir)/src/lib/datasrc/datasrc_messages.mes
 
 EXTRA_DIST = datasrc_messages.mes
+
+# for authors list
+authors.cc: $(top_srcdir)/authors.xml $(srcdir)/authors.xsl
+if HAVE_XSLTPROC
+	$(AM_V_GEN) $(XSLTPROC) $(srcdir)/authors.xsl $< > $(@) || rm -f $(@)
+else
+        @echo "*** xsltproc is required to regenerate $(@) ***"; exit 1;
+endif
+
+BUILT_SOURCES += \
+	authors.cc
+
+EXTRA_DIST += \
+	authors.xsl

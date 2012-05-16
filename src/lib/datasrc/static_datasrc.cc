@@ -12,7 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#include <config.h>
+#include "config.h"
+#include "authors.h"
 
 #include <cassert>
 
@@ -69,27 +70,12 @@ StaticDataSrcImpl::StaticDataSrcImpl() :
 {
     authors = RRsetPtr(new RRset(authors_name, RRClass::CH(),
                                  RRType::TXT(), RRTTL(0)));
-    authors->addRdata(generic::TXT("Chen Zhengzhang")); // Jerry
-    authors->addRdata(generic::TXT("Dmitriy Volodin"));
-    authors->addRdata(generic::TXT("Evan Hunt"));
-    authors->addRdata(generic::TXT("Haidong Wang")); // Ocean
-    authors->addRdata(generic::TXT("Haikuo Zhang"));
-    authors->addRdata(generic::TXT("Han Feng"));
-    authors->addRdata(generic::TXT("Jelte Jansen"));
-    authors->addRdata(generic::TXT("Jeremy C. Reed")); 
-    authors->addRdata(generic::TXT("Xie Jiagui")); // Kevin Tes
-    authors->addRdata(generic::TXT("Jin Jian"));
-    authors->addRdata(generic::TXT("JINMEI Tatuya"));
-    authors->addRdata(generic::TXT("Kazunori Fujiwara"));
-    authors->addRdata(generic::TXT("Michael Graff"));
-    authors->addRdata(generic::TXT("Michal Vaner"));
-    authors->addRdata(generic::TXT("Mukund Sivaraman"));
-    authors->addRdata(generic::TXT("Naoki Kambe"));
-    authors->addRdata(generic::TXT("Shane Kerr"));
-    authors->addRdata(generic::TXT("Shen Tingting"));
-    authors->addRdata(generic::TXT("Stephen Morris"));
-    authors->addRdata(generic::TXT("Yoshitaka Aharen"));
-    authors->addRdata(generic::TXT("Zhang Likun"));
+
+    const char * const * author_list = get_authors();
+    while (*author_list != NULL) {
+        authors->addRdata(generic::TXT(*author_list));
+        author_list++;
+    }
 
     authors_ns = RRsetPtr(new RRset(authors_name, RRClass::CH(),
                                     RRType::NS(), RRTTL(0)));
