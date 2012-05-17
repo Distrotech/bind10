@@ -284,6 +284,7 @@ private:
     LoggerImpl* loggerptr_;                  ///< Pointer to underlying logger
     char        name_[MAX_LOGGER_NAME_SIZE + 1]; ///< Copy of the logger name
     std::string lockfile_path_;
+    int         lock_fd_;
 };
 
 } // namespace log
