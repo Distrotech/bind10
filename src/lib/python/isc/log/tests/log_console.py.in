@@ -1,5 +1,8 @@
 #!@PYTHON@
 
+import os
+os.environ['B10_FROM_SOURCE'] = '@abs_top_srcdir@'
+
 import isc.log
 # This would come from a dictionary in real life
 MSG_ID = isc.log.create_message("MSG_ID", "Message with %2 %1")

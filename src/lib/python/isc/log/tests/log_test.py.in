@@ -13,6 +13,9 @@
 # NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
 # WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+import os
+os.environ['B10_FROM_SOURCE'] = '@abs_top_srcdir@'
+
 # This tests it can be loaded, nothing more yet
 import isc.log
 import unittest
