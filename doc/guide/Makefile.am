@@ -7,7 +7,7 @@ if ENABLE_MAN
 
 .PHONY: bind10-messages.xml
 
-bind10-guide.html: bind10-guide.xml
+bind10-guide.html: bind10-guide.xml bind10-guide-authors.xml
 	xsltproc --novalid --xinclude --nonet \
 		--path $(top_builddir)/doc \
 		-o $@ \
@@ -34,4 +34,19 @@ bind10-messages.html: bind10-messages.xml
 bind10-messages.xml:
 	$(PYTHON) $(top_srcdir)/tools/system_messages.py -o $@ $(top_srcdir)
 
+
 endif
+
+# for authors list
+bind10-guide-authors.xml: $(top_srcdir)/authors.xml $(srcdir)/bind10-guide-authors.xsl
+if HAVE_XSLTPROC
+	$(AM_V_GEN) $(XSLTPROC) $(srcdir)/bind10-guide-authors.xsl $< > $(@) || rm -f $(@)
+else
+        @echo "*** xsltproc is required to regenerate $(@) ***"; exit 1;
+endif
+
+BUILT_SOURCES = \
+	bind10-guide-authors.xml
+
+EXTRA_DIST += \
+	bind10-guide-authors.xsl

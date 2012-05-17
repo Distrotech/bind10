@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+<chapter id="contributors">
+<title>Contributors</title>
+
+<para>
+The following people have contributed code to BIND 10:
+</para>
+
+<itemizedlist>
+    <listitem><simpara>Chen Zhengzhang (Jerry)</simpara></listitem>
+    <listitem><simpara>Dmitriy Volodin</simpara></listitem>
+    <listitem><simpara>Evan Hunt</simpara></listitem>
+    <listitem><simpara>Haidong Wang (Ocean)</simpara></listitem>
+    <listitem><simpara>Haikuo Zhang</simpara></listitem>
+    <listitem><simpara>Han Feng</simpara></listitem>
+    <listitem><simpara>Jelte Jansen</simpara></listitem>
+    <listitem><simpara>Jeremy C. Reed</simpara></listitem>
+    <listitem><simpara>Xie Jiagui (Kevin Tes)</simpara></listitem>
+    <listitem><simpara>Jin Jian</simpara></listitem>
+    <listitem><simpara>JINMEI Tatuya</simpara></listitem>
+    <listitem><simpara>Kazunori Fujiwara</simpara></listitem>
+    <listitem><simpara>Michael Graff</simpara></listitem>
+    <listitem><simpara>Michal Vaner</simpara></listitem>
+    <listitem><simpara>Mukund Sivaraman</simpara></listitem>
+    <listitem><simpara>Naoki Kambe</simpara></listitem>
+    <listitem><simpara>Shane Kerr</simpara></listitem>
+    <listitem><simpara>Shen Tingting</simpara></listitem>
+    <listitem><simpara>Stephen Morris</simpara></listitem>
+    <listitem><simpara>Yoshitaka Aharen</simpara></listitem>
+    <listitem><simpara>Zhang Likun</simpara></listitem>
+
+</itemizedlist>
+
+<para>
+The following people have helped to document BIND 10:
+</para>
+
+<itemizedlist>
+
+</itemizedlist>
+
+</chapter>

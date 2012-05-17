@@ -3259,6 +3259,8 @@ Logging/loggers[0]/output_options[0]/maxver	8	integer	(modified)
 
   </chapter>
 
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="bind10-guide-authors.xml" />
+
 <!-- TODO: Add bibliography section (mostly RFCs, probably) -->
 
 
