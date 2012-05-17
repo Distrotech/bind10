@@ -14,6 +14,10 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include <log/logger.h>
 #include <log/logger_impl.h>
@@ -28,6 +32,30 @@ using namespace std;
 
 namespace isc {
 namespace log {
+
+// Constructor
+
+Logger::Logger(const char* name) : loggerptr_(NULL) {
+    assert(std::strlen(name) < sizeof(name_));
+    // Do the copy.  Note that the assertion above has checked that the
+    // contents of "name" and a trailing null will fit within the space
+    // allocated for name_, so we could use strcpy here and be safe.
+    // However, a bit of extra paranoia doesn't hurt.
+    std::strncpy(name_, name, sizeof(name_));
+    assert(name_[sizeof(name_) - 1] == '\0');
+
+    lockfile_path_ = LOCKFILE_DIR;
+
+    const char *env = getenv("B10_FROM_SOURCE");
+    if (env)
+        lockfile_path_ = env;
+
+    const char *env2 = getenv("B10_FROM_SOURCE_LOCALSTATEDIR");
+    if (env2)
+        lockfile_path_ = env2;
+
+    lockfile_path_ += "/logger_lockfile";
+}
 
 // Initialize underlying logger, but only if logging has been initialized.
 void Logger::initLoggerImpl() {
@@ -126,7 +154,51 @@ Logger::isFatalEnabled() {
 
 void
 Logger::output(const Severity& severity, const std::string& message) {
+    // Use a lock file for mutual exclusion from other processes to
+    // avoid log messages getting interspersed
+
+    int fd;
+    struct flock lock;
+    int status;
+
+    // Acquire the exclusive lock
+    fd = open(lockfile_path_.c_str(), O_CREAT | O_RDWR, 0600);
+    if (fd == -1) {
+        getLoggerPtr()->outputRaw(isc::log::FATAL, "Unable to open logger lockfile: " + lockfile_path_);
+        return;
+    }
+
+    memset(&lock, 0, sizeof lock);
+    lock.l_type = F_WRLCK;
+    lock.l_whence = SEEK_SET;
+    lock.l_start = 0;
+    lock.l_len = 1;
+    status = fcntl(fd, F_SETLKW, &lock);
+    if (status != 0) {
+        getLoggerPtr()->outputRaw(isc::log::FATAL, "Unable to lock logger lockfile: " + lockfile_path_);
+        close (fd);
+        return;
+    }
+
+    // Output the message
     getLoggerPtr()->outputRaw(severity, message);
+
+    // Release the exclusive lock
+    memset(&lock, 0, sizeof lock);
+    lock.l_type = F_UNLCK;
+    lock.l_whence = SEEK_SET;
+    lock.l_start = 0;
+    lock.l_len = 1;
+    status = fcntl(fd, F_SETLKW, &lock);
+    if (status != 0) {
+        getLoggerPtr()->outputRaw(isc::log::FATAL, "Unable to unlock logger lockfile: " + lockfile_path_);
+        close (fd);
+        return;
+    }
+
+    close(fd);
+
+    // The lockfile will continue to exist, as we mustn't delete it.
 }
 
 Logger::Formatter

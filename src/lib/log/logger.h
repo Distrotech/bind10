@@ -133,15 +133,7 @@ public:
     /// \note Note also that there is no constructor taking a std::string. This
     /// minimises the possibility of initializing a static logger with a
     /// string, so leading to problems mentioned above.
-    Logger(const char* name) : loggerptr_(NULL) {
-        assert(std::strlen(name) < sizeof(name_));
-        // Do the copy.  Note that the assertion above has checked that the
-        // contents of "name" and a trailing null will fit within the space
-        // allocated for name_, so we could use strcpy here and be safe.
-        // However, a bit of extra paranoia doesn't hurt.
-        std::strncpy(name_, name, sizeof(name_));
-        assert(name_[sizeof(name_) - 1] == '\0');
-    }
+    Logger(const char* name);
 
     /// \brief Destructor
     virtual ~Logger();
@@ -291,6 +283,7 @@ private:
 
     LoggerImpl* loggerptr_;                  ///< Pointer to underlying logger
     char        name_[MAX_LOGGER_NAME_SIZE + 1]; ///< Copy of the logger name
+    std::string lockfile_path_;
 };
 
 } // namespace log
