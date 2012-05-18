@@ -46,13 +46,15 @@ Logger::Logger(const char* name) : loggerptr_(NULL) {
 
     lockfile_path_ = LOCKFILE_DIR;
 
-    const char *env = getenv("B10_FROM_SOURCE");
-    if (env)
+    const char* const env = getenv("B10_FROM_SOURCE");
+    if (env != NULL) {
         lockfile_path_ = env;
+    }
 
-    const char *env2 = getenv("B10_FROM_SOURCE_LOCALSTATEDIR");
-    if (env2)
+    const char* const env2 = getenv("B10_FROM_SOURCE_LOCALSTATEDIR");
+    if (env2 != NULL) {
         lockfile_path_ = env2;
+    }
 
     lockfile_path_ += "/logger_lockfile";
 
@@ -74,8 +76,9 @@ void Logger::initLoggerImpl() {
 // Destructor.
 
 Logger::~Logger() {
-    if (lock_fd_ != -1)
+    if (lock_fd_ != -1) {
         close(lock_fd_);
+    }
     // The lockfile will continue to exist, as we mustn't delete it.
 
     delete loggerptr_;
@@ -169,7 +172,9 @@ Logger::output(const Severity& severity, const std::string& message) {
     int status;
 
     if (lock_fd_ == -1) {
-        getLoggerPtr()->outputRaw(isc::log::WARN, "Unable to use logger lockfile: " + lockfile_path_);
+        getLoggerPtr()->outputRaw(isc::log::WARN,
+                                  "Unable to use logger lockfile: " +
+                                  lockfile_path_);
     } else {
         memset(&lock, 0, sizeof lock);
         lock.l_type = F_WRLCK;
@@ -178,7 +183,9 @@ Logger::output(const Severity& severity, const std::string& message) {
         lock.l_len = 1;
         status = fcntl(lock_fd_, F_SETLKW, &lock);
         if (status != 0) {
-            getLoggerPtr()->outputRaw(isc::log::WARN, "Unable to lock logger lockfile: " + lockfile_path_);
+            getLoggerPtr()->outputRaw(isc::log::WARN,
+                                      "Unable to lock logger lockfile: " +
+                                      lockfile_path_);
             return;
         }
 
@@ -193,7 +200,9 @@ Logger::output(const Severity& severity, const std::string& message) {
         lock.l_len = 1;
         status = fcntl(lock_fd_, F_SETLKW, &lock);
         if (status != 0) {
-            getLoggerPtr()->outputRaw(isc::log::WARN, "Unable to unlock logger lockfile: " + lockfile_path_);
+            getLoggerPtr()->outputRaw(isc::log::WARN,
+                                      "Unable to unlock logger lockfile: " +
+                                      lockfile_path_);
         }
     }
 }
