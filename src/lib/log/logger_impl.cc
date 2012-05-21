@@ -18,6 +18,10 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <boost/lexical_cast.hpp>
 #include <boost/static_assert.hpp>
 
@@ -50,11 +54,32 @@ namespace log {
 LoggerImpl::LoggerImpl(const string& name) : name_(expandLoggerName(name)),
     logger_(log4cplus::Logger::getInstance(name_))
 {
+    lockfile_path_ = LOCKFILE_DIR;
+
+    const char* const env = getenv("B10_FROM_SOURCE");
+    if (env != NULL) {
+        lockfile_path_ = env;
+    }
+
+    const char* const env2 = getenv("B10_FROM_SOURCE_LOCALSTATEDIR");
+    if (env2 != NULL) {
+        lockfile_path_ = env2;
+    }
+
+    lockfile_path_ += "/logger_lockfile";
+
+    // Open the lockfile in the constructor so it doesn't do the access
+    // checks every time a message is logged.
+    lock_fd_ = open(lockfile_path_.c_str(), O_CREAT | O_RDWR, 0600);
 }
 
 // Destructor. (Here because of virtual declaration.)
 
 LoggerImpl::~LoggerImpl() {
+    if (lock_fd_ != -1) {
+        close(lock_fd_);
+    }
+    // The lockfile will continue to exist, as we mustn't delete it.
 }
 
 // Set the severity for logging.
@@ -104,7 +129,31 @@ LoggerImpl::lookupMessage(const MessageID& ident) {
 
 void
 LoggerImpl::outputRaw(const Severity& severity, const string& message) {
-    switch (severity) {
+    // Use a lock file for mutual exclusion from other processes to
+    // avoid log messages getting interspersed
+
+    struct flock lock;
+    int status;
+
+    if (lock_fd_ == -1) {
+        LOG4CPLUS_ERROR(logger_, "Unable to use logger lockfile: " +
+                        lockfile_path_);
+    } else {
+        // Acquire the exclusive lock
+        memset(&lock, 0, sizeof lock);
+        lock.l_type = F_WRLCK;
+        lock.l_whence = SEEK_SET;
+        lock.l_start = 0;
+        lock.l_len = 1;
+        status = fcntl(lock_fd_, F_SETLKW, &lock);
+        if (status != 0) {
+            LOG4CPLUS_ERROR(logger_, "Unable to lock logger lockfile: " +
+                            lockfile_path_);
+            return;
+        }
+
+        // Log the message
+        switch (severity) {
         case DEBUG:
             LOG4CPLUS_DEBUG(logger_, message);
             break;
@@ -123,6 +172,19 @@ LoggerImpl::outputRaw(const Severity& severity, const string& message) {
 
         case FATAL:
             LOG4CPLUS_FATAL(logger_, message);
+        }
+
+        // Release the exclusive lock
+        memset(&lock, 0, sizeof lock);
+        lock.l_type = F_UNLCK;
+        lock.l_whence = SEEK_SET;
+        lock.l_start = 0;
+        lock.l_len = 1;
+        status = fcntl(lock_fd_, F_SETLKW, &lock);
+        if (status != 0) {
+            LOG4CPLUS_ERROR(logger_, "Unable to unlock logger lockfile: " +
+                            lockfile_path_);
+        }
     }
 }
 

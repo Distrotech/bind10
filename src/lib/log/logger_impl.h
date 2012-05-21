@@ -180,6 +180,8 @@ public:
 private:
     std::string         name_;              ///< Full name of this logger
     log4cplus::Logger   logger_;            ///< Underlying log4cplus logger
+    std::string         lockfile_path_;
+    int                 lock_fd_;
 };
 
 } // namespace log
