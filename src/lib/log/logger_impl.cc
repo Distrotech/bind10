@@ -75,6 +75,11 @@ LoggerImpl::LoggerImpl(const string& name) : name_(expandLoggerName(name)),
     mode_t mode = umask(0111);
     lock_fd_ = open(lockfile_path_.c_str(), O_CREAT | O_RDWR, 0666);
     umask(mode);
+
+    if (lock_fd_ == -1) {
+        LOG4CPLUS_ERROR(logger_, "Unable to use logger lockfile: " +
+                        lockfile_path_);
+    }
 }
 
 // Destructor. (Here because of virtual declaration.)
@@ -139,10 +144,7 @@ LoggerImpl::outputRaw(const Severity& severity, const string& message) {
     struct flock lock;
     int status;
 
-    if (lock_fd_ == -1) {
-        LOG4CPLUS_ERROR(logger_, "Unable to use logger lockfile: " +
-                        lockfile_path_);
-    } else {
+    if (lock_fd_ != -1) {
         // Acquire the exclusive lock
         memset(&lock, 0, sizeof lock);
         lock.l_type = F_WRLCK;
