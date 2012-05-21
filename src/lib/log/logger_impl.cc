@@ -22,6 +22,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <boost/lexical_cast.hpp>
 #include <boost/static_assert.hpp>
 
@@ -70,7 +72,9 @@ LoggerImpl::LoggerImpl(const string& name) : name_(expandLoggerName(name)),
 
     // Open the lockfile in the constructor so it doesn't do the access
     // checks every time a message is logged.
-    lock_fd_ = open(lockfile_path_.c_str(), O_CREAT | O_RDWR, 0600);
+    mode_t mode = umask(0111);
+    lock_fd_ = open(lockfile_path_.c_str(), O_CREAT | O_RDWR, 0666);
+    umask(mode);
 }
 
 // Destructor. (Here because of virtual declaration.)
