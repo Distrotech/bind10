@@ -71,7 +71,7 @@ LoggerImpl::LoggerImpl(const string& name) : name_(expandLoggerName(name)),
     // Open the lockfile in the constructor so it doesn't do the access
     // checks every time a message is logged.
     mode_t mode = umask(0111);
-    lock_fd_ = open(lockfile_path_.c_str(), O_CREAT | O_RDWR, 0666);
+    lock_fd_ = open(lockfile_path_.c_str(), O_CREAT | O_RDWR, 0660);
     umask(mode);
 
     if (lock_fd_ == -1) {
