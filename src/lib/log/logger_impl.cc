@@ -18,12 +18,9 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <boost/lexical_cast.hpp>
 #include <boost/static_assert.hpp>
 
@@ -38,6 +35,7 @@
 #include <log/message_types.h>
 
 #include <util/strutil.h>
+#include <util/file_lock.h>
 
 // Note: as log4cplus and the BIND 10 logger have many concepts in common, and
 // thus many similar names, to disambiguate types we don't "use" the log4cplus
@@ -141,21 +139,12 @@ LoggerImpl::outputRaw(const Severity& severity, const string& message) {
     // Use a lock file for mutual exclusion from other processes to
     // avoid log messages getting interspersed
 
-    struct flock lock;
-    int status;
+    isc::util::file_lock l(lock_fd_);
 
     if (lock_fd_ != -1) {
-        // Acquire the exclusive lock
-        memset(&lock, 0, sizeof lock);
-        lock.l_type = F_WRLCK;
-        lock.l_whence = SEEK_SET;
-        lock.l_start = 0;
-        lock.l_len = 1;
-        status = fcntl(lock_fd_, F_SETLKW, &lock);
-        if (status != 0) {
+        if (!l.lock()) {
             LOG4CPLUS_ERROR(logger_, "Unable to lock logger lockfile: " +
                             lockfile_path_);
-            return;
         }
     }
 
@@ -182,14 +171,7 @@ LoggerImpl::outputRaw(const Severity& severity, const string& message) {
     }
 
     if (lock_fd_ != -1) {
-        // Release the exclusive lock
-        memset(&lock, 0, sizeof lock);
-        lock.l_type = F_UNLCK;
-        lock.l_whence = SEEK_SET;
-        lock.l_start = 0;
-        lock.l_len = 1;
-        status = fcntl(lock_fd_, F_SETLKW, &lock);
-        if (status != 0) {
+        if (!l.unlock()) {
             LOG4CPLUS_ERROR(logger_, "Unable to unlock logger lockfile: " +
                             lockfile_path_);
         }
