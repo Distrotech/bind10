@@ -157,9 +157,10 @@ LoggerImpl::outputRaw(const Severity& severity, const string& message) {
                             lockfile_path_);
             return;
         }
+    }
 
-        // Log the message
-        switch (severity) {
+    // Log the message
+    switch (severity) {
         case DEBUG:
             LOG4CPLUS_DEBUG(logger_, message);
             break;
@@ -178,8 +179,9 @@ LoggerImpl::outputRaw(const Severity& severity, const string& message) {
 
         case FATAL:
             LOG4CPLUS_FATAL(logger_, message);
-        }
+    }
 
+    if (lock_fd_ != -1) {
         // Release the exclusive lock
         memset(&lock, 0, sizeof lock);
         lock.l_type = F_UNLCK;
