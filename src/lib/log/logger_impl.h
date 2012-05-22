@@ -222,6 +222,10 @@ public:
         return (name_ == other.name_);
     }
 
+    /// \brief Sets a different logger wrapper
+    ///
+    /// This method is only supposed to be used by test code. It is used
+    /// to pass mock objects for intercepting log calls.
     void setLoggerWrapper(LoggerWrapper *wrapper) {
         delete logger_;
         logger_ = wrapper;
