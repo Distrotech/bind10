@@ -385,9 +385,6 @@ TEST_F(LoggerTest, LoggerNameLength) {
 #endif
 }
 
-// Checks that the logger logs exclusively and other BIND 10 components
-// are locked out.
-
 class MockWrapper : public LoggerWrapper {
 public:
     MockWrapper(const std::string& name) : LoggerWrapper(name), was_locked_(false) {
@@ -464,6 +461,9 @@ public:
 private:
     bool was_locked_;
 };
+
+// Checks that the logger logs exclusively and other BIND 10 components
+// are locked out.
 
 TEST_F(LoggerTest, Lock) {
     // Create a logger
