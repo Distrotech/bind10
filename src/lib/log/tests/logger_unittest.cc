@@ -438,7 +438,7 @@ public:
             close(fds[1]);
             exit(0);
         } else {
-            unsigned char locked;
+            unsigned char locked = 0;
             // Parent reads from pipe
             close(fds[1]);
 
