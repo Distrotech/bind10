@@ -444,10 +444,10 @@ public:
 
             // Read status and set flag
             read(fds[0], &locked, sizeof locked);
-            if (locked == 0) {
-                was_locked_ = false;
-            } else {
+            if (locked == 1) {
                 was_locked_ = true;
+            } else {
+                was_locked_ = false;
             }
 
             close(fds[0]);
