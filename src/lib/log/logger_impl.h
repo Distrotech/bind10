@@ -40,35 +40,35 @@ public:
     LoggerWrapper(const std::string& name) : logger_(log4cplus::Logger::getInstance(name)) {
     }
 
-    virtual bool isEnabledFor(log4cplus::LogLevel level) {
+    bool isEnabledFor(log4cplus::LogLevel level) {
         return (logger_.isEnabledFor(level));
     }
 
-    virtual void setLogLevel(log4cplus::LogLevel level) {
+    void setLogLevel(log4cplus::LogLevel level) {
         logger_.setLogLevel(level);
     }
 
-    virtual log4cplus::LogLevel getLogLevel() {
+    log4cplus::LogLevel getLogLevel() {
         return (logger_.getLogLevel());
     }
 
-    virtual log4cplus::LogLevel getChainedLogLevel() {
+    log4cplus::LogLevel getChainedLogLevel() {
         return (logger_.getChainedLogLevel());
     }
 
-    virtual void debug(std::string msg) {
+    void debug(std::string msg) {
         LOG4CPLUS_DEBUG(logger_, msg);
     }
 
-    virtual void info(std::string msg) {
+    void info(std::string msg) {
         LOG4CPLUS_INFO(logger_, msg);
     }
 
-    virtual void warn(std::string msg) {
+    void warn(std::string msg) {
         LOG4CPLUS_WARN(logger_, msg);
     }
 
-    virtual void error(std::string msg) {
+    void error(std::string msg) {
         LOG4CPLUS_ERROR(logger_, msg);
     }
 
