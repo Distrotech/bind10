@@ -1,4 +1,4 @@
-// File created from log_messages.mes on Thu Jul  7 15:32:06 2011
+// File created from log_messages.mes on Tue May 22 08:17:08 2012
 
 #ifndef __LOG_MESSAGES_H
 #define __LOG_MESSAGES_H
@@ -15,6 +15,7 @@ extern const isc::log::MessageID LOG_DUPLICATE_MESSAGE_ID;
 extern const isc::log::MessageID LOG_DUPLICATE_NAMESPACE;
 extern const isc::log::MessageID LOG_INPUT_OPEN_FAIL;
 extern const isc::log::MessageID LOG_INVALID_MESSAGE_ID;
+extern const isc::log::MessageID LOG_LOCK_TEST_MESSAGE;
 extern const isc::log::MessageID LOG_NAMESPACE_EXTRA_ARGS;
 extern const isc::log::MessageID LOG_NAMESPACE_INVALID_ARG;
 extern const isc::log::MessageID LOG_NAMESPACE_NO_ARGS;

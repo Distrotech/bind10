@@ -51,9 +51,10 @@ namespace log {
 // one compiler requires that all member variables be constructed before the
 // constructor is run, but log4cplus::Logger (the type of logger_) has no
 // default constructor.
-LoggerImpl::LoggerImpl(const string& name) : name_(expandLoggerName(name)),
-    logger_(log4cplus::Logger::getInstance(name_))
+LoggerImpl::LoggerImpl(const string& name) : name_(expandLoggerName(name))
 {
+    logger_ = new LoggerWrapper(name_);
+
     lockfile_path_ = LOCKFILE_DIR;
 
     const char* const env = getenv("B10_FROM_SOURCE");
@@ -75,8 +76,7 @@ LoggerImpl::LoggerImpl(const string& name) : name_(expandLoggerName(name)),
     umask(mode);
 
     if (lock_fd_ == -1) {
-        LOG4CPLUS_ERROR(logger_, "Unable to use logger lockfile: " +
-                        lockfile_path_);
+        logger_->error("Unable to use logger lockfile: " + lockfile_path_);
     }
 }
 
@@ -87,26 +87,28 @@ LoggerImpl::~LoggerImpl() {
         close(lock_fd_);
     }
     // The lockfile will continue to exist, as we mustn't delete it.
+
+    delete logger_;
 }
 
 // Set the severity for logging.
 void
 LoggerImpl::setSeverity(isc::log::Severity severity, int dbglevel) {
     Level level(severity, dbglevel);
-    logger_.setLogLevel(LoggerLevelImpl::convertFromBindLevel(level));
+    logger_->setLogLevel(LoggerLevelImpl::convertFromBindLevel(level));
 }
 
 // Return severity level
 isc::log::Severity
 LoggerImpl::getSeverity() {
-    Level level = LoggerLevelImpl::convertToBindLevel(logger_.getLogLevel());
+    Level level = LoggerLevelImpl::convertToBindLevel(logger_->getLogLevel());
     return level.severity;
 }
 
 // Return current debug level (only valid if current severity level is DEBUG).
 int
 LoggerImpl::getDebugLevel() {
-    Level level = LoggerLevelImpl::convertToBindLevel(logger_.getLogLevel());
+    Level level = LoggerLevelImpl::convertToBindLevel(logger_->getLogLevel());
     return level.dbglevel;
 }
 
@@ -114,7 +116,7 @@ LoggerImpl::getDebugLevel() {
 // severity of the root level.
 isc::log::Severity
 LoggerImpl::getEffectiveSeverity() {
-    Level level = LoggerLevelImpl::convertToBindLevel(logger_.getChainedLogLevel());
+    Level level = LoggerLevelImpl::convertToBindLevel(logger_->getChainedLogLevel());
     return level.severity;
 }
 
@@ -122,7 +124,7 @@ LoggerImpl::getEffectiveSeverity() {
 // is DEBUG).
 int
 LoggerImpl::getEffectiveDebugLevel() {
-    Level level = LoggerLevelImpl::convertToBindLevel(logger_.getChainedLogLevel());
+    Level level = LoggerLevelImpl::convertToBindLevel(logger_->getChainedLogLevel());
     return level.dbglevel;
 }
 
@@ -143,37 +145,35 @@ LoggerImpl::outputRaw(const Severity& severity, const string& message) {
 
     if (lock_fd_ != -1) {
         if (!l.lock()) {
-            LOG4CPLUS_ERROR(logger_, "Unable to lock logger lockfile: " +
-                            lockfile_path_);
+            logger_->error("Unable to lock logger lockfile: " + lockfile_path_);
         }
     }
 
     // Log the message
     switch (severity) {
         case DEBUG:
-            LOG4CPLUS_DEBUG(logger_, message);
+            logger_->debug(message);
             break;
 
         case INFO:
-            LOG4CPLUS_INFO(logger_, message);
+            logger_->info(message);
             break;
 
         case WARN:
-            LOG4CPLUS_WARN(logger_, message);
+            logger_->warn(message);
             break;
 
         case ERROR:
-            LOG4CPLUS_ERROR(logger_, message);
+            logger_->error(message);
             break;
 
         case FATAL:
-            LOG4CPLUS_FATAL(logger_, message);
+            logger_->fatal(message);
     }
 
     if (lock_fd_ != -1) {
         if (!l.unlock()) {
-            LOG4CPLUS_ERROR(logger_, "Unable to unlock logger lockfile: " +
-                            lockfile_path_);
+          logger_->error("Unable to unlock logger lockfile: " + lockfile_path_);
         }
     }
 }

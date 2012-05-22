@@ -35,6 +35,51 @@
 namespace isc {
 namespace log {
 
+class LoggerWrapper {
+public:
+    LoggerWrapper(const std::string& name) : logger_(log4cplus::Logger::getInstance(name)) {
+    }
+
+    virtual bool isEnabledFor(log4cplus::LogLevel level) {
+        return (logger_.isEnabledFor(level));
+    }
+
+    virtual void setLogLevel(log4cplus::LogLevel level) {
+        logger_.setLogLevel(level);
+    }
+
+    virtual log4cplus::LogLevel getLogLevel() {
+        return (logger_.getLogLevel());
+    }
+
+    virtual log4cplus::LogLevel getChainedLogLevel() {
+        return (logger_.getChainedLogLevel());
+    }
+
+    virtual void debug(std::string msg) {
+        LOG4CPLUS_DEBUG(logger_, msg);
+    }
+
+    virtual void info(std::string msg) {
+        LOG4CPLUS_INFO(logger_, msg);
+    }
+
+    virtual void warn(std::string msg) {
+        LOG4CPLUS_WARN(logger_, msg);
+    }
+
+    virtual void error(std::string msg) {
+        LOG4CPLUS_ERROR(logger_, msg);
+    }
+
+    virtual void fatal(std::string msg) {
+        LOG4CPLUS_FATAL(logger_, msg);
+    }
+
+private:
+    log4cplus::Logger logger_;            ///< Underlying log4cplus logger
+};
+
 /// \brief Console Logger Implementation
 ///
 /// The logger uses a "pimpl" idiom for implementation, where the base logger
@@ -129,27 +174,27 @@ public:
     /// checked is less than or equal to the debug level set for the logger.
     virtual bool isDebugEnabled(int dbglevel = MIN_DEBUG_LEVEL) {
         Level level(DEBUG, dbglevel);
-        return logger_.isEnabledFor(LoggerLevelImpl::convertFromBindLevel(level));
+        return logger_->isEnabledFor(LoggerLevelImpl::convertFromBindLevel(level));
     }
 
     /// \brief Is INFO Enabled?
     virtual bool isInfoEnabled() {
-        return (logger_.isEnabledFor(log4cplus::INFO_LOG_LEVEL));
+        return (logger_->isEnabledFor(log4cplus::INFO_LOG_LEVEL));
     }
 
     /// \brief Is WARNING Enabled?
     virtual bool isWarnEnabled() {
-        return (logger_.isEnabledFor(log4cplus::WARN_LOG_LEVEL));
+        return (logger_->isEnabledFor(log4cplus::WARN_LOG_LEVEL));
     }
 
     /// \brief Is ERROR Enabled?
     virtual bool isErrorEnabled() {
-        return (logger_.isEnabledFor(log4cplus::ERROR_LOG_LEVEL));
+        return (logger_->isEnabledFor(log4cplus::ERROR_LOG_LEVEL));
     }
 
     /// \brief Is FATAL Enabled?
     virtual bool isFatalEnabled() {
-        return (logger_.isEnabledFor(log4cplus::FATAL_LOG_LEVEL));
+        return (logger_->isEnabledFor(log4cplus::FATAL_LOG_LEVEL));
     }
 
     /// \brief Raw output
@@ -177,9 +222,14 @@ public:
         return (name_ == other.name_);
     }
 
+    void setLoggerWrapper(LoggerWrapper *wrapper) {
+        delete logger_;
+        logger_ = wrapper;
+    }
+
 private:
     std::string         name_;              ///< Full name of this logger
-    log4cplus::Logger   logger_;            ///< Underlying log4cplus logger
+    LoggerWrapper      *logger_;            ///< Underlying log4cplus wrapper
     std::string         lockfile_path_;
     int                 lock_fd_;
 };

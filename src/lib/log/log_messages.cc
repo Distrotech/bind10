@@ -1,4 +1,4 @@
-// File created from log_messages.mes on Thu Jul  7 15:32:06 2011
+// File created from log_messages.mes on Tue May 22 08:17:08 2012
 
 #include <cstddef>
 #include <log/message_types.h>
@@ -14,6 +14,7 @@ extern const isc::log::MessageID LOG_DUPLICATE_MESSAGE_ID = "LOG_DUPLICATE_MESSA
 extern const isc::log::MessageID LOG_DUPLICATE_NAMESPACE = "LOG_DUPLICATE_NAMESPACE";
 extern const isc::log::MessageID LOG_INPUT_OPEN_FAIL = "LOG_INPUT_OPEN_FAIL";
 extern const isc::log::MessageID LOG_INVALID_MESSAGE_ID = "LOG_INVALID_MESSAGE_ID";
+extern const isc::log::MessageID LOG_LOCK_TEST_MESSAGE = "LOG_LOCK_TEST_MESSAGE";
 extern const isc::log::MessageID LOG_NAMESPACE_EXTRA_ARGS = "LOG_NAMESPACE_EXTRA_ARGS";
 extern const isc::log::MessageID LOG_NAMESPACE_INVALID_ARG = "LOG_NAMESPACE_INVALID_ARG";
 extern const isc::log::MessageID LOG_NAMESPACE_NO_ARGS = "LOG_NAMESPACE_NO_ARGS";
@@ -41,6 +42,7 @@ const char* values[] = {
     "LOG_DUPLICATE_NAMESPACE", "line %1: duplicate $NAMESPACE directive found",
     "LOG_INPUT_OPEN_FAIL", "unable to open message file %1 for input: %2",
     "LOG_INVALID_MESSAGE_ID", "line %1: invalid message identification '%2'",
+    "LOG_LOCK_TEST_MESSAGE", "this is a test message.",
     "LOG_NAMESPACE_EXTRA_ARGS", "line %1: $NAMESPACE directive has too many arguments",
     "LOG_NAMESPACE_INVALID_ARG", "line %1: $NAMESPACE directive has an invalid argument ('%2')",
     "LOG_NAMESPACE_NO_ARGS", "line %1: no arguments were given to the $NAMESPACE directive",

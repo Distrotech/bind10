@@ -20,9 +20,14 @@
 #include <util/unittests/resource.h>
 
 #include <log/logger.h>
+#include <log/logger_impl.h>
 #include <log/logger_manager.h>
 #include <log/logger_name.h>
 #include <log/log_messages.h>
+
+#include <util/file_lock.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 using namespace isc;
 using namespace isc::log;
@@ -378,4 +383,101 @@ TEST_F(LoggerTest, LoggerNameLength) {
         Logger l3(ok3.c_str());
     }, ".*");
 #endif
+}
+
+// Checks that the logger logs exclusively and other BIND 10 components
+// are locked out.
+
+class MockWrapper : public LoggerWrapper {
+public:
+    MockWrapper(const std::string& name) : LoggerWrapper(name), was_locked_(false) {
+    }
+
+    virtual void fatal(std::string msg) {
+        int fds[2];
+
+        msg = msg; // shut up compiler
+
+        // Here, we check that a lock has been taken by forking and
+        // checking from the child that a lock exists. This has to be
+        // done from a separate process as we test by trying to lock the
+        // range again on the lock file. The lock attempt would pass if
+        // done from the same process for the granted range. The lock
+        // attempt must fail to pass our check.
+
+        pipe(fds);
+
+        if (fork() == 0) {
+            unsigned char locked = 0;
+            // Child writes to pipe
+            close(fds[0]);
+
+            // Check if the lock file was indeed locked.
+            string lockfile_path = LOCKFILE_DIR;
+
+            const char* const env = getenv("B10_FROM_SOURCE");
+            if (env != NULL) {
+                lockfile_path = env;
+            }
+
+            const char* const env2 = getenv("B10_FROM_SOURCE_LOCALSTATEDIR");
+            if (env2 != NULL) {
+                lockfile_path = env2;
+            }
+
+            lockfile_path += "/logger_lockfile";
+
+            int lock_fd = open(lockfile_path.c_str(), O_RDWR);
+            if (lock_fd != -1) {
+                isc::util::file_lock l(lock_fd);
+
+                if (!l.tryLock()) {
+                    locked = 1;
+                }
+                close(lock_fd);
+            }
+
+            write(fds[1], &locked, sizeof locked);
+            close(fds[1]);
+            exit(0);
+        } else {
+            unsigned char locked;
+            // Parent reads from pipe
+            close(fds[1]);
+
+            // Read status and set flag
+            read(fds[0], &locked, sizeof locked);
+            if (locked == 0) {
+                was_locked_ = false;
+            } else {
+                was_locked_ = true;
+            }
+
+            close(fds[0]);
+        }
+    }
+
+    bool wasLocked() {
+        return was_locked_;
+    }
+
+private:
+    bool was_locked_;
+};
+
+TEST_F(LoggerTest, Lock) {
+    // Create a logger
+    Logger logger("alpha");
+
+    // Setup our own mock wrapper so that we can intercept the logging
+    // call and check if a file lock has been taken.
+    LoggerImpl *i = logger.getLoggerPtr();
+    MockWrapper *my_wrapper = new MockWrapper("alpha");
+    i->setLoggerWrapper(my_wrapper);
+
+    // Log a message and put things into play.
+    logger.setSeverity(isc::log::FATAL, 100);
+    logger.fatal(LOG_LOCK_TEST_MESSAGE);
+
+    EXPECT_TRUE(my_wrapper->wasLocked());
 }

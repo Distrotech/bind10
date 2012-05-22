@@ -144,3 +144,6 @@ Within a message file, a line starting with a dollar symbol was found
 % LOG_WRITE_ERROR error writing to %1: %2
 The specified error was encountered by the message compiler when writing
 to the named output file.
+
+% LOG_LOCK_TEST_MESSAGE this is a test message.
+This is a test message for the lock test.

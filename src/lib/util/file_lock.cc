@@ -54,6 +54,33 @@ file_lock::lock() {
 }
 
 bool
+file_lock::tryLock() {
+    if (is_locked_) {
+        return true;
+    }
+
+    if (fd_ != -1) {
+        struct flock lock;
+        int status;
+
+        // Acquire the exclusive lock
+        memset(&lock, 0, sizeof lock);
+        lock.l_type = F_WRLCK;
+        lock.l_whence = SEEK_SET;
+        lock.l_start = 0;
+        lock.l_len = 1;
+
+        status = fcntl(fd_, F_SETLK, &lock);
+        if (status == 0) {
+            is_locked_ = true;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool
 file_lock::unlock() {
     if (!is_locked_) {
         return true;

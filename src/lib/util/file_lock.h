@@ -30,6 +30,7 @@ public:
     virtual ~file_lock();
 
     bool lock();
+    bool tryLock();
     bool unlock();
 private:
     int fd_;

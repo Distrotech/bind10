@@ -244,6 +244,25 @@ public:
     /// \return true if the logger objects are instances of the same logger.
     bool operator==(Logger& other);
 
+    /// \brief Initialize Implementation
+    ///
+    /// Returns the logger pointer.  If not yet set, the implementation class is
+    /// initialized.
+    ///
+    /// The main reason for this is to allow loggers to be declared statically
+    /// before the underlying logging system is initialized.  However, any
+    /// attempt to access a logging method on any logger before initialization -
+    /// regardless of whether is is statically or automatically declared -  will
+    /// cause a "LoggingNotInitialized" exception to be thrown.
+    ///
+    /// \return Returns pointer to implementation
+    LoggerImpl* getLoggerPtr() {
+        if (!loggerptr_) {
+            initLoggerImpl();
+        }
+        return (loggerptr_);
+    }
+
 private:
     friend class isc::log::Formatter<Logger>;
 
@@ -266,25 +285,6 @@ private:
     /// Disabled (marked private) as it makes no sense to copy the logger -
     /// just create another one of the same name.
     Logger& operator=(const Logger&);
-
-    /// \brief Initialize Implementation
-    ///
-    /// Returns the logger pointer.  If not yet set, the implementation class is
-    /// initialized.
-    ///
-    /// The main reason for this is to allow loggers to be declared statically
-    /// before the underlying logging system is initialized.  However, any
-    /// attempt to access a logging method on any logger before initialization -
-    /// regardless of whether is is statically or automatically declared -  will
-    /// cause a "LoggingNotInitialized" exception to be thrown.
-    ///
-    /// \return Returns pointer to implementation
-    LoggerImpl* getLoggerPtr() {
-        if (!loggerptr_) {
-            initLoggerImpl();
-        }
-        return (loggerptr_);
-    }
 
     /// \brief Initialize Underlying Implementation and Set loggerptr_
     void initLoggerImpl();
