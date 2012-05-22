@@ -455,7 +455,7 @@ public:
     }
 
     bool wasLocked() {
-        return was_locked_;
+        return (was_locked_);
     }
 
 private:

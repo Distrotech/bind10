@@ -173,7 +173,7 @@ LoggerImpl::outputRaw(const Severity& severity, const string& message) {
 
     if (lock_fd_ != -1) {
         if (!l.unlock()) {
-          logger_->error("Unable to unlock logger lockfile: " + lockfile_path_);
+            logger_->error("Unable to unlock logger lockfile: " + lockfile_path_);
         }
     }
 }
