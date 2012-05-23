@@ -37,8 +37,9 @@ namespace log {
 
 class LoggerWrapper {
 public:
-    LoggerWrapper(const std::string& name) : logger_(log4cplus::Logger::getInstance(name)) {
-    }
+    LoggerWrapper(const std::string& name) :
+        logger_(log4cplus::Logger::getInstance(name))
+    {}
 
     bool isEnabledFor(log4cplus::LogLevel level) {
         return (logger_.isEnabledFor(level));
@@ -226,14 +227,14 @@ public:
     ///
     /// This method is only supposed to be used by test code. It is used
     /// to pass mock objects for intercepting log calls.
-    void setLoggerWrapper(LoggerWrapper *wrapper) {
+    void setLoggerWrapper(LoggerWrapper* wrapper) {
         delete logger_;
         logger_ = wrapper;
     }
 
 private:
     std::string         name_;              ///< Full name of this logger
-    LoggerWrapper      *logger_;            ///< Underlying log4cplus wrapper
+    LoggerWrapper*      logger_;            ///< Underlying log4cplus wrapper
     std::string         lockfile_path_;
     int                 lock_fd_;
 };

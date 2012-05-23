@@ -29,12 +29,11 @@ file_lock::~file_lock() {
 bool
 file_lock::lock() {
     if (is_locked_) {
-        return true;
+        return (true);
     }
 
     if (fd_ != -1) {
         struct flock lock;
-        int status;
 
         // Acquire the exclusive lock
         memset(&lock, 0, sizeof lock);
@@ -43,25 +42,24 @@ file_lock::lock() {
         lock.l_start = 0;
         lock.l_len = 1;
 
-        status = fcntl(fd_, F_SETLKW, &lock);
+        const int status = fcntl(fd_, F_SETLKW, &lock);
         if (status == 0) {
             is_locked_ = true;
-            return true;
+            return (true);
         }
     }
 
-    return false;
+    return (false);
 }
 
 bool
 file_lock::tryLock() {
     if (is_locked_) {
-        return true;
+        return (true);
     }
 
     if (fd_ != -1) {
         struct flock lock;
-        int status;
 
         // Acquire the exclusive lock
         memset(&lock, 0, sizeof lock);
@@ -70,25 +68,24 @@ file_lock::tryLock() {
         lock.l_start = 0;
         lock.l_len = 1;
 
-        status = fcntl(fd_, F_SETLK, &lock);
+        const int status = fcntl(fd_, F_SETLK, &lock);
         if (status == 0) {
             is_locked_ = true;
-            return true;
+            return (true);
         }
     }
 
-    return false;
+    return (false);
 }
 
 bool
 file_lock::unlock() {
     if (!is_locked_) {
-        return true;
+        return (true);
     }
 
     if (fd_ != -1) {
         struct flock lock;
-        int status;
 
         // Release the exclusive lock
         memset(&lock, 0, sizeof lock);
@@ -97,14 +94,14 @@ file_lock::unlock() {
         lock.l_start = 0;
         lock.l_len = 1;
 
-        status = fcntl(fd_, F_SETLKW, &lock);
+        const int status = fcntl(fd_, F_SETLKW, &lock);
         if (status == 0) {
             is_locked_ = false;
-            return true;
+            return (true);
         }
     }
 
-    return false;
+    return (false);
 }
 
 } // namespace util

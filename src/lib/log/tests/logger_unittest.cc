@@ -387,7 +387,9 @@ TEST_F(LoggerTest, LoggerNameLength) {
 
 class MockWrapper : public LoggerWrapper {
 public:
-    MockWrapper(const std::string& name) : LoggerWrapper(name), was_locked_(false) {
+    MockWrapper(const std::string& name) : LoggerWrapper(name),
+                                           was_locked_(false)
+    {
     }
 
     virtual void fatal(std::string msg) {
@@ -471,8 +473,8 @@ TEST_F(LoggerTest, Lock) {
 
     // Setup our own mock wrapper so that we can intercept the logging
     // call and check if a file lock has been taken.
-    LoggerImpl *i = logger.getLoggerPtr();
-    MockWrapper *my_wrapper = new MockWrapper("alpha");
+    LoggerImpl* i = logger.getLoggerPtr();
+    MockWrapper* my_wrapper = new MockWrapper("alpha");
     i->setLoggerWrapper(my_wrapper);
 
     // Log a message and put things into play.
