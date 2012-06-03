@@ -207,7 +207,6 @@ DatabaseClient::Finder::getRRsets(const string& name, const WantedTypes& types,
     bool seen_ds(false);
     bool seen_other(false);
     bool seen_ns(false);
-    bool seen_a(false);
     bool may_have_glue(false);
 
     while (context->getNext(columns)) {
@@ -258,9 +257,6 @@ DatabaseClient::Finder::getRRsets(const string& name, const WantedTypes& types,
                     may_have_glue = true;
             } else if (cur_type == RRType::DS()) {
                 seen_ds = true;
-            } else if (cur_type == RRType::A() ||
-                       cur_type == RRType::AAAA()) {
-                seen_a = true;
             } else if (cur_type != RRType::RRSIG() &&
                        cur_type != RRType::NSEC3() &&
                        cur_type != RRType::NSEC()) {
@@ -286,11 +282,11 @@ DatabaseClient::Finder::getRRsets(const string& name, const WantedTypes& types,
                       RDATA_COLUMN]);
         }
     }
-    if (seen_cname && (seen_other || seen_a || seen_ns || seen_ds)) {
+    if (seen_cname && (seen_other || seen_ns || seen_ds)) {
         isc_throw(DataSourceError, "CNAME shares domain " << name <<
                   " with something else");
     }
-    if (check_ns && seen_ns && ((!may_have_glue && seen_a) || seen_other)) {
+    if (check_ns && seen_ns && (!may_have_glue && seen_other)) {
         isc_throw(DataSourceError, "NS shares domain " << name <<
                   " with something else");
     }
