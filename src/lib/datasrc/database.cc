@@ -207,6 +207,10 @@ DatabaseClient::Finder::getRRsets(const string& name, const WantedTypes& types,
     bool seen_ds(false);
     bool seen_other(false);
     bool seen_ns(false);
+
+    // may_have_glue indicates if glue records may exist for the
+    // domain. It is true when records like this are seen:
+    // child.example. IN NS child.example.
     bool may_have_glue(false);
 
     while (context->getNext(columns)) {
