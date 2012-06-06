@@ -325,8 +325,8 @@ public:
 
     /// @brief Returns packet timestamp.
     ///
-    /// Returns packet timestamp value updated when
-    /// packet is received or send.
+    /// Returns the packet timestamp value, which is updated when the packet is
+    /// received or sent.
     ///
     /// @return packet timestamp.
     const boost::posix_time::ptime& getTimestamp() const { return timestamp_; }
@@ -399,9 +399,9 @@ public:
 
     /// @brief Update packet timestamp.
     ///
-    /// Updates packet timestamp. This method is invoked
-    /// by interface manager just before sending or
-    /// just after receiving it.
+    /// Updates the packet timestamp. This method is invoked by the interface
+    /// manager just before sending or just after receiving it.
+    ///
     /// @throw isc::Unexpected if timestamp update failed
     void updateTimestamp();
 

@@ -33,10 +33,8 @@ PerfPkt6::PerfPkt6(const uint8_t* buf, uint32_t len,
     transid_ = transid;
 }
 
-PerfPkt6::PerfPkt6(const uint8_t* buf,
-                   uint32_t len,
-                   const Offset&
-                   transid_offset) :
+PerfPkt6::PerfPkt6(const uint8_t* buf, uint32_t len,
+                   const Offset& transid_offset) :
     Pkt6(buf, len, Pkt6::UDP),
     transid_offset_(transid_offset.get()) {
 }

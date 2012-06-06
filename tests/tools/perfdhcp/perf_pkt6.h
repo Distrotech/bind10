@@ -26,28 +26,27 @@ namespace perfdhcp {
 
 /// \brief PerfPkt6 (DHCPv6 packet)
 ///
-/// This class extends functionality of \ref isc::dhcp::Pkt6 by
-/// adding ability to specify options offset in DHCP message
-/// and override options' contents with new option.
-/// This approach is useful when we create paket object from
-/// raw template buffer from file and we want to use it as
-/// a base to create test packets to be sent to DHCP server.
+/// This class extends the functionality of \ref isc::dhcp::Pkt6 by
+/// adding the ability to specify options offset in a DHCP message
+/// and overridethe  options' contents with new option.
+/// This approach is useful when we create packet object from
+/// raw template buffer (from a file) and we want to use it as
+/// a base to create test packets to be sent to the DHCP server.
 ///
 /// Some of the contents of such a template packets always
 /// have to be replaced e.g. transaction id, IA_NA. Other
 /// contents (options) may be changed e.g. elapsed time,
 /// server id.
 ///
-/// In order to create packet from raw template buffer
+/// In order to create a packet from a raw template buffer,
 /// we have to pass this buffer along with transaction id
-/// offset. Class will read transaction id from the buffer.
-/// Next, in order to replace contents of selected options
+/// offset. The class will read the transaction id from the buffer.
+/// Next, in order to replace the contents of the selected options
 /// in a template packet, we need to add these selected options
-/// to packet object using addOption() method. Please note
-/// that options must be of the
-/// \ref isc::perfdhcp::LocalizedOption type.
+/// to the packet object using addOption() method. Please note
+/// that the options must be of the \ref isc::perfdhcp::LocalizedOption type.
 ///
-/// \note: if you don't use template files simply use constructors
+/// \note: if you don't use template files, simply use constructors
 /// inherited from parent class and isc::dhcp::Option type instead
 ///
 class PerfPkt6 : public dhcp::Pkt6 {
@@ -56,12 +55,13 @@ public:
     /// \brief Represents offset value.
     ///
     /// This class represent offsets for DHCP message fields
-    /// like transaction id. Constructors of PerfPkt6 take
+    /// like transaction id. Constructors of PerfPkt6 take a
     /// number of arguments of integer type so it is easy to
     /// mess up arguments of constructors and for example
     /// swap transaction id with its offset.
-    /// Use of this class implies that client class has to
-    /// explicitely use constructor of this class to pass
+    ///
+    /// Use of this class implies that the client class has to
+    /// explicitly use a constructor of this class to pass the
     /// offset value. This should prevent mistakes and save some
     /// time on debugging.
     class Offset {
@@ -89,9 +89,9 @@ public:
 
     /// \brief Constructor, used for outgoing DHCP messages.
     ///
-    /// Creates new DHCPv6 message using provided buffer.
-    /// Transaction id and its offset are specified through this
-    /// constructor so as they are stored in outgoing message
+    /// Creates new DHCPv6 message using the provided buffer. The
+    /// transaction id and its offset are specified through this
+    /// constructor, as they are stored in outgoing message
     /// when client class calls \ref PerfPkt6::rawPack.
     ///
     /// \note This constructor should be used only for outgoing
@@ -110,22 +110,21 @@ public:
 
     /// Constructor, used for incoming DHCP messages.
     ///
-    /// Creates new DHCPv6 message using provided buffer. New object
-    /// will keep copy of contents of provided buffer. If buffer contains
-    /// options at custom offsets (e.g. if packet was read from
-    /// template file) additional information about options'
+    /// Creates ia new DHCPv6 message using the provided buffer. The new object
+    /// will keep a copy of contents of provided buffer. If the buffer contains
+    /// options at custom offsets (e.g. if packet was read from a
+    /// template file) additional information about the options'
     /// offsets has to be provided - see
     /// \ref isc::perfdhcp::LocalizedOption for details.
     ///
-    /// Transaction id offset point to location of raw data where
+    /// The transaction id offset points to location of raw data where the
     /// transaction id field is stored. The transaction id will
     /// be read from this location when PerfPkt6::rawUnpack is
     /// called. The transid_ class member will be updated accordingly.
     ///
-    /// \note use this constructor only in case you want to create
-    /// incoming DHCPv6 object from the raw buffer
-    /// and you know options offsets. Options offsets are
-    /// specified from perfdhcp command line by the user.
+    /// \note use this constructor only in the case where you want to create
+    /// incoming DHCPv6 object from the raw buffer and you know options offsets.
+    /// Options offsets are specified from perfdhcp command line by the user.
     ///
     /// \param buf pointer to a buffer of received packet content.
     /// \param len size of buffer of packet content.
@@ -141,11 +140,11 @@ public:
 
     /// \brief Prepares on-wire format from raw buffer
     ///
-    /// The method copies user buffer to output buffer and
-    /// extracts transaction id from it based on transaction id
-    /// offset provided in constructor.
+    /// The method copies the user buffer to the output buffer and
+    /// extracts the transaction id from it based on the transaction id
+    /// offset provided in the constructor.
     ///
-    /// \note: Use this method to prepare on-wire DHCPv6 message
+    /// \note: Use this method to prepare an on-wire DHCPv6 message
     /// when you use template packets that require replacement
     /// of selected options' contents before sending.
     ///
@@ -155,11 +154,11 @@ public:
     /// \brief Handles limited binary packet parsing for packets with
     /// custom offsets of options and transaction id
     ///
-    /// Function handles reception of packets that have non-default values
-    /// of options or transaction id offsets. Use
+    /// This method  handles the reception of packets that have non-default
+    /// values of options or transaction id offsets. Use
     /// \ref isc::dhcp::Pkt6::addOption to specify which options to parse.
     /// Each option should be of the: isc::perfdhcp::LocalizedOption
-    /// type with offset value indicated.
+    /// type with the offset value indicated.
     ///
     /// \return false, if unpack operation failed.
     bool rawUnpack();
@@ -173,14 +172,14 @@ private:
 
     /// \brief Updates options in the output buffer
     ///
-    /// The method uses options collection added to object
-    /// of this class with \ref dhcp::Pkt6::addOption to
-    /// on-wire data. Option objects has to be of
-    /// \ref perfdhcp::LocalizedOption type and should
+    /// The method uses the options collection added to object of this class
+    /// with \ref dhcp::Pkt6::addOption to create on-wire data. Option objects
+    /// have to be of \ref perfdhcp::LocalizedOption type and should
     /// have non-zero values of offsets specified.
-    /// This method will use these offsets to seek to
-    /// given position in output buffer and update option
-    /// on-wire data with contents of option's buffer.
+    ///
+    /// This method will use these offsets to seek to given position in the
+    /// output buffer and update the option on-wire data with the contents of
+    /// the option's buffer.
     ///
     /// \throw isc::Unexpected if options update failed.
     void rawPackOptions();
@@ -188,15 +187,17 @@ private:
     /// \brief Reads contents of specified options from buffer
     ///
     /// The method reads options data from the copy of the buffer
-    /// provided in constructor and stores data in options
+    /// provided in constructor and stores the data in options
     /// objects that belong to options collection.
-    /// Client class that constructs this object has to create
+    ///
+    /// The client class that constructs this object has to create an
     /// options collection prior to calling \ref rawUnpack
     /// method that in turn calls this method.
-    /// If option is not added to options collection, it will
+    ///
+    /// If an option is not added to options collection, it will
     /// not be added by this method. This method will rather
     /// skip update of such an option even if it is present
-    /// in packet's buffer.
+    /// in the packet's buffer.
     ///
     /// \throw isc::Unexpected if options unpack failed.
     void rawUnpackOptions();

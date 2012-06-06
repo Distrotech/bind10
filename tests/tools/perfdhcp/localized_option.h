@@ -24,20 +24,22 @@ namespace perfdhcp {
 ///
 /// This class represents DHCP option with data placed at specified
 /// offset in DHCP message.
+///
 /// Objects of this type are intended to be used when DHCP packets
 /// are created from templates (e.g. read from template file).
-/// Such packets have number of options with contents that have to be
-/// replaced before sending: e.g. DUID can be randomized.
-/// If option of this type is added to \ref PerfPkt6 options collection,
+/// Such packets have a number of options with contents that have to be
+/// replaced before sending: e.g. the DUID can be randomized.
+/// If an option of this type is added to \ref PerfPkt6 options collection,
 /// \ref perfdhcp::PerfPkt6 will call \ref getOffset on this object
-/// to retrieve user-defined option position and replace contents of
-/// the output buffer at this offset before packet is sent to the server.
-/// (\see perfdhcp::PerfPkt6::rawPack).
-/// In order to read on-wire data from incoming packet client class
+/// to retrieve the user-defined option position and replace the contents of
+/// the output buffer at this offset before packet is sent to the server
+/// (\see perfdhcp::PerfPkt6::rawPack.
+///
+/// In order to read on-wire data from an incoming packet, the client class
 /// has to specify options of \ref perfdhcp::LocalizedOption type
 /// with expected offsets of these options in a packet. The
-/// \ret perfdhcp::PerfPkt6 will use offsets to read fragments
-/// of packet and store them in options' buffers.
+/// \ret perfdhcp::PerfPkt6 will use these offsets to read fragments
+/// of the packet and store them in the options' buffers.
 /// (\see perfdhcp::PerfPkt6::rawUnpack).
 ///
 class LocalizedOption : public dhcp::Option {
