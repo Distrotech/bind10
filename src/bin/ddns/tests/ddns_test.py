@@ -711,6 +711,13 @@ class TestDDNSSession(unittest.TestCase):
         self.check_session(result=UPDATE_DROP, ipv6=False,
                            tsig_key=BAD_TSIG_KEY)
 
+    def test_auth_loadzone(self,zone_name, rrclass, result):
+        """
+        Just test the _tell_auth_loadzone function of the previous operation.
+        """
+        if reslut == UPDATE_SUCCESS:
+           ddns._tell_auth_loadzone(self, zone_name, rrclass)
+
     def test_socket_error(self):
         # Have the faked socket raise an exception on sendto()
         self.__sock._raise_on_send = True

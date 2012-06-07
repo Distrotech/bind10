@@ -82,6 +82,7 @@ isc.util.process.rename()
 
 # Cooperating modules
 XFROUT_MODULE_NAME = 'Xfrout'
+AUTH_MODULE_NAME = 'Auth'
 
 class DDNSConfigError(Exception):
     '''An exception indicating an error in updating ddns configuration.
@@ -381,6 +382,7 @@ class DDNSServer:
                                    remote_addr)
         if result == isc.ddns.session.UPDATE_SUCCESS:
             self.__notify_update(zname, zclass)
+            _tell_auth_loadzone(self, zname, zclass)
         return ret
 
     def __send_response(self, sock, data, dest):
@@ -497,6 +499,50 @@ class DDNSServer:
                     self.handle_session(fileno)
         self.shutdown_cleanup()
         logger.info(DDNS_STOPPED)
+
+def _tell_auth_loadzone(server, zone_name, zone_class):
+    # On a successful response of DDNS request, if the zone is served by
+    # b10-auth in the in-memory data source using sqlite3 as a
+    # backend, send the "loadzone" command for the zone to auth.
+    datasources, is_default =\
+       server.cc.get_remote_config_value(AUTH_MODULE_NAME, "datasources")
+    if is_default:
+       return
+    for d in datasources:
+        if "type" not in d:
+           continue
+        try:
+            if "class" in d:
+               dclass = RRClass(d["class"])
+            else:
+               dclass = RRClass("IN")
+        except InvalidRRClass as err:
+            logger.info(DDNS_AUTH_CONFIG_RRCLASS_ERROR, str(err))
+            continue
+
+        if d["type"].lower() == "memory" and dclass == zone_class:
+           for zone in d["zones"]:
+               if "filetype" not in zone:
+                  continue
+               if "origin" not in zone:
+                  continue
+               if "filetype" not in zone:
+                  continue
+               try:
+                   name = Name(zone["origin"])
+               except (EmptyLabel, TooLongLabel, BadLabelType, BadEscape, TooLongName, IncompleteName):
+                   logger.info(DDNS_AUTH_CONFIG_NAME_PARSER_ERROR, str(err))
+                   continue
+
+               if zone["filetype"].lower() == "sqlite3" and name == zone_name:
+                  param = {"origin": zone_name.to_text(),
+                           "class": zone_class.to_text(),
+                           "datasrc": d["type"]}
+                  logger.debug(TRACE_BASIC, DDNS_AUTH_LOADZONE,
+                               param["origin"], param["class"], param["datasrc"])
+                  msg = create_command("loadzone", param)
+                  seq = server._send_cc_session.group_sendmsg(msg, AUTH_MODULE_NAME)
+                  answer, env = server._send_cc_session.group_recvmsg(False, seq)
 
 def create_signal_handler(ddns_server):
     '''
