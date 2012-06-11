@@ -209,7 +209,8 @@ DatabaseClient::Finder::getRRsets(const string& name, const WantedTypes& types,
     bool seen_ns(false);
 
     // may_have_glue indicates if glue records may exist for the
-    // domain. It is true when records like this are seen:
+    // delegated zone. It is set to true below when the NS name equals
+    // the delegated zone name:
     // child.example. IN NS child.example.
     bool may_have_glue(false);
 
