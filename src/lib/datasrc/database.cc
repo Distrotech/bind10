@@ -258,8 +258,10 @@ DatabaseClient::Finder::getRRsets(const string& name, const WantedTypes& types,
             } else if (cur_type == RRType::NS()) {
                 seen_ns = true;
 
-                if (Name(columns[DatabaseAccessor::RDATA_COLUMN]) == construct_name_object)
+                if (Name(columns[DatabaseAccessor::RDATA_COLUMN]) ==
+                    construct_name_object) {
                     may_have_glue = true;
+                }
             } else if (cur_type == RRType::DS()) {
                 seen_ds = true;
             } else if (cur_type != RRType::RRSIG() &&
