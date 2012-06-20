@@ -14,4 +14,4 @@ CLEANFILES = *.gcno *.gcda
 
 lib_LTLIBRARIES = libxfr.la
 libxfr_la_SOURCES = xfrout_client.h xfrout_client.cc
-libxfr_la_LIBADD = $(top_builddir)/src/lib/util/io/libutil_io.la
+libxfr_la_LIBADD = $(top_builddir)/src/lib/util/io/libb10util_io.la

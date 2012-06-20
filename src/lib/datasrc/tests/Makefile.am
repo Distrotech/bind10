@@ -36,12 +36,12 @@ common_sources += $(top_srcdir)/src/lib/dns/tests/unittest_util.cc
 
 common_ldadd = $(top_builddir)/src/lib/datasrc/libdatasrc.la
 common_ldadd += $(top_builddir)/src/lib/dns/libdns++.la
-common_ldadd += $(top_builddir)/src/lib/util/libutil.la
+common_ldadd += $(top_builddir)/src/lib/util/libb10util.la
 common_ldadd += $(top_builddir)/src/lib/log/liblog.la
 common_ldadd += $(top_builddir)/src/lib/exceptions/libexceptions.la
 common_ldadd += $(top_builddir)/src/lib/cc/libcc.la
 common_ldadd += $(top_builddir)/src/lib/testutils/libtestutils.la
-common_ldadd += $(top_builddir)/src/lib/util/unittests/libutil_unittests.la
+common_ldadd += $(top_builddir)/src/lib/util/unittests/libb10util_unittests.la
 common_ldadd += $(GTEST_LDADD) $(SQLITE_LIBS)
 
 # The general tests

@@ -30,7 +30,7 @@ run_unittests_LDADD += $(top_builddir)/src/lib/cc/libcc.la
 run_unittests_LDADD += $(top_builddir)/src/lib/config/libcfgclient.la
 run_unittests_LDADD += $(top_builddir)/src/lib/exceptions/libexceptions.la
 run_unittests_LDADD += $(top_builddir)/src/lib/log/liblog.la
-run_unittests_LDADD += $(top_builddir)/src/lib/util/unittests/libutil_unittests.la
+run_unittests_LDADD += $(top_builddir)/src/lib/util/unittests/libb10util_unittests.la
 
 endif
 

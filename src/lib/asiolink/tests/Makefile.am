@@ -38,7 +38,7 @@ run_unittests_CPPFLAGS = $(AM_CPPFLAGS) $(GTEST_INCLUDES)
 
 run_unittests_LDADD = $(top_builddir)/src/lib/asiolink/libasiolink.la
 run_unittests_LDADD += $(top_builddir)/src/lib/log/liblog.la
-run_unittests_LDADD += $(top_builddir)/src/lib/util/unittests/libutil_unittests.la
+run_unittests_LDADD += $(top_builddir)/src/lib/util/unittests/libb10util_unittests.la
 run_unittests_LDADD += $(top_builddir)/src/lib/exceptions/libexceptions.la
 run_unittests_LDADD += $(GTEST_LDADD)
 

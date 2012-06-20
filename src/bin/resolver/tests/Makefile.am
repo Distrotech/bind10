@@ -52,8 +52,8 @@ run_unittests_LDADD += $(top_builddir)/src/lib/resolve/libresolve.la
 run_unittests_LDADD += $(top_builddir)/src/lib/cache/libcache.la
 run_unittests_LDADD += $(top_builddir)/src/lib/nsas/libnsas.la
 run_unittests_LDADD += $(top_builddir)/src/lib/acl/libacl.la
-run_unittests_LDADD += $(top_builddir)/src/lib/util/libutil.la
-run_unittests_LDADD += $(top_builddir)/src/lib/util/unittests/libutil_unittests.la
+run_unittests_LDADD += $(top_builddir)/src/lib/util/libb10util.la
+run_unittests_LDADD += $(top_builddir)/src/lib/util/unittests/libb10util_unittests.la
 
 # Note the ordering matters: -Wno-... must follow -Wextra (defined in
 # B10_CXXFLAGS

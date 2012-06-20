@@ -24,7 +24,7 @@ logger_example_SOURCES = logger_example.cc
 logger_example_CPPFLAGS = $(AM_CPPFLAGS)
 logger_example_LDFLAGS = $(AM_LDFLAGS)
 logger_example_LDADD  = $(top_builddir)/src/lib/log/liblog.la
-logger_example_LDADD += $(top_builddir)/src/lib/util/libutil.la
+logger_example_LDADD += $(top_builddir)/src/lib/util/libb10util.la
 logger_example_LDADD += $(top_builddir)/src/lib/exceptions/libexceptions.la
 logger_example_LDADD += $(AM_LDADD) $(LOG4CPLUS_LIBS)
 
@@ -33,7 +33,7 @@ init_logger_test_SOURCES = init_logger_test.cc
 init_logger_test_CPPFLAGS = $(AM_CPPFLAGS)
 init_logger_test_LDFLAGS = $(AM_LDFLAGS)
 init_logger_test_LDADD  = $(top_builddir)/src/lib/log/liblog.la
-init_logger_test_LDADD += $(top_builddir)/src/lib/util/libutil.la
+init_logger_test_LDADD += $(top_builddir)/src/lib/util/libb10util.la
 init_logger_test_LDADD += $(top_builddir)/src/lib/exceptions/libexceptions.la
 init_logger_test_LDADD += $(AM_LDADD) $(LOG4CPLUS_LIBS)
 
@@ -43,7 +43,7 @@ nodist_logger_lock_test_SOURCES = log_test_messages.cc log_test_messages.h
 logger_lock_test_CPPFLAGS = $(AM_CPPFLAGS)
 logger_lock_test_LDFLAGS = $(AM_LDFLAGS)
 logger_lock_test_LDADD  = $(top_builddir)/src/lib/log/liblog.la
-logger_lock_test_LDADD += $(top_builddir)/src/lib/util/libutil.la
+logger_lock_test_LDADD += $(top_builddir)/src/lib/util/libb10util.la
 logger_lock_test_LDADD += $(top_builddir)/src/lib/exceptions/libexceptions.la
 logger_lock_test_LDADD += $(AM_LDADD) $(LOG4CPLUS_LIBS)
 
@@ -62,10 +62,10 @@ AM_CPPFLAGS += $(GTEST_INCLUDES) $(LOG4CPLUS_INCLUDES)
 AM_LDFLAGS  += $(GTEST_LDFLAGS)
 
 AM_LDADD += $(top_builddir)/src/lib/log/liblog.la
-AM_LDADD += $(top_builddir)/src/lib/util/unittests/libutil_unittests.la
-AM_LDADD += $(top_builddir)/src/lib/util/libutil.la
+AM_LDADD += $(top_builddir)/src/lib/util/unittests/libb10util_unittests.la
+AM_LDADD += $(top_builddir)/src/lib/util/libb10util.la
 AM_LDADD += $(top_builddir)/src/lib/exceptions/libexceptions.la
-AM_LDADD += $(top_builddir)/src/lib/util/unittests/libutil_unittests.la
+AM_LDADD += $(top_builddir)/src/lib/util/unittests/libb10util_unittests.la
 AM_LDADD += $(GTEST_LDADD)
 
 # Set of unit tests for the general logging classes

@@ -32,7 +32,7 @@ run_unittests_LDFLAGS = $(AM_LDFLAGS) $(GTEST_LDFLAGS)
 # Otherwise the linker may not use the source tree libs
 run_unittests_LDADD =  $(top_builddir)/src/lib/cc/libcc.la
 run_unittests_LDADD +=  $(top_builddir)/src/lib/log/liblog.la
-run_unittests_LDADD +=  $(top_builddir)/src/lib/util/unittests/libutil_unittests.la
+run_unittests_LDADD +=  $(top_builddir)/src/lib/util/unittests/libb10util_unittests.la
 run_unittests_LDADD +=  $(top_builddir)/src/lib/exceptions/libexceptions.la
 run_unittests_LDADD += $(GTEST_LDADD)
 

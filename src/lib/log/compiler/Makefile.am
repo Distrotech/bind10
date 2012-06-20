@@ -15,5 +15,5 @@ noinst_PROGRAMS = message
 
 message_SOURCES = message.cc
 message_LDADD   = $(top_builddir)/src/lib/log/liblog.la
-message_LDADD  += $(top_builddir)/src/lib/util/libutil.la
+message_LDADD  += $(top_builddir)/src/lib/util/libb10util.la
 message_LDADD  += $(top_builddir)/src/lib/exceptions/libexceptions.la
