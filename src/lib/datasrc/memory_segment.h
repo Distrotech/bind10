@@ -15,6 +15,8 @@
 #ifndef _MEMORY_SEGMENT_H
 #define _MEMORY_SEGMENT_H 1
 
+#include <cstdlib>
+
 namespace isc {
 namespace datasrc {
 
@@ -22,14 +24,14 @@ class MemorySegment {
 public:
     MemorySegment() : allocated_(0) {}
     void* allocate(size_t size) {
-        void* p = malloc(size);
+        void* p = std::malloc(size);
         assert(p != NULL);      // skip error handling for experiments
         allocated_ += size;
         return (p);
     }
     void deallocate(void* ptr, size_t size) {
         assert(allocated_ >= size);
-        free(ptr);
+        std::free(ptr);
         allocated_ -= size;
     }
     bool allMemoryDeallocated() const { return (allocated_ == 0); }
