@@ -18,6 +18,8 @@
 #include <dns/name.h>
 #include <util/buffer.h>
 
+#include <stdint.h>
+
 namespace isc {
 namespace dns {
 
@@ -67,7 +69,7 @@ public:
     /// \param len Pointer to a size_t where the length of the data
     ///        will be stored (in number of octets)
     /// \return Pointer to the wire-format data of this label sequence
-    const unsigned char* getData(size_t* len) const;
+    const uint8_t* getData(size_t* len) const;
 
     /// \brief Return the length of the wire-format data of this LabelSequence
     ///
@@ -175,3 +177,7 @@ private:
 } // end namespace isc
 
 #endif
+
+// Local Variables:
+// mode: c++
+// End:
