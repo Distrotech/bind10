@@ -53,6 +53,7 @@ run_unittests_SOURCES += cache_unittest.cc
 run_unittests_SOURCES += test_client.h test_client.cc
 run_unittests_SOURCES += test_datasrc.h test_datasrc.cc
 run_unittests_SOURCES += rbtree_unittest.cc
+run_unittests_SOURCES += rbtree2_unittest.cc
 run_unittests_SOURCES += logger_unittest.cc
 run_unittests_SOURCES += client_unittest.cc
 run_unittests_SOURCES += database_unittest.cc
