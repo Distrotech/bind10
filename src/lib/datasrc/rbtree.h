@@ -1010,7 +1010,7 @@ private:
     /// node, old node will hold the base name, new node will be the down node
     /// of old node, new node will hold the sub_name, the data
     /// of old node will be move into new node, and old node became non-terminal
-    void nodeFission(RBNode<T>& node, const isc::dns::Name& sub_name);
+    RBNode<T>* nodeFission(RBNode<T>& node, const isc::dns::Name& sub_name);
     //@}
 
     RBNode<T>*  NULLNODE;
@@ -1260,6 +1260,9 @@ RBTree<T>::previousNode(RBTreeNodeChain<T>& node_path) const {
             // already, which located the exact node. The rest of the function
             // goes one domain left and returns it for us.
             break;
+        case dns::NameComparisonResult::NONE:
+            assert(false);
+            break;
     }
 
     // So, the node_path now contains the path to a node we want previous for.
@@ -1354,7 +1357,15 @@ RBTree<T>::insert(const isc::dns::Name& target_name, RBNode<T>** new_node) {
                     const isc::dns::Name common_ancestor = name.split(
                         name.getLabelCount() - common_label_count,
                         common_label_count);
-                    nodeFission(*current, common_ancestor);
+                    const bool fix_down_link = (current == up_node->down_);
+                    const bool fix_root = (current == root_);
+                    current = nodeFission(*current, common_ancestor);
+                    if (fix_down_link) {
+                        up_node->down_ = current;
+                    }
+                    if (fix_root) {
+                        root_ = current;
+                    }
                 }
             }
         }
@@ -1384,6 +1395,7 @@ RBTree<T>::insert(const isc::dns::Name& target_name, RBNode<T>** new_node) {
 
     ++node_count_;
     node.release();
+
     return (SUCCESS);
 }
 
@@ -1393,25 +1405,44 @@ RBTree<T>::insert(const isc::dns::Name& target_name, RBNode<T>** new_node) {
 // name (and therefore the name for the existing node doesn't change).
 // Otherwise, things like shortcut links between nodes won't work.
 template <typename T>
-void
+RBNode<T>*
 RBTree<T>::nodeFission(RBNode<T>& node, const isc::dns::Name& base_name) {
     using namespace helper;
     const isc::dns::Name sub_name = node.name_ - base_name;
     // using auto_ptr here is to avoid memory leak in case of exception raised
     // after the RBNode creation
-    std::auto_ptr<RBNode<T> > down_node(new RBNode<T>(sub_name));
-    node.name_ = base_name;
+    std::auto_ptr<RBNode<T> > up_node(new RBNode<T>(base_name));
+    node.name_ = sub_name;
     // the rest of this function should be exception free so that it keeps
     // consistent behavior (i.e., a weak form of strong exception guarantee)
     // even if code after the call to this function throws an exception.
-    std::swap(node.data_, down_node->data_);
-    std::swap(node.flags_, down_node->flags_);
-    down_node->down_ = node.down_;
-    node.down_ = down_node.get();
+    std::swap(up_node->parent_, node.parent_);
+    std::swap(up_node->left_, node.left_);
+    std::swap(up_node->right_, node.right_);
+
+    // Fix pointers that were to the current node.
+    if (up_node->parent_ != NULLNODE) {
+        if (up_node->parent_->left_ == &node) {
+            up_node->parent_->left_ = up_node.get();
+        } else {
+            assert(up_node->parent_->right_ == &node);
+            up_node->parent_->right_ = up_node.get();
+        }
+    }
+    if (up_node->left_ != NULLNODE) {
+        up_node->left_->parent_ = up_node.get();
+    }
+    if (up_node->right_ != NULLNODE) {
+        up_node->right_->parent_ = up_node.get();
+    }
+
+    up_node->color_ = node.color_;
+    up_node->down_ = &node;
     // root node of sub tree, the initial color is BLACK
-    down_node->color_ = RBNode<T>::BLACK;
+    node.color_ = RBNode<T>::BLACK;
     ++node_count_;
-    down_node.release();
+
+    return (up_node.release());
 }
 
 
