@@ -14,6 +14,7 @@
 
 #include <dns/labelsequence.h>
 #include <dns/name_internal.h>
+#include <util/buffer.h>
 #include <exceptions/exceptions.h>
 
 #include <boost/functional/hash.hpp>
@@ -28,7 +29,7 @@ namespace dns {
 const uint8_t*
 LabelSequence::getData(size_t *len) const {
     *len = getDataLength();
-    return (&name_.ndata_[name_.offsets_[first_label_]]);
+    return (&ndata_[offsets_[first_label_]]);
 }
 
 size_t
@@ -39,10 +40,10 @@ LabelSequence::getDataLength() const {
     // the length for the 'previous' label (the root label) plus
     // one (for the root label zero octet)
     if (isAbsolute()) {
-        return (name_.offsets_[last_label_ - 1] -
-                name_.offsets_[first_label_] + 1);
+        return (offsets_[last_label_ - 1] -
+                offsets_[first_label_] + 1);
     } else {
-        return (name_.offsets_[last_label_] - name_.offsets_[first_label_]);
+        return (offsets_[last_label_] - offsets_[first_label_]);
     }
 }
 
@@ -93,7 +94,7 @@ LabelSequence::stripRight(size_t i) {
 
 bool
 LabelSequence::isAbsolute() const {
-    return (last_label_ == name_.offsets_.size());
+    return (last_label_ == offsets_orig_size_);
 }
 
 size_t
@@ -112,6 +113,12 @@ LabelSequence::getHash(bool case_sensitive) const {
         --length;
     }
     return (hash_val);
+}
+
+Name
+LabelSequence::getName() const {
+    util::InputBuffer b(ndata_, offsets_[offsets_orig_size_ - 1]);
+    return (Name(b));
 }
 
 } // end namespace dns

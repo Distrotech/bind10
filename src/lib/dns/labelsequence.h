@@ -52,7 +52,9 @@ public:
     /// to the labels in the Name object).
     ///
     /// \param name The Name to construct a LabelSequence for
-    LabelSequence(const Name& name): name_(name),
+    LabelSequence(const Name& name): ndata_(name.ndata_.c_str()),
+                                     offsets_(&name.offsets_[0]),
+                                     offsets_orig_size_(name.offsets_.size()),
                                      first_label_(0),
                                      last_label_(name.getLabelCount())
     {}
@@ -134,7 +136,7 @@ public:
     /// LabelSequence itself.
     ///
     /// \return Reference to the original Name object
-    const Name& getName() const { return (name_); }
+    Name getName() const;
 
     /// \brief Calculate a simple hash for the label sequence.
     ///
@@ -167,7 +169,9 @@ public:
     bool isAbsolute() const;
 
 private:
-    const Name& name_;
+    const uint8_t* ndata_;
+    const uint8_t* offsets_;
+    const size_t offsets_orig_size_;
     size_t first_label_;
     size_t last_label_;
 };
