@@ -100,6 +100,8 @@ public:
     ///         and contain the same data.
     bool equals(const LabelSequence& other, bool case_sensitive = false) const;
 
+    NameComparisonResult compare(const LabelSequence& other) const;
+
     /// \brief Remove labels from the front of this LabelSequence
     ///
     /// \note No actual memory is changed, this operation merely updates the

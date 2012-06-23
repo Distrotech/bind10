@@ -142,7 +142,8 @@ public:
         SUPERDOMAIN = 0,
         SUBDOMAIN = 1,
         EQUAL = 2,
-        COMMONANCESTOR = 3
+        COMMONANCESTOR = 3,
+        NONE = 4
     };
 
     ///

@@ -83,6 +83,29 @@ TEST_F(LabelSequenceTest, equals_sensitive) {
     EXPECT_FALSE(ls5.equals(ls8, true));
 }
 
+//
+// Helper class to hold comparison test parameters.
+//
+struct CompareParameters {
+    CompareParameters(const Name& n1, const Name&  n2,
+                      NameComparisonResult::NameRelation r, int o,
+                      unsigned int l) :
+        name1(n1), name2(n2), reln(r), order(o), labels(l) {}
+    static int normalizeOrder(int o) {
+        if (o > 0) {
+            return (1);
+        } else if (o < 0) {
+            return (-1);
+        }
+        return (0);
+    }
+    Name name1;
+    Name name2;
+    NameComparisonResult::NameRelation reln;
+    int order;
+    unsigned int labels;
+};
+
 TEST_F(LabelSequenceTest, equals_insensitive) {
     EXPECT_TRUE(ls1.equals(ls1));
     EXPECT_FALSE(ls1.equals(ls2));
@@ -123,6 +146,44 @@ TEST_F(LabelSequenceTest, equals_insensitive) {
     EXPECT_TRUE(ls5.equals(ls5));
     EXPECT_TRUE(ls5.equals(ls6));
     EXPECT_FALSE(ls5.equals(ls7));
+}
+
+TEST_F(LabelSequenceTest, compare) {
+    vector<CompareParameters> params;
+    params.push_back(CompareParameters(Name("c.d"), Name("a.b.c.d"),
+                                       NameComparisonResult::SUPERDOMAIN,
+                                       -1, 3));
+    params.push_back(CompareParameters(Name("a.b.c.d"), Name("c.d"),
+                                       NameComparisonResult::SUBDOMAIN, 1, 3));
+    params.push_back(CompareParameters(Name("a.b.c.d"), Name("c.d.e.f"),
+                                       NameComparisonResult::COMMONANCESTOR,
+                                       -1, 1));
+    params.push_back(CompareParameters(Name("a.b.c.d"), Name("f.g.c.d"),
+                                       NameComparisonResult::COMMONANCESTOR,
+                                       -1, 3));
+    params.push_back(CompareParameters(Name("a.b.c.d"), Name("A.b.C.d."),
+                                       NameComparisonResult::EQUAL,
+                                       0, 5));
+
+    vector<CompareParameters>::const_iterator it;
+    for (it = params.begin(); it != params.end(); ++it) {
+        NameComparisonResult result = LabelSequence((*it).name1).
+            compare(LabelSequence((*it).name2));
+        EXPECT_EQ((*it).reln, result.getRelation());
+        EXPECT_EQ((*it).order,
+                  CompareParameters::normalizeOrder(result.getOrder()));
+        EXPECT_EQ((*it).labels, result.getCommonLabels());
+    }
+
+    const Name a("example.com");
+    const Name b("example.org");
+    LabelSequence la(a);
+    LabelSequence lb(b);
+    la.stripRight(1);
+    lb.stripRight(1);
+    EXPECT_EQ(NameComparisonResult::NONE, la.compare(lb).getRelation());
+    EXPECT_EQ(0, la.compare(lb).getCommonLabels());
+    EXPECT_EQ(-1, CompareParameters::normalizeOrder(la.compare(lb).getOrder()));
 }
 
 void
