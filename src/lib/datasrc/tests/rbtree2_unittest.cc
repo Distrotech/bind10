@@ -23,14 +23,19 @@
 #include <dns/rrttl.h>
 
 #include <datasrc/rbtree2.h>
+#include <datasrc/memory_segment.h>
 
 #include <dns/tests/unittest_util.h>
+
+#include <boost/scoped_ptr.hpp>
 
 using namespace std;
 using namespace isc;
 using namespace isc::dns;
 using isc::UnitTestUtil;
 using namespace isc::datasrc::experimental;
+using isc::datasrc::MemorySegment;
+using boost::scoped_ptr;
 
 // XXX: some compilers cannot find class static constants used in
 // EXPECT_xxx macros, for which we need an explicit empty definition.
@@ -56,7 +61,14 @@ using namespace isc::datasrc::experimental;
 namespace {
 class RBTreeTest2 : public::testing::Test {
 protected:
-    RBTreeTest2() : rbtree_expose_empty_node(true), crbtnode(NULL) {
+    RBTreeTest2() : rbtree_ptr_(new RBTree<int>(segment)),
+                    rbtree(*rbtree_ptr_),
+                    rbtree_expose_empty_node_ptr_(new RBTree<int>(segment,
+                                                                  true)),
+                    rbtree_expose_empty_node(
+                        *rbtree_expose_empty_node_ptr_),
+                    crbtnode(NULL)
+    {
         const char* const domain_names[] = {
             "c", "b", "a", "x.d.e.f", "z.d.e.f", "g.h", "i.g.h", "o.w.y.d.e.f",
             "j.z.d.e.f", "p.w.y.d.e.f", "q.w.y.d.e.f", "k.g.h"};
@@ -67,12 +79,21 @@ protected:
 
             rbtree_expose_empty_node.insert(Name(domain_names[i]), &rbtnode);
             rbtnode->setData(RBNode<int>::NodeDataPtr(new int(i + 1)));
-
         }
     }
 
-    RBTree<int> rbtree;
-    RBTree<int> rbtree_expose_empty_node;
+    virtual void TearDown() {
+        // Explicitly destroy the trees and check memory leak.
+        rbtree_ptr_.reset();
+        rbtree_expose_empty_node_ptr_.reset();
+        EXPECT_TRUE(segment.allMemoryDeallocated());
+    }
+
+    MemorySegment segment;
+    scoped_ptr<RBTree<int> > rbtree_ptr_;
+    RBTree<int>& rbtree;
+    scoped_ptr<RBTree<int> > rbtree_expose_empty_node_ptr_;
+    RBTree<int>& rbtree_expose_empty_node;
     RBNode<int>* rbtnode;
     const RBNode<int>* crbtnode;
 };
@@ -98,12 +119,14 @@ TEST_F(RBTreeTest2, insertNames) {
     EXPECT_EQ(Name("."), rbtnode->getName());
     EXPECT_EQ(15, rbtree.getNodeCount());
 
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(Name("example.com"), &rbtnode));
+    EXPECT_EQ(RBTree<int>::SUCCESS,
+              rbtree.insert(Name("example.com"), &rbtnode));
     EXPECT_EQ(16, rbtree.getNodeCount());
     rbtnode->setData(RBNode<int>::NodeDataPtr(new int(12)));
 
     // return ALREADYEXISTS, since node "example.com" already has been explicitly inserted
-    EXPECT_EQ(RBTree<int>::ALREADYEXISTS, rbtree.insert(Name("example.com"), &rbtnode));
+    EXPECT_EQ(RBTree<int>::ALREADYEXISTS,
+              rbtree.insert(Name("example.com"), &rbtnode));
     EXPECT_EQ(16, rbtree.getNodeCount());
 
     // split the node "d.e.f"
@@ -117,10 +140,12 @@ TEST_F(RBTreeTest2, insertNames) {
     EXPECT_EQ(19, rbtree.getNodeCount());
 
     // add child domain
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(Name("m.p.w.y.d.e.f"), &rbtnode));
+    EXPECT_EQ(RBTree<int>::SUCCESS,
+              rbtree.insert(Name("m.p.w.y.d.e.f"), &rbtnode));
     EXPECT_EQ(Name("m"), rbtnode->getName());
     EXPECT_EQ(20, rbtree.getNodeCount());
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(Name("n.p.w.y.d.e.f"), &rbtnode));
+    EXPECT_EQ(RBTree<int>::SUCCESS,
+              rbtree.insert(Name("n.p.w.y.d.e.f"), &rbtnode));
     EXPECT_EQ(Name("n"), rbtnode->getName());
     EXPECT_EQ(21, rbtree.getNodeCount());
 
@@ -132,7 +157,8 @@ TEST_F(RBTreeTest2, insertNames) {
     EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(Name("s.d.e.f"), &rbtnode));
     EXPECT_EQ(24, rbtree.getNodeCount());
 
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(Name("h.w.y.d.e.f"), &rbtnode));
+    EXPECT_EQ(RBTree<int>::SUCCESS,
+              rbtree.insert(Name("h.w.y.d.e.f"), &rbtnode));
 
     // add more nodes one by one to cover leftRotate and rightRotate
     EXPECT_EQ(RBTree<int>::ALREADYEXISTS, rbtree.insert(Name("f"), &rbtnode));
@@ -239,7 +265,7 @@ TEST_F(RBTreeTest2, callback) {
     subrbtnode->setData(RBNode<int>::NodeDataPtr(new int(2)));
     RBNode<int>* parentrbtnode;
     EXPECT_EQ(RBTree<int>::ALREADYEXISTS, rbtree.insert(Name("example"),
-                                                       &parentrbtnode));
+                                                        &parentrbtnode));
     //  the chilld/parent nodes shouldn't "inherit" the callback flag.
     // "rbtnode" may be invalid due to the insertion, so we need to re-find
     // it.
@@ -276,7 +302,7 @@ TEST_F(RBTreeTest2, chainLevel) {
 
     // insert one node to the tree and find it.  there should be exactly
     // one level in the chain.
-    RBTree<int> tree(true);
+    RBTree<int> tree(segment, true);
     Name node_name(Name::ROOT_NAME());
     EXPECT_EQ(RBTree<int>::SUCCESS, tree.insert(node_name, &rbtnode));
     EXPECT_EQ(RBTree<int>::EXACTMATCH,
@@ -543,7 +569,7 @@ TEST_F(RBTreeTest2, previousNode) {
     {
         SCOPED_TRACE("Lookup in empty tree");
         // Just check it doesn't crash, etc.
-        RBTree<int> empty_tree;
+        RBTree<int> empty_tree(segment);
         EXPECT_EQ(RBTree<int>::NOTFOUND,
                   empty_tree.find(Name("x"), &node, node_path));
         EXPECT_EQ(static_cast<void*>(NULL), node);
@@ -587,7 +613,7 @@ TEST_F(RBTreeTest2, getLastComparedNode) {
     EXPECT_EQ(static_cast<void*>(NULL), chain.getLastComparedNode());
 
     // A search for an empty tree should result in no 'last compared', too.
-    RBTree<int> empty_tree;
+    RBTree<int> empty_tree(segment);
     EXPECT_EQ(RBTree<int>::NOTFOUND,
               empty_tree.find(Name("a"), &crbtnode, chain));
     EXPECT_EQ(static_cast<void*>(NULL), chain.getLastComparedNode());
@@ -691,7 +717,7 @@ TEST_F(RBTreeTest2, swap) {
     size_t count1(rbtree.getNodeCount());
 
     // Create second one and store state
-    RBTree<int> tree2;
+    RBTree<int> tree2(segment);
     RBNode<int>* node;
     tree2.insert(Name("second"), &node);
     std::ostringstream str2;
@@ -717,7 +743,7 @@ TEST_F(RBTreeTest2, swap) {
 // any domain names should be considered a subdomain of it), so it makes
 // sense to test cases with the root zone explicitly.
 TEST_F(RBTreeTest2, root) {
-    RBTree<int> root;
+    RBTree<int> root(segment);
     root.insert(Name::ROOT_NAME(), &rbtnode);
     rbtnode->setData(RBNode<int>::NodeDataPtr(new int(1)));
 
@@ -738,7 +764,7 @@ TEST_F(RBTreeTest2, root) {
 
     // Perform the same tests for the tree that allows matching against empty
     // nodes.
-    RBTree<int> root_emptyok(true);
+    RBTree<int> root_emptyok(segment, true);
     root_emptyok.insert(Name::ROOT_NAME(), &rbtnode);
     EXPECT_EQ(RBTree<int>::EXACTMATCH,
               root_emptyok.find(Name::ROOT_NAME(), &crbtnode));

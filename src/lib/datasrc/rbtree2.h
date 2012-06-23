@@ -26,8 +26,12 @@
 #include <exceptions/exceptions.h>
 
 #include <dns/name.h>
+#include <datasrc/memory_segment.h>
+
+#include <boost/interprocess/offset_ptr.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
+
 #include <exceptions/exceptions.h>
 #include <ostream>
 #include <algorithm>
@@ -89,6 +93,9 @@ private:
     /// The RBNode is meant for use from within RBTree, so it has access to
     /// it.
     friend class RBTree<T>;
+
+    typedef boost::interprocess::offset_ptr<RBNode<T> > RBNodePtr;
+    typedef boost::interprocess::offset_ptr<const RBNode<T> > ConstRBNodePtr;
 
     /// \name Constructors
     ///
@@ -256,9 +263,9 @@ private:
     }
 
     /// This is a factory class method of a special singleton null node.
-    static RBNode<T>* NULL_NODE() {
+    static RBNodePtr NULL_NODE() {
         static RBNode<T> null_node;
-        return (&null_node);
+        return (RBNodePtr(&null_node));
     }
 
     /// \brief return the next node which is bigger than current node
@@ -276,7 +283,7 @@ private:
     /// returns \c NULL_NODE().
     ///
     /// This method never throws an exception.
-    const RBNode<T>* successor() const;
+    ConstRBNodePtr successor() const;
 
     /// \brief return the next node which is smaller than current node
     /// in the same subtree
@@ -293,7 +300,7 @@ private:
     /// returns \c NULL_NODE().
     ///
     /// This method never throws an exception.
-    const RBNode<T>* predecessor() const;
+    ConstRBNodePtr predecessor() const;
 
     /// \brief private shared implementation of successor and predecessor
     ///
@@ -306,14 +313,14 @@ private:
     /// The overhead of the member pointers should be optimised out, as this
     /// will probably get completely inlined into predecessor and successor
     /// methods.
-    const RBNode<T>* abstractSuccessor(RBNode<T>* RBNode<T>::*left,
-                                       RBNode<T>* RBNode<T>::*right) const;
+    ConstRBNodePtr abstractSuccessor(RBNodePtr RBNode<T>::*left,
+                                     RBNodePtr RBNode<T>::*right) const;
 
     /// \name Data to maintain the rbtree structure.
     //@{
-    RBNode<T>*  parent_;
-    RBNode<T>*  left_;
-    RBNode<T>*  right_;
+    RBNodePtr  parent_;
+    RBNodePtr  left_;
+    RBNodePtr  right_;
     //@}
 
     /// \brief Relative name of the node.
@@ -330,7 +337,19 @@ private:
     ///     big flat tree into several hierarchy trees.
     /// \li It saves memory usage as it allows storing only relative names,
     ///     avoiding storage of the same domain labels multiple times.
-    RBNode<T>*  down_;
+    RBNodePtr  down_;
+
+    // Memory management related methods using generic memory segments
+
+    static RBNode<T>* allocate(MemorySegment& segment, const dns::Name& name) {
+        void* region = segment.allocate(sizeof(RBNode<T>));
+        RBNode<T>* node = new(region) RBNode<T>(name);
+        return (node);
+    }
+
+    static void deallocate(MemorySegment& segment, RBNodePtr nodep) {
+        segment.deallocate(nodep.get(), sizeof(RBNode<T>));
+    }
 
     /// \brief If callback should be called when traversing this node in
     /// RBTree::find().
@@ -338,7 +357,6 @@ private:
     /// \todo It might be needed to put it into more general attributes field.
     uint32_t flags_;
 };
-
 
 // This is only to support NULL nodes.
 template <typename T>
@@ -377,22 +395,23 @@ RBNode<T>::~RBNode() {
 }
 
 template <typename T>
-const RBNode<T>*
-RBNode<T>::abstractSuccessor(RBNode<T>* RBNode<T>::*left, RBNode<T>*
-                             RBNode<T>::*right) const
+typename RBNode<T>::ConstRBNodePtr
+RBNode<T>::abstractSuccessor(
+    typename RBNode<T>::RBNodePtr RBNode<T>::*left,
+    typename RBNode<T>::RBNodePtr RBNode<T>::*right) const
 {
     // This function is written as a successor. It becomes predecessor if
     // the left and right pointers are swapped. So in case of predecessor,
     // the left pointer points to right and vice versa. Don't get confused
     // by the idea, just imagine the pointers look into a mirror.
 
-    const RBNode<T>* current = this;
+    ConstRBNodePtr current = this;
     // If it has right node, the successor is the left-most node of the right
     // subtree.
-    if (current->*right != RBNode<T>::NULL_NODE()) {
-        current = current->*right;
-        while (current->*left != RBNode<T>::NULL_NODE()) {
-            current = current->*left;
+    if (current.get()->*right != RBNode<T>::NULL_NODE()) {
+        current = current.get()->*right;
+        while (current.get()->*left != RBNode<T>::NULL_NODE()) {
+            current = current.get()->*left;
         }
         return (current);
     }
@@ -400,8 +419,9 @@ RBNode<T>::abstractSuccessor(RBNode<T>* RBNode<T>::*left, RBNode<T>*
     // Otherwise go up until we find the first left branch on our path to
     // root.  If found, the parent of the branch is the successor.
     // Otherwise, we return the null node
-    const RBNode<T>* parent = current->parent_;
-    while (parent != RBNode<T>::NULL_NODE() && current == parent->*right) {
+    ConstRBNodePtr parent = current->parent_;
+    while (parent != RBNode<T>::NULL_NODE() &&
+           current == parent.get()->*right) {
         current = parent;
         parent = parent->parent_;
     }
@@ -409,13 +429,13 @@ RBNode<T>::abstractSuccessor(RBNode<T>* RBNode<T>::*left, RBNode<T>*
 }
 
 template <typename T>
-const RBNode<T>*
+typename RBNode<T>::ConstRBNodePtr
 RBNode<T>::successor() const {
     return (abstractSuccessor(&RBNode<T>::left_, &RBNode<T>::right_));
 }
 
 template <typename T>
-const RBNode<T>*
+typename RBNode<T>::ConstRBNodePtr
 RBNode<T>::predecessor() const {
     // Swap the left and right pointers for the abstractSuccessor
     return (abstractSuccessor(&RBNode<T>::right_, &RBNode<T>::left_));
@@ -698,7 +718,7 @@ public:
     /// The constructor.
     ///
     /// It never throws an exception.
-    explicit RBTree(bool returnEmptyNode = false);
+    RBTree(MemorySegment& segment, bool returnEmptyNode = false);
 
     /// \b Note: RBTree is not intended to be inherited so the destructor
     /// is not virtual
@@ -1003,18 +1023,25 @@ public:
 private:
     /// \name RBTree balance functions
     //@{
-    void insertRebalance(RBNode<T>** root, RBNode<T>* node);
-    RBNode<T>* rightRotate(RBNode<T>** root, RBNode<T>* node);
-    RBNode<T>* leftRotate(RBNode<T>** root, RBNode<T>* node);
+    void insertRebalance(typename RBNode<T>::RBNodePtr* root,
+                         typename RBNode<T>::RBNodePtr node);
+    typename RBNode<T>::RBNodePtr rightRotate(
+        typename RBNode<T>::RBNodePtr* root,
+        typename RBNode<T>::RBNodePtr node);
+    typename RBNode<T>::RBNodePtr leftRotate(
+        typename RBNode<T>::RBNodePtr* root,
+        typename RBNode<T>::RBNodePtr node);
     //@}
 
     /// \name Helper functions
     //@{
     /// \brief delete tree whose root is equal to node
-    void deleteHelper(RBNode<T> *node);
+    void deleteHelper(typename RBNode<T>::RBNodePtr node,
+                      MemorySegment& segment);
 
     /// \brief Print the information of given RBNode.
-    void dumpTreeHelper(std::ostream& os, const RBNode<T>* node,
+    void dumpTreeHelper(std::ostream& os,
+                        typename RBNode<T>::ConstRBNodePtr node,
                         unsigned int depth) const;
 
     /// \brief Indentation helper function for dumpTree
@@ -1024,11 +1051,14 @@ private:
     /// node, old node will hold the base name, new node will be the down node
     /// of old node, new node will hold the sub_name, the data
     /// of old node will be move into new node, and old node became non-terminal
-    RBNode<T>* nodeFission(RBNode<T>& node, const isc::dns::Name& sub_name);
+    typename RBNode<T>::RBNodePtr nodeFission(
+        typename RBNode<T>::RBNodePtr node, const isc::dns::Name& sub_name);
     //@}
 
-    RBNode<T>*  NULLNODE;
-    RBNode<T>*  root_;
+    MemorySegment& segment_;
+
+    typename RBNode<T>::RBNodePtr  NULLNODE;
+    typename RBNode<T>::RBNodePtr  root_;
     /// the node count of current tree
     unsigned int node_count_;
     /// search policy for rbtree
@@ -1036,7 +1066,8 @@ private:
 };
 
 template <typename T>
-RBTree<T>::RBTree(bool returnEmptyNode) :
+RBTree<T>::RBTree(MemorySegment& segment, bool returnEmptyNode) :
+    segment_(segment),
     NULLNODE(RBNode<T>::NULL_NODE()),
     root_(NULLNODE),
     node_count_(0),
@@ -1046,38 +1077,40 @@ RBTree<T>::RBTree(bool returnEmptyNode) :
 
 template <typename T>
 RBTree<T>::~RBTree() {
-    deleteHelper(root_);
+    deleteHelper(root_, segment_);
     assert(node_count_ == 0);
 }
 
 template <typename T>
 void
-RBTree<T>::deleteHelper(RBNode<T>* root) {
+RBTree<T>::deleteHelper(typename RBNode<T>::RBNodePtr root,
+                        MemorySegment& segment)
+{
     if (root == NULLNODE) {
         return;
     }
 
-    RBNode<T>* node = root;
+    typename RBNode<T>::RBNodePtr node = root;
     while (root->left_ != NULLNODE || root->right_ != NULLNODE) {
         while (node->left_ != NULLNODE || node->right_ != NULLNODE) {
             node = (node->left_ != NULLNODE) ? node->left_ : node->right_;
         }
 
-        RBNode<T>* parent = node->parent_;
+        typename RBNode<T>::RBNodePtr parent = node->parent_;
         if (parent->left_ == node) {
             parent->left_ = NULLNODE;
         } else {
             parent->right_ = NULLNODE;
         }
 
-        deleteHelper(node->down_);
-        delete node;
+        deleteHelper(node->down_, segment);
+        RBNode<T>::deallocate(segment, node);
         --node_count_;
         node = parent;
     }
 
-    deleteHelper(root->down_);
-    delete root;
+    deleteHelper(root->down_, segment);
+    RBNode<T>::deallocate(segment, root);
     --node_count_;
 }
 
@@ -1096,20 +1129,20 @@ RBTree<T>::find(const isc::dns::Name& target_name,
         isc_throw(isc::BadValue, "RBTree::find is given a non empty chain");
     }
 
-    RBNode<T>* node = root_;
+    typename RBNode<T>::RBNodePtr node = root_;
     Result ret = NOTFOUND;
     isc::dns::Name name = target_name;
 
     while (node != NULLNODE) {
-        node_path.last_compared_ = node;
+        node_path.last_compared_ = node.get();
         node_path.last_comparison_ = name.compare(node->name_);
         const isc::dns::NameComparisonResult::NameRelation relation =
             node_path.last_comparison_.getRelation();
 
         if (relation == isc::dns::NameComparisonResult::EQUAL) {
             if (needsReturnEmptyNode_ || !node->isEmpty()) {
-                node_path.push(node);
-                *target = node;
+                node_path.push(node.get());
+                *target = node.get();
                 ret = EXACTMATCH;
             }
             break;
@@ -1131,7 +1164,7 @@ RBTree<T>::find(const isc::dns::Name& target_name,
             } else if (relation == isc::dns::NameComparisonResult::SUBDOMAIN) {
                 if (needsReturnEmptyNode_ || !node->isEmpty()) {
                     ret = PARTIALMATCH;
-                    *target = node;
+                    *target = node.get();
                     if (callback != NULL &&
                         node->getFlag(RBNode<T>::FLAG_CALLBACK)) {
                         if ((callback)(*node, callback_arg)) {
@@ -1139,7 +1172,7 @@ RBTree<T>::find(const isc::dns::Name& target_name,
                         }
                     }
                 }
-                node_path.push(node);
+                node_path.push(node.get());
                 name = name - node->name_;
                 node = node->down_;
             } else {
@@ -1162,12 +1195,12 @@ RBTree<T>::nextNode(RBTreeNodeChain<T>& node_path) const {
     // if node has sub domain, the next domain is the smallest
     // domain in sub domain tree
     if (node->down_ != NULLNODE) {
-        const RBNode<T>* left_most = node->down_;
+        typename RBNode<T>::ConstRBNodePtr left_most = node->down_;
         while (left_most->left_ != NULLNODE) {
             left_most = left_most->left_;
         }
-        node_path.push(left_most);
-        return (left_most);
+        node_path.push(left_most.get());
+        return (left_most.get());
     }
 
     // try to find a successor.
@@ -1176,11 +1209,12 @@ RBTree<T>::nextNode(RBTreeNodeChain<T>& node_path) const {
     // up node doesn't have successor we gonna keep moving to up
     // level
     while (!node_path.isEmpty()) {
-        const RBNode<T>* up_node_successor = node_path.top()->successor();
+        typename RBNode<T>::ConstRBNodePtr up_node_successor =
+            node_path.top()->successor();
         node_path.pop();
         if (up_node_successor != NULLNODE) {
-            node_path.push(up_node_successor);
-            return (up_node_successor);
+            node_path.push(up_node_successor.get());
+            return (up_node_successor.get());
         }
     }
 
@@ -1228,9 +1262,10 @@ RBTree<T>::previousNode(RBTreeNodeChain<T>& node_path) const {
                 // compared one (it is either the compared one, or some
                 // subdomain of it). There probably is not an easy trick
                 // for this, so we just find the correct place.
-                const RBNode<T>* current(node_path.last_compared_);
+                typename RBNode<T>::ConstRBNodePtr current =
+                    node_path.last_compared_;
                 while (current != NULLNODE) {
-                    node_path.push(current);
+                    node_path.push(current.get());
                     // Go a level down and as much right there as possible
                     current = current->down_;
                     while (current->right_ != NULLNODE) {
@@ -1288,7 +1323,7 @@ RBTree<T>::previousNode(RBTreeNodeChain<T>& node_path) const {
         return (NULL);
     }
 
-    const RBNode<T>* node(node_path.top());
+    typename RBNode<T>::ConstRBNodePtr node(node_path.top());
 
     // Try going left in this tree
     node = node->predecessor();
@@ -1308,7 +1343,7 @@ RBTree<T>::previousNode(RBTreeNodeChain<T>& node_path) const {
     // Exchange the node at the top of the path, as we move horizontaly
     // through the domain tree
     node_path.pop();
-    node_path.push(node);
+    node_path.push(node.get());
 
     // Try going as deep as possible, keeping on the right side of the trees
     while (node->down_ != NULLNODE) {
@@ -1320,21 +1355,23 @@ RBTree<T>::previousNode(RBTreeNodeChain<T>& node_path) const {
         }
         // Now, we found the right-most node in the sub-tree, we need to
         // include it in the path
-        node_path.push(node);
+        node_path.push(node.get());
     }
 
     // Now, if the current node has no down_ pointer any more, it's the
     // correct one.
-    return (node);
+    return (node.get());
 }
 
 template <typename T>
 typename RBTree<T>::Result
-RBTree<T>::insert(const isc::dns::Name& target_name, RBNode<T>** new_node) {
+RBTree<T>::insert(const isc::dns::Name& target_name,
+                  RBNode<T>** inserted_node)
+{
     using namespace helper;
-    RBNode<T>* parent = NULLNODE;
-    RBNode<T>* current = root_;
-    RBNode<T>* up_node = NULLNODE;
+    typename RBNode<T>::RBNodePtr parent = NULLNODE;
+    typename RBNode<T>::RBNodePtr current = root_;
+    typename RBNode<T>::RBNodePtr up_node = NULLNODE;
     isc::dns::Name name = target_name;
 
     int order = -1;
@@ -1344,8 +1381,8 @@ RBTree<T>::insert(const isc::dns::Name& target_name, RBNode<T>** new_node) {
         const isc::dns::NameComparisonResult::NameRelation relation =
             compare_result.getRelation();
         if (relation == isc::dns::NameComparisonResult::EQUAL) {
-            if (new_node != NULL) {
-                *new_node = current;
+            if (inserted_node != NULL) {
+                *inserted_node = current.get();
             }
             return (ALREADYEXISTS);
         } else {
@@ -1373,7 +1410,7 @@ RBTree<T>::insert(const isc::dns::Name& target_name, RBNode<T>** new_node) {
                         common_label_count);
                     const bool fix_down_link = (current == up_node->down_);
                     const bool fix_root = (current == root_);
-                    current = nodeFission(*current, common_ancestor);
+                    current = nodeFission(current, common_ancestor);
                     if (fix_down_link) {
                         up_node->down_ = current;
                     }
@@ -1385,30 +1422,32 @@ RBTree<T>::insert(const isc::dns::Name& target_name, RBNode<T>** new_node) {
         }
     }
 
-    RBNode<T>** current_root = (up_node != NULLNODE) ?
+    typename RBNode<T>::RBNodePtr* current_root = (up_node != NULLNODE) ?
         &(up_node->down_) : &root_;
     // using auto_ptr here is avoid memory leak in case of exceptoin raised
     // after the RBNode creation, if we can make sure no exception will be
     // raised until the end of the function, we can remove it for optimization
-    std::auto_ptr<RBNode<T> > node(new RBNode<T>(name));
+
+    // disable for experiment
+    //std::auto_ptr<RBNode<T> > node(new RBNode<T>(name));
+    typename RBNode<T>::RBNodePtr node = RBNode<T>::allocate(segment_, name);
     node->parent_ = parent;
     if (parent == NULLNODE) {
-        *current_root = node.get();
+        *current_root = node;
         //node is the new root of sub tree, so its init color
         // is BLACK
         node->setColor(RBNode<T>::BLACK);
     } else if (order < 0) {
-        parent->left_ = node.get();
+        parent->left_ = node;
     } else {
-        parent->right_ = node.get();
+        parent->right_ = node;
     }
-    insertRebalance(current_root, node.get());
-    if (new_node != NULL) {
-        *new_node = node.get();
+    insertRebalance(current_root, node);
+    if (inserted_node != NULL) {
+        *inserted_node = node.get();
     }
 
     ++node_count_;
-    node.release();
 
     return (SUCCESS);
 }
@@ -1419,52 +1458,56 @@ RBTree<T>::insert(const isc::dns::Name& target_name, RBNode<T>** new_node) {
 // name (and therefore the name for the existing node doesn't change).
 // Otherwise, things like shortcut links between nodes won't work.
 template <typename T>
-RBNode<T>*
-RBTree<T>::nodeFission(RBNode<T>& node, const isc::dns::Name& base_name) {
+typename RBNode<T>::RBNodePtr
+RBTree<T>::nodeFission(typename RBNode<T>::RBNodePtr node,
+                       const isc::dns::Name& base_name)
+{
     using namespace helper;
-    const isc::dns::Name sub_name = node.name_ - base_name;
+    const isc::dns::Name sub_name = node->name_ - base_name;
     // using auto_ptr here is to avoid memory leak in case of exception raised
     // after the RBNode creation
-    std::auto_ptr<RBNode<T> > up_node(new RBNode<T>(base_name));
-    node.name_ = sub_name;
+    //std::auto_ptr<RBNode<T> > up_node(new RBNode<T>(base_name));
+    typename RBNode<T>::RBNodePtr up_node(RBNode<T>::allocate(segment_,
+                                                              base_name));
+    node->name_ = sub_name;
     // the rest of this function should be exception free so that it keeps
     // consistent behavior (i.e., a weak form of strong exception guarantee)
     // even if code after the call to this function throws an exception.
-    std::swap(up_node->parent_, node.parent_);
-    std::swap(up_node->left_, node.left_);
-    std::swap(up_node->right_, node.right_);
+    std::swap(up_node->parent_, node->parent_);
+    std::swap(up_node->left_, node->left_);
+    std::swap(up_node->right_, node->right_);
 
     // Fix pointers that were to the current node.
     if (up_node->parent_ != NULLNODE) {
-        if (up_node->parent_->left_ == &node) {
-            up_node->parent_->left_ = up_node.get();
+        if (up_node->parent_->left_ == node) {
+            up_node->parent_->left_ = up_node;
         } else {
-            assert(up_node->parent_->right_ == &node);
-            up_node->parent_->right_ = up_node.get();
+            up_node->parent_->right_ = up_node;
         }
     }
     if (up_node->left_ != NULLNODE) {
-        up_node->left_->parent_ = up_node.get();
+        up_node->left_->parent_ = up_node;
     }
     if (up_node->right_ != NULLNODE) {
-        up_node->right_->parent_ = up_node.get();
+        up_node->right_->parent_ = up_node;
     }
 
-    up_node->setColor(node.getColor());
-    up_node->down_ = &node;
+    up_node->setColor(node->getColor());
+    up_node->down_ = node;
     // root node of sub tree, the initial color is BLACK
-    node.setColor(RBNode<T>::BLACK);
+    node->setColor(RBNode<T>::BLACK);
     ++node_count_;
 
-    return (up_node.release());
+    return (up_node);
 }
 
 
 template <typename T>
 void
-RBTree<T>::insertRebalance(RBNode<T>** root, RBNode<T>* node) {
-
-    RBNode<T>* uncle;
+RBTree<T>::insertRebalance(typename RBNode<T>::RBNodePtr* root,
+                           typename RBNode<T>::RBNodePtr node)
+{
+    typename RBNode<T>::RBNodePtr uncle;
     while (node != *root && node->parent_->getColor() == RBNode<T>::RED) {
         if (node->parent_ == node->parent_->parent_->left_) {
             uncle = node->parent_->parent_->right_;
@@ -1507,9 +1550,11 @@ RBTree<T>::insertRebalance(RBNode<T>** root, RBNode<T>* node) {
 
 
 template <typename T>
-RBNode<T>*
-RBTree<T>::leftRotate(RBNode<T>** root, RBNode<T>* node) {
-    RBNode<T>* right = node->right_;
+typename RBNode<T>::RBNodePtr
+RBTree<T>::leftRotate(typename RBNode<T>::RBNodePtr* root,
+                      typename RBNode<T>::RBNodePtr node)
+{
+    typename RBNode<T>::RBNodePtr right = node->right_;
     node->right_ = right->left_;
     if (right->left_ != NULLNODE)
         right->left_->parent_ = node;
@@ -1532,9 +1577,11 @@ RBTree<T>::leftRotate(RBNode<T>** root, RBNode<T>* node) {
 }
 
 template <typename T>
-RBNode<T>*
-RBTree<T>::rightRotate(RBNode<T>** root, RBNode<T>* node) {
-    RBNode<T>* left = node->left_;
+typename RBNode<T>::RBNodePtr
+RBTree<T>::rightRotate(typename RBNode<T>::RBNodePtr* root,
+                       typename RBNode<T>::RBNodePtr node)
+{
+    typename RBNode<T>::RBNodePtr left = node->left_;
     node->left_ = left->right_;
     if (left->right_ != NULLNODE)
         left->right_->parent_ = node;
@@ -1566,7 +1613,8 @@ RBTree<T>::dumpTree(std::ostream& os, unsigned int depth) const {
 
 template <typename T>
 void
-RBTree<T>::dumpTreeHelper(std::ostream& os, const RBNode<T>* node,
+RBTree<T>::dumpTreeHelper(std::ostream& os,
+                          typename RBNode<T>::ConstRBNodePtr node,
                           unsigned int depth) const
 {
     if (node == NULLNODE) {
