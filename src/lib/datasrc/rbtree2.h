@@ -25,7 +25,9 @@
 
 #include <exceptions/exceptions.h>
 
+#include <util/buffer.h>
 #include <dns/name.h>
+#include <dns/labelsequence.h>
 #include <datasrc/memory_segment.h>
 
 #include <boost/interprocess/offset_ptr.hpp>
@@ -134,9 +136,9 @@ public:
         FLAG_BLACK = 0x00000002U, ///< Node color: on=black, off=red, internal.
         FLAG_ROOT =  0x00000004U, ///< Set iff the node is root of subtree.
 
-        FLAG_USER1 = 0x80000000U, ///< Application specific flag
-        FLAG_USER2 = 0x40000000U, ///< Application specific flag
-        FLAG_USER3 = 0x20000000U  ///< Application specific flag
+        FLAG_USER1 = 0x00008000U, ///< Application specific flag
+        FLAG_USER2 = 0x00004000U, ///< Application specific flag
+        FLAG_USER3 = 0x00002000U  ///< Application specific flag
     };
 private:
     // Some flag values are expected to be used for internal purposes
@@ -168,7 +170,12 @@ public:
     ///
     /// To get the absolute name of one node, the node path from the top node
     /// to current node has to be recorded.
-    const isc::dns::Name& getName() const { return (name_); }
+    const isc::dns::Name getName() const {
+        const uint8_t* ndata = getNameData();
+        util::InputBuffer b(ndata + 4, ndata[0]);
+        const dns::Name n(b);
+        return (n);
+    }
 
     /// \brief Return the data stored in this node.
     ///
@@ -339,23 +346,78 @@ private:
     ///     avoiding storage of the same domain labels multiple times.
     RBNodePtr  down_;
 
+    // Accessor to the appended data at the end of the main structure
+    const uint8_t* getNameData() const {
+        return (reinterpret_cast<const uint8_t*>(this + 1));
+    }
+    uint8_t* getNameData() {
+        return (reinterpret_cast<uint8_t*>(this + 1));
+    }
+
+    void encodeNameData(const uint8_t* ndata, size_t nsize,
+                        const uint8_t* odata, size_t osize)
+    {
+        assert(oldnamelen_ >= nsize);
+        assert(oldoffsetlen_ >= osize);
+
+        uint8_t* np = getNameData();
+        *np++ = nsize;
+        *np++ = osize;
+        *np++ = 0;              // leave it open for now
+        *np++ = 0;              // leave it open for now
+        memcpy(np, ndata, nsize);
+        np += nsize;
+        memcpy(np, odata, osize);
+    }
+
+    void resetName(const dns::Name& name) { // temporary interface
+        name_ = name;                       // should become obsolete soon
+
+        const dns::LabelSequence seq(name);
+        size_t ndata_len;
+        const uint8_t* ndata = seq.getData(&ndata_len);
+        uint8_t offset_holder[dns::Name::MAX_LABELS];
+        size_t offset_len;
+        const uint8_t* odata = seq.getOffsetData(&offset_len, offset_holder);
+
+        encodeNameData(ndata, ndata_len, odata, offset_len);
+    }
+
     // Memory management related methods using generic memory segments
 
     static RBNode<T>* allocate(MemorySegment& segment, const dns::Name& name) {
-        void* region = segment.allocate(sizeof(RBNode<T>));
+        const dns::LabelSequence seq(name);
+        size_t ndata_len;
+        const uint8_t* ndata = seq.getData(&ndata_len);
+        uint8_t offset_holder[dns::Name::MAX_LABELS];
+        size_t offset_len;
+        const uint8_t* odata = seq.getOffsetData(&offset_len, offset_holder);
+
+        const size_t namedata_size = ndata_len + offset_len + 4;
+
+        void* region = segment.allocate(sizeof(RBNode<T>) + namedata_size);
         RBNode<T>* node = new(region) RBNode<T>(name);
+        node->oldnamelen_ = ndata_len;
+        node->oldoffsetlen_ = offset_len;
+        node->encodeNameData(ndata, ndata_len, odata, offset_len);
+
         return (node);
     }
 
     static void deallocate(MemorySegment& segment, RBNodePtr nodep) {
-        segment.deallocate(nodep.get(), sizeof(RBNode<T>));
+        RBNode<T>* node = nodep.get();
+        const size_t namedata_size = node->oldnamelen_ +
+            node->oldoffsetlen_+ 4;
+        segment.deallocate(node, sizeof(RBNode<T>) + namedata_size);
     }
 
     /// \brief If callback should be called when traversing this node in
     /// RBTree::find().
     ///
     /// \todo It might be needed to put it into more general attributes field.
-    uint32_t flags_;
+    uint32_t flags_ : 16;
+    uint32_t oldnamelen_ : 8;       // range is 1..255
+    uint32_t oldoffsetlen_ : 8;     // range is 1..128
 };
 
 // This is only to support NULL nodes.
@@ -1469,7 +1531,7 @@ RBTree<T>::nodeFission(typename RBNode<T>::RBNodePtr node,
     //std::auto_ptr<RBNode<T> > up_node(new RBNode<T>(base_name));
     typename RBNode<T>::RBNodePtr up_node(RBNode<T>::allocate(segment_,
                                                               base_name));
-    node->name_ = sub_name;
+    node->resetName(sub_name);
     // the rest of this function should be exception free so that it keeps
     // consistent behavior (i.e., a weak form of strong exception guarantee)
     // even if code after the call to this function throws an exception.
@@ -1624,16 +1686,16 @@ RBTree<T>::dumpTreeHelper(std::ostream& os,
     }
 
     indent(os, depth);
-    os << node->name_.toText() << " ("
+    os << node->getName() << " ("
        << ((node->getColor() == RBNode<T>::BLACK) ? "black" : "red") << ")";
     os << ((node->isEmpty()) ? "[invisible] \n" : "\n");
 
     if (node->down_ != NULLNODE) {
         indent(os, depth + 1);
-        os << "begin down from " << node->name_.toText() << "\n";
+        os << "begin down from " << node->getName() << "\n";
         dumpTreeHelper(os, node->down_, depth + 1);
         indent(os, depth + 1);
-        os << "end down from " << node->name_.toText() << "\n";
+        os << "end down from " << node->getName() << "\n";
     }
     dumpTreeHelper(os, node->left_, depth + 1);
     dumpTreeHelper(os, node->right_, depth + 1);
