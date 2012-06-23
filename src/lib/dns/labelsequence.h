@@ -73,6 +73,9 @@ public:
     /// \return Pointer to the wire-format data of this label sequence
     const uint8_t* getData(size_t* len) const;
 
+    const uint8_t* getOffsetData(size_t* len,
+                                 uint8_t placeholder[Name::MAX_LABELS]) const;
+
     /// \brief Return the length of the wire-format data of this LabelSequence
     ///
     /// This method returns the number of octets for the data that would

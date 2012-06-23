@@ -20,8 +20,11 @@
 #include <boost/functional/hash.hpp>
 
 #include <cstring>
+#include <vector>
 
 #include <stdint.h>
+#include <algorithm>
+#include <functional>
 
 namespace isc {
 namespace dns {
@@ -30,6 +33,23 @@ const uint8_t*
 LabelSequence::getData(size_t *len) const {
     *len = getDataLength();
     return (&ndata_[offsets_[first_label_]]);
+}
+
+const uint8_t*
+LabelSequence::getOffsetData(size_t* len,
+                             uint8_t placeholder[Name::MAX_LABELS]) const
+{
+    *len = getLabelCount();
+    if (first_label_ == 0) {
+        return (&offsets_[first_label_]);
+    }
+    // store adjusted offsets in the placeholder
+    size_t i = 0;
+    for (size_t l = first_label_; l <= last_label_; ++i, ++l) {
+        placeholder[i] = offsets_[l] - offsets_[first_label_];
+    }
+    assert(i < Name::MAX_LABELS);
+    return (placeholder);
 }
 
 size_t
@@ -184,7 +204,11 @@ LabelSequence::getHash(bool case_sensitive) const {
 
 Name
 LabelSequence::getName() const {
-    util::InputBuffer b(ndata_, offsets_[offsets_orig_size_ - 1]);
+    std::vector<uint8_t> absolute_data(ndata_,
+                                       ndata_ +
+                                       offsets_[offsets_orig_size_ - 1]);
+    absolute_data.push_back(0);
+    util::InputBuffer b(&absolute_data[0], absolute_data.size());
     return (Name(b));
 }
 

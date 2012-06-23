@@ -187,31 +187,73 @@ TEST_F(LabelSequenceTest, compare) {
 }
 
 void
-getDataCheck(const char* expected_data, size_t expected_len,
+getDataCheck(const char* expected_cdata, size_t expected_len,
              const LabelSequence& ls)
 {
+    vector<uint8_t> expected_data(expected_cdata,
+                                  expected_cdata + expected_len);
+
     size_t len;
     const unsigned char* data = ls.getData(&len);
-    ASSERT_EQ(expected_len, len) << "Expected data: " << expected_data <<
+    ASSERT_EQ(expected_len, len) << "Expected data: " << expected_cdata <<
                                     " name: " << ls.getName().toText();
     EXPECT_EQ(expected_len, ls.getDataLength()) <<
-        "Expected data: " << expected_data <<
+        "Expected data: " << expected_cdata <<
         " name: " << ls.getName().toText();
     for (size_t i = 0; i < len; ++i) {
-        EXPECT_EQ((const unsigned char) expected_data[i], data[i]) <<
-          "Difference at pos " << i << ": Expected data: " << expected_data <<
+        EXPECT_EQ(expected_data[i], data[i]) <<
+          "Difference at pos " << i << ": Expected data: " << expected_cdata <<
           " name: " << ls.getName().toText();;
     }
 }
 
 TEST_F(LabelSequenceTest, getData) {
     getDataCheck("\007example\003org\000", 13, ls1);
-    getDataCheck("\007example\003com\000", 13, ls2);
+    ls1.stripRight(1);
+    getDataCheck("\007example\003org", 12, ls1);
+    ls1.stripLeft(1);
+    getDataCheck("\003org", 4, ls1);
     getDataCheck("\007example\003org\000", 13, ls3);
     getDataCheck("\003foo\003bar\004test\007example\000", 22, ls4);
     getDataCheck("\007example\003ORG\000", 13, ls5);
     getDataCheck("\007ExAmPlE\003org\000", 13, ls6);
     getDataCheck("\000", 1, ls7);
+};
+
+TEST_F(LabelSequenceTest, getOffsetData) {
+    uint8_t placeholder[Name::MAX_LABELS];
+
+    size_t olen;
+    const uint8_t* odata;
+    odata = ls1.getOffsetData(&olen, placeholder);
+    uint8_t expect1[] = {0, 8, 12};
+    EXPECT_EQ(olen, sizeof(expect1));
+    EXPECT_EQ(0, memcmp(odata, expect1, olen));
+
+    ls1.stripRight(1);
+    odata = ls1.getOffsetData(&olen, placeholder);
+    uint8_t expect2[] = {0, 8};
+    EXPECT_EQ(olen, sizeof(expect2));
+    EXPECT_EQ(0, memcmp(odata, expect2, olen));
+
+    ls1.stripLeft(1);
+    odata = ls1.getOffsetData(&olen, placeholder);
+    uint8_t expect3[] = {0};
+    EXPECT_EQ(olen, sizeof(expect3));
+    EXPECT_EQ(0, memcmp(odata, expect3, olen));
+
+    // boundary check
+    const Name longname("a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a."
+                        "a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a."
+                        "a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a."
+                        "a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a."
+                        "a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a."
+                        "a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a."
+                        "a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.a."
+                        "a.a.a.a.a.a.a.a.a.a.a.a.a.a.a.");
+    LabelSequence sequence(longname);
+    odata = sequence.getOffsetData(&olen, placeholder);
+    EXPECT_EQ(olen, 128);
 };
 
 TEST_F(LabelSequenceTest, stripLeft) {
