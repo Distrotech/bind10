@@ -105,6 +105,7 @@ public:
     virtual void setTruncated() {}
     virtual CompressMode getCompressMode() const { return (CASE_INSENSITIVE); }
     virtual void setCompressMode(const CompressMode) {}
+    virtual void writeName(const LabelSequence&, const bool = false) {}
     virtual void writeName(const Name& name, const bool = false) {
         name.toWire(getBuffer());
     }

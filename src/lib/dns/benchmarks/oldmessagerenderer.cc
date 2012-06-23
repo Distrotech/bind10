@@ -222,6 +222,10 @@ OldMessageRenderer::setCompressMode(const CompressMode mode) {
 }
 
 void
+OldMessageRenderer::writeName(const LabelSequence&, const bool) {
+}
+
+void
 OldMessageRenderer::writeName(const Name& name, const bool compress) {
     impl_->nbuffer_.clear();
     name.toWire(impl_->nbuffer_);
