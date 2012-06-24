@@ -22,6 +22,7 @@
 
 #include <boost/static_assert.hpp>
 
+#include <cassert>
 #include <exception>
 #include <utility>
 #include <vector>
@@ -179,7 +180,7 @@ getRdataEncodeSpec(RRType type) {
 
 RdataEncoder::RdataEncoder() :
     n_data_(0), n_varlen_fields_(0), name_data_len_(0), other_data_len_(0),
-    composer_(new RdataFieldComposer)
+    encode_spec_(NULL), composer_(new RdataFieldComposer)
 {
 }
 
@@ -194,6 +195,7 @@ RdataEncoder::clear() {
     n_varlen_fields_ = 0;
     name_data_len_ = 0;
     other_data_len_ = 0;
+    encode_spec_ = NULL;
     data_lengths_.clear();
     data_offsets_.clear();
 }
@@ -218,16 +220,16 @@ RdataEncoder::construct(RRType type) {
     vector<pair<size_t, Name> >::const_iterator const it_name_end =
         composer_->names_.end();
 
-    const RdataEncodeSpec& encode_spec = getRdataEncodeSpec(type);
-    if (n_data_ * encode_spec.n_names != composer_->names_.size()) {
+    encode_spec_ = &getRdataEncodeSpec(type);
+    if (n_data_ * encode_spec_->n_names != composer_->names_.size()) {
         throw runtime_error("assumption failure: # of names mismatch");
     }
     size_t cur_pos = 0;
     n_varlen_fields_ = 0;
     size_t i;
     for (i = 0; i < n_data_; ++i) {
-        for (size_t field = 0; field < encode_spec.n_fields; ++field) {
-            const RdataFieldSpec& field_spec = encode_spec.field_spec[field];
+        for (size_t field = 0; field < encode_spec_->n_fields; ++field) {
+            const RdataFieldSpec& field_spec = encode_spec_->field_spec[field];
             switch (field_spec.type) {
             case RdataFieldSpec::NAME:
             {
@@ -265,8 +267,12 @@ RdataEncoder::construct(RRType type) {
                     ++n_varlen_fields_;
                 }
                 const size_t len = it_data->second;
+                if (len > 0xffff) {
+                    throw runtime_error("assumption failure: data too large");
+                }
                 const uint8_t* dp =
-                    static_cast<const uint8_t*>(composer_->getData()) + len;
+                    static_cast<const uint8_t*>(composer_->getData()) +
+                    it_data->first;
                 data_offsets_.push_back(
                     pair<const uint8_t*, size_t>(dp, len));
                 cur_pos += len;
@@ -288,6 +294,89 @@ RdataEncoder::getStorageLength() const {
             name_data_len_ + other_data_len_);
 }
 
+size_t
+RdataEncoder::encodeLengths(uint16_t* field_buf, size_t n_bufs) const {
+    assert(n_varlen_fields_ <= n_bufs);
+
+    vector<pair <const uint8_t*, size_t> >::const_iterator it_dataoff =
+        data_offsets_.begin();
+    vector<pair<const uint8_t*, size_t> >::const_iterator const
+        it_dataoff_end = data_offsets_.end();
+    size_t n_fields = 0;
+    for (size_t i = 0; i < n_data_; ++i) {
+        for (size_t field = 0; field < encode_spec_->n_fields; ++field) {
+            const RdataFieldSpec& field_spec = encode_spec_->field_spec[field];
+            if (field_spec.type == RdataFieldSpec::FIXED_LEN_DATA ||
+                field_spec.type == RdataFieldSpec::VAR_LEN_DATA) {
+                assert(it_dataoff != it_dataoff_end);
+                if (field_spec.type == RdataFieldSpec::VAR_LEN_DATA) {
+                    *field_buf = it_dataoff->second;
+                    ++n_fields;
+                }
+                ++field_buf;
+                ++it_dataoff;
+            }
+        }
+    }
+
+    assert(n_fields == n_varlen_fields_);
+    return (n_fields);
+}
+
+size_t
+RdataEncoder::encodeData(uint8_t* const data_buf, size_t bufsize) const {
+    assert(name_data_len_ + other_data_len_ <= bufsize);
+
+    vector<pair<const uint8_t*, size_t> >::const_iterator it_data =
+        data_offsets_.begin();
+    vector<pair<const uint8_t*, size_t> >::const_iterator const it_data_end =
+        data_offsets_.end();
+    vector<pair<size_t, Name> >::const_iterator it_name =
+        composer_->names_.begin();
+    vector<pair<size_t, Name> >::const_iterator const it_name_end =
+        composer_->names_.end();
+
+    vector<pair <const uint8_t*, size_t> >::const_iterator it_dataoff =
+        data_offsets_.begin();
+    vector<pair<const uint8_t*, size_t> >::const_iterator const
+        it_dataoff_end = data_offsets_.end();
+
+    uint8_t* dp = data_buf;
+    uint8_t* const dp_end = data_buf + bufsize;
+    for (size_t i = 0; i < n_data_; ++i) {
+        for (size_t field = 0; field < encode_spec_->n_fields; ++field) {
+            const RdataFieldSpec& field_spec = encode_spec_->field_spec[field];
+            if (field_spec.type == RdataFieldSpec::NAME) {
+                assert(it_name != it_name_end);
+                const LabelSequence seq(it_name->second);
+                size_t nlen;
+                const uint8_t* np = seq.getData(&nlen);
+                size_t olen;
+                const uint8_t* op = seq.getOffsetData(&olen,
+                                                      noffset_placeholder_);
+                assert(dp + nlen + olen + 2 <= dp_end);
+                *dp++ = nlen;
+                *dp++ = olen;
+                memcpy(dp, np, nlen);
+                dp += nlen;
+                memcpy(dp, op, olen);
+                dp += olen;
+
+                ++it_name;
+            } else {            // fixed or variable size len
+                assert(it_data != it_data_end);
+                const size_t len = it_data->second;
+                assert(dp + len <= dp_end);
+                memcpy(dp, it_data->first, len);
+                dp += len;
+                ++it_data;
+            }
+        }
+    }
+    assert(it_data == it_data_end);
+    assert(it_name == it_name_end);
+    return (dp - data_buf);
+}
 }
 }
 }

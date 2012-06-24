@@ -56,8 +56,16 @@ public:
     // only valid after construct.
     size_t getStorageLength() const;
 
-    void encodeLengths(uint16_t* field_buf) const;
+    // encode lengths of variable length fields.  return the total # of fields.
+    // only valid after construct.
+    size_t encodeLengths(uint16_t* field_buf, size_t n_bufs)
+        const;
 
+    // encode generic data.  return the total # of bytes used.
+    // only valid after construct.
+    size_t encodeData(uint8_t* data_buf, size_t bufsize) const;
+
+    // Reset internal state for reuse
     void clear();
 
 private:
@@ -71,8 +79,15 @@ private:
     // offset in the internal buffer to each data field
     std::vector<std::pair<const uint8_t*, size_t> > data_offsets_;
 
+    // Current encode spec determined by the RR type given to construct.
+    const struct RdataEncodeSpec* encode_spec_;
+
     class RdataFieldComposer;
     RdataFieldComposer* composer_;
+
+    // This is essentially temporary workspace, and should be usable in
+    // cost methods
+    mutable uint8_t noffset_placeholder_[dns::Name::MAX_LABELS];
 };
 
 }
