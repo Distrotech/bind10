@@ -18,6 +18,7 @@
 #include <dns/name.h>
 #include <util/buffer.h>
 
+#include <ostream>
 #include <stdint.h>
 
 namespace isc {
@@ -57,6 +58,12 @@ public:
                                      offsets_orig_size_(name.offsets_.size()),
                                      first_label_(0),
                                      last_label_(name.getLabelCount())
+    {}
+
+    LabelSequence(const uint8_t* ndata, const uint8_t* odata,
+                  size_t label_count) :
+        ndata_(ndata), offsets_(odata), offsets_orig_size_(label_count),
+        first_label_(0), last_label_(label_count)
     {}
 
     /// \brief Return the wire-format data for this LabelSequence
@@ -132,16 +139,7 @@ public:
     /// \return The number of labels
     size_t getLabelCount() const { return (last_label_ - first_label_); }
 
-    /// \brief Returns the original Name object associated with this
-    ///        LabelSequence
-    ///
-    /// While the Name should still be in scope during the lifetime of
-    /// the LabelSequence, it can still be useful to have access to it,
-    /// for instance in helper functions that are only passed the
-    /// LabelSequence itself.
-    ///
-    /// \return Reference to the original Name object
-    Name getName() const;
+    std::string toText() const;
 
     /// \brief Calculate a simple hash for the label sequence.
     ///
@@ -176,12 +174,13 @@ public:
 private:
     const uint8_t* ndata_;
     const uint8_t* offsets_;
-    const size_t offsets_orig_size_;
+    size_t offsets_orig_size_;  // mutable to allow assignment
     size_t first_label_;
     size_t last_label_;
 };
 
-
+std::ostream&
+operator<<(std::ostream& os, const LabelSequence& sequence);
 } // end namespace dns
 } // end namespace isc
 

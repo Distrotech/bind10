@@ -196,14 +196,14 @@ getDataCheck(const char* expected_cdata, size_t expected_len,
     size_t len;
     const unsigned char* data = ls.getData(&len);
     ASSERT_EQ(expected_len, len) << "Expected data: " << expected_cdata <<
-                                    " name: " << ls.getName().toText();
+                                    " name: " << ls.toText();
     EXPECT_EQ(expected_len, ls.getDataLength()) <<
         "Expected data: " << expected_cdata <<
-        " name: " << ls.getName().toText();
+        " name: " << ls.toText();
     for (size_t i = 0; i < len; ++i) {
         EXPECT_EQ(expected_data[i], data[i]) <<
           "Difference at pos " << i << ": Expected data: " << expected_cdata <<
-          " name: " << ls.getName().toText();;
+          " name: " << ls.toText();;
     }
 }
 
@@ -349,20 +349,20 @@ TEST_F(LabelSequenceTest, comparePart) {
 }
 
 TEST_F(LabelSequenceTest, isAbsolute) {
-    ASSERT_TRUE(ls1.isAbsolute());
+    EXPECT_TRUE(ls1.isAbsolute());
 
     ls1.stripLeft(1);
-    ASSERT_TRUE(ls1.isAbsolute());
+    EXPECT_TRUE(ls1.isAbsolute());
     ls1.stripRight(1);
-    ASSERT_FALSE(ls1.isAbsolute());
+    EXPECT_FALSE(ls1.isAbsolute());
 
-    ASSERT_TRUE(ls2.isAbsolute());
+    EXPECT_TRUE(ls2.isAbsolute());
     ls2.stripRight(1);
-    ASSERT_FALSE(ls2.isAbsolute());
+    EXPECT_FALSE(ls2.isAbsolute());
 
-    ASSERT_TRUE(ls3.isAbsolute());
+    EXPECT_TRUE(ls3.isAbsolute());
     ls3.stripLeft(2);
-    ASSERT_TRUE(ls3.isAbsolute());
+    EXPECT_TRUE(ls3.isAbsolute());
 }
 
 // The following are test data used in the getHash test below.  Normally

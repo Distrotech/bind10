@@ -54,17 +54,8 @@ LabelSequence::getOffsetData(size_t* len,
 
 size_t
 LabelSequence::getDataLength() const {
-    // If the labelsequence is absolute, the current last_label_ falls
-    // out of the vector (since it points to the 'label' after the
-    // root label, which doesn't exist; in that case, return
-    // the length for the 'previous' label (the root label) plus
-    // one (for the root label zero octet)
-    if (isAbsolute()) {
-        return (offsets_[last_label_ - 1] -
-                offsets_[first_label_] + 1);
-    } else {
-        return (offsets_[last_label_] - offsets_[first_label_]);
-    }
+    return (offsets_[last_label_ - 1] -
+            offsets_[first_label_] + ndata_[offsets_[last_label_ - 1]] + 1);
 }
 
 bool
@@ -181,7 +172,7 @@ LabelSequence::stripRight(size_t i) {
 
 bool
 LabelSequence::isAbsolute() const {
-    return (last_label_ == offsets_orig_size_);
+    return (ndata_[offsets_[last_label_ - 1]] == 0);
 }
 
 size_t
@@ -202,15 +193,78 @@ LabelSequence::getHash(bool case_sensitive) const {
     return (hash_val);
 }
 
-Name
-LabelSequence::getName() const {
-    std::vector<uint8_t> absolute_data(ndata_,
-                                       ndata_ +
-                                       offsets_[offsets_orig_size_ - 1]);
-    absolute_data.push_back(0);
-    util::InputBuffer b(&absolute_data[0], absolute_data.size());
-    return (Name(b));
+std::string
+LabelSequence::toText() const {
+    const uint8_t* np = ndata_;
+    const uint8_t* np_end = ndata_ + getDataLength();
+    unsigned int labels = getLabelCount(); // use for integrity check
+    // init with an impossible value to catch error cases in the end:
+    unsigned int count = Name::MAX_LABELLEN + 1;
+
+    // result string: it will roughly have the same length as the wire format
+    // name data.  reserve that length to minimize reallocation.
+    std::string result;
+    result.reserve(getDataLength());
+
+    while (np != np_end) {
+        labels--;
+        count = *np++;
+
+        if (count == 0) {
+            result.push_back('.');
+            break;
+        }
+
+        if (count <= Name::MAX_LABELLEN) {
+            assert(np_end - np >= count);
+
+            if (!result.empty()) {
+                // just after a non-empty label.  add a separating dot.
+                result.push_back('.');
+            }
+
+            while (count-- > 0) {
+                unsigned char c = *np++;
+                switch (c) {
+                case 0x22: // '"'
+                case 0x28: // '('
+                case 0x29: // ')'
+                case 0x2E: // '.'
+                case 0x3B: // ';'
+                case 0x5C: // '\\'
+                    // Special modifiers in zone files.
+                case 0x40: // '@'
+                case 0x24: // '$'
+                    result.push_back('\\');
+                    result.push_back(c);
+                    break;
+                default:
+                    if (c > 0x20 && c < 0x7f) {
+                        // append printable characters intact
+                        result.push_back(c);
+                    } else {
+                        // encode non-printable characters in the form of \DDD
+                        result.push_back(0x5c);
+                        result.push_back(0x30 + ((c / 100) % 10));
+                        result.push_back(0x30 + ((c / 10) % 10));
+                        result.push_back(0x30 + (c % 10));
+                    }
+                }
+            }
+        } else {
+            isc_throw(BadLabelType, "unknown label type in name data");
+        }
+    }
+
+    assert(labels == 0);
+
+    return (result);
 }
 
+std::ostream&
+operator<<(std::ostream& os, const LabelSequence& sequence) {
+    os << sequence.toText();
+    return (os);
+}
 } // end namespace dns
 } // end namespace isc
