@@ -136,7 +136,9 @@ LabelSequence::compare(const LabelSequence& other) const {
         if (cdiff != 0) {
                 return (NameComparisonResult(
                             cdiff, nlabels,
-                            NameComparisonResult::COMMONANCESTOR));
+                            nlabels > 0 ?
+                            NameComparisonResult::COMMONANCESTOR :
+                            NameComparisonResult::NONE));
         }
         ++nlabels;
     }

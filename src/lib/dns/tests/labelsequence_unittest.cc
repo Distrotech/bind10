@@ -184,6 +184,11 @@ TEST_F(LabelSequenceTest, compare) {
     EXPECT_EQ(NameComparisonResult::NONE, la.compare(lb).getRelation());
     EXPECT_EQ(0, la.compare(lb).getCommonLabels());
     EXPECT_EQ(-1, CompareParameters::normalizeOrder(la.compare(lb).getOrder()));
+
+    const Name c("example.c");
+    LabelSequence lc(c);
+    lc.stripRight(1);
+    EXPECT_EQ(NameComparisonResult::NONE, la.compare(lc).getRelation());
 }
 
 void
