@@ -43,27 +43,6 @@ namespace isc {
 namespace datasrc {
 namespace experimental {
 
-namespace helper {
-
-/// \brief Helper function to remove the base domain from super domain.
-///
-/// The precondition of this function is the super_name contains the
-/// sub_name so
-/// \code Name a("a.b.c");
-/// Name b("b.c");
-/// Name c = a - b;
-/// \endcode
-/// c will contain "a".
-///
-/// \note Functions in this namespace is not intended to be used outside of
-///     RBTree implementation.
-inline isc::dns::Name
-operator-(const isc::dns::Name& super_name, const isc::dns::Name& sub_name) {
-    return (super_name.split(0, super_name.getLabelCount() -
-                             sub_name.getLabelCount()));
-}
-}
-
 /// Forward declare RBTree class here is convinent for following friend
 /// class declare inside RBNode and RBTreeNodeChain
 template <typename T>
@@ -193,6 +172,8 @@ public:
     /// empty nodes anywhere.
     bool isEmpty() const { return (data_.get() == NULL); }
 
+    /// whether this is the root node of a subtree.
+    bool isRoot() const { return ((flags_ & FLAG_ROOT) != 0); }
     //@}
 
     /// \name Setter functions.
@@ -242,6 +223,15 @@ public:
             flags_ |= flag;
         } else {
             flags_ &= ~flag;
+        }
+    }
+
+    /// whether this is the root node of a subtree.
+    void setRootFlag(bool on) {
+        if (on) {
+            flags_ |= FLAG_ROOT;
+        } else {
+            flags_ &= ~FLAG_ROOT;
         }
     }
     //@}
@@ -1200,8 +1190,6 @@ RBTree<T>::find(const isc::dns::Name& target_name,
                 bool (*callback)(const RBNode<T>&, CBARG),
                 CBARG callback_arg) const
 {
-    using namespace helper;
-
     if (!node_path.isEmpty()) {
         isc_throw(isc::BadValue, "RBTree::find is given a non empty chain");
     }
@@ -1433,7 +1421,6 @@ typename RBTree<T>::Result
 RBTree<T>::insert(const isc::dns::Name& target_name,
                   RBNode<T>** inserted_node)
 {
-    using namespace helper;
     typename RBNode<T>::RBNodePtr parent = NULLNODE;
     typename RBNode<T>::RBNodePtr current = root_;
     typename RBNode<T>::RBNodePtr up_node = NULLNODE;
@@ -1498,6 +1485,7 @@ RBTree<T>::insert(const isc::dns::Name& target_name,
         *current_root = node;
         //node is the new root of sub tree, so its init color
         // is BLACK
+        node->setRootFlag(true);
         node->setColor(RBNode<T>::BLACK);
     } else if (order < 0) {
         parent->left_ = node;
@@ -1524,7 +1512,6 @@ typename RBNode<T>::RBNodePtr
 RBTree<T>::nodeFission(typename RBNode<T>::RBNodePtr node,
                        const dns::LabelSequence& common_suffix)
 {
-    using namespace helper;
     dns::LabelSequence prefix_labels = node->getLabelSequence();
     prefix_labels.stripRight(common_suffix.getLabelCount());
     // using auto_ptr here is to avoid memory leak in case of exception raised
@@ -1539,15 +1526,16 @@ RBTree<T>::nodeFission(typename RBNode<T>::RBNodePtr node,
     std::swap(up_node->parent_, node->parent_);
     std::swap(up_node->left_, node->left_);
     std::swap(up_node->right_, node->right_);
+    up_node->setRootFlag(node->isRoot());
 
     // Fix pointers that were to the current node.
-    if (up_node->parent_ != NULLNODE) {
+    if (!up_node->isRoot()) {
         if (up_node->parent_->left_ == node) {
             up_node->parent_->left_ = up_node;
         } else {
             up_node->parent_->right_ = up_node;
         }
-    }
+    } else { assert(up_node->isRoot()); }
     if (up_node->left_ != NULLNODE) {
         up_node->left_->parent_ = up_node;
     }
@@ -1558,6 +1546,8 @@ RBTree<T>::nodeFission(typename RBNode<T>::RBNodePtr node,
     up_node->setColor(node->getColor());
     up_node->down_ = node;
     // root node of sub tree, the initial color is BLACK
+    //node->parent_ = up_node;
+    node->setRootFlag(true);
     node->setColor(RBNode<T>::BLACK);
     ++node_count_;
 
@@ -1619,19 +1609,22 @@ RBTree<T>::leftRotate(typename RBNode<T>::RBNodePtr* root,
 {
     typename RBNode<T>::RBNodePtr right = node->right_;
     node->right_ = right->left_;
-    if (right->left_ != NULLNODE)
+    if (right->left_ != NULLNODE) {
         right->left_->parent_ = node;
+    }
 
     right->parent_ = node->parent_;
 
-    if (node->parent_ != NULLNODE) {
+    if (node->isRoot()) {
+        node->setRootFlag(false);
+        right->setRootFlag(true);
+        *root = right;
+    } else {
         if (node == node->parent_->left_) {
             node->parent_->left_ = right;
         } else  {
             node->parent_->right_ = right;
         }
-    } else {
-        *root = right;
     }
 
     right->left_ = node;
@@ -1646,19 +1639,22 @@ RBTree<T>::rightRotate(typename RBNode<T>::RBNodePtr* root,
 {
     typename RBNode<T>::RBNodePtr left = node->left_;
     node->left_ = left->right_;
-    if (left->right_ != NULLNODE)
+    if (left->right_ != NULLNODE) {
         left->right_->parent_ = node;
+    }
 
     left->parent_ = node->parent_;
 
-    if (node->parent_ != NULLNODE) {
+    if (node->isRoot()) {
+        node->setRootFlag(false);
+        left->setRootFlag(true);
+        *root = left;
+    } else {
         if (node == node->parent_->right_) {
             node->parent_->right_ = left;
         } else  {
             node->parent_->left_ = left;
         }
-    } else {
-        *root = left;
     }
     left->right_ = node;
     node->parent_ = left;
@@ -1689,7 +1685,9 @@ RBTree<T>::dumpTreeHelper(std::ostream& os,
     indent(os, depth);
     os << node->getLabelSequence() << " ("
        << ((node->getColor() == RBNode<T>::BLACK) ? "black" : "red") << ")";
-    os << ((node->isEmpty()) ? "[invisible] \n" : "\n");
+    os << ((node->isEmpty()) ? "[invisible] " : "");
+    os << ((node->isRoot()) ? "[root]" : "");
+    os << "\n";
 
     if (node->down_ != NULLNODE) {
         indent(os, depth + 1);
