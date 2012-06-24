@@ -17,7 +17,8 @@
 #include <dns/name.h>
 
 #include <datasrc/zonetable.h>
-#include <datasrc/rbtree.h>
+#include <datasrc/memory_segment.h>
+#include <datasrc/rbtree2.h>
 
 using namespace std;
 using namespace isc::dns;
@@ -28,8 +29,12 @@ namespace datasrc {
 /// \short Private data and implementation of ZoneTable
 struct ZoneTable::ZoneTableImpl {
     // Type aliases to make it shorter
-    typedef RBTree<ZoneFinder> ZoneTree;
-    typedef RBNode<ZoneFinder> ZoneNode;
+    typedef experimental::RBTree<ZoneFinder> ZoneTree;
+    typedef experimental::RBNode<ZoneFinder> ZoneNode;
+
+    ZoneTableImpl() : zones_(segment_) {}
+
+    MemorySegment segment_;
     // The actual storage
     ZoneTree zones_;
 
