@@ -98,6 +98,8 @@ protected:
     RBTree<int>& rbtree_expose_empty_node;
     RBNode<int>* rbtnode;
     const RBNode<int>* crbtnode;
+    uint8_t nbuf[Name::MAX_WIRE];
+    uint8_t obuf[Name::MAX_LABELS];
 };
 
 
@@ -114,6 +116,7 @@ TEST_F(RBTreeTest2, insertNames) {
     EXPECT_EQ(RBTree<int>::ALREADYEXISTS, rbtree.insert(Name("d.e.f"),
                                                         &rbtnode));
     EXPECT_EQ(Name("d.e.f"), rbtnode->getName());
+    EXPECT_EQ("d.e.f.", rbtnode->getAbsoluteLabelSequence(nbuf, obuf).toText());
     EXPECT_EQ(15, rbtree.getNodeCount());
 
     //insert not exist node
@@ -130,6 +133,7 @@ TEST_F(RBTreeTest2, insertNames) {
     // split the node "d.e.f"
     EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(Name("k.e.f"), &rbtnode));
     EXPECT_EQ(Name("k"), rbtnode->getName());
+    EXPECT_EQ("k.e.f.", rbtnode->getAbsoluteLabelSequence(nbuf, obuf).toText());
     EXPECT_EQ(18, rbtree.getNodeCount());
 
     // split the node "g.h"
@@ -141,10 +145,14 @@ TEST_F(RBTreeTest2, insertNames) {
     EXPECT_EQ(RBTree<int>::SUCCESS,
               rbtree.insert(Name("m.p.w.y.d.e.f"), &rbtnode));
     EXPECT_EQ(Name("m"), rbtnode->getName());
+    EXPECT_EQ("m.p.w.y.d.e.f.",
+              rbtnode->getAbsoluteLabelSequence(nbuf, obuf).toText());
     EXPECT_EQ(20, rbtree.getNodeCount());
     EXPECT_EQ(RBTree<int>::SUCCESS,
               rbtree.insert(Name("n.p.w.y.d.e.f"), &rbtnode));
     EXPECT_EQ(Name("n"), rbtnode->getName());
+    EXPECT_EQ("n.p.w.y.d.e.f.",
+              rbtnode->getAbsoluteLabelSequence(nbuf, obuf).toText());
     EXPECT_EQ(21, rbtree.getNodeCount());
 
     EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(Name("l.a"), &rbtnode));
@@ -197,8 +205,11 @@ TEST_F(RBTreeTest2, findName) {
               rbtree_expose_empty_node.find(Name("m.d.e.f"), &crbtnode));
 
     // find rbtnode
-    EXPECT_EQ(RBTree<int>::EXACTMATCH, rbtree.find(Name("q.w.y.d.e.f"), &rbtnode));
+    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+              rbtree.find(Name("q.w.y.d.e.f"), &rbtnode));
     EXPECT_EQ(Name("q"), rbtnode->getName());
+    EXPECT_EQ("q.w.y.d.e.f.",
+              rbtnode->getAbsoluteLabelSequence(nbuf, obuf).toText());
 }
 
 TEST_F(RBTreeTest2, findError) {

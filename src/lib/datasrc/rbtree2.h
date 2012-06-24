@@ -158,6 +158,39 @@ public:
                                    getOffsetDataLen()));
     }
 
+    const dns::LabelSequence getAbsoluteLabelSequence(
+        uint8_t namebuf[dns::Name::MAX_WIRE],
+        uint8_t offsetbuf[dns::Name::MAX_LABELS]) const
+    {
+        uint8_t* np = namebuf;
+        const uint8_t* const np_end = namebuf + dns::Name::MAX_WIRE;
+        uint8_t* op = offsetbuf;
+        const uint8_t* const op_end = offsetbuf + dns::Name::MAX_LABELS;
+        uint8_t current_offset = 0;
+        for (ConstRBNodePtr node = this;
+             node != NULL_NODE();
+             node = node->getUpperNode())
+        {
+            const size_t nlen = node->getNameDataLen();
+            assert(np + nlen <= np_end);
+            memcpy(np, node->getNameData(), nlen);
+            np += nlen;
+
+            const size_t olen = node->getOffsetDataLen();
+            assert(op + olen <= op_end);
+            memcpy(op, node->getOffsetData(), node->getOffsetDataLen());
+            if (current_offset > 0) {
+                // fix offsets in other levels
+                for (size_t i = 0; i < olen; ++i) {
+                    op[i] += current_offset;
+                }
+            }
+            op += olen;
+            current_offset = *(op - 1) + namebuf[*(op - 1)];
+        }
+        return (dns::LabelSequence(namebuf, offsetbuf, op - offsetbuf));
+    }
+
     /// \brief Return the data stored in this node.
     ///
     /// You should not delete the data, it is handled by shared pointers.
@@ -259,6 +292,17 @@ private:
     }
     RBNodeColor getColor() const {
         return ((flags_ & FLAG_BLACK) ? BLACK : RED);
+    }
+
+    // Return the node in the level above the argument node that points
+    // to the level the argument node is in.  If the argument node is in
+    // the top level, the return value is NULL Node.
+    ConstRBNodePtr getUpperNode() const {
+	ConstRBNodePtr root;
+	for (root = this; !root->isRoot(); root = root->parent_) {
+            ;
+        }
+	return (root->parent_);
     }
 
     /// This is a factory class method of a special singleton null node.
