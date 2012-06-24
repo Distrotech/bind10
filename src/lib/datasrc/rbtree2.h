@@ -486,12 +486,14 @@ RBNode<T>::abstractSuccessor(
     // root.  If found, the parent of the branch is the successor.
     // Otherwise, we return the null node
     ConstRBNodePtr parent = current->parent_;
-    while (parent != RBNode<T>::NULL_NODE() &&
-           current == parent.get()->*right) {
+    while (!current->isRoot()) {
+        if (current == parent.get()->*left) {
+            return (parent);
+        }
         current = parent;
         parent = parent->parent_;
     }
-    return (parent);
+    return (RBNode<T>::NULL_NODE());
 }
 
 template <typename T>
@@ -1486,6 +1488,7 @@ RBTree<T>::insert(const isc::dns::Name& target_name,
         //node is the new root of sub tree, so its init color
         // is BLACK
         node->setRootFlag(true);
+        node->parent_ = up_node;
         node->setColor(RBNode<T>::BLACK);
     } else if (order < 0) {
         parent->left_ = node;
@@ -1535,7 +1538,7 @@ RBTree<T>::nodeFission(typename RBNode<T>::RBNodePtr node,
         } else {
             up_node->parent_->right_ = up_node;
         }
-    } else { assert(up_node->isRoot()); }
+    }
     if (up_node->left_ != NULLNODE) {
         up_node->left_->parent_ = up_node;
     }
@@ -1546,7 +1549,7 @@ RBTree<T>::nodeFission(typename RBNode<T>::RBNodePtr node,
     up_node->setColor(node->getColor());
     up_node->down_ = node;
     // root node of sub tree, the initial color is BLACK
-    //node->parent_ = up_node;
+    node->parent_ = up_node;
     node->setRootFlag(true);
     node->setColor(RBNode<T>::BLACK);
     ++node_count_;
@@ -1687,6 +1690,9 @@ RBTree<T>::dumpTreeHelper(std::ostream& os,
        << ((node->getColor() == RBNode<T>::BLACK) ? "black" : "red") << ")";
     os << ((node->isEmpty()) ? "[invisible] " : "");
     os << ((node->isRoot()) ? "[root]" : "");
+    if (node->isRoot() && node->parent_ != NULLNODE) {
+        os << "->" << node->parent_->getLabelSequence();
+    }
     os << "\n";
 
     if (node->down_ != NULLNODE) {
