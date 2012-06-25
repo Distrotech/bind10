@@ -1006,11 +1006,22 @@ public:
     /// \return As in the description, but in case of callback returning
     ///     \c true, it returns immediately with the current node.
     template <typename CBARG>
-    Result find(const isc::dns::Name& name,
+    Result find(const isc::dns::LabelSequence& labels,
                 RBNode<T>** node,
                 RBTreeNodeChain<T>& node_path,
                 bool (*callback)(const RBNode<T>&, CBARG),
                 CBARG callback_arg) const;
+
+    template <typename CBARG>
+    Result find(const isc::dns::Name& name,
+                RBNode<T>** node,
+                RBTreeNodeChain<T>& node_path,
+                bool (*callback)(const RBNode<T>&, CBARG),
+                CBARG callback_arg) const
+    {
+        return (find(dns::LabelSequence(name), node, node_path, callback,
+                     callback_arg));
+    }
 
     /// \brief Simple find returning immutable node.
     ///
@@ -1243,7 +1254,7 @@ RBTree<T>::deleteHelper(typename RBNode<T>::RBNodePtr root,
 template <typename T>
 template <typename CBARG>
 typename RBTree<T>::Result
-RBTree<T>::find(const isc::dns::Name& target_name,
+RBTree<T>::find(const dns::LabelSequence& target_labels,
                 RBNode<T>** target,
                 RBTreeNodeChain<T>& node_path,
                 bool (*callback)(const RBNode<T>&, CBARG),
@@ -1255,7 +1266,7 @@ RBTree<T>::find(const isc::dns::Name& target_name,
 
     typename RBNode<T>::RBNodePtr node = root_;
     Result ret = NOTFOUND;
-    dns::LabelSequence labels(target_name);
+    dns::LabelSequence labels(target_labels);
 
     while (node != NULLNODE) {
         node_path.last_compared_ = node.get();
