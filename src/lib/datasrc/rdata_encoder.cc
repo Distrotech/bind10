@@ -20,6 +20,7 @@
 
 #include <datasrc/rdata_encoder.h>
 
+#include <boost/bind.hpp>
 #include <boost/static_assert.hpp>
 
 #include <cassert>
@@ -62,35 +63,35 @@ const RdataFieldSpec mx_specs[] = {{RdataFieldSpec::FIXED_LEN_DATA, 0, 2},
 
 struct RdataEncodeSpec encode_spec_list[] = {
     // #fields, #names, field spec list
-    {1, 0, opaque_specs},       // #0
-    {1, 0, single_ipv4_specs},  // #1: A
-    {1, 1, single_name_specs},  // #2: NS
-    {1, 0, opaque_specs},       // #3
-    {1, 0, opaque_specs},       // #4
-    {1, 1, single_name_specs},  // #5: CNAME
-    {3, 2, soa_specs},          // #6
-    {1, 0, opaque_specs},       // #7
-    {1, 0, opaque_specs},       // #8
-    {1, 0, opaque_specs},       // #9
-    {1, 0, opaque_specs},       // #10
-    {1, 0, opaque_specs},       // #11
-    {1, 1, single_name_specs},  // #12: PTR
-    {1, 0, opaque_specs},       // #13
-    {1, 0, opaque_specs},       // #14
-    {2, 0, mx_specs},           // #15
-    {1, 0, opaque_specs},       // #16: TXT
-    {1, 0, opaque_specs},       // #17
-    {1, 0, opaque_specs},       // #18
-    {1, 0, opaque_specs},       // #19
-    {1, 0, opaque_specs},       // #20
-    {1, 0, opaque_specs},       // #21
-    {1, 0, opaque_specs},       // #22
-    {1, 0, opaque_specs},       // #23
-    {1, 0, opaque_specs},       // #24
-    {1, 0, opaque_specs},       // #25
-    {1, 0, opaque_specs},       // #26
-    {1, 0, opaque_specs},       // #27
-    {1, 0, single_ipv6_specs}   // #28: AAAA
+    {1, 0, 0, opaque_specs},       // #0
+    {1, 0, 0, single_ipv4_specs},  // #1: A
+    {1, 1, 0, single_name_specs},  // #2: NS
+    {1, 0, 1, opaque_specs},       // #3
+    {1, 0, 1, opaque_specs},       // #4
+    {1, 1, 0, single_name_specs},  // #5: CNAME
+    {3, 2, 0, soa_specs},          // #6
+    {1, 0, 1, opaque_specs},       // #7
+    {1, 0, 1, opaque_specs},       // #8
+    {1, 0, 1, opaque_specs},       // #9
+    {1, 0, 1, opaque_specs},       // #10
+    {1, 0, 1, opaque_specs},       // #11
+    {1, 1, 0, single_name_specs},  // #12: PTR
+    {1, 0, 1, opaque_specs},       // #13
+    {1, 0, 1, opaque_specs},       // #14
+    {2, 0, 0, mx_specs},           // #15
+    {1, 0, 1, opaque_specs},       // #16: TXT
+    {1, 0, 1, opaque_specs},       // #17
+    {1, 0, 1, opaque_specs},       // #18
+    {1, 0, 1, opaque_specs},       // #19
+    {1, 0, 1, opaque_specs},       // #20
+    {1, 0, 1, opaque_specs},       // #21
+    {1, 0, 1, opaque_specs},       // #22
+    {1, 0, 1, opaque_specs},       // #23
+    {1, 0, 1, opaque_specs},       // #24
+    {1, 0, 1, opaque_specs},       // #25
+    {1, 0, 1, opaque_specs},       // #26
+    {1, 0, 1, opaque_specs},       // #27
+    {1, 0, 0, single_ipv6_specs}   // #28: AAAA
 };
 
 const size_t encode_spec_list_size =
@@ -171,7 +172,7 @@ private:
 
 const RdataEncodeSpec&
 getRdataEncodeSpec(RRType type) {
-    static const RdataEncodeSpec generic_spec = {1, 0, opaque_specs};
+    static const RdataEncodeSpec generic_spec = {1, 0, 1, opaque_specs};
     if (type.getCode() < encode_spec_list_size) {
         return (encode_spec_list[type.getCode()]);
     }
@@ -394,6 +395,37 @@ renderData(dns::AbstractMessageRenderer* renderer,
            const uint8_t* data, size_t len)
 {
     renderer->writeData(data, len);
+}
+
+namespace {
+void
+addNameLen(size_t* total, const uint8_t* encoded_ndata, unsigned int) {
+    const size_t nlen = encoded_ndata[0];
+    const size_t olen = encoded_ndata[1];
+    *total += (2 + nlen + olen);
+}
+
+void
+addDataLen(size_t* total, const uint8_t*, size_t len) {
+    *total += len;
+}
+}
+
+size_t
+getEncodedDataSize(dns::RRType type, uint16_t n_rdata, const uint8_t* buf) {
+    const RdataEncodeSpec& encode_spec(getRdataEncodeSpec(type));
+    const size_t n_len_fields = encode_spec.n_varlens * n_rdata;
+
+    size_t data_len = 0;
+    RdataIterator rd_it(type, n_rdata,
+                        reinterpret_cast<const uint16_t*>(buf),
+                        buf + n_len_fields * sizeof(uint16_t),
+                        boost::bind(addNameLen, &data_len, _1, _2),
+                        boost::bind(addDataLen, &data_len, _1, _2));
+    while (!rd_it.isLast()) {
+        rd_it.action();
+    }
+    return (data_len + n_len_fields * sizeof(uint16_t));
 }
 
 RdataIterator::RdataIterator(RRType type, uint16_t n_rdata,

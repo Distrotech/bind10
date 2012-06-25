@@ -42,6 +42,7 @@ struct RdataFieldSpec {
 struct RdataEncodeSpec {
     const uint16_t n_fields;
     const uint16_t n_names;
+    const uint16_t n_varlens;
     const RdataFieldSpec* field_spec;
 };
 
@@ -99,6 +100,10 @@ renderName(dns::AbstractMessageRenderer* renderer,
 void
 renderData(dns::AbstractMessageRenderer* renderer,
            const uint8_t* data, size_t len);
+
+// Return the size of encoded lengths and data, temporary function.
+size_t
+getEncodedDataSize(dns::RRType type, uint16_t n_rdata, const uint8_t* buf);
 
 // An iterator on the encoded list of RDATAs, maybe allowing random access too
 class RdataIterator {

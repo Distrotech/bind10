@@ -65,6 +65,7 @@ run_unittests_SOURCES += zone_finder_context_unittest.cc
 run_unittests_SOURCES += faked_nsec3.h faked_nsec3.cc
 run_unittests_SOURCES += client_list_unittest.cc
 run_unittests_SOURCES += rdata_encoder_unittest.cc
+run_unittests_SOURCES += rdataset_unittest.cc
 
 # We need the actual module implementation in the tests (they are not part
 # of libdatasrc)
@@ -72,6 +73,8 @@ run_unittests_SOURCES += $(top_srcdir)/src/lib/datasrc/sqlite3_accessor.cc
 run_unittests_SOURCES += $(top_srcdir)/src/lib/datasrc/memory_datasrc.cc
 run_unittests_SOURCES += $(top_srcdir)/src/lib/datasrc/rdata_encoder.h
 run_unittests_SOURCES += $(top_srcdir)/src/lib/datasrc/rdata_encoder.cc
+run_unittests_SOURCES += $(top_srcdir)/src/lib/datasrc/rdataset.h
+run_unittests_SOURCES += $(top_srcdir)/src/lib/datasrc/rdataset.cc
 
 run_unittests_CPPFLAGS = $(AM_CPPFLAGS) $(GTEST_INCLUDES)
 run_unittests_LDFLAGS  = $(AM_LDFLAGS)  $(GTEST_LDFLAGS)
