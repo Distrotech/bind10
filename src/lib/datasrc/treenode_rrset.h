@@ -111,6 +111,8 @@ private:
     mutable uint8_t offsetbuf_[dns::Name::MAX_LABELS];
 };
 
+typedef boost::shared_ptr<const TreeNodeRRset> ConstTreeNodeRRsetPtr;
+
 }   // namespace internal
 }   // namespace experimental
 }   // namespace datasrc

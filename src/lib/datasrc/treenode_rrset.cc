@@ -88,7 +88,7 @@ TreeNodeRRset::setTTL(const isc::dns::RRTTL&) {
 
 std::string
 TreeNodeRRset::toText() const {
-    isc_throw(NotImplemented, "TreeNodeRRset::setTTL not implemented");
+    return ("<not implemented>\n");
 }
 
 unsigned int
@@ -96,7 +96,6 @@ TreeNodeRRset::toWire(AbstractMessageRenderer& renderer) const {
     unsigned int n = 0;
     const LabelSequence owner_seq =
         node_->getAbsoluteLabelSequence(namebuf_, offsetbuf_);
-    std::cout << owner_seq << std::endl;
 
     const size_t limit = renderer.getLengthLimit();
     const size_t n_rdata = rdset_->getRdataCount();
@@ -154,7 +153,7 @@ TreeNodeRRset::getRdataIterator() const {
 
 RRsetPtr
 TreeNodeRRset::getRRsig() const {
-    isc_throw(NotImplemented, "TreeNodeRRset::getRRsig not implemented");
+    return (RRsetPtr());
 }
 
 void

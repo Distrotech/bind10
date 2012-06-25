@@ -178,7 +178,7 @@ public:
 
             const size_t olen = node->getOffsetDataLen();
             assert(op + olen <= op_end);
-            memcpy(op, node->getOffsetData(), node->getOffsetDataLen());
+            memcpy(op, node->getOffsetData(), olen);
             if (current_offset > 0) {
                 // fix offsets in other levels
                 for (size_t i = 0; i < olen; ++i) {
@@ -186,7 +186,7 @@ public:
                 }
             }
             op += olen;
-            current_offset = *(op - 1) + namebuf[*(op - 1)];
+            current_offset = *(op - 1) + namebuf[*(op - 1)] + 1;
         }
         return (dns::LabelSequence(namebuf, offsetbuf, op - offsetbuf));
     }
