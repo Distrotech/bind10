@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <exceptions/exceptions.h>
+
 #include <dns/name.h>
 #include <dns/labelsequence.h>
 #include <dns/messagerenderer.h>
@@ -24,7 +26,6 @@
 #include <boost/static_assert.hpp>
 
 #include <cassert>
-#include <exception>
 #include <utility>
 #include <vector>
 
@@ -47,6 +48,8 @@ const RdataFieldSpec single_ipv6_specs[] = {{RdataFieldSpec::FIXED_LEN_DATA, 0,
 const RdataFieldSpec single_name_specs[] = {{RdataFieldSpec::NAME,
                                        RdataFieldSpec::COMPRESSIBLE_NAME |
                                        RdataFieldSpec::ADDITIONAL_NAME, 0}};
+// single name, but not well known, no additional needed
+const RdataFieldSpec single_new_name_specs[] = {{RdataFieldSpec::NAME, 0 , 0}};
 // SOAR specific
 const RdataFieldSpec soa_specs[] = {{RdataFieldSpec::NAME,
                                      RdataFieldSpec::COMPRESSIBLE_NAME |
@@ -60,6 +63,14 @@ const RdataFieldSpec mx_specs[] = {{RdataFieldSpec::FIXED_LEN_DATA, 0, 2},
                                    {RdataFieldSpec::NAME,
                                     RdataFieldSpec::COMPRESSIBLE_NAME |
                                     RdataFieldSpec::ADDITIONAL_NAME, 0}};
+// RRSIG specific (eventually we should handle as opaque data)
+const RdataFieldSpec rrsig_specs[] = {
+    {RdataFieldSpec::FIXED_LEN_DATA, 0, 18},
+    {RdataFieldSpec::NAME, 0, 0},
+    {RdataFieldSpec::VAR_LEN_DATA, 0, 0}};
+const RdataFieldSpec nsec_specs[] = {
+    {RdataFieldSpec::NAME, 0, 0},
+    {RdataFieldSpec::VAR_LEN_DATA, 0, 0}};
 
 struct RdataEncodeSpec encode_spec_list[] = {
     // #fields, #names, field spec list
@@ -91,12 +102,32 @@ struct RdataEncodeSpec encode_spec_list[] = {
     {1, 0, 1, opaque_specs},       // #25
     {1, 0, 1, opaque_specs},       // #26
     {1, 0, 1, opaque_specs},       // #27
-    {1, 0, 0, single_ipv6_specs}   // #28: AAAA
+    {1, 0, 0, single_ipv6_specs},  // #28: AAAA
+    {1, 0, 1, opaque_specs},       // #29
+    {1, 0, 1, opaque_specs},       // #30
+    {1, 0, 1, opaque_specs},       // #31
+    {1, 0, 1, opaque_specs},       // #32
+    {1, 0, 1, opaque_specs},       // #33: SRV, not supported yet
+    {1, 0, 1, opaque_specs},       // #34
+    {1, 0, 1, opaque_specs},       // #35
+    {1, 0, 1, opaque_specs},       // #36
+    {1, 0, 1, opaque_specs},       // #37
+    {1, 0, 1, opaque_specs},       // #38
+    {1, 1, 0, single_new_name_specs},  // #39: DNAME
+    {1, 0, 1, opaque_specs},       // #40
+    {1, 0, 1, opaque_specs},       // #41: OPT (we wouldn't expect this)
+    {1, 0, 1, opaque_specs},       // #42
+    {1, 0, 1, opaque_specs},       // #43: DS
+    {1, 0, 1, opaque_specs},       // #44: SSHFP, skip
+    {1, 0, 1, opaque_specs},       // #45
+    {3, 1, 1, rrsig_specs},        // #46: RRSIG
+    {2, 1, 1, nsec_specs},         // #47: NSEC
+    {1, 0, 1, opaque_specs}        // #48: DNSKEY
 };
 
 const size_t encode_spec_list_size =
     sizeof(encode_spec_list) / sizeof(encode_spec_list[0]);
-BOOST_STATIC_ASSERT(encode_spec_list_size == 29);
+BOOST_STATIC_ASSERT(encode_spec_list_size == 49);
 
 } // end of unnamed namespace
 
@@ -223,7 +254,8 @@ RdataEncoder::construct(RRType type) {
 
     encode_spec_ = &getRdataEncodeSpec(type);
     if (n_data_ * encode_spec_->n_names != composer_->names_.size()) {
-        throw runtime_error("assumption failure: # of names mismatch");
+        isc_throw(Unexpected, "assumption failure: # of names mismatch for "
+                  << type);
     }
     size_t cur_pos = 0;
     n_varlen_fields_ = 0;
@@ -235,10 +267,12 @@ RdataEncoder::construct(RRType type) {
             case RdataFieldSpec::NAME:
             {
                 if (it_name == it_name_end) {
-                    throw runtime_error("assumption failure on # of names");
+                    isc_throw(Unexpected, "assumption failure: # of names for "
+                              << type);
                 }
                 if (cur_pos != it_name->first) {
-                    throw runtime_error("assumption failure on name position");
+                    isc_throw(Unexpected, "assumption failure on name position"
+                              << " for " << type);
                 }
                 const Name& name = it_name->second;
                 cur_pos += name.getLength();
@@ -254,22 +288,24 @@ RdataEncoder::construct(RRType type) {
             case RdataFieldSpec::FIXED_LEN_DATA:
             case RdataFieldSpec::VAR_LEN_DATA:
                 if (it_data == it_data_end || cur_pos != it_data->first) {
-                    throw runtime_error("assumption failure on # of data");
+                    isc_throw(Unexpected, "assumption failure on # of data "
+                              << " for " << type);
                 }
                 if (field_spec.type == RdataFieldSpec::FIXED_LEN_DATA) {
                     if (it_data->second != field_spec.len) {
                         // XXX this assumption is not actually correct, but
                         // should hold in most cases.  for prototype it should
                         // be okay.
-                        throw runtime_error(
-                            "assumption failure on fix-len data");
+                        isc_throw(Unexpected, "assumption failure on "
+                                  "fix-len data for " << type);
                     }
                 } else {
                     ++n_varlen_fields_;
                 }
                 const size_t len = it_data->second;
                 if (len > 0xffff) {
-                    throw runtime_error("assumption failure: data too large");
+                    isc_throw(Unexpected, "assumption failure: data too "
+                              " large for " << type);
                 }
                 const uint8_t* dp =
                     static_cast<const uint8_t*>(composer_->getData()) +
@@ -283,7 +319,8 @@ RdataEncoder::construct(RRType type) {
         }
     }
     if (i != n_data_) {
-        throw runtime_error("assumption failure: not all RDATAs are parsed");
+        isc_throw(Unexpected, "assumption failure: not all RDATAs are parsed "
+                              " for " << type);
     }
 }
 
