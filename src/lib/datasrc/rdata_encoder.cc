@@ -428,15 +428,30 @@ getEncodedDataSize(dns::RRType type, uint16_t n_rdata, const uint8_t* buf) {
     return (data_len + n_len_fields * sizeof(uint16_t));
 }
 
+namespace {
+const uint8_t*
+getDataPos(const RdataEncodeSpec& encode_spec,
+           const uint16_t* lengths, const uint8_t* data, uint16_t n_rdata)
+{
+    if (data != NULL) {
+        return (data);
+    }
+    const size_t n_len_fields = encode_spec.n_varlens * n_rdata;
+    return (reinterpret_cast<const uint8_t*>(lengths + n_len_fields));
+}
+}
+
 RdataIterator::RdataIterator(RRType type, uint16_t n_rdata,
                              const uint16_t* lengths,
                              const uint8_t* encoded_data,
                              NameAction name_action, DataAction data_action) :
+    encode_spec_(&getRdataEncodeSpec(type)),
     n_rdata_(n_rdata), rdata_count_(0), lengths_begin_(lengths),
-    lengths_(lengths), data_begin_(encoded_data), data_(encoded_data),
-    name_action_(name_action), data_action_(data_action),
-    encode_spec_(&getRdataEncodeSpec(type))
-{}
+    lengths_(lengths),
+    data_begin_(getDataPos(*encode_spec_, lengths, encoded_data, n_rdata)),
+    data_(data_begin_), name_action_(name_action), data_action_(data_action)
+{
+}
 
 void
 RdataIterator::action() {

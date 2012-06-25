@@ -121,6 +121,7 @@ public:
     }
 
 private:
+    const struct RdataEncodeSpec* const encode_spec_;
     const size_t n_rdata_;
     size_t rdata_count_;
     const uint16_t* const lengths_begin_;
@@ -129,7 +130,6 @@ private:
     const uint8_t* data_;
     NameAction name_action_;
     DataAction data_action_;
-    const struct RdataEncodeSpec* const encode_spec_;
 };
 
 }
