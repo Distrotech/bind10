@@ -99,7 +99,7 @@ private:
 
 public:
     /// \brief Alias for shared pointer to the data.
-    typedef boost::shared_ptr<T> NodeDataPtr;
+    typedef boost::interprocess::offset_ptr<T> NodeDataPtr;
 
     /// Node flags.
     ///

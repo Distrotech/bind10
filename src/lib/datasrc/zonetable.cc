@@ -12,13 +12,16 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#include <cassert>
-
 #include <dns/name.h>
 
 #include <datasrc/zonetable.h>
 #include <datasrc/memory_segment.h>
 #include <datasrc/rbtree2.h>
+
+#include <boost/interprocess/offset_ptr.hpp>
+
+#include <cassert>
+#include <vector>
 
 using namespace std;
 using namespace isc::dns;
@@ -26,17 +29,33 @@ using namespace isc::dns;
 namespace isc {
 namespace datasrc {
 
+namespace {
+struct ZoneFinderWrapper {
+    ZoneFinderWrapper(ZoneFinderPtr finder_param) : finder(finder_param)
+    {}
+    ZoneFinderPtr finder;
+};
+}
+
 /// \short Private data and implementation of ZoneTable
 struct ZoneTable::ZoneTableImpl {
     // Type aliases to make it shorter
-    typedef experimental::RBTree<ZoneFinder> ZoneTree;
-    typedef experimental::RBNode<ZoneFinder> ZoneNode;
+    typedef experimental::RBTree<ZoneFinderWrapper> ZoneTree;
+    typedef experimental::RBNode<ZoneFinderWrapper> ZoneNode;
 
     ZoneTableImpl() : zones_(segment_) {}
+    ~ZoneTableImpl() {
+        vector<ZoneFinderWrapper *>::iterator it = wrappers_.begin();
+        vector<ZoneFinderWrapper *>::iterator it_end = wrappers_.end();
+        for (; it != it_end; ++it) {
+            delete *it;
+        }
+    }
 
     MemorySegment segment_;
     // The actual storage
     ZoneTree zones_;
+    vector<ZoneFinderWrapper *> wrappers_;
 
     /*
      * The implementation methods are here and just wrap-called in the
@@ -68,7 +87,10 @@ struct ZoneTable::ZoneTableImpl {
 
         // Is it empty? We either just created it or it might be nonterminal
         if (node->isEmpty()) {
-            node->setData(zone);
+            ZoneFinderWrapper* wrapper(new ZoneFinderWrapper(zone));
+            wrappers_.push_back(wrapper);
+            node->setData(boost::interprocess::offset_ptr<ZoneFinderWrapper>(
+                              wrapper));
             return (result::SUCCESS);
         } else { // There's something there already
             return (result::EXIST);
@@ -101,7 +123,7 @@ struct ZoneTable::ZoneTableImpl {
         // Can Not Happen (remember, NOTFOUND is handled)
         assert(node);
 
-        return (FindResult(my_result, node->getData()));
+        return (FindResult(my_result, node->getData()->finder));
     }
 };
 
