@@ -19,6 +19,7 @@
 #include <iostream>
 #include <vector>
 
+#include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include <bench/benchmark.h>
@@ -54,6 +55,7 @@ using namespace isc::xfr;
 using namespace isc::bench;
 using namespace isc::asiodns;
 using namespace isc::asiolink;
+using boost::lexical_cast;
 
 namespace {
 // Commonly used constant:
@@ -105,6 +107,13 @@ public:
 
         return (queries_.size());
     }
+    ~QueryBenchMark() {
+        // Clear the message; otherwise it could cause a crash if the server
+        // with the underlying datasrc is destroyed while the message still
+        // contains an RRset that refers to the stale object (which is a bug,
+        // but we need a workaround for now).
+        query_message_.clear(Message::PARSE);
+    }
 private:
     MockSocketSessionForwarder ddns_forwarder;
 protected:
@@ -139,15 +148,18 @@ class MemoryQueryBenchMark  : public QueryBenchMark {
 public:
     MemoryQueryBenchMark(const char* const zone_file,
                          const char* const zone_origin,
-                          const BenchQueries& queries,
-                          Message& query_message,
-                          OutputBuffer& buffer) :
+                         const BenchQueries& queries,
+                         Message& query_message,
+                         OutputBuffer& buffer,
+                         int version = 1) :
         QueryBenchMark(false, queries, query_message, buffer)
     {
         configureAuthServer(*server_,
                             Element::fromJSON(
                                 "{\"datasources\": "
                                 " [{\"type\": \"memory\","
+                                "   \"version\": " +
+                                lexical_cast<string>(version) + ","
                                 "   \"zones\": [{\"origin\": \"" +
                                 string(zone_origin) + "\","
                                 "    \"file\": \"" +
@@ -298,10 +310,14 @@ main(int argc, char* argv[]) {
                                              message, buffer));
         break;
     case MEMORY:
-        cout << "Benchmark with In Memory Data Source" << endl;
+        cout << "Benchmark with In Memory Data Source (version 1)" << endl;
         BenchMark<MemoryQueryBenchMark>(
             iteration, MemoryQueryBenchMark(datasrc_file, origin, queries,
                                             message, buffer));
+        cout << "Benchmark with In Memory Data Source (version 2)" << endl;
+        BenchMark<MemoryQueryBenchMark>(
+            iteration, MemoryQueryBenchMark(datasrc_file, origin, queries,
+                                            message, buffer, 2));
         break;
     }
 
