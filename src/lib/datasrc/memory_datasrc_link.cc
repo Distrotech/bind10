@@ -19,6 +19,7 @@
 #include <datasrc/client.h>
 #include <datasrc/factory.h>
 #include <datasrc/memory_datasrc.h>
+#include <datasrc/memory_datasrc2.h>
 
 #include <exceptions/exceptions.h>
 
@@ -92,7 +93,7 @@ checkZoneConfig(ConstElementPtr config, ElementPtr errors) {
 }
 
 bool
-checkConfig(ConstElementPtr config, ElementPtr errors) {
+checkConfig(ConstElementPtr config, ElementPtr errors, int* version) {
     /* Specific configuration is under discussion, right now this accepts
      * the 'old' configuration, see [TODO]
      * So for memory datasource, we get a structure like this:
@@ -122,6 +123,9 @@ checkConfig(ConstElementPtr config, ElementPtr errors) {
                 addError(errors,
                          "Config for memory backend is not of type \"memory\"");
                 result = false;
+            }
+            if (config->contains("version")) {
+                *version = config->get("version")->intValue();
             }
         }
         if (config->contains("class")) {
@@ -161,8 +165,9 @@ checkConfig(ConstElementPtr config, ElementPtr errors) {
 // Apply the given config to the just-initialized client
 // client must be freshly allocated, and config_value should have been
 // checked by the caller
+template <typename ClientType, typename FinderType>
 void
-applyConfig(isc::datasrc::InMemoryClient& client,
+applyConfig(ClientType& client,
             isc::data::ConstElementPtr config_value)
 {
     // XXX: We have lost the context to get to the default values here,
@@ -213,15 +218,15 @@ applyConfig(isc::datasrc::InMemoryClient& client,
         // specific error.  We may eventually want to introduce some unified
         // error handling framework as we have more configuration parameters.
         // See bug #1627 for the relevant discussion.
-        InMemoryZoneFinder* imzf = NULL;
+        FinderType* imzf = NULL;
         try {
-            imzf = new InMemoryZoneFinder(rrclass, Name(origin_txt));
+            imzf = new FinderType(rrclass, Name(origin_txt));
         } catch (const isc::dns::NameParserException& ex) {
             isc_throw(InMemoryConfigError, "unable to parse zone's origin: " <<
                       ex.what());
         }
 
-        boost::shared_ptr<InMemoryZoneFinder> zone_finder(imzf);
+        boost::shared_ptr<FinderType> zone_finder(imzf);
         const result::Result result = client.addZone(zone_finder);
         if (result == result::EXIST) {
             isc_throw(InMemoryConfigError, "zone "<< origin->str()
@@ -248,14 +253,26 @@ applyConfig(isc::datasrc::InMemoryClient& client,
 DataSourceClient *
 createInstance(isc::data::ConstElementPtr config, std::string& error) {
     ElementPtr errors(Element::createList());
-    if (!checkConfig(config, errors)) {
+    int version = 1;
+    if (!checkConfig(config, errors, &version)) {
         error = "Configuration error: " + errors->str();
         return (NULL);
     }
     try {
-        std::auto_ptr<InMemoryClient> client(new isc::datasrc::InMemoryClient());
-        applyConfig(*client, config);
-        return (client.release());
+        if (version == 1) {
+            std::auto_ptr<InMemoryClient> client(
+                new isc::datasrc::InMemoryClient());
+            applyConfig<InMemoryClient, InMemoryZoneFinder>(*client, config);
+            return (client.release());
+        } else if (version == 2) {
+            std::auto_ptr<experimental::InMemoryClient> client(
+                new isc::datasrc::experimental::InMemoryClient());
+            applyConfig<experimental::InMemoryClient,
+                experimental::InMemoryZoneFinder>(*client, config);
+            return (client.release());
+        }
+        error = std::string("Unknown datasource version");
+        return (NULL);
     } catch (const isc::Exception& isce) {
         error = isce.what();
         return (NULL);

@@ -28,6 +28,11 @@
             "item_optional": false,
             "item_default": "IN"
           },
+          { "item_name": "version",
+            "item_type": "integer",
+            "item_optional": false,
+            "item_default": 1
+          },
           { "item_name": "zones",
             "item_type": "list",
             "item_optional": false,
