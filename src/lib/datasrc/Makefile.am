@@ -54,6 +54,7 @@ memory_ds_la_SOURCES = memory_datasrc.h memory_datasrc.cc
 memory_ds_la_SOURCES += rdata_encoder.h rdata_encoder.cc
 memory_ds_la_SOURCES += rdataset.h rdataset.cc
 memory_ds_la_SOURCES += treenode_rrset.h treenode_rrset.cc
+memory_ds_la_SOURCES += memory_datasrc2.h memory_datasrc2.cc
 memory_ds_la_SOURCES += memory_datasrc_link.cc
 memory_ds_la_LDFLAGS = -module -avoid-version
 memory_ds_la_LIBADD = $(top_builddir)/src/lib/exceptions/libexceptions.la

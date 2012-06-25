@@ -396,7 +396,7 @@ private:
         return (buf[1]);
     }
     const uint8_t* getNameData() const {
-        return (getNameBuf() + 4);
+        return (getNameBuf() + 2);
     }
     const uint8_t* getOffsetData() const {
         return (getNameData() + getNameDataLen());
@@ -411,8 +411,6 @@ private:
         uint8_t* np = getNameBuf();
         *np++ = nsize;
         *np++ = osize;
-        *np++ = 0;              // leave it open for now
-        *np++ = 0;              // leave it open for now
         memcpy(np, ndata, nsize);
         np += nsize;
         memcpy(np, odata, osize);
