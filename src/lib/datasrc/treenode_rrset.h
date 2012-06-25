@@ -102,6 +102,10 @@ public:
 
     virtual void removeRRsig();
 
+    const datasrc::internal::RdataSet& getRdataSet() const {
+        return (*rdset_);
+    }
+
 private:
     const dns::RRClass rrclass_;
     const RBNode<datasrc::internal::RdataSet>* node_;

@@ -18,6 +18,7 @@
 #include <dns/rrset.h>
 #include <dns/masterload.h>
 
+#include <datasrc/rdata_encoder.h>
 #include <datasrc/logger.h>
 #include <datasrc/iterator.h>
 #include <datasrc/rbtree2.h>
@@ -141,7 +142,7 @@ struct InMemoryZoneFinder::ZoneData {
         const unsigned int flags;
     };
 
-    FindNodeResult findNode(const Name& name,
+    FindNodeResult findNode(const LabelSequence& labels,
                             RBTreeNodeChain<RdataSet>& node_path,
                             ZoneFinder::FindOptions options) const;
 
@@ -344,7 +345,7 @@ bool cutCallback(const DomainNode& node, FindState* state) {
 // If none of the above succeeds, we conclude the name doesn't exist in
 // the zone.
 InMemoryZoneFinder::ZoneData::FindNodeResult
-InMemoryZoneFinder::ZoneData::findNode(const Name& name,
+InMemoryZoneFinder::ZoneData::findNode(const LabelSequence& labels,
                                        RBTreeNodeChain<RdataSet>& node_path,
                                        ZoneFinder::FindOptions options) const
 {
@@ -352,7 +353,7 @@ InMemoryZoneFinder::ZoneData::findNode(const Name& name,
     FindState state((options & ZoneFinder::FIND_GLUE_OK) != 0);
 
     const DomainTree::Result result =
-        domains_.find(name, &node, node_path, cutCallback, &state);
+        domains_.find(labels, &node, node_path, cutCallback, &state);
     const unsigned int zonecut_flag =
         (state.zonecut_node_ != NULL) ? FindNodeResult::FIND_ZONECUT : 0;
     if (result == DomainTree::EXACTMATCH) {
@@ -377,7 +378,8 @@ InMemoryZoneFinder::ZoneData::findNode(const Name& name,
         }
         if (node_path.getLastComparisonResult().getRelation() ==
             NameComparisonResult::SUPERDOMAIN) { // empty node, so NXRRSET
-            LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_SUPER_STOP).arg(name);
+            LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_SUPER_STOP).
+                arg(labels);
             return (FindNodeResult(ZoneFinder::NXRRSET,
                                    getClosestNSEC(node_path, options)));
         }
@@ -387,7 +389,7 @@ InMemoryZoneFinder::ZoneData::findNode(const Name& name,
                 NameComparisonResult::COMMONANCESTOR) {
                 // Wildcard canceled.  Treat it as NXDOMAIN.
                 LOG_DEBUG(logger, DBG_TRACE_DATA,
-                          DATASRC_MEM_WILDCARD_CANCEL).arg(name);
+                          DATASRC_MEM_WILDCARD_CANCEL).arg(labels);
                 return (FindNodeResult(ZoneFinder::NXDOMAIN,
                                        getClosestNSEC(node_path, options)));
             }
@@ -410,68 +412,164 @@ InMemoryZoneFinder::ZoneData::findNode(const Name& name,
                                    zonecut_flag));
         }
         // Nothing really matched.
-        LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_NOT_FOUND).arg(name);
+        LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_NOT_FOUND).arg(labels);
         return (FindNodeResult(ZoneFinder::NXDOMAIN,
                                getClosestNSEC(node_path, options)));
     } else {
         // If the name is neither an exact or partial match, it is
         // out of bailiwick, which is considered an error.
-        isc_throw(OutOfZone, name.toText() << " not in origin " <<
+        isc_throw(OutOfZone, labels << " not in origin " <<
                   origin_node_->getAbsoluteName());
     }
 }
-
-namespace {
-// Add the necessary magic for any wildcard contained in 'name'
-// (including itself) to be found in the zone.
-//
-// In order for wildcard matching to work correctly in find(),
-// we must ensure that a node for the wildcarding level exists in the
-// backend RBTree.
-// E.g. if the wildcard name is "*.sub.example." then we must ensure
-// that "sub.example." exists and is marked as a wildcard level.
-// Note: the "wildcarding level" is for the parent name of the wildcard
-// name (such as "sub.example.").
-//
-// We also perform the same trick for empty wild card names possibly
-// contained in 'name' (e.g., '*.foo.example' in 'bar.*.foo.example').
-void
-addWildcards(DomainTree& domains, const Name& name, const Name& origin) {
-    Name wname(name);
-    const unsigned int labels(wname.getLabelCount());
-    const unsigned int origin_labels(origin.getLabelCount());
-    for (unsigned int l = labels;
-         l > origin_labels;
-         --l, wname = wname.split(1)) {
-        if (wname.isWildcard()) {
-            LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_ADD_WILDCARD).
-                arg(name);
-            // Ensure a separate level exists for the "wildcarding" name,
-            // and mark the node as "wild".
-            DomainNode* node;
-            DomainTree::Result result(domains.insert(wname.split(1),
-                                                     &node));
-            assert(result == DomainTree::SUCCESS ||
-                   result == DomainTree::ALREADYEXISTS);
-            node->setFlag(domain_flag::WILD);
-
-            // Ensure a separate level exists for the wildcard name.
-            // Note: for 'name' itself we do this later anyway, but the
-            // overhead should be marginal because wildcard names should
-            // be rare.
-            result = domains.insert(wname, &node);
-            assert(result == DomainTree::SUCCESS ||
-                   result == DomainTree::ALREADYEXISTS);
-        }
-    }
-}
-} // unnamed namespace
 
 ///
 /// Searching Zones
 ///
 
-ZoneFinder::ResultContext 
+// Specialized version of ZoneFinder::ResultContext, which specifically
+// holds rrset in the form of RBNodeRRset.
+struct InMemoryZoneFinder::TreeNodeResultContext {
+    /// \brief Constructor
+    ///
+    /// The first three parameters correspond to those of
+    /// ZoneFinder::ResultContext.  If node is non NULL, it specifies the
+    /// found in the tree search.
+    TreeNodeResultContext(ZoneFinder::Result code_param,
+                          ConstTreeNodeRRsetPtr rrset_param,
+                          ZoneFinder::FindResultFlags flags_param,
+                          const DomainNode* node,
+                          const ZoneData& zone_data_param) :
+        code(code_param), rrset(rrset_param), flags(flags_param),
+        found_node(node), zone_data(zone_data_param)
+    {}
+
+    const ZoneFinder::Result code;
+    const ConstTreeNodeRRsetPtr rrset;
+    const ZoneFinder::FindResultFlags flags;
+    const DomainNode* const found_node;
+    const ZoneData& zone_data;
+};
+
+class InMemoryZoneFinder::Context : public ZoneFinder::Context {
+public:
+    /// \brief Constructor.
+    ///
+    /// Note that we don't have a specific constructor for the findAll() case.
+    /// For (successful) type ANY query, found_node points to the
+    /// corresponding RB node, which is recorded within this specialized
+    /// context.
+    Context(InMemoryZoneFinder& finder, ZoneFinder::FindOptions options,
+            const TreeNodeResultContext& result) :
+        ZoneFinder::Context(finder, options,
+                            ResultContext(result.code, result.rrset,
+                                          result.flags)),
+        options_(options), rrset_(result.rrset),
+        found_node_(result.found_node), finder_(finder)
+    {}
+
+protected:
+    virtual void getAdditionalImpl(const vector<RRType>& requested_types,
+                                   vector<ConstRRsetPtr>& result)
+    {
+        if (!rrset_) {
+            // In this case this context should encapsulate the result of
+            // findAll() and found_node_ should point to a valid answer node.
+            if (found_node_ == NULL || found_node_->isEmpty()) {
+                isc_throw(isc::Unexpected,
+                          "Invalid call to in-memory getAdditional: caller's "
+                          "bug or broken zone");
+            }
+            for (ConstRdataSetPtr rdset = found_node_->getData();
+                 rdset;
+                 rdset = rdset->next)
+            {
+                getAdditionalForRdataset(*rdset, requested_types, result,
+                                         options_);
+            }
+        } else {
+            getAdditionalForRdataset(rrset_->getRdataSet(), requested_types,
+                                     result, options_);
+        }
+    }
+
+private:
+    // Retrieve additional RRsets for a given RRset associated in the context.
+    // The process is straightforward: it examines the link to
+    // AdditionalNodeInfo vector (if set), and find RRsets of the requested
+    // type for each node.
+    void
+    getAdditionalForRdataset(const RdataSet& rdset,
+                             const vector<RRType>& requested_types,
+                             vector<ConstRRsetPtr>& result,
+                             ZoneFinder::FindOptions orig_options) const
+    {
+        ZoneFinder::FindOptions options = ZoneFinder::FIND_DEFAULT;
+        if ((orig_options & ZoneFinder::FIND_DNSSEC) != 0) {
+            options = options | ZoneFinder::FIND_DNSSEC;
+        }
+
+        datasrc::internal::RdataIterator rd_it(
+            RRType(rdset.type), rdset.getRdataCount(),
+            rdset.getLengthBuf(), NULL,
+            boost::bind(&Context::findAdditional, this, &requested_types,
+                        &result, options, _1, _2),
+            NULL);
+        while (!rd_it.isLast()) {
+            rd_it.action();
+        }
+    }
+
+    void
+    findAdditional(const vector<RRType>* requested_types,
+                   vector<ConstRRsetPtr>* result,
+                   ZoneFinder::FindOptions options,
+                   const uint8_t* encoded_ndata, unsigned int attributes) const
+    {
+        if ((attributes &
+             datasrc::internal::RdataFieldSpec::ADDITIONAL_NAME) == 0) {
+            return;
+        }
+        const size_t nlen = encoded_ndata[0];
+        const size_t olen = encoded_ndata[1];
+        const LabelSequence seq(encoded_ndata + 2, encoded_ndata + 2 + nlen,
+                                olen);
+        RBTreeNodeChain<RdataSet> node_path;
+        const ZoneData::FindNodeResult node_result =
+            finder_.zone_data_->findNode(seq, node_path,
+                                         options | ZoneFinder::FIND_GLUE_OK);
+
+        // Note: ignore corner case conditions like wildcard or GLUE_OK or not
+        const vector<RRType>::const_iterator it_end = requested_types->end();
+        if (node_result.code == SUCCESS) {
+            const DomainNode* node = node_result.rrset.first;
+            for (ConstRdataSetPtr rdset = node->getData();
+                 rdset;
+                 rdset = rdset->next)
+            {
+                for (vector<RRType>::const_iterator it =
+                         requested_types->begin();
+                     it != it_end;
+                     ++it) {
+                    if (RRType(rdset->type) == (*it)) {
+                        ConstTreeNodeRRsetPtr rrset(
+                            new TreeNodeRRset(finder_.zone_class_, *node,
+                                              *rdset));
+                        result->push_back(rrset);
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    const ZoneFinder::FindOptions options_;
+    const ConstTreeNodeRRsetPtr rrset_;
+    const DomainNode* const found_node_;
+    const InMemoryZoneFinder& finder_;
+};
+
+InMemoryZoneFinder::TreeNodeResultContext
 InMemoryZoneFinder::createFindResult(Result code, RRsetPair rrset, 
                                      bool wild) const
 {
@@ -490,15 +588,18 @@ InMemoryZoneFinder::createFindResult(Result code, RRsetPair rrset,
         }
     }
     if (rrset.first != NULL && rrset.second != NULL) {
-        return (ResultContext(code, ConstTreeNodeRRsetPtr(
-                                  new TreeNodeRRset(zone_class_, *rrset.first,
-                                                    *rrset.second)), flags));
+        return (TreeNodeResultContext(
+                    code, ConstTreeNodeRRsetPtr(
+                        new TreeNodeRRset(zone_class_, *rrset.first,
+                                          *rrset.second)), flags,
+                    rrset.first, *zone_data_));
     }
-    return (ResultContext(code, ConstTreeNodeRRsetPtr(), flags));
+    return (TreeNodeResultContext(code, ConstTreeNodeRRsetPtr(), flags,
+                                  rrset.first, *zone_data_));
 }
 
 // Implementation of InMemoryZoneFinder::find
-ZoneFinder::ResultContext 
+InMemoryZoneFinder::TreeNodeResultContext
 InMemoryZoneFinder::find(
     const Name& name, RRType type, std::vector<ConstRRsetPtr>* target,
     const FindOptions options) const
@@ -510,7 +611,7 @@ InMemoryZoneFinder::find(
     // in findNode().  We simply construct a result structure and return.
     RBTreeNodeChain<RdataSet> node_path; // findNode will fill in this
     const ZoneData::FindNodeResult node_result =
-        zone_data_->findNode(name, node_path, options);
+        zone_data_->findNode(LabelSequence(name), node_path, options);
     if (node_result.code != SUCCESS) {
         return (createFindResult(node_result.code, node_result.rrset));
     }
@@ -569,22 +670,27 @@ InMemoryZoneFinder::find(
         return (createFindResult(SUCCESS, RRsetPair(NULL, NULL), rename));
     }
 
-    found = findRdataSet(type, node->getData());
-    if (found) {
-        // Good, it is here
-        LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_SUCCESS).arg(name).
-            arg(type);
-        return (createFindResult(SUCCESS, RRsetPair(node, found.get()),
-                                 rename));
-    } else {
-        // Next, try CNAME.
-        found = findRdataSet(RRType::CNAME(), node->getData());
-        if (found) {
-            LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_CNAME).arg(name);
-            return (createFindResult(CNAME, RRsetPair(node, found.get()),
+    ConstRdataSetPtr found_cname;
+    for (found = node->getData(); found; found = found->next) {
+        if (RRType(found->type) == type) {
+            // Good, it is here
+            LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_SUCCESS).arg(name).
+                arg(type);
+            return (createFindResult(SUCCESS, RRsetPair(node, found.get()),
                                      rename));
         }
+        // We should have ensured CNAME and other type shouldn't coexist
+        if (RRType(found->type) == RRType::CNAME()) {
+            found_cname = found;
+        }
     }
+
+    if (found_cname) {
+        // We've found CNAME, and that's the best one.
+        LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_CNAME).arg(name);
+        return (createFindResult(CNAME, RRsetPair(node, found.get()), rename));
+    }
+
     // No exact match or CNAME.  Get NSEC if necessary and return NXRRSET.
     if (zone_data_->nsec_signed_ && (options & FIND_DNSSEC) != 0 &&
         (found = findRdataSet(RRType::NSEC(), node->getData()))) {
@@ -597,6 +703,51 @@ InMemoryZoneFinder::find(
 ///
 /// Loading Zones
 ///
+namespace {
+// Add the necessary magic for any wildcard contained in 'name'
+// (including itself) to be found in the zone.
+//
+// In order for wildcard matching to work correctly in find(),
+// we must ensure that a node for the wildcarding level exists in the
+// backend RBTree.
+// E.g. if the wildcard name is "*.sub.example." then we must ensure
+// that "sub.example." exists and is marked as a wildcard level.
+// Note: the "wildcarding level" is for the parent name of the wildcard
+// name (such as "sub.example.").
+//
+// We also perform the same trick for empty wild card names possibly
+// contained in 'name' (e.g., '*.foo.example' in 'bar.*.foo.example').
+void
+addWildcards(DomainTree& domains, const Name& name, const Name& origin) {
+    Name wname(name);
+    const unsigned int labels(wname.getLabelCount());
+    const unsigned int origin_labels(origin.getLabelCount());
+    for (unsigned int l = labels;
+         l > origin_labels;
+         --l, wname = wname.split(1)) {
+        if (wname.isWildcard()) {
+            LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_ADD_WILDCARD).
+                arg(name);
+            // Ensure a separate level exists for the "wildcarding" name,
+            // and mark the node as "wild".
+            DomainNode* node;
+            DomainTree::Result result(domains.insert(wname.split(1),
+                                                     &node));
+            assert(result == DomainTree::SUCCESS ||
+                   result == DomainTree::ALREADYEXISTS);
+            node->setFlag(domain_flag::WILD);
+
+            // Ensure a separate level exists for the wildcard name.
+            // Note: for 'name' itself we do this later anyway, but the
+            // overhead should be marginal because wildcard names should
+            // be rare.
+            result = domains.insert(wname, &node);
+            assert(result == DomainTree::SUCCESS ||
+                   result == DomainTree::ALREADYEXISTS);
+        }
+    }
+}
+} // unnamed namespace
 
 /*
  * Does some checks in context of the data that are already in the zone.
@@ -787,11 +938,19 @@ InMemoryZoneFinder::add(const ConstRRsetPtr& rrset, ZoneData& zone_data) {
         }
     }
 
+    // Note: this is not exception safe.
     RdataSetPtr rdset = RdataSet::allocate(memory_segment_, rdata_encoder_,
                                            rrset, ConstRRsetPtr());
-    node->setData(rdset);
     if (rdset_head) {
-        rdset->next = rdset_head;
+        // Append the new one at the end of list; normally in a zone file
+        // minor records are placed later.
+        RdataSetPtr prev = rdset_head;
+        for (; prev->next; prev = prev->next) {
+            ;
+        }
+        prev->next = rdset;
+    } else {
+        node->setData(rdset);
     }
     
     // Ok, we just put it in

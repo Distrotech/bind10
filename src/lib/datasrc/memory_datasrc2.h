@@ -54,6 +54,14 @@ typedef boost::function<void(dns::ConstRRsetPtr)> LoadCallback;
 
 /// This class is non copyable.
 class InMemoryZoneFinder : boost::noncopyable, public ZoneFinder {
+private:
+    /// \brief In-memory version of finder context.
+    ///
+    /// The implementation (and any specialized interface) is completely local
+    /// to the InMemoryZoneFinder class, so it's defined as private
+    struct TreeNodeResultContext;
+    class Context;
+
     ///
     /// \name Constructors and Destructor.
 public:
@@ -105,7 +113,7 @@ public:
 private:
     struct ZoneData;
 
-    ResultContext
+    TreeNodeResultContext
     find(const dns::Name& name, dns::RRType type,
          std::vector<dns::ConstRRsetPtr>* target,
          const FindOptions options) const;
@@ -116,8 +124,8 @@ private:
     void contextCheck(const dns::AbstractRRset& rrset,
                       datasrc::internal::ConstRdataSetPtr rdset_head) const;
 
-    ResultContext createFindResult(Result code, RRsetPair rrset, 
-                                   bool wild = false) const;
+    TreeNodeResultContext createFindResult(Result code, RRsetPair rrset,
+                                           bool wild = false) const;
 
     // Common process for zone load.
     // rrset_installer is a functor that takes another functor as an argument,

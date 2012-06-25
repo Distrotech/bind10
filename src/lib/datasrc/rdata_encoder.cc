@@ -500,13 +500,17 @@ RdataIterator::action() {
         if (field_spec.type == RdataFieldSpec::NAME) {
             const size_t nlen = dp[0];
             const size_t olen = dp[1];
-            name_action_(dp, field_spec.attributes);
+            if (name_action_) {
+                name_action_(dp, field_spec.attributes);
+            }
             dp += 2 + nlen + olen;
         } else {
             const size_t len =
                 (field_spec.type == RdataFieldSpec::FIXED_LEN_DATA) ?
                 field_spec.len : lengths_[lcount++];
-            data_action_(dp, len);
+            if (data_action_) {
+                data_action_(dp, len);
+            }
             dp += len;
         }
     }
