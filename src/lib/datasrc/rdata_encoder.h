@@ -16,9 +16,11 @@
 #define _RDATE_ENCODER_H 1
 
 #include <dns/name.h>
+#include <dns/messagerenderer.h>
 #include <dns/rdata.h>
 #include <dns/rrtype.h>
 
+#include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
 
 #include <stdint.h>
@@ -88,6 +90,41 @@ private:
     // This is essentially temporary workspace, and should be usable in
     // cost methods
     mutable uint8_t noffset_placeholder_[dns::Name::MAX_LABELS];
+};
+
+void
+renderName(dns::AbstractMessageRenderer* renderer,
+           const uint8_t* encoded_ndata, unsigned int attributes);
+
+void
+renderData(dns::AbstractMessageRenderer* renderer,
+           const uint8_t* data, size_t len);
+
+// An iterator on the encoded list of RDATAs, maybe allowing random access too
+class RdataIterator {
+public:
+    typedef boost::function<void(const uint8_t*, unsigned int)> NameAction;
+    typedef boost::function<void(const uint8_t*, size_t)> DataAction;
+
+    RdataIterator(dns::RRType type, uint16_t n_rdata,
+                  const uint16_t* lengths, const uint8_t* encoded_data,
+                  NameAction name_action, DataAction data_action);
+
+    void action();
+    bool isLast() const {
+        return (rdata_count_ == n_rdata_);
+    }
+
+private:
+    const size_t n_rdata_;
+    size_t rdata_count_;
+    const uint16_t* const lengths_begin_;
+    const uint16_t* lengths_;
+    const uint8_t* const data_begin_;
+    const uint8_t* data_;
+    NameAction name_action_;
+    DataAction data_action_;
+    const struct RdataEncodeSpec* const encode_spec_;
 };
 
 }

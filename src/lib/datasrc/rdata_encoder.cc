@@ -377,6 +377,61 @@ RdataEncoder::encodeData(uint8_t* const data_buf, size_t bufsize) const {
     assert(it_name == it_name_end);
     return (dp - data_buf);
 }
+
+void
+renderName(dns::AbstractMessageRenderer* renderer,
+           const uint8_t* encoded_ndata, unsigned int attributes)
+{
+    const size_t nlen = encoded_ndata[0];
+    const size_t olen = encoded_ndata[1];
+    renderer->writeName(LabelSequence(encoded_ndata + 2,
+                                      encoded_ndata + 2 + nlen, olen),
+                        (attributes & RdataFieldSpec::COMPRESSIBLE_NAME) != 0);
 }
+
+void
+renderData(dns::AbstractMessageRenderer* renderer,
+           const uint8_t* data, size_t len)
+{
+    renderer->writeData(data, len);
 }
+
+RdataIterator::RdataIterator(RRType type, uint16_t n_rdata,
+                             const uint16_t* lengths,
+                             const uint8_t* encoded_data,
+                             NameAction name_action, DataAction data_action) :
+    n_rdata_(n_rdata), rdata_count_(0), lengths_begin_(lengths),
+    lengths_(lengths), data_begin_(encoded_data), data_(encoded_data),
+    name_action_(name_action), data_action_(data_action),
+    encode_spec_(&getRdataEncodeSpec(type))
+{}
+
+void
+RdataIterator::action() {
+    const uint8_t* dp = data_;
+
+    size_t lcount = 0;          // counter for lengths
+    for (size_t field = 0; field < encode_spec_->n_fields; ++field) {
+        const RdataFieldSpec& field_spec = encode_spec_->field_spec[field];
+        if (field_spec.type == RdataFieldSpec::NAME) {
+            const size_t nlen = dp[0];
+            const size_t olen = dp[1];
+            name_action_(dp, field_spec.attributes);
+            dp += 2 + nlen + olen;
+        } else {
+            const size_t len =
+                (field_spec.type == RdataFieldSpec::FIXED_LEN_DATA) ?
+                field_spec.len : lengths_[lcount++];
+            data_action_(dp, len);
+            dp += len;
+        }
+    }
+
+    rdata_count_ += 1;
+    lengths_ += lcount;
+    data_ = dp;
 }
+
+} // internal
+} // datasrc
+} // isc

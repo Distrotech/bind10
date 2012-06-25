@@ -12,16 +12,24 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <util/buffer.h>
+
 #include <dns/labelsequence.h>
+#include <dns/messagerenderer.h>
 #include <dns/rrtype.h>
 #include <dns/rrclass.h>
 #include <dns/rdata.h>
 #include <datasrc/rdata_encoder.h>
 
+#include <boost/scoped_ptr.hpp>
+#include <boost/bind.hpp>
+
 #include <gtest/gtest.h>
 
 using namespace std;
+using boost::scoped_ptr;
 
+using namespace isc::util;
 using namespace isc::dns;
 using namespace isc::dns::rdata;
 using namespace isc::datasrc;
@@ -47,6 +55,7 @@ protected:
     ConstRdataPtr txt_rdata_;
     ConstRdataPtr txt_rdata2_;
     vector<uint8_t> encode_buf_;
+    MessageRenderer m_renderer_;
 };
 
 TEST_F(RdataEncoderTest, basicTests) {
@@ -120,5 +129,69 @@ TEST_F(RdataEncoderTest, basicTests) {
                                           '6', '7', '8', '9',
                                           5, '0', '1', '2', '3', '4'};
     EXPECT_TRUE(memcmp(expected_txt_data, &encode_buf_[4], 17));
+}
+
+TEST_F(RdataEncoderTest, renderer) {
+    encoder_.clear();
+    encoder_.addRdata(*a_rdata_);
+    encoder_.construct(RRType::A());
+    encode_buf_.resize(encoder_.getStorageLength()); // should be 4
+    encoder_.encodeData(&encode_buf_[0], encode_buf_.size());
+
+    internal::RdataIterator rd_it(
+        RRType::A(), 1, NULL, &encode_buf_[0],
+        boost::bind(internal::renderName, &m_renderer_, _1, _2),
+        boost::bind(internal::renderData, &m_renderer_, _1, _2));
+    EXPECT_FALSE(rd_it.isLast());
+    rd_it.action();
+    EXPECT_TRUE(rd_it.isLast());
+    scoped_ptr<InputBuffer> b(new InputBuffer(m_renderer_.getData(),
+                                              m_renderer_.getLength()));
+    EXPECT_EQ(0, createRdata(RRType::A(), RRClass::IN(),
+                             *b, b->getLength())->compare(*a_rdata_));
+
+    m_renderer_.clear();
+    encoder_.clear();
+    encoder_.addRdata(*soa_rdata_);
+    encoder_.construct(RRType::SOA());
+    encode_buf_.resize(encoder_.getStorageLength());
+    encoder_.encodeData(&encode_buf_[0], encode_buf_.size());
+
+    internal::RdataIterator rd_it_soa(
+        RRType::SOA(), 1, NULL, &encode_buf_[0],
+        boost::bind(internal::renderName, &m_renderer_, _1, _2),
+        boost::bind(internal::renderData, &m_renderer_, _1, _2));
+    EXPECT_FALSE(rd_it_soa.isLast());
+    rd_it_soa.action();
+    EXPECT_TRUE(rd_it_soa.isLast());
+    b.reset(new InputBuffer(m_renderer_.getData(), m_renderer_.getLength()));
+    EXPECT_EQ(0, createRdata(RRType::SOA(), RRClass::IN(),
+                             *b, b->getLength())->compare(*soa_rdata_));
+
+    m_renderer_.clear();
+    encoder_.clear();
+    encoder_.addRdata(*txt_rdata_);
+    encoder_.addRdata(*txt_rdata2_);
+    encoder_.construct(RRType::TXT());
+    encode_buf_.resize(encoder_.getStorageLength());
+    encoder_.encodeLengths(reinterpret_cast<uint16_t*>(&encode_buf_[0]),
+                           encode_buf_.size() / 2);
+    encoder_.encodeData(&encode_buf_[4], encode_buf_.size() - 4);
+
+    internal::RdataIterator rd_it_txt(
+        RRType::TXT(), 2,
+        reinterpret_cast<const uint16_t*>(&encode_buf_[0]), &encode_buf_[4],
+        boost::bind(internal::renderName, &m_renderer_, _1, _2),
+        boost::bind(internal::renderData, &m_renderer_, _1, _2));
+    EXPECT_FALSE(rd_it_txt.isLast());
+    rd_it_txt.action();
+    EXPECT_FALSE(rd_it_txt.isLast());
+    rd_it_txt.action();
+    EXPECT_TRUE(rd_it_txt.isLast());
+    b.reset(new InputBuffer(m_renderer_.getData(), m_renderer_.getLength()));
+    EXPECT_EQ(0, createRdata(RRType::TXT(), RRClass::IN(),
+                             *b, 11)->compare(*txt_rdata_));
+    EXPECT_EQ(0, createRdata(RRType::TXT(), RRClass::IN(),
+                             *b, 6)->compare(*txt_rdata2_));
 }
 } // end of unnamed namespace
