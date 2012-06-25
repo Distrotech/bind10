@@ -191,6 +191,21 @@ public:
         return (dns::LabelSequence(namebuf, offsetbuf, op - offsetbuf));
     }
 
+    // Return the absolute name of the node.
+    // Expensive, but more convenient than the label sequence version.
+    // Good for purposes like debug logs.
+    dns::Name getAbsoluteName() const {
+        uint8_t namebuf[dns::Name::MAX_WIRE];
+        uint8_t offsetbuf[dns::Name::MAX_LABELS];
+
+        const dns::LabelSequence seq =
+            getAbsoluteLabelSequence(namebuf, offsetbuf);
+        size_t nlen;
+        const uint8_t* np = seq.getData(&nlen);
+        util::InputBuffer b(np, nlen);
+        return (dns::Name(b));
+    }
+
     /// \brief Return the data stored in this node.
     ///
     /// You should not delete the data, it is handled by shared pointers.

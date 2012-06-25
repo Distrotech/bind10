@@ -348,9 +348,6 @@ InMemoryZoneFinder::ZoneData::findNode(const Name& name,
                                        RBTreeNodeChain<RdataSet>& node_path,
                                        ZoneFinder::FindOptions options) const
 {
-    uint8_t nb[Name::MAX_WIRE]; // placeholder for logging
-    uint8_t ob[Name::MAX_LABELS];
-
     DomainNode* node = NULL;
     FindState state((options & ZoneFinder::FIND_GLUE_OK) != 0);
 
@@ -366,14 +363,14 @@ InMemoryZoneFinder::ZoneData::findNode(const Name& name,
         assert(node != NULL);
         if (state.dname_node_ != NULL) { // DNAME
             LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_DNAME_FOUND).
-                arg(state.dname_node_->getAbsoluteLabelSequence(nb, ob));
+                arg(state.dname_node_->getAbsoluteName());
             return (FindNodeResult(ZoneFinder::DNAME,
                                    RRsetPair(state.dname_node_,
                                              state.rdataset_)));
         }
         if (state.zonecut_node_ != NULL) { // DELEGATION due to NS
             LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_DELEG_FOUND).
-                arg(state.zonecut_node_->getAbsoluteLabelSequence(nb, ob));
+                arg(state.zonecut_node_->getAbsoluteName());
             return (FindNodeResult(ZoneFinder::DELEGATION,
                                    RRsetPair(state.zonecut_node_,
                                              state.rdataset_)));
@@ -420,7 +417,7 @@ InMemoryZoneFinder::ZoneData::findNode(const Name& name,
         // If the name is neither an exact or partial match, it is
         // out of bailiwick, which is considered an error.
         isc_throw(OutOfZone, name.toText() << " not in origin " <<
-                  origin_node_->getAbsoluteLabelSequence(nb, ob));
+                  origin_node_->getAbsoluteName());
     }
 }
 
@@ -540,7 +537,7 @@ InMemoryZoneFinder::find(
     // For simplicity for now
     if (rename) {
         LOG_DEBUG(logger, DBG_TRACE_DETAILED, DATASRC_MEM_RENAME).
-            arg(node->getLabelSequence()).arg(name);
+            arg(node->getAbsoluteName()).arg(name);
         isc_throw(isc::NotImplemented, "wildcard substation not supported");
     }
 
