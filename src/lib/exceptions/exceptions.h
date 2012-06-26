@@ -126,6 +126,17 @@ public:
         isc::Exception(file, line, what) {}
 };
 
+/// \brief A generic exception that is thrown if a function is called
+/// in a prohibited way.
+///
+/// For example, this can happen if a class method is called when the object's
+/// state does not allow that particular method.
+class InvalidOperation : public Exception {
+public:
+    InvalidOperation(const char* file, size_t line, const char* what) :
+        isc::Exception(file, line, what) {}
+};
+
 ///
 /// \brief A generic exception that is thrown when an unexpected
 /// error condition occurs.
@@ -207,6 +218,76 @@ public:
         std::ostringstream oss__; \
         oss__ << stream; \
         throw type(__FILE__, __LINE__, oss__.str().c_str(), param1); \
+    } while (1)
+#endif
+
+///
+/// Similar as isc_throw, but allows the exception to have two additional
+/// parameters (the stream/text goes first)
+#ifdef _MSC_VER
+#define isc_throw_2(type, stream, param1, param2) \
+    __pragma(warning(push)) \
+    __pragma(warning(disable: 4127)) \
+    do { \
+        std::ostringstream oss__; \
+        oss__ << stream; \
+        throw type(__FILE__, __LINE__, oss__.str().c_str(), param1, param2); \
+    } while (1) \
+    __pragma(warning(pop))
+#else
+#define isc_throw_2(type, stream, param1, param2) \
+    do { \
+        std::ostringstream oss__; \
+        oss__ << stream; \
+        throw type(__FILE__, __LINE__, oss__.str().c_str(), param1, param2); \
+    } while (1)
+#endif
+
+///
+/// Similar as isc_throw, but allows the exception to have three additional
+/// parameters (the stream/text goes first)
+#ifdef _MSC_VER
+#define isc_throw_3(type, stream, param1, param2, param3) \
+    __pragma(warning(push)) \
+    __pragma(warning(disable: 4127)) \
+    do { \
+        std::ostringstream oss__; \
+        oss__ << stream; \
+        throw type(__FILE__, __LINE__, oss__.str().c_str(), param1, param2,\
+                   param3); \
+    } while (1) \
+    __pragma(warning(pop))
+#else
+#define isc_throw_3(type, stream, param1, param2, param3) \
+    do { \
+        std::ostringstream oss__; \
+        oss__ << stream; \
+        throw type(__FILE__, __LINE__, oss__.str().c_str(), param1, param2,\
+                   param3); \
+    } while (1)
+#endif
+
+///
+/// Similar as isc_throw, but allows the exception to have four additional
+/// parameters (the stream/text goes first)
+#ifdef _MSC_VER
+#define isc_throw_4(type, stream, param1, param2, param3, param4) \
+    __pragma(warning(push)) \
+    __pragma(warning(disable: 4127)) \
+    do { \
+        std::ostringstream oss__; \
+        oss__ << stream; \
+        throw type(__FILE__, __LINE__, oss__.str().c_str(), param1, param2,\
+                   param3, param4); \
+    } while (1) \
+    __pragma(warning(pop))
+#else
+#define isc_throw_4(type, stream, param1, param2, param3, param4) \
+    do { \
+        std::ostringstream oss__; \
+        oss__ << stream; \
+        throw type(__FILE__, __LINE__, oss__.str().c_str(), param1, param2,\
+                   param3, param4); \
     } while (1)
 #endif
 
