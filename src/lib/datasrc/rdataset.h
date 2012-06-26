@@ -36,7 +36,7 @@ typedef boost::interprocess::offset_ptr<const RdataSet> ConstRdataSetPtr;
 typedef boost::interprocess::offset_ptr<
     experimental::RBNode<datasrc::internal::RdataSet> > DomainNodePtr;
 typedef boost::interprocess::offset_ptr<
-    experimental::RBNode<const datasrc::internal::RdataSet> >
+    const experimental::RBNode<datasrc::internal::RdataSet> >
 ConstDomainNodePtr;
 
 struct RdataSet {
@@ -71,9 +71,11 @@ struct RdataSet {
     }
     const ConstDomainNodePtr* getNameBuf() const {
         if (many_rrs == 1) {
-            return (reinterpret_cast<const ConstDomainNodePtr*>(this + 1) + 1);
+            return (reinterpret_cast<const ConstDomainNodePtr*>(
+                        this + 1) + 1);
         } else {
-            return (reinterpret_cast<const ConstDomainNodePtr*>(this + 1));
+            return (reinterpret_cast<const ConstDomainNodePtr*>(
+                        this + 1));
         }
     }
     uint16_t* getLengthBuf() {

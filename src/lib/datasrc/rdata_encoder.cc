@@ -414,14 +414,14 @@ RdataEncoder::encodeData(uint8_t* const data_buf, size_t bufsize) const {
 }
 
 void
-renderName(AbstractMessageRenderer* renderer, ConstDomainNodePtr ptr_buf,
+renderName(AbstractMessageRenderer* renderer, const DomainNode* node,
            unsigned int attributes)
 {
     uint8_t namebuf[Name::MAX_WIRE];
     uint8_t offsetbuf[Name::MAX_LABELS];
 
-    const LabelSequence seq(ptr_buf->getAbsoluteLabelSequence(namebuf,
-                                                              offsetbuf));
+    const LabelSequence seq(node->getAbsoluteLabelSequence(namebuf,
+                                                           offsetbuf));
     renderer->writeName(seq,
                         (attributes & RdataFieldSpec::COMPRESSIBLE_NAME) != 0);
 }
@@ -506,7 +506,7 @@ RdataIterator::action() {
         const RdataFieldSpec& field_spec = encode_spec_->field_spec[field];
         if (field_spec.type == RdataFieldSpec::NAME) {
             if (name_action_) {
-                name_action_(*np, field_spec.attributes);
+                name_action_((*np).get(), field_spec.attributes);
             }
             ++np;
         } else {

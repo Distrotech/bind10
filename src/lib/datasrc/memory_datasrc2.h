@@ -43,7 +43,9 @@ namespace experimental {
 // The tree stores domains
 typedef RBTree<datasrc::internal::RdataSet> DomainTree;
 typedef RBNode<datasrc::internal::RdataSet> DomainNode;
+typedef RBNode<const datasrc::internal::RdataSet> ConstDomainNode;
 typedef boost::interprocess::offset_ptr<RBNode<datasrc::internal::RdataSet> > DomainNodePtr;
+typedef boost::interprocess::offset_ptr<const RBNode<datasrc::internal::RdataSet> > ConstDomainNodePtr;
 
 typedef boost::interprocess::offset_ptr<datasrc::internal::RdataSet> RdataSetPtr;
 typedef boost::interprocess::offset_ptr<const datasrc::internal::RdataSet> ConstRdataSetPtr;

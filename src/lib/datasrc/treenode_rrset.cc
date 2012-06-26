@@ -38,10 +38,10 @@ namespace isc {
 namespace datasrc {
 namespace experimental {
 namespace internal {
-
-TreeNodeRRset::TreeNodeRRset(RRClass rrclass,
-                             const RBNode<datasrc::internal::RdataSet>& node,
-                             const datasrc::internal::RdataSet& rdset) :
+TreeNodeRRset::TreeNodeRRset(
+    RRClass rrclass,
+    const RBNode<datasrc::internal::RdataSet>& node,
+    const datasrc::internal::RdataSet& rdset) :
     rrclass_(rrclass), node_(&node), rdset_(&rdset)
 {
 }

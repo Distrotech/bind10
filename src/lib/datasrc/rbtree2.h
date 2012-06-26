@@ -115,6 +115,7 @@ public:
         FLAG_BLACK = 0x00000002U, ///< Node color: on=black, off=red, internal.
         FLAG_ROOT =  0x00000004U, ///< Set iff the node is root of subtree.
         FLAG_NULL =  0x00000008U, ///< Set iff the node is "null" (workaround)
+        FLAG_INVISIBLE = 0x00000010U, ///< ignore in normal search
 
         FLAG_USER1 = 0x00008000U, ///< Application specific flag
         FLAG_USER2 = 0x00004000U, ///< Application specific flag
@@ -127,6 +128,7 @@ private:
     // explicitly defined in \c Flags.  This constant represents all
     // such flags.
     static const uint32_t SETTABLE_FLAGS = (FLAG_CALLBACK | FLAG_USER1 |
+                                            FLAG_INVISIBLE |
                                             FLAG_USER2 | FLAG_USER3);
 
 public:
@@ -231,7 +233,17 @@ public:
     /// \name Setter functions.
     //@{
     /// \brief Set the data stored in the node.
-    void setData(const NodeDataPtr& data) { data_ = data; }
+    void setData(const NodeDataPtr& data) {
+        data_ = data;
+        if (getFlag(FLAG_INVISIBLE)) {
+            setFlag(FLAG_INVISIBLE, false);
+            for (RBNodePtr node = this;
+                 !node->isNULL() && node->getFlag(FLAG_INVISIBLE);
+                 node = node->getUpperNode()) {
+                node->setFlag(FLAG_INVISIBLE, false);
+            }
+        }
+    }
     //@}
 
     /// \name Node flag manipulation methods
@@ -326,6 +338,13 @@ private:
     // the top level, the return value is NULL Node.
     ConstRBNodePtr getUpperNode() const {
 	ConstRBNodePtr root;
+	for (root = this; !root->isRoot(); root = root->parent_) {
+            ;
+        }
+	return (root->parent_);
+    }
+    RBNodePtr getUpperNode() {
+	RBNodePtr root;
 	for (root = this; !root->isRoot(); root = root->parent_) {
             ;
         }
@@ -1281,6 +1300,11 @@ RBTree<T>::find(const dns::LabelSequence& target_labels,
     dns::LabelSequence labels(target_labels);
 
     while (node != NULLNODE) {
+        if (node->getFlag(RBNode<T>::FLAG_INVISIBLE)) {
+            // If the node is invisible, it would be "exact match", so the
+            // name actually doesn't exist.
+            break;
+        }
         node_path.last_compared_ = node.get();
         node_path.last_comparison_ = labels.compare(node->getLabelSequence());
         const isc::dns::NameComparisonResult::NameRelation relation =

@@ -34,10 +34,11 @@ namespace internal {
 
 struct RdataSet;
 
+typedef experimental::RBNode<datasrc::internal::RdataSet> DomainNode;
 typedef boost::interprocess::offset_ptr<
     experimental::RBNode<datasrc::internal::RdataSet> > DomainNodePtr;
 typedef boost::interprocess::offset_ptr<
-    experimental::RBNode<const datasrc::internal::RdataSet> >
+    const experimental::RBNode<datasrc::internal::RdataSet> >
 ConstDomainNodePtr;
 
 struct RdataFieldSpec {
@@ -113,7 +114,8 @@ private:
 };
 
 void
-renderName(dns::AbstractMessageRenderer* renderer, ConstDomainNodePtr ptr_buf,
+renderName(dns::AbstractMessageRenderer* renderer,
+           const DomainNode* ptr_buf,
            unsigned int attributes);
 
 void
@@ -127,7 +129,7 @@ getEncodedDataSize(dns::RRType type, uint16_t n_rdata, const uint8_t* buf);
 // An iterator on the encoded list of RDATAs, maybe allowing random access too
 class RdataIterator {
 public:
-    typedef boost::function<void(ConstDomainNodePtr, unsigned int)> NameAction;
+    typedef boost::function<void(const DomainNode*, unsigned int)> NameAction;
     typedef boost::function<void(const uint8_t*, size_t)> DataAction;
 
     RdataIterator(dns::RRType type, uint16_t n_rdata,

@@ -433,7 +433,8 @@ InMemoryZoneFinder::ZoneData::findNode(const LabelSequence& labels,
 namespace {
 shared_ptr<TreeNodeRRset>
 createRRsetPtr(boost::object_pool<TreeNodeRRset>* pool, RRClass rrclass,
-               const DomainNode& node, const RdataSet& rdset)
+               const RBNode<datasrc::internal::RdataSet>& node,
+               const RdataSet& rdset)
 {
     TreeNodeRRset* p = pool->construct(rrclass, node, rdset);
     if (p == NULL) {
@@ -518,8 +519,8 @@ private:
     // type for each node.
     void
     getAdditionalForRdataset(const RdataSet& rdset,
-                             const vector<RRType>& /*requested_types*/,
-                             vector<ConstRRsetPtr>& /*result*/,
+                             const vector<RRType>& requested_types,
+                             vector<ConstRRsetPtr>& result,
                              ZoneFinder::FindOptions orig_options) const
     {
         ZoneFinder::FindOptions options = ZoneFinder::FIND_DEFAULT;
@@ -530,11 +531,8 @@ private:
         datasrc::internal::RdataIterator rd_it(
             RRType(rdset.type), rdset.getRdataCount(),
             rdset.getNameBuf(), NULL, NULL,
-            NULL,
-#ifdef notyet
             boost::bind(&Context::findAdditional, this, &requested_types,
                         &result, options, _1, _2),
-#endif
             NULL);
         while (!rd_it.isLast()) {
             rd_it.action();
@@ -544,40 +542,30 @@ private:
     void
     findAdditional(const vector<RRType>* requested_types,
                    vector<ConstRRsetPtr>* result,
-                   ZoneFinder::FindOptions options,
-                   const uint8_t* encoded_ndata, unsigned int attributes) const
+                   ZoneFinder::FindOptions /*options*/,
+                   const DomainNode* node,
+                   unsigned int attributes) const
     {
         if ((attributes &
              datasrc::internal::RdataFieldSpec::ADDITIONAL_NAME) == 0) {
             return;
         }
-        const size_t nlen = encoded_ndata[0];
-        const size_t olen = encoded_ndata[1];
-        const LabelSequence seq(encoded_ndata + 2, encoded_ndata + 2 + nlen,
-                                olen);
-        RBTreeNodeChain<RdataSet> node_path;
-        const ZoneData::FindNodeResult node_result =
-            finder_.zone_data_->findNode(seq, node_path,
-                                         options | ZoneFinder::FIND_GLUE_OK);
-
         // Note: ignore corner case conditions like wildcard or GLUE_OK or not
-        const vector<RRType>::const_iterator it_end = requested_types->end();
-        if (node_result.code == SUCCESS) {
-            const DomainNode* node = node_result.rrset.first;
-            for (ConstRdataSetPtr rdset = node->getData();
-                 rdset;
-                 rdset = rdset->next)
-            {
-                for (vector<RRType>::const_iterator it =
-                         requested_types->begin();
-                     it != it_end;
-                     ++it) {
-                    if (RRType(rdset->type) == (*it)) {
-                        ConstTreeNodeRRsetPtr rrset =
-                            createRRsetPtr(&finder_.rrset_pool_,
-                                           finder_.zone_class_, *node, *rdset);
-                        result->push_back(rrset);
-                    }
+        for (ConstRdataSetPtr rdset = node->getData();
+             rdset;
+             rdset = rdset->next)
+        {
+            const vector<RRType>::const_iterator it_end =
+                requested_types->end();
+            for (vector<RRType>::const_iterator it =
+                     requested_types->begin();
+                 it != it_end;
+                 ++it) {
+                if (RRType(rdset->type) == (*it)) {
+                    ConstTreeNodeRRsetPtr rrset =
+                        createRRsetPtr(&finder_.rrset_pool_,
+                                       finder_.zone_class_, *node, *rdset);
+                    result->push_back(rrset);
                 }
             }
         }
@@ -900,6 +888,21 @@ InMemoryZoneFinder::addValidation(const ConstRRsetPtr rrset) const {
     }
 }
 
+DomainNodePtr
+createRdataNameNode(DomainTree* tree, const Name* name) {
+    assert(name != NULL);
+    DomainNode* node;
+    DomainTree::Result result = tree->insert(*name, &node);
+    if (result == DomainTree::SUCCESS && node->isEmpty()) {
+        // If this is a newly created node, this is "invisible" at the
+        // moment.
+        node->setFlag(DomainNode::FLAG_INVISIBLE);
+    } else {
+        assert(node != NULL);
+    }
+    return (DomainNodePtr(node));
+}
+
 /*
  * Implementation of longer methods. We put them here, because the
  * access is without the impl_-> and it will get inlined anyway.
@@ -958,8 +961,10 @@ InMemoryZoneFinder::add(const ConstRRsetPtr& rrset, ZoneData& zone_data) {
     }
 
     // Note: this is not exception safe.
-    RdataSetPtr rdset = RdataSet::allocate(memory_segment_, rdata_encoder_,
-                                           NULL, rrset, ConstRRsetPtr());
+    RdataSetPtr rdset = RdataSet::allocate(
+        memory_segment_, rdata_encoder_,
+        boost::bind(createRdataNameNode, &zone_data.domains_, _1),
+        rrset, ConstRRsetPtr());
     if (rdset_head) {
         // Append the new one at the end of list; normally in a zone file
         // minor records are placed later.
