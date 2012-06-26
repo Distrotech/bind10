@@ -18,8 +18,9 @@
 #include <io.h>
 #define write _write
 #define read _read
+#else
+#include <unistd.h>
 #endif
-
 #include <cerrno>
 
 namespace isc {
@@ -28,46 +29,60 @@ namespace io {
 
 bool
 write_data(const int fd, const void *buffer_v, const size_t length) {
-    const unsigned char *buffer(static_cast<const unsigned char *>(buffer_v));
-    size_t rest(length);
+    const unsigned char* buffer(static_cast<const unsigned char*>(buffer_v));
+    size_t remaining = length;  // Amount remaining to be written
+
     // Just keep writing until all is written
-    while (rest) {
-        ssize_t written(write(fd, buffer, rest));
+    while (remaining > 0) {
+        const int written = write(fd, buffer, remaining);
         if (written == -1) {
             if (errno == EINTR) { // Just keep going
                 continue;
             } else {
-                return false;
+                return (false);
             }
-        } else { // Wrote something
-            rest -= written;
+
+        } else if (written > 0) {
+            // Wrote "written" bytes from the buffer
+            remaining -= written;
             buffer += written;
+
+        } else {
+            // Wrote zero bytes from the buffer. We should not get here as any
+            // error that causes zero bytes to be written should have returned
+            // -1.  However, write(2) can return 0, and in this case we
+            // interpret it as an error.
+            return (false);
         }
     }
-    return true;
+    return (true);
 }
 
 ssize_t
 read_data(const int fd, void *buffer_v, const size_t length) {
-    unsigned char *buffer(static_cast<unsigned char *>(buffer_v));
-    size_t rest(length), already(0);
-    while (rest) { // Stil something to read
-        ssize_t amount(read(fd, buffer, rest));
+    unsigned char* buffer(static_cast<unsigned char*>(buffer_v));
+    size_t remaining = length;   // Amount remaining to be read
+
+    while (remaining > 0) {
+        const int amount = read(fd, buffer, remaining);
         if (amount == -1) {
             if (errno == EINTR) { // Continue on interrupted call
                 continue;
             } else {
-                return -1;
+                return (-1);
             }
-        } else if (amount != 0) {
-            already += amount;
-            rest -= amount;
+        } else if (amount > 0) {
+            // Read "amount" bytes into the buffer
+            remaining -= amount;
             buffer += amount;
-        } else { // EOF
-            return already;
+        } else {
+            // EOF - end the read
+            break;
         }
     }
-    return already;
+
+    // Return total number of bytes read
+    return (static_cast<ssize_t>(length - remaining));
 }
 
 }

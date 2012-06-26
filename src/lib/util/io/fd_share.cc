@@ -24,7 +24,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
+#include <unistd.h>
 #endif
+#include <errno.h>
 #include <stdlib.h>             // for malloc and free
 #include "fd_share.h"
 
@@ -98,21 +100,39 @@ recv_fd(const int sock) {
     msghdr.msg_controllen = cmsg_space(sizeof(int));
     msghdr.msg_control = malloc(msghdr.msg_controllen);
     if (msghdr.msg_control == NULL) {
-        return (FD_OTHER_ERROR);
+        return (FD_SYSTEM_ERROR);
     }
 
-    if (recvmsg(sock, &msghdr, 0) < 0) {
+    const int cc = recvmsg(sock, &msghdr, 0);
+    if (cc <= 0) {
         free(msghdr.msg_control);
-        return (FD_COMM_ERROR);
+        if (cc == 0) {
+            errno = ECONNRESET;
+        }
+        return (FD_SYSTEM_ERROR);
     }
     const struct cmsghdr* cmsg = CMSG_FIRSTHDR(&msghdr);
     int fd = FD_OTHER_ERROR;
     if (cmsg != NULL && cmsg->cmsg_len == cmsg_len(sizeof(int)) &&
         cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
-        fd = *(const int*)CMSG_DATA(cmsg);
+        std::memcpy(&fd, CMSG_DATA(cmsg), sizeof(int));
     }
     free(msghdr.msg_control);
-    return (fd);
+    // It is strange, but the call can return the same file descriptor as
+    // one returned previously, even if that one is not closed yet. So,
+    // we just re-number every one we get, so they are unique.
+    int new_fd(dup(fd));
+    int close_error(close(fd));
+    if (close_error == -1 || new_fd == -1) {
+        // We need to return an error, because something failed. But in case
+        // it was the previous close, we at least try to close the duped FD.
+        if (new_fd != -1) {
+            close(new_fd); // If this fails, nothing but returning error can't
+                           // be done and we are doing that anyway.
+        }
+        return (FD_SYSTEM_ERROR);
+    }
+    return (new_fd);
 }
 
 int
@@ -138,16 +158,17 @@ send_fd(const int sock, const int fd) {
     cmsg->cmsg_len = cmsg_len(sizeof(int));
     cmsg->cmsg_level = SOL_SOCKET;
     cmsg->cmsg_type = SCM_RIGHTS;
-    *(int*)CMSG_DATA(cmsg) = fd;
+    std::memcpy(CMSG_DATA(cmsg), &fd, sizeof(int));
 
     const int ret = sendmsg(sock, &msghdr, 0);
     free(msghdr.msg_control);
-    return (ret >= 0 ? 0 : FD_COMM_ERROR);
+    return (ret >= 0 ? 0 : FD_SYSTEM_ERROR);
 }
 
 } // End for namespace io
 } // End for namespace util
 } // End for namespace isc
+
 
 #else
 
@@ -164,7 +185,7 @@ int
 send_pid(const int sock) {
     pid_t pid(_getpid());
     if (send(sock, (const char *)&pid, sizeof(pid), 0) != sizeof(pid)) {
-        return (FD_COMM_ERROR);
+        return (FD_SYSTEM_ERROR);
     }
     return (0);
 }
@@ -173,7 +194,7 @@ pid_t
 recv_pid(const int sock) {
     pid_t pid;
     if (recv(sock, (char *)&pid , sizeof(pid), 0) != sizeof(pid)) {
-        return (FD_COMM_ERROR);
+        return (FD_SYSTEM_ERROR);
     }
     return (pid);
 }
@@ -187,7 +208,7 @@ recv_fd(const int sock) {
     }
     WSAPROTOCOL_INFO pi;
     if (recv(sock, (char *)&pi, sizeof(pi), 0) != sizeof(pi)) {
-        return (FD_COMM_ERROR);
+        return (FD_SYSTEM_ERROR);
     }
     SOCKET nsock = WSASocket(pi.iAddressFamily,
                              pi.iSocketType,
@@ -202,8 +223,8 @@ recv_fd(const int sock) {
 int
 send_fd(const int sock, const int fd) {
     pid_t peerpid(recv_pid(sock));
-    if (peerpid == FD_COMM_ERROR) {
-        return (FD_COMM_ERROR);
+    if (peerpid == FD_SYSTEM_ERROR) {
+        return (FD_SYSTEM_ERROR);
     }
 
     WSAPROTOCOL_INFO pi;
@@ -212,7 +233,7 @@ send_fd(const int sock, const int fd) {
     }
 
     if (send(sock, (const char *)&pi, sizeof(pi), 0) != sizeof(pi)) {
-        return (FD_COMM_ERROR);
+        return (FD_SYSTEM_ERROR);
     }
     return (0);
 
