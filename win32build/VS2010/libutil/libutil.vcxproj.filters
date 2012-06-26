@@ -66,6 +66,18 @@
     <ClInclude Include="..\..\..\src\lib\util\random\random_number_generator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\util\interprocess_sync.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\util\interprocess_sync_file.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\util\interprocess_sync_null.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\util\range_utilities.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\util\random\qid_gen.cc">
@@ -84,6 +96,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\lib\util\time_utilities.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\util\interprocess_sync_file.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\util\interprocess_sync_null.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

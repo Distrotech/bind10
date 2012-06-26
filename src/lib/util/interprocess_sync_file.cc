@@ -53,7 +53,13 @@ InterprocessSyncFile::do_lock(int cmd, short l_type) {
     // Open lock file only when necessary (i.e., here). This is so that
     // if a default InterprocessSync object is replaced with another
     // implementation, it doesn't attempt any opens.
-    if (fd_ == -1) {
+    if
+#ifdef _WIN32
+       (fd_ != INVALID_HANDLE_VALUE)
+#else
+       (fd_ == -1)
+#endif
+    {
         std::string lockfile_path = LOCKFILE_DIR;
 
         const char* const env = getenv("B10_FROM_BUILD");
@@ -76,13 +82,13 @@ InterprocessSyncFile::do_lock(int cmd, short l_type) {
         // Open the lockfile in the constructor so it doesn't do the access
         // checks every time a message is logged.
 #ifdef _WIN32
-        fd_ = CreateFile(lockfile_path.c_str(),
-                         GENERIC_READ | GENERIC_WRITE,
-                         FILE_SHARE_READ | FILE_SHARE_WRITE,
-                         NULL,
-                         OPEN_ALWAYS,
-                         FILE_ATTRIBUTE_NORMAL,
-                         NULL);
+        fd_ = CreateFileA(lockfile_path.c_str(),
+                          GENERIC_READ | GENERIC_WRITE,
+                          FILE_SHARE_READ | FILE_SHARE_WRITE,
+                          NULL,
+                          OPEN_ALWAYS,
+                          FILE_ATTRIBUTE_NORMAL,
+                          NULL);
         if (fd_ == INVALID_HANDLE_VALUE) {
             isc_throw(InterprocessSyncFileError,
                       "Unable to use interprocess sync lockfile: " +
@@ -108,13 +114,13 @@ InterprocessSyncFile::do_lock(int cmd, short l_type) {
 #define F_WRLCK 1
 
     if (l_type == F_UNLCK)
-        return (UnlockFile(fd_, 0, 0, 1, 0));
+        return (UnlockFile(fd_, 0, 0, 1, 0) != 0);
     OVERLAPPED o;
     memset(&o, 0, sizeof (o));
     if (cmd == F_SETLK)
-        return (LockFileEx(fd_, LOCKFILE_FAIL_IMMEDIATELY, 0, 1, 0, &o));
+        return (LockFileEx(fd_, LOCKFILE_FAIL_IMMEDIATELY, 0, 1, 0, &o) != 0);
     else
-        return (LockFileEx(fd_, LOCKFILE_EXCLUSIVE_LOCK, 0, 1, 0, &o));
+        return (LockFileEx(fd_, LOCKFILE_EXCLUSIVE_LOCK, 0, 1, 0, &o) != 0);
 #else
     struct flock lock;
 

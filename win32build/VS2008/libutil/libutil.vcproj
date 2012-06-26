@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\exceptions;..\..\..\src\lib\util;&quot;$(BOOST)&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;LOCKFILE_DIR=\&quot;locks\&quot;"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -108,7 +108,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\exceptions;..\..\..\src\lib\util;&quot;$(BOOST)&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;LOCKFILE_DIR=\&quot;locks\&quot;"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -158,6 +158,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\util\filename.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\util\interprocess_sync_file.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\util\interprocess_sync_null.cc"
 				>
 			</File>
 			<File
@@ -219,6 +227,18 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\util\interprocess_sync.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\util\interprocess_sync_file.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\util\interprocess_sync_null.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\util\io_utilities.h"
 				>
 			</File>
@@ -236,6 +256,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\util\random\random_number_generator.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\util\range_utilities.h"
 				>
 			</File>
 			<File
