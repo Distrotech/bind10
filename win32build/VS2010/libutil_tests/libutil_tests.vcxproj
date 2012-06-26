@@ -52,7 +52,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;TEST_DATA_TOPBUILDDIR="%BIND10HOME%";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\exceptions;..\..\..\src\lib\utils;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
@@ -71,7 +71,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;TEST_DATA_TOPBUILDDIR="%BIND10HOME%";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\exceptions;..\..\..\src\lib\utils;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
@@ -92,10 +92,12 @@
     <ClCompile Include="..\..\..\src\lib\util\tests\fd_tests.cc" />
     <ClCompile Include="..\..\..\src\lib\util\tests\filename_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\util\tests\hex_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\util\tests\interprocess_sync_null_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\util\tests\io_utilities_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\util\tests\lru_list_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\util\tests\qid_gen_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\util\tests\random_number_generator_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\util\tests\range_utilities_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\util\tests\run_unittests.cc" />
     <ClCompile Include="..\..\..\src\lib\util\tests\sha1_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\util\tests\strutil_unittest.cc" />

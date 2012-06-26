@@ -57,5 +57,11 @@
     <ClCompile Include="..\..\..\src\lib\util\tests\fd_tests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\util\tests\interprocess_sync_null_unittest.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\util\tests\range_utilities_unittest.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

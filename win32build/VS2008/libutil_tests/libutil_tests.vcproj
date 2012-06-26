@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\exceptions;..\..\..\src\lib\utils;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;TEST_DATA_TOPBUILDDIR=\&quot;$(BIND10HOME)\&quot;"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -120,7 +120,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\exceptions;..\..\..\src\lib\utils;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;TEST_DATA_TOPBUILDDIR=\&quot;$(BIND10HOME)\&quot;"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -205,6 +205,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\util\tests\interprocess_sync_null_unittest.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\util\tests\io_utilities_unittest.cc"
 				>
 			</File>
@@ -218,6 +222,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\util\tests\random_number_generator_unittest.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\util\tests\range_utilities_unittest.cc"
 				>
 			</File>
 			<File

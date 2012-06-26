@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
 #include <gtest/gtest.h>
 #include <util/unittests/run_all.h>
 #include <stdlib.h>
@@ -20,6 +22,11 @@ int
 main(int argc, char* argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
 
+#ifdef _WIN32
+    std::string vv("B10_LOCKFILE_DIR_FROM_BUILD=" TEST_DATA_TOPBUILDDIR);
+    _putenv(vv.c_str());
+#else
     setenv("B10_LOCKFILE_DIR_FROM_BUILD", TEST_DATA_TOPBUILDDIR, 1);
+#endif
     return (isc::util::unittests::run_all());
 }
