@@ -126,7 +126,7 @@ private:
     void addFromLoad(const dns::ConstRRsetPtr& set, ZoneData* zone_data);
     result::Result add(const dns::ConstRRsetPtr& rrset, ZoneData& zone_data);
     void contextCheck(const dns::AbstractRRset& rrset,
-                      datasrc::internal::ConstRdataSetPtr rdset_head) const;
+                      const datasrc::internal::RdataSet* rdset_head) const;
 
     TreeNodeResultContext createFindResult(Result code, RRsetPair rrset,
                                            bool wild = false) const;

@@ -91,9 +91,11 @@ const DomainNode::Flags WILD_EXPANDED = DomainNode::FLAG_USER3;
 };
 
 // Simple search helper on node's Rdata
-ConstRdataSetPtr
-findRdataSet(RRType rrtype, ConstRdataSetPtr rdset_head) {
-    for (ConstRdataSetPtr rdset = rdset_head; rdset; rdset = rdset->next) {
+const RdataSet*
+findRdataSet(RRType rrtype, const RdataSet* rdset_head) {
+    for (const RdataSet* rdset = rdset_head;
+         rdset != NULL;
+         rdset = rdset->next.get()) {
         if (rdset->type == rrtype.getCode()) {
             return (rdset);
         }
@@ -101,9 +103,12 @@ findRdataSet(RRType rrtype, ConstRdataSetPtr rdset_head) {
     return (NULL);
 }
 
-ConstRdataSetPtr
-findExRdataSet(RRType rrtype, ConstRdataSetPtr rdset_head) {
-    for (ConstRdataSetPtr rdset = rdset_head; rdset; rdset = rdset->next) {
+const RdataSet*
+findExRdataSet(RRType rrtype, const RdataSet* rdset_head) {
+    for (const RdataSet* rdset = rdset_head;
+         rdset != NULL;
+         rdset = rdset->next.get())
+    {
         if (rdset->type != rrtype.getCode()) {
             return (rdset);
         }
@@ -193,7 +198,7 @@ InMemoryZoneFinder::ZoneData::getClosestNSEC(
     while ((prev_node = domains_.previousNode(node_path)) != NULL) {
         if (!prev_node->isEmpty()) {
             ConstRdataSetPtr found =
-                findRdataSet(RRType::NSEC(), prev_node->getData());
+                findRdataSet(RRType::NSEC(), prev_node->getData().get());
             if (found) {
                 return (RRsetPair(prev_node, found.get()));
             }
@@ -242,7 +247,7 @@ bool cutCallback(const DomainNode& node, FindState* state) {
     // the NS is authoritative, not delegation (corner case explicitly
     // allowed by section 3 of 2672)
     ConstRdataSetPtr found_dname = findRdataSet(RRType::DNAME(),
-                                                node.getData());
+                                                node.getData().get());
     if (found_dname) {
         LOG_DEBUG(logger, DBG_TRACE_DETAILED, DATASRC_MEM_DNAME_ENCOUNTERED);
         state->dname_node_ = &node;
@@ -257,7 +262,7 @@ bool cutCallback(const DomainNode& node, FindState* state) {
     }
 
     // Look for NS
-    ConstRdataSetPtr found_ns = findRdataSet(RRType::NS(), node.getData());
+    ConstRdataSetPtr found_ns = findRdataSet(RRType::NS(), node.getData().get());
     if (found_ns) {
         // We perform callback check only for the highest zone cut in the
         // rare case of nested zone cuts.
@@ -641,7 +646,7 @@ InMemoryZoneFinder::find(
                                  rename));
     }
 
-    ConstRdataSetPtr found;
+    const RdataSet* found;
 
     // For simplicity for now
     if (rename) {
@@ -656,19 +661,22 @@ InMemoryZoneFinder::find(
     // be considered in-zone lookup.
     if (node->getFlag(DomainNode::FLAG_CALLBACK) &&
         node != zone_data_->origin_node_.get() && type != RRType::DS()) {
-        found = findRdataSet(RRType::NS(), node->getData());
-        if (found) {
+        found = findRdataSet(RRType::NS(), node->getData().get());
+        if (found != NULL) {
             LOG_DEBUG(logger, DBG_TRACE_DATA,
                       DATASRC_MEM_EXACT_DELEGATION).arg(name);
             return (createFindResult(DELEGATION,
-                                     RRsetPair(node, found.get())));
+                                     RRsetPair(node, found)));
         }
     }
 
     // handle type any query
     if (target != NULL) {
         // Empty domain will be handled as NXRRSET by normal processing
-        for (found = node->getData(); found; found = found->next) {
+        for (found = node->getData().get();
+             found != NULL;
+             found = found->next.get())
+        {
             target->push_back(createRRsetPtr(&rrset_pool_, zone_class_, *node,
                                              *found));
         }
@@ -677,14 +685,15 @@ InMemoryZoneFinder::find(
         return (createFindResult(SUCCESS, RRsetPair(NULL, NULL), rename));
     }
 
-    ConstRdataSetPtr found_cname;
-    for (found = node->getData(); found; found = found->next) {
+    const RdataSet* found_cname = NULL;
+    for (found = node->getData().get();
+         found != NULL;
+         found = found->next.get()) {
         if (RRType(found->type) == type) {
             // Good, it is here
             LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_SUCCESS).arg(name).
                 arg(type);
-            return (createFindResult(SUCCESS, RRsetPair(node, found.get()),
-                                     rename));
+            return (createFindResult(SUCCESS, RRsetPair(node, found), rename));
         }
         // We should have ensured CNAME and other type shouldn't coexist
         if (RRType(found->type) == RRType::CNAME()) {
@@ -692,17 +701,18 @@ InMemoryZoneFinder::find(
         }
     }
 
-    if (found_cname) {
+    if (found_cname != NULL) {
         // We've found CNAME, and that's the best one.
         LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_CNAME).arg(name);
-        return (createFindResult(CNAME, RRsetPair(node, found.get()), rename));
+        return (createFindResult(CNAME, RRsetPair(node, found), rename));
     }
 
     // No exact match or CNAME.  Get NSEC if necessary and return NXRRSET.
     if (zone_data_->nsec_signed_ && (options & FIND_DNSSEC) != 0 &&
-        (found = findRdataSet(RRType::NSEC(), node->getData()))) {
-        return (createFindResult(NXRRSET, RRsetPair(node, found.get()),
-                                 rename));
+        (found = findRdataSet(RRType::NSEC(), node->getData().get()))
+        != NULL)
+    {
+        return (createFindResult(NXRRSET, RRsetPair(node, found), rename));
     }
     return (createFindResult(NXRRSET, RRsetPair(NULL, NULL), rename));
 }
@@ -765,21 +775,21 @@ addWildcards(DomainTree& domains, const Name& name, const Name& origin) {
  */
 void
 InMemoryZoneFinder::contextCheck(const AbstractRRset& rrset,
-                                 ConstRdataSetPtr rdset_head) const
+                                 const RdataSet* rdset_head) const
 {
     // Ensure CNAME and other type of RR don't coexist for the same
     // owner name except with NSEC, which is the only RR that can coexist
     // with CNAME (and also RRSIG, which is handled separately)
     if (rrset.getType() == RRType::CNAME()) {
         
-        if (findExRdataSet(RRType::NSEC(), rdset_head)) { 
+        if (findExRdataSet(RRType::NSEC(), rdset_head) != NULL) {
             LOG_ERROR(logger, DATASRC_MEM_CNAME_TO_NONEMPTY).
                 arg(rrset.getName());
             isc_throw(AddError, "CNAME can't be added with other data for "
                       << rrset.getName());
         }
     } else if (rrset.getType() != RRType::NSEC() &&
-               findRdataSet(RRType::CNAME(), rdset_head)) {
+               findRdataSet(RRType::CNAME(), rdset_head) != NULL) {
         LOG_ERROR(logger, DATASRC_MEM_CNAME_COEXIST).arg(rrset.getName());
         isc_throw(AddError, "CNAME and " << rrset.getType() <<
                   " can't coexist for " << rrset.getName());
@@ -793,10 +803,10 @@ InMemoryZoneFinder::contextCheck(const AbstractRRset& rrset,
     if (rrset.getName() != origin_ &&
         // Adding DNAME, NS already there
         ((rrset.getType() == RRType::DNAME() &&
-          findRdataSet(RRType::NS(), rdset_head)) ||
+          findRdataSet(RRType::NS(), rdset_head) != NULL) ||
          // Adding NS, DNAME already there
          (rrset.getType() == RRType::NS() &&
-          findRdataSet(RRType::DNAME(), rdset_head))))
+          findRdataSet(RRType::DNAME(), rdset_head) != NULL)))
     {
         LOG_ERROR(logger, DATASRC_MEM_DNAME_NS).arg(rrset.getName());
         isc_throw(AddError, "DNAME can't coexist with NS in non-apex "
@@ -944,8 +954,8 @@ InMemoryZoneFinder::add(const ConstRRsetPtr& rrset, ZoneData& zone_data) {
             result == DomainTree::ALREADYEXISTS) && node!= NULL);
 
     // Now get the domain
-    RdataSetPtr const rdset_head = node->getData(); // current head
-    if (rdset_head) {
+    RdataSet* const rdset_head = node->getData().get(); // current head
+    if (rdset_head != NULL) {
         // Checks related to the surrounding data.
         // Note: when the check fails and the exception is thrown, it may
         // break strong exception guarantee.  At the moment we prefer
@@ -954,22 +964,22 @@ InMemoryZoneFinder::add(const ConstRRsetPtr& rrset, ZoneData& zone_data) {
         contextCheck(*rrset, rdset_head);
 
         // Try inserting the rrset there
-        if (findRdataSet(rrset->getType(), rdset_head)) {
+        if (findRdataSet(rrset->getType(), rdset_head) != NULL) {
             // The RRSet of given type was already there
             return (result::EXIST);
         }
     }
 
     // Note: this is not exception safe.
-    RdataSetPtr rdset = RdataSet::allocate(
+    RdataSet* rdset = RdataSet::allocate(
         memory_segment_, rdata_encoder_,
         boost::bind(createRdataNameNode, &zone_data.domains_, _1),
         rrset, ConstRRsetPtr());
-    if (rdset_head) {
+    if (rdset_head != NULL) {
         // Append the new one at the end of list; normally in a zone file
         // minor records are placed later.
-        RdataSetPtr prev = rdset_head;
-        for (; prev->next; prev = prev->next) {
+        RdataSet* prev = rdset_head;
+        for (; prev->next; prev = prev->next.get()) {
             ;
         }
         prev->next = rdset;
