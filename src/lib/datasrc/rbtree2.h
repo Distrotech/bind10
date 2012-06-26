@@ -114,6 +114,7 @@ public:
         FLAG_CALLBACK = 1, ///< Callback enabled. See \ref callback
         FLAG_BLACK = 0x00000002U, ///< Node color: on=black, off=red, internal.
         FLAG_ROOT =  0x00000004U, ///< Set iff the node is root of subtree.
+        FLAG_NULL =  0x00000008U, ///< Set iff the node is "null" (workaround)
 
         FLAG_USER1 = 0x00008000U, ///< Application specific flag
         FLAG_USER2 = 0x00004000U, ///< Application specific flag
@@ -167,8 +168,8 @@ public:
         uint8_t* op = offsetbuf;
         const uint8_t* const op_end = offsetbuf + dns::Name::MAX_LABELS;
         uint8_t current_offset = 0;
-        for (ConstRBNodePtr node = this;
-             node != NULL_NODE();
+        for (const RBNode* node = this;
+             !node->isNULL();
              node = node->getUpperNode())
         {
             const size_t nlen = node->getNameDataLen();
@@ -222,6 +223,9 @@ public:
 
     /// whether this is the root node of a subtree.
     bool isRoot() const { return ((flags_ & FLAG_ROOT) != 0); }
+
+    /// whether this is the "null" node
+    bool isNULL() const { return ((flags_ & FLAG_NULL) != 0); }
     //@}
 
     /// \name Setter functions.
@@ -282,6 +286,14 @@ public:
             flags_ &= ~FLAG_ROOT;
         }
     }
+    /// whether this is the NULL node.
+    void setNULLFlag(bool on) {
+        if (on) {
+            flags_ |= FLAG_NULL;
+        } else {
+            flags_ &= ~FLAG_NULL;
+        }
+    }
     //@}
 
 private:
@@ -312,12 +324,36 @@ private:
     // Return the node in the level above the argument node that points
     // to the level the argument node is in.  If the argument node is in
     // the top level, the return value is NULL Node.
-    ConstRBNodePtr getUpperNode() const {
-	ConstRBNodePtr root;
-	for (root = this; !root->isRoot(); root = root->parent_) {
+    const RBNode* getUpperNode() const {
+	const RBNode* root;
+	for (root = this; !root->isRoot(); root = root->getParent()) {
             ;
         }
-	return (root->parent_);
+	return (root->getParent());
+    }
+
+    RBNode* getUpperNode() {
+	RBNode* root;
+	for (root = this; !root->isRoot(); root = root->getParent()) {
+            ;
+        }
+	return (root->getParent());
+    }
+
+    RBNode* getParent() {
+        return (parent_.get());
+    }
+    const RBNode* getParent() const {
+        return (parent_.get());
+    }
+    RBNode* getRight() {
+        return (right_.get());
+    }
+    RBNode* getLeft() {
+        return (left_.get());
+    }
+    RBNode* getDown() {
+        return (down_.get());
     }
 
     /// This is a factory class method of a special singleton null node.
@@ -497,6 +533,7 @@ RBNode<T>::RBNode() :
     left_ = this;
     right_ = this;
     down_ = this;
+    setNULLFlag(true);
 }
 
 template <typename T>
@@ -1264,31 +1301,31 @@ RBTree<T>::find(const dns::LabelSequence& target_labels,
         isc_throw(isc::BadValue, "RBTree::find is given a non empty chain");
     }
 
-    typename RBNode<T>::RBNodePtr node = root_;
+    RBNode<T>* node = root_.get();
     Result ret = NOTFOUND;
     dns::LabelSequence labels(target_labels);
 
-    while (node != NULLNODE) {
-        node_path.last_compared_ = node.get();
+    while (!node->isNULL()) {
+        node_path.last_compared_ = node;
         node_path.last_comparison_ = labels.compare(node->getLabelSequence());
         const isc::dns::NameComparisonResult::NameRelation relation =
             node_path.last_comparison_.getRelation();
 
         if (relation == isc::dns::NameComparisonResult::EQUAL) {
             if (needsReturnEmptyNode_ || !node->isEmpty()) {
-                node_path.push(node.get());
-                *target = node.get();
+                node_path.push(node);
+                *target = node;
                 ret = EXACTMATCH;
             }
             break;
         } else if (relation == isc::dns::NameComparisonResult::NONE) {
             node = (node_path.last_comparison_.getOrder() < 0) ?
-                node->left_ : node->right_;
+                node->getLeft() : node->getRight();
         } else {
             if (relation == isc::dns::NameComparisonResult::SUBDOMAIN) {
                 if (needsReturnEmptyNode_ || !node->isEmpty()) {
                     ret = PARTIALMATCH;
-                    *target = node.get();
+                    *target = node;
                     if (callback != NULL &&
                         node->getFlag(RBNode<T>::FLAG_CALLBACK)) {
                         if ((callback)(*node, callback_arg)) {
@@ -1296,10 +1333,10 @@ RBTree<T>::find(const dns::LabelSequence& target_labels,
                         }
                     }
                 }
-                node_path.push(node.get());
+                node_path.push(node);
                 labels.stripRight(
                     node_path.last_comparison_.getCommonLabels());
-                node = node->down_;
+                node = node->getDown();
             } else {
                 break;
             }
