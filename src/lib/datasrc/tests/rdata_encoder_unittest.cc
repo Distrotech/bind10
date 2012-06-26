@@ -20,6 +20,8 @@
 #include <dns/rrclass.h>
 #include <dns/rdata.h>
 #include <datasrc/rdata_encoder.h>
+#include <datasrc/rbtree2.h>
+#include <datasrc/memory_datasrc2.h> // XXX
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/bind.hpp>
@@ -33,11 +35,14 @@ using namespace isc::util;
 using namespace isc::dns;
 using namespace isc::dns::rdata;
 using namespace isc::datasrc;
+typedef internal::DomainNodePtr DomainNodePtr;
+typedef internal::ConstDomainNodePtr ConstDomainNodePtr;
 
 namespace {
 class RdataEncoderTest : public::testing::Test {
 protected:
     RdataEncoderTest() :
+        tree(segment, true),
         a_rdata_(createRdata(RRType::A(), RRClass::IN(), "192.0.2.1")),
         a_rdata2_(createRdata(RRType::A(), RRClass::IN(), "192.0.2.53")),
         ns_rdata_(createRdata(RRType::NS(), RRClass::IN(), "ns.example.com")),
@@ -46,7 +51,28 @@ protected:
                                "1 2 3 4 65536")),
         txt_rdata_(createRdata(RRType::TXT(), RRClass::IN(), "0123456789")),
         txt_rdata2_(createRdata(RRType::TXT(), RRClass::IN(), "01234"))
-    {}
+    {
+        tree.insert(Name("ns.example.org"), &soa_mname_);
+        assert(soa_mname_ != NULL);
+        soa_mname_ptr_ = soa_mname_;
+        tree.insert(Name("root.example.org"), &soa_rname_);
+        assert(soa_rname_ != NULL);
+        soa_rname_ptr_ = soa_rname_;
+    }
+
+    DomainNodePtr
+    testPtrCreator(const Name* name) {
+        if (*name == Name("ns.example.org")) {
+            return (soa_mname_ptr_);
+        }
+        if (*name == Name("root.example.org")) {
+            return (soa_rname_ptr_);
+        }
+        return (NULL);
+    }
+
+    MemorySegment segment;
+    experimental::DomainTree tree;
     internal::RdataEncoder encoder_;
     ConstRdataPtr a_rdata_;
     ConstRdataPtr a_rdata2_;
@@ -56,7 +82,17 @@ protected:
     ConstRdataPtr txt_rdata2_;
     vector<uint8_t> encode_buf_;
     MessageRenderer m_renderer_;
+
+    experimental::DomainNode* soa_mname_;
+    experimental::DomainNodePtr soa_mname_ptr_;
+    experimental::DomainNode* soa_rname_;
+    experimental::DomainNodePtr soa_rname_ptr_;
 };
+
+DomainNodePtr
+dummyPtrCreator(const Name*) {
+    return (NULL);
+}
 
 TEST_F(RdataEncoderTest, basicTests) {
     encoder_.addRdata(*a_rdata_);
@@ -80,36 +116,45 @@ TEST_F(RdataEncoderTest, basicTests) {
     encoder_.clear();
     encoder_.addRdata(*ns_rdata_);
     encoder_.construct(RRType::NS());
-    // namelen = 16, offsetlen = 4
-    EXPECT_EQ((16 + 4 + 2), encoder_.getStorageLength());
+    // a single pointer
+    EXPECT_EQ(sizeof(DomainNodePtr), encoder_.getStorageLength());
     encode_buf_.resize(encoder_.getStorageLength());
+    EXPECT_EQ(1, encoder_.encodeNames(
+                  reinterpret_cast<DomainNodePtr*>(&encode_buf_[0]),
+                  encode_buf_.size() / sizeof(DomainNodePtr),
+                  dummyPtrCreator));
     EXPECT_EQ(0, encoder_.encodeLengths(
                   reinterpret_cast<uint16_t*>(&encode_buf_[0]),
                   encode_buf_.size() / 2));
-    EXPECT_EQ(22, encoder_.encodeData(&encode_buf_[0], encode_buf_.size()));
-    LabelSequence seq(&encode_buf_[2], &encode_buf_[encode_buf_[0] + 2],
-                      encode_buf_[1]);
-    EXPECT_EQ("ns.example.com.", seq.toText());
+    EXPECT_EQ(0, encoder_.encodeData(&encode_buf_[0], encode_buf_.size()));
 
     encoder_.clear();
     encoder_.addRdata(*soa_rdata_);
     encoder_.construct(RRType::SOA());
-    // 1st name data: 16+4+2bytes, 2nd: 18+4+2bytes, rest 20
-    EXPECT_EQ((16 + 4 + 2) + (18 + 4 + 2) + 20, encoder_.getStorageLength());
+    // 2 names and 20-byte field
+    const size_t name_offset = 2 * sizeof(DomainNodePtr);
+    EXPECT_EQ(name_offset + 20, encoder_.getStorageLength());
     encode_buf_.resize(encoder_.getStorageLength());
+    EXPECT_EQ(2, encoder_.encodeNames(
+                  reinterpret_cast<DomainNodePtr*>(&encode_buf_[0]),
+                  encode_buf_.size() / sizeof(DomainNodePtr),
+                  dummyPtrCreator));
     EXPECT_EQ(0, encoder_.encodeLengths(
-                  reinterpret_cast<uint16_t*>(&encode_buf_[0]),
+                  reinterpret_cast<uint16_t*>(&encode_buf_[name_offset]),
                   encode_buf_.size() / 2));
-    EXPECT_EQ(66, encoder_.encodeData(&encode_buf_[0], encode_buf_.size()));
-    seq = LabelSequence(&encode_buf_[2], &encode_buf_[encode_buf_[0] + 2],
-                        encode_buf_[1]);
+    EXPECT_EQ(20, encoder_.encodeData(&encode_buf_[name_offset],
+                                      encode_buf_.size()));
+#if 0                           // not effectively testable
+    LabelSequence seq(&encode_buf_[2], &encode_buf_[encode_buf_[0] + 2],
+                      encode_buf_[1]);
     EXPECT_EQ("ns.example.org.", seq.toText());
     seq = LabelSequence(&encode_buf_[24], &encode_buf_[encode_buf_[22] + 2],
                         encode_buf_[23]);
     EXPECT_EQ("root.example.org.", seq.toText());
+#endif
     const uint8_t expected_soa_data[] = { 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3,
                                           0, 0, 0, 4, 0, 1, 0, 0 };
-    EXPECT_TRUE(memcmp(expected_soa_data, &encode_buf_[46], 20) == 0);
+    EXPECT_TRUE(memcmp(expected_soa_data, &encode_buf_[name_offset], 20) == 0);
 
     encoder_.clear();
     encoder_.addRdata(*txt_rdata_);
@@ -139,7 +184,9 @@ TEST_F(RdataEncoderTest, renderer) {
     encoder_.encodeData(&encode_buf_[0], encode_buf_.size());
 
     internal::RdataIterator rd_it(
-        RRType::A(), 1, NULL, &encode_buf_[0],
+        RRType::A(), 1,
+        reinterpret_cast<const ConstDomainNodePtr*>(&encode_buf_[0]), NULL,
+        NULL,
         boost::bind(internal::renderName, &m_renderer_, _1, _2),
         boost::bind(internal::renderData, &m_renderer_, _1, _2));
     EXPECT_FALSE(rd_it.isLast());
@@ -155,10 +202,17 @@ TEST_F(RdataEncoderTest, renderer) {
     encoder_.addRdata(*soa_rdata_);
     encoder_.construct(RRType::SOA());
     encode_buf_.resize(encoder_.getStorageLength());
-    encoder_.encodeData(&encode_buf_[0], encode_buf_.size());
-
+    EXPECT_EQ(2, encoder_.encodeNames(
+                  reinterpret_cast<DomainNodePtr*>(&encode_buf_[0]),
+                  encode_buf_.size() / sizeof(DomainNodePtr),
+                  boost::bind(&RdataEncoderTest::testPtrCreator, this,
+                              _1)));
+    encoder_.encodeData(&encode_buf_[sizeof(DomainNodePtr) * 2],
+                        encode_buf_.size());
     internal::RdataIterator rd_it_soa(
-        RRType::SOA(), 1, NULL, &encode_buf_[0],
+        RRType::SOA(), 1,
+        reinterpret_cast<const ConstDomainNodePtr*>(&encode_buf_[0]), NULL,
+        NULL,
         boost::bind(internal::renderName, &m_renderer_, _1, _2),
         boost::bind(internal::renderData, &m_renderer_, _1, _2));
     EXPECT_FALSE(rd_it_soa.isLast());
@@ -180,7 +234,8 @@ TEST_F(RdataEncoderTest, renderer) {
 
     internal::RdataIterator rd_it_txt(
         RRType::TXT(), 2,
-        reinterpret_cast<const uint16_t*>(&encode_buf_[0]), &encode_buf_[4],
+        reinterpret_cast<const ConstDomainNodePtr*>(&encode_buf_[0]), NULL,
+        NULL,
         boost::bind(internal::renderName, &m_renderer_, _1, _2),
         boost::bind(internal::renderData, &m_renderer_, _1, _2));
     EXPECT_FALSE(rd_it_txt.isLast());

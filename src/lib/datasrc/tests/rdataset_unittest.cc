@@ -46,12 +46,17 @@ protected:
     ConstRRsetPtr rrset_txt_;
 };
 
+DomainNodePtr
+dummyPtrCreator(const Name*) {
+    return (NULL);
+}
+
 TEST_F(RdataSetTest, allocate) {
     MemorySegment segment;
-    RdataSetPtr rdsetptr1(RdataSet::allocate(segment, encoder, rrset_soa_,
-                                             ConstRRsetPtr()));
-    RdataSetPtr rdsetptr2(RdataSet::allocate(segment, encoder, rrset_txt_,
-                                             ConstRRsetPtr()));
+    RdataSetPtr rdsetptr1(RdataSet::allocate(segment, encoder, dummyPtrCreator,
+                                             rrset_soa_, ConstRRsetPtr()));
+    RdataSetPtr rdsetptr2(RdataSet::allocate(segment, encoder, dummyPtrCreator,
+                                             rrset_txt_, ConstRRsetPtr()));
     RdataSet::deallocate(segment, rdsetptr1);
     RdataSet::deallocate(segment, rdsetptr2);
     EXPECT_TRUE(segment.allMemoryDeallocated());

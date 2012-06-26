@@ -27,6 +27,7 @@
 
 #include <testutils/dnsmessage_test.h>
 
+#include <boost/bind.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include <gtest/gtest.h>
@@ -42,22 +43,34 @@ using experimental::internal::TreeNodeRRset;
 namespace {
 class TreeNodeRRsetTest : public::testing::Test {
 protected:
+    typedef experimental::RBTree<internal::RdataSet> DomainTree;
+    typedef experimental::RBNode<internal::RdataSet> DomainNode;
+
     TreeNodeRRsetTest() :
         tree_(segment_, true),
         rrset_soa_(textToRRset(". 86400 IN SOA "
                                "ns.example.org. admin.example.org. "
-                               "2012052901 7200 3600 2592000 1200")),
-        rdset_soa_(internal::RdataSet::allocate(segment_, encoder_, rrset_soa_,
-                                                ConstRRsetPtr()))
+                               "2012052901 7200 3600 2592000 1200"))
     {}
+    void SetUp() {
+        rdset_soa_ = internal::RdataSet::allocate(
+            segment_, encoder_,
+            boost::bind(&TreeNodeRRsetTest::nameCreator, this, _1),
+            rrset_soa_, ConstRRsetPtr());
+    }
     ~TreeNodeRRsetTest() {
         if (rdset_soa_) {
             internal::RdataSet::deallocate(segment_, rdset_soa_);
         }
     }
-
-    typedef experimental::RBTree<internal::RdataSet> DomainTree;
-    typedef experimental::RBNode<internal::RdataSet> DomainNode;
+    internal::DomainNodePtr
+    nameCreator(const Name* name) {
+        assert(name != NULL);
+        DomainNode* node = NULL;
+        tree_.insert(*name, &node);
+        assert(node != NULL);
+        return (internal::DomainNodePtr(node));
+    }
 
     MemorySegment segment_;
     internal::RdataEncoder encoder_;
@@ -69,7 +82,10 @@ protected:
 
 TEST_F(TreeNodeRRsetTest, construct) {
     DomainNode* node;
-    EXPECT_EQ(DomainTree::SUCCESS, tree_.insert(rrset_soa_->getName(), &node));
+    // as a side effect, "." node should have been created.
+    EXPECT_EQ(DomainTree::ALREADYEXISTS,
+              tree_.insert(rrset_soa_->getName(), &node));
+    EXPECT_TRUE(node->isEmpty());
     node->setData(rdset_soa_);
     TreeNodeRRset rrset(RRClass::IN(), *node, *rdset_soa_);
     rrset.toWire(renderer_);
@@ -83,6 +99,5 @@ TEST_F(TreeNodeRRsetTest, construct) {
     EXPECT_EQ("ns.example.org. admin.example.org. "
               "2012052901 7200 3600 2592000 1200",
               createRdata(RRType::SOA(), RRClass::IN(), b, 44)->toText());
-                             
 }
 } // end of unnamed namespace

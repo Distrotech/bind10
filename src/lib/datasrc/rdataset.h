@@ -32,6 +32,13 @@ struct RdataSet;
 typedef boost::interprocess::offset_ptr<RdataSet> RdataSetPtr;
 typedef boost::interprocess::offset_ptr<const RdataSet> ConstRdataSetPtr;
 
+// Ugly, but okay
+typedef boost::interprocess::offset_ptr<
+    experimental::RBNode<datasrc::internal::RdataSet> > DomainNodePtr;
+typedef boost::interprocess::offset_ptr<
+    experimental::RBNode<const datasrc::internal::RdataSet> >
+ConstDomainNodePtr;
+
 struct RdataSet {
     RdataSet(dns::RRType type, dns::RRTTL ttl, uint16_t n_rdata,
              bool with_sig);
@@ -44,6 +51,7 @@ struct RdataSet {
 
     static RdataSet* allocate(MemorySegment& segment,
                               RdataEncoder& encoder,
+                              RdataEncoder::NamePtrCreator name_creator,
                               dns::ConstRRsetPtr rrset,
                               dns::ConstRRsetPtr sig_rrset);
     static void deallocate(MemorySegment& segment, RdataSetPtr rdataset);
@@ -52,6 +60,20 @@ struct RdataSet {
             return (*reinterpret_cast<const uint16_t*>(this + 1));
         } else {
             return (num_rrs);
+        }
+    }
+    DomainNodePtr* getNameBuf() {
+        if (many_rrs == 1) {
+            return (reinterpret_cast<DomainNodePtr*>(this + 1) + 1);
+        } else {
+            return (reinterpret_cast<DomainNodePtr*>(this + 1));
+        }
+    }
+    const ConstDomainNodePtr* getNameBuf() const {
+        if (many_rrs == 1) {
+            return (reinterpret_cast<const ConstDomainNodePtr*>(this + 1) + 1);
+        } else {
+            return (reinterpret_cast<const ConstDomainNodePtr*>(this + 1));
         }
     }
     uint16_t* getLengthBuf() {

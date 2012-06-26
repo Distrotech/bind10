@@ -101,7 +101,7 @@ TreeNodeRRset::toWire(AbstractMessageRenderer& renderer) const {
     const size_t n_rdata = rdset_->getRdataCount();
     assert(n_rdata > 0);
     datasrc::internal::RdataIterator rd_it(
-        RRType(rdset_->type), n_rdata, rdset_->getLengthBuf(), NULL,
+        RRType(rdset_->type), n_rdata, rdset_->getNameBuf(), NULL, NULL,
         boost::bind(datasrc::internal::renderName, &renderer, _1, _2),
         boost::bind(datasrc::internal::renderData, &renderer, _1, _2));
     while (!rd_it.isLast()) {

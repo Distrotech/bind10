@@ -20,14 +20,25 @@
 #include <dns/rdata.h>
 #include <dns/rrtype.h>
 
+#include <datasrc/rbtree2.h> // ugly, but okay for experiments
+
 #include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/interprocess/offset_ptr.hpp>
 
 #include <stdint.h>
 
 namespace isc {
 namespace datasrc {
 namespace internal {
+
+struct RdataSet;
+
+typedef boost::interprocess::offset_ptr<
+    experimental::RBNode<datasrc::internal::RdataSet> > DomainNodePtr;
+typedef boost::interprocess::offset_ptr<
+    experimental::RBNode<const datasrc::internal::RdataSet> >
+ConstDomainNodePtr;
 
 struct RdataFieldSpec {
     enum Type { NAME = 0, FIXED_LEN_DATA, VAR_LEN_DATA };
@@ -58,6 +69,14 @@ public:
     // Return the size of storage for the entire data in the encoder.
     // only valid after construct.
     size_t getStorageLength() const;
+
+    // encode domain names.  return the total # of bytes used.
+    // only valid after construct.
+    // Ugly intrusion of modularity, but for experiments...
+    typedef boost::function<
+        DomainNodePtr(const dns::Name*)> NamePtrCreator;
+    size_t encodeNames(DomainNodePtr* ptr_buf,
+                       size_t n_bufs, NamePtrCreator creator_fn) const;
 
     // encode lengths of variable length fields.  return the total # of fields.
     // only valid after construct.
@@ -94,8 +113,8 @@ private:
 };
 
 void
-renderName(dns::AbstractMessageRenderer* renderer,
-           const uint8_t* encoded_ndata, unsigned int attributes);
+renderName(dns::AbstractMessageRenderer* renderer, ConstDomainNodePtr ptr_buf,
+           unsigned int attributes);
 
 void
 renderData(dns::AbstractMessageRenderer* renderer,
@@ -108,10 +127,11 @@ getEncodedDataSize(dns::RRType type, uint16_t n_rdata, const uint8_t* buf);
 // An iterator on the encoded list of RDATAs, maybe allowing random access too
 class RdataIterator {
 public:
-    typedef boost::function<void(const uint8_t*, unsigned int)> NameAction;
+    typedef boost::function<void(ConstDomainNodePtr, unsigned int)> NameAction;
     typedef boost::function<void(const uint8_t*, size_t)> DataAction;
 
     RdataIterator(dns::RRType type, uint16_t n_rdata,
+                  const ConstDomainNodePtr* names,
                   const uint16_t* lengths, const uint8_t* encoded_data,
                   NameAction name_action, DataAction data_action);
 
@@ -124,6 +144,8 @@ private:
     const struct RdataEncodeSpec* const encode_spec_;
     const size_t n_rdata_;
     size_t rdata_count_;
+    const ConstDomainNodePtr* const names_begin_;
+    const ConstDomainNodePtr* names_;
     const uint16_t* const lengths_begin_;
     const uint16_t* lengths_;
     const uint8_t* const data_begin_;

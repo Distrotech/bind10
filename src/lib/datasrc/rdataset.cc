@@ -19,6 +19,7 @@
 
 #include <datasrc/rdataset.h>
 #include <datasrc/memory_segment.h>
+#include <datasrc/memory_datasrc2.h>
 #include <datasrc/rdata_encoder.h>
 
 #include <boost/interprocess/offset_ptr.hpp>
@@ -41,6 +42,7 @@ RdataSet::RdataSet(dns::RRType type, dns::RRTTL ttl, uint16_t n_rdata,
 
 RdataSet*
 RdataSet::allocate(MemorySegment& segment, RdataEncoder& encoder,
+                   RdataEncoder::NamePtrCreator name_creator,
                    ConstRRsetPtr rrset, ConstRRsetPtr sig_rrset)
 {
     assert(!sig_rrset);         // for now not support sigs
@@ -59,18 +61,24 @@ RdataSet::allocate(MemorySegment& segment, RdataEncoder& encoder,
     assert(n_rdata <= 0xffff);
     encoder.construct(type);
 
-    const size_t data_size = encoder.getStorageLength() +
+    size_t data_size = encoder.getStorageLength() +
         ((n_rdata > 16383) ? 2 : 0); 
     void* region = segment.allocate(sizeof(RdataSet) + data_size);
     RdataSet* rdset = new(region) RdataSet(type, rrset->getTTL(), n_rdata,
                                            false);
-    uint16_t* lengths = rdset->getLengthBuf();
+    DomainNodePtr* names = rdset->getNameBuf();
+    const size_t n_names = encoder.encodeNames(names,
+                                               data_size /
+                                               sizeof(DomainNodePtr),
+                                               name_creator);
+    data_size -= n_names * sizeof(DomainNodePtr);
+    uint16_t* lengths = reinterpret_cast<uint16_t*>(names + n_names);
     const size_t n_lens = encoder.encodeLengths(lengths,
                                                 data_size / sizeof(uint16_t));
+    data_size -= n_lens * sizeof(uint16_t);
     uint8_t* data_buf = reinterpret_cast<uint8_t*>(lengths + n_lens);
-    const size_t dlen = encoder.encodeData(data_buf, data_size -
-                                           (n_lens * sizeof(uint16_t)));
-    assert(n_lens * sizeof(uint16_t) + dlen == data_size);
+    const size_t dlen = encoder.encodeData(data_buf, data_size);
+    assert(dlen == data_size);
 
     return (rdset);
 }

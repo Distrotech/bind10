@@ -114,6 +114,7 @@ public:
         FLAG_CALLBACK = 1, ///< Callback enabled. See \ref callback
         FLAG_BLACK = 0x00000002U, ///< Node color: on=black, off=red, internal.
         FLAG_ROOT =  0x00000004U, ///< Set iff the node is root of subtree.
+        FLAG_NULL =  0x00000008U, ///< Set iff the node is "null" (workaround)
 
         FLAG_USER1 = 0x00008000U, ///< Application specific flag
         FLAG_USER2 = 0x00004000U, ///< Application specific flag
@@ -168,7 +169,7 @@ public:
         const uint8_t* const op_end = offsetbuf + dns::Name::MAX_LABELS;
         uint8_t current_offset = 0;
         for (ConstRBNodePtr node = this;
-             node != NULL_NODE();
+             !node->isNULL();
              node = node->getUpperNode())
         {
             const size_t nlen = node->getNameDataLen();
@@ -222,6 +223,9 @@ public:
 
     /// whether this is the root node of a subtree.
     bool isRoot() const { return ((flags_ & FLAG_ROOT) != 0); }
+
+    /// whether this is the "null" node
+    bool isNULL() const { return ((flags_ & FLAG_NULL) != 0); }
     //@}
 
     /// \name Setter functions.
@@ -280,6 +284,14 @@ public:
             flags_ |= FLAG_ROOT;
         } else {
             flags_ &= ~FLAG_ROOT;
+        }
+    }
+    /// whether this is the NULL node.
+    void setNULLFlag(bool on) {
+        if (on) {
+            flags_ |= FLAG_NULL;
+        } else {
+            flags_ &= ~FLAG_NULL;
         }
     }
     //@}
@@ -485,7 +497,6 @@ RBNode<T>::RBNode() :
     parent_(NULL),
     left_(NULL),
     right_(NULL),
-    // dummy name, the value doesn't matter:
     down_(NULL),
     flags_(0),
     oldnamelen_(0),
@@ -497,6 +508,7 @@ RBNode<T>::RBNode() :
     left_ = this;
     right_ = this;
     down_ = this;
+    setNULLFlag(true);
 }
 
 template <typename T>

@@ -518,8 +518,8 @@ private:
     // type for each node.
     void
     getAdditionalForRdataset(const RdataSet& rdset,
-                             const vector<RRType>& requested_types,
-                             vector<ConstRRsetPtr>& result,
+                             const vector<RRType>& /*requested_types*/,
+                             vector<ConstRRsetPtr>& /*result*/,
                              ZoneFinder::FindOptions orig_options) const
     {
         ZoneFinder::FindOptions options = ZoneFinder::FIND_DEFAULT;
@@ -529,9 +529,12 @@ private:
 
         datasrc::internal::RdataIterator rd_it(
             RRType(rdset.type), rdset.getRdataCount(),
-            rdset.getLengthBuf(), NULL,
+            rdset.getNameBuf(), NULL, NULL,
+            NULL,
+#ifdef notyet
             boost::bind(&Context::findAdditional, this, &requested_types,
                         &result, options, _1, _2),
+#endif
             NULL);
         while (!rd_it.isLast()) {
             rd_it.action();
@@ -956,7 +959,7 @@ InMemoryZoneFinder::add(const ConstRRsetPtr& rrset, ZoneData& zone_data) {
 
     // Note: this is not exception safe.
     RdataSetPtr rdset = RdataSet::allocate(memory_segment_, rdata_encoder_,
-                                           rrset, ConstRRsetPtr());
+                                           NULL, rrset, ConstRRsetPtr());
     if (rdset_head) {
         // Append the new one at the end of list; normally in a zone file
         // minor records are placed later.

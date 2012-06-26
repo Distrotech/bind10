@@ -21,6 +21,8 @@
 #include <dns/rdata.h>
 
 #include <datasrc/rdata_encoder.h>
+#include <datasrc/rbtree2.h>
+#include <datasrc/rdataset.h>
 
 #include <boost/bind.hpp>
 #include <boost/static_assert.hpp>
@@ -251,7 +253,6 @@ RdataEncoder::construct(RRType type) {
         composer_->names_.begin();
     vector<pair<size_t, Name> >::const_iterator const it_name_end =
         composer_->names_.end();
-
     encode_spec_ = &getRdataEncodeSpec(type);
     if (n_data_ * encode_spec_->n_names != composer_->names_.size()) {
         isc_throw(Unexpected, "assumption failure: # of names mismatch for "
@@ -326,10 +327,28 @@ RdataEncoder::construct(RRType type) {
 
 size_t
 RdataEncoder::getStorageLength() const {
-    // In this implementation, it's total data len +
+    // In this implementation, it's other (non-name) data len +
+    // sizeof(offset pointer to tree node) * # of names +
     // sizeof(uint16_t) * # of variable-length data fields
     return (n_varlen_fields_ * sizeof(uint16_t) +
-            name_data_len_ + other_data_len_);
+            composer_->names_.size() * sizeof(DomainNodePtr) +
+            other_data_len_);
+}
+
+size_t
+RdataEncoder::encodeNames(DomainNodePtr* ptr_buf, size_t n_bufs,
+                          NamePtrCreator creator_fn) const
+{
+    assert(composer_->names_.size() <= n_bufs);
+    vector<pair<size_t, Name> >::const_iterator it_name =
+        composer_->names_.begin();
+    vector<pair<size_t, Name> >::const_iterator const it_name_end =
+        composer_->names_.end();
+    for (; it_name != it_name_end; ++it_name) {
+        DomainNodePtr ptr = creator_fn(&it_name->second);
+        *ptr_buf++ = ptr;
+    }
+    return (composer_->names_.size());
 }
 
 size_t
@@ -363,17 +382,12 @@ RdataEncoder::encodeLengths(uint16_t* field_buf, size_t n_bufs) const {
 
 size_t
 RdataEncoder::encodeData(uint8_t* const data_buf, size_t bufsize) const {
-    assert(name_data_len_ + other_data_len_ <= bufsize);
+    assert(other_data_len_ <= bufsize);
 
     vector<pair<const uint8_t*, size_t> >::const_iterator it_data =
         data_offsets_.begin();
     vector<pair<const uint8_t*, size_t> >::const_iterator const it_data_end =
         data_offsets_.end();
-    vector<pair<size_t, Name> >::const_iterator it_name =
-        composer_->names_.begin();
-    vector<pair<size_t, Name> >::const_iterator const it_name_end =
-        composer_->names_.end();
-
     vector<pair <const uint8_t*, size_t> >::const_iterator it_dataoff =
         data_offsets_.begin();
     vector<pair<const uint8_t*, size_t> >::const_iterator const
@@ -384,24 +398,8 @@ RdataEncoder::encodeData(uint8_t* const data_buf, size_t bufsize) const {
     for (size_t i = 0; i < n_data_; ++i) {
         for (size_t field = 0; field < encode_spec_->n_fields; ++field) {
             const RdataFieldSpec& field_spec = encode_spec_->field_spec[field];
-            if (field_spec.type == RdataFieldSpec::NAME) {
-                assert(it_name != it_name_end);
-                const LabelSequence seq(it_name->second);
-                size_t nlen;
-                const uint8_t* np = seq.getData(&nlen);
-                size_t olen;
-                const uint8_t* op = seq.getOffsetData(&olen,
-                                                      noffset_placeholder_);
-                assert(dp + nlen + olen + 2 <= dp_end);
-                *dp++ = nlen;
-                *dp++ = olen;
-                memcpy(dp, np, nlen);
-                dp += nlen;
-                memcpy(dp, op, olen);
-                dp += olen;
-
-                ++it_name;
-            } else {            // fixed or variable size len
+            if (field_spec.type != RdataFieldSpec::NAME) {
+                // fixed or variable size len
                 assert(it_data != it_data_end);
                 const size_t len = it_data->second;
                 assert(dp + len <= dp_end);
@@ -412,18 +410,19 @@ RdataEncoder::encodeData(uint8_t* const data_buf, size_t bufsize) const {
         }
     }
     assert(it_data == it_data_end);
-    assert(it_name == it_name_end);
     return (dp - data_buf);
 }
 
 void
-renderName(dns::AbstractMessageRenderer* renderer,
-           const uint8_t* encoded_ndata, unsigned int attributes)
+renderName(AbstractMessageRenderer* renderer, ConstDomainNodePtr ptr_buf,
+           unsigned int attributes)
 {
-    const size_t nlen = encoded_ndata[0];
-    const size_t olen = encoded_ndata[1];
-    renderer->writeName(LabelSequence(encoded_ndata + 2,
-                                      encoded_ndata + 2 + nlen, olen),
+    uint8_t namebuf[Name::MAX_WIRE];
+    uint8_t offsetbuf[Name::MAX_LABELS];
+
+    const LabelSequence seq(ptr_buf->getAbsoluteLabelSequence(namebuf,
+                                                              offsetbuf));
+    renderer->writeName(seq,
                         (attributes & RdataFieldSpec::COMPRESSIBLE_NAME) != 0);
 }
 
@@ -436,36 +435,22 @@ renderData(dns::AbstractMessageRenderer* renderer,
 
 namespace {
 void
-addNameLen(size_t* total, const uint8_t* encoded_ndata, unsigned int) {
-    const size_t nlen = encoded_ndata[0];
-    const size_t olen = encoded_ndata[1];
-    *total += (2 + nlen + olen);
-}
-
-void
 addDataLen(size_t* total, const uint8_t*, size_t len) {
     *total += len;
 }
-}
 
-size_t
-getEncodedDataSize(dns::RRType type, uint16_t n_rdata, const uint8_t* buf) {
-    const RdataEncodeSpec& encode_spec(getRdataEncodeSpec(type));
-    const size_t n_len_fields = encode_spec.n_varlens * n_rdata;
-
-    size_t data_len = 0;
-    RdataIterator rd_it(type, n_rdata,
-                        reinterpret_cast<const uint16_t*>(buf),
-                        buf + n_len_fields * sizeof(uint16_t),
-                        boost::bind(addNameLen, &data_len, _1, _2),
-                        boost::bind(addDataLen, &data_len, _1, _2));
-    while (!rd_it.isLast()) {
-        rd_it.action();
+const uint16_t*
+getLengthsPos(const RdataEncodeSpec& encode_spec,
+              const ConstDomainNodePtr* names, const uint16_t* lengths,
+              uint16_t n_rdata)
+{
+    if (lengths != NULL) {
+        return (lengths);
     }
-    return (data_len + n_len_fields * sizeof(uint16_t));
+    const size_t n_len_fields = encode_spec.n_names * n_rdata;
+    return (reinterpret_cast<const uint16_t*>(names + n_len_fields));
 }
 
-namespace {
 const uint8_t*
 getDataPos(const RdataEncodeSpec& encode_spec,
            const uint16_t* lengths, const uint8_t* data, uint16_t n_rdata)
@@ -478,32 +463,52 @@ getDataPos(const RdataEncodeSpec& encode_spec,
 }
 }
 
+size_t
+getEncodedDataSize(dns::RRType type, uint16_t n_rdata, const uint8_t* buf) {
+    const RdataEncodeSpec& encode_spec(getRdataEncodeSpec(type));
+    const size_t n_names = encode_spec.n_names * n_rdata;
+    const size_t n_len_fields = encode_spec.n_varlens * n_rdata;
+
+    size_t data_len = 0;
+    const ConstDomainNodePtr* const np =
+        reinterpret_cast<const ConstDomainNodePtr*>(buf);
+    RdataIterator rd_it(type, n_rdata, np, NULL, NULL, NULL,
+                        boost::bind(addDataLen, &data_len, _1, _2));
+    while (!rd_it.isLast()) {
+        rd_it.action();
+    }
+    return (data_len + n_names * sizeof(ConstDomainNodePtr) +
+            n_len_fields * sizeof(uint16_t));
+}
+
 RdataIterator::RdataIterator(RRType type, uint16_t n_rdata,
+                             const ConstDomainNodePtr* names,
                              const uint16_t* lengths,
                              const uint8_t* encoded_data,
                              NameAction name_action, DataAction data_action) :
     encode_spec_(&getRdataEncodeSpec(type)),
-    n_rdata_(n_rdata), rdata_count_(0), lengths_begin_(lengths),
-    lengths_(lengths),
-    data_begin_(getDataPos(*encode_spec_, lengths, encoded_data, n_rdata)),
+    n_rdata_(n_rdata), rdata_count_(0),
+    names_begin_(names), names_(names),
+    lengths_begin_(getLengthsPos(*encode_spec_, names_, lengths, n_rdata)),
+    lengths_(lengths_begin_),
+    data_begin_(getDataPos(*encode_spec_, lengths_, encoded_data, n_rdata)),
     data_(data_begin_), name_action_(name_action), data_action_(data_action)
 {
 }
 
 void
 RdataIterator::action() {
+    const ConstDomainNodePtr* np = names_;
     const uint8_t* dp = data_;
 
     size_t lcount = 0;          // counter for lengths
     for (size_t field = 0; field < encode_spec_->n_fields; ++field) {
         const RdataFieldSpec& field_spec = encode_spec_->field_spec[field];
         if (field_spec.type == RdataFieldSpec::NAME) {
-            const size_t nlen = dp[0];
-            const size_t olen = dp[1];
             if (name_action_) {
-                name_action_(dp, field_spec.attributes);
+                name_action_(*np, field_spec.attributes);
             }
-            dp += 2 + nlen + olen;
+            ++np;
         } else {
             const size_t len =
                 (field_spec.type == RdataFieldSpec::FIXED_LEN_DATA) ?
@@ -517,6 +522,7 @@ RdataIterator::action() {
 
     rdata_count_ += 1;
     lengths_ += lcount;
+    names_ = np;
     data_ = dp;
 }
 
