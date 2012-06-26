@@ -1,4 +1,8 @@
-SUBDIRS = doc src tests
+ACLOCAL_AMFLAGS = -I m4macros ${ACLOCAL_FLAGS}
+# ^^^^^^^^ This has to be the first line and cannot come later in this
+# Makefile.am due to some bork in some versions of autotools.
+
+SUBDIRS = compatcheck doc src tests
 USE_LCOV=@USE_LCOV@
 LCOV=@LCOV@
 GENHTML=@GENHTML@
@@ -11,6 +15,26 @@ DISTCHECK_CONFIGURE_FLAGS = --disable-install-configurations
 
 # Use same --with-gtest flag if set
 DISTCHECK_CONFIGURE_FLAGS += $(DISTCHECK_GTEST_CONFIGURE_FLAG)
+
+dist_doc_DATA = AUTHORS COPYING ChangeLog README
+
+.PHONY: check-valgrind check-valgrind-suppress
+
+check-valgrind:
+if HAVE_VALGRIND
+	@VALGRIND_COMMAND="$(VALGRIND) -q --gen-suppressions=all --track-origins=yes --num-callers=48 --leak-check=full --fullpath-after=" \
+	make -C $(abs_top_builddir) check
+else
+	@echo "*** Valgrind is required for check-valgrind ***"; exit 1;
+endif
+
+check-valgrind-suppress:
+if HAVE_VALGRIND
+	@VALGRIND_COMMAND="$(VALGRIND) -q --gen-suppressions=all --error-exitcode=1 --suppressions=$(abs_top_srcdir)/src/valgrind-suppressions --suppressions=$(abs_top_srcdir)/src/valgrind-suppressions.revisit --num-callers=48 --leak-check=full --fullpath-after=" \
+	make -C $(abs_top_builddir) check
+else
+	@echo "*** Valgrind is required for check-valgrind-suppress ***"; exit 1;
+endif
 
 clean-cpp-coverage:
 	@if [ $(USE_LCOV) = yes ] ; then \
@@ -79,7 +103,7 @@ report-coverage: report-cpp-coverage report-python-coverage
 
 # for static C++ check using cppcheck (when available)
 cppcheck:
-	cppcheck --enable=all --suppressions src/cppcheck-suppress.lst \
+	cppcheck --enable=all --suppressions src/cppcheck-suppress.lst --inline-suppr \
 		--quiet --error-exitcode=1 \
 		--template '{file}:{line}: check_fail: {message} ({severity},{id})' \
 		src
@@ -398,3 +422,8 @@ EXTRA_DIST += ext/asio/asio/system_error.hpp
 EXTRA_DIST += ext/asio/asio/deadline_timer.hpp
 EXTRA_DIST += ext/asio/asio/stream_socket_service.hpp
 EXTRA_DIST += ext/coroutine/coroutine.h
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = dns++.pc
+
+CLEANFILES = $(abs_top_builddir)/logger_lockfile

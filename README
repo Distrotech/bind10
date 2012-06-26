@@ -2,17 +2,14 @@
 This is the source for the development version of BIND 10.
 
 BIND is the popular implementation of a DNS server, developer
-interfaces, and DNS tools. BIND 10 is a rewrite of BIND 9. BIND 10
-is written in C++ and Python and provides a modular environment
-for serving, maintaining, and developing DNS.
+interfaces, and DNS tools. BIND 10 is a rewrite of BIND 9 and ISC
+DHCP. BIND 10 is written in C++ and Python and provides a modular
+environment for serving, maintaining, and developing DNS and DHCP.
 
 BIND10-devel is new development leading up to the production
 BIND 10 release. It contains prototype code and experimental
 interfaces. Nevertheless it is ready to use now for testing the
-new BIND 10 infrastructure ideas. The Year 3 goals of the five
-year plan are described here:
-
-        http://bind10.isc.org/wiki/Year3Goals
+new BIND 10 infrastructure ideas.
 
 This release includes the bind10 master process, b10-msgq message
 bus, b10-auth authoritative DNS server (with SQLite3 and in-memory
@@ -22,8 +19,9 @@ AXFR inbound service, b10-xfrout outgoing AXFR service, b10-zonemgr
 secondary manager, b10-stats statistics collection and reporting
 daemon, b10-stats-httpd for HTTP access to XML-formatted stats,
 b10-host DNS lookup utility, and a new libdns++ library for C++
-with a python wrapper. BIND 10 also provides an experimental DHCPv6
-echo server, b10-dhcp6.
+with a python wrapper. BIND 10 also provides experimental DHCPv4
+and DHCPv6 servers, b10-dhcp4 and b10-dhcp6, a portable DHCP library,
+libdhcp++, and a DHCP benchmarking tool, perfdhcp.
 
 Documentation is included with the source. See doc/guide/bind10-guide.txt
 (or bind10-guide.html) for installation instructions.  The
