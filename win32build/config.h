@@ -74,3 +74,5 @@ typedef int ssize_t;
 #ifdef _RESTORE_WSA_
 #undef _WINSOCKAPI_
 #endif
+
+#pragma warning(disable: 4512)
