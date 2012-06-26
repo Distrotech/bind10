@@ -159,6 +159,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\util\unittests\resource.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\util\unittests\run_all.cc"
 				>
 			</File>
@@ -182,6 +186,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\util\unittests\resolver.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\util\unittests\resource.h"
 				>
 			</File>
 			<File

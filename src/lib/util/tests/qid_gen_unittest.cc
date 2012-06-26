@@ -30,8 +30,6 @@
 /// \brief Test of QidGenerator
 ///
 
-#include <stdint.h>
-
 #include <gtest/gtest.h>
 
 #include <util/random/qid_gen.h>

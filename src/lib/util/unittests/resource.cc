@@ -29,7 +29,7 @@ namespace unittests {
 
 void
 dontCreateCoreDumps() {
-#ifndef_WIN32
+#ifndef _WIN32
     const rlimit core_limit = {0, 0};
 
     EXPECT_EQ(setrlimit(RLIMIT_CORE, &core_limit), 0);
