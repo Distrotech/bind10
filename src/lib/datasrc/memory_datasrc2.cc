@@ -30,12 +30,15 @@
 #include <boost/interprocess/offset_ptr.hpp>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
+#include <boost/shared_ptr.hpp>
 
+#include <exception>
 #include <utility>
 
 using namespace std;
 using namespace isc::dns;
 using namespace isc::dns::rdata;
+using boost::shared_ptr;
 
 namespace isc {
 namespace datasrc {
@@ -427,6 +430,21 @@ InMemoryZoneFinder::ZoneData::findNode(const LabelSequence& labels,
 /// Searching Zones
 ///
 
+namespace {
+shared_ptr<TreeNodeRRset>
+createRRsetPtr(boost::object_pool<TreeNodeRRset>* pool, RRClass rrclass,
+               const DomainNode& node, const RdataSet& rdset)
+{
+    TreeNodeRRset* p = pool->construct(rrclass, node, rdset);
+    if (p == NULL) {
+        throw bad_alloc();
+    }
+    return (shared_ptr<TreeNodeRRset>(
+                p, boost::bind(&boost::object_pool<TreeNodeRRset>::destroy,
+                               pool, _1)));
+}
+}
+
 // Specialized version of ZoneFinder::ResultContext, which specifically
 // holds rrset in the form of RBNodeRRset.
 struct InMemoryZoneFinder::TreeNodeResultContext {
@@ -552,9 +570,9 @@ private:
                      it != it_end;
                      ++it) {
                     if (RRType(rdset->type) == (*it)) {
-                        ConstTreeNodeRRsetPtr rrset(
-                            new TreeNodeRRset(finder_.zone_class_, *node,
-                                              *rdset));
+                        ConstTreeNodeRRsetPtr rrset =
+                            createRRsetPtr(&finder_.rrset_pool_,
+                                           finder_.zone_class_, *node, *rdset);
                         result->push_back(rrset);
                     }
                 }
@@ -589,9 +607,8 @@ InMemoryZoneFinder::createFindResult(Result code, RRsetPair rrset,
     }
     if (rrset.first != NULL && rrset.second != NULL) {
         return (TreeNodeResultContext(
-                    code, ConstTreeNodeRRsetPtr(
-                        new TreeNodeRRset(zone_class_, *rrset.first,
-                                          *rrset.second)), flags,
+                    code, createRRsetPtr(&rrset_pool_, zone_class_,
+                                         *rrset.first, *rrset.second), flags,
                     rrset.first, *zone_data_));
     }
     return (TreeNodeResultContext(code, ConstTreeNodeRRsetPtr(), flags,
@@ -661,9 +678,8 @@ InMemoryZoneFinder::find(
     if (target != NULL) {
         // Empty domain will be handled as NXRRSET by normal processing
         for (found = node->getData(); found; found = found->next) {
-            target->push_back(ConstTreeNodeRRsetPtr(
-                                  new TreeNodeRRset(zone_class_, *node,
-                                                    *found)));
+            target->push_back(createRRsetPtr(&rrset_pool_, zone_class_, *node,
+                                             *found));
         }
         LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_ANY_SUCCESS).
             arg(name);

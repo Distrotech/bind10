@@ -20,12 +20,14 @@
 #include <datasrc/client.h>
 #include <datasrc/memory_segment.h>
 #include <datasrc/rbtree2.h>
+#include <datasrc/treenode_rrset.h>
 #include <datasrc/rdataset.h>
 #include <datasrc/rdata_encoder.h>
 
 #include <boost/interprocess/offset_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/function.hpp>
+#include <boost/pool/object_pool.hpp>
 
 #include <string>
 
@@ -145,6 +147,7 @@ private:
     datasrc::internal::RdataEncoder rdata_encoder_;
 
     ZoneData* zone_data_;
+    mutable boost::object_pool<internal::TreeNodeRRset> rrset_pool_;
 };
 
 
