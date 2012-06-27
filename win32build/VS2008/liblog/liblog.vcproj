@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\log;..\..\..\..\log4cplus\include;&quot;$(BOOST)&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;TOP_BUILDDIR=\&quot;$(BIND10HOME)\&quot;"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -106,7 +106,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\log;..\..\..\..\log4cplus\include;&quot;$(BOOST)&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;TOP_BUILDDIR=\&quot;$(BIND10HOME)\&quot;"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -226,6 +226,10 @@
 			>
 			<File
 				RelativePath="..\..\..\src\lib\log\dummylog.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\log\log_dbglevels.h"
 				>
 			</File>
 			<File

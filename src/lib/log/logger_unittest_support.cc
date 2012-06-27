@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
 #include <iostream>
 #include <algorithm>
 #include <string>
@@ -165,7 +167,12 @@ void initLogger(isc::log::Severity severity, int dbglevel) {
     const char* localfile = getenv("B10_LOGGER_LOCALMSG");
 
     // Set a directory for creating lockfiles when running tests
+#ifdef _WIN32
+    string vv("B10_LOCKFILE_DIR_FROM_BUILD" TOP_BUILDDIR);
+    _putenv(vv.c_str());
+#else
     setenv("B10_LOCKFILE_DIR_FROM_BUILD", TOP_BUILDDIR, 1);
+#endif
 
     // Initialize logging
     initLogger(root, isc::log::DEBUG, isc::log::MAX_DEBUG_LEVEL, localfile);
