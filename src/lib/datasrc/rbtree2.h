@@ -226,6 +226,11 @@ public:
     /// whether this is the root node of a subtree.
     bool isRoot() const { return ((flags_ & FLAG_ROOT) != 0); }
 
+    bool isAbsolute() const {
+        // Absolute label sequence should end with a 0-length label
+        return (getNameData()[getOffsetData()[getOffsetDataLen() - 1]] == 0);
+    }
+
     /// whether this is the "null" node
     bool isNULL() const { return ((flags_ & FLAG_NULL) != 0); }
     //@}
@@ -336,6 +341,7 @@ private:
     // Return the node in the level above the argument node that points
     // to the level the argument node is in.  If the argument node is in
     // the top level, the return value is NULL Node.
+public: // this version now needs to be public for rendering optimization
     const RBNode* getUpperNode() const {
 	const RBNode* root;
 	for (root = this; !root->isRoot(); root = root->getParent()) {
@@ -343,6 +349,7 @@ private:
         }
 	return (root->getParent());
     }
+private:
     RBNode* getUpperNode() {
 	RBNode* root;
 	for (root = this; !root->isRoot(); root = root->getParent()) {

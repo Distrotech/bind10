@@ -23,6 +23,7 @@
 #include <datasrc/treenode_rrset.h>
 #include <datasrc/rdataset.h>
 #include <datasrc/rdata_encoder.h>
+#include <datasrc/compress_table.h>
 
 #include <boost/interprocess/offset_ptr.hpp>
 #include <boost/noncopyable.hpp>
@@ -35,7 +36,7 @@ namespace isc {
 namespace dns {
 class Name;
 class RRsetList;
-};
+}
 
 namespace datasrc {
 namespace experimental {
@@ -113,6 +114,11 @@ public:
 
     void load(const std::string& filename);
     void load(ZoneIterator& iterator);
+    void setOffsetTable(datasrc::experimental::internal::CompressOffsetTable*
+                        offset_table)
+    {
+        offset_table_ = offset_table;
+    }
 
 private:
     struct ZoneData;
@@ -150,6 +156,10 @@ private:
 
     ZoneData* zone_data_;
     mutable boost::object_pool<internal::TreeNodeRRset> rrset_pool_;
+
+    // Ugly, but this is the most convenient place to hold it.
+    mutable
+    datasrc::experimental::internal::CompressOffsetTable* offset_table_;
 };
 
 
@@ -175,6 +185,9 @@ private:
     // directly any more (it should be handled through DataSourceClient)?
     class InMemoryClientImpl;
     InMemoryClientImpl* impl_;
+
+    // Ugly, but...see above
+    mutable datasrc::experimental::internal::CompressOffsetTable offset_table_;
 };
 }
 }

@@ -32,6 +32,7 @@ namespace isc {
 namespace datasrc {
 namespace experimental {
 namespace internal {
+class CompressOffsetTable;
 
 class TreeNodeRRset : public isc::dns::AbstractRRset, boost::noncopyable {
 
@@ -106,10 +107,16 @@ public:
         return (*rdset_);
     }
 
+    // We use this as boost::object_pool only allows up to 3 ctor params
+    void setCompressTable(CompressOffsetTable* offset_table) {
+        offset_table_ = offset_table;
+    }
+
 private:
     const dns::RRClass rrclass_;
     const RBNode<datasrc::internal::RdataSet>* node_;
     const datasrc::internal::RdataSet* rdset_;
+    CompressOffsetTable* offset_table_;
 
     mutable uint8_t namebuf_[dns::Name::MAX_WIRE];
     mutable uint8_t offsetbuf_[dns::Name::MAX_LABELS];

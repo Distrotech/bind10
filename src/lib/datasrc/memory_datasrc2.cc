@@ -439,12 +439,14 @@ namespace {
 shared_ptr<TreeNodeRRset>
 createRRsetPtr(boost::object_pool<TreeNodeRRset>* pool, RRClass rrclass,
                const RBNode<datasrc::internal::RdataSet>& node,
-               const RdataSet& rdset)
+               const RdataSet& rdset,
+               internal::CompressOffsetTable* offset_table)
 {
     TreeNodeRRset* p = pool->construct(rrclass, node, rdset);
     if (p == NULL) {
         throw bad_alloc();
     }
+    p->setCompressTable(offset_table);
     return (shared_ptr<TreeNodeRRset>(
                 p, boost::bind(&boost::object_pool<TreeNodeRRset>::destroy,
                                pool, _1)));
@@ -556,9 +558,9 @@ private:
             return;
         }
         // Note: ignore corner case conditions like wildcard or GLUE_OK or not
-        for (ConstRdataSetPtr rdset = node->getData();
+        for (const RdataSet* rdset = node->getData().get();
              rdset;
-             rdset = rdset->next)
+             rdset = rdset->next.get())
         {
             const vector<RRType>::const_iterator it_end =
                 requested_types->end();
@@ -569,7 +571,8 @@ private:
                 if (RRType(rdset->type) == (*it)) {
                     ConstTreeNodeRRsetPtr rrset =
                         createRRsetPtr(&finder_.rrset_pool_,
-                                       finder_.zone_class_, *node, *rdset);
+                                       finder_.zone_class_, *node, *rdset,
+                                       finder_.offset_table_);
                     result->push_back(rrset);
                 }
             }
@@ -604,7 +607,8 @@ InMemoryZoneFinder::createFindResult(Result code, RRsetPair rrset,
     if (rrset.first != NULL && rrset.second != NULL) {
         return (TreeNodeResultContext(
                     code, createRRsetPtr(&rrset_pool_, zone_class_,
-                                         *rrset.first, *rrset.second), flags,
+                                         *rrset.first, *rrset.second,
+                                         offset_table_), flags,
                     rrset.first, *zone_data_));
     }
     return (TreeNodeResultContext(code, ConstTreeNodeRRsetPtr(), flags,
@@ -678,7 +682,7 @@ InMemoryZoneFinder::find(
              found = found->next.get())
         {
             target->push_back(createRRsetPtr(&rrset_pool_, zone_class_, *node,
-                                             *found));
+                                             *found, offset_table_));
         }
         LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_ANY_SUCCESS).
             arg(name);
@@ -1211,6 +1215,10 @@ InMemoryClient::addZone(ZoneFinderPtr zone_finder) {
     LOG_DEBUG(logger, DBG_TRACE_BASIC, DATASRC_MEM_ADD_ZONE).
         arg(zone_finder->getOrigin()).arg(zone_finder->getClass().toText());
 
+    // XXX: quick hack
+    dynamic_cast<InMemoryZoneFinder&>(*zone_finder).setOffsetTable(
+        &offset_table_);
+
     const result::Result result = impl_->zone_table.addZone(zone_finder);
     if (result == result::SUCCESS) {
         ++impl_->zone_count;
@@ -1222,6 +1230,8 @@ InMemoryClient::FindResult
 InMemoryClient::findZone(const isc::dns::Name& name) const {
     LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_FIND_ZONE).arg(name);
     ZoneTable::FindResult result(impl_->zone_table.findZone(name));
+    // ugly, but for quick experiment it's just okay to clear the table here.
+    offset_table_.clear();
     return (FindResult(result.code, result.zone));
 }
 

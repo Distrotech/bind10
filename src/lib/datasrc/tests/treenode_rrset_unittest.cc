@@ -24,6 +24,7 @@
 #include <datasrc/rbtree2.h>
 #include <datasrc/rdataset.h>
 #include <datasrc/treenode_rrset.h>
+#include <datasrc/compress_table.h>
 
 #include <testutils/dnsmessage_test.h>
 
@@ -39,6 +40,7 @@ using namespace isc::dns;
 using namespace isc::dns::rdata;
 using namespace isc::datasrc;
 using experimental::internal::TreeNodeRRset;
+using experimental::internal::CompressOffsetTable;
 
 namespace {
 class TreeNodeRRsetTest : public::testing::Test {
@@ -72,6 +74,7 @@ protected:
         return (internal::DomainNodePtr(node));
     }
 
+    CompressOffsetTable offset_table_;
     MemorySegment segment_;
     internal::RdataEncoder encoder_;
     DomainTree tree_;
@@ -88,6 +91,7 @@ TEST_F(TreeNodeRRsetTest, construct) {
     EXPECT_TRUE(node->isEmpty());
     node->setData(rdset_soa_);
     TreeNodeRRset rrset(RRClass::IN(), *node, *rdset_soa_);
+    rrset.setCompressTable(&offset_table_);
     rrset.toWire(renderer_);
 
     isc::util::InputBuffer b(renderer_.getData(), renderer_.getLength());

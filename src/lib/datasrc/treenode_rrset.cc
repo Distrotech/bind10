@@ -24,7 +24,9 @@
 
 #include <datasrc/rdataset.h>
 #include <datasrc/memory_segment.h>
+#include <datasrc/memory_datasrc2.h>
 #include <datasrc/treenode_rrset.h>
+#include <datasrc/compress_table.h>
 
 #include <boost/bind.hpp>
 #include <boost/interprocess/offset_ptr.hpp>
@@ -38,11 +40,14 @@ namespace isc {
 namespace datasrc {
 namespace experimental {
 namespace internal {
+class CompressOffsetTable;
+
 TreeNodeRRset::TreeNodeRRset(
     RRClass rrclass,
     const RBNode<datasrc::internal::RdataSet>& node,
     const datasrc::internal::RdataSet& rdset) :
-    rrclass_(rrclass), node_(&node), rdset_(&rdset)
+    rrclass_(rrclass), node_(&node), rdset_(&rdset),
+    offset_table_(NULL)
 {
 }
 
@@ -91,6 +96,41 @@ TreeNodeRRset::toText() const {
     return ("<not implemented>\n");
 }
 
+void
+renderName(AbstractMessageRenderer* renderer,
+           CompressOffsetTable* offset_table, const DomainNode* node,
+           unsigned int attributes)
+{
+    size_t nlen;
+    const bool compressible =
+        ((attributes &
+          datasrc::internal::RdataFieldSpec::COMPRESSIBLE_NAME) != 0); 
+
+    uint16_t offset = CompressOffsetTable::OFFSET_NOTFOUND;
+    while (!node->isAbsolute() &&
+           ((offset = offset_table->find(node)) ==
+            CompressOffsetTable::OFFSET_NOTFOUND || !compressible))
+    {
+        if (offset == CompressOffsetTable::OFFSET_NOTFOUND) {
+            offset_table->insert(node, renderer->getLength());
+        }
+        const uint8_t* np = node->getLabelSequence().getData(&nlen);
+        renderer->writeData(np, nlen);
+        node = node->getUpperNode();
+    }
+    if (node->isAbsolute()) {
+        const uint8_t* np = node->getLabelSequence().getData(&nlen);
+        renderer->writeData(np, nlen);
+        if (nlen > 1) {
+            offset_table->insert(node, renderer->getLength());
+        }
+    } else {
+        assert(compressible);
+        assert(offset < Name::COMPRESS_POINTER_MARK16);
+        renderer->writeUint16(Name::COMPRESS_POINTER_MARK16 | offset);
+    }
+}
+
 unsigned int
 TreeNodeRRset::toWire(AbstractMessageRenderer& renderer) const {
     unsigned int n = 0;
@@ -102,13 +142,14 @@ TreeNodeRRset::toWire(AbstractMessageRenderer& renderer) const {
     assert(n_rdata > 0);
     datasrc::internal::RdataIterator rd_it(
         RRType(rdset_->type), n_rdata, rdset_->getNameBuf(), NULL, NULL,
-        boost::bind(datasrc::internal::renderName, &renderer, _1, _2),
+        boost::bind(renderName, &renderer, offset_table_, _1, _2),
         boost::bind(datasrc::internal::renderData, &renderer, _1, _2));
     while (!rd_it.isLast()) {
         const size_t pos0 = renderer.getLength();
         assert(pos0 < 65536);
 
-        renderer.writeName(owner_seq);
+        renderName(&renderer, offset_table_, node_,
+                   datasrc::internal::RdataFieldSpec::COMPRESSIBLE_NAME);
         renderer.writeUint16(rdset_->type);
         rrclass_.toWire(renderer);
         renderer.writeData(&rdset_->ttl, sizeof(rdset_->ttl));
