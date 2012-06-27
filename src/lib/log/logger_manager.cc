@@ -28,6 +28,7 @@
 #include <log/message_initializer.h>
 #include <log/message_reader.h>
 #include <log/message_types.h>
+#include "util/interprocess_sync_null.h"
 
 using namespace std;
 
@@ -95,6 +96,10 @@ void
 LoggerManager::init(const std::string& root, isc::log::Severity severity,
                     int dbglevel, const char* file)
 {
+    // Load in the messages declared in the program and registered by
+    // statically-declared MessageInitializer objects.
+    MessageInitializer::loadDictionary();
+
     // Save name, severity and debug level for later.  No need to save the
     // file name as once the local message file is read the messages will
     // not be lost.
@@ -144,6 +149,13 @@ LoggerManager::readLocalMessageFile(const char* file) {
 
     MessageDictionary& dictionary = MessageDictionary::globalDictionary();
     MessageReader reader(&dictionary);
+
+    // Turn off use of any lock files. This is because this logger can
+    // be used by standalone programs which may not have write access to
+    // the local state directory (to create lock files). So we switch to
+    // using a null interprocess sync object here.
+    logger.setInterprocessSync(new isc::util::InterprocessSyncNull("logger"));
+
     try {
 
         logger.info(LOG_READING_LOCAL_FILE).arg(file);
@@ -167,7 +179,7 @@ LoggerManager::readLocalMessageFile(const char* file) {
         // Log the variable number of arguments.  The actual message will be
         // logged when the error_message variable is destroyed.
         Formatter<isc::log::Logger> error_message = logger.error(ident);
-        for (unsigned int i = 0; i < args.size(); ++i) {
+        for (vector<string>::size_type i = 0; i < args.size(); ++i) {
             error_message = error_message.arg(args[i]);
         }
     }
