@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="liblog_tests"
-	ProjectGUID="{9437FF4D-3CCE-45F1-A248-6B713FBF0A5D}"
-	RootNamespace="liblog_tests"
+	Name="liblog_i2utests"
+	ProjectGUID="{2A91C578-0DDA-4957-958D-28AD11266275}"
+	RootNamespace="liblog_i2utests"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -25,7 +25,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd ..\..\..\src\lib\log\tests&#x0D;&#x0A;copy tempdir.h.win32 tempdir.h&#x0D;&#x0A;..\..\..\..\win32build\VS2008\liblog_compiler\$(ConfigurationName)\message.exe log_test_messages.mes"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,8 +41,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\log;..\..\..\..\log4cplus\include;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;"
-				PreprocessorDefinitions="BIND10HOME=\&quot;$(BIND10HOME)\&quot;"
+				AdditionalIncludeDirectories="..\..;..\..\..\src\lib;..\..\..\..\log4cplus\include;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -62,9 +61,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
 				AdditionalDependencies="libexceptions.lib libutil.lib libutil_unittests.lib liblog.lib log4cplusSD.lib gtestd.lib"
-				OutputFile="$(OutDir)\run_unittests.exe"
+				OutputFile="$(OutDir)\initializer_unittests_2.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
@@ -103,7 +101,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd ..\..\..\src\lib\log\tests&#x0D;&#x0A;copy tempdir.h.win32 tempdir.h&#x0D;&#x0A;..\..\..\..\win32build\VS2008\liblog_compiler\$(ConfigurationName)\message.exe log_test_messages.mes"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -121,8 +118,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\log;..\..\..\..\log4cplus\include;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;"
-				PreprocessorDefinitions="NO_EXPECT_DEATH;BIND10HOME=\&quot;$(BIND10HOME)\&quot;"
+				AdditionalIncludeDirectories="..\..;..\..\..\src\lib;..\..\..\..\log4cplus\include;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;NO_EXPECT_DEATH"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -140,9 +137,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
 				AdditionalDependencies="libexceptions.lib libutil.lib libutil_unittests.lib liblog.lib log4cplusS.lib gtest.lib"
-				OutputFile="$(OutDir)\run_unittests.exe"
+				OutputFile="$(OutDir)\initializer_unittests_2.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
@@ -183,55 +179,11 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\..\src\lib\log\tests\log_formatter_unittest.cc"
+				RelativePath="..\..\..\src\lib\log\tests\message_initializer_2_unittest.cc"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\lib\log\tests\log_test_messages.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\log\tests\logger_level_impl_unittest.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\log\tests\logger_level_unittest.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\log\tests\logger_manager_unittest.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\log\tests\logger_name_unittest.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\log\tests\logger_specification_unittest.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\log\tests\logger_support_unittest.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\log\tests\logger_unittest.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\log\tests\message_dictionary_unittest.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\log\tests\message_reader_unittest.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\log\output_option.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\log\tests\run_unittests.cc"
+				RelativePath="..\..\..\src\lib\log\tests\run_initializer_unittests.cc"
 				>
 			</File>
 		</Filter>
@@ -240,10 +192,6 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath="..\..\..\src\lib\log\tests\log_test_messages.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

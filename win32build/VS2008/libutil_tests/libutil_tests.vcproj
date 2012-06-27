@@ -120,7 +120,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\exceptions;..\..\..\src\lib\utils;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;TEST_DATA_TOPBUILDDIR=\&quot;$(BIND10HOME)\&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;NO_EXPECT_DEATH;TEST_DATA_TOPBUILDDIR=\&quot;$(BIND10HOME)\&quot;"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"

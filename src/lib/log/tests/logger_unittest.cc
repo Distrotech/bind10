@@ -372,7 +372,7 @@ TEST_F(LoggerTest, LoggerNameLength) {
 
     // Note: Not all systems have EXPECT_DEATH.  As it is a macro we can just
     // test for its presence and bypass the test if not available.
-#ifdef EXPECT_DEATH
+#if defined(EXPECT_DEATH) && !defined(NO_EXPECT_DEATH)
     // Too long a logger name should trigger an assertion failure.
     // Note that we just check that it dies - we don't check what message is
     // output.
