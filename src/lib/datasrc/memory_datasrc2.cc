@@ -556,9 +556,9 @@ private:
             return;
         }
         // Note: ignore corner case conditions like wildcard or GLUE_OK or not
-        for (ConstRdataSetPtr rdset = node->getData();
+        for (const RdataSet* rdset = node->getData().get();
              rdset;
-             rdset = rdset->next)
+             rdset = rdset->next.get())
         {
             const vector<RRType>::const_iterator it_end =
                 requested_types->end();
