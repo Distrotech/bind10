@@ -55,7 +55,7 @@ InterprocessSyncFile::do_lock(int cmd, short l_type) {
     // implementation, it doesn't attempt any opens.
     if
 #ifdef _WIN32
-       (fd_ != INVALID_HANDLE_VALUE)
+       (fd_ == INVALID_HANDLE_VALUE)
 #else
        (fd_ == -1)
 #endif

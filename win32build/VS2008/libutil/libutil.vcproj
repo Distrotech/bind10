@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\exceptions;..\..\..\src\lib\util;&quot;$(BOOST)&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;LOCKFILE_DIR=\&quot;locks\&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;LOCKFILE_DIR=\&quot;/Temp/locks\&quot;"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -77,6 +77,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="mkdir \Temp\locks&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -108,7 +109,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\exceptions;..\..\..\src\lib\util;&quot;$(BOOST)&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;LOCKFILE_DIR=\&quot;locks\&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;LOCKFILE_DIR=\&quot;/Temp/locks\&quot;"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -141,6 +142,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="mkdir \Temp\locks&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
