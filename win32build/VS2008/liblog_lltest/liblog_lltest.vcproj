@@ -88,6 +88,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="cd ..\..\..\src\lib\log\tests&#x0D;&#x0A;copy logger_lock_test.sh.win32 logger_lock_test.sh&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -161,6 +162,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="cd ..\..\..\src\lib\log\tests&#x0D;&#x0A;copy logger_lock_test.sh.win32 logger_lock_test.sh&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

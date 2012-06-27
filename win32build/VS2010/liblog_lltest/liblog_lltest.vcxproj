@@ -64,6 +64,10 @@
       <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\liblog\$(Configuration);..\..\..\..\log4cplus\md10\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libexceptions.lib;libutil.lib;liblog.lib;log4cplusSD.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>cd ..\..\..\src\lib\log\tests
+copy logger_lock_test.sh.win32 logger_lock_test.sh</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -86,6 +90,10 @@
       <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\liblog\$(Configuration);..\..\..\..\log4cplus\md10\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libexceptions.lib;libutil.lib;liblog.lib;log4cplusS.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>cd ..\..\..\src\lib\log\tests
+copy logger_lock_test.sh.win32 logger_lock_test.sh</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\log\tests\logger_lock_test.cc" />

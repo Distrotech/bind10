@@ -88,6 +88,7 @@
     <PreBuildEvent>
       <Command>cd ..\..\..\src\lib\log\tests
 copy tempdir.h.win32 tempdir.h
+..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe log_test_messages.mes
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
