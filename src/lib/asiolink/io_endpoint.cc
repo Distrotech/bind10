@@ -14,6 +14,14 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
+#include <unistd.h>             // for some IPC/network system calls
+#include <sys/socket.h>
+#include <netinet/in.h>
+#endif
+
 #include <asio.hpp>
 
 #include <asiolink/io_address.h>
@@ -25,9 +33,6 @@
 #include <boost/lexical_cast.hpp>
 
 #include <cassert>
-#include <unistd.h>             // for some IPC/network system calls
-#include <sys/socket.h>
-#include <netinet/in.h>
 
 using namespace std;
 

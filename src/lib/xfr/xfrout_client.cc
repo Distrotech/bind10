@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -61,7 +63,6 @@ XfroutClient::~XfroutClient() {
 void
 XfroutClient::connect() {
     try {
-        impl_->socket_.connect(stream_protocol::endpoint(impl_->file_path_));
 #ifndef _WIN32
         stream_protocol::endpoint ep(impl_->file_path_);
 #else

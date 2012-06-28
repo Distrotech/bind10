@@ -14,9 +14,13 @@
 
 #include <config.h>
 
-#include <unistd.h>             // for some IPC/network system calls
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <unistd.h>             // for some IPC/network system calls
+#endif
 
 #include <asio.hpp>
 #include <asiolink/io_service.h>

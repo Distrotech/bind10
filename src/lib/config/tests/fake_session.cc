@@ -16,6 +16,14 @@
 
 #include <stdint.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#endif
+
 #include <cstdio>
 #include <vector>
 #include <iostream>
@@ -31,14 +39,6 @@
 using namespace std;
 using namespace isc::cc;
 using namespace isc::data;
-
-#ifdef _WIN32
-#include <ws2tcpip.h>
-#else
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#endif
 
 // ok i want these in cc/data 
 bool

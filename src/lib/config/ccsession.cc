@@ -19,6 +19,7 @@
 #include <string.h>
 #ifdef _WIN32
 #include <time.h>
+#include <ws2tcpip.h>
 #else
 #include <sys/time.h>
 #endif

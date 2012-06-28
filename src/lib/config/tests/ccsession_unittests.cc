@@ -14,6 +14,10 @@
 
 #include <config.h>
 
+#include _WIN32
+#include <ws2tcpip.h>
+#endif
+
 #include <gtest/gtest.h>
 
 #include <config/tests/fake_session.h>
@@ -740,8 +744,8 @@ protected:
         registerCommand(const string& recipient)
     {
         return (mccs_.groupRecvMsgAsync(
-            bind(&AsyncReceiveCCSessionTest::callback, this, next_flag_ ++, _1,
-                 _2, _3), false, -1, recipient));
+            boost::bind(&AsyncReceiveCCSessionTest::callback, this,
+                 next_flag_ ++, _1, _2, _3), false, -1, recipient));
     }
     /// \brief Convenience function to queue a request to get a reply
     ///     message.
@@ -749,8 +753,8 @@ protected:
         registerReply(int seq)
     {
         return (mccs_.groupRecvMsgAsync(
-            bind(&AsyncReceiveCCSessionTest::callback, this, next_flag_ ++, _1,
-                 _2, _3), true, seq));
+            boost::bind(&AsyncReceiveCCSessionTest::callback, this,
+                 next_flag_ ++, _1, _2, _3), true, seq));
     }
     /// \brief Check the next called callback was with this flag
     void called(int flag) {
