@@ -20,7 +20,6 @@
 #ifndef _WIN32
 #include <unistd.h>
 #endif
-#include <config.h>
 #include <asio.hpp>
 
 #include <util/io/fd_share.h>
@@ -61,23 +60,25 @@ XfroutClient::~XfroutClient() {
 
 void
 XfroutClient::connect() {
-    asio::error_code err;
+    try {
+        impl_->socket_.connect(stream_protocol::endpoint(impl_->file_path_));
 #ifndef _WIN32
-    stream_protocol::endpoint ep(impl_->file_path_);
+        stream_protocol::endpoint ep(impl_->file_path_);
 #else
-    asio::ip::address addr;
-    if (impl_->file_path_.find("v4_") == 0)
-        addr = asio::ip::address_v4::loopback();
-    else if (impl_->file_path_.find("v6_") == 0)
-        addr = asio::ip::address_v6::loopback();
-    else
-        isc_throw(XfroutError, "bad endpoint: " << impl_->file_path_);
-    uint16_t port = boost::lexical_cast<uint16_t>(impl_->file_path_.substr(3));
-    stream_protocol::endpoint ep(addr, port);
+        asio::ip::address addr;
+        if (impl_->file_path_.find("v4_") == 0)
+            addr = asio::ip::address_v4::loopback();
+        else if (impl_->file_path_.find("v6_") == 0)
+            addr = asio::ip::address_v6::loopback();
+        else
+            isc_throw(XfroutError, "bad endpoint: " << impl_->file_path_);
+        uint16_t port = boost::lexical_cast<uint16_t>(impl_->file_path_.substr(3));
+        stream_protocol::endpoint ep(addr, port);
 #endif
-    impl_->socket_.connect(ep, err);
-    if (err) {
-        isc_throw(XfroutError, "socket connect failed: " << err.message());
+        impl_->socket_.connect(ep);
+    } catch (const asio::system_error& err) {
+        isc_throw(XfroutError, "socket connect failed for " <<
+                  impl_->file_path_ << ": " << err.what());
     }
 }
 
@@ -103,8 +104,14 @@ XfroutClient::sendXfroutRequestInfo(const int tcp_sock,
 
     // TODO: this shouldn't be blocking send, even though it's unlikely to
     // block.
-    // converting the 16-bit word to network byte order.
-    const uint8_t lenbuf[2] = { msg_len >> 8, msg_len & 0xff };
+    // Converting the 16-bit word to network byte order.
+
+    // Splitting msg_len below performs something called a 'narrowing
+    // conversion' (conversion of uint16_t to uint8_t). C++0x (and GCC
+    // 4.7) requires explicit casting when a narrowing conversion is
+    // performed. For reference, see 8.5.4/6 of n3225.
+    const uint8_t lenbuf[2] = { static_cast<uint8_t>(msg_len >> 8),
+                                static_cast<uint8_t>(msg_len & 0xff) };
 #ifndef _WIN32
     if (send(impl_->socket_.native(), lenbuf, sizeof(lenbuf), 0) !=
         sizeof(lenbuf)) {
@@ -129,6 +136,7 @@ XfroutClient::sendXfroutRequestInfo(const int tcp_sock,
                   "failed to send XFR request data to xfrout module");
     }
 #endif
+
     return (0);
 }
 
