@@ -93,6 +93,11 @@ public:
     void startRead(boost::function<void()> user_handler);
     void setTimeout(size_t seconds) { timeout_ = seconds; };
     size_t getTimeout() const { return timeout_; };
+#ifdef _WIN32
+    SOCKET getSocketDesc();
+#else
+    int getSocketDesc();
+#endif
 
     long int sequence_; // the next sequence number to use
     std::string lname_;
@@ -276,12 +281,28 @@ SessionImpl::internalRead(const asio::error_code& error,
         }
         user_handler_();
     } else {
-        LOG_ERROR(logger, CC_ASYNC_READ_FAILED);
+        LOG_ERROR(logger, CC_ASYNC_READ_FAILED).arg(error.value());
         isc_throw(SessionError, "asynchronous read failed");
     }
 }
 
-Session::Session(io_service& io_service) : impl_(new SessionImpl(io_service))
+#ifdef _WIN32
+SOCKET
+#else
+int
+#endif
+SessionImpl::getSocketDesc() {
+    /// @todo boost 1.42 uses native() method, but it is deprecated
+    /// in 1.49 and native_handle() is recommended instead
+    if (!socket_.is_open()) {
+        isc_throw(InvalidOperation,
+                  "Can't return socket descriptor: no socket opened.");
+    }
+    return socket_.native();
+}
+
+Session::Session(asio::io_service& io_service) :
+    impl_(new SessionImpl(io_service))
 {}
 
 Session::~Session() {
@@ -297,6 +318,15 @@ void
 Session::startRead(boost::function<void()> read_callback) {
     LOG_DEBUG(logger, DBG_TRACE_DETAILED, CC_START_READ);
     impl_->startRead(read_callback);
+}
+
+#ifdef _WIN32
+SOCKET
+#else
+int
+#endif
+Session::getSocketDesc() const {
+    return impl_->getSocketDesc();
 }
 
 namespace {                     // maybe unnecessary.
@@ -393,7 +423,7 @@ Session::recvmsg(ConstElementPtr& env, ConstElementPtr& msg,
     size_t length = impl_->readDataLength();
     if (hasQueuedMsgs()) {
         ConstElementPtr q_el;
-        for (unsigned int i = 0; i < impl_->queue_->size(); i++) {
+        for (size_t i = 0; i < impl_->queue_->size(); i++) {
             q_el = impl_->queue_->get(i);
             if (( seq == -1 &&
                   !q_el->get(0)->contains("reply")
