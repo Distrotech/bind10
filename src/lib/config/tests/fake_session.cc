@@ -76,7 +76,8 @@ FakeSession::FakeSession(isc::data::ElementPtr initial_messages,
     messages_(initial_messages),
     subscriptions_(subscriptions),
     msg_queue_(msg_queue),
-    started_(false)
+    started_(false),
+    throw_on_send_(false)
 {
 }
 
@@ -142,6 +143,9 @@ FakeSession::recvmsg(ConstElementPtr& env, ConstElementPtr& msg, bool nonblock,
                 ElementPtr new_env = Element::createMap();
                 new_env->set("group", c_m->get(0));
                 new_env->set("to", c_m->get(1));
+                if (c_m->get(3)->intValue() != -1) {
+                    new_env->set("reply", c_m->get(3));
+                }
                 env = new_env;
                 msg = c_m->get(2);
                 to_remove = c_m;
@@ -185,8 +189,9 @@ int
 FakeSession::group_sendmsg(ConstElementPtr msg, std::string group,
                            std::string to, std::string)
 {
-    //cout << "[XX] client sends message: " << msg << endl;
-    //cout << "[XX] to: " << group << " . " << instance << "." << to << endl;
+    if (throw_on_send_) {
+        isc_throw(Exception, "Throw on send is set in FakeSession");
+    }
     addMessage(msg, group, to);
     return (1);
 }
@@ -209,7 +214,7 @@ FakeSession::reply(ConstElementPtr envelope, ConstElementPtr newmsg) {
 
 bool
 FakeSession::hasQueuedMsgs() const {
-    return (false);
+    return (msg_queue_ && msg_queue_->size() > 0);
 }
 
 ConstElementPtr
@@ -230,12 +235,13 @@ FakeSession::getFirstMessage(std::string& group, std::string& to) const {
 
 void
 FakeSession::addMessage(ConstElementPtr msg, const std::string& group,
-                        const std::string& to)
+                        const std::string& to, int seq)
 {
     ElementPtr m_el = Element::createList();
     m_el->add(Element::create(group));
     m_el->add(Element::create(to));
     m_el->add(msg);
+    m_el->add(Element::create(seq));
     if (!msg_queue_) {
         msg_queue_ = Element::createList();
     }
@@ -265,6 +271,5 @@ FakeSession::haveSubscription(ConstElementPtr group, ConstElementPtr instance)
 {
     return (haveSubscription(group->stringValue(), instance->stringValue()));
 }
-
 }
 }

@@ -29,7 +29,7 @@ What is needed:
  - google test (aka gtest, got the 1.[56].0 sources but some recent
   tests require >= 1.6.0)
 
- - boost >= 1.35 (got the 1.44/1.46 setup from Boostpro, installed
+ - boost >= 1.35 (got the 1.44/1.47 setup from Boostpro, installed
   Multithread and Multithread Debug)
 
  - setproctitle python module (in theory)
