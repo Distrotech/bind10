@@ -70,8 +70,6 @@ public:
 
 private:
     const isc::dns::Name name_;
-    // silence MSVC warning C4512: assignment operator could not be generated
-    NameCheck& operator=(NameCheck const&);
 };
 
 } // namespace dns

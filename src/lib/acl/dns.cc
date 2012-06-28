@@ -115,8 +115,9 @@ getRequestLoader() {
             auto_ptr<RequestLoader>(new RequestLoader(REJECT));
 
         // Register default check creator(s)
-        loader_ptr->registerCreator(boost::shared_ptr<internal::RequestCheckCreator>(
-                                        new internal::RequestCheckCreator()));
+        loader_ptr->registerCreator(
+            boost::shared_ptr<internal::RequestCheckCreator>(
+                new internal::RequestCheckCreator()));
         loader_ptr->registerCreator(
             boost::shared_ptr<NotCreator<RequestContext> >(
                 new NotCreator<RequestContext>("NOT")));

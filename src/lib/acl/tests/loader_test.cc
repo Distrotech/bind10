@@ -74,22 +74,21 @@ public:
                                           bool abbreviatedList = true)
     {
         return (boost::shared_ptr<NamedCreator>(new NamedCreator(name,
-                                                          abbreviatedList)));
+                                                    abbreviatedList)));
     }
     // Create and add a NamedCreator
     void addNamed(const string& name, bool abbreviatedList = true) {
         EXPECT_NO_THROW(loader_.registerCreator(
             namedCreator(name, abbreviatedList)));
     }
-    template<class Result> boost::shared_ptr<Result> loadCheckAny(const string&
-                                                               definition)
+    template<class Result> boost::shared_ptr<Result> loadCheckAny(
+        const string& definition)
     {
         SCOPED_TRACE("Loading check " + definition);
         boost::shared_ptr<Check<Log> > loaded;
         EXPECT_NO_THROW(loaded = loader_.loadCheck(
                             Element::fromJSON(definition)));
-        boost::shared_ptr<Result> result(dynamic_pointer_cast<Result>(
-            loaded));
+        boost::shared_ptr<Result> result(dynamic_pointer_cast<Result>(loaded));
         EXPECT_TRUE(result);
         return (result);
     }
@@ -114,11 +113,12 @@ public:
     // Insert the throw, throwcheck and logcheck checks into the loader
     void aclSetup() {
         try {
-            loader_.registerCreator(boost::shared_ptr<ThrowCreator>(new
-                                                             ThrowCreator()));
+            loader_.registerCreator(boost::shared_ptr<ThrowCreator>(
+                new ThrowCreator()));
             loader_.registerCreator(boost::shared_ptr<ThrowCheckCreator>(
                 new ThrowCheckCreator()));
-            loader_.registerCreator(boost::shared_ptr<LogCreator>(new LogCreator()));
+            loader_.registerCreator(boost::shared_ptr<LogCreator>(
+                new LogCreator()));
         }
         // We ignore this exception here, because it happens when we try to
         // insert the creators multiple times. This is harmless.
@@ -230,7 +230,8 @@ TEST_F(LoaderTest, UnkownName) {
 
 // Exception from the creator is propagated
 TEST_F(LoaderTest, CheckPropagate) {
-    loader_.registerCreator(boost::shared_ptr<ThrowCreator>(new ThrowCreator()));
+    loader_.registerCreator(boost::shared_ptr<ThrowCreator>(
+                                new ThrowCreator()));
     EXPECT_THROW(loader_.loadCheck(Element::fromJSON("{\"throw\": null}")),
                  TestCreatorError);
 }

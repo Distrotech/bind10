@@ -244,7 +244,8 @@ TEST_F(LogicCreatorTest, nested) {
 }
 
 void notTest(bool value) {
-    NotOperator<Log> notOp(boost::shared_ptr<Check<Log> >(new ConstCheck(value, 0)));
+    NotOperator<Log> notOp(boost::shared_ptr<Check<Log> >(
+                                new ConstCheck(value, 0)));
     Log log;
     // It returns negated value
     EXPECT_EQ(!value, notOp.matches(log));

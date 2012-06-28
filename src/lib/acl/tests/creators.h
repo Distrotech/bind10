@@ -39,9 +39,6 @@ public:
     virtual bool matches(const Log&) const { return (true); }
     const std::string name_;
     const isc::data::ConstElementPtr data_;
-private:
-    // silence MSVC warning C4512: assignment operator could not be generated
-    NamedCheck& operator=(NamedCheck const&);
 };
 
 // The creator of NamedCheck
@@ -81,8 +78,6 @@ public:
 private:
     std::vector<std::string> names_;
     const bool abbreviated_list_;
-    // silence MSVC warning C4512: assignment operator could not be generated
-    NamedCreator& operator=(NamedCreator const&);
 };
 
 // To be thrown in tests internally
