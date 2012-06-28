@@ -39,6 +39,7 @@
 #include "message_python.h"
 #include "messagerenderer_python.h"
 #include "name_python.h"
+#include "nsec3hash_python.h"
 #include "opcode_python.h"
 #include "pydnspp_common.h"
 #include "pydnspp_towire.h"
@@ -49,6 +50,7 @@
 #include "rrset_python.h"
 #include "rrttl_python.h"
 #include "rrtype_python.h"
+#include "serial_python.h"
 #include "tsigerror_python.h"
 #include "tsigkey_python.h"
 #include "tsig_python.h"
@@ -163,6 +165,10 @@ initModulePart_Message(PyObject* mod) {
             PyErr_NewException("pydnspp.DNSMessageBADVERS", NULL, NULL);
         PyObjectContainer(po_DNSMessageBADVERS).installToModule(
             mod, "DNSMessageBADVERS");
+        po_UnknownNSEC3HashAlgorithm =
+            PyErr_NewException("pydnspp.UnknownNSEC3HashAlgorithm", NULL, NULL);
+        PyObjectContainer(po_UnknownNSEC3HashAlgorithm).installToModule(
+            mod, "UnknownNSEC3HashAlgorithm");
     } catch (const std::exception& ex) {
         const std::string ex_what =
             "Unexpected failure in Message initialization: " +
@@ -215,6 +221,15 @@ initModulePart_Name(PyObject* mod) {
         NameComparisonResult::COMMONANCESTOR, "COMMONANCESTOR");
     addClassVariable(name_comparison_result_type, "NameRelation",
                      po_NameRelation);
+    // Add the constants themselves too
+    addClassVariable(name_comparison_result_type, "SUPERDOMAIN",
+                     Py_BuildValue("I", NameComparisonResult::SUPERDOMAIN));
+    addClassVariable(name_comparison_result_type, "SUBDOMAIN",
+                     Py_BuildValue("I", NameComparisonResult::SUBDOMAIN));
+    addClassVariable(name_comparison_result_type, "EQUAL",
+                     Py_BuildValue("I", NameComparisonResult::EQUAL));
+    addClassVariable(name_comparison_result_type, "COMMONANCESTOR",
+                     Py_BuildValue("I", NameComparisonResult::COMMONANCESTOR));
 
     PyModule_AddObject(mod, "NameComparisonResult",
         reinterpret_cast<PyObject*>(&name_comparison_result_type));
@@ -487,6 +502,18 @@ initModulePart_RRType(PyObject* mod) {
     Py_INCREF(&rrtype_type);
     PyModule_AddObject(mod, "RRType",
                        reinterpret_cast<PyObject*>(&rrtype_type));
+
+    return (true);
+}
+
+bool
+initModulePart_Serial(PyObject* mod) {
+    if (PyType_Ready(&serial_type) < 0) {
+        return (false);
+    }
+    Py_INCREF(&serial_type);
+    PyModule_AddObject(mod, "Serial",
+                       reinterpret_cast<PyObject*>(&serial_type));
 
     return (true);
 }
@@ -824,6 +851,10 @@ PyInit_pydnspp(void) {
         return (NULL);
     }
 
+    if (!initModulePart_NSEC3Hash(mod)) {
+        return (NULL);
+    }
+
     if (!initModulePart_RRClass(mod)) {
         return (NULL);
     }
@@ -861,6 +892,10 @@ PyInit_pydnspp(void) {
     }
 
     if (!initModulePart_EDNS(mod)) {
+        return (NULL);
+    }
+
+    if (!initModulePart_Serial(mod)) {
         return (NULL);
     }
 

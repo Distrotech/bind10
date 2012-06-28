@@ -49,7 +49,7 @@ template <typename T>
 class RdataRenderBenchMark {
 public:
     RdataRenderBenchMark(const vector<T>& dataset) :
-        dataset_(dataset), buffer_(4096), renderer_(buffer_)
+        dataset_(dataset)
     {}
     unsigned int run() {
         typename vector<T>::const_iterator data;
@@ -62,7 +62,6 @@ public:
     }
 private:
     const vector<T>& dataset_;
-    OutputBuffer buffer_;
     MessageRenderer renderer_;
 };
 

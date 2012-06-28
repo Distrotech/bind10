@@ -119,7 +119,7 @@ Generic::Generic(isc::util::InputBuffer& buffer, size_t rdata_len) {
     impl_ = new GenericImpl(data);
 }
 
-Generic::Generic(const string& rdata_string) {
+Generic::Generic(const std::string& rdata_string) {
     istringstream iss(rdata_string);
     string unknown_mark;
     iss >> unknown_mark;
@@ -244,7 +244,9 @@ compare_internal(const GenericImpl& lhs, const GenericImpl& rhs) {
     size_t len = (this_len < other_len) ? this_len : other_len;
     int cmp;
 
-    if ((this_len > 0) && (other_len > 0) &&
+    // TODO: is there a need to check len - should we just assert?
+    // (Depends if it is possible for rdata to have zero length)
+    if ((len != 0) &&
         ((cmp = memcmp(&lhs.data_[0], &rhs.data_[0], len)) != 0)) {
         return (cmp);
     } else {

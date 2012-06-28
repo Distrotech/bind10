@@ -83,7 +83,6 @@ namespace {
 class MessageTest : public ::testing::Test {
 protected:
     MessageTest() : test_name("test.example.com"), obuffer(0),
-                    renderer(obuffer),
                     message_parse(Message::PARSE),
                     message_render(Message::RENDER),
                     bogus_section(static_cast<Message::Section>(
@@ -211,7 +210,7 @@ TEST_F(MessageTest, fromWireWithTSIG) {
     EXPECT_THROW(message_render.getTSIGRecord(), InvalidMessageOperation);
 
     factoryFromFile(message_parse, "message_toWire2.wire");
-    const unsigned char expected_mac[] = {
+    const uint8_t expected_mac[] = {
         0x22, 0x70, 0x26, 0xad, 0x29, 0x7b, 0xee, 0xe7,
         0x21, 0xce, 0x6c, 0x6f, 0xff, 0x1e, 0x9e, 0xf3
     };
@@ -328,6 +327,10 @@ TEST_F(MessageTest, badAddRRset) {
                                         rrset_a), InvalidMessageOperation);
     // out-of-band section ID
     EXPECT_THROW(message_render.addRRset(bogus_section, rrset_a), OutOfRange);
+
+    // NULL RRset
+    EXPECT_THROW(message_render.addRRset(Message::SECTION_ANSWER, RRsetPtr()),
+                 InvalidParameter);
 }
 
 TEST_F(MessageTest, hasRRset) {
@@ -407,6 +410,8 @@ TEST_F(MessageTest, clearQuestionSection) {
 
     message_render.clearSection(Message::SECTION_QUESTION);
     EXPECT_EQ(0, message_render.getRRCount(Message::SECTION_QUESTION));
+    EXPECT_TRUE(message_render.beginQuestion() ==
+                message_render.endQuestion());
 }
 
 
@@ -467,6 +472,13 @@ TEST_F(MessageTest, clearAdditionalSection) {
     EXPECT_EQ(0, message_render.getRRCount(Message::SECTION_ADDITIONAL));
 }
 
+TEST_F(MessageTest, badClearSection) {
+    // attempt of clearing a message in the parse mode.
+    EXPECT_THROW(message_parse.clearSection(Message::SECTION_QUESTION),
+                 InvalidMessageOperation);
+    // attempt of clearing out-of-range section
+    EXPECT_THROW(message_render.clearSection(bogus_section), OutOfRange);
+}
 
 TEST_F(MessageTest, badBeginSection) {
     // valid cases are tested via other tests
@@ -731,8 +743,8 @@ TEST_F(MessageTest, toWire) {
     message_render.toWire(renderer);
     vector<unsigned char> data;
     UnitTestUtil::readWireData("message_toWire1", data);
-    EXPECT_PRED_FORMAT4(UnitTestUtil::matchWireData, obuffer.getData(),
-                        obuffer.getLength(), &data[0], data.size());
+    EXPECT_PRED_FORMAT4(UnitTestUtil::matchWireData, renderer.getData(),
+                        renderer.getLength(), &data[0], data.size());
 }
 
 TEST_F(MessageTest, toWireInParseMode) {
@@ -961,9 +973,6 @@ TEST_F(MessageTest, toWireTSIGNoTruncation) {
 // rendering fail unexpectedly in the test that follows.
 class BadRenderer : public MessageRenderer {
 public:
-    BadRenderer(isc::util::OutputBuffer& buffer) :
-        MessageRenderer(buffer)
-    {}
     virtual void setLengthLimit(size_t len) {
         if (getLength() > 0) {
             MessageRenderer::setLengthLimit(getLength());
@@ -994,8 +1003,7 @@ TEST_F(MessageTest, toWireTSIGLengthErrors) {
                  InvalidParameter);
 
     // Trying to render a message with TSIG using a buggy renderer.
-    obuffer.clear();
-    BadRenderer bad_renderer(obuffer);
+    BadRenderer bad_renderer;
     bad_renderer.setLengthLimit(512);
     message_render.clear(Message::RENDER);
     EXPECT_THROW(commonTSIGToWireCheck(message_render, bad_renderer, tsig_ctx,

@@ -279,8 +279,6 @@ private:
     const Name key_name_;
     const rdata::any::TSIG rdata_;
     const size_t length_;
-    // silence MSVC warning C4512: assignment operator could not be generated
-    TSIGRecord& operator=(TSIGRecord const&);
 };
 
 /// A pointer-like type pointing to a \c TSIGRecord object.

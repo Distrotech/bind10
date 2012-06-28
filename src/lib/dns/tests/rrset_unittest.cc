@@ -12,8 +12,6 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#include <stdexcept>
-
 #include <util/buffer.h>
 #include <dns/messagerenderer.h>
 #include <dns/name.h>
@@ -24,9 +22,12 @@
 #include <dns/rrttl.h>
 #include <dns/rrset.h>
 
+#include <dns/tests/unittest_util.h>
+
 #include <gtest/gtest.h>
 
-#include <dns/tests/unittest_util.h>
+#include <stdexcept>
+#include <sstream>
 
 using isc::UnitTestUtil;
 
@@ -38,13 +39,17 @@ using namespace isc::dns::rdata;
 namespace {
 class RRsetTest : public ::testing::Test {
 protected:
-    RRsetTest() : buffer(0), renderer(buffer),
+    RRsetTest() : buffer(0),
                   test_name("test.example.com"),
                   test_domain("example.com"),
                   test_nsname("ns.example.com"),
                   rrset_a(test_name, RRClass::IN(), RRType::A(), RRTTL(3600)),
                   rrset_a_empty(test_name, RRClass::IN(), RRType::A(),
                                 RRTTL(3600)),
+                  rrset_any_a_empty(test_name, RRClass::ANY(), RRType::A(),
+                                    RRTTL(3600)),
+                  rrset_none_a_empty(test_name, RRClass::NONE(), RRType::A(),
+                                     RRTTL(3600)),
                   rrset_ns(test_domain, RRClass::IN(), RRType::NS(),
                            RRTTL(86400)),
                   rrset_ch_txt(test_domain, RRClass::CH(), RRType::TXT(),
@@ -61,6 +66,8 @@ protected:
     Name test_nsname;
     RRset rrset_a;
     RRset rrset_a_empty;
+    RRset rrset_any_a_empty;
+    RRset rrset_none_a_empty;
     RRset rrset_ns;
     RRset rrset_ch_txt;
     std::vector<unsigned char> wiredata;
@@ -110,6 +117,20 @@ TEST_F(RRsetTest, setTTL) {
 TEST_F(RRsetTest, setName) {
     rrset_a.setName(test_nsname);
     EXPECT_EQ(test_nsname, rrset_a.getName());
+}
+
+TEST_F(RRsetTest, isSameKind) {
+    RRset rrset_w(test_name, RRClass::IN(), RRType::A(), RRTTL(3600));
+    RRset rrset_x(test_name, RRClass::IN(), RRType::A(), RRTTL(3600));
+    RRset rrset_y(test_name, RRClass::IN(), RRType::NS(), RRTTL(3600));
+    RRset rrset_z(test_name, RRClass::CH(), RRType::A(), RRTTL(3600));
+    RRset rrset_p(test_nsname, RRClass::IN(), RRType::A(), RRTTL(3600));
+
+    EXPECT_TRUE(rrset_w.isSameKind(rrset_w));
+    EXPECT_TRUE(rrset_w.isSameKind(rrset_x));
+    EXPECT_FALSE(rrset_w.isSameKind(rrset_y));
+    EXPECT_FALSE(rrset_w.isSameKind(rrset_z));
+    EXPECT_FALSE(rrset_w.isSameKind(rrset_p));
 }
 
 void
@@ -178,8 +199,14 @@ TEST_F(RRsetTest, toText) {
               "test.example.com. 3600 IN A 192.0.2.2\n",
               rrset_a.toText());
 
-    // toText() cannot be performed for an empty RRset.
+    // toText() cannot be performed for an empty RRset
     EXPECT_THROW(rrset_a_empty.toText(), EmptyRRset);
+
+    // Unless it is type ANY or NONE
+    EXPECT_EQ("test.example.com. 3600 ANY A\n",
+              rrset_any_a_empty.toText());
+    EXPECT_EQ("test.example.com. 3600 CLASS254 A\n",
+              rrset_none_a_empty.toText());
 }
 
 TEST_F(RRsetTest, toWireBuffer) {
@@ -192,6 +219,20 @@ TEST_F(RRsetTest, toWireBuffer) {
     // toWire() cannot be performed for an empty RRset.
     buffer.clear();
     EXPECT_THROW(rrset_a_empty.toWire(buffer), EmptyRRset);
+
+    // Unless it is type ANY or None
+    buffer.clear();
+    rrset_any_a_empty.toWire(buffer);
+    wiredata.clear();
+    UnitTestUtil::readWireData("rrset_toWire3", wiredata);
+    EXPECT_PRED_FORMAT4(UnitTestUtil::matchWireData, buffer.getData(),
+                        buffer.getLength(), &wiredata[0], wiredata.size());
+    buffer.clear();
+    rrset_none_a_empty.toWire(buffer);
+    wiredata.clear();
+    UnitTestUtil::readWireData("rrset_toWire4", wiredata);
+    EXPECT_PRED_FORMAT4(UnitTestUtil::matchWireData, buffer.getData(),
+                        buffer.getLength(), &wiredata[0], wiredata.size());
 }
 
 TEST_F(RRsetTest, toWireRenderer) {
@@ -201,12 +242,28 @@ TEST_F(RRsetTest, toWireRenderer) {
     rrset_ns.toWire(renderer);
 
     UnitTestUtil::readWireData("rrset_toWire2", wiredata);
+    EXPECT_PRED_FORMAT4(UnitTestUtil::matchWireData, renderer.getData(),
+                        renderer.getLength(), &wiredata[0], wiredata.size());
+
+    // toWire() cannot be performed for an empty RRset.
+    buffer.clear();
+    EXPECT_THROW(rrset_a_empty.toWire(buffer), EmptyRRset);
+
+    // Unless it is type ANY or None
+    // toWire() can also be performed for an empty RRset.
+    buffer.clear();
+    rrset_any_a_empty.toWire(buffer);
+    wiredata.clear();
+    UnitTestUtil::readWireData("rrset_toWire3", wiredata);
     EXPECT_PRED_FORMAT4(UnitTestUtil::matchWireData, buffer.getData(),
                         buffer.getLength(), &wiredata[0], wiredata.size());
 
-    // toWire() cannot be performed for an empty RRset.
-    renderer.clear();
-    EXPECT_THROW(rrset_a_empty.toWire(renderer), EmptyRRset);
+    buffer.clear();
+    rrset_none_a_empty.toWire(buffer);
+    wiredata.clear();
+    UnitTestUtil::readWireData("rrset_toWire4", wiredata);
+    EXPECT_PRED_FORMAT4(UnitTestUtil::matchWireData, buffer.getData(),
+                        buffer.getLength(), &wiredata[0], wiredata.size());
 }
 
 // test operator<<.  We simply confirm it appends the result of toText().

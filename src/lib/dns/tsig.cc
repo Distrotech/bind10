@@ -156,9 +156,6 @@ struct TSIGContext::TSIGContextImpl {
     uint64_t previous_timesigned_; // only meaningful for response with BADTIME
     size_t digest_len_;
     HMACPtr hmac_;
-private:
-    // silence MSVC warning C4512: assignment operator could not be generated
-    TSIGContextImpl& operator=(TSIGContextImpl const&);
 };
 
 void

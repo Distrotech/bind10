@@ -41,7 +41,7 @@ SOA::SOA(InputBuffer& buffer, size_t) :
     buffer.readData(numdata_, sizeof(numdata_));
 }
 
-SOA::SOA(const string& soastr) :
+SOA::SOA(const std::string& soastr) :
     mname_("."), rname_(".")    // quick hack workaround
 {
     istringstream iss(soastr);
@@ -104,6 +104,12 @@ SOA::toWire(AbstractMessageRenderer& renderer) const {
     renderer.writeName(mname_);
     renderer.writeName(rname_);
     renderer.writeData(numdata_, sizeof(numdata_));
+}
+
+Serial
+SOA::getSerial() const {
+    InputBuffer b(numdata_, sizeof(numdata_));
+    return (Serial(b.readUint32()));
 }
 
 string

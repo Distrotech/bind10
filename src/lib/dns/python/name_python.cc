@@ -20,10 +20,13 @@
 #include <dns/exceptions.h>
 #include <dns/messagerenderer.h>
 #include <dns/name.h>
+#include <dns/labelsequence.h>
 
 #include "pydnspp_common.h"
 #include "messagerenderer_python.h"
 #include "name_python.h"
+
+#include <iostream>
 
 using namespace isc::dns;
 using namespace isc::dns::python;
@@ -97,7 +100,7 @@ int Name_init(s_Name* self, PyObject* args);
 void Name_destroy(s_Name* self);
 
 PyObject* Name_toWire(s_Name* self, PyObject* args);
-PyObject* Name_toText(s_Name* self);
+PyObject* Name_toText(s_Name* self, PyObject* args);
 PyObject* Name_str(PyObject* self);
 PyObject* Name_getLabelCount(s_Name* self);
 PyObject* Name_at(s_Name* self, PyObject* args);
@@ -112,6 +115,7 @@ PyObject* Name_reverse(s_Name* self);
 PyObject* Name_concatenate(s_Name* self, PyObject* args);
 PyObject* Name_downcase(s_Name* self);
 PyObject* Name_isWildCard(s_Name* self);
+Py_hash_t Name_hash(PyObject* py_self);
 
 PyMethodDef Name_methods[] = {
     { "at", reinterpret_cast<PyCFunction>(Name_at), METH_VARARGS,
@@ -120,8 +124,9 @@ PyMethodDef Name_methods[] = {
       "Returns the length" },
     { "get_labelcount", reinterpret_cast<PyCFunction>(Name_getLabelCount), METH_NOARGS,
       "Returns the number of labels" },
-    { "to_text", reinterpret_cast<PyCFunction>(Name_toText), METH_NOARGS,
-      "Returns the string representation" },
+    { "to_text", reinterpret_cast<PyCFunction>(Name_toText), METH_VARARGS,
+      "Returns the string representation. The optional argument must be either"
+      "True of False. If True, the final dot will be omitted." },
     { "to_wire", reinterpret_cast<PyCFunction>(Name_toWire), METH_VARARGS,
       "Converts the Name object to wire format.\n"
       "The argument can be either a MessageRenderer or an object that "
@@ -278,8 +283,24 @@ Name_getLabelCount(s_Name* self) {
 }
 
 PyObject*
-Name_toText(s_Name* self) {
-    return (Py_BuildValue("s", self->cppobj->toText().c_str()));
+Name_toText(s_Name* self, PyObject* args) {
+    PyObject* omit_final_dot_obj = NULL;
+    if (PyArg_ParseTuple(args, "|O", &omit_final_dot_obj)) {
+        bool omit_final_dot = false;
+        if (omit_final_dot_obj != NULL) {
+            if (PyBool_Check(omit_final_dot_obj) != 0) {
+                omit_final_dot = (omit_final_dot_obj == Py_True);
+            } else {
+                PyErr_SetString(PyExc_TypeError,
+                    "Optional argument 1 of to_text() should be True of False");
+                return (NULL);
+            }
+        }
+        return (Py_BuildValue("s",
+                              self->cppobj->toText(omit_final_dot).c_str()));
+    } else {
+        return (NULL);
+    }
 }
 
 PyObject*
@@ -499,6 +520,12 @@ Name_isWildCard(s_Name* self) {
     }
 }
 
+Py_hash_t
+Name_hash(PyObject* pyself) {
+    s_Name* const self = static_cast<s_Name*>(pyself);
+    return (LabelSequence(*self->cppobj).getHash(false));
+}
+
 } // end of unnamed namespace
 
 namespace isc {
@@ -596,7 +623,7 @@ PyTypeObject name_type = {
     NULL,                               // tp_as_number
     NULL,                               // tp_as_sequence
     NULL,                               // tp_as_mapping
-    NULL,                               // tp_hash
+    Name_hash,                          // tp_hash
     NULL,                               // tp_call
     Name_str,                           // tp_str
     NULL,                               // tp_getattro

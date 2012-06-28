@@ -56,8 +56,8 @@ TEST_F(Rdata_SOA_Test, toWireRenderer) {
     vector<unsigned char> data;
     UnitTestUtil::readWireData("rdata_soa_fromWire", data);
     EXPECT_PRED_FORMAT4(UnitTestUtil::matchWireData,
-                        static_cast<const uint8_t *>(obuffer.getData()) + 2,
-                        obuffer.getLength() - 2, &data[2], data.size() - 2);
+                        static_cast<const uint8_t *>(renderer.getData()) + 2,
+                        renderer.getLength() - 2, &data[2], data.size() - 2);
 }
 
 TEST_F(Rdata_SOA_Test, toWireBuffer) {
@@ -74,4 +74,9 @@ TEST_F(Rdata_SOA_Test, toText) {
     EXPECT_EQ("ns.example.com. root.example.com. "
               "2010012601 3600 300 3600000 1200", rdata_soa.toText());
 }
+
+TEST_F(Rdata_SOA_Test, getSerial) {
+    EXPECT_EQ(2010012601, rdata_soa.getSerial().getValue());
+}
+
 }

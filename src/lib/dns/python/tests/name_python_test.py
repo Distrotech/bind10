@@ -121,6 +121,15 @@ class NameTest(unittest.TestCase):
         self.assertEqual(".", str(self.name2))
         self.assertEqual("something.completely.different.", self.name3.to_text())
 
+        self.assertEqual("example.com.", self.name1.to_text(False))
+        self.assertEqual("example.com", self.name1.to_text(True))
+
+        # make sure it does not behave unexpectedly on wrong arguments
+        self.assertRaises(TypeError, self.name1.to_text, True, 1)
+        self.assertRaises(TypeError, self.name1.to_text, 1)
+        self.assertRaises(TypeError, self.name1.to_text, [])
+        self.assertRaises(TypeError, self.name1.to_text, "foo")
+
     def test_to_wire(self):
         b1 = bytearray()
         self.name1.to_wire(b1)
@@ -208,6 +217,28 @@ class NameTest(unittest.TestCase):
         self.assertTrue(self.name4 >= self.name1)
         self.assertTrue(self.name4 <= self.name1)
         self.assertFalse(self.name2 >= self.name1)
+
+    def test_hash(self):
+        # The same name should have the same hash value.
+        self.assertEqual(hash(Name('example.com')), hash(Name('example.com')))
+        # Hash is case insensitive.
+        self.assertEqual(hash(Name('example.com')), hash(Name('EXAMPLE.COM')))
+
+        # These pairs happen to be known to have different hashes.
+        # It may be naive to assume the hash value is always the same (we use
+        # an external library and it depends on its internal details).  If
+        # it turns out that this assumption isn't always held, we should
+        # disable this test.
+        self.assertNotEqual(hash(Name('example.com')),
+                            hash(Name('example.org')))
+
+        # Check insensitiveness for the case of inequality.
+        # Based on the assumption above, this 'if' should be true and
+        # we'll always test the case inside it.  We'll still keep the if in
+        # case we end up disabling the above test.
+        if hash(Name('example.com')) != hash(Name('example.org')):
+            self.assertNotEqual(hash(Name('example.com')),
+                                hash(Name('EXAMPLE.ORG')))
 
 if __name__ == '__main__':
     unittest.main()

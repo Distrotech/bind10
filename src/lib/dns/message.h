@@ -462,15 +462,19 @@ public:
     /// This interface takes into account the RRSIG possibly attached to
     /// \c rrset.  This interface design needs to be revisited later.
     ///
-    /// This method is only allowed in the \c RENDER mode;
-    /// if the \c Message is in other mode, an exception of class
-    /// InvalidMessageOperation will be thrown.
-    /// \c section must be a valid constant of the \c Section type;
-    /// otherwise, an exception of class \c OutOfRange will be thrown.
-    ///
     /// Note that \c addRRset() does not currently check for duplicate
     /// data before inserting RRsets.  The caller is responsible for
     /// checking for these (see \c hasRRset() below).
+    ///
+    /// \throw InvalidParameter rrset is NULL
+    /// \throw InvalidMessageOperation The message is not in the \c RENDER
+    /// mode.
+    /// \throw OutOfRange \c section doesn't specify a valid \c Section value.
+    ///
+    /// \param section The message section to which the rrset is to be added
+    /// \param rrset The rrset to be added.  Must not be NULL.
+    /// \param sign If true, and if \c rrset has associated RRSIGs, the
+    /// RRSIGs will also be added to the same section of the message.
     void addRRset(const Section section, RRsetPtr rrset, bool sign = false);
 
     /// \brief Determine whether the given section already has an RRset
@@ -509,6 +513,12 @@ public:
 
     /// \brief Remove all RRSets from the given Section
     ///
+    /// This method is only allowed in the \c RENDER mode, and the given
+    /// section must be valid.
+    ///
+    /// \throw InvalidMessageOperation Message is not in the \c RENDER mode
+    /// \throw OutOfRange The specified section is not valid
+    ///
     /// \param section Section to remove all rrsets from
     void clearSection(const Section section);
 
@@ -526,7 +536,7 @@ public:
     /// source message to the same section of this message
     ///
     /// \param section the section to append
-    /// \param target The source Message
+    /// \param source The source Message
     void appendSection(const Section section, const Message& source);
 
     /// \brief Prepare for making a response from a request.
@@ -668,7 +678,7 @@ typedef boost::shared_ptr<const Message> ConstMessagePtr;
 ///
 /// \param os A \c std::ostream object on which the insertion operation is
 /// performed.
-/// \param record A \c Message object output by the operation.
+/// \param message A \c Message object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
 std::ostream& operator<<(std::ostream& os, const Message& message);

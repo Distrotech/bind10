@@ -130,6 +130,11 @@ public:
                const RRClass& rrclass, const RRType& rrtype,
                const RRTTL& ttl, ConstRdataPtr rdata,
                Message::ParseOptions options);
+    // There are also times where an RR needs to be added that
+    // represents an empty RRset. There is no Rdata in that case
+    void addRR(Message::Section section, const Name& name,
+               const RRClass& rrclass, const RRType& rrtype,
+               const RRTTL& ttl, Message::ParseOptions options);
     void addEDNS(Message::Section section, const Name& name,
                  const RRClass& rrclass, const RRType& rrtype,
                  const RRTTL& ttl, const Rdata& rdata);
@@ -223,9 +228,6 @@ struct RenderSection {
     AbstractMessageRenderer& renderer_;
     const bool partial_ok_;
     bool truncated_;
-private:
-    // silence MSVC warning C4512: assignment operator could not be generated
-    RenderSection& operator=(RenderSection const&);
 };
 }
 
@@ -492,6 +494,10 @@ Message::getRRCount(const Section section) const {
 
 void
 Message::addRRset(const Section section, RRsetPtr rrset, const bool sign) {
+    if (!rrset) {
+        isc_throw(InvalidParameter,
+                  "NULL RRset is given to Message::addRRset");
+    }
     if (impl_->mode_ != Message::RENDER) {
         isc_throw(InvalidMessageOperation,
                   "addRRset performed in non-render mode");
@@ -560,10 +566,18 @@ Message::removeRRset(const Section section, RRsetIterator& iterator) {
 
 void
 Message::clearSection(const Section section) {
+    if (impl_->mode_ != Message::RENDER) {
+        isc_throw(InvalidMessageOperation,
+                  "clearSection performed in non-render mode");
+    }
     if (section >= MessageImpl::NUM_SECTIONS) {
         isc_throw(OutOfRange, "Invalid message section: " << section);
     }
-    impl_->rrsets_[section].clear();
+    if (section == Message::SECTION_QUESTION) {
+        impl_->questions_.clear();
+    } else {
+        impl_->rrsets_[section].clear();
+    }
     impl_->counts_[section] = 0;
 }
 
@@ -642,7 +656,7 @@ int
 MessageImpl::parseQuestion(InputBuffer& buffer) {
     unsigned int added = 0;
 
-    for (int count = 0;
+    for (unsigned int count = 0;
          count < counts_[Message::SECTION_QUESTION];
          ++count) {
         const Name name(buffer);
@@ -678,9 +692,6 @@ struct MatchRR : public unary_function<RRsetPtr, bool> {
     const Name& name_;
     const RRType& rrtype_;
     const RRClass& rrclass_;
-private:
-    // silence MSVC warning C4512: assignment operator could not be generated
-    MatchRR& operator=(MatchRR const&);
 };
 }
 
@@ -720,7 +731,7 @@ MessageImpl::parseSection(const Message::Section section,
 
     unsigned int added = 0;
 
-    for (int count = 0; count < counts_[section]; ++count) {
+    for (unsigned int count = 0; count < counts_[section]; ++count) {
         // We need to remember the start position for TSIG processing
         const size_t start_position = buffer.getPosition();
 
@@ -738,6 +749,17 @@ MessageImpl::parseSection(const Message::Section section,
         const RRClass rrclass(buffer.readUint16());
         const RRTTL ttl(buffer.readUint32());
         const size_t rdlen = buffer.readUint16();
+
+        // If class is ANY or NONE, rdlength may be zero, to signal
+        // an empty RRset.
+        // (the class check must be done to differentiate from RRTypes
+        // that can have zero length rdata
+        if ((rrclass == RRClass::ANY() || rrclass == RRClass::NONE()) &&
+            rdlen == 0) {
+            addRR(section, name, rrclass, rrtype, ttl, options);
+            ++added;
+            continue;
+        }
         ConstRdataPtr rdata = createRdata(rrtype, rrclass, buffer, rdlen);
 
         if (rrtype == RRType::OPT()) {
@@ -772,6 +794,24 @@ MessageImpl::addRR(Message::Section section, const Name& name,
     }
     RRsetPtr rrset(new RRset(name, rrclass, rrtype, ttl));
     rrset->addRdata(rdata);
+    rrsets_[section].push_back(rrset);
+}
+
+void
+MessageImpl::addRR(Message::Section section, const Name& name,
+                   const RRClass& rrclass, const RRType& rrtype,
+                   const RRTTL& ttl, Message::ParseOptions options)
+{
+    if ((options & Message::PRESERVE_ORDER) == 0) {
+        vector<RRsetPtr>::iterator it =
+            find_if(rrsets_[section].begin(), rrsets_[section].end(),
+                    MatchRR(name, rrtype, rrclass));
+        if (it != rrsets_[section].end()) {
+            (*it)->setTTL(min((*it)->getTTL(), ttl));
+            return;
+        }
+    }
+    RRsetPtr rrset(new RRset(name, rrclass, rrtype, ttl));
     rrsets_[section].push_back(rrset);
 }
 
@@ -829,9 +869,6 @@ struct SectionFormatter {
     }
     const Message::Section section_;
     string& output_;
-private:
-    // silence MSVC warning C4512: assignment operator could not be generated
-    SectionFormatter& operator=(SectionFormatter const&);
 };
 }
 

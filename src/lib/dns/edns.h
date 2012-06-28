@@ -363,8 +363,6 @@ private:
     const uint8_t version_;
     uint16_t udp_size_;
     bool dnssec_aware_;
-    // silence MSVC warning C4512: assignment operator could not be generated
-    EDNS& operator=(EDNS const&);
 };
 
 /// \brief Create a new \c EDNS object from a set of RR parameters, also

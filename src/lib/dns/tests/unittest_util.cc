@@ -116,7 +116,7 @@ UnitTestUtil::readWireData(const string& datastr,
             throw runtime_error(err_oss.str());
         }
 
-        for (unsigned int pos = 0; pos < bytes.size(); pos += 2) {
+        for (string::size_type pos = 0; pos < bytes.size(); pos += 2) {
             istringstream iss_byte(bytes.substr(pos, 2));
             unsigned int ch;
 
@@ -139,7 +139,7 @@ UnitTestUtil::matchWireData(const char*, const char*, const char*, const char*,
     ::testing::Message msg;
     size_t cmplen = min(len1, len2);
 
-    for (unsigned int i = 0; i < cmplen; i++) {
+    for (size_t i = 0; i < cmplen; i++) {
         int ch1 = static_cast<const uint8_t*>(data1)[i];
         int ch2 = static_cast<const uint8_t*>(data2)[i];
         if (ch1 != ch2) {
@@ -191,3 +191,21 @@ UnitTestUtil::createRequestMessage(Message& message,
     message.addQuestion(Question(name, rrclass, rrtype));
 }
 
+void
+UnitTestUtil::createDNSSECRequestMessage(Message& message,
+                                         const Opcode& opcode,
+                                         const uint16_t qid,
+                                         const Name& name,
+                                         const RRClass& rrclass,
+                                         const RRType& rrtype)
+{
+    message.clear(Message::RENDER);
+    message.setOpcode(opcode);
+    message.setRcode(Rcode::NOERROR());
+    message.setQid(qid);
+    message.addQuestion(Question(name, rrclass, rrtype));
+    EDNSPtr edns(new EDNS());
+    edns->setUDPSize(4096);
+    edns->setDNSSECAwareness(true);
+    message.setEDNS(edns);
+}
