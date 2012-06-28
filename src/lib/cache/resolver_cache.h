@@ -89,8 +89,8 @@ public:
     ResolverClassCache(const isc::dns::RRClass& cache_class);
 
     /// \brief Construct Function.
-    /// \param caches_size cache size information for each
-    ///        messages/rrsets of different classes.
+    /// \param cache_info Cache size information for each message/rrsets of
+    ///        different classes.
     ResolverClassCache(const CacheSizeInfo& cache_info);
 
     /// \name Lookup Interfaces
@@ -197,9 +197,6 @@ private:
 
     /// \brief cache the SOA rrset parsed from the negative response message.
     RRsetCachePtr negative_soa_cache_;
-
-    // silence MSVC warning C4512: assignment operator could not be generated
-    ResolverClassCache& operator=(ResolverClassCache const&);
 };
 
 class ResolverCache {
