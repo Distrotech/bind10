@@ -14,14 +14,6 @@
 
 #include <config.h>
 
-#ifdef _WIN32
-#include <ws2tcpip.h>
-#else
-#include <unistd.h>             // for some IPC/network system calls
-#include <sys/socket.h>
-#include <netinet/in.h>
-#endif
-
 #include <asio.hpp>
 
 #include <asiolink/io_address.h>
@@ -29,6 +21,13 @@
 #include <asiolink/io_endpoint.h>
 #include <asiolink/tcp_endpoint.h>
 #include <asiolink/udp_endpoint.h>
+
+#include <boost/lexical_cast.hpp>
+
+#include <cassert>
+#include <unistd.h>             // for some IPC/network system calls
+#include <sys/socket.h>
+#include <netinet/in.h>
 
 using namespace std;
 
@@ -62,5 +61,18 @@ IOEndpoint::operator!=(const IOEndpoint& other) const {
     return (!operator==(other));
 }
 
+ostream&
+operator<<(ostream& os, const IOEndpoint& endpoint) {
+    if (endpoint.getFamily() == AF_INET6) {
+        os << "[" << endpoint.getAddress().toText() << "]";
+    } else {
+        // In practice this should be AF_INET, but it's not guaranteed by
+        // the interface.  We'll use the result of textual address
+        // representation opaquely.
+        os << endpoint.getAddress().toText();
+    }
+    os << ":" << boost::lexical_cast<string>(endpoint.getPort());
+    return (os);
+}
 } // namespace asiolink
 } // namespace isc

@@ -18,9 +18,7 @@
 // IMPORTANT NOTE: only very few ASIO headers files can be included in
 // this file.  In particular, asio.hpp should never be included here.
 // See the description of the namespace below.
-#ifndef _WIN32
 #include <unistd.h>             // for some network system calls
-#endif
 
 #include <functional>
 #include <string>
@@ -83,8 +81,6 @@ class IOEndpoint;
 /// modules use it.  Also, at that point we may define a separate (visible)
 /// derived class for testing purposes rather than providing factory methods
 /// (i.e., getDummy variants below).
-///
-/// TODO: Check if IOAsioSocket class is still needed
 ///
 /// \param C Template parameter identifying type of the callback object.
 
@@ -330,10 +326,9 @@ public:
     ///
     /// A call that is a no-op on UDP sockets, this opens a connection to the
     /// system identified by the given endpoint.
+    /// The endpoint and callback are unused.
     ///
-    /// \param endpoint Unused
-    /// \param callback Unused.
-    ///false indicating that the operation completed synchronously.
+    /// \return false indicating that the operation completed synchronously.
     virtual bool open(const IOEndpoint*, C&) {
         return (false);
     }
@@ -341,23 +336,14 @@ public:
     /// \brief Send Asynchronously
     ///
     /// Must be supplied as it is abstract in the base class.
-    ///
-    /// \param data Unused
-    /// \param length Unused
-    /// \param endpoint Unused
-    /// \param callback Unused
+    /// This is unused.
     virtual void asyncSend(const void*, size_t, const IOEndpoint*, C&) {
     }
 
     /// \brief Receive Asynchronously
     ///
     /// Must be supplied as it is abstract in the base class.
-    ///
-    /// \param data Unused
-    /// \param length Unused
-    /// \param offset Unused
-    /// \param endpoint Unused
-    /// \param callback Unused
+    /// The parameters are unused.
     virtual void asyncReceive(void* data, size_t, size_t, IOEndpoint*, C&) {
     }
 

@@ -20,11 +20,9 @@
 #endif
 
 #include <log/dummylog.h>
-#ifndef _WIN32
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>             // for some IPC/network system calls
-#endif
 
 #include <algorithm>
 #include <cassert>
@@ -42,10 +40,6 @@
 #include <asiolink/io_endpoint.h>
 #include <asiolink/io_service.h>
 #include <asiolink/tcp_endpoint.h>
-
-#if defined(_WIN32) && defined(min)
-#undef min
-#endif
 
 namespace isc {
 namespace asiolink {

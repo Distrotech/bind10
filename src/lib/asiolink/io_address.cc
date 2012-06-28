@@ -14,13 +14,10 @@
 
 #include <config.h>
 
-#ifdef _WIN32
-#include <ws2tcpip.h>
-#else
 #include <unistd.h>             // for some IPC/network system calls
+#include <stdint.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#endif
 
 #include <asio.hpp>
 
@@ -40,7 +37,7 @@ namespace asiolink {
 
 // XXX: we cannot simply construct the address in the initialization list,
 // because we'd like to throw our own exception on failure.
-IOAddress::IOAddress(const string& address_str) {
+IOAddress::IOAddress(const std::string& address_str) {
     asio::error_code err;
     asio_address_ = ip::address::from_string(address_str, err);
     if (err) {
@@ -49,9 +46,14 @@ IOAddress::IOAddress(const string& address_str) {
     }
 }
 
-IOAddress::IOAddress(const ip::address& asio_address) :
+IOAddress::IOAddress(const asio::ip::address& asio_address) :
     asio_address_(asio_address)
 {}
+
+IOAddress::IOAddress(uint32_t v4address):
+    asio_address_(asio::ip::address_v4(v4address)) {
+
+}
 
 string
 IOAddress::toText() const {
@@ -70,12 +72,7 @@ IOAddress::from_bytes(short family, const uint8_t* data) {
 
     BOOST_STATIC_ASSERT(INET6_ADDRSTRLEN >= INET_ADDRSTRLEN);
     char addr_str[INET6_ADDRSTRLEN];
-#ifdef _WIN32
-#define DECONST (void *)
-#else
-#define DECONST
-#endif
-    inet_ntop(family, DECONST data, addr_str, INET6_ADDRSTRLEN);
+    inet_ntop(family, data, addr_str, INET6_ADDRSTRLEN);
     return IOAddress(string(addr_str));
 }
 
@@ -91,6 +88,15 @@ IOAddress::getFamily() const {
 const asio::ip::address&
 IOAddress::getAddress() const {
     return asio_address_;
+}
+
+IOAddress::operator uint32_t() const {
+    if (getAddress().is_v4()) {
+        return (getAddress().to_v4().to_ulong());
+    } else {
+        isc_throw(BadValue, "Can't convert " << toText()
+                  << " address to IPv4.");
+    }
 }
 
 } // namespace asiolink

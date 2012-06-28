@@ -97,10 +97,6 @@ protected:
         TimerCallBackCounter& counter_;
         int count_;
         int prev_counter_;
-        // silence MSVC warning C4512:
-        // assignment operator could not be generated
-        TimerCallBackCancelDeleter&
-                operator=(TimerCallBackCancelDeleter const&);
     };
     class TimerCallBackCanceller {
     public:
@@ -114,9 +110,6 @@ protected:
     private:
         unsigned int& counter_;
         IntervalTimer& itimer_;
-        // silence MSVC warning C4512:
-        // assignment operator could not be generated
-        TimerCallBackCanceller& operator=(TimerCallBackCanceller const&);
     };
     class TimerCallBackOverwriter : public std::unary_function<void, void> {
     public:
@@ -143,9 +136,6 @@ protected:
         IntervalTimerTest* test_obj_;
         IntervalTimer& timer_;
         int count_;
-        // silence MSVC warning C4512:
-        // assignment operator could not be generated
-        TimerCallBackOverwriter& operator=(TimerCallBackOverwriter const&);
     };
 protected:
     IOService io_service_;
