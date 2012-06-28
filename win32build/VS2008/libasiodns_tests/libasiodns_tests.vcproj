@@ -185,11 +185,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\lib\asiodns\tests\io_fetch_unittest.cc"
+				RelativePath="..\..\..\src\lib\asiodns\tests\dns_service_unittest.cc"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\lib\asiodns\tests\io_service_unittest.cc"
+				RelativePath="..\..\..\src\lib\asiodns\tests\io_fetch_unittest.cc"
 				>
 			</File>
 			<File

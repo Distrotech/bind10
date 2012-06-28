@@ -26,10 +26,10 @@
 
 #include <csignal>
 
+#ifndef _WIN32
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#ifndef _WIN32
 #include <unistd.h>
 #include <netdb.h>
 #endif
@@ -140,8 +140,9 @@ protected:
             UINT_PTR _no_use_idevent,
             DWORD _no_use_dwtime)
 #else
-    static void stopIOService(int) {
+    static void stopIOService(int)
 #endif
+    {
         io_service_is_time_out = true;
         if (current_service != NULL) {
             current_service->stop();

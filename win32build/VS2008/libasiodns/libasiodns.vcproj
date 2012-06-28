@@ -165,6 +165,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\asiodns\logger.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\asiodns\sync_udp_server.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\asiodns\tcp_server.cc"
 				>
 			</File>
@@ -204,6 +212,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\asiodns\io_fetch.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\asiodns\logger.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\asiodns\sync_udp_server.h"
 				>
 			</File>
 			<File

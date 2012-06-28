@@ -36,8 +36,10 @@
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 
+#ifndef _WIN32
 #include <sys/types.h>
 #include <sys/socket.h>
+#endif
 
 /// The following tests focus on stop interface for udp and
 /// tcp server, there are lots of things can be shared to test
@@ -382,7 +384,7 @@ class DNSServerTestBase : public::testing::Test {
 #ifdef _WIN32
             UINT_PTR id = 1;
             SetTimer(NULL, id, IO_SERVICE_TIME_OUT * 1000,
-                     DNSServerTest::stopIOService);
+                     DNSServerTestBase::stopIOService);
             current_service = &service;
             service.run();
             service.reset();
@@ -408,8 +410,9 @@ class DNSServerTestBase : public::testing::Test {
             UINT_PTR _no_use_idevent,
             DWORD _no_use_dwtime)
 #else
-        static void stopIOService(int _no_use_parameter) {
+        static void stopIOService(int _no_use_parameter)
 #endif
+        {
             io_service_is_time_out = true;
             if (current_service != NULL) {
                 current_service->stop();
@@ -516,8 +519,8 @@ protected:
                                                this->checker_, this->lookup_,
                                                this->answer_);
 #ifdef _WIN32
-        const int fdTCP(getFd(SOCK_STREAM));
-        ASSERT_NE(-1, fdTCP) << strerror(errno);
+        const SOCKET fdTCP(getFd(SOCK_STREAM));
+        ASSERT_NE(INVALID_SOCKET, fdTCP) << strerror(errno);
 #else
         const int fdTCP(getFd(SOCK_STREAM));
         ASSERT_NE(-1, fdTCP) << strerror(errno);
