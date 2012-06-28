@@ -15,6 +15,7 @@
     <ClInclude Include="..\..\..\src\lib\dns\python\messagerenderer_python.h" />
     <ClInclude Include="..\..\..\src\lib\dns\python\message_python.h" />
     <ClInclude Include="..\..\..\src\lib\dns\python\name_python.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\python\nsec3hash_python.h" />
     <ClInclude Include="..\..\..\src\lib\dns\python\opcode_python.h" />
     <ClInclude Include="..\..\..\src\lib\dns\python\pydnspp_common.h" />
     <ClInclude Include="..\..\..\src\lib\dns\python\pydnspp_towire.h" />
@@ -25,6 +26,7 @@
     <ClInclude Include="..\..\..\src\lib\dns\python\rrset_python.h" />
     <ClInclude Include="..\..\..\src\lib\dns\python\rrttl_python.h" />
     <ClInclude Include="..\..\..\src\lib\dns\python\rrtype_python.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\python\serial_python.h" />
     <ClInclude Include="..\..\..\src\lib\dns\python\tsigerror_python.h" />
     <ClInclude Include="..\..\..\src\lib\dns\python\tsigkey_python.h" />
     <ClInclude Include="..\..\..\src\lib\dns\python\tsigrecord_python.h" />
@@ -37,6 +39,8 @@
     <ClCompile Include="..\..\..\src\lib\dns\python\message_python.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\python\message_python_inc.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\python\name_python.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\python\nsec3hash_python.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\python\nsec3hash_python_inc.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\python\opcode_python.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\python\pydnspp_common.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\python\question_python.cc" />
@@ -46,6 +50,7 @@
     <ClCompile Include="..\..\..\src\lib\dns\python\rrset_python.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\python\rrttl_python.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\python\rrtype_python.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\python\serial_python.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\python\tsigerror_python.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\python\tsigerror_python_inc.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\python\tsigkey_python.cc" />

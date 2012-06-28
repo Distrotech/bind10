@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="libdns++_benchmarks"
+	Name="libdns++_rbench"
 	ProjectGUID="{9ABB5EB9-7742-4EBE-955A-0AE81B5878BA}"
-	RootNamespace="libdns_benchmarks"
+	RootNamespace="libdns_rbench"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>

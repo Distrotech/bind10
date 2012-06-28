@@ -309,7 +309,8 @@ MessageRenderer::writeName(const Name& name, const bool compress) {
         }
         // write with range check for safety
         impl_->seq_hashes_.at(nlabels_uncomp) =
-            sequence.getHash(impl_->compress_mode_);
+          sequence.getHash(impl_->compress_mode_ ==
+                           MessageRenderer::CASE_SENSITIVE);
         InputBuffer name_buf(data, data_len);
         ptr_offset = impl_->findOffset(getBuffer(), name_buf,
                                        impl_->seq_hashes_[nlabels_uncomp],

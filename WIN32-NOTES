@@ -36,7 +36,7 @@ What is needed:
 
  - botan 1.8.x (compiled from sources to control things, i.e.,
   tried to factorize the (in)convenience with gtest. Note its
-  config phase requires a python2)
+  config phase requires a python2. Tested with a 1.10.x too)
 
  - log4cplus (compiled from sources in the same style...
   Note WIN32 disables syslog support. In VS2010 solution/project
@@ -48,7 +48,7 @@ Environment variables (with examples):
 
  - BOOST -> C:\Program Files\boost\boost_1_44
 
- - BIND10HOME -> c:/cygwin/home/dupont/bind10.trac826
+ - BIND10HOME -> c:/cygwin/home/dupont/bind10
 
 How to compile google test:
 
@@ -91,7 +91,7 @@ How to recompile python:
 
 Where I put things (hardwired paths):
 
- - <home>\bind10.trac826 for bind10 (BIND10HOME environment variable)
+ - <home>\bind10 for bind10 (BIND10HOME environment variable)
 
  - <home>\gtest\include
 

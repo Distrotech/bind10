@@ -169,6 +169,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\dns\python\nsec3hash_python.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\dns\python\opcode_python.cc"
 				>
 			</File>
@@ -202,6 +206,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\dns\python\rrtype_python.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\dns\python\serial_python.cc"
 				>
 			</File>
 			<File
@@ -247,6 +255,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\dns\python\nsec3hash_python.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\dns\python\opcode_python.h"
 				>
 			</File>
@@ -284,6 +296,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\dns\python\rrtype_python.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\dns\python\serial_python.h"
 				>
 			</File>
 			<File
