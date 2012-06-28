@@ -12,13 +12,16 @@ endif
 
 CLEANFILES = *.gcno *.gcda
 
+TESTS_ENVIRONMENT = \
+	$(LIBTOOL) --mode=execute $(VALGRIND_COMMAND)
+
 TESTS =
 if HAVE_GTEST
 TESTS += run_unittests
 run_unittests_SOURCES  = run_unittests.cc
 run_unittests_SOURCES += $(top_srcdir)/src/lib/dns/tests/unittest_util.h
 run_unittests_SOURCES += $(top_srcdir)/src/lib/dns/tests/unittest_util.cc
-run_unittests_SOURCES += io_service_unittest.cc
+run_unittests_SOURCES += dns_service_unittest.cc
 run_unittests_SOURCES += dns_server_unittest.cc
 run_unittests_SOURCES += io_fetch_unittest.cc
 

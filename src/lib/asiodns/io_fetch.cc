@@ -19,9 +19,9 @@
 #include <ws2tcpip.h>
 #include <mswsock.h>
 #else
+#include <unistd.h>             // for some IPC/network system calls
 #include <netinet/in.h>
 #include <sys/socket.h>
-#include <unistd.h>             // for some IPC/network system calls
 #endif
 
 #include <boost/bind.hpp>
@@ -43,14 +43,13 @@
 #include <dns/messagerenderer.h>
 #include <dns/opcode.h>
 #include <dns/rcode.h>
-#include <log/logger.h>
-#include <log/macros.h>
 
-#include <asiodns/asiodns_messages.h>
 #include <asiodns/io_fetch.h>
 
 #include <util/buffer.h>
 #include <util/random/qid_gen.h>
+
+#include <asiodns/logger.h>
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -68,19 +67,11 @@ using namespace std;
 namespace isc {
 namespace asiodns {
 
-/// Use the ASIO logger
-
-namespace {
-
-isc::log::Logger logger("asiolink");
 // Log debug verbosity
-enum {
-    DBG_IMPORTANT = 1,
-    DBG_COMMON = 20,
-    DBG_ALL = 50
-};
 
-}
+const int DBG_IMPORTANT = DBGLVL_TRACE_BASIC;
+const int DBG_COMMON = DBGLVL_TRACE_DETAIL;
+const int DBG_ALL = DBGLVL_TRACE_DETAIL + 20;
 
 /// \brief IOFetch Data
 ///
@@ -188,12 +179,12 @@ struct IOFetchData {
 /// IOFetch Constructor - just initialize the private data
 
 IOFetch::IOFetch(Protocol protocol, IOService& service,
-    const isc::dns::Question& question, const IOAddress& address, uint16_t port,
-    OutputBufferPtr& buff, Callback* cb, int wait)
+    const isc::dns::Question& question, const IOAddress& address,
+    uint16_t port, OutputBufferPtr& buff, Callback* cb, int wait, bool edns)
 {
     MessagePtr query_msg(new Message(Message::RENDER));
     initIOFetch(query_msg, protocol, service, question, address, port, buff,
-                cb, wait);
+                cb, wait, edns);
 }
 
 IOFetch::IOFetch(Protocol protocol, IOService& service,
@@ -224,10 +215,11 @@ IOFetch::IOFetch(Protocol protocol, IOService& service,
 }
 
 void
-IOFetch::initIOFetch(MessagePtr& query_msg, Protocol protocol, IOService& service,
+IOFetch::initIOFetch(MessagePtr& query_msg, Protocol protocol,
+                     IOService& service,
                      const isc::dns::Question& question,
                      const IOAddress& address, uint16_t port,
-                     OutputBufferPtr& buff, Callback* cb, int wait)
+                     OutputBufferPtr& buff, Callback* cb, int wait, bool edns)
 {
     data_ = boost::shared_ptr<IOFetchData>(new IOFetchData(
         protocol, service, address, port, buff, cb, wait));
@@ -237,11 +229,17 @@ IOFetch::initIOFetch(MessagePtr& query_msg, Protocol protocol, IOService& servic
     query_msg->setRcode(Rcode::NOERROR());
     query_msg->setHeaderFlag(Message::HEADERFLAG_RD);
     query_msg->addQuestion(question);
-    EDNSPtr edns_query(new EDNS());
-    edns_query->setUDPSize(Message::DEFAULT_MAX_EDNS0_UDPSIZE);
-    query_msg->setEDNS(edns_query);
-    MessageRenderer renderer(*data_->msgbuf);
+
+    if (edns) {
+        EDNSPtr edns_query(new EDNS());
+        edns_query->setUDPSize(Message::DEFAULT_MAX_EDNS0_UDPSIZE);
+        query_msg->setEDNS(edns_query);
+    }
+
+    MessageRenderer renderer;
+    renderer.setBuffer(data_->msgbuf.get());
     query_msg->toWire(renderer);
+    renderer.setBuffer(NULL);
 }
 
 // Return protocol in use.
@@ -367,10 +365,6 @@ IOFetch::stop(Result result) {
         // well be, in which case the testing (and setting) of the stopped_
         // variable should be done inside a mutex (and the stopped_ variable
         // declared as "volatile").
-        //
-        // The numeric arguments indicate the debug level, with the lower
-        // numbers indicating the most important information.  The relative
-        // values are somewhat arbitrary.
         //
         // TODO: Update testing of stopped_ if threads are used.
         data_->stopped = true;

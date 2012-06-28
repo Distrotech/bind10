@@ -53,7 +53,9 @@ protected:
     /// This is intentionally defined as \c protected, as this base class
     /// should never be instantiated except as part of a derived class.
     //@{
-    DNSServer() { self_ = this; }
+    DNSServer() {
+        self_ = this;
+    }
 public:
     /// \brief The destructor
     virtual ~DNSServer() {}
@@ -85,22 +87,6 @@ public:
     /// \param done If true, this signals the system there is an answer
     ///             to return.
     virtual void resume(const bool done) { self_->resume(done); }
-
-    /// \brief Indicate whether the server is able to send an answer
-    /// to a query.
-    ///
-    /// This is presently used only for testing purposes.
-    virtual bool hasAnswer() { return (self_->hasAnswer()); }
-
-    /// \brief Returns the current value of the 'coroutine' object
-    ///
-    /// This is a temporary method, intended to be used for debugging
-    /// purposes during development and removed later.  It allows
-    /// callers from outside the coroutine object to retrieve information
-    /// about its current state.
-    ///
-    /// \return The value of the 'coroutine' object
-    virtual int value() { return (self_->value()); }
 
     /// \brief Returns a pointer to a clone of this DNSServer object.
     ///

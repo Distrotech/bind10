@@ -41,16 +41,23 @@ class UDPServer : public virtual DNSServer, public virtual coroutine {
 public:
     /// \brief Constructor
     /// \param io_service the asio::io_service to work with
-    /// \param addr the IP address to listen for queries on
-    /// \param port the port to listen for queries on
+    /// \param fd the file descriptor of opened UDP socket
+    /// \param af address family, either AF_INET or AF_INET6
     /// \param checkin the callbackprovider for non-DNS events
     /// \param lookup the callbackprovider for DNS lookup events
     /// \param answer the callbackprovider for DNS answer events
-    explicit UDPServer(asio::io_service& io_service,
-                       const asio::ip::address& addr, const uint16_t port,
-                       isc::asiolink::SimpleCallback* checkin = NULL,
-                       DNSLookup* lookup = NULL,
-                       DNSAnswer* answer = NULL);
+    /// \throw isc::InvalidParameter if af is neither AF_INET nor AF_INET6
+    /// \throw isc::asiolink::IOError when a low-level error happens, like the
+    ///     fd is not a valid descriptor.
+    UDPServer(asio::io_service& io_service,
+#ifdef _WIN32
+              SOCKET fd,
+#else
+              int fd,
+#endif
+              int af,
+              isc::asiolink::SimpleCallback* checkin = NULL,
+              DNSLookup* lookup = NULL, DNSAnswer* answer = NULL);
 
     /// \brief The function operator
     void operator()(asio::error_code ec = asio::error_code(),
@@ -69,16 +76,6 @@ public:
     ///        we have an answer
     void resume(const bool done);
 
-    /// \brief Check if we have an answer
-    ///
-    /// \return true if we have an answer
-    bool hasAnswer();
-
-    /// \brief Returns the coroutine state value
-    ///
-    /// \return the coroutine state value
-    int value() { return (get_value()); }
-
     /// \brief Clones the object
     ///
     /// \return a newly allocated copy of this object
@@ -94,7 +91,7 @@ private:
      * \brief Internal state and data.
      *
      * We use the pimple design pattern, but not because we need to hide
-     * internal data. This struct and whole header is for private use anyway.
+     * internal data. This class and whole header is for private use anyway.
      * It turned out that UDPServer is copied a lot, because it is a coroutine.
      * This way the overhead of copying is lower, we copy only one shared
      * pointer instead of about 10 of them.

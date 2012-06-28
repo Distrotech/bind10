@@ -18,9 +18,9 @@
 #ifdef _WIN32
 #include <ws2tcpip.h>
 #else
+#include <unistd.h>             // for some IPC/network system calls
 #include <netinet/in.h>
 #include <sys/socket.h>
-#include <unistd.h>             // for some IPC/network system calls
 #endif
 #include <errno.h>
 
@@ -34,6 +34,7 @@
 #include <asiolink/udp_endpoint.h>
 #include <asiolink/udp_socket.h>
 #include "udp_server.h"
+#include "logger.h"
 
 #include <dns/opcode.h>
 
@@ -58,7 +59,7 @@ namespace asiodns {
  */
 struct UDPServer::Data {
     /*
-     * Constructor from parameters passed to UDPServer constructor.
+     * Constructors from parameters passed to UDPServer constructor.
      * This instance will not be used to retrieve and answer the actual
      * query, it will only hold parameters until we wait for the
      * first packet. But we do initialize the socket in here.
@@ -80,6 +81,32 @@ struct UDPServer::Data {
             socket_->set_option(asio::ip::v6_only(true));
         }
         socket_->bind(udp::endpoint(addr, port));
+    }
+    Data(io_service& io_service,
+#ifdef _WIN32
+         SOCKET fd,
+#else
+         int fd,
+#endif
+         int af, SimpleCallback* checkin,
+         DNSLookup* lookup, DNSAnswer* answer) :
+         io_(io_service), done_(false),
+         checkin_callback_(checkin),lookup_callback_(lookup),
+         answer_callback_(answer)
+    {
+        if (af != AF_INET && af != AF_INET6) {
+            isc_throw(InvalidParameter, "Address family must be either AF_INET "
+                      "or AF_INET6, not " << af);
+        }
+        LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, ASIODNS_FD_ADD_UDP).arg(fd);
+        try {
+            socket_.reset(new udp::socket(io_service));
+            socket_->assign(af == AF_INET6 ? udp::v6() : udp::v4(), fd);
+        } catch (const std::exception& exception) {
+            // Whatever the thing throws, it is something from ASIO and we
+            // convert it
+            isc_throw(IOError, exception.what());
+        }
     }
 
     /*
@@ -162,19 +189,21 @@ struct UDPServer::Data {
 
     std::auto_ptr<IOEndpoint> peer_;
     std::auto_ptr<IOSocket> iosock_;
-private:
-    // silence MSVC warning C4512: assignment operator could not be generated
-    Data& operator=(Data const&);
 };
 
 /// The following functions implement the \c UDPServer class.
 ///
 /// The constructor. It just creates new internal state object
 /// and lets it handle the initialization.
-UDPServer::UDPServer(io_service& io_service, const ip::address& addr,
-    const uint16_t port, SimpleCallback* checkin, DNSLookup* lookup,
-    DNSAnswer* answer) :
-    data_(new Data(io_service, addr, port, checkin, lookup, answer))
+UDPServer::UDPServer(io_service& io_service,
+#ifdef _WIN32
+                     SOCKET fd,
+#else
+                     int fd,
+#endif
+                     int af, SimpleCallback* checkin, DNSLookup* lookup,
+                     DNSAnswer* answer) :
+    data_(new Data(io_service, fd, af, checkin, lookup, answer))
 { }
 
 /// The function operator is implemented with the "stackless coroutine"
@@ -324,11 +353,6 @@ void
 UDPServer::resume(const bool done) {
     data_->done_ = done;
     data_->io_.post(*this);
-}
-
-bool
-UDPServer::hasAnswer() {
-    return (data_->done_);
 }
 
 } // namespace asiodns
