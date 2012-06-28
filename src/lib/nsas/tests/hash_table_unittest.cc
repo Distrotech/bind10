@@ -30,7 +30,6 @@
 #include "nsas_test.h"
 
 using namespace std;
-using boost::shared_ptr;
 using namespace isc::dns;
 
 namespace isc {

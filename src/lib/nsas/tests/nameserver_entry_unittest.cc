@@ -144,7 +144,7 @@ TEST_F(NameserverEntryTest, SetRTT) {
     NameserverEntry::AddressVector vec;
     alpha->getAddresses(vec);
 
-    ASSERT_TRUE(vec.size() > 0);
+    ASSERT_FALSE(vec.empty());
 
     // Take the first address and change the RTT.
     IOAddress first_address = vec[0].getAddress();
@@ -179,7 +179,7 @@ TEST_F(NameserverEntryTest, Unreachable) {
     NameserverEntry::AddressVector vec;
     alpha->getAddresses(vec);
 
-    ASSERT_TRUE(vec.size() > 0);
+    ASSERT_FALSE(vec.empty());
 
     // Take the first address and mark as unreachable.
     IOAddress first_address = vec[0].getAddress();
