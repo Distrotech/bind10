@@ -39,8 +39,13 @@ TEST(ZoneTest, init) {
 
 TEST(ZoneTest, find) {
     InMemoryZoneFinder zone(RRClass::IN(), Name("example.com"));
+#ifdef _MSC_VER
+    EXPECT_EQ(ZoneFinder::NXDOMAIN,
+              zone.find(Name("www.example.com"), RRType::A())->code);
+#else
     EXPECT_EQ(ZoneFinder::NXDOMAIN,
               zone.find(Name("www.example.com"), RRType::A()).code);
+#endif
 }
 
 class ZoneTableTest : public ::testing::Test {

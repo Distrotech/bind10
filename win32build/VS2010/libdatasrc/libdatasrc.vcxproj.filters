@@ -66,6 +66,15 @@
     <ClInclude Include="..\..\..\src\lib\datasrc\sqlite3_accessor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\datasrc\client_list.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\datasrc\rbnode_rrset.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\datasrc\datasrc_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\datasrc\cache.cc">
@@ -102,6 +111,21 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\lib\datasrc\sqlite3_accessor.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\datasrc\client_list.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\datasrc\memory_datasrc_link.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\datasrc\sqlite3_accessor_link.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\datasrc\static_datasrc_link.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\datasrc\zone_finder_context.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

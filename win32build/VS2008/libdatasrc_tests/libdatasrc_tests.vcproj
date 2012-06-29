@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd ..\..\..\src\lib\datasrc\tests\testdata&#x0D;&#x0A;copy rwtest.sqlite3 rwtest.sqlite3.copied&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;;C:\sqlite3"
-				PreprocessorDefinitions="TEST_DATA_DIR=\&quot;$(BIND10HOME)/src/lib/datasrc/tests/testdata\&quot;;TEST_DATA_BUILDDIR=\&quot;$(BIND10HOME)/src/lib/datasrc/tests/testdata\&quot;"
+				PreprocessorDefinitions="TEST_DATA_DIR=\&quot;$(BIND10HOME)/src/lib/datasrc/tests/testdata\&quot;;TEST_DATA_BUILDDIR=\&quot;$(BIND10HOME)/src/lib/datasrc/tests/testdata\&quot;;TEST_DATA_COMMONDIR=\&quot;$(BIND10HOME)/src/lib/datasrc/tests/testdata\&quot;"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -103,7 +103,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd ..\..\..\src\lib\datasrc\tests\testdata&#x0D;&#x0A;copy rwtest.sqlite3 rwtest.sqlite3.copied&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -122,7 +122,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;;C:\sqlite3"
-				PreprocessorDefinitions="TEST_DATA_DIR=\&quot;$(BIND10HOME)/src/lib/datasrc/tests/testdata\&quot;;TEST_DATA_BUILDDIR=\&quot;$(BIND10HOME)/src/lib/datasrc/tests/testdata\&quot;"
+				PreprocessorDefinitions="TEST_DATA_DIR=\&quot;$(BIND10HOME)/src/lib/datasrc/tests/testdata\&quot;;TEST_DATA_BUILDDIR=\&quot;$(BIND10HOME)/src/lib/datasrc/tests/testdata\&quot;;TEST_DATA_COMMONDIR=\&quot;$(BIND10HOME)/src/lib/datasrc/tests/testdata\&quot;"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -187,6 +187,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\datasrc\tests\client_list_unittest.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\datasrc\tests\client_unittest.cc"
 				>
 			</File>
@@ -203,6 +207,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\datasrc\tests\faked_nsec3.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\datasrc\tests\logger_unittest.cc"
 				>
 			</File>
@@ -212,6 +220,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\datasrc\tests\query_unittest.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\tests\rbnode_rrset_unittest.cc"
 				>
 			</File>
 			<File
@@ -235,11 +247,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\datasrc\tests\test_client.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\datasrc\tests\test_datasrc.cc"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\dns\tests\unittest_util.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\tests\zone_finder_context_unittest.cc"
 				>
 			</File>
 			<File
@@ -252,6 +272,14 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\tests\faked_nsec3.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\tests\test_client.h"
+				>
+			</File>
 			<File
 				RelativePath="..\..\..\src\lib\datasrc\tests\test_datasrc.h"
 				>

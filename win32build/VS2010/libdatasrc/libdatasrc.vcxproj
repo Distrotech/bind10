@@ -13,7 +13,9 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\src\lib\datasrc\cache.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\client.h" />
+    <ClInclude Include="..\..\..\src\lib\datasrc\client_list.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\database.h" />
+    <ClInclude Include="..\..\..\src\lib\datasrc\datasrc_config.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\datasrc_messages.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\data_source.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\factory.h" />
@@ -21,6 +23,7 @@
     <ClInclude Include="..\..\..\src\lib\datasrc\logger.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\memory_datasrc.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\query.h" />
+    <ClInclude Include="..\..\..\src\lib\datasrc\rbnode_rrset.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\rbtree.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\result.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\sqlite3_accessor.h" />
@@ -31,17 +34,22 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\datasrc\cache.cc" />
+    <ClCompile Include="..\..\..\src\lib\datasrc\client_list.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\database.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\datasrc_messages.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\data_source.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\factory.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\logger.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\memory_datasrc.cc" />
+    <ClCompile Include="..\..\..\src\lib\datasrc\memory_datasrc_link.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\query.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\sqlite3_accessor.cc" />
+    <ClCompile Include="..\..\..\src\lib\datasrc\sqlite3_accessor_link.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\sqlite3_datasrc.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\static_datasrc.cc" />
+    <ClCompile Include="..\..\..\src\lib\datasrc\static_datasrc_link.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\zonetable.cc" />
+    <ClCompile Include="..\..\..\src\lib\datasrc\zone_finder_context.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{32624520-5341-471B-B88D-2599DBCDABF5}</ProjectGuid>
@@ -92,6 +100,8 @@
     <PreBuildEvent>
       <Command>cd ..\..\..\src\lib\datasrc
 ..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe datasrc_messages.mes
+copy datasrc_config.h.pre.win32 datasrc_config.h
+copy static.zone.pre static.zone
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -115,6 +125,8 @@
     <PreBuildEvent>
       <Command>cd ..\..\..\src\lib\datasrc
 ..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe datasrc_messages.mes
+copy datasrc_config.h.pre.win32 datasrc_config.h
+copy static.zone.pre static.zone
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>

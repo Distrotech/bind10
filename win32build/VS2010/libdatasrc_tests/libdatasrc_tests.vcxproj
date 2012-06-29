@@ -52,7 +52,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;TEST_DATA_DIR="%BIND10HOME%/src/lib/datasrc/tests/testdata";TEST_DATA_BUILDDIR="%BIND10HOME%/src/lib/datasrc/tests/testdata";_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;TEST_DATA_DIR="%BIND10HOME%/src/lib/datasrc/tests/testdata";TEST_DATA_BUILDDIR="%BIND10HOME%/src/lib/datasrc/tests/testdata";TEST_DATA_COMMONDIR="%BIND10HOME%/src/lib/datasrc/tests/testdata";_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\..\gtest\include;%BOOST%;C:\sqlite3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
@@ -64,9 +64,8 @@
       <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\libutil_unittests\$(Configuration);..\liblog\$(Configuration);..\libcryptolink\$(Configuration);..\libdns++\$(Configuration);..\libcc\$(Configuration);..\libtestutils\$(Configuration);..\libdatasrc\$(Configuration);..\..\..\..\botan\md10\$(Configuration);..\..\..\..\log4cplus\md10\$(Configuration);..\..\..\..\gtest\md10\$(Configuration);C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
-      <Command>cd ..\..\..\src\lib\datasrc\tests\testdata
-copy rwtest.sqlite3 rwtest.sqlite3.copied
-</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -76,7 +75,7 @@ copy rwtest.sqlite3 rwtest.sqlite3.copied
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;TEST_DATA_DIR="%BIND10HOME%/src/lib/datasrc/tests/testdata";TEST_DATA_BUILDDIR="%BIND10HOME%/src/lib/datasrc/tests/testdata";NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;TEST_DATA_DIR="%BIND10HOME%/src/lib/datasrc/tests/testdata";TEST_DATA_BUILDDIR="%BIND10HOME%/src/lib/datasrc/tests/testdata";TEST_DATA_COMMONDIR="%BIND10HOME%/src/lib/datasrc/tests/testdata";NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\..\gtest\include;%BOOST%;C:\sqlite3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
@@ -90,31 +89,37 @@ copy rwtest.sqlite3 rwtest.sqlite3.copied
       <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\libutil_unittests\$(Configuration);..\liblog\$(Configuration);..\libcryptolink\$(Configuration);..\libdns++\$(Configuration);..\libcc\$(Configuration);..\libtestutils\$(Configuration);..\libdatasrc\$(Configuration);..\..\..\..\botan\md10\$(Configuration);..\..\..\..\log4cplus\md10\$(Configuration);..\..\..\..\gtest\md10\$(Configuration);C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
-      <Command>cd ..\..\..\src\lib\datasrc\tests\testdata
-copy rwtest.sqlite3 rwtest.sqlite3.copied
-</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\lib\datasrc\tests\faked_nsec3.h" />
+    <ClInclude Include="..\..\..\src\lib\datasrc\tests\test_client.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\tests\test_datasrc.h" />
     <ClInclude Include="..\..\..\src\lib\dns\tests\unittest_util.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\cache_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\datasrc\tests\client_list_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\client_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\database_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\datasrc_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\factory_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\datasrc\tests\faked_nsec3.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\logger_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\memory_datasrc_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\query_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\datasrc\tests\rbnode_rrset_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\rbtree_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\run_unittests.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\sqlite3_accessor_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\sqlite3_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\static_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\datasrc\tests\test_client.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\test_datasrc.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\zonetable_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\datasrc\tests\zone_finder_context_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dns\tests\unittest_util.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

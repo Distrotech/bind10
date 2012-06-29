@@ -1258,8 +1258,10 @@ TEST_F(InMemoryZoneFinderTest, loadFromIterator) {
     const char* const a_sig_txt = "ns1.example.org. 300 IN RRSIG A 5 3 300 "
         "20000101000000 20000201000000 12345 example.org. FAKEFAKE\n";
     ss << soa_txt << soa_sig_txt << a_txt << a_sig_txt;
-    shared_ptr<DataSourceClient> db_client = unittest::createSQLite3Client(
-        class_, origin_, TEST_DATA_BUILDDIR "/contexttest.sqlite3.copied", ss);
+    boost::shared_ptr<DataSourceClient>
+        db_client = unittest::createSQLite3Client(
+            class_, origin_,
+            TEST_DATA_BUILDDIR "/contexttest.sqlite3.copied", ss);
     zone_finder_.load(*db_client->getIterator(origin_));
 
     // The new content should be visible, including the previously-nonexistent

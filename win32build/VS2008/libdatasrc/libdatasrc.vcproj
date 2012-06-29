@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd ..\..\..\src\lib\datasrc&#x0D;&#x0A;..\..\..\win32build\VS2008\liblog_compiler\$(ConfigurationName)\message.exe datasrc_messages.mes&#x0D;&#x0A;"
+				CommandLine="cd ..\..\..\src\lib\datasrc&#x0D;&#x0A;..\..\..\win32build\VS2008\liblog_compiler\$(ConfigurationName)\message.exe datasrc_messages.mes&#x0D;&#x0A;copy datasrc_config.h.pre.win32 datasrc_config.h&#x0D;&#x0A;copy static.zone.pre static.zone&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -89,7 +89,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd ..\..\..\src\lib\datasrc&#x0D;&#x0A;..\..\..\win32build\VS2008\liblog_compiler\$(ConfigurationName)\message.exe datasrc_messages.mes&#x0D;&#x0A;"
+				CommandLine="cd ..\..\..\src\lib\datasrc&#x0D;&#x0A;..\..\..\win32build\VS2008\liblog_compiler\$(ConfigurationName)\message.exe datasrc_messages.mes&#x0D;&#x0A;copy datasrc_config.h.pre.win32 datasrc_config.h&#x0D;&#x0A;copy static.zone.pre static.zone&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -157,6 +157,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\datasrc\client_list.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\datasrc\data_source.cc"
 				>
 			</File>
@@ -181,6 +185,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\datasrc\memory_datasrc_link.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\datasrc\query.cc"
 				>
 			</File>
@@ -189,11 +197,23 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\datasrc\sqlite3_accessor_link.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\datasrc\sqlite3_datasrc.cc"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\datasrc\static_datasrc.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\static_datasrc_link.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\zone_finder_context.cc"
 				>
 			</File>
 			<File
@@ -215,11 +235,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\datasrc\client_list.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\datasrc\data_source.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\datasrc\database.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\datasrc_config.h"
 				>
 			</File>
 			<File
@@ -244,6 +272,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\datasrc\query.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\datasrc\rbnode_rrset.h"
 				>
 			</File>
 			<File
