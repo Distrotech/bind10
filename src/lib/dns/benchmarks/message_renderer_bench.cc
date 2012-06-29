@@ -14,16 +14,16 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <getopt.h>
+#include <winsock2.h>
+#endif
+
 #include <bench/benchmark.h>
 
 #include <dns/name.h>
 #include <dns/messagerenderer.h>
 #include <oldmessagerenderer.h>
-
-#ifdef _WIN32
-#include <getopt.h>
-#include <winsock2.h>
-#endif
 
 #include <cassert>
 #include <vector>
