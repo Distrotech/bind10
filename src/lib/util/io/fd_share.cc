@@ -182,7 +182,7 @@ namespace {
 // Need the peer PID
 
 int
-send_pid(const int sock) {
+send_pid(const SOCKET sock) {
     pid_t pid(_getpid());
     if (send(sock, (const char *)&pid, sizeof(pid), 0) != sizeof(pid)) {
         return (FD_SYSTEM_ERROR);
@@ -191,7 +191,7 @@ send_pid(const int sock) {
 }
 
 pid_t
-recv_pid(const int sock) {
+recv_pid(const SOCKET sock) {
     pid_t pid;
     if (recv(sock, (char *)&pid , sizeof(pid), 0) != sizeof(pid)) {
         return (FD_SYSTEM_ERROR);
@@ -200,28 +200,28 @@ recv_pid(const int sock) {
 }
 }
 
-int
-recv_fd(const int sock) {
+SOCKET
+recv_fd(const SOCKET sock) {
     int ret(send_pid(sock));
     if (ret != 0) {
-        return (ret);
+      return ((SOCKET) ret);
     }
     WSAPROTOCOL_INFO pi;
     if (recv(sock, (char *)&pi, sizeof(pi), 0) != sizeof(pi)) {
-        return (FD_SYSTEM_ERROR);
+      return ((SOCKET) FD_SYSTEM_ERROR);
     }
     SOCKET nsock = WSASocket(pi.iAddressFamily,
                              pi.iSocketType,
                              pi.iProtocol,
                              &pi, 0, 0);
     if (nsock == INVALID_SOCKET) {
-        return (FD_OTHER_ERROR);
+      return ((SOCKET) FD_OTHER_ERROR);
     }
-    return ((int) nsock);
+    return (nsock);
 }
 
 int
-send_fd(const int sock, const int fd) {
+send_fd(const SOCKET sock, const SOCKET fd) {
     pid_t peerpid(recv_pid(sock));
     if (peerpid == FD_SYSTEM_ERROR) {
         return (FD_SYSTEM_ERROR);

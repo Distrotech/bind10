@@ -60,7 +60,13 @@ public:
     //@}
     virtual void connect() = 0;
     virtual void disconnect() = 0;
-    virtual int sendXfroutRequestInfo(int tcp_sock, const void* msg_data,
+    virtual int sendXfroutRequestInfo(
+#ifdef _WIN32
+                                      SOCKET tcp_sock,
+#else
+                                      int tcp_sock,
+#endif
+                                      const void* msg_data,
                                       uint16_t msg_len) = 0;
 };
 
@@ -75,7 +81,13 @@ private:
 public:
     virtual void connect();
     virtual void disconnect();
-    virtual int sendXfroutRequestInfo(int tcp_sock, const void* msg_data,
+    virtual int sendXfroutRequestInfo(
+#ifdef _WIN32
+                                      SOCKET tcp_sock,
+#else
+                                      int tcp_sock,
+#endif
+                                      const void* msg_data,
                                       uint16_t msg_len);
 private:
     XfroutClientImpl* impl_;

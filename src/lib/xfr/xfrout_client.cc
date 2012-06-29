@@ -93,7 +93,12 @@ XfroutClient::disconnect() {
 }
 
 int
-XfroutClient::sendXfroutRequestInfo(const int tcp_sock,
+XfroutClient::sendXfroutRequestInfo(
+#ifdef _WIN32
+                                    const SOCKET tcp_sock,
+#else
+                                    const int tcp_sock,
+#endif
                                     const void* const msg_data,
                                     const uint16_t msg_len)
 {

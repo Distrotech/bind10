@@ -18,6 +18,7 @@
 #include <ws2tcpip.h>
 #include <mswsock.h>
 #else
+#include <sys/types.h>
 #include <netinet/in.h>
 #endif
 
@@ -38,6 +39,7 @@ using namespace isc::asiolink;
 namespace isc {
 namespace testutils {
 const char* const DEFAULT_REMOTE_ADDRESS = "192.0.2.1";
+const uint16_t DEFAULT_REMOTE_PORT = 53210;
 
 SrvTestBase::SrvTestBase() : request_message(Message::RENDER),
                              parse_message(new Message(Message::PARSE)),
@@ -48,8 +50,6 @@ SrvTestBase::SrvTestBase() : request_message(Message::RENDER),
                              qclass(RRClass::IN()),
                              qtype(RRType::A()), io_sock(NULL),
                              io_message(NULL), endpoint(NULL),
-                             request_obuffer(0),
-                             request_renderer(request_obuffer),
                              response_obuffer(new OutputBuffer(0))
 {}
 
@@ -68,7 +68,8 @@ SrvTestBase::createDataFromFile(const char* const datafile,
     delete endpoint;
 
     endpoint = IOEndpoint::create(protocol,
-                                  IOAddress(DEFAULT_REMOTE_ADDRESS), 53210);
+                                  IOAddress(DEFAULT_REMOTE_ADDRESS),
+                                  DEFAULT_REMOTE_PORT);
     UnitTestUtil::readWireData(datafile, data);
     io_sock = (protocol == IPPROTO_UDP) ? &IOSocket::getDummyUDPSocket() :
         &IOSocket::getDummyTCPSocket();
@@ -77,7 +78,9 @@ SrvTestBase::createDataFromFile(const char* const datafile,
 
 void
 SrvTestBase::createRequestPacket(Message& message,
-                                 const int protocol, TSIGContext* context)
+                                 const int protocol, TSIGContext* context,
+                                 const char* const remote_address,
+                                 uint16_t remote_port)
 {
     if (context == NULL) {
         message.toWire(request_renderer);
@@ -87,10 +90,11 @@ SrvTestBase::createRequestPacket(Message& message,
 
     delete io_message;
 
-    endpoint = IOEndpoint::create(protocol,
-                                  IOAddress(DEFAULT_REMOTE_ADDRESS), 53210);
+    endpoint = IOEndpoint::create(protocol, IOAddress(remote_address),
+                                  remote_port);
     io_sock = (protocol == IPPROTO_UDP) ? &IOSocket::getDummyUDPSocket() :
         &IOSocket::getDummyTCPSocket();
+
     io_message = new IOMessage(request_renderer.getData(),
                                request_renderer.getLength(),
                                *io_sock, *endpoint);
@@ -99,11 +103,12 @@ SrvTestBase::createRequestPacket(Message& message,
 // Unsupported requests.  Should result in NOTIMP.
 void
 SrvTestBase::unsupportedRequest() {
-    for (int i = 0; i < 16; ++i) {
+    for (unsigned int i = 0; i < 16; ++i) {
         // set Opcode to 'i', which iterators over all possible codes except
-        // the standard query and notify 
+        // the standard opcodes we support.
         if (i == isc::dns::Opcode::QUERY().getCode() ||
-            i == isc::dns::Opcode::NOTIFY().getCode()) {
+            i == isc::dns::Opcode::NOTIFY().getCode() ||
+            i == isc::dns::Opcode::UPDATE().getCode()) {
             continue;
         }
         createDataFromFile("simplequery_fromWire.wire");

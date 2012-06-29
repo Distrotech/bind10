@@ -12,6 +12,9 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#ifndef __ISC_TESTUTILS_SRVTEST_H
+#define __ISC_TESTUTILS_SRVTEST_H 1
+
 #include <util/buffer.h>
 #include <dns/name.h>
 #include <dns/message.h>
@@ -32,6 +35,7 @@ class IOEndpoint;
 namespace isc {
 namespace testutils {
 extern const char* const DEFAULT_REMOTE_ADDRESS;
+extern const uint16_t DEFAULT_REMOTE_PORT;
 
 // These are flags to indicate whether the corresponding flag bit of the
 // DNS header is to be set in the test cases.  (The flag values
@@ -44,7 +48,7 @@ extern const unsigned int RA_FLAG;
 extern const unsigned int AD_FLAG;
 extern const unsigned int CD_FLAG;
 
-// The base class for Auth and Recurse test case
+/// \brief The base class for Auth and Recurse test case
 class SrvTestBase : public ::testing::Test {
 protected:
     SrvTestBase();
@@ -85,7 +89,9 @@ protected:
     /// The existing content of \c io_message, if any, will be deleted.
     void createRequestPacket(isc::dns::Message& message,
                              const int protocol = IPPROTO_UDP,
-                             isc::dns::TSIGContext* context = NULL);
+                             isc::dns::TSIGContext* context = NULL,
+                             const char* const address = DEFAULT_REMOTE_ADDRESS,
+                             uint16_t port = DEFAULT_REMOTE_PORT);
 
     MockSession notify_session;
     MockServer dnsserv;
@@ -100,13 +106,13 @@ protected:
     asiolink::IOSocket* io_sock;
     asiolink::IOMessage* io_message;
     const asiolink::IOEndpoint* endpoint;
-    isc::util::OutputBuffer request_obuffer;
     isc::dns::MessageRenderer request_renderer;
     isc::util::OutputBufferPtr response_obuffer;
     std::vector<uint8_t> data;
 };
 } // end of namespace testutils
 } // end of namespace isc
+#endif  // __ISC_TESTUTILS_SRVTEST_H
 
 // Local Variables: 
 // mode: c++

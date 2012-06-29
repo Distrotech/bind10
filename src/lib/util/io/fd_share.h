@@ -41,7 +41,11 @@ const int FD_OTHER_ERROR = -1;
  * \param sock The unix domain socket to read from. Tested and it does
  *     not work with a pipe.
  */
+#ifdef _WIN32
+SOCKET recv_fd(const SOCKET sock);
+#else
 int recv_fd(const int sock);
+#endif
 
 /**
  * \short Sends a file descriptor.
@@ -56,7 +60,11 @@ int recv_fd(const int sock);
  * \param fd The file descriptor to send. It should work with any valid
  *     file descriptor.
  */
+#ifdef _WIN32
+int send_fd(const SOCKET sock, const SOCKET fd);
+#else
 int send_fd(const int sock, const int fd);
+#endif
 
 } // End for namespace io
 } // End for namespace util
