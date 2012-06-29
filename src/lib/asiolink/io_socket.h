@@ -85,7 +85,11 @@ public:
     ///
     /// \return The native representation of the socket.  This is the socket
     /// file descriptor for UNIX-like systems.
+#ifdef _WIN32
+    virtual SOCKET getNative() const = 0;
+#else
     virtual int getNative() const = 0;
+#endif
 
     /// \brief Return the transport protocol of the socket.
     ///

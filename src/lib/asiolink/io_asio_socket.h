@@ -127,7 +127,11 @@ public:
     ///
     /// \return The native representation of the socket.  This is the socket
     ///         file descriptor for UNIX-like systems.
+#ifdef _WIN32
+    virtual SOCKET getNative() const = 0;
+#else
     virtual int getNative() const = 0;
+#endif
 
     /// \brief Return the transport protocol of the socket.
     ///
@@ -309,7 +313,11 @@ public:
     ///
     /// \return Always returns -1 as the object is not associated with a real
     /// (native) socket.
+#ifdef _WIN32
+    virtual SOCKET getNative() const { return (INVALID_SOCKET); }
+#else
     virtual int getNative() const { return (-1); }
+#endif
 
     /// \brief A dummy derived method of \c IOAsioSocket::getProtocol().
     ///

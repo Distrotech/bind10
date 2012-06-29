@@ -44,7 +44,11 @@ public:
     ///
     /// This version of method always returns -1 as the object is not
     /// associated with a real (native) socket.
+#ifdef _WIN32
+    virtual SOCKET getNative() const { return (INVALID_SOCKET); }
+#else
     virtual int getNative() const { return (-1); }
+#endif
 
     virtual int getProtocol() const { return (protocol_); }
 private:

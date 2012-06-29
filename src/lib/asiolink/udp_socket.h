@@ -73,7 +73,12 @@ public:
     virtual ~UDPSocket();
 
     /// \brief Return file descriptor of underlying socket
-    virtual int getNative() const {
+#ifdef
+    virtual SOCKET getNative() const
+#else
+    virtual int getNative() const
+#endif
+    {
         return (socket_.native());
     }
 

@@ -37,10 +37,6 @@ namespace {
         }
         MessagePtr message_;
         const Message::Section section_;
-    private:
-        // silence MSVC warning C4512:
-        // assignment operator could not be generated
-        SectionInserter& operator=(SectionInserter const&);
     };
 }
 

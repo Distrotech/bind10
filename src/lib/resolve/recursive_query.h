@@ -38,7 +38,7 @@ public:
     ///
     /// Adds a round-trip time to the internal vector of times.
     ///
-    /// \param RTT to record.
+    /// \param rtt RTT to record.
     void addRtt(uint32_t rtt) {
         rtt_.push_back(rtt);
     }
@@ -73,6 +73,10 @@ public:
     ///
     /// \param dns_service The DNS Service to perform the recursive
     ///        query on.
+    /// \param nsas Nameserver address store, used to hold information about zone
+    ///        nameservers.
+    /// \param cache Resolver cache object, used to hold information about retrieved
+    ///        records.
     /// \param upstream Addresses and ports of the upstream servers
     ///        to forward queries to.
     /// \param upstream_root Addresses and ports of the root servers
@@ -83,7 +87,7 @@ public:
     /// \param lookup_timeout Timeout value for when we give up, in ms
     /// \param retries how many times we try again (0 means just send and
     ///     and return if it returs).
-    RecursiveQuery(DNSService& dns_service,
+    RecursiveQuery(DNSServiceBase& dns_service,
                    isc::nsas::NameserverAddressStore& nsas,
                    isc::cache::ResolverCache& cache,
                    const std::vector<std::pair<std::string, uint16_t> >&
@@ -133,8 +137,10 @@ public:
     /// object.
     ///
     /// \param question The question being answered <qname/qclass/qtype>
-    /// \param answer_message An output Message into which the final response will be copied
-    /// \param buffer An output buffer into which the intermediate responses will be copied
+    /// \param answer_message An output Message into which the final response will
+    ///        be copied.
+    /// \param buffer An output buffer into which the intermediate responses will
+    ///        be copied.
     /// \param server A pointer to the \c DNSServer object handling the client
     void resolve(const isc::dns::Question& question,
                  isc::dns::MessagePtr answer_message,
@@ -147,6 +153,10 @@ public:
     ///  function resolve().
     ///
     /// \param query_message the full query got from client.
+    /// \param answer_message the full answer received from other server.
+    /// \param buffer Output buffer into which the responses will be copied.
+    /// \param server Server object that handles receipt and processing of the
+    ///               received messages.
     /// \param callback callback object
     void forward(isc::dns::ConstMessagePtr query_message,
                  isc::dns::MessagePtr answer_message,
@@ -168,7 +178,7 @@ public:
     void setTestServer(const std::string& address, uint16_t port);
 
 private:
-    DNSService& dns_service_;
+    DNSServiceBase& dns_service_;
     isc::nsas::NameserverAddressStore& nsas_;
     isc::cache::ResolverCache& cache_;
     boost::shared_ptr<std::vector<std::pair<std::string, uint16_t> > >
@@ -181,8 +191,6 @@ private:
     int lookup_timeout_;
     unsigned retries_;
     boost::shared_ptr<RttRecorder>  rtt_recorder_;  ///< Round-trip time recorder
-    // silence MSVC warning C4512: assignment operator could not be generated
-    RecursiveQuery& operator=(RecursiveQuery const&);
 };
 
 }      // namespace asiodns

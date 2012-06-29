@@ -91,7 +91,12 @@ public:
     virtual ~TCPSocket();
 
     /// \brief Return file descriptor of underlying socket
-    virtual int getNative() const {
+#ifdef _WIN32
+    virtual SOCKET getNative() const
+#else
+    virtual int getNative() const
+#endif
+    {
         return (socket_.native());
     }
 
