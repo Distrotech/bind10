@@ -73,7 +73,7 @@ public:
     virtual ~UDPSocket();
 
     /// \brief Return file descriptor of underlying socket
-#ifdef
+#ifdef _WIN32
     virtual SOCKET getNative() const
 #else
     virtual int getNative() const

@@ -153,7 +153,8 @@ public:
                 check(dynamic_cast<const NamedCheck*>(compound->
                                                       getSubexpressions()
                                                       [index]));
-            ASSERT_TRUE(check) << "The subexpression is of different type";
+            ASSERT_TRUE(check != NULL) <<
+                "The subexpression is of different type";
             EXPECT_EQ(name, check->name_);
             EXPECT_TRUE(data->equals(*check->data_));
         }
@@ -292,7 +293,8 @@ TEST_F(LoaderTest, BothAbbrev) {
         const LogicOperator<AnyOfSpec, Log>*
             orOper(dynamic_cast<const LogicOperator<AnyOfSpec, Log>*>(
             oper->getSubexpressions()[1]));
-        ASSERT_TRUE(orOper) << "Different type than AnyOf operator";
+        ASSERT_TRUE(orOper != NULL) <<
+            "Different type than AnyOf operator";
         EXPECT_EQ(2, orOper->getSubexpressions().size());
         isSubexprNamed(orOper, 0, "name2", Element::fromJSON("3"));
         isSubexprNamed(orOper, 1, "name2", Element::fromJSON("4"));

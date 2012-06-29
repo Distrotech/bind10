@@ -189,6 +189,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\resolve\tests\recursive_query_unittest_3.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\resolve\tests\resolve_unittest.cc"
 				>
 			</File>

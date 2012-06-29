@@ -14,6 +14,7 @@
     <ClInclude Include="..\..\..\src\lib\testutils\dnsmessage_test.h" />
     <ClInclude Include="..\..\..\src\lib\testutils\mockups.h" />
     <ClInclude Include="..\..\..\src\lib\testutils\portconfig.h" />
+    <ClInclude Include="..\..\..\src\lib\testutils\socket_request.h" />
     <ClInclude Include="..\..\..\src\lib\testutils\srv_test.h" />
   </ItemGroup>
   <ItemGroup>
@@ -74,6 +75,8 @@ python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o iquery_fromWire.wire 
 python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o iquery_response_fromWire.wire iquery_response_fromWire.spec
 python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o iqueryresponse_fromWire.wire iqueryresponse_fromWire.spec
 python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o multiquestion_fromWire.wire multiquestion_fromWire.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o nsec3query_fromWire.wire nsec3query_fromWire.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o nsec3query_nodnssec_fromWire.wire nsec3query_nodnssec_fromWire.spec
 python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o queryBadEDNS_fromWire.wire queryBadEDNS_fromWire.spec
 python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o shortanswer_fromWire.wire shortanswer_fromWire.spec
 python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o simplequery_fromWire.wire simplequery_fromWire.spec
@@ -106,6 +109,8 @@ python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o iquery_fromWire.wire 
 python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o iquery_response_fromWire.wire iquery_response_fromWire.spec
 python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o iqueryresponse_fromWire.wire iqueryresponse_fromWire.spec
 python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o multiquestion_fromWire.wire multiquestion_fromWire.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o nsec3query_fromWire.wire nsec3query_fromWire.spec
+python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o nsec3query_nodnssec_fromWire.wire nsec3query_nodnssec_fromWire.spec
 python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o queryBadEDNS_fromWire.wire queryBadEDNS_fromWire.spec
 python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o shortanswer_fromWire.wire shortanswer_fromWire.spec
 python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o simplequery_fromWire.wire simplequery_fromWire.spec

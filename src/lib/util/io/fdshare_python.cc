@@ -18,6 +18,10 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#endif
+
 #include "fd_share.h"
 
 

@@ -41,5 +41,8 @@
     <ClCompile Include="..\..\..\src\lib\resolve\tests\run_unittests.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\resolve\tests\recursive_query_unittest_3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

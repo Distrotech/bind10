@@ -831,7 +831,7 @@ setSocketTimeout(int sock, size_t tv_sec, size_t tv_usec)
 // try to read from the socket max time
 // *num is incremented for every succesfull read
 // returns true if it can read max times, false otherwise
-#ifdef
+#ifdef _WIN32
 bool tryRead(SOCKET sock, int recv_options, size_t max, int* num)
 #else
 bool tryRead(int sock, int recv_options, size_t max, int* num)
@@ -913,7 +913,7 @@ TEST_F(RecursiveQueryTest, forwardQueryTimeout) {
     query.forward(ConstMessagePtr(&query_message), answer, buffer, &server, callback);
     // Run the test
     io_service_.run();
-    EXPECT_EQ(callback->result, MockResolverCallback::FAILURE);
+    EXPECT_EQ(callback->result_, MockResolverCallback::FAILURE);
 }
 
 // If we set client timeout to lower than querytimeout, we should
@@ -948,7 +948,7 @@ TEST_F(RecursiveQueryTest, forwardClientTimeout) {
     query.forward(ConstMessagePtr(&query_message), answer, buffer, &server, callback);
     // Run the test
     io_service_.run();
-    EXPECT_EQ(callback->result, MockResolverCallback::FAILURE);
+    EXPECT_EQ(callback->result_, MockResolverCallback::FAILURE);
 }
 
 // If we set lookup timeout to lower than querytimeout, the lookup
@@ -983,7 +983,7 @@ TEST_F(RecursiveQueryTest, forwardLookupTimeout) {
     query.forward(ConstMessagePtr(&query_message), answer, buffer, &server, callback);
     // Run the test
     io_service_.run();
-    EXPECT_EQ(callback->result, MockResolverCallback::FAILURE);
+    EXPECT_EQ(callback->result_, MockResolverCallback::FAILURE);
 }
 
 // Set everything very low and see if this doesn't cause weird
@@ -1018,7 +1018,7 @@ TEST_F(RecursiveQueryTest, lowtimeouts) {
     query.forward(ConstMessagePtr(&query_message), answer, buffer, &server, callback);
     // Run the test
     io_service_.run();
-    EXPECT_EQ(callback->result, MockResolverCallback::FAILURE);
+    EXPECT_EQ(callback->result_, MockResolverCallback::FAILURE);
 }
 
 // as mentioned above, we need a more better framework for this,

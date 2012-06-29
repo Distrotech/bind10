@@ -495,12 +495,13 @@ private:
             if (sock != INVALID_SOCKET) {
                 closesocket(sock);
             }
+            return (INVALID_SOCKET);
 #else
             if (sock != -1) {
                 close(sock);
             }
-#endif
             return (-1);
+#endif
         } else {
             return (sock);
         }
@@ -697,9 +698,16 @@ TYPED_TEST(DNSServerTestBase, invalidTCPFD) {
     EXPECT_THROW(UDPServer(service, -1, AF_INET, checker_, lookup_,
                            answer_), isc::asiolink::IOError);
     */
+#ifdef _WIN32
+    EXPECT_THROW(TCPServer(this->service, INVALID_SOCKET,
+                           AF_INET, this->checker_,
+                           this->lookup_, this->answer_),
+                 isc::asiolink::IOError);
+#else
     EXPECT_THROW(TCPServer(this->service, -1, AF_INET, this->checker_,
                            this->lookup_, this->answer_),
                  isc::asiolink::IOError);
+#endif
 }
 
 TYPED_TEST(DNSServerTestBase, DISABLED_invalidUDPFD) {
@@ -710,9 +718,16 @@ TYPED_TEST(DNSServerTestBase, DISABLED_invalidUDPFD) {
      not the others, maybe we could make it run this at least on epoll-based
      systems).
     */
+#ifdef _WIN32
+    EXPECT_THROW(TypeParam(this->service, INVALID_SOCKET,
+                           AF_INET, this->checker_,
+                           this->lookup_, this->answer_),
+                 isc::asiolink::IOError);
+#else
     EXPECT_THROW(TypeParam(this->service, -1, AF_INET, this->checker_,
                            this->lookup_, this->answer_),
                  isc::asiolink::IOError);
+#endif
 }
 
 // A specialized test type for SyncUDPServer.
