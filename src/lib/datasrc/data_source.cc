@@ -72,9 +72,6 @@ struct MatchRRsetForType {
         return (rrset->getType() == rrtype_);
     }
     const RRType rrtype_;
-private:
-    // silence MSVC warning C4512: assignment operator could not be generated
-    MatchRRsetForType& operator=(MatchRRsetForType const&);
 };
 
 // This is a helper to retrieve a specified RR type of RRset from RRsetList.
@@ -398,7 +395,8 @@ doQueryTask(QueryTask& task, ZoneInfo& zoneinfo, RRsetList& target) {
     const Name* const zonename = zoneinfo.getEnclosingZone();
     if (ds == NULL) {
         task.flags |= DataSrc::NO_SUCH_ZONE;
-        logger.info(DATASRC_QUERY_NO_ZONE).arg(task.qname).arg(task.qclass);
+        LOG_DEBUG(logger, DBG_TRACE_BASIC, DATASRC_QUERY_NO_ZONE).
+            arg(task.qname).arg(task.qclass);
         return (DataSrc::SUCCESS);
     }
 

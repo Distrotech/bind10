@@ -431,9 +431,6 @@ struct ZoneNameMatch : public unary_function<Name, bool> {
         return (zone.zone_name == name_);
     }
     const Name& name_;
-private:
-    // silence MSVC warning C4512: assignment operator could not be generated
-    ZoneNameMatch& operator=(ZoneNameMatch const&);
 };
 
 // XXX: the main data source module can override the returned RRset.
@@ -519,9 +516,6 @@ public:
     uint32_t& flags_;
     bool name_found_;
     bool has_delegation_;
-private:
-    // silence MSVC warning C4512: assignment operator could not be generated
-    RRsetMatch& operator=(RRsetMatch const&);
 };
 
 void

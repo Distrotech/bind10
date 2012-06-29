@@ -57,6 +57,18 @@ public:
         isc::Exception(file, line, what) {}
 };
 
+/// \brief No such serial number when obtaining difference iterator
+///
+/// Thrown if either the zone/start serial number or zone/end serial number
+/// combination does not exist in the differences table.  (Note that this
+/// includes the case where the differences table contains no records related
+/// to that zone.)
+class NoSuchSerial : public DataSourceError {
+public:
+    NoSuchSerial(const char* file, size_t line, const char* what) :
+        DataSourceError(file, line, what) {}
+};
+
 
 class AbstractDataSrc {
     ///
@@ -410,8 +422,6 @@ private:
     const uint8_t flags_;
     const uint16_t iterations_;
     const std::vector<uint8_t> salt_;
-    // silence MSVC warning C4512: assignment operator could not be generated
-    Nsec3Param& operator=(Nsec3Param const&);
 };
 
 }

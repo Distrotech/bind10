@@ -14,6 +14,7 @@
 
 #include <boost/scoped_ptr.hpp>
 
+#include <datasrc/datasrc_config.h>
 #include <datasrc/factory.h>
 #include <datasrc/data_source.h>
 #include <datasrc/sqlite3_accessor.h>
@@ -27,8 +28,74 @@ using namespace isc::datasrc;
 using namespace isc::data;
 
 std::string SQLITE_DBFILE_EXAMPLE_ORG = TEST_DATA_DIR "/example.org.sqlite3";
+const std::string STATIC_DS_FILE = TEST_DATA_DIR "/static.zone";
+const std::string ROOT_ZONE_FILE = TEST_DATA_DIR "/root.zone";
 
 namespace {
+
+// note this helper only checks the error that is received up to the length
+// of the expected string. It will always pass if you give it an empty
+// expected_error
+void
+pathtestHelper(const std::string& file, const std::string& expected_error) {
+    std::string error;
+    try {
+        DataSourceClientContainer(file, ElementPtr());
+    } catch (const DataSourceLibraryError& dsle) {
+        error = dsle.what();
+    }
+    ASSERT_LT(expected_error.size(), error.size());
+    EXPECT_EQ(expected_error, error.substr(0, expected_error.size()));
+}
+
+TEST(FactoryTest, paths) {
+    // Test whether the paths are made absolute if they are not,
+    // by inspecting the error that is raised when they are wrong
+    const std::string error("dlopen failed for ");
+    // With the current implementation, we can safely assume this has
+    // been set for this test (as the loader would otherwise also fail
+    // unless the loadable backend library happens to be installed)
+    const std::string builddir(getenv("B10_FROM_BUILD"));
+
+    // Absolute and ending with .so should have no change
+    pathtestHelper("/no_such_file.so", error + "/no_such_file.so");
+
+    // If no ending in .so, it should get _ds.so
+    pathtestHelper("/no_such_file", error + "/no_such_file_ds.so");
+
+    // If not starting with /, path should be added. For this test that
+    // means the build directory as set in B10_FROM_BUILD
+    pathtestHelper("no_such_file.so", error + builddir +
+                   "/src/lib/datasrc/.libs/no_such_file.so");
+    pathtestHelper("no_such_file", error + builddir +
+                   "/src/lib/datasrc/.libs/no_such_file_ds.so");
+
+    // Some tests with '.so' in the name itself
+    pathtestHelper("no_such_file.so.something", error + builddir +
+                   "/src/lib/datasrc/.libs/no_such_file.so.something_ds.so");
+    pathtestHelper("/no_such_file.so.something", error +
+                   "/no_such_file.so.something_ds.so");
+    pathtestHelper("/no_such_file.so.something.so", error +
+                   "/no_such_file.so.something.so");
+    pathtestHelper("/no_such_file.so.so", error +
+                   "/no_such_file.so.so");
+    pathtestHelper("no_such_file.so.something", error + builddir +
+                   "/src/lib/datasrc/.libs/no_such_file.so.something_ds.so");
+
+    // Temporarily unset B10_FROM_BUILD to see that BACKEND_LIBRARY_PATH
+    // is used
+    unsetenv("B10_FROM_BUILD");
+    pathtestHelper("no_such_file.so", error + BACKEND_LIBRARY_PATH +
+                   "no_such_file.so");
+    // Put it back just in case
+    setenv("B10_FROM_BUILD", builddir.c_str(), 1);
+
+    // Test some bad input values
+    ASSERT_THROW(DataSourceClientContainer("", ElementPtr()),
+                 DataSourceLibraryError);
+    ASSERT_THROW(DataSourceClientContainer(".so", ElementPtr()),
+                 DataSourceLibraryError);
+}
 
 TEST(FactoryTest, sqlite3ClientBadConfig) {
     // We start out by building the configuration data bit by bit,
@@ -123,8 +190,8 @@ TEST(FactoryTest, memoryClient) {
                  DataSourceError);
 
     config->set("type", Element::create("memory"));
-    ASSERT_THROW(DataSourceClientContainer("memory", config),
-                 DataSourceError);
+    // no config at all should result in a default empty memory client
+    ASSERT_NO_THROW(DataSourceClientContainer("memory", config));
 
     config->set("class", ElementPtr());
     ASSERT_THROW(DataSourceClientContainer("memory", config),
@@ -139,8 +206,7 @@ TEST(FactoryTest, memoryClient) {
                  DataSourceError);
 
     config->set("class", Element::create("IN"));
-    ASSERT_THROW(DataSourceClientContainer("memory", config),
-                 DataSourceError);
+    ASSERT_NO_THROW(DataSourceClientContainer("memory", config));
 
     config->set("zones", ElementPtr());
     ASSERT_THROW(DataSourceClientContainer("memory", config),
@@ -169,6 +235,60 @@ TEST(FactoryTest, memoryClient) {
 TEST(FactoryTest, badType) {
     ASSERT_THROW(DataSourceClientContainer("foo", ElementPtr()),
                                            DataSourceError);
+}
+
+// Check the static data source can be loaded.
+TEST(FactoryTest, staticDS) {
+    // The only configuration is the file to load.
+    const ConstElementPtr config(new StringElement(STATIC_DS_FILE));
+    // Get the data source
+    DataSourceClientContainer dsc("static", config);
+    // And try getting something out to see if it really works.
+    DataSourceClient::FindResult
+        result(dsc.getInstance().findZone(isc::dns::Name("BIND")));
+    ASSERT_EQ(result::SUCCESS, result.code);
+    EXPECT_EQ(isc::dns::Name("BIND"), result.zone_finder->getOrigin());
+    EXPECT_EQ(isc::dns::RRClass::CH(), result.zone_finder->getClass());
+    const isc::dns::ConstRRsetPtr
+        version(result.zone_finder->find(isc::dns::Name("VERSION.BIND"),
+                                         isc::dns::RRType::TXT())->rrset);
+    ASSERT_NE(isc::dns::ConstRRsetPtr(), version);
+    EXPECT_EQ(isc::dns::Name("VERSION.BIND"), version->getName());
+    EXPECT_EQ(isc::dns::RRClass::CH(), version->getClass());
+    EXPECT_EQ(isc::dns::RRType::TXT(), version->getType());
+}
+
+// Check that file not containing BIND./CH is rejected
+//
+// FIXME: This test is disabled because the InMemoryZoneFinder::load does
+// not check if the data loaded correspond with the origin. The static
+// factory is not the place to fix that.
+TEST(FactoryTest, DISABLED_staticDSBadFile) {
+    // The only configuration is the file to load.
+    const ConstElementPtr config(new StringElement(STATIC_DS_FILE));
+    // See it does not want the file
+    EXPECT_THROW(DataSourceClientContainer("static", config), DataSourceError);
+}
+
+// Check that some bad configs are rejected
+TEST(FactoryTest, staticDSBadConfig) {
+    const char* configs[] = {
+        // The file does not exist
+        "\"/does/not/exist\"",
+        // Bad types
+        "null",
+        "42",
+        "{}",
+        "[]",
+        "true",
+        NULL
+    };
+    for (const char** config(configs); *config; ++config) {
+        SCOPED_TRACE(*config);
+        EXPECT_THROW(DataSourceClientContainer("static",
+                                               Element::fromJSON(*config)),
+                     DataSourceError);
+    }
 }
 
 } // end anonymous namespace

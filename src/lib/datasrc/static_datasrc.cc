@@ -62,9 +62,6 @@ public:
     RRsetPtr version;
     RRsetPtr version_ns;
     RRsetPtr version_soa;
-private:
-    // silence MSVC warning C4512: assignment operator could not be generated
-    StaticDataSrcImpl& operator=(StaticDataSrcImpl const&);
 };
 
 StaticDataSrcImpl::StaticDataSrcImpl() :
@@ -76,14 +73,17 @@ StaticDataSrcImpl::StaticDataSrcImpl() :
     authors->addRdata(generic::TXT("Dmitriy Volodin"));
     authors->addRdata(generic::TXT("Evan Hunt"));
     authors->addRdata(generic::TXT("Haidong Wang")); // Ocean
+    authors->addRdata(generic::TXT("Haikuo Zhang"));
     authors->addRdata(generic::TXT("Han Feng"));
     authors->addRdata(generic::TXT("Jelte Jansen"));
     authors->addRdata(generic::TXT("Jeremy C. Reed")); 
+    authors->addRdata(generic::TXT("Xie Jiagui")); // Kevin Tes
     authors->addRdata(generic::TXT("Jin Jian"));
     authors->addRdata(generic::TXT("JINMEI Tatuya"));
     authors->addRdata(generic::TXT("Kazunori Fujiwara"));
     authors->addRdata(generic::TXT("Michael Graff"));
     authors->addRdata(generic::TXT("Michal Vaner"));
+    authors->addRdata(generic::TXT("Mukund Sivaraman"));
     authors->addRdata(generic::TXT("Naoki Kambe"));
     authors->addRdata(generic::TXT("Shane Kerr"));
     authors->addRdata(generic::TXT("Shen Tingting"));

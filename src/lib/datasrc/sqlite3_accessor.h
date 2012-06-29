@@ -17,6 +17,7 @@
 #define __DATASRC_SQLITE3_ACCESSOR_H
 
 #include <datasrc/database.h>
+#include <datasrc/data_source.h>
 
 #include <exceptions/exceptions.h>
 
@@ -40,10 +41,40 @@ namespace datasrc {
  * It might mean corrupt database file, invalid request or that something is
  * rotten in the library.
  */
-class SQLite3Error : public Exception {
+class SQLite3Error : public DataSourceError {
 public:
     SQLite3Error(const char* file, size_t line, const char* what) :
+        DataSourceError(file, line, what) {}
+};
+
+class IncompatibleDbVersion : public Exception {
+public:
+    IncompatibleDbVersion(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
+};
+
+/**
+ * \brief Too Much Data
+ *
+ * Thrown if a query expecting a certain number of rows back returned too
+ * many rows.
+ */
+class TooMuchData : public DataSourceError {
+public:
+    TooMuchData(const char* file, size_t line, const char* what) :
+        DataSourceError(file, line, what) {}
+};
+
+/**
+ * \brief Too Little Data
+ *
+ * Thrown if a query expecting a certain number of rows back returned too
+ * few rows (including none).
+ */
+class TooLittleData : public DataSourceError {
+public:
+    TooLittleData(const char* file, size_t line, const char* what) :
+        DataSourceError(file, line, what) {}
 };
 
 struct SQLite3Parameters;
@@ -116,6 +147,14 @@ public:
                                           int id,
                                           bool subdomains = false) const;
 
+    /// \brief Look up NSEC3 records for the given hash
+    ///
+    /// This implements the getNSEC3Records of DatabaseAccessor.
+    ///
+    /// \todo Actually implement, currently throws NotImplemented.
+    virtual IteratorContextPtr getNSEC3Records(const std::string& hash,
+                                               int id) const;
+
     /** \brief Look up all resource records for a zone
      *
      * This implements the getRecords() method from DatabaseAccessor
@@ -128,8 +167,31 @@ public:
      */
     virtual IteratorContextPtr getAllRecords(int id) const;
 
+    /** \brief Creates an iterator context for a set of differences.
+     *
+     * Implements the getDiffs() method from DatabaseAccessor
+     *
+     * \exception NoSuchSerial if either of the versions do not exist in
+     *            the difference table.
+     * \exception SQLite3Error if there is an sqlite3 error when performing
+     *            the query
+     *
+     * \param id The ID of the zone, returned from getZone().
+     * \param start The SOA serial number of the version of the zone from
+     *        which the difference sequence should start.
+     * \param end The SOA serial number of the version of the zone at which
+     *        the difference sequence should end.
+     *
+     * \return Iterator containing difference records.
+     */
+    virtual IteratorContextPtr
+    getDiffs(int id, uint32_t start, uint32_t end) const;
+
+
     virtual std::pair<bool, int> startUpdateZone(const std::string& zone_name,
                                                  bool replace);
+
+    virtual void startTransaction();
 
     /// \note we are quite impatient here: it's quite possible that the COMMIT
     /// fails due to other process performing SELECT on the same database
@@ -139,7 +201,7 @@ public:
     /// attempt and/or increase timeout before giving up the COMMIT, even
     /// if it still doesn't guarantee 100% success.  Right now this
     /// implementation throws a \c DataSourceError exception in such a case.
-    virtual void commitUpdateZone();
+    virtual void commit();
 
     /// \note In SQLite3 rollback can fail if there's another unfinished
     /// statement is performed for the same database structure.
@@ -147,13 +209,26 @@ public:
     /// guaranteed to be prevented at the API level.  If it ever happens, this
     /// method throws a \c DataSourceError exception.  It should be
     /// considered a bug of the higher level application program.
-    virtual void rollbackUpdateZone();
+    virtual void rollback();
 
     virtual void addRecordToZone(
         const std::string (&columns)[ADD_COLUMN_COUNT]);
 
+    virtual void addNSEC3RecordToZone(
+        const std::string (&columns)[ADD_NSEC3_COLUMN_COUNT]);
+
     virtual void deleteRecordInZone(
         const std::string (&params)[DEL_PARAM_COUNT]);
+
+    virtual void deleteNSEC3RecordInZone(
+        const std::string (&params)[DEL_PARAM_COUNT]);
+
+    /// This derived version of the method prepares an SQLite3 statement
+    /// for adding the diff first time it's called, and if it fails throws
+    // an \c SQLite3Error exception.
+    virtual void addRecordDiff(
+        int zone_id, uint32_t serial, DiffOperation operation,
+        const std::string (&params)[DIFF_PARAM_COUNT]);
 
     /// The SQLite3 implementation of this method returns a string starting
     /// with a fixed prefix of "sqlite3_" followed by the DB file name
@@ -166,6 +241,11 @@ public:
     virtual std::string findPreviousName(int zone_id, const std::string& rname)
         const;
 
+    /// \brief Conrete implemantion of the pure virtual method of
+    /// DatabaseAccessor
+    virtual std::string findPreviousNSEC3Hash(int zone_id,
+                                              const std::string& hash) const;
+
 private:
     /// \brief Private database data
     boost::scoped_ptr<SQLite3Parameters> dbparameters_;
@@ -173,14 +253,20 @@ private:
     const std::string filename_;
     /// \brief The class for which the queries are done
     const std::string class_;
+    /// \brief Database name
+    const std::string database_name_;
+
     /// \brief Opens the database
     void open(const std::string& filename);
     /// \brief Closes the database
     void close();
-    /// \brief SQLite3 implementation of IteratorContext
+
+    /// \brief SQLite3 implementation of IteratorContext for all records
     class Context;
     friend class Context;
-    const std::string database_name_;
+    /// \brief SQLite3 implementation of IteratorContext for differences
+    class DiffContext;
+    friend class DiffContext;
 };
 
 /// \brief Creates an instance of the SQlite3 datasource client

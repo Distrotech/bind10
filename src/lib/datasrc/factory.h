@@ -15,13 +15,13 @@
 #ifndef __DATA_SOURCE_FACTORY_H
 #define __DATA_SOURCE_FACTORY_H 1
 
-#include <boost/noncopyable.hpp>
-
 #include <datasrc/data_source.h>
 #include <datasrc/client.h>
-#include <exceptions/exceptions.h>
 
 #include <cc/data.h>
+
+#include <boost/noncopyable.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace isc {
 namespace datasrc {
@@ -68,7 +68,7 @@ public:
     ///             the library path.
     ///
     /// \exception DataSourceLibraryError If the library cannot be found or
-    ///            cannot be loaded.
+    ///            cannot be loaded, or if name is an empty string.
     LibraryContainer(const std::string& name);
 
     /// \brief Destructor
@@ -119,6 +119,15 @@ private:
 /// easy recognition and to reduce potential mistakes.
 /// For example, the sqlite3 implementation has the type 'sqlite3', and the
 /// derived filename 'sqlite3_ds.so'
+/// The value of type can be a specific loadable library; if it already ends
+/// with '.so', the loader will not add '_ds.so'.
+/// It may also be an absolute path; if it starts with '/', nothing is
+/// prepended. If it does not, the loadable library will be taken from the
+/// installation directory, see the value of
+/// isc::datasrc::BACKEND_LIBRARY_PATH in datasrc_config.h for the exact path.
+///
+/// \note When 'B10_FROM_BUILD' is set in the environment, the build
+///       directory is used instead of the install directory.
 ///
 /// There are of course some demands to an implementation, not all of which
 /// can be verified compile-time. It must provide a creator and destructor
@@ -129,6 +138,13 @@ private:
 ///
 /// extern "C" void destroyInstance(isc::data::DataSourceClient* instance);
 /// \endcode
+///
+/// \note This class is relatively recent, and its design is not yet fully
+/// formed. We may want to split this into an abstract base container
+/// class, and a derived 'dyload' class, and perhaps then add non-dynamic
+/// derived classes as well. Currently, the class is actually derived in some
+/// of the tests, which is rather unclean (as this class as written is really
+/// intended to be used directly).
 class DataSourceClientContainer : boost::noncopyable {
 public:
     /// \brief Constructor
@@ -152,19 +168,25 @@ public:
                               isc::data::ConstElementPtr config);
 
     /// \brief Destructor
-    ~DataSourceClientContainer();
+    virtual ~DataSourceClientContainer();
 
     /// \brief Accessor to the instance
     ///
     /// \return Reference to the DataSourceClient instance contained in this
     ///         container.
-    DataSourceClient& getInstance() { return *instance_; }
+    virtual DataSourceClient& getInstance() { return (*instance_); }
 
 private:
     DataSourceClient* instance_;
     ds_destructor* destructor_;
     LibraryContainer ds_lib_;
 };
+
+///
+/// Shared pointer type for datasource client containers
+///
+typedef boost::shared_ptr<DataSourceClientContainer>
+    DataSourceClientContainerPtr;
 
 } // end namespace datasrc
 } // end namespace isc
