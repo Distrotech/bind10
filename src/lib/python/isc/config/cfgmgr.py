@@ -81,6 +81,7 @@ class ConfigManagerData:
            and stop loading the system.
            """
         config = ConfigManagerData(data_path, file_name)
+        logger.info(CFGMGR_CONFIG_FILE, config.db_filename)
         file = None
         try:
             file = open(config.db_filename, 'r')
@@ -117,12 +118,13 @@ class ConfigManagerData:
             if file:
                 file.close();
         return config
-        
+
     def write_to_file(self, output_file_name = None):
         """Writes the current configuration data to a file. If
            output_file_name is not specified, the file used in
            read_from_file is used."""
         filename = None
+
         try:
             file = tempfile.NamedTemporaryFile(mode='w',
                                                prefix="b10-config.db.",
@@ -147,6 +149,27 @@ class ConfigManagerData:
             # Ok if we really can't delete it anymore, leave it
             pass
 
+    def rename_config_file(self, old_file_name=None, new_file_name=None):
+        """Renames the given configuration file to the given new file name,
+           if it exists. If it does not exist, nothing happens.
+           If old_file_name is None (default), the file used in
+           read_from_file is used. If new_file_name is None (default), the
+           file old_file_name appended with .bak is used. If that file exists
+           already, .1 is appended. If that file exists, .2 is appended, etc.
+        """
+        if old_file_name is None:
+            old_file_name = self.db_filename
+        if new_file_name is None:
+            new_file_name = old_file_name + ".bak"
+        if os.path.exists(new_file_name):
+            i = 1
+            while os.path.exists(new_file_name + "." + str(i)):
+                i += 1
+            new_file_name = new_file_name + "." + str(i)
+        if os.path.exists(old_file_name):
+            logger.info(CFGMGR_BACKED_UP_CONFIG_FILE, old_file_name, new_file_name)
+            os.rename(old_file_name, new_file_name)
+
     def __eq__(self, other):
         """Returns True if the data contained is equal. data_path and
            db_filename may be different."""
@@ -162,14 +185,16 @@ class ConfigManager:
        channel session. If not, a new session will be created.
        The ability to specify a custom session is for testing purposes
        and should not be needed for normal usage."""
-    def __init__(self, data_path, database_filename, session=None):
+    def __init__(self, data_path, database_filename, session=None,
+                 clear_config=False):
         """Initialize the configuration manager. The data_path string
            is the path to the directory where the configuration is
            stored (in <data_path>/<database_filename> or in
-           <database_filename>, if it is absolute). The dabase_filename
+           <database_filename>, if it is absolute). The database_filename
            is the config file to load. Session is an optional
            cc-channel session. If this is not given, a new one is
-           created."""
+           created. If clear_config is True, the configuration file is
+           renamed and a new one is created."""
         self.data_path = data_path
         self.database_filename = database_filename
         self.module_specs = {}
@@ -178,6 +203,8 @@ class ConfigManager:
         # of some other process
         self.virtual_modules = {}
         self.config = ConfigManagerData(data_path, database_filename)
+        if clear_config:
+            self.config.rename_config_file()
         if session:
             self.cc = session
         else:
@@ -202,7 +229,7 @@ class ConfigManager:
 
     def notify_boss(self):
         """Notifies the Boss module that the Config Manager is running"""
-        self.cc.group_sendmsg({"running": "configmanager"}, "Boss")
+        self.cc.group_sendmsg({"running": "ConfigManager"}, "Boss")
 
     def set_module_spec(self, spec):
         """Adds a ModuleSpec"""
@@ -291,12 +318,12 @@ class ConfigManager:
             # ok, just start with an empty config
             self.config = ConfigManagerData(self.data_path,
                                             self.database_filename)
-        
+
     def write_config(self):
         """Write the current configuration to the file specificied at init()"""
         self.config.write_to_file()
 
-    def _handle_get_module_spec(self, cmd):
+    def __handle_get_module_spec(self, cmd):
         """Private function that handles the 'get_module_spec' command"""
         answer = {}
         if cmd != None:
@@ -317,7 +344,7 @@ class ConfigManager:
             answer = ccsession.create_answer(0, self.get_module_spec())
         return answer
 
-    def _handle_get_config_dict(self, cmd):
+    def __handle_get_config_dict(self, cmd):
         """Private function that handles the 'get_config' command
            where the command has been checked to be a dict"""
         if 'module_name' in cmd and cmd['module_name'] != '':
@@ -331,17 +358,17 @@ class ConfigManager:
         else:
             return ccsession.create_answer(1, "Bad module_name in get_config command")
 
-    def _handle_get_config(self, cmd):
+    def __handle_get_config(self, cmd):
         """Private function that handles the 'get_config' command"""
         if cmd != None:
             if type(cmd) == dict:
-                return self._handle_get_config_dict(cmd)
+                return self.__handle_get_config_dict(cmd)
             else:
                 return ccsession.create_answer(1, "Bad get_config command, argument not a dict")
         else:
             return ccsession.create_answer(0, self.config.data)
 
-    def _handle_set_config_module(self, module_name, cmd):
+    def __handle_set_config_module(self, module_name, cmd):
         # the answer comes (or does not come) from the relevant module
         # so we need a variable to see if we got it
         answer = None
@@ -404,7 +431,7 @@ class ConfigManager:
                 self.config.data = old_data
         return answer
 
-    def _handle_set_config_all(self, cmd):
+    def __handle_set_config_all(self, cmd):
         old_data = copy.deepcopy(self.config.data)
         got_error = False
         err_list = []
@@ -412,7 +439,7 @@ class ConfigManager:
         # sets, so we simply call set_config_module for each of those
         for module in cmd:
             if module != "version":
-                answer = self._handle_set_config_module(module, cmd[module])
+                answer = self.__handle_set_config_module(module, cmd[module])
                 if answer == None:
                     got_error = True
                     err_list.append("No answer message from " + module)
@@ -431,37 +458,58 @@ class ConfigManager:
             self.config.data = old_data
             return ccsession.create_answer(1, " ".join(err_list))
 
-    def _handle_set_config(self, cmd):
+    def __handle_set_config(self, cmd):
         """Private function that handles the 'set_config' command"""
         answer = None
 
         if cmd == None:
             return ccsession.create_answer(1, "Wrong number of arguments")
         if len(cmd) == 2:
-            answer = self._handle_set_config_module(cmd[0], cmd[1])
+            answer = self.__handle_set_config_module(cmd[0], cmd[1])
         elif len(cmd) == 1:
-            answer = self._handle_set_config_all(cmd[0])
+            answer = self.__handle_set_config_all(cmd[0])
         else:
             answer = ccsession.create_answer(1, "Wrong number of arguments")
         if not answer:
             answer = ccsession.create_answer(1, "No answer message from " + cmd[0])
-            
+
         return answer
 
-    def _handle_module_spec(self, spec):
+    def __handle_module_spec(self, spec):
         """Private function that handles the 'module_spec' command"""
         # todo: validate? (no direct access to spec as
         # todo: use ModuleSpec class
         # todo: error checking (like keyerrors)
         answer = {}
         self.set_module_spec(spec)
-        
-        # We should make one general 'spec update for module' that
-        # passes both specification and commands at once
-        spec_update = ccsession.create_command(ccsession.COMMAND_MODULE_SPECIFICATION_UPDATE,
-                                               [ spec.get_module_name(), spec.get_full_spec() ])
-        self.cc.group_sendmsg(spec_update, "Cmdctl")
+        self._send_module_spec_to_cmdctl(spec.get_module_name(),
+                                         spec.get_full_spec())
         return ccsession.create_answer(0)
+
+    def __handle_module_stopping(self, arg):
+        """Private function that handles a 'stopping' command;
+           The argument is of the form { 'module_name': <name> }.
+           If the module is known, it is removed from the known list,
+           and a message is sent to the Cmdctl channel to remove it as well.
+           If it is unknown, the message is ignored."""
+        if arg['module_name'] in self.module_specs:
+            del self.module_specs[arg['module_name']]
+            self._send_module_spec_to_cmdctl(arg['module_name'], None)
+        # This command is not expected to be answered
+        return None
+
+    def _send_module_spec_to_cmdctl(self, module_name, spec):
+        """Sends the given module spec for the given module name to Cmdctl.
+           Parameters:
+           module_name: A string with the name of the module
+           spec: dict containing full module specification, as returned by
+                 ModuleSpec.get_full_spec(). This argument may also be None,
+                 in which case it signals Cmdctl to remove said module from
+                 its list.
+           No response from Cmdctl is expected."""
+        spec_update = ccsession.create_command(ccsession.COMMAND_MODULE_SPECIFICATION_UPDATE,
+                                               [ module_name, spec ])
+        self.cc.group_sendmsg(spec_update, "Cmdctl")
 
     def handle_msg(self, msg):
         """Handle a command from the cc channel to the configuration manager"""
@@ -473,17 +521,19 @@ class ConfigManager:
             elif cmd == ccsession.COMMAND_GET_STATISTICS_SPEC:
                 answer = ccsession.create_answer(0, self.get_statistics_spec())
             elif cmd == ccsession.COMMAND_GET_MODULE_SPEC:
-                answer = self._handle_get_module_spec(arg)
+                answer = self.__handle_get_module_spec(arg)
             elif cmd == ccsession.COMMAND_GET_CONFIG:
-                answer = self._handle_get_config(arg)
+                answer = self.__handle_get_config(arg)
             elif cmd == ccsession.COMMAND_SET_CONFIG:
-                answer = self._handle_set_config(arg)
+                answer = self.__handle_set_config(arg)
+            elif cmd == ccsession.COMMAND_MODULE_STOPPING:
+                answer = self.__handle_module_stopping(arg)
             elif cmd == ccsession.COMMAND_SHUTDOWN:
                 self.running = False
                 answer = ccsession.create_answer(0)
             elif cmd == ccsession.COMMAND_MODULE_SPEC:
                 try:
-                    answer = self._handle_module_spec(isc.config.ModuleSpec(arg))
+                    answer = self.__handle_module_spec(isc.config.ModuleSpec(arg))
                 except isc.config.ModuleSpecError as dde:
                     answer = ccsession.create_answer(1, "Error in data definition: " + str(dde))
             else:
@@ -491,7 +541,7 @@ class ConfigManager:
         else:
             answer = ccsession.create_answer(1, "Unknown message format: " + str(msg))
         return answer
-        
+
     def run(self):
         """Runs the configuration manager."""
         self.running = True
@@ -507,4 +557,6 @@ class ConfigManager:
             # not ask
             if msg is not None and not 'result' in msg:
                 answer = self.handle_msg(msg);
-                self.cc.group_reply(env, answer)
+                # Only respond if there actually is something to respond with
+                if answer is not None:
+                    self.cc.group_reply(env, answer)

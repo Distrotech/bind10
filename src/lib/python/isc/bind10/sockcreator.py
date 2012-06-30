@@ -16,7 +16,9 @@
 import socket
 import struct
 import os
+import copy
 import subprocess
+import copy
 from isc.log_messages.bind10_messages import *
 from libutil_io_python import recv_fd
 
@@ -200,6 +202,9 @@ class WrappedSocket:
 class Creator(Parser):
     """
     This starts the socket creator and allows asking for the sockets.
+
+    Note: __process shouldn't be reset once created.  See the note
+    of the SockCreator class for details.
     """
     def __init__(self, path):
         (local, remote) = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -207,14 +212,23 @@ class Creator(Parser):
         # stdin as well as stdout, so we dup it before passing it there.
         remote2 = socket.fromfd(remote.fileno(), socket.AF_UNIX,
                                 socket.SOCK_STREAM)
-        env = os.environ
+        env = copy.deepcopy(os.environ)
         env['PATH'] = path
         self.__process = subprocess.Popen(['b10-sockcreator'], env=env,
                                           stdin=remote.fileno(),
-                                          stdout=remote2.fileno())
+                                          stdout=remote2.fileno(),
+                                          preexec_fn=self.__preexec_work)
         remote.close()
         remote2.close()
         Parser.__init__(self, WrappedSocket(local))
+
+    def __preexec_work(self):
+        """Function used before running a program that needs to run as a
+        different user."""
+        # Put us into a separate process group so we don't get
+        # SIGINT signals on Ctrl-C (the boss will shut everthing down by
+        # other means).
+        os.setpgrp()
 
     def pid(self):
         return self.__process.pid
@@ -223,4 +237,3 @@ class Creator(Parser):
         logger.warn(BIND10_SOCKCREATOR_KILL)
         if self.__process is not None:
             self.__process.kill()
-            self.__process = None

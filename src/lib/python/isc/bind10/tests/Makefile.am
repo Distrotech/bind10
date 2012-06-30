@@ -1,7 +1,7 @@
 PYCOVERAGE_RUN = @PYCOVERAGE_RUN@
 #PYTESTS = args_test.py bind10_test.py
 # NOTE: this has a generated test found in the builddir
-PYTESTS = sockcreator_test.py
+PYTESTS = sockcreator_test.py component_test.py socket_cache_test.py
 
 EXTRA_DIST = $(PYTESTS)
 
@@ -23,6 +23,7 @@ endif
 	echo Running test: $$pytest ; \
 	$(LIBRARY_PATH_PLACEHOLDER) \
 	PYTHONPATH=$(COMMON_PYTHON_PATH):$(abs_top_srcdir)/src/bin:$(abs_top_builddir)/src/bin/bind10:$(abs_top_builddir)/src/lib/util/io/.libs \
+	B10_LOCKFILE_DIR_FROM_BUILD=$(abs_top_builddir) \
 	BIND10_MSGQ_SOCKET_FILE=$(abs_top_builddir)/msgq_socket \
 		$(PYCOVERAGE_RUN) $(abs_srcdir)/$$pytest || exit ; \
 	done

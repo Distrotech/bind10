@@ -45,6 +45,23 @@ using namespace isc::dns::python;
 using namespace isc::datasrc;
 using namespace isc::datasrc::python;
 
+namespace  {
+ZoneFinder::FindResultFlags
+getFindResultFlags(const ZoneFinder::Context& context) {
+    ZoneFinder::FindResultFlags result_flags = ZoneFinder::RESULT_DEFAULT;
+    if (context.isWildcard()) {
+        result_flags = result_flags | ZoneFinder::RESULT_WILDCARD;
+    }
+    if (context.isNSECSigned()) {
+        result_flags = result_flags | ZoneFinder::RESULT_NSEC_SIGNED;
+    }
+    if (context.isNSEC3Signed()) {
+        result_flags = result_flags | ZoneFinder::RESULT_NSEC3_SIGNED;
+    }
+    return (result_flags);
+}
+}
+
 namespace isc_datasrc_internal {
 // This is the shared code for the find() call in the finder and the updater
 // Is is intentionally not available through any header, nor at our standard
@@ -53,32 +70,93 @@ namespace isc_datasrc_internal {
 PyObject* ZoneFinder_helper(ZoneFinder* finder, PyObject* args) {
     if (finder == NULL) {
         PyErr_SetString(getDataSourceException("Error"),
-                        "Internal error in find() wrapper; finder object NULL");
+                        "Internal error in find() wrapper; "
+                        "finder object NULL");
         return (NULL);
     }
-    PyObject *name;
-    PyObject *rrtype;
-    PyObject *target;
-    int options_int;
-    if (PyArg_ParseTuple(args, "O!O!OI", &name_type, &name,
+    PyObject* name;
+    PyObject* rrtype;
+    unsigned int options_int = ZoneFinder::FIND_DEFAULT;
+    if (PyArg_ParseTuple(args, "O!O!|I", &name_type, &name,
                                          &rrtype_type, &rrtype,
-                                         &target, &options_int)) {
+                                         &options_int)) {
         try {
             ZoneFinder::FindOptions options =
                 static_cast<ZoneFinder::FindOptions>(options_int);
-            ZoneFinder::FindResult find_result(
-                finder->find(PyName_ToName(name),
-                                   PyRRType_ToRRType(rrtype),
-                                   NULL,
-                                   options
-                                   ));
-            ZoneFinder::Result r = find_result.code;
-            isc::dns::ConstRRsetPtr rrsp = find_result.rrset;
+            ConstZoneFinderContextPtr find_ctx(
+                finder->find(PyName_ToName(name), PyRRType_ToRRType(rrtype),
+                             options));
+            const ZoneFinder::Result r = find_ctx->code;
+            isc::dns::ConstRRsetPtr rrsp = find_ctx->rrset;
+            ZoneFinder::FindResultFlags result_flags =
+                getFindResultFlags(*find_ctx);
             if (rrsp) {
                 // Use N instead of O so the refcount isn't increased twice
-                return (Py_BuildValue("IN", r, createRRsetObject(*rrsp)));
+                return (Py_BuildValue("INI", r, createRRsetObject(*rrsp),
+                                      result_flags));
             } else {
-                return (Py_BuildValue("IO", r, Py_None));
+                return (Py_BuildValue("IOI", r, Py_None, result_flags));
+            }
+        } catch (const OutOfZone& ooz) {
+            PyErr_SetString(getDataSourceException("OutOfZone"), ooz.what());
+            return (NULL);
+        } catch (const DataSourceError& dse) {
+            PyErr_SetString(getDataSourceException("Error"), dse.what());
+            return (NULL);
+        } catch (const std::exception& exc) {
+            PyErr_SetString(getDataSourceException("Error"), exc.what());
+            return (NULL);
+        } catch (...) {
+            PyErr_SetString(getDataSourceException("Error"),
+                            "Unexpected exception");
+            return (NULL);
+        }
+    } else {
+        return (NULL);
+    }
+}
+
+PyObject* ZoneFinder_helper_all(ZoneFinder* finder, PyObject* args) {
+    if (finder == NULL) {
+        PyErr_SetString(getDataSourceException("Error"),
+                        "Internal error in find_all() wrapper; "
+                        "finder object NULL");
+        return (NULL);
+    }
+    PyObject* name;
+    const unsigned int options_int = ZoneFinder::FIND_DEFAULT;
+    if (PyArg_ParseTuple(args, "O!|I", &name_type, &name, &options_int)) {
+        try {
+            ZoneFinder::FindOptions options =
+                static_cast<ZoneFinder::FindOptions>(options_int);
+            std::vector<isc::dns::ConstRRsetPtr> target;
+            ConstZoneFinderContextPtr find_ctx(
+                finder->findAll(PyName_ToName(name), target, options));
+            const ZoneFinder::Result r = find_ctx->code;
+            isc::dns::ConstRRsetPtr rrsp = find_ctx->rrset;
+            ZoneFinder::FindResultFlags result_flags =
+                getFindResultFlags(*find_ctx);
+            if (r == ZoneFinder::SUCCESS) {
+                // Copy all the RRsets to the result list
+                PyObjectContainer list_container(PyList_New(target.size()));
+                for (size_t i(0); i < target.size(); ++i) {
+                    PyList_SET_ITEM(list_container.get(), i,
+                                    createRRsetObject(*target[i]));
+                }
+                // Construct the result with the list. The Py_BuildValue
+                // increases the refcount and the container decreases it
+                // later. This way, it feels safer in case the build function
+                // would fail.
+                return (Py_BuildValue("IOI", r, list_container.get(),
+                                      result_flags));
+            } else {
+                if (rrsp) {
+                    // Use N instead of O so the refcount isn't increased twice
+                    return (Py_BuildValue("INI", r, createRRsetObject(*rrsp),
+                                          result_flags));
+                } else {
+                    return (Py_BuildValue("IOI", r, Py_None, result_flags));
+                }
             }
         } catch (const DataSourceError& dse) {
             PyErr_SetString(getDataSourceException("Error"), dse.what());
@@ -94,7 +172,6 @@ PyObject* ZoneFinder_helper(ZoneFinder* finder, PyObject* args) {
     } else {
         return (NULL);
     }
-    return Py_BuildValue("I", 1);
 }
 
 } // end namespace internal
@@ -118,7 +195,7 @@ typedef CPPPyObjectContainer<s_ZoneFinder, ZoneFinder> ZoneFinderContainer;
 
 // General creation and destruction
 int
-ZoneFinder_init(s_ZoneFinder* self, PyObject* args) {
+ZoneFinder_init(PyObject*, PyObject*, PyObject*) {
     // can't be called directly
     PyErr_SetString(PyExc_TypeError,
                     "ZoneFinder cannot be constructed directly");
@@ -127,7 +204,8 @@ ZoneFinder_init(s_ZoneFinder* self, PyObject* args) {
 }
 
 void
-ZoneFinder_destroy(s_ZoneFinder* const self) {
+ZoneFinder_destroy(PyObject* po_self) {
+    s_ZoneFinder* self = static_cast<s_ZoneFinder*>(po_self);
     // cppobj is a shared ptr, but to make sure things are not destroyed in
     // the wrong order, we reset it here.
     self->cppobj.reset();
@@ -170,28 +248,10 @@ ZoneFinder_find(PyObject* po_self, PyObject* args) {
 }
 
 PyObject*
-ZoneFinder_findPreviousName(PyObject* po_self, PyObject* args) {
+ZoneFinder_find_all(PyObject* po_self, PyObject* args) {
     s_ZoneFinder* const self = static_cast<s_ZoneFinder*>(po_self);
-    PyObject* name_obj;
-    if (PyArg_ParseTuple(args, "O!", &name_type, &name_obj)) {
-        try {
-            return (createNameObject(
-                self->cppobj->findPreviousName(PyName_ToName(name_obj))));
-        } catch (const isc::NotImplemented& nie) {
-            PyErr_SetString(getDataSourceException("NotImplemented"),
-                            nie.what());
-            return (NULL);
-        } catch (const std::exception& exc) {
-            PyErr_SetString(getDataSourceException("Error"), exc.what());
-            return (NULL);
-        } catch (...) {
-            PyErr_SetString(getDataSourceException("Error"),
-                            "Unexpected exception");
-            return (NULL);
-        }
-    } else {
-        return (NULL);
-    }
+    return (isc_datasrc_internal::ZoneFinder_helper_all(self->cppobj.get(),
+                                                        args));
 }
 
 // This list contains the actual set of functions we have in
@@ -205,8 +265,7 @@ PyMethodDef ZoneFinder_methods[] = {
        ZoneFinder_getOrigin_doc },
     { "get_class", ZoneFinder_getClass, METH_NOARGS, ZoneFinder_getClass_doc },
     { "find", ZoneFinder_find, METH_VARARGS, ZoneFinder_find_doc },
-    { "find_previous_name", ZoneFinder_findPreviousName, METH_VARARGS,
-      ZoneFinder_find_previous_name_doc },
+    { "find_all", ZoneFinder_find_all, METH_VARARGS, ZoneFinder_findAll_doc },
     { NULL, NULL, 0, NULL }
 };
 
@@ -221,7 +280,7 @@ PyTypeObject zonefinder_type = {
     "datasrc.ZoneFinder",
     sizeof(s_ZoneFinder),               // tp_basicsize
     0,                                  // tp_itemsize
-    reinterpret_cast<destructor>(ZoneFinder_destroy),// tp_dealloc
+    ZoneFinder_destroy,                 // tp_dealloc
     NULL,                               // tp_print
     NULL,                               // tp_getattr
     NULL,                               // tp_setattr
@@ -252,7 +311,7 @@ PyTypeObject zonefinder_type = {
     NULL,                               // tp_descr_get
     NULL,                               // tp_descr_set
     0,                                  // tp_dictoffset
-    reinterpret_cast<initproc>(ZoneFinder_init),// tp_init
+    ZoneFinder_init,                    // tp_init
     NULL,                               // tp_alloc
     PyType_GenericNew,                  // tp_new
     NULL,                               // tp_free
@@ -268,16 +327,16 @@ PyTypeObject zonefinder_type = {
 
 PyObject*
 createZoneFinderObject(isc::datasrc::ZoneFinderPtr source, PyObject* base_obj) {
-    s_ZoneFinder* py_zi = static_cast<s_ZoneFinder*>(
+    s_ZoneFinder* py_zf = static_cast<s_ZoneFinder*>(
         zonefinder_type.tp_alloc(&zonefinder_type, 0));
-    if (py_zi != NULL) {
-        py_zi->cppobj = source;
-        py_zi->base_obj = base_obj;
+    if (py_zf != NULL) {
+        py_zf->cppobj = source;
+        py_zf->base_obj = base_obj;
+        if (base_obj != NULL) {
+            Py_INCREF(base_obj);
+        }
     }
-    if (base_obj != NULL) {
-        Py_INCREF(base_obj);
-    }
-    return (py_zi);
+    return (py_zf);
 }
 
 } // namespace python

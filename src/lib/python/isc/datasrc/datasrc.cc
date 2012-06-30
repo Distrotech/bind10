@@ -27,6 +27,7 @@
 #include "finder_python.h"
 #include "iterator_python.h"
 #include "updater_python.h"
+#include "journal_reader_python.h"
 
 #include <util/python/pycppwrapper_util.h>
 #include <dns/python/pydnspp_common.h>
@@ -128,12 +129,6 @@ initModulePart_ZoneFinder(PyObject* mod) {
                              Py_BuildValue("I", ZoneFinder::CNAME));
         installClassVariable(zonefinder_type, "DNAME",
                              Py_BuildValue("I", ZoneFinder::DNAME));
-        installClassVariable(zonefinder_type, "WILDCARD",
-                             Py_BuildValue("I", ZoneFinder::WILDCARD));
-        installClassVariable(zonefinder_type, "WILDCARD_NXRRSET",
-                             Py_BuildValue("I", ZoneFinder::WILDCARD_NXRRSET));
-        installClassVariable(zonefinder_type, "WILDCARD_CNAME",
-                             Py_BuildValue("I", ZoneFinder::WILDCARD_CNAME));
 
         installClassVariable(zonefinder_type, "FIND_DEFAULT",
                              Py_BuildValue("I", ZoneFinder::FIND_DEFAULT));
@@ -143,6 +138,15 @@ initModulePart_ZoneFinder(PyObject* mod) {
                              Py_BuildValue("I", ZoneFinder::FIND_DNSSEC));
         installClassVariable(zonefinder_type, "NO_WILDCARD",
                              Py_BuildValue("I", ZoneFinder::NO_WILDCARD));
+
+        installClassVariable(zonefinder_type, "RESULT_WILDCARD",
+                             Py_BuildValue("I", ZoneFinder::RESULT_WILDCARD));
+        installClassVariable(zonefinder_type, "RESULT_NSEC_SIGNED",
+                             Py_BuildValue("I",
+                                           ZoneFinder::RESULT_NSEC_SIGNED));
+        installClassVariable(zonefinder_type, "RESULT_NSEC3_SIGNED",
+                             Py_BuildValue("I",
+                                           ZoneFinder::RESULT_NSEC3_SIGNED));
     } catch (const std::exception& ex) {
         const std::string ex_what =
             "Unexpected failure in ZoneFinder initialization: " +
@@ -192,8 +196,44 @@ initModulePart_ZoneUpdater(PyObject* mod) {
     return (true);
 }
 
+bool
+initModulePart_ZoneJournalReader(PyObject* mod) {
+    if (PyType_Ready(&journal_reader_type) < 0) {
+        return (false);
+    }
+    void* p = &journal_reader_type;
+    if (PyModule_AddObject(mod, "ZoneJournalReader",
+                           static_cast<PyObject*>(p)) < 0) {
+        return (false);
+    }
+    Py_INCREF(&journal_reader_type);
+
+    try {
+        installClassVariable(journal_reader_type, "SUCCESS",
+                             Py_BuildValue("I", ZoneJournalReader::SUCCESS));
+        installClassVariable(journal_reader_type, "NO_SUCH_ZONE",
+                             Py_BuildValue("I",
+                                           ZoneJournalReader::NO_SUCH_ZONE));
+        installClassVariable(journal_reader_type, "NO_SUCH_VERSION",
+                             Py_BuildValue("I",
+                                           ZoneJournalReader::NO_SUCH_VERSION));
+    } catch (const std::exception& ex) {
+        const std::string ex_what =
+            "Unexpected failure in ZoneJournalReader initialization: " +
+            std::string(ex.what());
+        PyErr_SetString(po_IscException, ex_what.c_str());
+        return (false);
+    } catch (...) {
+        PyErr_SetString(PyExc_SystemError,
+            "Unexpected failure in ZoneJournalReader initialization");
+        return (false);
+    }
+
+    return (true);
+}
 
 PyObject* po_DataSourceError;
+PyObject* po_OutOfZone;
 PyObject* po_NotImplemented;
 
 PyModuleDef iscDataSrc = {
@@ -239,10 +279,17 @@ PyInit_datasrc(void) {
         return (NULL);
     }
 
+    if (!initModulePart_ZoneJournalReader(mod)) {
+        Py_DECREF(mod);
+        return (NULL);
+    }
+
     try {
         po_DataSourceError = PyErr_NewException("isc.datasrc.Error", NULL,
                                                 NULL);
         PyObjectContainer(po_DataSourceError).installToModule(mod, "Error");
+        po_OutOfZone = PyErr_NewException("isc.datasrc.OutOfZone", NULL, NULL);
+        PyObjectContainer(po_OutOfZone).installToModule(mod, "OutOfZone");
         po_NotImplemented = PyErr_NewException("isc.datasrc.NotImplemented",
                                                NULL, NULL);
         PyObjectContainer(po_NotImplemented).installToModule(mod,

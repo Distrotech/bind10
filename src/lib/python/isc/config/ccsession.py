@@ -38,6 +38,7 @@
 
 from isc.cc import Session
 from isc.config.config_data import ConfigData, MultiConfigData, BIND10_CONFIG_DATA_VERSION
+import isc.config.module_spec
 import isc
 from isc.util.file import path_search
 import bind10_config
@@ -97,6 +98,7 @@ COMMAND_SET_CONFIG = "set_config"
 COMMAND_GET_MODULE_SPEC = "get_module_spec"
 COMMAND_MODULE_SPEC = "module_spec"
 COMMAND_SHUTDOWN = "shutdown"
+COMMAND_MODULE_STOPPING = "stopping"
 
 def parse_command(msg):
     """Parses what may be a command message. If it looks like one,
@@ -143,7 +145,9 @@ class ModuleCCSession(ConfigData):
        callbacks are called when 'check_command' is called on the
        ModuleCCSession"""
        
-    def __init__(self, spec_file_name, config_handler, command_handler, cc_session=None, handle_logging_config=True):
+    def __init__(self, spec_file_name, config_handler, command_handler,
+                 cc_session=None, handle_logging_config=True,
+                 socket_file = None):
         """Initialize a ModuleCCSession. This does *NOT* send the
            specification and request the configuration yet. Use start()
            for that once the ModuleCCSession has been initialized.
@@ -165,6 +169,12 @@ class ModuleCCSession(ConfigData):
            logger manager when the logging configuration gets updated.
            The module does not need to do anything except intializing
            its loggers, and provide log messages. Defaults to true.
+
+           socket_file: If cc_session was none, this optional argument
+           specifies which socket file to use to connect to msgq. It
+           will be overridden by the environment variable
+           MSGQ_SOCKET_FILE. If none, and no environment variable is
+           set, it will use the system default.
         """
         module_spec = isc.config.module_spec_from_file(spec_file_name)
         ConfigData.__init__(self, module_spec)
@@ -175,7 +185,7 @@ class ModuleCCSession(ConfigData):
         self.set_command_handler(command_handler)
 
         if not cc_session:
-            self._session = Session()
+            self._session = Session(socket_file)
         else:
             self._session = cc_session
         self._session.group_subscribe(self._module_name, "*")
@@ -201,6 +211,24 @@ class ModuleCCSession(ConfigData):
            The config_handler will be called with that configuration"""
         self.__send_spec()
         self.__request_config()
+
+    def send_stopping(self):
+        """Sends a 'stopping' message to the configuration manager. This
+           message is just an FYI, and no response is expected. Any errors
+           when sending this message (for instance if the msgq session has
+           previously been closed) are logged, but ignored."""
+        # create_command could raise an exception as well, but except for
+        # out of memory related errors, these should all be programming
+        # failures and are not caught
+        msg = create_command(COMMAND_MODULE_STOPPING,
+                             self.get_module_spec().get_full_spec())
+        try:
+            self._session.group_sendmsg(msg, "ConfigManager")
+        except Exception as se:
+            # If the session was previously closed, obvously trying to send
+            # a message fails. (TODO: check if session is open so we can
+            # error on real problems?)
+            logger.error(CONFIG_SESSION_STOPPING_FAILED, se)
 
     def get_socket(self):
         """Returns the socket from the command channel session. This
@@ -300,43 +328,97 @@ class ModuleCCSession(ConfigData):
            and return an answer created with create_answer()"""
         self._command_handler = command_handler
 
-    def add_remote_config(self, spec_file_name, config_update_callback = None):
-        """Gives access to the configuration of a different module.
-           These remote module options can at this moment only be
-           accessed through get_remote_config_value(). This function
-           also subscribes to the channel of the remote module name
-           to receive the relevant updates. It is not possible to
-           specify your own handler for this right now.
-           start() must have been called on this CCSession
-           prior to the call to this method.
-           Returns the name of the module."""
-        module_spec = isc.config.module_spec_from_file(spec_file_name)
+    def _add_remote_config_internal(self, module_spec,
+                                    config_update_callback=None):
+        """The guts of add_remote_config and add_remote_config_by_name"""
         module_cfg = ConfigData(module_spec)
         module_name = module_spec.get_module_name()
+
         self._session.group_subscribe(module_name)
 
         # Get the current config for that module now
         seq = self._session.group_sendmsg(create_command(COMMAND_GET_CONFIG, { "module_name": module_name }), "ConfigManager")
 
         try:
-            answer, env = self._session.group_recvmsg(False, seq)
+            answer, _ = self._session.group_recvmsg(False, seq)
         except isc.cc.SessionTimeout:
             raise ModuleCCSessionError("No answer from ConfigManager when "
                                        "asking about Remote module " +
                                        module_name)
+        call_callback = False
         if answer:
             rcode, value = parse_answer(answer)
             if rcode == 0:
-                if value != None and module_spec.validate_config(False, value):
-                    module_cfg.set_local_config(value)
-                    if config_update_callback is not None:
-                        config_update_callback(value, module_cfg)
+                if value != None:
+                    if module_spec.validate_config(False, value):
+                        module_cfg.set_local_config(value)
+                        call_callback = True
+                    else:
+                        raise ModuleCCSessionError("Bad config data for " +
+                                                   module_name + ": " +
+                                                   str(value))
+            else:
+                raise ModuleCCSessionError("Failure requesting remote " +
+                                           "configuration data for " +
+                                           module_name)
 
         # all done, add it
         self._remote_module_configs[module_name] = module_cfg
         self._remote_module_callbacks[module_name] = config_update_callback
+        if call_callback and config_update_callback is not None:
+            config_update_callback(value, module_cfg)
+
+    def add_remote_config_by_name(self, module_name,
+                                  config_update_callback=None):
+        """
+        This does the same as add_remote_config, but you provide the module name
+        instead of the name of the spec file.
+        """
+        seq = self._session.group_sendmsg(create_command(COMMAND_GET_MODULE_SPEC,
+                                                         { "module_name":
+                                                         module_name }),
+                                          "ConfigManager")
+        try:
+            answer, env = self._session.group_recvmsg(False, seq)
+        except isc.cc.SessionTimeout:
+            raise ModuleCCSessionError("No answer from ConfigManager when " +
+                                       "asking about for spec of Remote " +
+                                       "module " + module_name)
+        if answer:
+            rcode, value = parse_answer(answer)
+            if rcode == 0:
+                module_spec = isc.config.module_spec.ModuleSpec(value)
+                if module_spec.get_module_name() != module_name:
+                    raise ModuleCCSessionError("Module name mismatch: " +
+                                               module_name + " and " +
+                                               module_spec.get_module_name())
+                self._add_remote_config_internal(module_spec,
+                                                 config_update_callback)
+            else:
+                raise ModuleCCSessionError("Error code " + str(rcode) +
+                                           "when asking for module spec of " +
+                                           module_name)
+        else:
+            raise ModuleCCSessionError("No answer when asking for module " +
+                                       "spec of " + module_name)
+        # Just to be consistent with the add_remote_config
         return module_name
-        
+
+    def add_remote_config(self, spec_file_name, config_update_callback=None):
+        """Gives access to the configuration of a different module.
+           These remote module options can at this moment only be
+           accessed through get_remote_config_value(). This function
+           also subscribes to the channel of the remote module name
+           to receive the relevant updates. It is not possible to
+           specify your own handler for this right now, but you can
+           specify a callback that is called after the change happened.
+           start() must have been called on this CCSession
+           prior to the call to this method.
+           Returns the name of the module."""
+        module_spec = isc.config.module_spec_from_file(spec_file_name)
+        self._add_remote_config_internal(module_spec, config_update_callback)
+        return module_spec.get_module_name()
+
     def remove_remote_config(self, module_name):
         """Removes the remote configuration access for this module"""
         if module_name in self._remote_module_configs:
@@ -363,7 +445,7 @@ class ModuleCCSession(ConfigData):
         except isc.cc.SessionTimeout:
             # TODO: log an error?
             pass
-        
+
     def __request_config(self):
         """Asks the configuration manager for the current configuration, and call the config handler if set.
            Raises a ModuleCCSessionError if there is no answer from the configuration manager"""
@@ -402,29 +484,37 @@ class UIModuleCCSession(MultiConfigData):
            passed must have send_GET and send_POST functions"""
         MultiConfigData.__init__(self)
         self._conn = conn
-        self.request_specifications()
-        self.request_current_config()
+        self.update_specs_and_config()
 
     def request_specifications(self):
-        """Request the module specifications from b10-cmdctl"""
-        # this step should be unnecessary but is the current way cmdctl returns stuff
-        # so changes are needed there to make this clean (we need a command to simply get the
-        # full specs for everything, including commands etc, not separate gets for that)
+        """Clears the current list of specifications, and requests a new
+            list from b10-cmdctl. As other actions may have caused modules
+            to be stopped, or new modules to be added, this is expected to
+            be run after each interaction (at this moment). It is usually
+            also combined with request_current_config(). For that reason,
+            we provide update_specs_and_config() which calls both."""
         specs = self._conn.send_GET('/module_spec')
+        self.clear_specifications()
         for module in specs.keys():
             self.set_specification(isc.config.ModuleSpec(specs[module]))
 
-    def update_specs_and_config(self):
-        self.request_specifications()
-        self.request_current_config()
-
     def request_current_config(self):
         """Requests the current configuration from the configuration
-           manager through b10-cmdctl, and stores those as CURRENT"""
+           manager through b10-cmdctl, and stores those as CURRENT. This
+           does not modify any local changes, it just updates to the current
+           state of the server itself."""
         config = self._conn.send_GET('/config_data')
         if 'version' not in config or config['version'] != BIND10_CONFIG_DATA_VERSION:
             raise ModuleCCSessionError("Bad config version")
         self._set_current_config(config)
+
+    def update_specs_and_config(self):
+        """Convenience function to both clear and update the known list of
+           module specifications, and update the current configuration on
+           the server side. There are a few cases where the caller might only
+           want to run one of these tasks, but often they are both needed."""
+        self.request_specifications()
+        self.request_current_config()
 
     def _add_value_to_list(self, identifier, value, module_spec):
         cur_list, status = self.get_value(identifier)
@@ -443,9 +533,9 @@ class UIModuleCCSession(MultiConfigData):
             cur_list.append(value)
             self.set_value(identifier, cur_list)
         else:
-            raise isc.cc.data.DataAlreadyPresentError(value +
+            raise isc.cc.data.DataAlreadyPresentError(str(value) +
                                                       " already in "
-                                                      + identifier)
+                                                      + str(identifier))
 
     def _add_value_to_named_set(self, identifier, value, item_value):
         if type(value) != str:
@@ -466,8 +556,8 @@ class UIModuleCCSession(MultiConfigData):
                 self.set_value(identifier, cur_map)
             else:
                 raise isc.cc.data.DataAlreadyPresentError(value +
-                                                          " already in "
-                                                          + identifier)
+                                                          " already in " +
+                                                          identifier)
 
     def add_value(self, identifier, value_str = None, set_value_str = None):
         """Add a value to a configuration list. Raises a DataTypeError
@@ -535,6 +625,7 @@ class UIModuleCCSession(MultiConfigData):
                 cur_map = {}
             if value in cur_map:
                 del cur_map[value]
+                self.set_value(identifier, cur_map)
             else:
                 raise isc.cc.data.DataNotFoundError(value + " not found in named_set " + str(identifier))
 
@@ -573,7 +664,6 @@ class UIModuleCCSession(MultiConfigData):
             # answer is either an empty dict (on success), or one
             # containing errors
             if answer == {}:
-                self.request_current_config()
                 self.clear_local_changes()
             elif "error" in answer:
                 raise ModuleCCSessionError("Error: " + str(answer["error"]) + "\n" + "Configuration not committed")

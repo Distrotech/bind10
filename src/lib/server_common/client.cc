@@ -34,9 +34,6 @@ struct Client::ClientImpl {
 
     const IOMessage& request_;
     const IPAddress request_src_;
-private:
-    // silence MSVC warning C4512: assignment operator could not be generated
-    ClientImpl& operator=(ClientImpl const&);
 };
 
 Client::Client(const IOMessage& request_message) :

@@ -1,4 +1,4 @@
-// Copyright (C) 2011  Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2011-2012 Internet Systems Consortium, Inc. ("ISC")
 //
 // Permission to use, copy, modify, and/or distribute this software for any
 // purpose with or without fee is hereby granted, provided that the above
@@ -12,58 +12,52 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#include "config.h"
-#include "dhcp/dhcp6.h"
-#include "dhcp/pkt6.h"
-#include "dhcp/libdhcp.h"
-#include "exceptions/exceptions.h"
+#include <config.h>
+
+#include <dhcp/dhcp6.h>
+#include <dhcp/pkt6.h>
+#include <dhcp/libdhcp++.h>
+#include <exceptions/exceptions.h>
 #include <iostream>
 #include <sstream>
 
 using namespace std;
-using namespace isc::dhcp;
 
 namespace isc {
+namespace dhcp {
 
-Pkt6::Pkt6(unsigned int dataLen, DHCPv6Proto proto /* = UDP */)
-    :data_len_(dataLen),
-     local_addr_("::"),
-     remote_addr_("::"),
-     iface_(""),
-     ifindex_(-1),
-     local_port_(-1),
-     remote_port_(-1),
-     proto_(proto),
-     msg_type_(-1),
-     transid_(rand()%0xffffff)
-{
-
-    data_ = boost::shared_array<uint8_t>(new uint8_t[dataLen]);
-    data_len_ = dataLen;
+Pkt6::Pkt6(const uint8_t* buf, uint32_t buf_len, DHCPv6Proto proto /* = UDP */) :
+    proto_(proto),
+    msg_type_(0),
+    transid_(rand()%0xffffff),
+    iface_(""),
+    ifindex_(-1),
+    local_addr_("::"),
+    remote_addr_("::"),
+    local_port_(0),
+    remote_port_(0),
+    bufferOut_(0) {
+    data_.resize(buf_len);
+    memcpy(&data_[0], buf, buf_len);
 }
 
-Pkt6::Pkt6(uint8_t msg_type,
-           unsigned int transid,
-           DHCPv6Proto proto /*= UDP*/)
-    :local_addr_("::"),
-     remote_addr_("::"),
-     iface_(""),
-     ifindex_(-1),
-     local_port_(-1),
-     remote_port_(-1),
-     proto_(proto),
-     msg_type_(msg_type),
-     transid_(transid) {
-
-    data_ = boost::shared_array<uint8_t>(new uint8_t[4]);
-    data_len_ = 4;
+Pkt6::Pkt6(uint8_t msg_type, uint32_t transid, DHCPv6Proto proto /*= UDP*/) :
+    proto_(proto),
+    msg_type_(msg_type),
+    transid_(transid),
+    iface_(""),
+    ifindex_(-1),
+    local_addr_("::"),
+    remote_addr_("::"),
+    local_port_(0),
+    remote_port_(0),
+    bufferOut_(0) {
 }
 
-unsigned short
-Pkt6::len() {
-    unsigned int length = DHCPV6_PKT_HDR_LEN; // DHCPv6 header
+uint16_t Pkt6::len() {
+    uint16_t length = DHCPV6_PKT_HDR_LEN; // DHCPv6 header
 
-    for (Option::Option6Collection::iterator it = options_.begin();
+    for (Option::OptionCollection::iterator it = options_.begin();
          it != options_.end();
          ++it) {
         length += (*it).second->len();
@@ -88,43 +82,28 @@ Pkt6::pack() {
 
 bool
 Pkt6::packUDP() {
-    unsigned short length = len();
-    if (data_len_ < length) {
-        cout << "Previous len=" << data_len_ << ", allocating new buffer: len="
-             << length << endl;
 
-        // May throw exception if out of memory. That is rather fatal,
-        // so we don't catch this
-        data_ = boost::shared_array<uint8_t>(new uint8_t[length]);
-        data_len_ = length;
-    }
+    // TODO: Once OutputBuffer is used here, some thing like this
+    // will be used. Yikes! That's ugly.
+    // bufferOut_.writeData(ciaddr_.getAddress().to_v6().to_bytes().data(), 16);
+    // It is better to implement a method in IOAddress that extracts
+    // vector<uint8_t>
 
-    data_len_ = length;
     try {
         // DHCPv6 header: message-type (1 octect) + transaction id (3 octets)
-        data_[0] = msg_type_;
-
+        bufferOut_.writeUint8(msg_type_);
         // store 3-octet transaction-id
-        data_[1] = (transid_ >> 16) & 0xff;
-        data_[2] = (transid_ >> 8) & 0xff;
-        data_[3] = (transid_) & 0xff;
+        bufferOut_.writeUint8( (transid_ >> 16) & 0xff );
+        bufferOut_.writeUint8( (transid_ >> 8) & 0xff );
+        bufferOut_.writeUint8( (transid_) & 0xff );
 
         // the rest are options
-        unsigned short offset = LibDHCP::packOptions6(data_, length,
-                                                      4/*offset*/,
-                                                      options_);
-
-        // sanity check
-        if (offset != length) {
-            isc_throw(OutOfRange, "Packet build failed: expected size="
-                      << length << ", actual len=" << offset);
-        }
+        LibDHCP::packOptions6(bufferOut_, options_);
     }
     catch (const Exception& e) {
         cout << "Packet build failed:" << e.what() << endl;
         return (false);
     }
-    cout << "Packet built, len=" << len() << endl;
     return (true);
 }
 
@@ -150,8 +129,8 @@ Pkt6::unpack() {
 
 bool
 Pkt6::unpackUDP() {
-    if (data_len_ < 4) {
-        std::cout << "DHCPv6 packet truncated. Only " << data_len_
+    if (data_.size() < 4) {
+        std::cout << "DHCPv6 packet truncated. Only " << data_.size()
                   << " bytes. Need at least 4." << std::endl;
         return (false);
     }
@@ -160,16 +139,13 @@ Pkt6::unpackUDP() {
         ((data_[2]) << 8) + (data_[3]);
     transid_ = transid_ & 0xffffff;
 
-    unsigned int offset = LibDHCP::unpackOptions6(data_,
-                                                  data_len_,
-                                                  4, //offset
-                                                  data_len_ - 4,
-                                                  options_);
-    if (offset != data_len_) {
-        cout << "DHCPv6 packet contains trailing garbage. Parsed "
-             << offset << " bytes, packet is " << data_len_ << " bytes."
-             << endl;
-        // just a warning. Ignore trailing garbage and continue
+    try {
+        OptionBuffer opt_buffer(data_.begin() + 4, data_.end());
+
+        LibDHCP::unpackOptions6(opt_buffer, options_);
+    } catch (const Exception& e) {
+        cout << "Packet parsing failed:" << e.what() << endl;
+        return (false);
     }
     return (true);
 }
@@ -189,7 +165,7 @@ Pkt6::toText() {
         << "]:" << remote_port_ << endl;
     tmp << "msgtype=" << msg_type_ << ", transid=0x" << hex << transid_
         << dec << endl;
-    for (isc::dhcp::Option::Option6Collection::iterator opt=options_.begin();
+    for (isc::dhcp::Option::OptionCollection::iterator opt=options_.begin();
          opt != options_.end();
          ++opt) {
         tmp << opt->second->toText() << std::endl;
@@ -198,8 +174,8 @@ Pkt6::toText() {
 }
 
 boost::shared_ptr<isc::dhcp::Option>
-Pkt6::getOption(unsigned short opt_type) {
-    isc::dhcp::Option::Option6Collection::const_iterator x = options_.find(opt_type);
+Pkt6::getOption(uint16_t opt_type) {
+    isc::dhcp::Option::OptionCollection::const_iterator x = options_.find(opt_type);
     if (x!=options_.end()) {
         return (*x).second;
     }
@@ -212,8 +188,8 @@ Pkt6::addOption(boost::shared_ptr<Option> opt) {
 }
 
 bool
-Pkt6::delOption(unsigned short type) {
-    isc::dhcp::Option::Option6Collection::iterator x = options_.find(type);
+Pkt6::delOption(uint16_t type) {
+    isc::dhcp::Option::OptionCollection::iterator x = options_.find(type);
     if (x!=options_.end()) {
         options_.erase(x);
         return (true); // delete successful
@@ -221,4 +197,17 @@ Pkt6::delOption(unsigned short type) {
     return (false); // can't find option to be deleted
 }
 
-};
+void Pkt6::repack() {
+    cout << "Convering RX packet to TX packet: " << data_.size() << " bytes." << endl;
+
+    bufferOut_.writeData(&data_[0], data_.size());
+}
+
+void
+Pkt6::updateTimestamp() {
+    timestamp_ = boost::posix_time::microsec_clock::universal_time();
+}
+
+
+} // end of isc::dhcp namespace
+} // end of isc namespace

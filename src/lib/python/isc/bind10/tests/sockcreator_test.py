@@ -13,9 +13,6 @@
 # NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
 # WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-# This test file is generated .py.in -> .py just to be in the build dir,
-# same as the rest of the tests. Saves a lot of stuff in makefile.
-
 """
 Tests for the bind10.sockcreator module.
 """
@@ -306,6 +303,7 @@ class WrapTests(unittest.TestCase):
 
         # Transfer the descriptor
         send_fd(t1.fileno(), p1.fileno())
+        p1.close()
         p1 = socket.fromfd(t2.read_fd(), socket.AF_UNIX, socket.SOCK_STREAM)
 
         # Now, pass some data trough the socket
@@ -320,6 +318,14 @@ class WrapTests(unittest.TestCase):
         t2.send(b'C')
         data = t1.recv(1)
         self.assertEqual(b'C', data)
+
+        # Explicitly close temporary socket pair as the Python
+        # interpreter expects it.  It may not be 100% exception safe,
+        # but since this is only for tests we prefer brevity.
+        p1.close()
+        p2.close()
+        t1.close()
+        t2.close()
 
 if __name__ == '__main__':
     isc.log.init("bind10") # FIXME Should this be needed?
