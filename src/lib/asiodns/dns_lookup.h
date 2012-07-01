@@ -70,13 +70,13 @@ public:
     ///                       this MessagePtr
     /// \param buffer The final answer is put here
     /// \param server DNSServer object to use
-    virtual void operator()(const asiolink::IOMessage& io_message,
+    virtual bool operator()(const asiolink::IOMessage& io_message,
                             isc::dns::MessagePtr message,
                             isc::dns::MessagePtr answer_message,
                             isc::util::OutputBufferPtr buffer,
                             DNSServer* server) const
     {
-        (*self_)(io_message, message, answer_message, buffer, server);
+        return ((*self_)(io_message, message, answer_message, buffer, server));
     }
 private:
     DNSLookup* self_;

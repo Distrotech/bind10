@@ -117,7 +117,7 @@ public:
     DummyLookup() :
         allow_resume_(true)
     { }
-    void operator()(const IOMessage& io_message,
+    bool operator()(const IOMessage& io_message,
             isc::dns::MessagePtr message,
             isc::dns::MessagePtr answer_message,
             isc::util::OutputBufferPtr buffer,
@@ -126,6 +126,7 @@ public:
         if (allow_resume_) {
             server->resume(true);
         }
+        return (true);
     }
     // If you want it not to call resume, set this to false
     bool allow_resume_;

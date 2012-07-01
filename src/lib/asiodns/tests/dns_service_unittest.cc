@@ -52,7 +52,7 @@ public:
                IOService& io_service) :
         first_buffer_(b1), second_buffer_(b2), io_service_(io_service)
     {}
-    void operator()(const IOMessage&, isc::dns::MessagePtr,
+    bool operator()(const IOMessage&, isc::dns::MessagePtr,
                     isc::dns::MessagePtr, isc::util::OutputBufferPtr buffer,
                     DNSServer* server) const
     {
@@ -65,6 +65,7 @@ public:
             server->stop();
             io_service_.stop();
         }
+        return (false);
     }
     isc::util::OutputBuffer** first_buffer_;
     isc::util::OutputBuffer** second_buffer_;

@@ -124,7 +124,7 @@ public:
     /// \param server Pointer to the \c DNSServer
     ///
     /// \throw isc::Unexpected Protocol type of \a message is unexpected
-    void processMessage(const isc::asiolink::IOMessage& io_message,
+    bool processMessage(const isc::asiolink::IOMessage& io_message,
                         isc::dns::Message& message,
                         isc::util::OutputBuffer& buffer,
                         isc::asiodns::DNSServer* server);

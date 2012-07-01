@@ -99,13 +99,6 @@ SyncUDPServer::handleRead(const asio::error_code& ec, const size_t length) {
     // provides the appropriate operator() but is otherwise functionless.
     IOMessage message(data_, length, *udp_socket_, udp_endpoint_);
 
-    // If we don't have a DNS Lookup provider, there's no point in
-    // continuing; we exit the coroutine permanently.
-    if (lookup_callback_ == NULL) {
-        scheduleRead();
-        return;
-    }
-
     // Make sure the buffers are fresh
     output_buffer_->clear();
     query_->clear(isc::dns::Message::PARSE);
@@ -115,18 +108,7 @@ SyncUDPServer::handleRead(const asio::error_code& ec, const size_t length) {
     resume_called_ = false;
 
     // Call the actual lookup
-    (*lookup_callback_)(message, query_, answer_, output_buffer_, this);
-
-    if (!resume_called_) {
-        isc_throw(isc::Unexpected,
-                  "No resume called from the lookup callback");
-    }
-
-    if (stopped_) {
-        return;
-    }
-
-    if (done_) {
+    if ((*lookup_callback_)(message, query_, answer_, output_buffer_, this)) {
         socket_->send_to(asio::buffer(output_buffer_->getData(),
                                       output_buffer_->getLength()),
                          sender_);
@@ -162,9 +144,7 @@ SyncUDPServer::stop() {
 /// resume processing where it left off.  The 'done' parameter indicates
 /// whether there is an answer to return to the client.
 void
-SyncUDPServer::resume(const bool done) {
-    resume_called_ = true;
-    done_ = done;
+SyncUDPServer::resume(const bool) {
 }
 
 bool

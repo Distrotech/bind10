@@ -266,7 +266,7 @@ public:
     MessageLookup(Resolver* srv) : server_(srv) {}
 
     // \brief Handle the DNS Lookup
-    virtual void operator()(const IOMessage& io_message,
+    virtual bool operator()(const IOMessage& io_message,
                             MessagePtr query_message,
                             MessagePtr answer_message,
                             OutputBufferPtr buffer,
@@ -274,6 +274,7 @@ public:
     {
         server_->processMessage(io_message, query_message,
                                 answer_message, buffer, server);
+        return (false);         // unused
     }
 private:
     Resolver* server_;
