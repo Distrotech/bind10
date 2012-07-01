@@ -25,10 +25,14 @@
 
 #include <dns/message.h>
 #include <asiolink/simple_callback.h>
+#include <asiolink/io_asio_socket.h>
+#include <asiolink/udp_endpoint.h>
+#include <asiolink/dummy_io_cb.h>
 #include <util/buffer.h>
 #include <exceptions/exceptions.h>
 
 #include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
 
 #include <stdint.h>
 
@@ -118,14 +122,15 @@ private:
     isc::dns::MessagePtr query_, answer_;
     // The socket used for the communication
     std::auto_ptr<asio::ip::udp::socket> socket_;
+    boost::scoped_ptr<asiolink::IOAsioSocket<asiolink::DummyIOCallback> >
+    udp_socket_;
     // The event loop we use
     asio::io_service& io_;
     // Place the socket puts the sender of a packet when it is received
     asio::ip::udp::endpoint sender_;
+    asiolink::UDPEndpoint udp_endpoint_;
     // Callbacks
-    const asiolink::SimpleCallback* checkin_callback_;
     const DNSLookup* lookup_callback_;
-    const DNSAnswer* answer_callback_;
     // Answers from the lookup callback (not sent directly, but signalled
     // through resume()
     bool resume_called_, done_;

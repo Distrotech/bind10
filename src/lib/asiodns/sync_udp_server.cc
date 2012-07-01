@@ -39,13 +39,12 @@ namespace isc {
 namespace asiodns {
 
 SyncUDPServer::SyncUDPServer(asio::io_service& io_service, const int fd,
-                             const int af, asiolink::SimpleCallback* checkin,
-                             DNSLookup* lookup, DNSAnswer* answer) :
+                             const int af, asiolink::SimpleCallback*,
+                             DNSLookup* lookup, DNSAnswer*) :
     output_buffer_(new isc::util::OutputBuffer(0)),
     query_(new isc::dns::Message(isc::dns::Message::PARSE)),
-    answer_(new isc::dns::Message(isc::dns::Message::RENDER)),
-    io_(io_service), checkin_callback_(checkin), lookup_callback_(lookup),
-    answer_callback_(answer), stopped_(false)
+    io_(io_service), udp_endpoint_(sender_),
+    lookup_callback_(lookup), stopped_(false)
 {
     if (af != AF_INET && af != AF_INET6) {
         isc_throw(InvalidParameter, "Address family must be either AF_INET "
@@ -56,6 +55,7 @@ SyncUDPServer::SyncUDPServer(asio::io_service& io_service, const int fd,
         socket_.reset(new asio::ip::udp::socket(io_service));
         socket_->assign(af == AF_INET6 ? asio::ip::udp::v6() :
                         asio::ip::udp::v4(), fd);
+        udp_socket_.reset(new UDPSocket<DummyIOCallback>(*socket_));
     } catch (const std::exception& exception) {
         // Whatever the thing throws, it is something from ASIO and we
         // convert it
@@ -97,15 +97,7 @@ SyncUDPServer::handleRead(const asio::error_code& ec, const size_t length) {
     // in the IOSocket base class) - but needs a UDPSocket to get hold of
     // the underlying Boost UDP socket - DummyIOCallback is used.  This
     // provides the appropriate operator() but is otherwise functionless.
-    UDPSocket<DummyIOCallback> socket(*socket_);
-    UDPEndpoint endpoint(sender_);
-    IOMessage message(data_, length, socket, endpoint);
-    if (checkin_callback_ != NULL) {
-        (*checkin_callback_)(message);
-        if (stopped_) {
-            return;
-        }
-    }
+    IOMessage message(data_, length, *udp_socket_, udp_endpoint_);
 
     // If we don't have a DNS Lookup provider, there's no point in
     // continuing; we exit the coroutine permanently.
@@ -117,7 +109,6 @@ SyncUDPServer::handleRead(const asio::error_code& ec, const size_t length) {
     // Make sure the buffers are fresh
     output_buffer_->clear();
     query_->clear(isc::dns::Message::PARSE);
-    answer_->clear(isc::dns::Message::RENDER);
 
     // Mark that we don't have an answer yet.
     done_ = false;
@@ -136,14 +127,6 @@ SyncUDPServer::handleRead(const asio::error_code& ec, const size_t length) {
     }
 
     if (done_) {
-        // Good, there's an answer.
-        // Call the answer callback to render it.
-        (*answer_callback_)(message, query_, answer_, output_buffer_);
-
-        if (stopped_) {
-            return;
-        }
-
         socket_->send_to(asio::buffer(output_buffer_->getData(),
                                       output_buffer_->getLength()),
                          sender_);
