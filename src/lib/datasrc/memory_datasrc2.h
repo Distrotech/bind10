@@ -40,6 +40,7 @@ class RRsetList;
 
 namespace datasrc {
 template <typename T> class SimpleAllocator;
+class MemoryFragments;
 
 namespace experimental {
 
@@ -122,6 +123,9 @@ public:
         offset_table_ = offset_table;
     }
 
+    // for debug
+    const MemoryFragments* getFragments() const { return (fragments_); }
+
 private:
     struct ZoneData;
 
@@ -159,8 +163,13 @@ private:
     ZoneData* zone_data_;
     mutable boost::pool<> rrset_pool_;
     const boost::function<void(internal::TreeNodeRRset*)> rrset_deleter_;
+    mutable boost::pool<> context_pool_;
+    const boost::function<void(Context*)> context_deleter_;
 
+    MemoryFragments* fragments_;
     const SimpleAllocator<int>* allocator_;
+
+    void clearContext(Context* context);
 
     // Ugly, but this is the most convenient place to hold it.
     mutable

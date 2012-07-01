@@ -45,14 +45,13 @@ namespace datasrc {
 
 using internal::RdataSet;
 
-namespace {
-template <size_t NUM_FRAGMENTS = 1024>
 class MemoryFragments {
 private:
     union Fragment {
         Fragment* next_;
         uint8_t storage_[64];
     };
+    static const size_t NUM_FRAGMENTS = 64;
 public:
     MemoryFragments() : free_(NULL), fragments_(new Fragment[NUM_FRAGMENTS]) {
         Fragment** nextp = &fragments_;
@@ -72,7 +71,7 @@ public:
             free_ = free_->next_;
             return (ret);
         } else {
-            throw std::bad_alloc();
+            throw bad_alloc();
         }
     }
     void deallocate(void* p) {
@@ -85,7 +84,6 @@ private:
     Fragment* free_;
     Fragment* fragments_;
 };
-}
 
 template <typename T>
 class SimpleAllocator {
@@ -95,7 +93,8 @@ public:
         typedef SimpleAllocator<U> other;
     };
 
-    SimpleAllocator(MemoryFragments<1024>& fragments) : fragments_(&fragments)
+    SimpleAllocator(MemoryFragments& fragments) :
+        fragments_(&fragments)
     {}
 
     template <typename U>
@@ -113,7 +112,7 @@ public:
         fragments_->deallocate(p);
     }
 
-    MemoryFragments<1024>* fragments_;
+    MemoryFragments* fragments_;
 };
 
 namespace experimental {
@@ -516,14 +515,15 @@ createRRsetPtr(boost::pool<>* rrset_pool,
                const RdataSet& rdset,
                internal::CompressOffsetTable* offset_table)
 {
-    TreeNodeRRset* p = new(rrset_pool->malloc()) TreeNodeRRset(rrclass, node,
-                                                               rdset,
-                                                               offset_table);
+    void* p = rrset_pool->malloc();
     if (p == NULL) {
         throw bad_alloc();
     }
 
-    return (shared_ptr<TreeNodeRRset>(p, rrset_deleter, allocator));
+    TreeNodeRRset* rrset = new(p) TreeNodeRRset(rrclass, node, rdset,
+                                                offset_table);
+
+    return (shared_ptr<TreeNodeRRset>(rrset, rrset_deleter, allocator));
 }
 }
 
@@ -1127,14 +1127,22 @@ InMemoryZoneFinder::addFromLoad(const ConstRRsetPtr& set, ZoneData* zone_data)
     }
 }
 
+void
+InMemoryZoneFinder::clearContext(Context* context) {
+    context->~Context();
+    context_pool_.free(context);
+}
+
 InMemoryZoneFinder::InMemoryZoneFinder(const RRClass& zone_class,
                                        const Name& origin) :
     zone_class_(zone_class), origin_(origin), zone_data_(NULL),
     rrset_pool_(sizeof(internal::TreeNodeRRset)),
-    rrset_deleter_(boost::bind(&boost::pool<>::free, &rrset_pool_, _1))
+    rrset_deleter_(boost::bind(&boost::pool<>::free, &rrset_pool_, _1)),
+    context_pool_(sizeof(Context)),
+    context_deleter_(boost::bind(&InMemoryZoneFinder::clearContext, this, _1)),
+    fragments_(new MemoryFragments)
 {
-    static MemoryFragments<1024> fragments;
-    allocator_ = new SimpleAllocator<int>(fragments);
+    allocator_ = new SimpleAllocator<int>(*fragments_); // XXX this could leak
 
     LOG_DEBUG(logger, DBG_TRACE_BASIC, DATASRC_MEM_CREATE).arg(origin).
         arg(zone_class);
@@ -1159,8 +1167,13 @@ ZoneFinderContextPtr
 InMemoryZoneFinder::find(const Name& name, const RRType& type,
                          const FindOptions options)
 {
-    return (ZoneFinderContextPtr(
-                new Context(*this, options, find(name, type, NULL, options))));
+    void* p = context_pool_.malloc();
+    if (p == NULL) {
+        throw bad_alloc();
+    }
+    Context* ctx = new (p) Context(*this, options, find(name, type, NULL,
+                                                        options));
+    return (ZoneFinderContextPtr(ctx, context_deleter_, *allocator_));
 }
 
 ZoneFinderContextPtr
@@ -1168,9 +1181,13 @@ InMemoryZoneFinder::findAll(const Name& name,
                             std::vector<ConstRRsetPtr>& target,
                             const FindOptions options)
 {
-    return (ZoneFinderContextPtr(
-                new Context(*this, options, find(name, RRType::ANY(),
-                                                 &target, options))));
+    void* p = context_pool_.malloc();
+    if (p == NULL) {
+        throw bad_alloc();
+    }
+    Context* ctx = new (p) Context(*this, options, find(name, RRType::ANY(),
+                                                        &target, options));
+    return (shared_ptr<Context>(ctx, context_deleter_, *allocator_));
 }
 
 ZoneFinder::FindNSEC3Result
