@@ -14,6 +14,11 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#endif
+
 #include <server_common/portconfig.h>
 #include <server_common/logger.h>
 #include <server_common/socket_request.h>

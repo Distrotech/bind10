@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="libdhcp_tests"
-	ProjectGUID="{9C6C5E00-5D4F-4149-88A7-AFDCDC7C5017}"
-	RootNamespace="libdhcp_tests"
+	Name="libstatistics"
+	ProjectGUID="{54BD83DD-8F29-45C6-9750-C3757D2C3C86}"
+	RootNamespace="libstatistics"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -20,7 +20,7 @@
 			Name="Debug|Win32"
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			CharacterSet="1"
 			>
 			<Tool
@@ -41,8 +41,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\ext\asio;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				AdditionalIncludeDirectories="..\..;..\..\..\src\lib;&quot;$(BOOST)&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -60,20 +60,10 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="libexceptions.lib libutil.lib libutil_unittests.lib liblog.lib libasiolink.lib libdhcp.lib log4cplusSD.lib gtestd.lib"
-				OutputFile="$(OutDir)\run_unittests.exe"
-				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\libasiolink\$(ConfigurationName)&quot;;&quot;..\libdhcp\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;;&quot;$(BOOST)\lib&quot;"
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				TargetMachine="1"
+				Name="VCLibrarianTool"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -85,9 +75,6 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -95,7 +82,7 @@
 			Name="Release|Win32"
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
@@ -118,8 +105,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\ext\asio;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				AdditionalIncludeDirectories="..\..;..\..\..\src\lib;&quot;$(BOOST)&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -136,22 +123,10 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="libexceptions.lib libutil.lib libutil_unittests.lib liblog.lib libasiolink.lib libdhcp.lib log4cplusS.lib gtest.lib"
-				OutputFile="$(OutDir)\run_unittests.exe"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\libasiolink\$(ConfigurationName)&quot;;&quot;..\libdhcp\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;;&quot;$(BOOST)\lib&quot;"
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				TargetMachine="1"
+				Name="VCLibrarianTool"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -161,9 +136,6 @@
 			/>
 			<Tool
 				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -179,39 +151,11 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\..\src\lib\dhcp\tests\libdhcp++_unittest.cc"
+				RelativePath="..\..\..\src\lib\statistics\counter.cc"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\lib\dhcp\tests\option4_addrlst_unittest.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\dhcp\tests\option6_addrlst_unittest.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\dhcp\tests\option6_ia_unittest.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\dhcp\tests\option6_iaaddr_unittest.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\dhcp\tests\option_unittest.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\dhcp\tests\pkt4_unittest.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\dhcp\tests\pkt6_unittest.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\lib\dhcp\tests\run_unittests.cc"
+				RelativePath="..\..\..\src\lib\statistics\counter_dict.cc"
 				>
 			</File>
 		</Filter>
@@ -220,6 +164,14 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath="..\..\..\src\lib\statistics\counter.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\statistics\counter_dict.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

@@ -39,6 +39,12 @@
     <ClCompile Include="..\..\..\src\lib\python\isc\datasrc\updater_python.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\python\isc\datasrc\journal_reader_inc.cc">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\python\isc\datasrc\journal_reader_python.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\lib\python\isc\datasrc\client_python.h">
@@ -54,6 +60,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\lib\python\isc\datasrc\updater_python.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\python\isc\datasrc\journal_reader_python.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

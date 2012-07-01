@@ -151,11 +151,15 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\..\src\lib\dhcp\libdhcp.cc"
+				RelativePath="..\..\..\src\lib\dhcp\libdhcp++.cc"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\dhcp\option.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\dhcp\option4_addrlst.cc"
 				>
 			</File>
 			<File
@@ -193,11 +197,19 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\lib\dhcp\libdhcp.h"
+				RelativePath="..\..\..\src\lib\dhcp\iface_mgr.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\dhcp\libdhcp++.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\dhcp\option.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\dhcp\option4_addrlst.h"
 				>
 			</File>
 			<File

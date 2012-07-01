@@ -195,6 +195,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\python\isc\datasrc\journal_reader_python.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\python\isc\datasrc\updater_python.cc"
 				>
 			</File>
@@ -230,6 +234,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\python\isc\datasrc\iterator_python.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\python\isc\datasrc\journal_reader_inc.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\python\isc\datasrc\journal_reader_python.h"
 				>
 			</File>
 			<File

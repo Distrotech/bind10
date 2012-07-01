@@ -86,7 +86,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\lib\dhcp\tests\libdhcp_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dhcp\tests\libdhcp++_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\dhcp\tests\option4_addrlst_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dhcp\tests\option6_addrlst_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dhcp\tests\option6_iaaddr_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dhcp\tests\option6_ia_unittest.cc" />

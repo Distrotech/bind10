@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="libserver_common_tests"
-	ProjectGUID="{AA3B87DA-D863-46D6-9B6C-CFEC091BAC10}"
-	RootNamespace="libserver_common_tests"
+	Name="libstatistics_tests"
+	ProjectGUID="{F3CE5960-9B36-4271-8CBB-20DC8FA7591D}"
+	RootNamespace="libstatistics_tests"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -25,7 +25,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd ..\..\..\src\lib\server_common\tests&#x0D;&#x0A;copy data_path.h.win32 data_path.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,8 +41,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\server_common;..\..\..\ext\asio;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;"
-				PreprocessorDefinitions="BIND10HOME=\&quot;$(BIND10HOME)\&quot;"
+				AdditionalIncludeDirectories="..\..;..\..\..\src\lib;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -62,11 +61,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
-				AdditionalDependencies="libexceptions.lib libutil.lib libutil_unittests.lib liblog.lib libcryptolink.lib libdns++.lib libcc.lib libcfgclient.lib libfake_session.lib libacl.lib libasiolink.lib libasiodns.lib libserver_common.lib log4cplusSD.lib botan.lib gtestd.lib"
+				AdditionalDependencies="libexceptions.lib libutil.lib libutil_unittests.lib liblog.lib libstatistics.lib log4cplusSD.lib gtestd.lib"
 				OutputFile="$(OutDir)\run_unittests.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\libcryptolink\$(ConfigurationName)&quot;;&quot;..\libdns++\$(ConfigurationName)&quot;;&quot;..\libcc\$(ConfigurationName)&quot;;&quot;..\libcfgclient\$(ConfigurationName)&quot;;&quot;..\libfake_session\$(ConfigurationName)&quot;;&quot;..\libacl\$(ConfigurationName)&quot;;&quot;..\libasiolink\$(ConfigurationName)&quot;;&quot;..\libasiodns\$(ConfigurationName)&quot;;&quot;..\libserver_common\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\botan\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;;&quot;$(BOOST)\lib&quot;"
+				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\libstatistics\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -103,7 +101,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cd ..\..\..\src\lib\server_common\tests&#x0D;&#x0A;copy data_path.h.win32 data_path.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -121,8 +118,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;..\..\..\src\lib\server_common;..\..\..\ext\asio;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;"
-				PreprocessorDefinitions="BIND10HOME=\&quot;$(BIND10HOME)\&quot;"
+				AdditionalIncludeDirectories="..\..;..\..\..\src\lib;..\..\..\..\gtest\include;&quot;$(BOOST)&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -140,11 +137,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
-				AdditionalDependencies="libexceptions.lib libutil.lib libutil_unittests.lib liblog.lib libcryptolink.lib libdns++.lib libcc.lib libcfgclient.lib libfake_session.lib libacl.lib libasiolink.lib libasiodns.lib libserver_common.lib log4cplusS.lib botan.lib gtest.lib"
+				AdditionalDependencies="libexceptions.lib libutil.lib libutil_unittests.lib liblog.lib libstatistics.lib log4cplusS.lib gtest.lib"
 				OutputFile="$(OutDir)\run_unittests.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\libcryptolink\$(ConfigurationName)&quot;;&quot;..\libdns++\$(ConfigurationName)&quot;;&quot;..\libcc\$(ConfigurationName)&quot;;&quot;..\libcfgclient\$(ConfigurationName)&quot;;&quot;..\libfake_session\$(ConfigurationName)&quot;;&quot;..\libacl\$(ConfigurationName)&quot;;&quot;..\libasiolink\$(ConfigurationName)&quot;;&quot;..\libasiodns\$(ConfigurationName)&quot;;&quot;..\libserver_common\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\botan\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;;&quot;$(BOOST)\lib&quot;"
+				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\libstatistics\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -183,15 +179,15 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\..\src\lib\server_common\tests\client_unittest.cc"
+				RelativePath="..\..\..\src\lib\statistics\tests\counter_dict_unittest.cc"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\lib\server_common\tests\keyring_test.cc"
+				RelativePath="..\..\..\src\lib\statistics\tests\counter_unittest.cc"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\lib\server_common\tests\run_unittests.cc"
+				RelativePath="..\..\..\src\lib\statistics\tests\run_unittests.cc"
 				>
 			</File>
 		</Filter>
@@ -200,10 +196,6 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath="..\..\..\src\lib\server_common\tests\data_path.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

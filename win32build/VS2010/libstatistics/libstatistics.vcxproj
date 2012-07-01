@@ -11,32 +11,17 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\lib\dhcp\dhcp4.h" />
-    <ClInclude Include="..\..\..\src\lib\dhcp\dhcp6.h" />
-    <ClInclude Include="..\..\..\src\lib\dhcp\iface_mgr.h" />
-    <ClInclude Include="..\..\..\src\lib\dhcp\libdhcp++.h" />
-    <ClInclude Include="..\..\..\src\lib\dhcp\option.h" />
-    <ClInclude Include="..\..\..\src\lib\dhcp\option4_addrlst.h" />
-    <ClInclude Include="..\..\..\src\lib\dhcp\option6_addrlst.h" />
-    <ClInclude Include="..\..\..\src\lib\dhcp\option6_ia.h" />
-    <ClInclude Include="..\..\..\src\lib\dhcp\option6_iaaddr.h" />
-    <ClInclude Include="..\..\..\src\lib\dhcp\pkt4.h" />
-    <ClInclude Include="..\..\..\src\lib\dhcp\pkt6.h" />
+    <ClInclude Include="..\..\..\src\lib\statistics\counter.h" />
+    <ClInclude Include="..\..\..\src\lib\statistics\counter_dict.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\lib\dhcp\libdhcp++.cc" />
-    <ClCompile Include="..\..\..\src\lib\dhcp\option.cc" />
-    <ClCompile Include="..\..\..\src\lib\dhcp\option4_addrlst.cc" />
-    <ClCompile Include="..\..\..\src\lib\dhcp\option6_addrlst.cc" />
-    <ClCompile Include="..\..\..\src\lib\dhcp\option6_ia.cc" />
-    <ClCompile Include="..\..\..\src\lib\dhcp\option6_iaaddr.cc" />
-    <ClCompile Include="..\..\..\src\lib\dhcp\pkt4.cc" />
-    <ClCompile Include="..\..\..\src\lib\dhcp\pkt6.cc" />
+    <ClCompile Include="..\..\..\src\lib\statistics\counter.cc" />
+    <ClCompile Include="..\..\..\src\lib\statistics\counter_dict.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F27BC0D0-A334-4DC0-9DC9-880D5DA74524}</ProjectGuid>
+    <ProjectGuid>{FF298091-A570-41CF-BB91-841ECB7F4E5F}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>libdhcp</RootNamespace>
+    <RootNamespace>libstatistics</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -72,7 +57,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dhcp;..\..\..\ext\asio;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
@@ -88,7 +73,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dhcp;..\..\..\ext\asio;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>

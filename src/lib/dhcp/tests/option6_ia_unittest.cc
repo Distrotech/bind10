@@ -210,7 +210,7 @@ TEST_F(Option6IATest, suboptions_unpack) {
     EXPECT_NO_THROW({
             ia = new Option6IA(D6O_IA_NA, buf_.begin() + 4, buf_.begin() + sizeof(expected));
     });
-    ASSERT_TRUE(ia);
+    ASSERT_TRUE(ia != NULL);
 
     EXPECT_EQ(D6O_IA_NA, ia->getType());
     EXPECT_EQ(0x13579ace, ia->getIAID());
