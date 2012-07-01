@@ -104,6 +104,11 @@ copy datasrc_config.h.pre.win32 datasrc_config.h
 copy static.zone.pre static.zone
 </Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>cd ..\..\..\src\lib\datasrc
+copy static.zone.win32 static.zone
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -129,6 +134,11 @@ copy datasrc_config.h.pre.win32 datasrc_config.h
 copy static.zone.pre static.zone
 </Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>cd ..\..\..\src\lib\datasrc
+copy static.zone.win32 static.zone
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
