@@ -20,6 +20,8 @@
 #include "sync_udp_server.h"
 #include "logger.h"
 
+#include <util/io/sockaddr_util.h>
+
 #include <asiolink/dummy_io_cb.h>
 #include <asiolink/udp_endpoint.h>
 #include <asiolink/udp_socket.h>
@@ -34,6 +36,7 @@
 
 using namespace std;
 using namespace isc::asiolink;
+using namespace isc::util::io::internal;
 
 namespace isc {
 namespace asiodns {
@@ -103,15 +106,34 @@ SyncUDPServer::handleRead(const asio::error_code& ec, const size_t length) {
     output_buffer_->clear();
     query_->clear(isc::dns::Message::PARSE);
 
-    // Mark that we don't have an answer yet.
-    done_ = false;
-    resume_called_ = false;
-
     // Call the actual lookup
     if ((*lookup_callback_)(message, query_, answer_, output_buffer_, this)) {
         socket_->send_to(asio::buffer(output_buffer_->getData(),
                                       output_buffer_->getLength()),
                          sender_);
+    }
+
+    // Assuming the socket is non blocking, directly handle up to 10 more
+    // queries.
+    for (int i = 0; i < 10; ++i) {
+        struct sockaddr* from = convertSockAddr(&ss_);
+        socklen_t from_len = sizeof(ss_);
+        const int s = socket_->native();
+        const int cc = recvfrom(s, data_, sizeof(data_), 0, from, &from_len);
+        if (cc < 0) {
+            // This is likely EWOULDBLOCK.  Whether or not it's the case
+            // we'll go back to the asio loop and let it handle any fatal
+            // errors.
+            break;
+        }
+        IOMessage message(data_, cc, *udp_socket_, udp_endpoint_);
+        output_buffer_->clear();
+        query_->clear(isc::dns::Message::PARSE);
+        if ((*lookup_callback_)(message, query_, answer_, output_buffer_,
+                                this)) {
+            sendto(s, output_buffer_->getData(), output_buffer_->getLength(),
+                   0, from, from_len);
+        }
     }
 
     // And schedule handling another socket.
@@ -149,7 +171,7 @@ SyncUDPServer::resume(const bool) {
 
 bool
 SyncUDPServer::hasAnswer() {
-    return (done_);
+    return (true);              // unused
 }
 
 } // namespace asiodns

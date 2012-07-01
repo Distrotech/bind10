@@ -36,6 +36,8 @@
 
 #include <stdint.h>
 
+#include <sys/socket.h>
+
 namespace isc {
 namespace asiodns {
 
@@ -131,12 +133,10 @@ private:
     asiolink::UDPEndpoint udp_endpoint_;
     // Callbacks
     const DNSLookup* lookup_callback_;
-    // Answers from the lookup callback (not sent directly, but signalled
-    // through resume()
-    bool resume_called_, done_;
     // This turns true when the server stops. Allows for not sending the
     // answer after we closed the socket.
     bool stopped_;
+    struct sockaddr_storage ss_;
 
     // Auxiliary functions
 
