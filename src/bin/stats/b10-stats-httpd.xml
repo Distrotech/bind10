@@ -2,7 +2,7 @@
                "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
 	       [<!ENTITY mdash "&#8212;">]>
 <!--
- - Copyright (C) 2011  Internet Systems Consortium, Inc. ("ISC")
+ - Copyright (C) 2011-2012  Internet Systems Consortium, Inc. ("ISC")
  -
  - Permission to use, copy, modify, and/or distribute this software for any
  - purpose with or without fee is hereby granted, provided that the above
@@ -20,7 +20,7 @@
 <refentry>
 
   <refentryinfo>
-    <date>Mar 8, 2011</date>
+    <date>February 28, 2012</date>
   </refentryinfo>
 
   <refmeta>
@@ -36,7 +36,7 @@
 
   <docinfo>
     <copyright>
-      <year>2011</year>
+      <year>2011-2012</year>
       <holder>Internet Systems Consortium, Inc. ("ISC")</holder>
     </copyright>
   </docinfo>
@@ -55,16 +55,16 @@
       process runs as a process separated from the process of the BIND 10 Stats
       daemon (<command>b10-stats</command>). The server is initially executed
       by the BIND 10 boss process (<command>bind10</command>) and eventually
-      exited by it.  The server is intended to be server requests by HTTP
+      exited by it.  The server is intended to serve requests by HTTP
       clients like web browsers and third-party modules. When the server is
       asked, it requests BIND 10 statistics data or its schema from
-      <command>b10-stats</command>, and it sends the data back in Python
-      dictionary format and the server converts it into XML format. The server
-      sends it to the HTTP client. The server can send three types of document,
+      <command>b10-stats</command> which sends the data back in Python
+      dictionary format, and the server converts it into XML format. The server
+      sends it to the HTTP client. The server can send three types of documents,
       which are XML (Extensible Markup Language), XSD (XML Schema definition)
       and XSL (Extensible Stylesheet Language). The XML document is the
-      statistics data of BIND 10, The XSD document is the data schema of it,
-      and The XSL document is the style sheet to be showed for the web
+      statistics data of BIND 10, the XSD document is the data schema of it,
+      and the XSL document is the style sheet to be showed for the web
       browsers. There is different URL for each document. But please note that
       you would be redirected to the URL of XML document if you request the URL
       of the root document. For example, you would be redirected to
@@ -81,6 +81,8 @@
       configuration of the server.
     </para>
   </refsect1>
+
+<!-- TODO: this is too verbose; move some of this into the guide instead -->
 
   <refsect1>
     <title>OPTIONS</title>
@@ -171,9 +173,12 @@
         <term><command>shutdown</command></term>
         <listitem>
 	  <para>
-	    exits the <command>b10-stats-httpd</command> process. (Note that
-	    the BIND 10 boss process will restart this service.)
-	  </para>
+	    exits the <command>b10-stats-httpd</command> process.
+            This has an optional <varname>pid</varname> argument to
+            select the process ID to stop.
+            (Note that the BIND 10 boss process may restart this service
+            if configured.)
+          </para>
         </listitem>
       </varlistentry>
     </variablelist>
@@ -205,7 +210,7 @@
     <title>HISTORY</title>
     <para>
       <command>b10-stats-httpd</command> was designed and implemented by Naoki
-      Kambe of JPRS in Mar 2011.
+      Kambe of JPRS in March 2011.
     </para>
   </refsect1>
 </refentry><!--

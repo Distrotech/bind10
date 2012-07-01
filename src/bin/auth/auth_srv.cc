@@ -14,17 +14,10 @@
 
 #include <config.h>
 
-#include <netinet/in.h>
-
-#include <algorithm>
-#include <cassert>
-#include <iostream>
-#include <vector>
-#include <memory>
-
-#include <boost/bind.hpp>
+#include <util/io/socketsession.h>
 
 #include <asiolink/asiolink.h>
+#include <asiolink/io_endpoint.h>
 
 #include <config/ccsession.h>
 
@@ -46,6 +39,8 @@
 #include <dns/message.h>
 #include <dns/tsig.h>
 
+#include <asiodns/dns_service.h>
+
 #include <datasrc/query.h>
 #include <datasrc/data_source.h>
 #include <datasrc/memory_datasrc.h>
@@ -61,6 +56,18 @@
 #include <auth/statistics.h>
 #include <auth/auth_log.h>
 
+#include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
+
+#include <algorithm>
+#include <cassert>
+#include <iostream>
+#include <vector>
+#include <memory>
+
+#include <sys/types.h>
+#include <netinet/in.h>
+
 using namespace std;
 
 using namespace isc;
@@ -68,6 +75,7 @@ using namespace isc::cc;
 using namespace isc::datasrc;
 using namespace isc::dns;
 using namespace isc::util;
+using namespace isc::util::io;
 using namespace isc::auth;
 using namespace isc::dns::rdata;
 using namespace isc::data;
@@ -76,7 +84,136 @@ using namespace isc::xfr;
 using namespace isc::asiolink;
 using namespace isc::asiodns;
 using namespace isc::server_common::portconfig;
-using boost::shared_ptr;
+
+namespace {
+// A helper class for cleaning up message renderer.
+//
+// A temporary object of this class is expected to be created before starting
+// response message rendering.  On construction, it (re)initialize the given
+// message renderer with the given buffer.  On destruction, it releases
+// the previously set buffer and then release any internal resource in the
+// renderer, no matter what happened during the rendering, especially even
+// when it resulted in an exception.
+//
+// Note: if we need this helper in many other places we might consider making
+// it visible to other modules.  As of this implementation this is the only
+// user of this class, so we hide it within the implementation.
+class RendererHolder {
+public:
+    RendererHolder(MessageRenderer& renderer, OutputBuffer* buffer) :
+        renderer_(renderer)
+    {
+        renderer.setBuffer(buffer);
+    }
+    ~RendererHolder() {
+        renderer_.setBuffer(NULL);
+        renderer_.clear();
+    }
+private:
+    MessageRenderer& renderer_;
+};
+
+// A helper container of socket session forwarder.
+//
+// This class provides a simple wrapper interface to SocketSessionForwarder
+// so that the caller doesn't have to worry about connection management,
+// exception handling or parameter building.
+//
+// It internally maintains whether the underlying forwarder establishes a
+// connection to the receiver.  On a forwarding request, if the connection
+// hasn't been established yet, it automatically opens a new one, then
+// pushes the session over it.  It also closes the connection on destruction,
+// or a non-recoverable error happens, automatically.  So the only thing
+// the application has to do is to create this object and push any session
+// to be forwarded.
+class SocketSessionForwarderHolder {
+public:
+    /// \brief The constructor.
+    ///
+    /// \param message_name Any string that can identify the type of messages
+    /// to be forwarded via this session.  It will be only used as part of
+    /// log message, so it can be anything, but in practice something like
+    /// "update" or "xfr" is expected.
+    /// \param forwarder The underlying socket session forwarder.
+    SocketSessionForwarderHolder(const string& message_name,
+                                 BaseSocketSessionForwarder& forwarder) :
+        message_name_(message_name), forwarder_(forwarder), connected_(false)
+    {}
+
+    ~SocketSessionForwarderHolder() {
+        if (connected_) {
+            forwarder_.close();
+        }
+    }
+
+    /// \brief Push a socket session corresponding to given IOMessage.
+    ///
+    /// If the connection with the receiver process hasn't been established,
+    /// it automatically establishes one, then push the session over it.
+    ///
+    /// If either connect or push fails, the underlying forwarder object should
+    /// throw an exception.  This method logs the event, and propagates the
+    /// exception to the caller, which will eventually result in SERVFAIL.
+    /// The connection, if established, is automatically closed, so the next
+    /// forward request will trigger reopening a new connection.
+    ///
+    /// \note: Right now, there's no API to retrieve the local address from
+    /// the IOMessage.  Until it's added, we pass the remote address as
+    /// local.
+    ///
+    /// \param io_message The request message to be forwarded as a socket
+    /// session.  It will be converted to the parameters that the underlying
+    /// SocketSessionForwarder expects.
+    void push(const IOMessage& io_message) {
+        const IOEndpoint& remote_ep = io_message.getRemoteEndpoint();
+        const int protocol = remote_ep.getProtocol();
+        const int sock_type = getSocketType(protocol);
+        try {
+            connect();
+            forwarder_.push(io_message.getSocket().getNative(),
+                            remote_ep.getFamily(), sock_type, protocol,
+                            remote_ep.getSockAddr(), remote_ep.getSockAddr(),
+                            io_message.getData(), io_message.getDataSize());
+        } catch (const SocketSessionError& ex) {
+            LOG_ERROR(auth_logger, AUTH_MESSAGE_FORWARD_ERROR).
+                arg(message_name_).arg(remote_ep).arg(ex.what());
+            close();
+            throw;
+        }
+    }
+
+private:
+    const string message_name_;
+    BaseSocketSessionForwarder& forwarder_;
+    bool connected_;
+
+    void connect() {
+        if (!connected_) {
+            forwarder_.connectToReceiver();
+            connected_ = true;
+        }
+    }
+
+    void close() {
+        if (connected_) {
+            forwarder_.close();
+            connected_ = false;
+        }
+    }
+
+    static int getSocketType(int protocol) {
+        switch (protocol) {
+        case IPPROTO_UDP:
+            return (SOCK_DGRAM);
+        case IPPROTO_TCP:
+            return (SOCK_STREAM);
+        default:
+            isc_throw(isc::InvalidParameter,
+                      "Unexpected socket address family: " << protocol);
+        }
+    }
+};
+}
 
 class AuthSrvImpl {
 private:
@@ -84,22 +221,25 @@ private:
     AuthSrvImpl(const AuthSrvImpl& source);
     AuthSrvImpl& operator=(const AuthSrvImpl& source);
 public:
-    AuthSrvImpl(const bool use_cache, AbstractXfroutClient& xfrout_client);
+    AuthSrvImpl(const bool use_cache, AbstractXfroutClient& xfrout_client,
+                BaseSocketSessionForwarder& ddns_forwarder);
     ~AuthSrvImpl();
     isc::data::ConstElementPtr setDbFile(isc::data::ConstElementPtr config);
 
-    bool processNormalQuery(const IOMessage& io_message, MessagePtr message,
-                            OutputBufferPtr buffer,
+    bool processNormalQuery(const IOMessage& io_message, Message& message,
+                            OutputBuffer& buffer,
                             auto_ptr<TSIGContext> tsig_context);
-    bool processAxfrQuery(const IOMessage& io_message, MessagePtr message,
-                          OutputBufferPtr buffer,
-                          auto_ptr<TSIGContext> tsig_context);
-    bool processNotify(const IOMessage& io_message, MessagePtr message,
-                       OutputBufferPtr buffer,
+    bool processXfrQuery(const IOMessage& io_message, Message& message,
+                         OutputBuffer& buffer,
+                         auto_ptr<TSIGContext> tsig_context);
+    bool processNotify(const IOMessage& io_message, Message& message,
+                       OutputBuffer& buffer,
                        auto_ptr<TSIGContext> tsig_context);
+    bool processUpdate(const IOMessage& io_message);
 
     IOService io_service_;
 
+    MessageRenderer renderer_;
     /// Currently non-configurable, but will be.
     static const uint16_t DEFAULT_LOCAL_UDPSIZE = 4096;
 
@@ -109,7 +249,7 @@ public:
 
     /// In-memory data source.  Currently class IN only for simplicity.
     const RRClass memory_client_class_;
-    AuthSrv::InMemoryClientPtr memory_client_;
+    isc::datasrc::DataSourceClientContainerPtr memory_client_container_;
 
     /// Hot spot cache
     isc::datasrc::HotCache cache_;
@@ -124,11 +264,27 @@ public:
     AddressList listen_addresses_;
 
     /// The TSIG keyring
-    const shared_ptr<TSIGKeyRing>* keyring_;
+    const boost::shared_ptr<TSIGKeyRing>* keyring_;
 
     /// Bind the ModuleSpec object in config_session_ with
     /// isc:config::ModuleSpec::validateStatistics.
     void registerStatisticsValidator();
+
+    /// \brief Resume the server
+    ///
+    /// This is a wrapper call for DNSServer::resume(done), if 'done' is true,
+    /// the Rcode set in the given Message is counted in the statistics
+    /// counter.
+    ///
+    /// This method is expected to be called by processMessage()
+    ///
+    /// \param server The DNSServer as passed to processMessage()
+    /// \param message The response as constructed by processMessage()
+    /// \param done If true, the Rcode from the given message is counted,
+    ///             this value is then passed to server->resume(bool)
+    void resumeServer(isc::asiodns::DNSServer* server,
+                      isc::dns::Message& message,
+                      bool done);
 private:
     std::string db_file_;
 
@@ -141,15 +297,21 @@ private:
     bool xfrout_connected_;
     AbstractXfroutClient& xfrout_client_;
 
+    // Socket session forwarder for dynamic update requests
+    SocketSessionForwarderHolder ddns_forwarder_;
+
     /// Increment query counter
     void incCounter(const int protocol);
 
     // validateStatistics
     bool validateStatistics(isc::data::ConstElementPtr data) const;
+
+    auth::Query query_;
 };
 
 AuthSrvImpl::AuthSrvImpl(const bool use_cache,
-                         AbstractXfroutClient& xfrout_client) :
+                         AbstractXfroutClient& xfrout_client,
+                         BaseSocketSessionForwarder& ddns_forwarder) :
     config_session_(NULL),
     xfrin_session_(NULL),
     memory_client_class_(RRClass::IN()),
@@ -157,7 +319,8 @@ AuthSrvImpl::AuthSrvImpl(const bool use_cache,
     counters_(),
     keyring_(NULL),
     xfrout_connected_(false),
-    xfrout_client_(xfrout_client)
+    xfrout_client_(xfrout_client),
+    ddns_forwarder_("update", ddns_forwarder)
 {
     // cur_datasrc_ is automatically initialized by the default constructor,
     // effectively being an empty (sqlite) data source.  once ccsession is up
@@ -185,12 +348,11 @@ public:
     MessageLookup(AuthSrv* srv) : server_(srv) {}
     virtual void operator()(const IOMessage& io_message,
                             MessagePtr message,
-                            MessagePtr answer_message,
+                            MessagePtr, // Not used here
                             OutputBufferPtr buffer,
                             DNSServer* server) const
     {
-        (void) answer_message;
-        server_->processMessage(io_message, message, buffer, server);
+        server_->processMessage(io_message, *message, *buffer, server);
     }
 private:
     AuthSrv* server_;
@@ -219,20 +381,24 @@ class ConfigChecker : public SimpleCallback {
 public:
     ConfigChecker(AuthSrv* srv) : server_(srv) {}
     virtual void operator()(const IOMessage&) const {
-        if (server_->getConfigSession()->hasQueuedMsgs()) {
-            server_->getConfigSession()->checkCommand();
+        ModuleCCSession* cfg_session = server_->getConfigSession();
+        if (cfg_session != NULL && cfg_session->hasQueuedMsgs()) {
+            cfg_session->checkCommand();
         }
     }
 private:
     AuthSrv* server_;
 };
 
-AuthSrv::AuthSrv(const bool use_cache, AbstractXfroutClient& xfrout_client) :
-    impl_(new AuthSrvImpl(use_cache, xfrout_client)),
-    checkin_(new ConfigChecker(this)),
-    dns_lookup_(new MessageLookup(this)),
-    dns_answer_(new MessageAnswer(this))
-{}
+AuthSrv::AuthSrv(const bool use_cache,
+                 isc::xfr::AbstractXfroutClient& xfrout_client,
+                 isc::util::io::BaseSocketSessionForwarder& ddns_forwarder)
+{
+    impl_ = new AuthSrvImpl(use_cache, xfrout_client, ddns_forwarder);
+    checkin_ = new ConfigChecker(this);
+    dns_lookup_ = new MessageLookup(this);
+    dns_answer_ = new MessageAnswer(this);
+}
 
 void
 AuthSrv::stop() {
@@ -249,55 +415,56 @@ AuthSrv::~AuthSrv() {
 namespace {
 class QuestionInserter {
 public:
-    QuestionInserter(MessagePtr message) : message_(message) {}
+    QuestionInserter(Message& message) : message_(message) {}
     void operator()(const QuestionPtr question) {
-        message_->addQuestion(question);
+        message_.addQuestion(question);
     }
-    MessagePtr message_;
+    Message& message_;
 };
 
 void
-makeErrorMessage(MessagePtr message, OutputBufferPtr buffer,
-                 const Rcode& rcode, 
+makeErrorMessage(MessageRenderer& renderer, Message& message,
+                 OutputBuffer& buffer, const Rcode& rcode,
                  std::auto_ptr<TSIGContext> tsig_context =
                  std::auto_ptr<TSIGContext>())
 {
     // extract the parameters that should be kept.
     // XXX: with the current implementation, it's not easy to set EDNS0
     // depending on whether the query had it.  So we'll simply omit it.
-    const qid_t qid = message->getQid();
-    const bool rd = message->getHeaderFlag(Message::HEADERFLAG_RD);
-    const bool cd = message->getHeaderFlag(Message::HEADERFLAG_CD);
-    const Opcode& opcode = message->getOpcode();
+    const qid_t qid = message.getQid();
+    const bool rd = message.getHeaderFlag(Message::HEADERFLAG_RD);
+    const bool cd = message.getHeaderFlag(Message::HEADERFLAG_CD);
+    const Opcode& opcode = message.getOpcode();
     vector<QuestionPtr> questions;
 
     // If this is an error to a query or notify, we should also copy the
     // question section.
     if (opcode == Opcode::QUERY() || opcode == Opcode::NOTIFY()) {
-        questions.assign(message->beginQuestion(), message->endQuestion());
+        questions.assign(message.beginQuestion(), message.endQuestion());
     }
 
-    message->clear(Message::RENDER);
-    message->setQid(qid);
-    message->setOpcode(opcode);
-    message->setHeaderFlag(Message::HEADERFLAG_QR);
+    message.clear(Message::RENDER);
+    message.setQid(qid);
+    message.setOpcode(opcode);
+    message.setHeaderFlag(Message::HEADERFLAG_QR);
     if (rd) {
-        message->setHeaderFlag(Message::HEADERFLAG_RD);
+        message.setHeaderFlag(Message::HEADERFLAG_RD);
     }
     if (cd) {
-        message->setHeaderFlag(Message::HEADERFLAG_CD);
+        message.setHeaderFlag(Message::HEADERFLAG_CD);
     }
     for_each(questions.begin(), questions.end(), QuestionInserter(message));
-    message->setRcode(rcode);
 
-    MessageRenderer renderer(*buffer);
+    message.setRcode(rcode);
+    
+    RendererHolder holder(renderer, &buffer);
     if (tsig_context.get() != NULL) {
-        message->toWire(renderer, *tsig_context);
+        message.toWire(renderer, *tsig_context);
     } else {
-        message->toWire(renderer);
+        message.toWire(renderer);
     }
     LOG_DEBUG(auth_logger, DBG_AUTH_MESSAGES, AUTH_SEND_ERROR_RESPONSE)
-              .arg(renderer.getLength()).arg(*message);
+              .arg(renderer.getLength()).arg(message);
 }
 }
 
@@ -337,34 +504,46 @@ AuthSrv::getConfigSession() const {
     return (impl_->config_session_);
 }
 
-AuthSrv::InMemoryClientPtr
-AuthSrv::getInMemoryClient(const RRClass& rrclass) {
-    // XXX: for simplicity, we only support the IN class right now.
+isc::datasrc::DataSourceClientContainerPtr
+AuthSrv::getInMemoryClientContainer(const RRClass& rrclass) {
     if (rrclass != impl_->memory_client_class_) {
         isc_throw(InvalidParameter,
                   "Memory data source is not supported for RR class "
                   << rrclass);
     }
-    return (impl_->memory_client_);
+    return (impl_->memory_client_container_);
+}
+
+isc::datasrc::DataSourceClient*
+AuthSrv::getInMemoryClient(const RRClass& rrclass) {
+    if (hasInMemoryClient()) {
+        return (&getInMemoryClientContainer(rrclass)->getInstance());
+    } else {
+        return (NULL);
+    }
+}
+
+bool
+AuthSrv::hasInMemoryClient() const {
+    return (impl_->memory_client_container_);
 }
 
 void
 AuthSrv::setInMemoryClient(const isc::dns::RRClass& rrclass,
-                           InMemoryClientPtr memory_client)
+                           DataSourceClientContainerPtr memory_client)
 {
-    // XXX: see above
     if (rrclass != impl_->memory_client_class_) {
         isc_throw(InvalidParameter,
                   "Memory data source is not supported for RR class "
                   << rrclass);
-    } else if (!impl_->memory_client_ && memory_client) {
+    } else if (!impl_->memory_client_container_ && memory_client) {
         LOG_DEBUG(auth_logger, DBG_AUTH_OPS, AUTH_MEM_DATASRC_ENABLED)
                   .arg(rrclass);
-    } else if (impl_->memory_client_ && !memory_client) {
+    } else if (impl_->memory_client_container_ && !memory_client) {
         LOG_DEBUG(auth_logger, DBG_AUTH_OPS, AUTH_MEM_DATASRC_DISABLED)
                   .arg(rrclass);
     }
-    impl_->memory_client_ = memory_client;
+    impl_->memory_client_container_ = memory_client;
 }
 
 uint32_t
@@ -395,54 +574,54 @@ AuthSrv::setStatisticsTimerInterval(uint32_t interval) {
 }
 
 void
-AuthSrv::processMessage(const IOMessage& io_message, MessagePtr message,
-                        OutputBufferPtr buffer, DNSServer* server)
+AuthSrv::processMessage(const IOMessage& io_message, Message& message,
+                        OutputBuffer& buffer, DNSServer* server)
 {
     InputBuffer request_buffer(io_message.getData(), io_message.getDataSize());
 
     // First, check the header part.  If we fail even for the base header,
     // just drop the message.
     try {
-        message->parseHeader(request_buffer);
+        message.parseHeader(request_buffer);
 
         // Ignore all responses.
-        if (message->getHeaderFlag(Message::HEADERFLAG_QR)) {
+        if (message.getHeaderFlag(Message::HEADERFLAG_QR)) {
             LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_RESPONSE_RECEIVED);
-            server->resume(false);
+            impl_->resumeServer(server, message, false);
             return;
         }
     } catch (const Exception& ex) {
         LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_HEADER_PARSE_FAIL)
                   .arg(ex.what());
-        server->resume(false);
+        impl_->resumeServer(server, message, false);
         return;
     }
 
     try {
         // Parse the message.
-        message->fromWire(request_buffer);
+        message.fromWire(request_buffer);
     } catch (const DNSProtocolError& error) {
         LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_PACKET_PROTOCOL_ERROR)
                   .arg(error.getRcode().toText()).arg(error.what());
-        makeErrorMessage(message, buffer, error.getRcode());
-        server->resume(true);
+        makeErrorMessage(impl_->renderer_, message, buffer, error.getRcode());
+        impl_->resumeServer(server, message, true);
         return;
     } catch (const Exception& ex) {
         LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_PACKET_PARSE_ERROR)
                   .arg(ex.what());
-        makeErrorMessage(message, buffer, Rcode::SERVFAIL());
-        server->resume(true);
+        makeErrorMessage(impl_->renderer_, message, buffer, Rcode::SERVFAIL());
+        impl_->resumeServer(server, message, true);
         return;
     } // other exceptions will be handled at a higher layer.
 
     LOG_DEBUG(auth_logger, DBG_AUTH_MESSAGES, AUTH_PACKET_RECEIVED)
-              .arg(message->toText());
+              .arg(message);
 
     // Perform further protocol-level validation.
     // TSIG first
     // If this is set to something, we know we need to answer with TSIG as well
     std::auto_ptr<TSIGContext> tsig_context;
-    const TSIGRecord* tsig_record(message->getTSIGRecord());
+    const TSIGRecord* tsig_record(message.getTSIGRecord());
     TSIGError tsig_error(TSIGError::NOERROR());
 
     // Do we do TSIG?
@@ -456,48 +635,71 @@ AuthSrv::processMessage(const IOMessage& io_message, MessagePtr message,
                                           io_message.getDataSize());
     }
 
-    bool sendAnswer = true;
     if (tsig_error != TSIGError::NOERROR()) {
-        makeErrorMessage(message, buffer, tsig_error.toRcode(), tsig_context);
-    } else if (message->getOpcode() == Opcode::NOTIFY()) {
-        sendAnswer = impl_->processNotify(io_message, message, buffer,
-                                          tsig_context);
-    } else if (message->getOpcode() != Opcode::QUERY()) {
-        LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_UNSUPPORTED_OPCODE)
-                  .arg(message->getOpcode().toText());
-        makeErrorMessage(message, buffer, Rcode::NOTIMP(), tsig_context);
-    } else if (message->getRRCount(Message::SECTION_QUESTION) != 1) {
-        makeErrorMessage(message, buffer, Rcode::FORMERR(), tsig_context);
-    } else {
-        ConstQuestionPtr question = *message->beginQuestion();
-        const RRType &qtype = question->getType();
-        if (qtype == RRType::AXFR()) {
-            sendAnswer = impl_->processAxfrQuery(io_message, message, buffer,
-                                                 tsig_context);
-        } else if (qtype == RRType::IXFR()) {
-            makeErrorMessage(message, buffer, Rcode::NOTIMP(), tsig_context);
-        } else {
-            sendAnswer = impl_->processNormalQuery(io_message, message, buffer,
-                                                   tsig_context);
-        }
+        makeErrorMessage(impl_->renderer_, message, buffer,
+                         tsig_error.toRcode(), tsig_context);
+        impl_->resumeServer(server, message, true);
+        return;
     }
 
-    server->resume(sendAnswer);
+    const Opcode opcode = message.getOpcode();
+    bool send_answer = true;
+    try {
+        // update per opcode statistics counter.  This can only be reliable
+        // after TSIG check succeeds.
+        impl_->counters_.inc(message.getOpcode());
+
+        if (opcode == Opcode::NOTIFY()) {
+            send_answer = impl_->processNotify(io_message, message, buffer,
+                                               tsig_context);
+        } else if (opcode == Opcode::UPDATE()) {
+            send_answer = impl_->processUpdate(io_message);
+        } else if (opcode != Opcode::QUERY()) {
+            LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_UNSUPPORTED_OPCODE)
+                      .arg(message.getOpcode().toText());
+            makeErrorMessage(impl_->renderer_, message, buffer,
+                             Rcode::NOTIMP(), tsig_context);
+        } else if (message.getRRCount(Message::SECTION_QUESTION) != 1) {
+            makeErrorMessage(impl_->renderer_, message, buffer,
+                             Rcode::FORMERR(), tsig_context);
+        } else {
+            ConstQuestionPtr question = *message.beginQuestion();
+            const RRType& qtype = question->getType();
+            if (qtype == RRType::AXFR()) {
+                send_answer = impl_->processXfrQuery(io_message, message,
+                                                     buffer, tsig_context);
+            } else if (qtype == RRType::IXFR()) {
+                send_answer = impl_->processXfrQuery(io_message, message,
+                                                     buffer, tsig_context);
+            } else {
+                send_answer = impl_->processNormalQuery(io_message, message,
+                                                        buffer, tsig_context);
+            }
+        }
+    } catch (const std::exception& ex) {
+        LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_RESPONSE_FAILURE)
+                  .arg(ex.what());
+        makeErrorMessage(impl_->renderer_, message, buffer, Rcode::SERVFAIL());
+    } catch (...) {
+        LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_RESPONSE_FAILURE_UNKNOWN);
+        makeErrorMessage(impl_->renderer_, message, buffer, Rcode::SERVFAIL());
+    }
+    impl_->resumeServer(server, message, send_answer);
 }
 
 bool
-AuthSrvImpl::processNormalQuery(const IOMessage& io_message, MessagePtr message,
-                                OutputBufferPtr buffer,
+AuthSrvImpl::processNormalQuery(const IOMessage& io_message, Message& message,
+                                OutputBuffer& buffer,
                                 auto_ptr<TSIGContext> tsig_context)
 {
-    ConstEDNSPtr remote_edns = message->getEDNS();
+    ConstEDNSPtr remote_edns = message.getEDNS();
     const bool dnssec_ok = remote_edns && remote_edns->getDNSSECAwareness();
     const uint16_t remote_bufsize = remote_edns ? remote_edns->getUDPSize() :
         Message::DEFAULT_MAX_UDPSIZE;
 
-    message->makeResponse();
-    message->setHeaderFlag(Message::HEADERFLAG_AA);
-    message->setRcode(Rcode::NOERROR());
+    message.makeResponse();
+    message.setHeaderFlag(Message::HEADERFLAG_AA);
+    message.setRcode(Rcode::NOERROR());
 
     // Increment query counter.
     incCounter(io_message.getSocket().getProtocol());
@@ -506,53 +708,55 @@ AuthSrvImpl::processNormalQuery(const IOMessage& io_message, MessagePtr message,
         EDNSPtr local_edns = EDNSPtr(new EDNS());
         local_edns->setDNSSECAwareness(dnssec_ok);
         local_edns->setUDPSize(AuthSrvImpl::DEFAULT_LOCAL_UDPSIZE);
-        message->setEDNS(local_edns);
+        message.setEDNS(local_edns);
     }
 
     try {
         // If a memory data source is configured call the separate
         // Query::process()
-        const ConstQuestionPtr question = *message->beginQuestion();
-        if (memory_client_ && memory_client_class_ == question->getClass()) {
+        const ConstQuestionPtr question = *message.beginQuestion();
+        if (memory_client_container_ &&
+            memory_client_class_ == question->getClass()) {
             const RRType& qtype = question->getType();
             const Name& qname = question->getName();
-            auth::Query(*memory_client_, qname, qtype, *message).process();
+            query_.process(memory_client_container_->getInstance(),
+                           qname, qtype, message, dnssec_ok);
         } else {
-            datasrc::Query query(*message, cache_, dnssec_ok);
+            datasrc::Query query(message, cache_, dnssec_ok);
             data_sources_.doQuery(query);
         }
     } catch (const Exception& ex) {
         LOG_ERROR(auth_logger, AUTH_PROCESS_FAIL).arg(ex.what());
-        makeErrorMessage(message, buffer, Rcode::SERVFAIL());
+        makeErrorMessage(renderer_, message, buffer, Rcode::SERVFAIL());
         return (true);
     }
 
-    MessageRenderer renderer(*buffer);
+    RendererHolder holder(renderer_, &buffer);
     const bool udp_buffer =
         (io_message.getSocket().getProtocol() == IPPROTO_UDP);
-    renderer.setLengthLimit(udp_buffer ? remote_bufsize : 65535);
+    renderer_.setLengthLimit(udp_buffer ? remote_bufsize : 65535);
     if (tsig_context.get() != NULL) {
-        message->toWire(renderer, *tsig_context);
+        message.toWire(renderer_, *tsig_context);
     } else {
-        message->toWire(renderer);
+        message.toWire(renderer_);
     }
     LOG_DEBUG(auth_logger, DBG_AUTH_MESSAGES, AUTH_SEND_NORMAL_RESPONSE)
-              .arg(renderer.getLength()).arg(message->toText());
-
+              .arg(renderer_.getLength()).arg(message);
     return (true);
 }
 
 bool
-AuthSrvImpl::processAxfrQuery(const IOMessage& io_message, MessagePtr message,
-                              OutputBufferPtr buffer,
-                              auto_ptr<TSIGContext> tsig_context)
+AuthSrvImpl::processXfrQuery(const IOMessage& io_message, Message& message,
+                             OutputBuffer& buffer,
+                             auto_ptr<TSIGContext> tsig_context)
 {
     // Increment query counter.
     incCounter(io_message.getSocket().getProtocol());
 
     if (io_message.getSocket().getProtocol() == IPPROTO_UDP) {
         LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_AXFR_UDP);
-        makeErrorMessage(message, buffer, Rcode::FORMERR(), tsig_context);
+        makeErrorMessage(renderer_, message, buffer, Rcode::FORMERR(),
+                         tsig_context);
         return (true);
     }
 
@@ -577,7 +781,8 @@ AuthSrvImpl::processAxfrQuery(const IOMessage& io_message, MessagePtr message,
 
         LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_AXFR_ERROR)
                   .arg(err.what());
-        makeErrorMessage(message, buffer, Rcode::SERVFAIL(), tsig_context);
+        makeErrorMessage(renderer_, message, buffer, Rcode::SERVFAIL(),
+                         tsig_context);
         return (true);
     }
 
@@ -585,23 +790,25 @@ AuthSrvImpl::processAxfrQuery(const IOMessage& io_message, MessagePtr message,
 }
 
 bool
-AuthSrvImpl::processNotify(const IOMessage& io_message, MessagePtr message, 
-                           OutputBufferPtr buffer,
+AuthSrvImpl::processNotify(const IOMessage& io_message, Message& message,
+                           OutputBuffer& buffer,
                            std::auto_ptr<TSIGContext> tsig_context)
 {
     // The incoming notify must contain exactly one question for SOA of the
     // zone name.
-    if (message->getRRCount(Message::SECTION_QUESTION) != 1) {
+    if (message.getRRCount(Message::SECTION_QUESTION) != 1) {
         LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_NOTIFY_QUESTIONS)
-                  .arg(message->getRRCount(Message::SECTION_QUESTION));
-        makeErrorMessage(message, buffer, Rcode::FORMERR(), tsig_context);
+                  .arg(message.getRRCount(Message::SECTION_QUESTION));
+        makeErrorMessage(renderer_, message, buffer, Rcode::FORMERR(),
+                         tsig_context);
         return (true);
     }
-    ConstQuestionPtr question = *message->beginQuestion();
+    ConstQuestionPtr question = *message.beginQuestion();
     if (question->getType() != RRType::SOA()) {
         LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_NOTIFY_RRTYPE)
                   .arg(question->getType().toText());
-        makeErrorMessage(message, buffer, Rcode::FORMERR(), tsig_context);
+        makeErrorMessage(renderer_, message, buffer, Rcode::FORMERR(),
+                         tsig_context);
         return (true);
     }
 
@@ -652,26 +859,35 @@ AuthSrvImpl::processNotify(const IOMessage& io_message, MessagePtr message,
         return (false);
     }
 
-    message->makeResponse();
-    message->setHeaderFlag(Message::HEADERFLAG_AA);
-    message->setRcode(Rcode::NOERROR());
+    message.makeResponse();
+    message.setHeaderFlag(Message::HEADERFLAG_AA);
+    message.setRcode(Rcode::NOERROR());
 
-    MessageRenderer renderer(*buffer);
+    RendererHolder holder(renderer_, &buffer);
     if (tsig_context.get() != NULL) {
-        message->toWire(renderer, *tsig_context);
+        message.toWire(renderer_, *tsig_context);
     } else {
-        message->toWire(renderer);
+        message.toWire(renderer_);
     }
     return (true);
+}
+
+bool
+AuthSrvImpl::processUpdate(const IOMessage& io_message) {
+    // Push the update request to a separate process via the forwarder.
+    // On successful push, the request shouldn't be responded from b10-auth,
+    // so we return false.
+    ddns_forwarder_.push(io_message);
+    return (false);
 }
 
 void
 AuthSrvImpl::incCounter(const int protocol) {
     // Increment query counter.
     if (protocol == IPPROTO_UDP) {
-        counters_.inc(AuthCounters::COUNTER_UDP_QUERY);
+        counters_.inc(AuthCounters::SERVER_UDP_QUERY);
     } else if (protocol == IPPROTO_TCP) {
-        counters_.inc(AuthCounters::COUNTER_TCP_QUERY);
+        counters_.inc(AuthCounters::SERVER_TCP_QUERY);
     } else {
         // unknown protocol
         isc_throw(Unexpected, "Unknown protocol: " << protocol);
@@ -744,6 +960,14 @@ AuthSrvImpl::setDbFile(ConstElementPtr config) {
     return (answer);
 }
 
+void
+AuthSrvImpl::resumeServer(DNSServer* server, Message& message, bool done) {
+    if (done) {
+        counters_.inc(message.getRcode());
+    }
+    server->resume(done);
+}
+
 ConstElementPtr
 AuthSrv::updateConfig(ConstElementPtr new_config) {
     try {
@@ -764,8 +988,18 @@ bool AuthSrv::submitStatistics() const {
 }
 
 uint64_t
-AuthSrv::getCounter(const AuthCounters::CounterType type) const {
+AuthSrv::getCounter(const AuthCounters::ServerCounterType type) const {
     return (impl_->counters_.getCounter(type));
+}
+
+uint64_t
+AuthSrv::getCounter(const Opcode opcode) const {
+    return (impl_->counters_.getCounter(opcode));
+}
+
+uint64_t
+AuthSrv::getCounter(const Rcode rcode) const {
+    return (impl_->counters_.getCounter(rcode));
 }
 
 const AddressList&
@@ -775,15 +1009,18 @@ AuthSrv::getListenAddresses() const {
 
 void
 AuthSrv::setListenAddresses(const AddressList& addresses) {
-    installListenAddresses(addresses, impl_->listen_addresses_, *dnss_);
+    // For UDP servers we specify the "SYNC_OK" option because in our usage
+    // it can act in the synchronous mode.
+    installListenAddresses(addresses, impl_->listen_addresses_, *dnss_,
+                           DNSService::SERVER_SYNC_OK);
 }
 
 void
-AuthSrv::setDNSService(isc::asiodns::DNSService& dnss) {
+AuthSrv::setDNSService(isc::asiodns::DNSServiceBase& dnss) {
     dnss_ = &dnss;
 }
 
 void
-AuthSrv::setTSIGKeyRing(const shared_ptr<TSIGKeyRing>* keyring) {
+AuthSrv::setTSIGKeyRing(const boost::shared_ptr<TSIGKeyRing>* keyring) {
     impl_->keyring_ = keyring;
 }

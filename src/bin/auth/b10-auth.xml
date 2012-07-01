@@ -2,7 +2,7 @@
                "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
 	       [<!ENTITY mdash "&#8212;">]>
 <!--
- - Copyright (C) 2010-2011  Internet Systems Consortium, Inc. ("ISC")
+ - Copyright (C) 2010-2012  Internet Systems Consortium, Inc. ("ISC")
  -
  - Permission to use, copy, modify, and/or distribute this software for any
  - purpose with or without fee is hereby granted, provided that the above
@@ -20,7 +20,7 @@
 <refentry>
 
   <refentryinfo>
-    <date>August 11, 2011</date>
+    <date>June 20, 2012</date>
   </refentryinfo>
 
   <refmeta>
@@ -36,7 +36,7 @@
 
   <docinfo>
     <copyright>
-      <year>2010</year>
+      <year>2010-2012</year>
       <holder>Internet Systems Consortium, Inc. ("ISC")</holder>
     </copyright>
   </docinfo>
@@ -45,7 +45,6 @@
     <cmdsynopsis>
       <command>b10-auth</command>
       <arg><option>-n</option></arg>
-      <arg><option>-u <replaceable>username</replaceable></option></arg>
       <arg><option>-v</option></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -93,24 +92,10 @@
       </varlistentry>
 
       <varlistentry>
-        <term><option>-u <replaceable>username</replaceable></option></term>
-        <listitem>
-	  <para>
-	    The user name of the <command>b10-auth</command> daemon.
-	    If specified, the daemon changes the process owner to the
-	    specified user.
-	    The <replaceable>username</replaceable> must be either a
-	    valid numeric user ID or a valid user name.
-	    By default the daemon runs as the user who invokes it.
-	  </para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
         <term><option>-v</option></term>
         <listitem><para>
-          Enabled verbose mode. This enables diagnostic messages to
-          STDERR.
+	  Enable verbose logging mode. This enables logging of
+	  diagnostic messages at the maximum debug level.
         </para></listitem>
       </varlistentry>
 
@@ -134,20 +119,27 @@
     <para>
       <varname>datasources</varname> configures data sources.
       The list items include:
-      <varname>type</varname> to optionally choose the data source type
+      <varname>type</varname> to define the required data source type
       (such as <quote>memory</quote>);
       <varname>class</varname> to optionally select the class
       (it defaults to <quote>IN</quote>);
       and
       <varname>zones</varname> to define the
-      <varname>file</varname> path name and the
-      <varname>origin</varname> (default domain).
-
-      By default, this is empty.
+      <varname>file</varname> path name,
+      <varname>origin</varname> (default domain), and optional
+      <varname>filetype</varname>.
+      By default, <varname>zones</varname> is empty.
+      For the in-memory data source (i.e., the <varname>type</varname>
+      is <quote>memory</quote>), the optional <varname>filetype</varname>
+      configuration item for <varname>zones</varname> can be
+      specified so the in-memory zone data can be built from another
+      data source that is based on a database backend (in practice
+      with current implementation, it would be an SQLite3 database
+      file for the SQLite3 data source).
+      See the <citetitle>BIND 10 Guide</citetitle> for configuration
+      details.
 
       <note><simpara>
-        In this development version, currently this is only used for the
-        memory data source.
         Only the IN class is supported at this time.
         By default, the memory data source is disabled.
         Also, currently the zone file must be canonical such as
@@ -203,7 +195,10 @@
 
     <para>
       <command>shutdown</command> exits <command>b10-auth</command>.
-      (Note that the BIND 10 boss process will restart this service.)
+      This has an optional <varname>pid</varname> argument to
+      select the process ID to stop.
+      (Note that the BIND 10 boss process may restart this service
+      if configured.)
     </para>
 
   </refsect1>
@@ -213,26 +208,28 @@
 
     <para>
       The statistics data collected by the <command>b10-stats</command>
-      daemon include:
+      daemon for <quote>Auth</quote> include:
     </para>
 
     <variablelist>
 
       <varlistentry>
-        <term>auth.queries.tcp</term>
+        <term>queries.tcp</term>
         <listitem><simpara>Total count of queries received by the
           <command>b10-auth</command> server over TCP since startup.
         </simpara></listitem>
       </varlistentry>
 
       <varlistentry>
-        <term>auth.queries.udp</term>
+        <term>queries.udp</term>
         <listitem><simpara>Total count of queries received by the
           <command>b10-auth</command> server over UDP since startup.
         </simpara></listitem>
       </varlistentry>
 
     </variablelist>
+
+<!-- TODO: missing stats docs. See ticket #1721 -->
 
   </refsect1>
 

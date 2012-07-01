@@ -30,7 +30,10 @@
 #include <dns/question.h>
 #include <dns/rrclass.h>
 
+#include <log/logger_support.h>
 #include <xfr/xfrout_client.h>
+
+#include <util/unittests/mock_socketsession.h>
 
 #include <auth/auth_srv.h>
 #include <auth/auth_config.h>
@@ -44,7 +47,9 @@ using namespace isc;
 using namespace isc::data;
 using namespace isc::auth;
 using namespace isc::dns;
+using namespace isc::log;
 using namespace isc::util;
+using namespace isc::util::unittests;
 using namespace isc::xfr;
 using namespace isc::bench;
 using namespace isc::asiodns;
@@ -73,9 +78,9 @@ private:
     typedef boost::shared_ptr<const IOEndpoint> IOEndpointPtr;
 protected:
     QueryBenchMark(const bool enable_cache,
-                   const BenchQueries& queries, MessagePtr query_message,
-                   OutputBufferPtr buffer) :
-        server_(new AuthSrv(enable_cache, xfrout_client)),
+                   const BenchQueries& queries, Message& query_message,
+                   OutputBuffer& buffer) :
+        server_(new AuthSrv(enable_cache, xfrout_client, ddns_forwarder)),
         queries_(queries),
         query_message_(query_message),
         buffer_(buffer),
@@ -92,20 +97,22 @@ public:
         for (query = queries_.begin(); query != query_end; ++query) {
             IOMessage io_message(&(*query)[0], (*query).size(), dummy_socket,
                                  *dummy_endpoint);
-            query_message_->clear(Message::PARSE);
-            buffer_->clear();
+            query_message_.clear(Message::PARSE);
+            buffer_.clear();
             server_->processMessage(io_message, query_message_, buffer_,
                                     &server);
         }
 
         return (queries_.size());
     }
+private:
+    MockSocketSessionForwarder ddns_forwarder;
 protected:
     AuthSrvPtr server_;
 private:
     const BenchQueries& queries_;
-    MessagePtr query_message_;
-    OutputBufferPtr buffer_;
+    Message& query_message_;
+    OutputBuffer& buffer_;
     IOSocket& dummy_socket;
     IOEndpointPtr dummy_endpoint;
 };
@@ -115,8 +122,8 @@ public:
     Sqlite3QueryBenchMark(const int cache_slots,
                           const char* const datasrc_file,
                           const BenchQueries& queries,
-                          MessagePtr query_message,
-                          OutputBufferPtr buffer) :
+                          Message& query_message,
+                          OutputBuffer& buffer) :
         QueryBenchMark(cache_slots >= 0 ? true : false, queries,
                        query_message, buffer)
     {
@@ -133,8 +140,8 @@ public:
     MemoryQueryBenchMark(const char* const zone_file,
                          const char* const zone_origin,
                           const BenchQueries& queries,
-                          MessagePtr query_message,
-                          OutputBufferPtr buffer) :
+                          Message& query_message,
+                          OutputBuffer& buffer) :
         QueryBenchMark(false, queries, query_message, buffer)
     {
         configureAuthServer(*server_,
@@ -231,6 +238,10 @@ main(int argc, char* argv[]) {
     const char* const datasrc_file = argv[0];
     const char* const query_data_file = argv[1];
 
+    // We disable logging to avoid unwanted noise. (We may eventually want to
+    // make it more configurable)
+    initLogger("query-bench", isc::log::NONE);
+
     DataSrcType datasrc_type = SQLITE3;
     if (strcmp(opt_datasrc_type, "sqlite3") == 0) {
         ;                       // no need to override
@@ -248,8 +259,8 @@ main(int argc, char* argv[]) {
 
     BenchQueries queries;
     loadQueryData(query_data_file, queries, RRClass::IN());
-    OutputBufferPtr buffer(new OutputBuffer(4096));
-    MessagePtr message(new Message(Message::PARSE));
+    OutputBuffer buffer(4096);
+    Message message(Message::PARSE);
 
     cout << "Parameters:" << endl;
     cout << "  Iterations: " << iteration << endl;

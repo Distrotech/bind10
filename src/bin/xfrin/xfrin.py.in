@@ -24,6 +24,8 @@ import struct
 import threading
 import socket
 import random
+import time
+from functools import reduce
 from optparse import OptionParser, OptionValueError
 from isc.config.ccsession import *
 from isc.notify import notify_out
@@ -31,10 +33,16 @@ import isc.util.process
 from isc.datasrc import DataSourceClient, ZoneFinder
 import isc.net.parse
 from isc.xfrin.diff import Diff
+from isc.server_common.auth_command import auth_loadzone_command
 from isc.log_messages.xfrin_messages import *
 
 isc.log.init("b10-xfrin")
 logger = isc.log.Logger("xfrin")
+
+# Pending system-wide debug level definitions, the ones we
+# use here are hardcoded for now
+DBG_PROCESS = logger.DBGLVL_TRACE_BASIC
+DBG_COMMANDS = logger.DBGLVL_TRACE_DETAIL
 
 try:
     from pydnspp import *
@@ -59,13 +67,13 @@ else:
 SPECFILE_LOCATION = SPECFILE_PATH + "/xfrin.spec"
 AUTH_SPECFILE_LOCATION = AUTH_SPECFILE_PATH + "/auth.spec"
 
+AUTH_MODULE_NAME = 'Auth'
 XFROUT_MODULE_NAME = 'Xfrout'
 ZONE_MANAGER_MODULE_NAME = 'Zonemgr'
 REFRESH_FROM_ZONEMGR = 'refresh_from_zonemgr'
-ZONE_XFRIN_FAILED = 'zone_xfrin_failed'
 
-# Constants for debug levels, to be removed when we have #1074.
-DBG_XFRIN_TRACE = 3
+# Constants for debug levels.
+DBG_XFRIN_TRACE = logger.DBGLVL_TRACE_BASIC
 
 # These two default are currently hard-coded. For config this isn't
 # necessary, but we need these defaults for optional command arguments
@@ -75,15 +83,21 @@ DEFAULT_MASTER_PORT = 53
 DEFAULT_ZONE_CLASS = RRClass.IN()
 
 __version__ = 'BIND10'
-# define xfrin rcode
-XFRIN_OK = 0
-XFRIN_FAIL = 1
+
+# Internal result codes of an xfr session
+XFRIN_OK = 0                    # normal success
+XFRIN_FAIL = 1                  # general failure (internal/external)
 
 class XfrinException(Exception):
     pass
 
 class XfrinProtocolError(Exception):
     '''An exception raised for errors encountered in xfrin protocol handling.
+    '''
+    pass
+
+class XfrinZoneUptodate(Exception):
+    '''TBD
     '''
     pass
 
@@ -122,8 +136,38 @@ def _check_zone_class(zone_class_str):
     except InvalidRRClass as irce:
         raise XfrinZoneInfoException("bad zone class: " + zone_class_str + " (" + str(irce) + ")")
 
+def format_zone_str(zone_name, zone_class):
+    """Helper function to format a zone name and class as a string of
+       the form '<name>/<class>'.
+       Parameters:
+       zone_name (isc.dns.Name) name to format
+       zone_class (isc.dns.RRClass) class to format
+    """
+    return zone_name.to_text(True) + '/' + str(zone_class)
+
+def format_addrinfo(addrinfo):
+    """Helper function to format the addrinfo as a string of the form
+       <addr>:<port> (for IPv4) or [<addr>]:port (for IPv6). For unix domain
+       sockets, and unknown address families, it returns a basic string
+       conversion of the third element of the passed tuple.
+       Parameters:
+       addrinfo: a 3-tuple consisting of address family, socket type, and,
+                 depending on the family, either a 2-tuple with the address
+                 and port, or a filename
+    """
+    try:
+        if addrinfo[0] == socket.AF_INET:
+            return str(addrinfo[2][0]) + ":" + str(addrinfo[2][1])
+        elif addrinfo[0] == socket.AF_INET6:
+            return "[" + str(addrinfo[2][0]) + "]:" + str(addrinfo[2][1])
+        else:
+            return str(addrinfo[2])
+    except IndexError:
+        raise TypeError("addrinfo argument to format_addrinfo() does not "
+                        "appear to be consisting of (family, socktype, (addr, port))")
+
 def get_soa_serial(soa_rdata):
-    '''Extract the serial field of an SOA RDATA and returns it as an intger.
+    '''Extract the serial field of SOA RDATA and return it as a Serial object.
 
     We don't have to be very efficient here, so we first dump the entire RDATA
     as a string and convert the first corresponding field.  This should be
@@ -132,7 +176,7 @@ def get_soa_serial(soa_rdata):
     should be a more direct and convenient way to get access to the SOA
     fields.
     '''
-    return int(soa_rdata.to_text().split()[2])
+    return Serial(int(soa_rdata.to_text().split()[2]))
 
 class XfrinState:
     '''
@@ -151,12 +195,12 @@ class XfrinState:
                              (AXFR or
             (recv SOA)        AXFR-style IXFR)  (SOA, add)
     InitialSOA------->FirstData------------->AXFR--------->AXFREnd
-                          |                  |  ^         (post xfr
-                          |                  |  |        checks, then
-                          |                  +--+        commit)
-                          |            (non SOA, add)
-                          |
-                          |                     (non SOA, delete)
+         |                |                  |  ^         (post xfr
+         |(IXFR &&        |                  |  |        checks, then
+         | recv SOA       |                  +--+        commit)
+         | not new)       |            (non SOA, add)
+         V                |
+    IXFRUptodate          |                     (non SOA, delete)
                (pure IXFR,|                           +-------+
             keep handling)|             (Delete SOA)  V       |
                           + ->IXFRDeleteSOA------>IXFRDelete--+
@@ -270,13 +314,14 @@ class XfrinInitialSOA(XfrinState):
                                      + rr.get_type().to_text() + ' received)')
         conn._end_serial = get_soa_serial(rr.get_rdata()[0])
 
-        # FIXME: we need to check the serial is actually greater than ours.
-        # To do so, however, we need to implement serial number arithmetic.
-        # Although it wouldn't be a big task, we'll leave it for a separate
-        # task for now.  (Always performing xfr could be inefficient, but
-        # shouldn't do any harm otherwise)
+        if conn._request_type == RRType.IXFR() and \
+                conn._end_serial <= conn._request_serial:
+            logger.info(XFRIN_IXFR_UPTODATE, conn.zone_str(),
+                        conn._request_serial, conn._end_serial)
+            self.set_xfrstate(conn, XfrinIXFRUptodate())
+        else:
+            self.set_xfrstate(conn, XfrinFirstData())
 
-        self.set_xfrstate(conn, XfrinFirstData())
         return True
 
 class XfrinFirstData(XfrinState):
@@ -336,9 +381,13 @@ class XfrinIXFRDeleteSOA(XfrinState):
                                  ' RR is given in IXFRDeleteSOA state')
         # This is the beginning state of one difference sequence (changes
         # for one SOA update).  We need to create a new Diff object now.
-        conn._diff = Diff(conn._datasrc_client, conn._zone_name)
+        # Note also that we (unconditionally) enable journaling here.  The
+        # Diff constructor may internally disable it, however, if the
+        # underlying data source doesn't support journaling.
+        conn._diff = Diff(conn._datasrc_client, conn._zone_name, False, True)
         conn._diff.delete_data(rr)
         self.set_xfrstate(conn, XfrinIXFRDelete())
+        conn.get_transfer_stats().ixfr_deletion_count += 1
         return True
 
 class XfrinIXFRDelete(XfrinState):
@@ -349,6 +398,7 @@ class XfrinIXFRDelete(XfrinState):
             self.set_xfrstate(conn, XfrinIXFRAddSOA())
             return False
         conn._diff.delete_data(rr)
+        conn.get_transfer_stats().ixfr_deletion_count += 1
         return True
 
 class XfrinIXFRAddSOA(XfrinState):
@@ -360,11 +410,14 @@ class XfrinIXFRAddSOA(XfrinState):
                                  ' RR is given in IXFRAddSOA state')
         conn._diff.add_data(rr)
         self.set_xfrstate(conn, XfrinIXFRAdd())
+        conn.get_transfer_stats().ixfr_addition_count += 1
         return True
 
 class XfrinIXFRAdd(XfrinState):
     def handle_rr(self, conn, rr):
         if rr.get_type() == RRType.SOA():
+            # This SOA marks the end of a difference sequence
+            conn.get_transfer_stats().ixfr_changeset_count += 1
             soa_serial = get_soa_serial(rr.get_rdata()[0])
             if soa_serial == conn._end_serial:
                 conn._diff.commit()
@@ -380,6 +433,7 @@ class XfrinIXFRAdd(XfrinState):
                 self.set_xfrstate(conn, XfrinIXFRDeleteSOA())
                 return False
         conn._diff.add_data(rr)
+        conn.get_transfer_stats().ixfr_addition_count += 1
         return True
 
 class XfrinIXFREnd(XfrinState):
@@ -395,6 +449,14 @@ class XfrinIXFREnd(XfrinState):
 
         '''
         return False
+
+class XfrinIXFRUptodate(XfrinState):
+    def handle_rr(self, conn, rr):
+        raise XfrinProtocolError('Extra data after single IXFR response ' +
+                                 rr.to_text())
+
+    def finish_message(self, conn):
+        raise XfrinZoneUptodate
 
 class XfrinAXFR(XfrinState):
     def handle_rr(self, conn, rr):
@@ -412,6 +474,7 @@ class XfrinAXFR(XfrinState):
                             conn._end_serial, soa_serial)
 
             self.set_xfrstate(conn, XfrinAXFREnd())
+        conn.get_transfer_stats().axfr_rr_count += 1
         # Yes, we've eaten this RR.
         return True
 
@@ -434,15 +497,67 @@ class XfrinAXFREnd(XfrinState):
         conn._diff.commit()
         return False
 
+class XfrinTransferStats:
+    """
+    This class keeps a record of transfer data for logging purposes.
+    It records number of messages, rrs, and bytes transfered, as well
+    as the start and end time. The start time is set upon instantiation of
+    this class. The end time is set the first time finalize(),
+    get_running_time(), or get_bytes_per_second() is called. The end time is
+    set only once; subsequent calls to any of these methods does not modify
+    it further.
+    All _count instance variables can be directly set as needed by the
+    class collecting these results.
+    """
+    def __init__(self):
+        self.message_count = 0
+        self.axfr_rr_count = 0
+        self.byte_count = 0
+        self.ixfr_changeset_count = 0;
+        self.ixfr_deletion_count = 0;
+        self.ixfr_addition_count = 0;
+        self._start_time = time.time()
+        self._end_time = None
+
+    def finalize(self):
+        """Sets the end time to time.time() if not done already."""
+        if self._end_time is None:
+            self._end_time = time.time()
+
+    def get_running_time(self):
+        """Calls finalize(), then returns the difference between creation
+           and finalization time"""
+        self.finalize()
+        return self._end_time - self._start_time
+
+    def get_bytes_per_second(self):
+        """Returns the number of bytes per second, based on the result of
+           get_running_time() and the value of bytes_count."""
+        runtime = self.get_running_time()
+        if runtime > 0.0:
+            return float(self.byte_count) / runtime
+        else:
+            # This should never happen, but if some clock is so
+            # off or reset in the meantime, we do need to return
+            # *something* (and not raise an error)
+            if self.byte_count == 0:
+                return 0.0
+            else:
+                return float("inf")
+
+
 class XfrinConnection(asyncore.dispatcher):
     '''Do xfrin in this class. '''
 
     def __init__(self,
                  sock_map, zone_name, rrclass, datasrc_client,
-                 shutdown_event, master_addrinfo, tsig_key=None,
+                 shutdown_event, master_addrinfo, db_file, tsig_key=None,
                  idle_timeout=60):
         '''Constructor of the XfirnConnection class.
 
+        db_file: SQLite3 DB file.  Unforutnately we still need this for
+                 temporary workaround in _get_zone_soa().  This should be
+                 removed when we eliminate the need for the workaround.
         idle_timeout: max idle time for read data from socket.
         datasrc_client: the data source client object used for the XFR session.
                         This will eventually replace db_file completely.
@@ -466,23 +581,83 @@ class XfrinConnection(asyncore.dispatcher):
         self._rrclass = rrclass
 
         # Data source handler
+        self._db_file = db_file
         self._datasrc_client = datasrc_client
+        self._zone_soa = self._get_zone_soa()
 
-        self.create_socket(master_addrinfo[0], master_addrinfo[1])
         self._sock_map = sock_map
         self._soa_rr_count = 0
         self._idle_timeout = idle_timeout
-        self.setblocking(1)
         self._shutdown_event = shutdown_event
-        self._master_address = master_addrinfo[2]
+        self._master_addrinfo = master_addrinfo
         self._tsig_key = tsig_key
         self._tsig_ctx = None
         # tsig_ctx_creator is introduced to allow tests to use a mock class for
         # easier tests (in normal case we always use the default)
-        self._tsig_ctx_creator = self.__create_tsig_ctx
+        self._tsig_ctx_creator = lambda key : TSIGContext(key)
 
-    def __create_tsig_ctx(self, key):
-        return TSIGContext(key)
+        # keep a record of this specific transfer to log on success
+        # (time, rr/s, etc)
+        self._transfer_stats = XfrinTransferStats()
+
+    def init_socket(self):
+        '''Initialize the underlyig socket.
+
+        This is essentially a part of __init__() and is expected to be
+        called immediately after the constructor.  It's separated from
+        the constructor because otherwise we might not be able to close
+        it if the constructor raises an exception after opening the socket.
+        '''
+        self.create_socket(self._master_addrinfo[0], self._master_addrinfo[1])
+        self.setblocking(1)
+
+    def _get_zone_soa(self):
+        '''Retrieve the current SOA RR of the zone to be transferred.
+
+        It will be used for various purposes in subsequent xfr protocol
+        processing.   It is validly possible that the zone is currently
+        empty and therefore doesn't have an SOA, so this method doesn't
+        consider it an error and returns None in such a case.  It may or
+        may not result in failure in the actual processing depending on
+        how the SOA is used.
+
+        When the zone has an SOA RR, this method makes sure that it's
+        valid, i.e., it has exactly one RDATA; if it is not the case
+        this method returns None.
+
+        If the underlying data source doesn't even know the zone, this method
+        tries to provide backward compatible behavior where xfrin is
+        responsible for creating zone in the corresponding DB table.
+        For a longer term we should deprecate this behavior by introducing
+        more generic zone management framework, but at the moment we try
+        to not surprise existing users.  (Note also that the part of
+        providing the compatible behavior uses the old data source API.
+        We'll deprecate this API in a near future, too).
+
+        '''
+        # get the zone finder.  this must be SUCCESS (not even
+        # PARTIALMATCH) because we are specifying the zone origin name.
+        result, finder = self._datasrc_client.find_zone(self._zone_name)
+        if result != DataSourceClient.SUCCESS:
+            # The data source doesn't know the zone.  For now, we provide
+            # backward compatibility and creates a new one ourselves.
+            isc.datasrc.sqlite3_ds.load(self._db_file,
+                                        self._zone_name.to_text(),
+                                        lambda : [])
+            logger.warn(XFRIN_ZONE_CREATED, self.zone_str())
+            # try again
+            result, finder = self._datasrc_client.find_zone(self._zone_name)
+        if result != DataSourceClient.SUCCESS:
+            return None
+        result, soa_rrset, _ = finder.find(self._zone_name, RRType.SOA())
+        if result != ZoneFinder.SUCCESS:
+            logger.info(XFRIN_ZONE_NO_SOA, self.zone_str())
+            return None
+        if soa_rrset.get_rdata_count() != 1:
+            logger.warn(XFRIN_ZONE_MULTIPLE_SOA, self.zone_str(),
+                        soa_rrset.get_rdata_count())
+            return None
+        return soa_rrset
 
     def __set_xfrstate(self, new_state):
         self.__state = new_state
@@ -490,51 +665,36 @@ class XfrinConnection(asyncore.dispatcher):
     def get_xfrstate(self):
         return self.__state
 
+    def get_transfer_stats(self):
+        """Returns the transfer stats object, used to measure transfer time,
+           and number of messages/records/bytes transfered."""
+        return self._transfer_stats
+
     def zone_str(self):
-        '''A convenient function for logging to include zone name and class'''
-        return self._zone_name.to_text() + '/' + str(self._rrclass)
+        '''A convenience function for logging to include zone name and class'''
+        return format_zone_str(self._zone_name, self._rrclass)
 
     def connect_to_master(self):
         '''Connect to master in TCP.'''
 
         try:
-            self.connect(self._master_address)
+            self.connect(self._master_addrinfo[2])
             return True
         except socket.error as e:
-            logger.error(XFRIN_CONNECT_MASTER, self._master_address, str(e))
+            logger.error(XFRIN_CONNECT_MASTER, self._master_addrinfo[2],
+                         str(e))
             return False
-
-    def _get_zone_soa(self):
-        result, finder = self._datasrc_client.find_zone(self._zone_name)
-        if result != DataSourceClient.SUCCESS:
-            raise XfrinException('Zone not found in the given data ' +
-                                 'source: ' + self.zone_str())
-        result, soa_rrset = finder.find(self._zone_name, RRType.SOA(),
-                                        None, ZoneFinder.FIND_DEFAULT)
-        if result != ZoneFinder.SUCCESS:
-            raise XfrinException('SOA RR not found in zone: ' +
-                                 self.zone_str())
-        # Especially for database-based zones, a working zone may be in
-        # a broken state where it has more than one SOA RR.  We proactively
-        # check the condition and abort the xfr attempt if we identify it.
-        if soa_rrset.get_rdata_count() != 1:
-            raise XfrinException('Invalid number of SOA RRs for ' +
-                                 self.zone_str() + ': ' +
-                                 str(soa_rrset.get_rdata_count()))
-        return soa_rrset
 
     def _create_query(self, query_type):
         '''Create an XFR-related query message.
 
-        query_type is either SOA, AXFR or IXFR.  For type IXFR, it searches
-        the associated data source for the current SOA record to include
-        it in the query.  If the corresponding zone or the SOA record
-        cannot be found, it raises an XfrinException exception.  Note that
-        this may not necessarily a broken configuration; for the first attempt
-        of transfer the secondary may not have any boot-strap zone
-        information, in which case IXFR simply won't work.  The xfrin
-        should then fall back to AXFR.  _request_serial is recorded for
-        later use.
+        query_type is either SOA, AXFR or IXFR.  An IXFR query needs the
+        zone's current SOA record.  If it's not known, it raises an
+        XfrinException exception.  Note that this may not necessarily a
+        broken configuration; for the first attempt of transfer the secondary
+        may not have any boot-strap zone information, in which case IXFR
+        simply won't work.  The xfrin should then fall back to AXFR.
+        _request_serial is recorded for later use.
 
         '''
         msg = Message(Message.RENDER)
@@ -544,27 +704,19 @@ class XfrinConnection(asyncore.dispatcher):
         msg.set_opcode(Opcode.QUERY())
         msg.set_rcode(Rcode.NOERROR())
         msg.add_question(Question(self._zone_name, self._rrclass, query_type))
+
+        # Remember our serial, if known
+        self._request_serial = get_soa_serial(self._zone_soa.get_rdata()[0]) \
+            if self._zone_soa is not None else None
+
+        # Set the authority section with our SOA for IXFR
         if query_type == RRType.IXFR():
-            # get the zone finder.  this must be SUCCESS (not even
-            # PARTIALMATCH) because we are specifying the zone origin name.
-            zone_soa_rr = self._get_zone_soa()
-            msg.add_rrset(Message.SECTION_AUTHORITY, zone_soa_rr)
-            self._request_serial = get_soa_serial(zone_soa_rr.get_rdata()[0])
-        else:
-            # For AXFR, we temporarily provide backward compatible behavior
-            # where xfrin is responsible for creating zone in the corresponding
-            # DB table.  Note that the code below uses the old data source
-            # API and assumes SQLite3 in an ugly manner.  We'll have to
-            # develop a better way of managing zones in a generic way and
-            # eliminate the code like the one here.
-            try:
-                self._get_zone_soa()
-            except XfrinException:
-                def empty_rr_generator():
-                    return []
-                isc.datasrc.sqlite3_ds.load(self._db_file,
-                                            self._zone_name.to_text(),
-                                            empty_rr_generator)
+            if self._zone_soa is None:
+                # (incremental) IXFR doesn't work without known SOA
+                raise XfrinException('Failed to create IXFR query due to no ' +
+                                     'SOA for ' + self.zone_str())
+            msg.add_rrset(Message.SECTION_AUTHORITY, self._zone_soa)
+
         return msg
 
     def _send_data(self, data):
@@ -618,7 +770,8 @@ class XfrinConnection(asyncore.dispatcher):
         if self._tsig_ctx is not None:
             tsig_error = self._tsig_ctx.verify(tsig_record, response_data)
             if tsig_error != TSIGError.NOERROR:
-                raise XfrinException('TSIG verify fail: %s' % str(tsig_error))
+                raise XfrinProtocolError('TSIG verify fail: %s' %
+                                         str(tsig_error))
         elif tsig_record is not None:
             # If the response includes a TSIG while we didn't sign the query,
             # we treat it as an error.  RFC doesn't say anything about this
@@ -627,13 +780,78 @@ class XfrinConnection(asyncore.dispatcher):
             # implementation would return such a response, and since this is
             # part of security mechanism, it's probably better to be more
             # strict.
-            raise XfrinException('Unexpected TSIG in response')
+            raise XfrinProtocolError('Unexpected TSIG in response')
+
+    def __parse_soa_response(self, msg, response_data):
+        '''Parse a response to SOA query and extract the SOA from answer.
+
+        This is a subroutine of _check_soa_serial().  This method also
+        validates message, and rejects bogus responses with XfrinProtocolError.
+
+        If everything is okay, it returns the SOA RR from the answer section
+        of the response.
+
+        '''
+        # Check TSIG integrity and validate the header.  Unlike AXFR/IXFR,
+        # we should be more strict for SOA queries and check the AA flag, too.
+        self._check_response_tsig(msg, response_data)
+        self._check_response_header(msg)
+        if not msg.get_header_flag(Message.HEADERFLAG_AA):
+            raise XfrinProtocolError('non-authoritative answer to SOA query')
+
+        # Validate the question section
+        n_question = msg.get_rr_count(Message.SECTION_QUESTION)
+        if n_question != 1:
+            raise XfrinProtocolError('Invalid response to SOA query: ' +
+                                     '(' + str(n_question) + ' questions, 1 ' +
+                                     'expected)')
+        resp_question = msg.get_question()[0]
+        if resp_question.get_name() != self._zone_name or \
+                resp_question.get_class() != self._rrclass or \
+                resp_question.get_type() != RRType.SOA():
+            raise XfrinProtocolError('Invalid response to SOA query: '
+                                     'question mismatch: ' +
+                                     str(resp_question))
+
+        # Look into the answer section for SOA
+        soa = None
+        for rr in msg.get_section(Message.SECTION_ANSWER):
+            if rr.get_type() == RRType.SOA():
+                if soa is not None:
+                    raise XfrinProtocolError('SOA response had multiple SOAs')
+                soa = rr
+            # There should not be a CNAME record at top of zone.
+            if rr.get_type() == RRType.CNAME():
+                raise XfrinProtocolError('SOA query resulted in CNAME')
+
+        # If SOA is not found, try to figure out the reason then report it.
+        if soa is None:
+            # See if we have any SOA records in the authority section.
+            for rr in msg.get_section(Message.SECTION_AUTHORITY):
+                if rr.get_type() == RRType.NS():
+                    raise XfrinProtocolError('SOA query resulted in referral')
+                if rr.get_type() == RRType.SOA():
+                    raise XfrinProtocolError('SOA query resulted in NODATA')
+            raise XfrinProtocolError('No SOA record found in response to ' +
+                                     'SOA query')
+
+        # Check if the SOA is really what we asked for
+        if soa.get_name() != self._zone_name or \
+                soa.get_class() != self._rrclass:
+            raise XfrinProtocolError("SOA response doesn't match query: " +
+                                     str(soa))
+
+        # All okay, return it
+        return soa
+
 
     def _check_soa_serial(self):
-        ''' Compare the soa serial, if soa serial in master is less than
-        the soa serial in local, Finish xfrin.
-        False: soa serial in master is less or equal to the local one.
-        True: soa serial in master is bigger
+        '''Send SOA query and compare the local and remote serials.
+
+        If we know our local serial and the remote serial isn't newer
+        than ours, we abort the session with XfrinZoneUptodate.
+        On success it returns XFRIN_OK for testing.  The caller won't use it.
+
         '''
 
         self._send_query(RRType.SOA())
@@ -641,18 +859,23 @@ class XfrinConnection(asyncore.dispatcher):
         msg_len = socket.htons(struct.unpack('H', data_len)[0])
         soa_response = self._get_request_response(msg_len)
         msg = Message(Message.PARSE)
-        msg.from_wire(soa_response)
+        msg.from_wire(soa_response, Message.PRESERVE_ORDER)
 
-        # TSIG related checks, including an unexpected signed response
-        self._check_response_tsig(msg, soa_response)
+        # Validate/parse the rest of the response, and extract the SOA
+        # from the answer section
+        soa = self.__parse_soa_response(msg, soa_response)
 
-        # perform some minimal level validation.  It's an open issue how
-        # strict we should be (see the comment in _check_response_header())
-        self._check_response_header(msg)
+        # Compare the two serials.  If ours is 'new', abort with ZoneUptodate.
+        primary_serial = get_soa_serial(soa.get_rdata()[0])
+        if self._request_serial is not None and \
+                self._request_serial >= primary_serial:
+            if self._request_serial != primary_serial:
+                logger.info(XFRIN_ZONE_SERIAL_AHEAD, primary_serial,
+                            self.zone_str(),
+                            format_addrinfo(self._master_addrinfo),
+                            self._request_serial)
+            raise XfrinZoneUptodate
 
-        # TODO, need select soa record from data source then compare the two
-        # serial, current just return OK, since this function hasn't been used
-        # now.
         return XFRIN_OK
 
     def do_xfrin(self, check_soa, request_type=RRType.AXFR()):
@@ -663,22 +886,52 @@ class XfrinConnection(asyncore.dispatcher):
             self._request_type = request_type
             # Right now RRType.[IA]XFR().to_text() is 'TYPExxx', so we need
             # to hardcode here.
-            request_str = 'IXFR' if request_type == RRType.IXFR() else 'AXFR'
+            req_str = 'IXFR' if request_type == RRType.IXFR() else 'AXFR'
             if check_soa:
-                ret =  self._check_soa_serial()
+                self._check_soa_serial()
 
-            if ret == XFRIN_OK:
-                logger.info(XFRIN_XFR_TRANSFER_STARTED, request_str,
-                            self.zone_str())
-                self._send_query(self._request_type)
-                self.__state = XfrinInitialSOA()
-                self._handle_xfrin_responses()
-                logger.info(XFRIN_XFR_TRANSFER_SUCCESS, request_str,
-                            self.zone_str())
+            logger.info(XFRIN_XFR_TRANSFER_STARTED, req_str, self.zone_str())
+            self._send_query(self._request_type)
+            self.__state = XfrinInitialSOA()
+            self._handle_xfrin_responses()
+            # Depending what data was found, we log different status reports
+            # (In case of an AXFR-style IXFR, print the 'AXFR' message)
+            if self._transfer_stats.axfr_rr_count == 0:
+                logger.info(XFRIN_IXFR_TRANSFER_SUCCESS,
+                            self.zone_str(),
+                            self._transfer_stats.message_count,
+                            self._transfer_stats.ixfr_changeset_count,
+                            self._transfer_stats.ixfr_deletion_count,
+                            self._transfer_stats.ixfr_addition_count,
+                            self._transfer_stats.byte_count,
+                            "%.3f" % self._transfer_stats.get_running_time(),
+                            "%.f" % self._transfer_stats.get_bytes_per_second()
+                           )
+            else:
+                logger.info(XFRIN_TRANSFER_SUCCESS,
+                            req_str,
+                            self.zone_str(),
+                            self._transfer_stats.message_count,
+                            self._transfer_stats.axfr_rr_count,
+                            self._transfer_stats.byte_count,
+                            "%.3f" % self._transfer_stats.get_running_time(),
+                            "%.f" % self._transfer_stats.get_bytes_per_second()
+                           )
 
-        except (XfrinException, XfrinProtocolError) as e:
-            logger.error(XFRIN_XFR_TRANSFER_FAILURE, request_str,
-                         self.zone_str(), str(e))
+        except XfrinZoneUptodate:
+            # Eventually we'll probably have to treat this case as a trigger
+            # of trying another primary server, etc, but for now we treat it
+            # as "success".
+            pass
+        except XfrinProtocolError as e:
+            logger.info(XFRIN_XFR_TRANSFER_PROTOCOL_ERROR, req_str,
+                        self.zone_str(),
+                        format_addrinfo(self._master_addrinfo), str(e))
+            ret = XFRIN_FAIL
+        except XfrinException as e:
+            logger.error(XFRIN_XFR_TRANSFER_FAILURE, req_str,
+                         self.zone_str(),
+                         format_addrinfo(self._master_addrinfo), str(e))
             ret = XFRIN_FAIL
         except Exception as e:
             # Catching all possible exceptions like this is generally not a
@@ -689,7 +942,7 @@ class XfrinConnection(asyncore.dispatcher):
             # catch it here, but until then we need broadest coverage so that
             # we won't miss anything.
 
-            logger.error(XFRIN_XFR_OTHER_FAILURE, request_str,
+            logger.error(XFRIN_XFR_OTHER_FAILURE, req_str,
                          self.zone_str(), str(e))
             ret = XFRIN_FAIL
         finally:
@@ -697,7 +950,6 @@ class XfrinConnection(asyncore.dispatcher):
             # (if not yet - possible in case of xfr-level exception) as soon
             # as possible
             self._diff = None
-            self.close()
 
         return ret
 
@@ -714,13 +966,14 @@ class XfrinConnection(asyncore.dispatcher):
 
         msg_rcode = msg.get_rcode()
         if msg_rcode != Rcode.NOERROR():
-            raise XfrinException('error response: %s' % msg_rcode.to_text())
+            raise XfrinProtocolError('error response: %s' %
+                                     msg_rcode.to_text())
 
         if not msg.get_header_flag(Message.HEADERFLAG_QR):
-            raise XfrinException('response is not a response')
+            raise XfrinProtocolError('response is not a response')
 
         if msg.get_qid() != self._query_id:
-            raise XfrinException('bad query id')
+            raise XfrinProtocolError('bad query id')
 
     def _check_response_status(self, msg):
         '''Check validation of xfr response. '''
@@ -728,43 +981,18 @@ class XfrinConnection(asyncore.dispatcher):
         self._check_response_header(msg)
 
         if msg.get_rr_count(Message.SECTION_QUESTION) > 1:
-            raise XfrinException('query section count greater than 1')
-
-    def _handle_answer_section(self, answer_section):
-        '''Return a generator for the reponse in one tcp package to a zone transfer.'''
-
-        for rrset in answer_section:
-            rrset_name = rrset.get_name().to_text()
-            rrset_ttl = int(rrset.get_ttl().to_text())
-            rrset_class = rrset.get_class().to_text()
-            rrset_type = rrset.get_type().to_text()
-
-            for rdata in rrset.get_rdata():
-                # Count the soa record count
-                if rrset.get_type() == RRType.SOA():
-                    self._soa_rr_count += 1
-
-                    # XXX: the current DNS message parser can't preserve the
-                    # RR order or separete the beginning and ending SOA RRs.
-                    # As a short term workaround, we simply ignore the second
-                    # SOA, and ignore the erroneous case where the transfer
-                    # session doesn't end with an SOA.
-                    if (self._soa_rr_count == 2):
-                        # Avoid inserting soa record twice
-                        break
-
-                rdata_text = rdata.to_text()
-                yield (rrset_name, rrset_ttl, rrset_class, rrset_type,
-                       rdata_text)
+            raise XfrinProtocolError('query section count greater than 1')
 
     def _handle_xfrin_responses(self):
         read_next_msg = True
         while read_next_msg:
             data_len = self._get_request_response(2)
             msg_len = socket.htons(struct.unpack('H', data_len)[0])
+            self._transfer_stats.byte_count += msg_len + 2
             recvdata = self._get_request_response(msg_len)
             msg = Message(Message.PARSE)
             msg.from_wire(recvdata, Message.PRESERVE_ORDER)
+            self._transfer_stats.message_count += 1
 
             # TSIG related checks, including an unexpected signed response
             self._check_response_tsig(msg, recvdata)
@@ -794,47 +1022,100 @@ class XfrinConnection(asyncore.dispatcher):
 
         return False
 
-    def log_info(self, msg, type='info'):
-        # Overwrite the log function, log nothing
-        pass
-
-def process_xfrin(server, xfrin_recorder, zone_name, rrclass, db_file,
-                  shutdown_event, master_addrinfo, check_soa, tsig_key,
-                  request_type):
-    xfrin_recorder.increment(zone_name)
-
-    # Create a data source client used in this XFR session.  Right now we
-    # still assume an sqlite3-based data source, and use both the old and new
-    # data source APIs.  We also need to use a mock client for tests.
-    # For a temporary workaround to deal with these situations, we skip the
-    # creation when the given file is none (the test case).  Eventually
-    # this code will be much cleaner.
-    datasrc_client = None
-    if db_file is not None:
-        # temporary hardcoded sqlite initialization. Once we decide on
-        # the config specification, we need to update this (TODO)
-        # this may depend on #1207, or any followup ticket created for #1207
-        datasrc_type = "sqlite3"
-        datasrc_config = "{ \"database_file\": \"" + db_file + "\"}"
-        datasrc_client = DataSourceClient(datasrc_type, datasrc_config)
-
-    # Create a TCP connection for the XFR session and perform the operation.
-    sock_map = {}
-    conn = XfrinConnection(sock_map, zone_name, rrclass, datasrc_client,
-                           shutdown_event, master_addrinfo, tsig_key)
-    # XXX: We still need _db_file for temporary workaround in _create_query().
-    # This should be removed when we eliminate the need for the workaround.
-    conn._db_file = db_file
+def __process_xfrin(server, zone_name, rrclass, db_file,
+                    shutdown_event, master_addrinfo, check_soa, tsig_key,
+                    request_type, conn_class):
+    conn = None
+    exception = None
     ret = XFRIN_FAIL
-    if conn.connect_to_master():
-        ret = conn.do_xfrin(check_soa, request_type)
+    try:
+        # Create a data source client used in this XFR session.  Right now we
+        # still assume an sqlite3-based data source, and use both the old and new
+        # data source APIs.  We also need to use a mock client for tests.
+        # For a temporary workaround to deal with these situations, we skip the
+        # creation when the given file is none (the test case).  Eventually
+        # this code will be much cleaner.
+        datasrc_client = None
+        if db_file is not None:
+            # temporary hardcoded sqlite initialization. Once we decide on
+            # the config specification, we need to update this (TODO)
+            # this may depend on #1207, or any followup ticket created for #1207
+            datasrc_type = "sqlite3"
+            datasrc_config = "{ \"database_file\": \"" + db_file + "\"}"
+            datasrc_client = DataSourceClient(datasrc_type, datasrc_config)
+
+        # Create a TCP connection for the XFR session and perform the operation.
+        sock_map = {}
+        # In case we were asked to do IXFR and that one fails, we try again with
+        # AXFR. But only if we could actually connect to the server.
+        #
+        # So we start with retry as True, which is set to false on each attempt.
+        # In the case of connected but failed IXFR, we set it to true once again.
+        retry = True
+        while retry:
+            retry = False
+            conn = conn_class(sock_map, zone_name, rrclass, datasrc_client,
+                              shutdown_event, master_addrinfo, db_file,
+                              tsig_key)
+            conn.init_socket()
+            ret = XFRIN_FAIL
+            if conn.connect_to_master():
+                ret = conn.do_xfrin(check_soa, request_type)
+                if ret == XFRIN_FAIL and request_type == RRType.IXFR():
+                    # IXFR failed for some reason. It might mean the server can't
+                    # handle it, or we don't have the zone or we are out of sync or
+                    # whatever else. So we retry with with AXFR, as it may succeed
+                    # in many such cases.
+                    retry = True
+                    request_type = RRType.AXFR()
+                    logger.warn(XFRIN_XFR_TRANSFER_FALLBACK, conn.zone_str())
+                    conn.close()
+                    conn = None
+
+    except Exception as ex:
+        # If exception happens, just remember it here so that we can re-raise
+        # after cleaning up things.  We don't log it here because we want
+        # eliminate smallest possibility of having an exception in logging
+        # itself.
+        exception = ex
+
+    # asyncore.dispatcher requires explicit close() unless its lifetime
+    # from born to destruction is closed within asyncore.loop, which is not
+    # the case for us.  We always close() here, whether or not do_xfrin
+    # succeeds, and even when we see an unexpected exception.
+    if conn is not None:
+        conn.close()
 
     # Publish the zone transfer result news, so zonemgr can reset the
     # zone timer, and xfrout can notify the zone's slaves if the result
     # is success.
     server.publish_xfrin_news(zone_name, rrclass, ret)
+
+    if exception is not None:
+        raise exception
+
+def process_xfrin(server, xfrin_recorder, zone_name, rrclass, db_file,
+                  shutdown_event, master_addrinfo, check_soa, tsig_key,
+                  request_type, conn_class=XfrinConnection):
+    # Even if it should be rare, the main process of xfrin session can
+    # raise an exception.  In order to make sure the lock in xfrin_recorder
+    # is released in any cases, we delegate the main part to the helper
+    # function in the try block, catch any exceptions, then release the lock.
+    xfrin_recorder.increment(zone_name)
+    exception = None
+    try:
+        __process_xfrin(server, zone_name, rrclass, db_file,
+                        shutdown_event, master_addrinfo, check_soa, tsig_key,
+                        request_type, conn_class)
+    except Exception as ex:
+        # don't log it until we complete decrement().
+        exception = ex
     xfrin_recorder.decrement(zone_name)
 
+    if exception is not None:
+        typestr = "AXFR" if request_type == RRType.AXFR() else "IXFR"
+        logger.error(XFRIN_XFR_PROCESS_FAILURE, typestr, zone_name.to_text(),
+                     str(rrclass), str(exception))
 
 class XfrinRecorder:
     def __init__(self):
@@ -966,10 +1247,24 @@ class ZoneInfo:
         return (self.master_addr.family, socket.SOCK_STREAM,
                 (str(self.master_addr), self.master_port))
 
+def _do_auth_loadzone(server, zone_name, zone_class):
+    msg = auth_loadzone_command(server._module_cc, zone_name, zone_class)
+    if msg is not None:
+        param = msg['command'][1]
+        logger.debug(DBG_XFRIN_TRACE, XFRIN_AUTH_LOADZONE, param["origin"],
+                     param["class"], param["datasrc"])
+        seq = server._send_cc_session.group_sendmsg(msg, AUTH_MODULE_NAME)
+        answer, env = server._send_cc_session.group_recvmsg(False, seq)
+
 class Xfrin:
     def __init__(self):
         self._max_transfers_in = 10
         self._zones = {}
+        # This is a set of (zone/class) tuples (both as strings),
+        # representing the in-memory zones maintaned by Xfrin. It
+        # is used to trigger Auth/in-memory so that it reloads
+        # zones when they have been transfered in
+        self._memory_zones = set()
         self._cc_setup()
         self.recorder = XfrinRecorder()
         self._shutdown_event = threading.Event()
@@ -988,6 +1283,8 @@ class Xfrin:
         self._module_cc.start()
         config_data = self._module_cc.get_full_config()
         self.config_handler(config_data)
+        self._module_cc.add_remote_config(AUTH_SPECFILE_LOCATION,
+                                          self._auth_config_handler)
 
     def _cc_check_command(self):
         '''This is a straightforward wrapper for cc.check_command,
@@ -1034,10 +1331,79 @@ class Xfrin:
 
         return create_answer(0)
 
+    def _auth_config_handler(self, new_config, config_data):
+        # Config handler for changes in Auth configuration
+        self._set_db_file()
+        self._set_memory_zones(new_config, config_data)
+
+    def _clear_memory_zones(self):
+        """Clears the memory_zones set; called before processing the
+           changed list of memory datasource zones that have file type
+           sqlite3"""
+        self._memory_zones.clear()
+
+    def _is_memory_zone(self, zone_name_str, zone_class_str):
+        """Returns true if the given zone/class combination is configured
+           in the in-memory datasource of the Auth process with file type
+           'sqlite3'.
+           Note: this method is not thread-safe. We are considering
+           changing the threaded model here, but if we do not, take
+           care in accessing and updating the memory zone set (or add
+           locks)
+        """
+        # Normalize them first, if either conversion fails, return false
+        # (they won't be in the set anyway)
+        try:
+            zone_name_str = Name(zone_name_str).to_text().lower()
+            zone_class_str = RRClass(zone_class_str).to_text()
+        except Exception:
+            return False
+        return (zone_name_str, zone_class_str) in self._memory_zones
+
+    def _set_memory_zones(self, new_config, config_data):
+        """Part of the _auth_config_handler function, keeps an internal set
+           of zones in the datasources config subset that have 'sqlite3' as
+           their file type.
+           Note: this method is not thread-safe. We are considering
+           changing the threaded model here, but if we do not, take
+           care in accessing and updating the memory zone set (or add
+           locks)
+        """
+        # walk through the data and collect the memory zones
+        # If this causes any exception, assume we were passed bad data
+        # and keep the original set
+        new_memory_zones = set()
+        try:
+            if "datasources" in new_config:
+                for datasource in new_config["datasources"]:
+                    if "class" in datasource:
+                        ds_class = RRClass(datasource["class"])
+                    else:
+                        # Get the default
+                        ds_class = RRClass(config_data.get_default_value(
+                                               "datasources/class"))
+                    if datasource["type"] == "memory":
+                        for zone in datasource["zones"]:
+                            if "filetype" in zone and \
+                               zone["filetype"] == "sqlite3":
+                                zone_name = Name(zone["origin"])
+                                zone_name_str = zone_name.to_text().lower()
+                                new_memory_zones.add((zone_name_str,
+                                                      ds_class.to_text()))
+                # Ok, we can use the data, update our list
+                self._memory_zones = new_memory_zones
+        except Exception:
+            # Something is wrong with the data. If this data even reached us,
+            # we cannot do more than assume the real module has logged and
+            # reported an error. Keep the old set.
+            return
+
     def shutdown(self):
         ''' shutdown the xfrin process. the thread which is doing xfrin should be
         terminated.
         '''
+        self._module_cc.remove_remote_config(AUTH_SPECFILE_LOCATION)
+        self._module_cc.send_stopping()
         self._shutdown_event.set()
         main_thread = threading.currentThread()
         for th in threading.enumerate():
@@ -1059,20 +1425,22 @@ class Xfrin:
                 # a security hole. Once we add the ability to have multiple master addresses,
                 # we should check if it matches one of them, and then use it.)
                 (zone_name, rrclass) = self._parse_zone_name_and_class(args)
+                zone_str = format_zone_str(zone_name, rrclass)
                 zone_info = self._get_zone_info(zone_name, rrclass)
                 notify_addr = self._parse_master_and_port(args, zone_name,
                                                           rrclass)
                 if zone_info is None:
                     # TODO what to do? no info known about zone. defaults?
-                    errmsg = "Got notification to retransfer unknown zone " + zone_name.to_text()
-                    logger.error(XFRIN_RETRANSFER_UNKNOWN_ZONE, zone_name.to_text())
+                    errmsg = "Got notification to retransfer unknown zone " + zone_str
+                    logger.info(XFRIN_RETRANSFER_UNKNOWN_ZONE, zone_str)
                     answer = create_answer(1, errmsg)
                 else:
                     request_type = RRType.AXFR()
                     if zone_info.use_ixfr:
                         request_type = RRType.IXFR()
                     master_addr = zone_info.get_master_addr_info()
-                    if notify_addr == master_addr:
+                    if notify_addr[0] == master_addr[0] and\
+                       notify_addr[2] == master_addr[2]:
                         ret = self.xfrin_start(zone_name,
                                                rrclass,
                                                self._get_db_file(),
@@ -1081,11 +1449,12 @@ class Xfrin:
                                                True)
                         answer = create_answer(ret[0], ret[1])
                     else:
-                        errmsg = "Got notification for " + zone_name.to_text()\
-                               + "from unknown address: " + notify_addr[2][0];
-                        logger.error(XFRIN_NOTIFY_UNKNOWN_MASTER,
-                                     zone_name.to_text(), notify_addr[2][0],
-                                     master_addr[2][0])
+                        notify_addr_str = format_addrinfo(notify_addr)
+                        master_addr_str = format_addrinfo(master_addr)
+                        errmsg = "Got notification for " + zone_str\
+                               + "from unknown address: " + notify_addr_str;
+                        logger.info(XFRIN_NOTIFY_UNKNOWN_MASTER, zone_str,
+                                    notify_addr_str, master_addr_str)
                         answer = create_answer(1, errmsg)
 
             elif command == 'retransfer' or command == 'refresh':
@@ -1166,22 +1535,21 @@ class Xfrin:
         return (addr.family, socket.SOCK_STREAM, (str(addr), port))
 
     def _get_db_file(self):
-        #TODO, the db file path should be got in auth server's configuration
-        # if we need access to this configuration more often, we
-        # should add it on start, and not remove it here
-        # (or, if we have writable ds, we might not need this in
-        # the first place)
-        self._module_cc.add_remote_config(AUTH_SPECFILE_LOCATION)
-        db_file, is_default = self._module_cc.get_remote_config_value("Auth", "database_file")
-        if is_default and "B10_FROM_BUILD" in os.environ:
-            # this too should be unnecessary, but currently the
-            # 'from build' override isn't stored in the config
-            # (and we don't have writable datasources yet)
-            db_file = os.environ["B10_FROM_BUILD"] + os.sep + "bind10_zones.sqlite3"
-        self._module_cc.remove_remote_config(AUTH_SPECFILE_LOCATION)
-        return db_file
+        return self._db_file
 
-    def publish_xfrin_news(self, zone_name, zone_class,  xfr_result):
+    def _set_db_file(self):
+        db_file, is_default =\
+            self._module_cc.get_remote_config_value(AUTH_MODULE_NAME, "database_file")
+        if is_default and "B10_FROM_BUILD" in os.environ:
+            # override the local database setting if it is default and we
+            # are running from the source tree
+            # This should be hidden inside the data source library and/or
+            # done as a configuration, and this special case should be gone).
+            db_file = os.environ["B10_FROM_BUILD"] + os.sep +\
+                      "bind10_zones.sqlite3"
+        self._db_file = db_file
+
+    def publish_xfrin_news(self, zone_name, zone_class, xfr_result):
         '''Send command to xfrout/zone manager module.
         If xfrin has finished successfully for one zone, tell the good
         news(command: zone_new_data_ready) to zone manager and xfrout.
@@ -1190,6 +1558,7 @@ class Xfrin:
         param = {'zone_name': zone_name.to_text(),
                  'zone_class': zone_class.to_text()}
         if xfr_result == XFRIN_OK:
+            _do_auth_loadzone(self, zone_name, zone_class)
             msg = create_command(notify_out.ZONE_NEW_DATA_READY_CMD, param)
             # catch the exception, in case msgq has been killed.
             try:
@@ -1208,8 +1577,9 @@ class Xfrin:
                     pass        # for now we just ignore the failure
             except socket.error as err:
                 logger.error(XFRIN_MSGQ_SEND_ERROR, XFROUT_MODULE_NAME, ZONE_MANAGER_MODULE_NAME)
+
         else:
-            msg = create_command(ZONE_XFRIN_FAILED, param)
+            msg = create_command(notify_out.ZONE_XFRIN_FAILED, param)
             # catch the exception, in case msgq has been killed.
             try:
                 seq = self._send_cc_session.group_sendmsg(msg, ZONE_MANAGER_MODULE_NAME)
@@ -1222,6 +1592,7 @@ class Xfrin:
                 logger.error(XFRIN_MSGQ_SEND_ERROR_ZONE_MANAGER, ZONE_MANAGER_MODULE_NAME)
 
     def startup(self):
+        logger.debug(DBG_PROCESS, XFRIN_STARTED)
         while not self._shutdown_event.is_set():
             self._cc_check_command()
 

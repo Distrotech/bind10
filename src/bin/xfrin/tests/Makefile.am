@@ -10,7 +10,7 @@ LIBRARY_PATH_PLACEHOLDER =
 if SET_ENV_LIBRARY_PATH
 LIBRARY_PATH_PLACEHOLDER += $(ENV_LIBRARY_PATH)=$(abs_top_builddir)/src/lib/cryptolink/.libs:$(abs_top_builddir)/src/lib/dns/.libs:$(abs_top_builddir)/src/lib/dns/python/.libs:$(abs_top_builddir)/src/lib/cc/.libs:$(abs_top_builddir)/src/lib/config/.libs:$(abs_top_builddir)/src/lib/log/.libs:$(abs_top_builddir)/src/lib/util/.libs:$(abs_top_builddir)/src/lib/exceptions/.libs:$(abs_top_builddir)/src/lib/util/io/.libs:$(abs_top_builddir)/src/lib/datasrc/.libs:$$$(ENV_LIBRARY_PATH)
 else
-# sunstudio needs the ds path even if not all paths are necessary
+# Some systems need the ds path even if not all paths are necessary
 LIBRARY_PATH_PLACEHOLDER += $(ENV_LIBRARY_PATH)=$(abs_top_builddir)/src/lib/datasrc/.libs
 endif
 
@@ -27,5 +27,6 @@ endif
 	PYTHONPATH=$(abs_top_builddir)/src/lib/dns/python/.libs:$(abs_top_builddir)/src/bin/xfrin:$(COMMON_PYTHON_PATH) \
 	TESTDATASRCDIR=$(abs_top_srcdir)/src/bin/xfrin/tests/testdata/ \
 	TESTDATAOBJDIR=$(abs_top_builddir)/src/bin/xfrin/tests/testdata/ \
+	B10_FROM_BUILD=$(abs_top_builddir) \
 	$(PYCOVERAGE_RUN) $(abs_srcdir)/$$pytest || exit ; \
 	done

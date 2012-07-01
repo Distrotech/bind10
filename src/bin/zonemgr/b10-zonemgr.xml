@@ -2,7 +2,7 @@
                "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
 	       [<!ENTITY mdash "&#8212;">]>
 <!--
- - Copyright (C) 2010-2011  Internet Systems Consortium, Inc. ("ISC")
+ - Copyright (C) 2010-2012  Internet Systems Consortium, Inc. ("ISC")
  -
  - Permission to use, copy, modify, and/or distribute this software for any
  - purpose with or without fee is hereby granted, provided that the above
@@ -20,7 +20,7 @@
 <refentry>
 
   <refentryinfo>
-    <date>May 19, 2011</date>
+    <date>February 28, 2012</date>
   </refentryinfo>
 
   <refmeta>
@@ -36,7 +36,7 @@
 
   <docinfo>
     <copyright>
-      <year>2010-2011</year>
+      <year>2010-2012</year>
       <holder>Internet Systems Consortium, Inc. ("ISC")</holder>
     </copyright>
   </docinfo>
@@ -107,15 +107,20 @@
 
     <para>
       <varname>refresh_jitter</varname>
+      is used to provide a time range for randomizing the refresh
+      and retry timers to help avoid many zones needing to do a refresh
+      or retry at the same time.
       This value is a real number.
-      The maximum amount is 0.5.
-      The default is 0.25.
+      The maximum amount is 0.5 (the new timer will be within
+      half the original time).
+      The default is 0.25 (up to a quarter sooner).
+      Set to 0 to disable this jitter.
     </para>
-<!-- TODO: needs to be documented -->
-<!-- TODO:      Set to 0 to disable the jitter.   -->
 
     <para>
       <varname>reload_jitter</varname>
+<!--      is used to provide a slight random variation -->
+<!-- TODO: ask what the purpose of this is and why 0.75. -->
       This value is a real number.
       The default is 0.75.
     </para>
@@ -181,7 +186,10 @@
 
     <para>
       <command>shutdown</command> exits <command>b10-zonemgr</command>.
-      (Note that the BIND 10 boss process will restart this service.)
+      This has an optional <varname>pid</varname> argument to
+      select the process ID to stop.
+      (Note that the BIND 10 boss process may restart this service
+      if configured.)
     </para>
 
     <para>
@@ -224,14 +232,6 @@
 
   </refsect1>
 -->
-<!--
-  <refsect1>
-    <title>FILES</title>
-    <para>
-    <filename>/tmp/auth_xfrout_conn</filename>
-    </para>
-  </refsect1>
--->
 
   <refsect1>
     <title>SEE ALSO</title>
@@ -247,9 +247,6 @@
       </citerefentry>,
       <citerefentry>
         <refentrytitle>b10-xfrin</refentrytitle><manvolnum>8</manvolnum>
-      </citerefentry>,
-      <citerefentry>
-        <refentrytitle>b10-xfrout</refentrytitle><manvolnum>8</manvolnum>
       </citerefentry>,
       <citerefentry>
         <refentrytitle>bind10</refentrytitle><manvolnum>8</manvolnum>

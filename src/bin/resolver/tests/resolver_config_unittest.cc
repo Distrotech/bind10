@@ -17,13 +17,23 @@
 #ifdef _WIN32
 #include <ws2tcpip.h>
 #include <mswsock.h>
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
 #endif
 
+#include <cerrno>
+#include <cstring>
 #include <string>
 
 #include <boost/scoped_ptr.hpp>
+#include <boost/noncopyable.hpp>
 
 #include <gtest/gtest.h>
+
+#include <exceptions/exceptions.h>
 
 #include <cc/data.h>
 
@@ -43,7 +53,9 @@
 
 #include <dns/tests/unittest_util.h>
 #include <testutils/srv_test.h>
+#include <testutils/mockups.h>
 #include <testutils/portconfig.h>
+#include <testutils/socket_request.h>
 
 using namespace std;
 using boost::scoped_ptr;
@@ -57,18 +69,32 @@ using namespace isc::server_common;
 using isc::UnitTestUtil;
 
 namespace {
+const char* const TEST_ADDRESS = "127.0.0.1";
+const char* const TEST_ADDRESS_FAIL = "192.0.2.2";
+const char* const TEST_PORT = "53210";
+
+// An internal exception class
+class TestConfigError : public isc::Exception {
+public:
+    TestConfigError(const char *file, size_t line, const char *what):
+        isc::Exception(file, line, what) {}
+};
+
 class ResolverConfig : public ::testing::Test {
 protected:
-    IOService ios;
-    DNSService dnss;
+    MockDNSService dnss;
     Resolver server;
     scoped_ptr<const IOEndpoint> endpoint;
     scoped_ptr<const IOMessage> query_message;
     scoped_ptr<const Client> client;
     scoped_ptr<const RequestContext> request;
-    ResolverConfig() : dnss(ios, NULL, NULL, NULL) {
+    ResolverConfig() :
+        // The empty string is expected value of the parameter of
+        // requestSocket, not the app_name (there's no fallback, it checks
+        // the empty string is passed).
+        sock_requestor_(dnss, address_store_, 53210, "")
+    {
         server.setDNSService(dnss);
-        server.setConfigured();
     }
     const RequestContext& createRequest(const string& source_addr) {
         endpoint.reset(IOEndpoint::create(IPPROTO_UDP, IOAddress(source_addr),
@@ -82,6 +108,8 @@ protected:
         return (*request);
     }
     void invalidTest(const string &JSON, const string& name);
+    isc::server_common::portconfig::AddressList address_store_;
+    isc::testutils::TestSocketRequestor sock_requestor_;
 };
 
 TEST_F(ResolverConfig, forwardAddresses) {
@@ -160,6 +188,134 @@ TEST_F(ResolverConfig, rootAddressConfig) {
     EXPECT_EQ(0, server.getRootAddresses().size());
 }
 
+// The following two are helper classes to manage some temporary system
+// resources in an RAII manner.
+class ScopedAddrInfo : public boost::noncopyable {
+public:
+    ScopedAddrInfo(struct addrinfo* ai) : ai_(ai) {}
+    ~ScopedAddrInfo() { freeaddrinfo(ai_);}
+private:
+    struct addrinfo* ai_;
+};
+
+struct ScopedSocket : public boost::noncopyable {
+#ifdef _WIN32
+public:
+    ScopedSocket(SOCKET fd) : fd_(fd) {}
+    ~ScopedSocket() { closesocket(fd_); }
+private:
+    const SOCKET fd_;
+#else
+public:
+    ScopedSocket(int fd) : fd_(fd) {}
+    ~ScopedSocket() { close(fd_); }
+private:
+    const int fd_;
+#endif
+};
+
+#ifdef _WIN32
+SOCKET
+#else
+int
+#endif
+createSocket(const char* address, const char* port) {
+    struct addrinfo hints, *res;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
+    const int error = getaddrinfo(address, port, &hints, &res);
+    if (error != 0) {
+        isc_throw(TestConfigError, "getaddrinfo failed: " <<
+                  gai_strerror(error));
+    }
+    ScopedAddrInfo scoped_res(res);
+#ifdef _WIN32
+    const SOCKET s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if (s == INVALID_SOCKET) {
+        isc_throw(TestConfigError, "socket system call failed: " <<
+                  strerror(WSAGetLastError()));
+    }
+    if (bind(s, res->ai_addr, res->ai_addrlen) == -1) {
+        closesocket(s);
+        isc_throw(TestConfigError, "bind system call failed: " <<
+                  strerror(WSAGetLastError()));
+    }
+#else
+    const int s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if (s == -1) {
+        isc_throw(TestConfigError, "socket system call failed: " <<
+                  strerror(errno));
+    }
+    if (bind(s, res->ai_addr, res->ai_addrlen) == -1) {
+        close(s);
+        isc_throw(TestConfigError, "bind system call failed: " <<
+                  strerror(errno));
+    }
+#endif
+    return (s);
+}
+
+void
+configAnswerCheck(ConstElementPtr config_answer, bool expect_success) {
+    EXPECT_EQ(Element::map, config_answer->getType());
+    EXPECT_TRUE(config_answer->contains("result"));
+
+    ConstElementPtr result = config_answer->get("result");
+    EXPECT_EQ(Element::list, result->getType());
+    EXPECT_EQ(expect_success ? 0 : 1, result->get(0)->intValue());
+}
+
+TEST_F(ResolverConfig, listenOnConfig) {
+    ConstElementPtr config(Element::fromJSON("{"
+                                             "\"listen_on\": ["
+                                             " {"
+                                             "    \"address\": \"" +
+                                             string(TEST_ADDRESS) + "\","
+                                             "    \"port\": " +
+                                             string(TEST_PORT) + "}]}"));
+    configAnswerCheck(server.updateConfig(config), true);
+}
+
+TEST_F(ResolverConfig, listenOnConfigFail) {
+    // Create and bind a socket that would make the subsequent listen_on fail
+    ScopedSocket sock(createSocket(TEST_ADDRESS, TEST_PORT));
+
+    ConstElementPtr config(Element::fromJSON("{"
+                                             "\"listen_on\": ["
+                                             " {"
+                                             "    \"address\": \"" +
+                                             string(TEST_ADDRESS_FAIL) + "\","
+                                             "    \"port\": " +
+                                             string(TEST_PORT) + "}]}"));
+    configAnswerCheck(server.updateConfig(config), false);
+}
+
+TEST_F(ResolverConfig, listenOnAndOtherConfig) {
+    // Create and bind a socket that would make the subsequent listen_on fail
+    ScopedSocket sock(createSocket(TEST_ADDRESS, TEST_PORT));
+
+    // We are going to install a pair of "root_addresses" and "listen_on"
+    // in a single update.
+    const string config_str("{\"root_addresses\": ["
+                            " {\"address\": \"192.0.2.1\","
+                            "   \"port\": 53}], "
+                            "\"listen_on\": ["
+                            " {\"address\": \"" + string(TEST_ADDRESS_FAIL) + "\","
+                            "  \"port\": " + string(TEST_PORT) + "}]}");
+    // Normally, if listen_on fails the rest of the config parameters will
+    // be ignored.
+    ConstElementPtr config(Element::fromJSON(config_str));
+    configAnswerCheck(server.updateConfig(config), false);
+    EXPECT_EQ(0, server.getRootAddresses().size());
+
+    // On startup the other parameters will be installed anyway.
+    configAnswerCheck(server.updateConfig(config, true), false);
+    EXPECT_EQ(1, server.getRootAddresses().size());
+}
+
 void
 ResolverConfig::invalidTest(const string &JSON, const string& name) {
     isc::testutils::portconfig::configRejected(server, JSON, name);
@@ -193,6 +349,29 @@ TEST_F(ResolverConfig, invalidForwardAddresses) {
 // Try setting the addresses directly
 TEST_F(ResolverConfig, listenAddresses) {
     isc::testutils::portconfig::listenAddresses(server);
+
+    // listenAddressConfig should have attempted to create 4 DNS server
+    // objects: two IP addresses, TCP and UDP for each.  For UDP, the "SYNC_OK"
+    // option (or anything else) should have NOT been specified.
+    EXPECT_EQ(2, dnss.getTCPFdParams().size());
+    EXPECT_EQ(2, dnss.getUDPFdParams().size());
+    EXPECT_EQ(DNSService::SERVER_DEFAULT, dnss.getUDPFdParams().at(0).options);
+    EXPECT_EQ(DNSService::SERVER_DEFAULT, dnss.getUDPFdParams().at(1).options);
+
+    // Check it requests the correct addresses
+    const char* tokens[] = {
+        "TCP:127.0.0.1:53210:1",
+        "UDP:127.0.0.1:53210:2",
+        "TCP:::1:53210:3",
+        "UDP:::1:53210:4",
+        NULL
+    };
+    sock_requestor_.checkTokens(tokens, sock_requestor_.given_tokens_,
+                                "Given tokens");
+    // It returns back to empty set of addresses afterwards, so
+    // they should be released
+    sock_requestor_.checkTokens(tokens, sock_requestor_.released_tokens_,
+                                "Released tokens");
 }
 
 // Try setting some addresses and a rollback

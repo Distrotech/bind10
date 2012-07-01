@@ -44,7 +44,6 @@ pkglibexec_PROGRAMS = b10-auth
 b10_auth_SOURCES = query.cc query.h
 b10_auth_SOURCES += auth_srv.cc auth_srv.h
 b10_auth_SOURCES += auth_log.cc auth_log.h
-b10_auth_SOURCES += change_user.cc change_user.h
 b10_auth_SOURCES += auth_config.cc auth_config.h
 b10_auth_SOURCES += command.cc command.h
 b10_auth_SOURCES += common.h common.cc
@@ -52,9 +51,9 @@ b10_auth_SOURCES += statistics.cc statistics.h
 b10_auth_SOURCES += main.cc
 # This is a temporary workaround for #1206, where the InMemoryClient has been
 # moved to an ldopened library. We could add that library to LDADD, but that
-# is nonportable. When #1207 is done this becomes moot anyway, and the
-# specific workaround is not needed anymore, so we can then remove this
-# line again.
+# is nonportable. This should've been moot after #1207, but there is still
+# one dependency; the in-memory-specific zone loader call is still in
+# auth.
 b10_auth_SOURCES += ${top_srcdir}/src/lib/datasrc/memory_datasrc.cc
 
 nodist_b10_auth_SOURCES = auth_messages.h auth_messages.cc
@@ -63,6 +62,7 @@ EXTRA_DIST += auth_messages.mes
 b10_auth_LDADD =  $(top_builddir)/src/lib/datasrc/libdatasrc.la
 b10_auth_LDADD += $(top_builddir)/src/lib/dns/libdns++.la
 b10_auth_LDADD += $(top_builddir)/src/lib/util/libutil.la
+b10_auth_LDADD += $(top_builddir)/src/lib/util/io/libutil_io.la
 b10_auth_LDADD += $(top_builddir)/src/lib/config/libcfgclient.la
 b10_auth_LDADD += $(top_builddir)/src/lib/cc/libcc.la
 b10_auth_LDADD += $(top_builddir)/src/lib/exceptions/libexceptions.la
@@ -71,6 +71,7 @@ b10_auth_LDADD += $(top_builddir)/src/lib/asiolink/libasiolink.la
 b10_auth_LDADD += $(top_builddir)/src/lib/log/liblog.la
 b10_auth_LDADD += $(top_builddir)/src/lib/xfr/libxfr.la
 b10_auth_LDADD += $(top_builddir)/src/lib/server_common/libserver_common.la
+b10_auth_LDADD += $(top_builddir)/src/lib/statistics/libstatistics.la
 b10_auth_LDADD += $(SQLITE_LIBS)
 
 # TODO: config.h.in is wrong because doesn't honor pkgdatadir

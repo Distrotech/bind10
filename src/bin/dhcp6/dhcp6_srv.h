@@ -1,4 +1,4 @@
-// Copyright (C) 2011  Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2011-2012 Internet Systems Consortium, Inc. ("ISC")
 //
 // Permission to use, copy, modify, and/or distribute this software for any
 // purpose with or without fee is hereby granted, provided that the above
@@ -15,10 +15,10 @@
 #ifndef DHCPV6_SRV_H
 #define DHCPV6_SRV_H
 
-#include <boost/shared_ptr.hpp>
 #include <boost/noncopyable.hpp>
-#include "dhcp/pkt6.h"
-#include "dhcp/option.h"
+#include <dhcp/dhcp6.h>
+#include <dhcp/pkt6.h>
+#include <dhcp/option.h>
 #include <iostream>
 
 namespace isc {
@@ -35,22 +35,27 @@ namespace dhcp {
 class Dhcpv6Srv : public boost::noncopyable {
 
 public:
+
+    /// @brief Minimum length of a MAC address to be used in DUID generation.
+    static const size_t MIN_MAC_LEN = 6;
+
     /// @brief Default constructor.
     ///
     /// Instantiates necessary services, required to run DHCPv6 server.
     /// In particular, creates IfaceMgr that will be responsible for
     /// network interaction. Will instantiate lease manager, and load
     /// old or create new DUID.
-    Dhcpv6Srv();
+    ///
+    /// @param port port on will all sockets will listen
+    Dhcpv6Srv(uint16_t port = DHCP6_SERVER_PORT);
 
     /// @brief Destructor. Used during DHCPv6 service shutdown.
-    ~Dhcpv6Srv();
+    virtual ~Dhcpv6Srv();
 
     /// @brief Returns server-intentifier option
     ///
     /// @return server-id option
-    boost::shared_ptr<isc::dhcp::Option>
-    getServerID() { return serverid_; }
+    OptionPtr getServerID() { return serverid_; }
 
     /// @brief Main server processing loop.
     ///
@@ -77,8 +82,7 @@ protected:
     /// @param solicit SOLICIT message received from client
     ///
     /// @return ADVERTISE, REPLY message or NULL
-    boost::shared_ptr<Pkt6>
-    processSolicit(boost::shared_ptr<Pkt6> solicit);
+    Pkt6Ptr processSolicit(const Pkt6Ptr& solicit);
 
     /// @brief Processes incoming REQUEST and returns REPLY response.
     ///
@@ -91,44 +95,77 @@ protected:
     /// @param request a message received from client
     ///
     /// @return REPLY message or NULL
-    boost::shared_ptr<Pkt6>
-    processRequest(boost::shared_ptr<Pkt6> request);
+    Pkt6Ptr processRequest(const Pkt6Ptr& request);
 
     /// @brief Stub function that will handle incoming RENEW messages.
     ///
     /// @param renew message received from client
-    boost::shared_ptr<Pkt6>
-    processRenew(boost::shared_ptr<Pkt6> renew);
+    Pkt6Ptr processRenew(const Pkt6Ptr& renew);
 
     /// @brief Stub function that will handle incoming REBIND messages.
     ///
     /// @param rebind message received from client
-    boost::shared_ptr<Pkt6>
-    processRebind(boost::shared_ptr<Pkt6> rebind);
+    Pkt6Ptr processRebind(const Pkt6Ptr& rebind);
 
     /// @brief Stub function that will handle incoming CONFIRM messages.
     ///
     /// @param confirm message received from client
-    boost::shared_ptr<Pkt6>
-    processConfirm(boost::shared_ptr<Pkt6> confirm);
+    Pkt6Ptr processConfirm(const Pkt6Ptr& confirm);
 
     /// @brief Stub function that will handle incoming RELEASE messages.
     ///
     /// @param release message received from client
-    boost::shared_ptr<Pkt6>
-    processRelease(boost::shared_ptr<Pkt6> release);
+    Pkt6Ptr processRelease(const Pkt6Ptr& release);
 
     /// @brief Stub function that will handle incoming DECLINE messages.
     ///
     /// @param decline message received from client
-    boost::shared_ptr<Pkt6>
-    processDecline(boost::shared_ptr<Pkt6> decline);
+    Pkt6Ptr processDecline(const Pkt6Ptr& decline);
 
     /// @brief Stub function that will handle incoming INF-REQUEST messages.
     ///
     /// @param infRequest message received from client
-    boost::shared_ptr<Pkt6>
-    processInfRequest(boost::shared_ptr<Pkt6> infRequest);
+    Pkt6Ptr processInfRequest(const Pkt6Ptr& infRequest);
+
+    /// @brief Copies required options from client message to server answer
+    ///
+    /// Copies options that must appear in any server response (ADVERTISE, REPLY)
+    /// to client's messages (SOLICIT, REQUEST, RENEW, REBIND, DECLINE, RELEASE).
+    /// One notable example is client-id. Other options may be copied as required.
+    ///
+    /// @param question client's message (options will be copied from here)
+    /// @param answer server's message (options will be copied here)
+    void copyDefaultOptions(const Pkt6Ptr& question, Pkt6Ptr& answer);
+
+    /// @brief Appends default options to server's answer.
+    ///
+    /// Adds required options to server's answer. In particular, server-id
+    /// is added. Possibly other mandatory options will be added, depending
+    /// on type (or content) of client message.
+    ///
+    /// @param question client's message
+    /// @param answer server's message (options will be added here)
+    void appendDefaultOptions(const Pkt6Ptr& question, Pkt6Ptr& answer);
+
+    /// @brief Appends requested options to server's answer.
+    ///
+    /// Appends options requested by client to the server's answer.
+    /// TODO: This method is currently a stub. It just appends DNS-SERVERS
+    /// option.
+    ///
+    /// @param question client's message
+    /// @param answer server's message (options will be added here)
+    void appendRequestedOptions(const Pkt6Ptr& question, Pkt6Ptr& answer);
+
+    /// @brief Assigns leases.
+    ///
+    /// TODO: This method is currently a stub. It just appends one
+    /// hardcoded lease. It supports addresses (IA_NA) only. It does NOT
+    /// support temporary addresses (IA_TA) nor prefixes (IA_PD).
+    ///
+    /// @param question client's message (with requested IA_NA)
+    /// @param answer server's message (IA_NA options will be added here)
+    void assignLeases(const Pkt6Ptr& question, Pkt6Ptr& answer);
 
     /// @brief Sets server-identifier.
     ///

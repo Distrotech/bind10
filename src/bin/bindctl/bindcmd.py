@@ -23,6 +23,7 @@ from cmd import Cmd
 from bindctl.exception import *
 from bindctl.moduleinfo import *
 from bindctl.cmdparse import BindCmdParse
+from bindctl import command_sets
 from xml.dom import minidom
 import isc
 import isc.cc.data
@@ -37,6 +38,7 @@ from hashlib import sha1
 import csv
 import pwd
 import getpass
+import copy
 
 try:
     from collections import OrderedDict
@@ -46,6 +48,16 @@ except ImportError:
 # if we have readline support, use that, otherwise use normal stdio
 try:
     import readline
+    # This is a fix for the problem described in
+    # http://bind10.isc.org/ticket/1345
+    # If '-' is seen as a word-boundary, the final completion-step
+    # (as handled by the cmd module, and hence outside our reach) can
+    # mistakenly add data twice, resulting in wrong completion results
+    # The solution is to remove it.
+    delims = readline.get_completer_delims()
+    delims = delims.replace('-', '')
+    readline.set_completer_delims(delims)
+
     my_readline = readline.get_line_buffer
 except ImportError:
     my_readline = sys.stdin.readline
@@ -61,21 +73,21 @@ Type \"<module_name> <command_name> help\" for help on the specific command.
 \nAvailable module names: """
 
 class ValidatedHTTPSConnection(http.client.HTTPSConnection):
-    '''Overrides HTTPSConnection to support certification 
+    '''Overrides HTTPSConnection to support certification
     validation. '''
     def __init__(self, host, ca_certs):
         http.client.HTTPSConnection.__init__(self, host)
         self.ca_certs = ca_certs
 
     def connect(self):
-        ''' Overrides the connect() so that we do 
+        ''' Overrides the connect() so that we do
         certificate validation. '''
         sock = socket.create_connection((self.host, self.port),
                                         self.timeout)
         if self._tunnel_host:
             self.sock = sock
             self._tunnel()
-       
+
         req_cert = ssl.CERT_NONE
         if self.ca_certs:
             req_cert = ssl.CERT_REQUIRED
@@ -85,7 +97,7 @@ class ValidatedHTTPSConnection(http.client.HTTPSConnection):
                                     ca_certs=self.ca_certs)
 
 class BindCmdInterpreter(Cmd):
-    """simple bindctl example."""    
+    """simple bindctl example."""
 
     def __init__(self, server_port='localhost:8080', pem_file=None,
                  csv_file_dir=None):
@@ -118,29 +130,33 @@ class BindCmdInterpreter(Cmd):
                                       socket.gethostname())).encode())
         digest = session_id.hexdigest()
         return digest
-    
+
     def run(self):
         '''Parse commands from user and send them to cmdctl. '''
         try:
             if not self.login_to_cmdctl():
-                return
+                return 1
 
             self.cmdloop()
             print('\nExit from bindctl')
+            return 0
         except FailToLogin as err:
             # error already printed when this was raised, ignoring
-            pass
+            return 1
         except KeyboardInterrupt:
             print('\nExit from bindctl')
+            return 0
         except socket.error as err:
             print('Failed to send request, the connection is closed')
+            return 1
         except http.client.CannotSendRequest:
             print('Can not send request, the connection is busy')
+            return 1
 
     def _get_saved_user_info(self, dir, file_name):
-        ''' Read all the available username and password pairs saved in 
+        ''' Read all the available username and password pairs saved in
         file(path is "dir + file_name"), Return value is one list of elements
-        ['name', 'password'], If get information failed, empty list will be 
+        ['name', 'password'], If get information failed, empty list will be
         returned.'''
         if (not dir) or (not os.path.exists(dir)):
             return []
@@ -166,7 +182,7 @@ class BindCmdInterpreter(Cmd):
             if not os.path.exists(dir):
                 os.mkdir(dir, 0o700)
 
-            csvfilepath = dir + file_name 
+            csvfilepath = dir + file_name
             csvfile = open(csvfilepath, 'w')
             os.chmod(csvfilepath, 0o600)
             writer = csv.writer(csvfile)
@@ -180,7 +196,7 @@ class BindCmdInterpreter(Cmd):
         return True
 
     def login_to_cmdctl(self):
-        '''Login to cmdctl with the username and password inputted 
+        '''Login to cmdctl with the username and password inputted
         from user. After the login is sucessful, the username and
         password will be saved in 'default_user.csv', when run the next
         time, username and password saved in 'default_user.csv' will be
@@ -246,14 +262,14 @@ class BindCmdInterpreter(Cmd):
             if self.login_to_cmdctl():
                 # successful, so try send again
                 status, reply_msg = self._send_message(url, body)
-            
+
         if reply_msg:
             return json.loads(reply_msg.decode())
         else:
             return {}
-       
 
-    def send_POST(self, url, post_param = None): 
+
+    def send_POST(self, url, post_param = None):
         '''Send POST request to cmdctl, session id is send with the name
         'cookie' in header.
         Format: /module_name/command_name
@@ -305,6 +321,8 @@ class BindCmdInterpreter(Cmd):
                                   param_spec = arg)
                 if ("item_default" in arg):
                     param.default = arg["item_default"]
+                if ("item_description" in arg):
+                    param.desc = arg["item_description"]
                 cmd.add_param(param)
             module.add_command(cmd)
         self.add_module_info(module)
@@ -312,12 +330,12 @@ class BindCmdInterpreter(Cmd):
     def _validate_cmd(self, cmd):
         '''validate the parameters and merge some parameters together,
         merge algorithm is based on the command line syntax, later, if
-        a better command line syntax come out, this function should be 
-        updated first.        
+        a better command line syntax come out, this function should be
+        updated first.
         '''
         if not cmd.module in self.modules:
             raise CmdUnknownModuleSyntaxError(cmd.module)
-        
+
         module_info = self.modules[cmd.module]
         if not module_info.has_command_with_name(cmd.command):
             raise CmdUnknownCmdSyntaxError(cmd.module, cmd.command)
@@ -325,17 +343,17 @@ class BindCmdInterpreter(Cmd):
         command_info = module_info.get_command_with_name(cmd.command)
         manda_params = command_info.get_mandatory_param_names()
         all_params = command_info.get_param_names()
-        
+
         # If help is entered, don't do further parameter validation.
         for val in cmd.params.keys():
             if val == "help":
                 return
-        
-        params = cmd.params.copy()       
-        if not params and manda_params:            
-            raise CmdMissParamSyntaxError(cmd.module, cmd.command, manda_params[0])            
+
+        params = cmd.params.copy()
+        if not params and manda_params:
+            raise CmdMissParamSyntaxError(cmd.module, cmd.command, manda_params[0])
         elif params and not all_params:
-            raise CmdUnknownParamSyntaxError(cmd.module, cmd.command, 
+            raise CmdUnknownParamSyntaxError(cmd.module, cmd.command,
                                              list(params.keys())[0])
         elif params:
             param_name = None
@@ -347,12 +365,12 @@ class BindCmdInterpreter(Cmd):
                 if type(name) == int:
                     # lump all extraneous arguments together as one big final one
                     # todo: check if last param type is a string?
-                    if (param_count > 2):
-                        while (param_count > len(command_info.params) - 1):
-                            params[param_count - 2] += params[param_count - 1]
-                            del(params[param_count - 1])
-                            param_count = len(params)
-                            cmd.params = params.copy()
+                    while (param_count > 2 and
+                           param_count > len(command_info.params) - 1):
+                        params[param_count - 2] += " " + params[param_count - 1]
+                        del(params[param_count - 1])
+                        param_count = len(params)
+                        cmd.params = params.copy()
 
                     # (-1, help is always in the all_params list)
                     if name >= len(all_params) - 1:
@@ -366,7 +384,7 @@ class BindCmdInterpreter(Cmd):
                         param_name = command_info.get_param_name_by_position(name, param_count)
                         cmd.params[param_name] = cmd.params[name]
                         del cmd.params[name]
-                        
+
                 elif not name in all_params:
                     raise CmdUnknownParamSyntaxError(cmd.module, cmd.command, name)
 
@@ -375,40 +393,34 @@ class BindCmdInterpreter(Cmd):
                 if not name in params and not param_nr in params:
                     raise CmdMissParamSyntaxError(cmd.module, cmd.command, name)
                 param_nr += 1
-        
+
         # Convert parameter value according parameter spec file.
-        # Ignore check for commands belongs to module 'config'
-        if cmd.module != CONFIG_MODULE_NAME:
+        # Ignore check for commands belongs to module 'config' or 'execute
+        if cmd.module != CONFIG_MODULE_NAME and\
+           cmd.module != command_sets.EXECUTE_MODULE_NAME:
             for param_name in cmd.params:
                 param_spec = command_info.get_param_with_name(param_name).param_spec
                 try:
                     cmd.params[param_name] = isc.config.config_data.convert_type(param_spec, cmd.params[param_name])
                 except isc.cc.data.DataTypeError as e:
-                    raise isc.cc.data.DataTypeError('Invalid parameter value for \"%s\", the type should be \"%s\" \n' 
+                    raise isc.cc.data.DataTypeError('Invalid parameter value for \"%s\", the type should be \"%s\" \n'
                                                      % (param_name, param_spec['item_type']) + str(e))
-    
+
     def _handle_cmd(self, cmd):
         '''Handle a command entered by the user'''
         if cmd.command == "help" or ("help" in cmd.params.keys()):
             self._handle_help(cmd)
         elif cmd.module == CONFIG_MODULE_NAME:
-            try:
-                self.apply_config_cmd(cmd)
-            except isc.cc.data.DataTypeError as dte:
-                print("Error: " + str(dte))
-            except isc.cc.data.DataNotFoundError as dnfe:
-                print("Error: " + str(dnfe))
-            except isc.cc.data.DataAlreadyPresentError as dape:
-                print("Error: " + str(dape))
-            except KeyError as ke:
-                print("Error: missing " + str(ke))
+            self.apply_config_cmd(cmd)
+        elif cmd.module == command_sets.EXECUTE_MODULE_NAME:
+            self.apply_execute_cmd(cmd)
         else:
             self.apply_cmd(cmd)
 
     def add_module_info(self, module_info):
         '''Add the information about one module'''
         self.modules[module_info.name] = module_info
-        
+
     def get_module_names(self):
         '''Return the names of all known modules'''
         return list(self.modules.keys())
@@ -440,15 +452,15 @@ class BindCmdInterpreter(Cmd):
                     subsequent_indent="    " +
                     " " * CONST_BINDCTL_HELP_INDENT_WIDTH,
                     width=70))
-    
+
     def onecmd(self, line):
         if line == 'EOF' or line.lower() == "quit":
             self.conn.close()
             return True
-            
+
         if line == 'h':
             line = 'help'
-        
+
         Cmd.onecmd(self, line)
 
     def remove_prefix(self, list, prefix):
@@ -476,7 +488,7 @@ class BindCmdInterpreter(Cmd):
                 cmd = BindCmdParse(cur_line)
                 if not cmd.params and text:
                     hints = self._get_command_startswith(cmd.module, text)
-                else:                       
+                else:
                     hints = self._get_param_startswith(cmd.module, cmd.command,
                                                        text)
                     if cmd.module == CONFIG_MODULE_NAME:
@@ -492,8 +504,8 @@ class BindCmdInterpreter(Cmd):
 
             except CmdMissCommandNameFormatError as e:
                 if not text.strip(): # command name is empty
-                    hints = self.modules[e.module].get_command_names()                    
-                else: 
+                    hints = self.modules[e.module].get_command_names()
+                else:
                     hints = self._get_module_startswith(text)
 
             except CmdCommandNameFormatError as e:
@@ -507,44 +519,43 @@ class BindCmdInterpreter(Cmd):
                 hints = []
 
             self.hint = hints
-            #self._append_space_to_hint()
 
         if state < len(self.hint):
             return self.hint[state]
         else:
             return None
-            
 
-    def _get_module_startswith(self, text):       
+
+    def _get_module_startswith(self, text):
         return [module
-                for module in self.modules 
+                for module in self.modules
                 if module.startswith(text)]
 
 
     def _get_command_startswith(self, module, text):
-        if module in self.modules:            
-            return [command
-                    for command in self.modules[module].get_command_names() 
-                    if command.startswith(text)]
-        
-        return []                    
-                        
-
-    def _get_param_startswith(self, module, command, text):        
         if module in self.modules:
-            module_info = self.modules[module]            
-            if command in module_info.get_command_names():                
+            return [command
+                    for command in self.modules[module].get_command_names()
+                    if command.startswith(text)]
+
+        return []
+
+
+    def _get_param_startswith(self, module, command, text):
+        if module in self.modules:
+            module_info = self.modules[module]
+            if command in module_info.get_command_names():
                 cmd_info = module_info.get_command_with_name(command)
-                params = cmd_info.get_param_names() 
+                params = cmd_info.get_param_names()
                 hint = []
-                if text:    
+                if text:
                     hint = [val for val in params if val.startswith(text)]
                 else:
                     hint = list(params)
-                
+
                 if len(hint) == 1 and hint[0] != "help":
-                    hint[0] = hint[0] + " ="    
-                
+                    hint[0] = hint[0] + " ="
+
                 return hint
 
         return []
@@ -561,24 +572,32 @@ class BindCmdInterpreter(Cmd):
             self._print_correct_usage(err)
         except isc.cc.data.DataTypeError as err:
             print("Error! ", err)
-            
-    def _print_correct_usage(self, ept):        
+        except isc.cc.data.DataTypeError as dte:
+            print("Error: " + str(dte))
+        except isc.cc.data.DataNotFoundError as dnfe:
+            print("Error: " + str(dnfe))
+        except isc.cc.data.DataAlreadyPresentError as dape:
+            print("Error: " + str(dape))
+        except KeyError as ke:
+            print("Error: missing " + str(ke))
+
+    def _print_correct_usage(self, ept):
         if isinstance(ept, CmdUnknownModuleSyntaxError):
             self.do_help(None)
-            
+
         elif isinstance(ept, CmdUnknownCmdSyntaxError):
             self.modules[ept.module].module_help()
-            
+
         elif isinstance(ept, CmdMissParamSyntaxError) or \
              isinstance(ept, CmdUnknownParamSyntaxError):
              self.modules[ept.module].command_help(ept.command)
-                 
-                
+
+
     def _append_space_to_hint(self):
         """Append one space at the end of complete hint."""
         self.hint = [(val + " ") for val in self.hint]
-            
-            
+
+
     def _handle_help(self, cmd):
         if cmd.command == "help":
             self.modules[cmd.module].module_help()
@@ -712,6 +731,84 @@ class BindCmdInterpreter(Cmd):
             return
 
         self.location = new_location
+
+    def apply_execute_cmd(self, command):
+        '''Handles the 'execute' command, which executes a number of
+           (preset) statements. The command set to execute is either
+           read from a file (e.g. 'execute file <file>'.) or one
+           of the sets as defined in command_sets.py'''
+        if command.command == 'file':
+            try:
+                with open(command.params['filename']) as command_file:
+                    commands = command_file.readlines()
+            except IOError as ioe:
+                print("Error: " + str(ioe))
+                return
+        elif command_sets.has_command_set(command.command):
+            commands = command_sets.get_commands(command.command)
+        else:
+            # Should not be reachable; parser should've caught this
+            raise Exception("Unknown execute command type " + command.command)
+
+        # We have our set of commands now, depending on whether 'show' was
+        # specified, show or execute them
+        if 'show' in command.params and command.params['show'] == 'show':
+            self.__show_execute_commands(commands)
+        else:
+            self.__apply_execute_commands(commands)
+
+    def __show_execute_commands(self, commands):
+        '''Prints the command list without executing them'''
+        for line in commands:
+            print(line.strip())
+
+    def __apply_execute_commands(self, commands):
+        '''Applies the configuration commands from the given iterator.
+           This is the method that catches, comments, echo statements, and
+           other directives. All commands not filtered by this method are
+           interpreted as if they are directly entered in an active session.
+           Lines starting with any of the following characters are not
+           passed directly:
+           # - These are comments
+           ! - These are directives
+               !echo: print the rest of the line
+               !verbose on/off: print the commands themselves too
+               Unknown directives are ignored (with a warning)
+           The execution is stopped if there are any errors.
+        '''
+        verbose = False
+        try:
+            for line in commands:
+                line = line.strip()
+                if verbose:
+                    print(line)
+                if line.startswith('#') or len(line) == 0:
+                    continue
+                elif line.startswith('!'):
+                    if re.match('^!echo ', line, re.I) and len(line) > 6:
+                        print(line[6:])
+                    elif re.match('^!verbose\s+on\s*$', line, re.I):
+                        verbose = True
+                    elif re.match('^!verbose\s+off$', line, re.I):
+                        verbose = False
+                    else:
+                        print("Warning: ignoring unknown directive: " + line)
+                else:
+                    cmd = BindCmdParse(line)
+                    self._validate_cmd(cmd)
+                    self._handle_cmd(cmd)
+        except (isc.config.ModuleCCSessionError,
+                IOError, http.client.HTTPException,
+                BindCtlException, isc.cc.data.DataTypeError,
+                isc.cc.data.DataNotFoundError,
+                isc.cc.data.DataAlreadyPresentError,
+                KeyError) as err:
+            print('Error: ', err)
+            print()
+            print('Depending on the contents of the script, and which')
+            print('commands it has called, there can be committed and')
+            print('local changes. It is advised to check your settings,')
+            print('and revert local changes with "config revert".')
 
     def apply_cmd(self, cmd):
         '''Handles a general module command'''

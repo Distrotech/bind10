@@ -95,11 +95,16 @@ public:
     isc::config::ModuleCCSession* getConfigSession() const;
     void setConfigSession(isc::config::ModuleCCSession* config_session);
 
-    /// \brief Handle commands from the config session
-    isc::data::ConstElementPtr updateConfig(isc::data::ConstElementPtr config);
+    /// \brief Handle commands from the config session.
+    ///
+    /// By default, or if \c startup is set to false explicitly, this method
+    /// will ignore any other configuration parameters if listen_on fails;
+    /// if \c startup is true, it will install as many parameters as possible.
+    isc::data::ConstElementPtr updateConfig(isc::data::ConstElementPtr config,
+                                            bool startup = false);
 
     /// \brief Assign an ASIO IO Service queue to this Resolver object
-    void setDNSService(isc::asiodns::DNSService& dnss);
+    void setDNSService(isc::asiodns::DNSServiceBase& dnss);
 
     /// \brief Assign a NameserverAddressStore to this Resolver object
     void setNameserverAddressStore(isc::nsas::NameserverAddressStore &nsas);
@@ -108,7 +113,7 @@ public:
     void setCache(isc::cache::ResolverCache& cache);
 
     /// \brief Return this object's ASIO IO Service queue
-    isc::asiodns::DNSService& getDNSService() const { return (*dnss_); }
+    isc::asiodns::DNSServiceBase& getDNSService() const { return (*dnss_); }
 
     /// \brief Returns this object's NSAS
     isc::nsas::NameserverAddressStore& getNameserverAddressStore() const {
@@ -128,13 +133,6 @@ public:
 
     /// \brief Return pointer to the Checkin callback function
     isc::asiolink::SimpleCallback* getCheckinProvider() { return (checkin_); }
-
-    /**
-     * \brief Tell the Resolver that is has already been configured
-     *        so that it will only set some defaults the first time
-     *        (used by updateConfig() and tests)
-     */
-    void setConfigured() { configured_ = true; };
 
     /**
      * \brief Specify the list of upstream servers.
@@ -260,16 +258,12 @@ public:
 
 private:
     ResolverImpl* impl_;
-    isc::asiodns::DNSService* dnss_;
+    isc::asiodns::DNSServiceBase* dnss_;
     isc::asiolink::SimpleCallback* checkin_;
     isc::asiodns::DNSLookup* dns_lookup_;
     isc::asiodns::DNSAnswer* dns_answer_;
     isc::nsas::NameserverAddressStore* nsas_;
     isc::cache::ResolverCache* cache_;
-    // This value is initally false, and will be set to true
-    // when the initial configuration is done (updateConfig
-    // should act a tiny bit different on the very first call)
-    bool configured_;
 };
 
 #endif // __RESOLVER_H

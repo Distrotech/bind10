@@ -20,6 +20,7 @@
 #include <iostream>
 
 #include <exceptions/exceptions.h>
+#include <log/logger_support.h>
 #include "command_options.h"
 #include "scan.h"
 
@@ -46,6 +47,7 @@ using namespace isc::badpacket;
 
 /// \brief Main Program
 int main(int argc, char* argv[]) {
+    isc::log::initLogger("badpacket");
 
     try {
         // Parse command

@@ -72,9 +72,19 @@ class ThreadingServerManager:
         self.server._started.wait()
         self.server._started.clear()
 
-    def shutdown(self):
+    def shutdown(self, blocking=False):
+        """Shut down the server by calling its own shutdown() method.
+           Then wait for its thread to finish. If blocking is True,
+           the thread.join() blocks until the thread finishes. If not,
+           it uses a zero timeout. The latter is necessary in a number
+           of existing tests. We should redo this part (we should not
+           even need threads in most, if not all, of these threads, see
+           ticket #1668)"""
         self.server.shutdown()
-        self.server._thread.join(0) # timeout is 0
+        if blocking:
+            self.server._thread.join()
+        else:
+            self.server._thread.join(0) # timeout is 0
 
 def do_nothing(*args, **kwargs): pass
 
@@ -140,6 +150,11 @@ class MockBoss:
         "command_name": "sendstats",
         "command_description": "Send data to a statistics module at once",
         "command_args": []
+      },
+      {
+        "command_name": "show_processes",
+        "command_description": "List the running BIND 10 processes",
+        "command_args": []
       }
     ],
     "statistics": [
@@ -170,6 +185,10 @@ class MockBoss:
         self.spec_file.close()
         self.cc_session = self.mccs._session
         self.got_command_name = ''
+        self.pid_list = [[ 9999, "b10-auth"   ],
+                         [ 9998, "b10-auth-2" ],
+                         [ 9997, "b10-auth-3" ],
+                         [ 9996, "b10-auth-4" ]]
 
     def run(self):
         self.mccs.start()
@@ -200,6 +219,10 @@ class MockBoss:
             return isc.config.create_answer(0)
         elif command == 'getstats':
             return isc.config.create_answer(0, params)
+        elif command == 'show_processes':
+            # Return dummy pids
+            return isc.config.create_answer(
+                0, self.pid_list)
         return isc.config.create_answer(1, "Unknown Command")
 
 class MockAuth:
@@ -232,6 +255,57 @@ class MockAuth:
         "item_default": 0,
         "item_title": "Queries UDP",
         "item_description": "A number of total query counts which all auth servers receive over UDP since they started initially"
+      },
+      {
+        "item_name": "queries.perzone",
+        "item_type": "list",
+        "item_optional": false,
+        "item_default": [
+          {
+            "zonename" : "test1.example",
+            "queries.udp" : 1,
+            "queries.tcp" : 2
+          },
+          {
+            "zonename" : "test2.example",
+            "queries.udp" : 3,
+            "queries.tcp" : 4
+          }
+        ],
+        "item_title": "Queries per zone",
+        "item_description": "Queries per zone",
+        "list_item_spec": {
+          "item_name": "zones",
+          "item_type": "map",
+          "item_optional": false,
+          "item_default": {},
+          "map_item_spec": [
+            {
+              "item_name": "zonename",
+              "item_type": "string",
+              "item_optional": false,
+              "item_default": "",
+              "item_title": "Zonename",
+              "item_description": "Zonename"
+            },
+            {
+              "item_name": "queries.udp",
+              "item_type": "integer",
+              "item_optional": false,
+              "item_default": 0,
+              "item_title": "Queries UDP per zone",
+              "item_description": "A number of UDP query counts per zone"
+            },
+            {
+              "item_name": "queries.tcp",
+              "item_type": "integer",
+              "item_optional": false,
+              "item_default": 0,
+              "item_title": "Queries TCP per zone",
+              "item_description": "A number of TCP query counts per zone"
+            }
+          ]
+        }
       }
     ]
   }
@@ -251,6 +325,11 @@ class MockAuth:
         self.got_command_name = ''
         self.queries_tcp = 3
         self.queries_udp = 2
+        self.queries_per_zone = [{
+                'zonename': 'test1.example',
+                'queries.tcp': 5,
+                'queries.udp': 4
+                }]
 
     def run(self):
         self.mccs.start()
@@ -273,7 +352,8 @@ class MockAuth:
         if command == 'sendstats':
             params = { "owner": "Auth",
                        "data": { 'queries.tcp': self.queries_tcp,
-                                 'queries.udp': self.queries_udp } }
+                                 'queries.udp': self.queries_udp,
+                                 'queries.perzone' : self.queries_per_zone } }
             return send_command("set", "Stats", params=params, session=self.cc_session)
         return isc.config.create_answer(1, "Unknown Command")
 

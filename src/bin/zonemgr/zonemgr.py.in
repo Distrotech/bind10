@@ -28,6 +28,7 @@ import os
 import time
 import signal
 import isc
+import isc.dns
 import random
 import threading
 import select
@@ -38,15 +39,21 @@ from optparse import OptionParser, OptionValueError
 from isc.config.ccsession import *
 import isc.util.process
 from isc.log_messages.zonemgr_messages import *
+from isc.notify import notify_out
 
 # Initialize logging for called modules.
 isc.log.init("b10-zonemgr")
 logger = isc.log.Logger("zonemgr")
 
-# Constants for debug levels, to be removed when we have #1074.
-DBG_START_SHUT = 0
-DBG_ZONEMGR_COMMAND = 10
-DBG_ZONEMGR_BASIC = 40
+# Pending system-wide debug level definitions, the ones we
+# use here are hardcoded for now
+DBG_PROCESS = logger.DBGLVL_TRACE_BASIC
+DBG_COMMANDS = logger.DBGLVL_TRACE_DETAIL
+
+# Constants for debug levels.
+DBG_START_SHUT = logger.DBGLVL_START_SHUT
+DBG_ZONEMGR_COMMAND = logger.DBGLVL_COMMAND
+DBG_ZONEMGR_BASIC = logger.DBGLVL_TRACE_BASIC
 
 isc.util.process.rename()
 
@@ -72,8 +79,6 @@ XFRIN_MODULE_NAME = 'Xfrin'
 AUTH_MODULE_NAME = 'Auth'
 
 # define command name
-ZONE_XFRIN_FAILED_COMMAND = 'zone_xfrin_failed'
-ZONE_XFRIN_SUCCESS_COMMAND = 'zone_new_data_ready'
 ZONE_REFRESH_COMMAND = 'refresh_from_zonemgr'
 ZONE_NOTIFY_COMMAND = 'notify'
 
@@ -98,7 +103,7 @@ class ZonemgrRefresh:
     can be stopped by calling shutdown() in another thread.
     """
 
-    def __init__(self, cc, db_file, slave_socket, config_data):
+    def __init__(self, cc, db_file, slave_socket, module_cc_session):
         self._cc = cc
         self._check_sock = slave_socket
         self._db_file = db_file
@@ -108,7 +113,8 @@ class ZonemgrRefresh:
         self._max_transfer_timeout = None
         self._refresh_jitter = None
         self._reload_jitter = None
-        self.update_config_data(config_data)
+        self.update_config_data(module_cc_session.get_full_config(),
+                                module_cc_session)
         self._running = False
 
     def _random_jitter(self, max, jitter):
@@ -421,10 +427,12 @@ class ZonemgrRefresh:
         self._thread.join()
         # Wipe out what we do not need
         self._thread = None
+        self._read_sock.close()
+        self._write_sock.close()
         self._read_sock = None
         self._write_sock = None
 
-    def update_config_data(self, new_config):
+    def update_config_data(self, new_config, module_cc_session):
         """ update ZonemgrRefresh config """
         # Get a new value, but only if it is defined (commonly used below)
         # We don't use "value or default", because if value would be
@@ -456,11 +464,42 @@ class ZonemgrRefresh:
             if secondary_zones is not None:
                 # Add new zones
                 for secondary_zone in new_config.get('secondary_zones'):
+                    if 'name' not in secondary_zone:
+                        raise ZonemgrException("Secondary zone specified "
+                                               "without a name")
                     name = secondary_zone['name']
-                    # Be tolerant to sclerotic users who forget the final dot
-                    if name[-1] != '.':
-                        name = name + '.'
-                    name_class = (name, secondary_zone['class'])
+
+                    # Convert to Name and back (both to check and to normalize)
+                    try:
+                        name = isc.dns.Name(name, True).to_text()
+                    # Name() can raise a number of different exceptions, just
+                    # catch 'em all.
+                    except Exception as isce:
+                        raise ZonemgrException("Bad zone name '" + name +
+                                               "': " + str(isce))
+
+                    # Currently we use an explicit get_default_value call
+                    # in case the class hasn't been set. Alternatively, we
+                    # could use
+                    # module_cc_session.get_value('secondary_zones[INDEX]/class')
+                    # To get either the value that was set, or the default if
+                    # it wasn't set.
+                    # But the real solution would be to make new_config a type
+                    # that contains default values itself
+                    # (then this entire method can be simplified a lot, and we
+                    # wouldn't need direct access to the ccsession object)
+                    if 'class' in secondary_zone:
+                        rr_class = secondary_zone['class']
+                    else:
+                        rr_class = module_cc_session.get_default_value(
+                                        'secondary_zones/class')
+                    # Convert rr_class to and from RRClass to check its value
+                    try:
+                        name_class = (name, isc.dns.RRClass(rr_class).to_text())
+                    except isc.dns.InvalidRRClass:
+                        raise ZonemgrException("Bad RR class '" +
+                                               rr_class +
+                                               "' for zone " + name)
                     required[name_class] = True
                     # Add it only if it isn't there already
                     if not name_class in self._zonemgr_refresh_info:
@@ -485,7 +524,7 @@ class Zonemgr:
         self._db_file = self.get_db_file()
         # Create socket pair for communicating between main thread and zonemgr timer thread
         self._master_socket, self._slave_socket = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
-        self._zone_refresh = ZonemgrRefresh(self._cc, self._db_file, self._slave_socket, self._config_data)
+        self._zone_refresh = ZonemgrRefresh(self._cc, self._db_file, self._slave_socket, self._module_cc)
         self._zone_refresh.run_timer()
 
         self._lock = threading.Lock()
@@ -540,7 +579,7 @@ class Zonemgr:
         self._config_data_check(complete)
         if self._zone_refresh is not None:
             try:
-                self._zone_refresh.update_config_data(complete)
+                self._zone_refresh.update_config_data(complete, self._module_cc)
             except Exception as e:
                 answer = create_answer(1, str(e))
                 ok = False
@@ -583,7 +622,7 @@ class Zonemgr:
     def command_handler(self, command, args):
         """Handle command receivd from command channel.
         ZONE_NOTIFY_COMMAND is issued by Auth process;
-        ZONE_XFRIN_SUCCESS_COMMAND and ZONE_XFRIN_FAILED_COMMAND are issued by
+        ZONE_NEW_DATA_READY_CMD and ZONE_XFRIN_FAILED are issued by
         Xfrin process;
         shutdown is issued by a user or Boss process. """
         answer = create_answer(0)
@@ -597,7 +636,7 @@ class Zonemgr:
             # Send notification to zonemgr timer thread
             self._master_socket.send(b" ")# make self._slave_socket readble
 
-        elif command == ZONE_XFRIN_SUCCESS_COMMAND:
+        elif command == notify_out.ZONE_NEW_DATA_READY_CMD:
             """ Handle xfrin success command"""
             zone_name_class = self._parse_cmd_params(args, command)
             logger.debug(DBG_ZONEMGR_COMMAND, ZONEMGR_RECEIVE_XFRIN_SUCCESS, zone_name_class[0], zone_name_class[1])
@@ -605,7 +644,7 @@ class Zonemgr:
                 self._zone_refresh.zone_refresh_success(zone_name_class)
             self._master_socket.send(b" ")# make self._slave_socket readble
 
-        elif command == ZONE_XFRIN_FAILED_COMMAND:
+        elif command == notify_out.ZONE_XFRIN_FAILED:
             """ Handle xfrin fail command"""
             zone_name_class = self._parse_cmd_params(args, command)
             logger.debug(DBG_ZONEMGR_COMMAND, ZONEMGR_RECEIVE_XFRIN_FAILED, zone_name_class[0], zone_name_class[1])
@@ -624,9 +663,13 @@ class Zonemgr:
         return answer
 
     def run(self):
+        logger.debug(DBG_PROCESS, ZONEMGR_STARTED)
         self.running = True
-        while not self._shutdown_event.is_set():
-            self._module_cc.check_command(False)
+        try:
+            while not self._shutdown_event.is_set():
+                self._module_cc.check_command(False)
+        finally:
+            self._module_cc.send_stopping()
 
 zonemgrd = None
 

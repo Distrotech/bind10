@@ -84,6 +84,7 @@ class TestSecureHTTPRequestHandler(unittest.TestCase):
         self.handler.rfile = open("check.tmp", 'w+b')
 
     def tearDown(self):
+        sys.stdout.close()
         sys.stdout = self.old_stdout
         self.handler.rfile.close()
         os.remove('check.tmp')
@@ -306,6 +307,7 @@ class TestCommandControl(unittest.TestCase):
         self.cmdctl = MyCommandControl(None, True)
    
     def tearDown(self):
+        sys.stdout.close()
         sys.stdout = self.old_stdout
 
     def _check_config(self, cmdctl):
@@ -344,6 +346,40 @@ class TestCommandControl(unittest.TestCase):
         rcode, msg = ccsession.parse_answer(answer)
         self.assertEqual(rcode, 0)
         self.assertTrue(msg != None)
+
+    def test_command_handler_spec_update(self):
+        # Should not be present
+        self.assertFalse("foo" in self.cmdctl.modules_spec)
+
+        answer = self.cmdctl.command_handler(
+            ccsession.COMMAND_MODULE_SPECIFICATION_UPDATE, [ "foo", {} ])
+        rcode, msg = ccsession.parse_answer(answer)
+        self.assertEqual(rcode, 0)
+        self.assertEqual(msg, None)
+
+        # Should now be present
+        self.assertTrue("foo" in self.cmdctl.modules_spec)
+
+        # When sending specification 'None', it should be removed
+        answer = self.cmdctl.command_handler(
+            ccsession.COMMAND_MODULE_SPECIFICATION_UPDATE, [ "foo", None ])
+        rcode, msg = ccsession.parse_answer(answer)
+        self.assertEqual(rcode, 0)
+        self.assertEqual(msg, None)
+
+        # Should no longer be present
+        self.assertFalse("foo" in self.cmdctl.modules_spec)
+
+        # Don't store 'None' if it wasn't there in the first place!
+        answer = self.cmdctl.command_handler(
+            ccsession.COMMAND_MODULE_SPECIFICATION_UPDATE, [ "foo", None ])
+        rcode, msg = ccsession.parse_answer(answer)
+        self.assertEqual(rcode, 1)
+        self.assertEqual(msg, "No such module: foo")
+
+        # Should still not present
+        self.assertFalse("foo" in self.cmdctl.modules_spec)
+
 
     def test_check_config_handler(self):
         answer = self.cmdctl.config_handler({'non-exist': 123})
@@ -393,6 +429,9 @@ class TestSecureHTTPServer(unittest.TestCase):
                                          MyCommandControl, verbose=True)
 
     def tearDown(self):
+        # both sys.stdout and sys.stderr are the same, so closing one is
+        # sufficient
+        sys.stdout.close()
         sys.stdout = self.old_stdout
         sys.stderr = self.old_stderr
 

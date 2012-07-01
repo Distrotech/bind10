@@ -77,8 +77,7 @@ host_lookup(const char* const name, const char* const dns_class,
                              RRClass(dns_class),
                              any ? RRType::ANY() : RRType(type)));  // if NULL then:
 
-    OutputBuffer obuffer(512);
-    MessageRenderer renderer(obuffer);
+    MessageRenderer renderer;
     msg.toWire(renderer);
 
     struct addrinfo hints, *res;
@@ -118,7 +117,7 @@ host_lookup(const char* const name, const char* const dns_class,
         before_time = detail::gettimeWrapper();
     }
 
-    sendto(s, (const char *) obuffer.getData(), obuffer.getLength(),
+    sendto(s, (const char *) renderer.getData(), renderer.getLength(),
            0, res->ai_addr, res->ai_addrlen);
 
     struct sockaddr_storage ss;
@@ -233,7 +232,7 @@ main(int argc, char* argv[]) {
     argv += optind;
 
     if (argc < 1) {
-        cout << "Usage: host [-adprv] [-c class] [-t type] hostname [server]\n";
+        cout << "Usage: host [-adrv] [-c class] [-p port] [-t type] hostname [server]\n";
         exit(1);
     }
 

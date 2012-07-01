@@ -15,8 +15,12 @@
 #ifndef __STATISTICS_H
 #define __STATISTICS_H 1
 
+#include <dns/opcode.h>
+#include <dns/rcode.h>
+
 #include <cc/session.h>
 #include <stdint.h>
+#include <boost/scoped_ptr.hpp>
 
 class AuthCountersImpl;
 
@@ -51,13 +55,18 @@ class AuthCountersImpl;
 /// \todo Consider overhead of \c AuthCounters::inc()
 class AuthCounters {
 private:
-    AuthCountersImpl* impl_;
+    boost::scoped_ptr<AuthCountersImpl> impl_;
 public:
     // Enum for the type of counter
-    enum CounterType {
-        COUNTER_UDP_QUERY = 0,  ///< COUNTER_UDP_QUERY: counter for UDP queries
-        COUNTER_TCP_QUERY = 1,  ///< COUNTER_TCP_QUERY: counter for TCP queries
-        COUNTER_TYPES = 2 ///< The number of defined counters
+    enum ServerCounterType {
+        SERVER_UDP_QUERY,       ///< SERVER_UDP_QUERY: counter for UDP queries
+        SERVER_TCP_QUERY,       ///< SERVER_TCP_QUERY: counter for TCP queries
+        SERVER_COUNTER_TYPES    ///< The number of defined counters
+    };
+    enum PerZoneCounterType {
+        ZONE_UDP_QUERY,         ///< ZONE_UDP_QUERY: counter for UDP queries
+        ZONE_TCP_QUERY,         ///< ZONE_TCP_QUERY: counter for TCP queries
+        PER_ZONE_COUNTER_TYPES  ///< The number of defined counters
     };
     /// The constructor.
     ///
@@ -77,9 +86,27 @@ public:
     ///
     /// \throw std::out_of_range \a type is unknown.
     ///
-    /// usage: counter.inc(CounterType::COUNTER_UDP_QUERY);
+    /// usage: counter.inc(AuthCounters::SERVER_UDP_QUERY);
     /// 
-    void inc(const CounterType type);
+    void inc(const ServerCounterType type);
+
+    /// \brief Increment the counter of a per opcode counter.
+    ///
+    /// \note This is a tentative interface.  See \c getCounter().
+    ///
+    /// \param opcode The opcode of the counter to increment.
+    ///
+    /// \throw None
+    void inc(const isc::dns::Opcode opcode);
+
+    /// \brief Increment the counter of a per rcode counter.
+    ///
+    /// \note This is a tentative interface.  See \c getCounter().
+    ///
+    /// \param rcode The rcode of the counter to increment.
+    ///
+    /// \throw None
+    void inc(const isc::dns::Rcode rcode);
 
     /// \brief Submit statistics counters to statistics module.
     ///
@@ -119,7 +146,7 @@ public:
     ///
     void setStatisticsSession(isc::cc::AbstractSession* statistics_session);
 
-    /// \brief Get a value of a counter in the AuthCounters.
+    /// \brief Get the value of a counter in the AuthCounters.
     ///
     /// This function returns a value of the counter specified by \a type.
     /// This method never throws an exception.
@@ -129,8 +156,36 @@ public:
     /// \param type Type of a counter to get the value of
     ///
     /// \return the value of the counter specified by \a type.
+    uint64_t getCounter(const AuthCounters::ServerCounterType type) const;
+
+    /// \brief Get the value of a per opcode counter.
     ///
-    uint64_t getCounter(const AuthCounters::CounterType type) const;
+    /// This method returns the value of the per opcode counter for the
+    /// specified \c opcode.
+    ///
+    /// \note This is a tentative interface as an attempt of experimentally
+    /// supporting more statistics counters.  This should eventually be more
+    /// generalized.  In any case, this method is mainly for testing.
+    ///
+    /// \throw None
+    /// \param opcode The opcode of the counter to get the value of
+    /// \return the value of the counter.
+    uint64_t getCounter(const isc::dns::Opcode opcode) const;
+
+    /// \brief Get the value of a per rcode counter.
+    ///
+    /// This method returns the value of the per rcode counter for the
+    /// specified \c rcode.
+    ///
+    /// \note As mentioned in getCounter(const isc::dns::Opcode opcode),
+    /// This is a tentative interface as an attempt of experimentally
+    /// supporting more statistics counters.  This should eventually be more
+    /// generalized.  In any case, this method is mainly for testing.
+    ///
+    /// \throw None
+    /// \param rcode The rcode of the counter to get the value of
+    /// \return the value of the counter.
+    uint64_t getCounter(const isc::dns::Rcode rcode) const;
 
     /// \brief A type of validation function for the specification in
     /// isc::config::ModuleSpec.

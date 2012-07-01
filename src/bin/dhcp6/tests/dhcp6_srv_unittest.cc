@@ -14,6 +14,7 @@
 
 #include <config.h>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 
 #ifdef _WIN32
@@ -23,22 +24,26 @@
 #endif
 #include <gtest/gtest.h>
 
-#include "dhcp/dhcp6.h"
-#include "dhcp6/dhcp6_srv.h"
-#include "dhcp/option6_ia.h"
+#include <dhcp/dhcp6.h>
+#include <dhcp/option6_ia.h>
+#include <dhcp6/dhcp6_srv.h>
+#include <util/buffer.h>
+#include <util/range_utilities.h>
+#include <boost/scoped_ptr.hpp>
 
 using namespace std;
 using namespace isc;
 using namespace isc::dhcp;
+using namespace isc::util;
 
 // namespace has to be named, because friends are defined in Dhcpv6Srv class
 // Maybe it should be isc::test?
-namespace test {
+namespace {
 
 class NakedDhcpv6Srv: public Dhcpv6Srv {
     // "naked" Interface Manager, exposes internal fields
 public:
-    NakedDhcpv6Srv() { }
+    NakedDhcpv6Srv():Dhcpv6Srv(DHCP6_SERVER_PORT + 10000) { }
 
     boost::shared_ptr<Pkt6>
     processSolicit(boost::shared_ptr<Pkt6>& request) {
@@ -52,39 +57,114 @@ public:
 
 class Dhcpv6SrvTest : public ::testing::Test {
 public:
+    // these are empty for now, but let's keep them around
     Dhcpv6SrvTest() {
     }
+    ~Dhcpv6SrvTest() {
+    };
 };
 
 TEST_F(Dhcpv6SrvTest, basic) {
-    // there's almost no code now. What's there provides echo capability
-    // that is just a proof of concept and will be removed soon
-    // No need to thoroughly test it
-
     // srv has stubbed interface detection. It will read
     // interfaces.txt instead. It will pretend to have detected
     // fe80::1234 link-local address on eth0 interface. Obviously
     // an attempt to bind this socket will fail.
-    EXPECT_NO_THROW( {
-        Dhcpv6Srv * srv = new Dhcpv6Srv();
+    Dhcpv6Srv* srv = NULL;
+    ASSERT_NO_THROW( {
+        // open an unpriviledged port
+        srv = new Dhcpv6Srv(DHCP6_SERVER_PORT + 10000);
+    });
 
-        delete srv;
-        });
+    delete srv;
+}
 
+TEST_F(Dhcpv6SrvTest, DUID) {
+    // tests that DUID is generated properly
+
+    boost::scoped_ptr<Dhcpv6Srv> srv;
+    ASSERT_NO_THROW( {
+        srv.reset(new Dhcpv6Srv(DHCP6_SERVER_PORT + 10000));
+    });
+
+    OptionPtr srvid = srv->getServerID();
+    ASSERT_TRUE(srvid);
+
+    EXPECT_EQ(D6O_SERVERID, srvid->getType());
+
+    OutputBuffer buf(32);
+    srvid->pack(buf);
+
+    // length of the actual DUID
+    size_t len = buf.getLength() - srvid->getHeaderLen();
+
+    InputBuffer data(buf.getData(), buf.getLength());
+
+    // ignore first four bytes (standard DHCPv6 header)
+    data.readUint32();
+
+    uint16_t duid_type = data.readUint16();
+    cout << "Duid-type=" << duid_type << endl;
+    switch(duid_type) {
+    case DUID_LLT: {
+        // DUID must contain at least 6 bytes long MAC
+        // + 8 bytes of fixed header
+        EXPECT_GE(14, len);
+
+        uint16_t hw_type = data.readUint16();
+        // there's no real way to find out "correct"
+        // hardware type
+        EXPECT_GT(hw_type, 0);
+
+        // check that timer is counted since 1.1.2000,
+        // not from 1.1.1970.
+        uint32_t seconds = data.readUint32();
+        EXPECT_LE(seconds, DUID_TIME_EPOCH);
+        // this test will start failing after 2030.
+        // Hopefully we will be at BIND12 by then.
+
+        // MAC must not be zeros
+        vector<uint8_t> mac(len-8);
+        vector<uint8_t> zeros(len-8, 0);
+        data.readVector(mac, len-8);
+        EXPECT_TRUE(mac != zeros);
+        break;
+    }
+    case DUID_EN: {
+        // there's not much we can check. Just simple
+        // check if it is not all zeros
+        vector<uint8_t> content(len-2);
+        data.readVector(content, len-2);
+        EXPECT_FALSE(isRangeZero(content.begin(), content.end()));
+        break;
+    }
+    case DUID_LL: {
+        // not supported yet
+        cout << "Test not implemented for DUID-LL." << endl;
+
+        // No failure here. There's really no way for test LL DUID. It doesn't
+        // even make sense to check if that Link Layer is actually present on
+        // a physical interface. RFC3315 says a server should write its DUID
+        // and keep it despite hardware changes.
+        break;
+    }
+    case DUID_UUID: // not supported yet
+    default:
+        ADD_FAILURE() << "Not supported duid type=" << duid_type << endl;
+        break;
+    }
 }
 
 TEST_F(Dhcpv6SrvTest, Solicit_basic) {
-    NakedDhcpv6Srv * srv = 0;
-    EXPECT_NO_THROW( srv = new NakedDhcpv6Srv(); );
+    boost::scoped_ptr<NakedDhcpv6Srv> srv;
+    ASSERT_NO_THROW( srv.reset(new NakedDhcpv6Srv()) );
 
     // a dummy content for client-id
-    boost::shared_array<uint8_t> clntDuid(new uint8_t[32]);
-    for (int i=0; i<32; i++)
-        clntDuid[i] = 100+i;
+    OptionBuffer clntDuid(32);
+    for (int i = 0; i < 32; i++) {
+        clntDuid[i] = 100 + i;
+    }
 
-    boost::shared_ptr<Pkt6> sol =
-        boost::shared_ptr<Pkt6>(new Pkt6(DHCPV6_SOLICIT,
-                                         1234, Pkt6::UDP));
+    Pkt6Ptr sol = Pkt6Ptr(new Pkt6(DHCPV6_SOLICIT, 1234));
 
     boost::shared_ptr<Option6IA> ia =
         boost::shared_ptr<Option6IA>(new Option6IA(D6O_IA_NA, 234));
@@ -107,9 +187,9 @@ TEST_F(Dhcpv6SrvTest, Solicit_basic) {
     // - server-id
     // - IA that includes IAADDR
 
-    boost::shared_ptr<Option> clientid =
-        boost::shared_ptr<Option>(new Option(Option::V6, D6O_CLIENTID,
-                                             clntDuid, 0, 16));
+    OptionPtr clientid = OptionPtr(new Option(Option::V6, D6O_CLIENTID,
+                                              clntDuid.begin(),
+                                              clntDuid.begin() + 16));
     sol->addOption(clientid);
 
     boost::shared_ptr<Pkt6> reply = srv->processSolicit(sol);
@@ -120,10 +200,10 @@ TEST_F(Dhcpv6SrvTest, Solicit_basic) {
     EXPECT_EQ( DHCPV6_ADVERTISE, reply->getType() );
     EXPECT_EQ( 1234, reply->getTransid() );
 
-    boost::shared_ptr<Option> tmp = reply->getOption(D6O_IA_NA);
+    OptionPtr tmp = reply->getOption(D6O_IA_NA);
     ASSERT_TRUE( tmp );
 
-    Option6IA * reply_ia = dynamic_cast<Option6IA*> ( tmp.get() );
+    Option6IA* reply_ia = dynamic_cast<Option6IA*>(tmp.get());
     EXPECT_EQ( 234, reply_ia->getIAID() );
 
     // check that there's an address included
@@ -134,17 +214,17 @@ TEST_F(Dhcpv6SrvTest, Solicit_basic) {
     ASSERT_TRUE( tmp );
     EXPECT_EQ(clientid->getType(), tmp->getType() );
     ASSERT_EQ(clientid->len(), tmp->len() );
-    EXPECT_FALSE(memcmp(clientid->getData(), tmp->getData(), tmp->len() ) );
+
+    EXPECT_TRUE( clientid->getData() == tmp->getData() );
+
     // check that server included its server-id
     tmp = reply->getOption(D6O_SERVERID);
     EXPECT_EQ(tmp->getType(), srv->getServerID()->getType() );
     ASSERT_EQ(tmp->len(),  srv->getServerID()->len() );
-    EXPECT_FALSE( memcmp(tmp->getData(), srv->getServerID()->getData(),
-                      tmp->len()) );
+
+    EXPECT_TRUE(tmp->getData() == srv->getServerID()->getData());
 
     // more checks to be implemented
-    delete srv;
-
 }
 
 }

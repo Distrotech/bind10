@@ -19,6 +19,7 @@
 #include <ws2tcpip.h>
 #include <mswsock.h>
 #else
+#include <sys/types.h>
 #include <netinet/in.h>
 #endif
 
@@ -62,7 +63,6 @@
 #include "resolver_log.h"
 
 using namespace std;
-
 using namespace isc;
 using namespace isc::util;
 using namespace isc::acl;
@@ -97,7 +97,7 @@ public:
         queryShutdown();
     }
 
-    void querySetup(DNSService& dnss,
+    void querySetup(DNSServiceBase& dnss,
                     isc::nsas::NameserverAddressStore& nsas,
                     isc::cache::ResolverCache& cache)
     {
@@ -126,10 +126,10 @@ public:
     }
 
     void setForwardAddresses(const AddressList& upstream,
-        DNSService *dnss)
+                             DNSServiceBase* dnss)
     {
         upstream_ = upstream;
-        if (dnss) {
+        if (dnss != NULL) {
             if (!upstream_.empty()) {
                 BOOST_FOREACH(const AddressPair& address, upstream) {
                     LOG_INFO(resolver_logger, RESOLVER_FORWARD_ADDRESS)
@@ -142,10 +142,10 @@ public:
     }
 
     void setRootAddresses(const AddressList& upstream_root,
-                          DNSService *dnss)
+                          DNSServiceBase* dnss)
     {
         upstream_root_ = upstream_root;
-        if (dnss) {
+        if (dnss != NULL) {
             if (!upstream_root_.empty()) {
                 BOOST_FOREACH(const AddressPair& address, upstream_root) {
                     LOG_INFO(resolver_logger, RESOLVER_SET_ROOT_ADDRESS)
@@ -258,7 +258,8 @@ makeErrorMessage(MessagePtr message, MessagePtr answer_message,
     }
     for_each(questions.begin(), questions.end(), QuestionInserter(message));
     message->setRcode(rcode);
-    MessageRenderer renderer(*buffer);
+    MessageRenderer renderer;
+    renderer.setBuffer(buffer.get());
     message->toWire(renderer);
 }
 
@@ -309,7 +310,8 @@ public:
 
         // Now we can clear the buffer and render the new message into it
         buffer->clear();
-        MessageRenderer renderer(*buffer);
+        MessageRenderer renderer;
+        renderer.setBuffer(buffer.get());
 
         ConstEDNSPtr edns(query_message->getEDNS());
         const bool dnssec_ok = edns && edns->getDNSSECAwareness();
@@ -333,6 +335,7 @@ public:
         }
 
         answer_message->toWire(renderer);
+        renderer.setBuffer(NULL);
 
         LOG_DEBUG(resolver_logger, RESOLVER_DBG_DETAIL,
                   RESOLVER_DNS_MESSAGE_SENT)
@@ -358,13 +361,18 @@ private:
 Resolver::Resolver() :
     impl_(new ResolverImpl()),
     dnss_(NULL),
-    checkin_(new ConfigCheck(this)),
-    dns_lookup_(new MessageLookup(this)),
+    checkin_(NULL),
+    dns_lookup_(NULL),
     dns_answer_(new MessageAnswer),
     nsas_(NULL),
-    cache_(NULL),
-    configured_(false)
-{}
+    cache_(NULL)
+{
+    // Operations referring to "this" must be done in the constructor body
+    // (some compilers will issue warnings if "this" is referred to in the
+    // initialization list).
+    checkin_ = new ConfigCheck(this);
+    dns_lookup_ = new MessageLookup(this);
+}
 
 Resolver::~Resolver() {
     delete impl_;
@@ -374,7 +382,7 @@ Resolver::~Resolver() {
 }
 
 void
-Resolver::setDNSService(isc::asiodns::DNSService& dnss) {
+Resolver::setDNSService(isc::asiodns::DNSServiceBase& dnss) {
     dnss_ = &dnss;
 }
 
@@ -585,7 +593,7 @@ ResolverImpl::processNormalQuery(const IOMessage& io_message,
 }
 
 ConstElementPtr
-Resolver::updateConfig(ConstElementPtr config) {
+Resolver::updateConfig(ConstElementPtr config, bool startup) {
     LOG_DEBUG(resolver_logger, RESOLVER_DBG_CONFIG, RESOLVER_CONFIG_UPDATED)
               .arg(*config);
 
@@ -658,7 +666,7 @@ Resolver::updateConfig(ConstElementPtr config) {
         // listenAddresses can fail to bind, so try them first
         bool need_query_restart = false;
         
-        if (listenAddressesE) {
+        if (!startup && listenAddressesE) {
             setListenAddresses(listenAddresses);
             need_query_restart = true;
         }
@@ -677,12 +685,15 @@ Resolver::updateConfig(ConstElementPtr config) {
         if (query_acl) {
             setQueryACL(query_acl);
         }
+        if (startup && listenAddressesE) {
+            setListenAddresses(listenAddresses);
+            need_query_restart = true;
+        }
 
         if (need_query_restart) {
             impl_->queryShutdown();
             impl_->querySetup(*dnss_, *nsas_, *cache_);
         }
-        setConfigured();
         return (isc::config::createAnswer());
 
     } catch (const isc::Exception& error) {

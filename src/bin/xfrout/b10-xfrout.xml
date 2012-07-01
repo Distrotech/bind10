@@ -2,7 +2,7 @@
                "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
 	       [<!ENTITY mdash "&#8212;">]>
 <!--
- - Copyright (C) 2010  Internet Systems Consortium, Inc. ("ISC")
+ - Copyright (C) 2010-2012  Internet Systems Consortium, Inc. ("ISC")
  -
  - Permission to use, copy, modify, and/or distribute this software for any
  - purpose with or without fee is hereby granted, provided that the above
@@ -20,7 +20,7 @@
 <refentry>
 
   <refentryinfo>
-    <date>December 1, 2010</date>
+    <date>March 16. 2012</date>
   </refentryinfo>
 
   <refmeta>
@@ -36,7 +36,7 @@
 
   <docinfo>
     <copyright>
-      <year>2010</year>
+      <year>2010-2012</year>
       <holder>Internet Systems Consortium, Inc. ("ISC")</holder>
     </copyright>
   </docinfo>
@@ -52,7 +52,7 @@
   <refsect1>
     <title>DESCRIPTION</title>
     <para>The <command>b10-xfrout</command> daemon provides the BIND 10
-      outgoing DNS zone transfer service.
+      outgoing DNS zone transfer service using AXFR or IXFR.
       It is also used to send outgoing NOTIFY messages.
       Normally it is started by the
       <citerefentry><refentrytitle>bind10</refentrytitle><manvolnum>8</manvolnum></citerefentry>
@@ -67,13 +67,13 @@
  process?, and then the socket and xfr request is sent to xfrout.
 -->
 
+<!-- TODO: IXFR from differences, DDNS, UDP socket passing -->
     <note><simpara>
-      This development prototype release only supports AXFR.
-      IXFR is not implemented.
+      Currently IXFR only works if it gets the zone via
+      <command>b10-xfrin</command> and only on TCP.
     </simpara></note>
 
     <para>
-<!-- TODO: does it really use msgq? what for? -->
       This daemon communicates with BIND 10 over a
       <citerefentry><refentrytitle>b10-msgq</refentrytitle><manvolnum>8</manvolnum></citerefentry>
       C-Channel connection.  If this connection is not established,
@@ -98,31 +98,22 @@
       that can run concurrently. The default is 10.
     </para>
     <para>
-      <varname>log_name</varname>
-<!-- TODO -->
+      <varname>transfer_acl</varname>
+      A list of ACL elements that apply to all transfer requests by
+      default (unless overridden in <varname>zone_config</varname>).
+      See the <citetitle>BIND 10 Guide</citetitle> for configuration examples.
+      The default is an element that allows any transfer requests.
     </para>
     <para>
-      <varname>log_file</varname>
-<!-- TODO -->
-      The location of the log file if using a file channel.
-      If undefined, then the file channel is closed.
-      The default is
-      <filename>/usr/local/var/bind10-devel/log/Xfrout.log</filename>.
-    </para>
-    <para>
-      <varname>log_severity</varname>
-<!-- TODO -->
-      The default is "debug".
-    </para>
-    <para>
-      <varname>log_versions</varname>
-<!-- TODO -->
-      The default is 5.
-    </para>
-    <para>
-      <varname>log_max_bytes</varname>
-<!-- TODO -->
-      The default is 1048576.
+      <varname>zone_config</varname>
+      A list of JSON objects (i.e. maps) that define per zone
+      configuration concerning <command>b10-xfrout</command>.
+      The supported names of each object are "origin" (the origin
+      name of the zone), "class" (the RR class of the zone, optional,
+      default to "IN"), and "transfer_acl" (ACL only applicable to
+      transfer requests for that zone).
+      See the <citetitle>BIND 10 Guide</citetitle> for configuration examples.
+      The default is an empty list, that is, no zone specific configuration.
     </para>
 
 <!-- TODO: log configurations not documented yet in here. jreed
@@ -135,31 +126,29 @@
     </simpara></note>
 
 
-<!--
-
-tsig_key_ring list of
-tsig_key string
-
--->
-
 <!-- TODO: formating -->
     <para>
       The configuration commands are:
     </para>
+
     <para>
-      <command>shutdown</command> stops all outbound zone transfers
-      and exits <command>b10-xfrout</command>. (Note that the BIND 10
-      boss process will restart this service.)
+      <command>notify</command> triggers <command>b10-xfrout</command>
+      to send NOTIFY message(s).
+      It has the following arguments: <varname>zone_name</varname>
+      to define the zone to send notifies for and the optional
+      <varname>zone_class</varname> to define the class (defaults to
+      <quote>IN</quote>).
+      <citerefentry><refentrytitle>b10-xfrin</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+      sends this command when a zone transferred in successfully.
     </para>
 
     <para>
-      <command>zone_new_data_ready</command> is sent from
-      <citerefentry><refentrytitle>b10-xfrin</refentrytitle><manvolnum>8</manvolnum></citerefentry>
-      to indicate that the zone transferred in successfully.
-      This triggers <command>b10-xfrout</command> to send NOTIFY
-      message(s).
-      This is an internal command and not exposed to the administrator.
-<!-- not defined in spec -->
+      <command>shutdown</command> stops all outbound zone transfers
+      and exits <command>b10-xfrout</command>.
+      This has an optional <varname>pid</varname> argument to
+      select the process ID to stop.
+      (Note that the BIND 10 boss process may restart this service
+      if configured.)
     </para>
 
   </refsect1>
