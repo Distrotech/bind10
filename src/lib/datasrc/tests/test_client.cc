@@ -68,21 +68,18 @@ createSQLite3Client(RRClass zclass, const Name& zname,
     // the zone data from the zone file to ensure both cases have the
     // same test data.
 #ifdef _WIN32
-    const char* const install_pcmd_prefix = "copy" " " TEST_DATA_COMMONDIR
+    const char* const install_cmd_prefix = "copy" " " TEST_DATA_COMMONDIR
         "/rwtest.sqlite3 ";
-    char install_cmd_prefix[1024];
-    for (unsigned int i = 0;; i++) {
-        install_cmd_prefix[i] = install_pcmd_prefix[i];
-        if (install_cmd_prefix[i] == '/')
-            install_cmd_prefix[i] = '\\';
-        if (install_cmd_prefix[i] == 0)
-            break;
+    string install_cmd = string(install_cmd_prefix) + db_file;
+    size_t pos = 0;
+    while ((pos = install_cmd.find('/', pos)) != std::string::npos) {
+        install_cmd[pos] = '\\';
     }
 #else
     const char* const install_cmd_prefix = INSTALL_PROG " -c " TEST_DATA_COMMONDIR
         "/rwtest.sqlite3 ";
-#endif
     const string install_cmd = string(install_cmd_prefix) + db_file;
+#endif
     if (system(install_cmd.c_str()) != 0) {
         isc_throw(isc::Unexpected,
                   "Error setting up; command failed: " << install_cmd);

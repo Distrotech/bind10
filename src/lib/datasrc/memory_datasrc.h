@@ -351,12 +351,16 @@ private:
 ///              during initialization
 /// \return An instance of the memory datasource client, or NULL if there was
 ///         an error
+
 #ifdef _WIN32
 extern "C" DataSourceClient* MemoryCreateInstance(isc::data::ConstElementPtr config,
+                                            std::string& error);
+extern "C" DataSourceClient* StaticCreateInstance(isc::data::ConstElementPtr config,
                                             std::string& error);
 
 /// \brief Destroy the instance created by createInstance()
 extern "C" void MemoryDestroyInstance(DataSourceClient* instance);
+extern "C" void StaticDestroyInstance(DataSourceClient* instance);
 #else
 extern "C" DataSourceClient* createInstance(isc::data::ConstElementPtr config,
                                             std::string& error);

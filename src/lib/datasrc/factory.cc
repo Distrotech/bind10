@@ -87,9 +87,11 @@ LibraryContainer::LibraryContainer(const std::string& name) {
         ds_lib_ = 1;
     else if (strcmp(name.c_str(), "memory_ds.so") == 0)
         ds_lib_ = 2;
+    else if (strcmp(name.c_str(), "static_ds.so") == 0)
+        ds_lib_ = 3;
     else {
         isc_throw(DataSourceLibraryError,
-                  "only \"sqlite3\" and \"memory\" are supported");
+                  "only \"sqlite3\", \"memory\" and \"static\" are supported");
     }
 #else
     // use RTLD_GLOBAL so that shared symbols (e.g. exceptions)
@@ -116,13 +118,17 @@ LibraryContainer::getSym(const char* name) {
     if (strcmp(name, "createInstance") == 0) {
         if (ds_lib_ == 1)
             return SQLCreateInstance;
-        else
+        else if (ds_lib_ == 2)
             return MemoryCreateInstance;
+        else
+            return StaticCreateInstance;
     } else if (strcmp(name, "destroyInstance") == 0) {
         if (ds_lib_ == 1)
             return SQLDestroyInstance;
-        else
+        else if (ds_lib_ == 2)
             return MemoryDestroyInstance;
+        else
+            return StaticDestroyInstance;
     } else {
         isc_throw(DataSourceLibrarySymbolError,
                   "not \"createInstance\" or \"destroyInstance\"");

@@ -30,7 +30,12 @@ namespace isc {
 namespace datasrc {
 
 DataSourceClient*
-createInstance(ConstElementPtr config, string& error) {
+#ifdef _WIN32
+StaticCreateInstance
+#else
+createInstance
+#endif
+(ConstElementPtr config, string& error) {
     try {
         // Create the data source
         auto_ptr<InMemoryClient> client(new InMemoryClient());
@@ -54,7 +59,12 @@ createInstance(ConstElementPtr config, string& error) {
 }
 
 void
-destroyInstance(DataSourceClient* instance) {
+#ifdef _WIN32
+StaticDestroyInstance
+#else
+destroyInstance
+#endif
+(DataSourceClient* instance) {
     delete instance;
 }
 
