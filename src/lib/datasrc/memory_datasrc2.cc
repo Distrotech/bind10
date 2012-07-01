@@ -49,28 +49,27 @@ class MemoryFragments {
 private:
     union Fragment {
         Fragment* next_;
-        uint8_t storage_[64];
     };
     static const size_t NUM_FRAGMENTS = 64;
 public:
-    MemoryFragments() : free_(NULL), fragments_(new Fragment[NUM_FRAGMENTS]) {
-        Fragment** nextp = &fragments_;
-        for (Fragment* cur = fragments_;
-             cur < fragments_ + NUM_FRAGMENTS;
-             nextp = &cur->next_, ++cur)
-        {
-            *nextp = cur;
+    MemoryFragments() : free_(NULL), fragments_(NULL), fragment_size_(0) {}
+    ~MemoryFragments() {
+        if (fragments_ != NULL) {
+            free(fragments_);
         }
-        *nextp = NULL;
-        free_ = fragments_;
     }
-    ~MemoryFragments() { delete[] fragments_; }
     void* allocate(const size_t n) {
-        if (free_ != NULL && n <= sizeof(Fragment)) {
+        if (fragments_ == NULL) {
+            create(n);
+        } else {
+            assert(n == fragment_size_);
+        }
+        if (free_ != NULL) {
             void* ret = free_;
             free_ = free_->next_;
             return (ret);
         } else {
+            assert(false);
             throw bad_alloc();
         }
     }
@@ -81,8 +80,32 @@ public:
     }
 
 private:
+    void create(size_t n) {
+        void *p = malloc(n * NUM_FRAGMENTS);
+        if (p == NULL) {
+            throw bad_alloc();
+        }
+        fragment_size_ = n;
+        fragments_ = reinterpret_cast<Fragment*>(p);
+        uint8_t* cp = reinterpret_cast<uint8_t*>(p);
+        uint8_t* cp_beg = cp;
+        const uint8_t* const cp_end = cp_beg + n * NUM_FRAGMENTS;
+        Fragment** nextp = &fragments_;
+        for (Fragment* cur = fragments_;
+             cp < cp_end;
+             nextp = &cur->next_, cp += n,
+                 cur = reinterpret_cast<Fragment*>(cp))
+        {
+            *nextp = cur;
+            
+        }
+        *nextp = NULL;
+        free_ = fragments_;
+    }
+
     Fragment* free_;
     Fragment* fragments_;
+    size_t fragment_size_;
 };
 
 template <typename T>
