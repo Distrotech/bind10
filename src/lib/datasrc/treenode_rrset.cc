@@ -42,15 +42,6 @@ namespace experimental {
 namespace internal {
 class CompressOffsetTable;
 
-TreeNodeRRset::TreeNodeRRset(
-    RRClass rrclass,
-    const RBNode<datasrc::internal::RdataSet>& node,
-    const datasrc::internal::RdataSet& rdset) :
-    rrclass_(rrclass), node_(&node), rdset_(&rdset),
-    offset_table_(NULL)
-{
-}
-
 bool
 TreeNodeRRset::isSameKind(const AbstractRRset& other) const {
     // This code is an optimisation for comparing

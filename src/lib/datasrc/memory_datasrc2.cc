@@ -45,6 +45,77 @@ namespace datasrc {
 
 using internal::RdataSet;
 
+namespace {
+template <size_t NUM_FRAGMENTS = 1024>
+class MemoryFragments {
+private:
+    union Fragment {
+        Fragment* next_;
+        uint8_t storage_[64];
+    };
+public:
+    MemoryFragments() : free_(NULL), fragments_(new Fragment[NUM_FRAGMENTS]) {
+        Fragment** nextp = &fragments_;
+        for (Fragment* cur = fragments_;
+             cur < fragments_ + NUM_FRAGMENTS;
+             nextp = &cur->next_, ++cur)
+        {
+            *nextp = cur;
+        }
+        *nextp = NULL;
+        free_ = fragments_;
+    }
+    ~MemoryFragments() { delete[] fragments_; }
+    void* allocate(const size_t n) {
+        if (free_ != NULL && n <= sizeof(Fragment)) {
+            void* ret = free_;
+            free_ = free_->next_;
+            return (ret);
+        } else {
+            throw std::bad_alloc();
+        }
+    }
+    void deallocate(void* p) {
+        Fragment* cur = static_cast<Fragment*>(p);
+        cur->next_ = free_;
+        free_ = cur;
+    }
+
+private:
+    Fragment* free_;
+    Fragment* fragments_;
+};
+}
+
+template <typename T>
+class SimpleAllocator {
+public:
+    template <typename U>
+    struct rebind {
+        typedef SimpleAllocator<U> other;
+    };
+
+    SimpleAllocator(MemoryFragments<1024>& fragments) : fragments_(&fragments)
+    {}
+
+    template <typename U>
+    SimpleAllocator(const SimpleAllocator<U>& other) {
+        fragments_ = other.fragments_;
+    }
+
+    T* allocate(const size_t n, T*) {
+        assert(n == 1);
+        return (reinterpret_cast<T*>(fragments_->allocate(sizeof(T))));
+    }
+
+    void deallocate(T* p, size_t n) {
+        assert(n == 1);
+        fragments_->deallocate(p);
+    }
+
+    MemoryFragments<1024>* fragments_;
+};
+
 namespace experimental {
 
 using internal::TreeNodeRRset;
@@ -437,19 +508,22 @@ InMemoryZoneFinder::ZoneData::findNode(const LabelSequence& labels,
 
 namespace {
 shared_ptr<TreeNodeRRset>
-createRRsetPtr(boost::object_pool<TreeNodeRRset>* pool, RRClass rrclass,
+createRRsetPtr(boost::pool<>* rrset_pool,
+               const SimpleAllocator<int>& allocator,
+               const boost::function<void(internal::TreeNodeRRset*)>&
+               rrset_deleter, RRClass rrclass,
                const RBNode<datasrc::internal::RdataSet>& node,
                const RdataSet& rdset,
                internal::CompressOffsetTable* offset_table)
 {
-    TreeNodeRRset* p = pool->construct(rrclass, node, rdset);
+    TreeNodeRRset* p = new(rrset_pool->malloc()) TreeNodeRRset(rrclass, node,
+                                                               rdset,
+                                                               offset_table);
     if (p == NULL) {
         throw bad_alloc();
     }
-    p->setCompressTable(offset_table);
-    return (shared_ptr<TreeNodeRRset>(
-                p, boost::bind(&boost::object_pool<TreeNodeRRset>::destroy,
-                               pool, _1)));
+
+    return (shared_ptr<TreeNodeRRset>(p, rrset_deleter, allocator));
 }
 }
 
@@ -571,6 +645,8 @@ private:
                 if (RRType(rdset->type) == (*it)) {
                     ConstTreeNodeRRsetPtr rrset =
                         createRRsetPtr(&finder_.rrset_pool_,
+                                       *finder_.allocator_,
+                                       finder_.rrset_deleter_,
                                        finder_.zone_class_, *node, *rdset,
                                        finder_.offset_table_);
                     result->push_back(rrset);
@@ -606,9 +682,10 @@ InMemoryZoneFinder::createFindResult(Result code, RRsetPair rrset,
     }
     if (rrset.first != NULL && rrset.second != NULL) {
         return (TreeNodeResultContext(
-                    code, createRRsetPtr(&rrset_pool_, zone_class_,
-                                         *rrset.first, *rrset.second,
-                                         offset_table_), flags,
+                    code, createRRsetPtr(&rrset_pool_, *allocator_,
+                                         rrset_deleter_, zone_class_,
+                                         *rrset.first,
+                                         *rrset.second, offset_table_), flags,
                     rrset.first, *zone_data_));
     }
     return (TreeNodeResultContext(code, ConstTreeNodeRRsetPtr(), flags,
@@ -681,8 +758,9 @@ InMemoryZoneFinder::find(
              found != NULL;
              found = found->next.get())
         {
-            target->push_back(createRRsetPtr(&rrset_pool_, zone_class_, *node,
-                                             *found, offset_table_));
+            target->push_back(createRRsetPtr(&rrset_pool_, *allocator_,
+                                             rrset_deleter_, zone_class_,
+                                             *node, *found, offset_table_));
         }
         LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_ANY_SUCCESS).
             arg(name);
@@ -1051,8 +1129,13 @@ InMemoryZoneFinder::addFromLoad(const ConstRRsetPtr& set, ZoneData* zone_data)
 
 InMemoryZoneFinder::InMemoryZoneFinder(const RRClass& zone_class,
                                        const Name& origin) :
-    zone_class_(zone_class), origin_(origin), zone_data_(NULL)
+    zone_class_(zone_class), origin_(origin), zone_data_(NULL),
+    rrset_pool_(sizeof(internal::TreeNodeRRset)),
+    rrset_deleter_(boost::bind(&boost::pool<>::free, &rrset_pool_, _1))
 {
+    static MemoryFragments<1024> fragments;
+    allocator_ = new SimpleAllocator<int>(fragments);
+
     LOG_DEBUG(logger, DBG_TRACE_BASIC, DATASRC_MEM_CREATE).arg(origin).
         arg(zone_class);
 }

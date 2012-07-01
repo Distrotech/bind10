@@ -44,7 +44,11 @@ public:
     /// \param rrset Pointer to underlying RRset encapsulated by this object.
     TreeNodeRRset(dns::RRClass rrclass,
                   const RBNode<datasrc::internal::RdataSet>& node,
-                  const datasrc::internal::RdataSet& rdset);
+                  const datasrc::internal::RdataSet& rdset,
+                  CompressOffsetTable* offset_table) :
+        rrclass_(rrclass), node_(&node), rdset_(&rdset),
+        offset_table_(offset_table)
+    {}
 
     /// \brief Destructor
     virtual ~TreeNodeRRset() {}
@@ -105,11 +109,6 @@ public:
 
     const datasrc::internal::RdataSet& getRdataSet() const {
         return (*rdset_);
-    }
-
-    // We use this as boost::object_pool only allows up to 3 ctor params
-    void setCompressTable(CompressOffsetTable* offset_table) {
-        offset_table_ = offset_table;
     }
 
 private:

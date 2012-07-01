@@ -90,8 +90,7 @@ TEST_F(TreeNodeRRsetTest, construct) {
               tree_.insert(rrset_soa_->getName(), &node));
     EXPECT_TRUE(node->isEmpty());
     node->setData(rdset_soa_);
-    TreeNodeRRset rrset(RRClass::IN(), *node, *rdset_soa_);
-    rrset.setCompressTable(&offset_table_);
+    TreeNodeRRset rrset(RRClass::IN(), *node, *rdset_soa_, &offset_table_);
     rrset.toWire(renderer_);
 
     isc::util::InputBuffer b(renderer_.getData(), renderer_.getLength());

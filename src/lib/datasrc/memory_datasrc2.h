@@ -28,7 +28,7 @@
 #include <boost/interprocess/offset_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/function.hpp>
-#include <boost/pool/object_pool.hpp>
+#include <boost/pool/pool.hpp>
 
 #include <string>
 
@@ -39,6 +39,8 @@ class RRsetList;
 }
 
 namespace datasrc {
+template <typename T> class SimpleAllocator;
+
 namespace experimental {
 
 // The tree stores domains
@@ -155,13 +157,15 @@ private:
     datasrc::internal::RdataEncoder rdata_encoder_;
 
     ZoneData* zone_data_;
-    mutable boost::object_pool<internal::TreeNodeRRset> rrset_pool_;
+    mutable boost::pool<> rrset_pool_;
+    const boost::function<void(internal::TreeNodeRRset*)> rrset_deleter_;
+
+    const SimpleAllocator<int>* allocator_;
 
     // Ugly, but this is the most convenient place to hold it.
     mutable
     datasrc::experimental::internal::CompressOffsetTable* offset_table_;
 };
-
 
 class InMemoryClient : public DataSourceClient {
 public:
