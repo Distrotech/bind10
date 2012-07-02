@@ -37,11 +37,13 @@ unsigned long recv_count = 0;
 unsigned long resp_count = 0;
 unsigned long recvresp_count = 0;
 unsigned long forward_count = 0;
+unsigned long forward2_count = 0;
 
 void
 sigterm_handler(int) {
     cout << recv_count << " packets received, "
          << forward_count << " forwarded, "
+         << forward2_count << " more recursion, "
          << recvresp_count << " response received, "
          << resp_count << " responded" << endl;
     exit(0);
@@ -198,6 +200,7 @@ main(int argc, char** argv) {
     FD_SET(s, &fdset_base);
     FD_SET(s_fwd, &fdset_base);
     const int max_fd = std::max(s, s_fwd);
+    int query_cc = 0;
     while (true) {
         fd_set fdset = fdset_base;
         const int n = select(max_fd + 1, &fdset, NULL, NULL, NULL);
@@ -214,11 +217,12 @@ main(int argc, char** argv) {
                 cout << "unexpected empty result on recvfrom" << endl;
                 return (1);
             }
+            query_cc = cc;
             ++recv_count;
 
-            // emulating "90% cache hit": 10% of queries are forwarded, and
-            // the rest are responded immediately.
-            if ((recv_count % 10) == 9) {
+            // If the first byte of the received "query" is non 0, we use
+            // it as an indication of thee need for recursion (cache miss)
+            if (recvbuf[0] != 0) {
                 cc = sendto(s_fwd, recvbuf, cc, 0, convertSockAddr(&fwd_ss),
                             fwd_salen);
                 if (cc < 0) {
@@ -227,6 +231,7 @@ main(int argc, char** argv) {
                 }
                 ++forward_count;
             } else {
+                // Emulating "cache hit".  Directly responding to the query.
                 cc = sendto(s, recvbuf, resp_size, 0,
                             convertSockAddr(&from_ss), fromlen);
                 if (cc < 0 || cc != resp_size) {
@@ -244,8 +249,7 @@ main(int argc, char** argv) {
         struct sockaddr* from_fwd = convertSockAddr(&from_fwd_ss);
         socklen_t fromfwd_len = sizeof(from_fwd_ss);
         if (FD_ISSET(s_fwd, &fdset)) {
-            // If we get a response from the "remote server", send it back
-            // to the client
+            // We've got a response from the "remote server".
             int cc = recvfrom(s_fwd, recvbuf, sizeof(recvbuf), 0,
                               from_fwd, &fromfwd_len);
             if (cc <= 0) {
@@ -254,8 +258,22 @@ main(int argc, char** argv) {
             }
             ++recvresp_count;
             if (recv_count == 0) {
+                // rare case, but depending on timing we could receive this
+                // even before the first query.
                 cout << "skip responding" << endl;
+            } else if (recvbuf[0] != 0) {
+                // If the first byte of the "response" is non 0, we consider
+                // it as an indication of the need for further recursion.
+                cc = sendto(s_fwd, recvbuf, query_cc, 0,
+                            convertSockAddr(&fwd_ss), fwd_salen);
+                if (cc < 0) {
+                    cout << "unexpected result on sendto for forward" << endl;
+                    return (1);
+                }
+                ++forward2_count;
             } else {
+                // If we get a response from the "remote server", send it back
+                // to the client
                 cc = sendto(s, recvbuf, resp_size, 0,
                             convertSockAddr(&from_ss), fromlen);
                 if (cc < 0 || cc != resp_size) {
@@ -266,8 +284,8 @@ main(int argc, char** argv) {
                     cout << endl;
                     return (1);
                 }
+                ++resp_count;
             }
-            ++resp_count;
         }
     }
     return (0);
