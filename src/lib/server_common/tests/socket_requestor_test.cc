@@ -14,6 +14,13 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
+#include <sys/socket.h>
+#include <sys/un.h>
+#endif
+
 #include <server_common/socket_request.h>
 
 #include <gtest/gtest.h>
@@ -27,10 +34,9 @@
 #include <cstdlib>
 #include <cstddef>
 #include <cerrno>
-#include <sys/socket.h>
-#include <sys/un.h>
 
 #include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include <util/io/fd.h>
@@ -237,6 +243,7 @@ TEST_F(SocketRequestorTest, testBadRequestAnswers) {
     addAnswer("foo", std::string(1000, 'x'));
     EXPECT_THROW(doRequest(), SocketRequestor::SocketError);
 
+#ifndef _WIN32
     // Test values around path boundary
     struct sockaddr_un sock_un;
     const std::string max_len(sizeof(sock_un.sun_path) - 1, 'x');
@@ -260,6 +267,7 @@ TEST_F(SocketRequestorTest, testBadRequestAnswers) {
     } catch (const SocketRequestor::SocketError& se) {
         EXPECT_NE(std::string::npos, std::string(se.what()).find("too long"));
     }
+#endif
 
     // Send back an error response
     // A generic one first
@@ -325,15 +333,26 @@ TEST_F(SocketRequestorTest, testBadSocketReleaseAnswers) {
 // send expected data.
 // It returns true when the timeout is set successfully; otherwise false.
 bool
-setRecvTimo(int s) {
+#ifdef _WIN32
+setRecvTimo(SOCKET s)
+#else
+setRecvTimo(int s)
+#endif
+{
     const struct timeval timeo = { 10, 0 }; // 10sec, arbitrary choice
-    if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &timeo, sizeof(timeo)) == 0) {
+    if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO,
+                   (char *) &timeo, sizeof(timeo)) == 0) {
         return (true);
     }
+#ifdef _WIN32
+    isc_throw(isc::Unexpected, "set RCVTIMEO failed: "
+              << strerror(WSAGetLastError()));
+#else
     if (errno == ENOPROTOOPT) { // deviant OS, give up using it.
         return (false);
     }
     isc_throw(isc::Unexpected, "set RCVTIMEO failed: " << strerror(errno));
+#endif
 }
 
 // Helper test class that creates a randomly named domain socket
@@ -342,8 +361,31 @@ setRecvTimo(int s) {
 // When run() is called, it creates the socket, forks, and the child will
 // listen for a connection, then send all the data passed to run to that
 // connection, and then close the socket
+typedef std::pair<std::string, int> DataPair;
+
+#ifdef _WIN32
+struct childargs {
+    SOCKET fd_;
+    const std::vector<DataPair>& data;
+
+    childargs(SOCKET fd_,
+              const std::vector<DataPair>& data) :
+       fd_(fd_), data(data) {}
+private:
+    childargs& operator=(childargs const&);
+};
+#endif
+
 class TestSocket {
 public:
+#ifdef _WIN32
+    TestSocket() : fd_(INVALID_SOCKET) {
+        int port = 15000 + rand() & 255;
+	std::string sport = boost::lexical_cast<std::string>(port);
+	path_ = strdup(sport.c_str());
+    }
+    friend DWORD WINAPI childproc(void *args);
+#else
     TestSocket() : fd_(-1) {
         path_ = strdup("test_socket.XXXXXX");
         // Misuse mkstemp to generate a file name.
@@ -354,11 +396,25 @@ public:
         // Just need the name, so immediately close
         close(f);
     }
+#endif
 
     ~TestSocket() {
         cleanup();
     }
 
+#ifdef _WIN32
+    void
+    cleanup() {
+        if (path_ != NULL) {
+            free(path_);
+            path_ = NULL;
+        }
+        if (fd_ != INVALID_SOCKET) {
+            closesocket(fd_);
+            fd_ = INVALID_SOCKET;
+        }
+    }
+#else
     void
     cleanup() {
         unlink(path_);
@@ -371,6 +427,7 @@ public:
             fd_ = -1;
         }
     }
+#endif
 
     // Returns the path used for the socket
     const char* getPath() const {
@@ -381,7 +438,21 @@ public:
     // If the underlying system doesn't allow to set read timeout, tell the
     // caller that via a false return value so that the caller can avoid
     // performing tests that could result in a dead lock.
-    bool run(const std::vector<std::pair<std::string, int> >& data) {
+#ifdef _WIN32
+    bool run(const std::vector<DataPair>& data) {
+        create();
+        const bool timo_ok = setRecvTimo(fd_);
+	struct childargs *args = new childargs(fd_, data);
+        if (CreateThread(NULL, 0, childproc, args, 0, NULL) == NULL) {
+            isc_throw(Unexpected, "CreateThread failed: "
+                      << strerror(GetLastError()));
+	}
+        // parent does not need fd anymore
+        fd_ = INVALID_SOCKET;
+        return (timo_ok);
+    }
+#else
+    bool run(const std::vector<DataPair>& data) {
         create();
         const bool timo_ok = setRecvTimo(fd_);
         const int child_pid = fork();
@@ -395,8 +466,37 @@ public:
         }
         return (timo_ok);
     }
+#endif
+
 private:
     // Actually create the socket and listen on it
+#ifdef _WIN32
+    void
+    create() {
+        fd_ = socket(AF_INET, SOCK_STREAM, 0);
+        if (fd_ == INVALID_SOCKET) {
+            isc_throw(Unexpected, "Unable to create socket");
+        }
+        struct sockaddr_in socket_address;
+        socket_address.sin_family = AF_INET;
+	socket_address.sin_addr.s_addr = inet_addr("127.0.0.1");
+	socket_address.sin_port = htons(atoi(path_));
+        socklen_t len = sizeof(socket_address);
+
+        if (::bind(fd_, (struct sockaddr*)&socket_address,
+		   len) == SOCKET_ERROR) {
+            isc_throw(Unexpected,
+                      "unable to bind to test ip socket " << path_ <<
+                      ": " << strerror(WSAGetLastError()));
+        }
+
+        if (listen(fd_, 1) == SOCKET_ERROR) {
+            isc_throw(Unexpected,
+                      "unable to listen on test ip socket " << path_ <<
+                      ": " << strerror(WSAGetLastError()));
+        }
+    }
+#else
     void
     create() {
         fd_ = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -432,6 +532,7 @@ private:
                       ": " << strerror(errno));
         }
     }
+#endif
 
     // Accept one connection, then for each value of the vector,
     // read the socket token from the connection and match the string
@@ -450,22 +551,29 @@ private:
     // NOTE: client_fd could leak on exception.  This should be cleaned up.
     // See the note about SocketSessionReceiver in socket_request.cc.
     void
-    serve(const std::vector<std::pair<std::string, int> > data) {
+    serve(const std::vector<DataPair> data) {
+#ifdef _WIN32
+        const SOCKET client_fd = accept(fd_, NULL, NULL);
+        if (client_fd == INVALID_SOCKET) {
+            isc_throw(Unexpected, "Error in accept(): "
+                      << strerror(WSAGetLastError()));
+        }
+#else
         const int client_fd = accept(fd_, NULL, NULL);
         if (client_fd == -1) {
             isc_throw(Unexpected, "Error in accept(): " << strerror(errno));
         }
+#endif
         if (!setRecvTimo(client_fd)) {
             // In the loop below we do blocking read.  To avoid deadlock
             // when the parent is buggy we'll skip it unless we can
             // set a read timeout on the socket.
             return;
         }
-        typedef std::pair<std::string, int> DataPair;
         BOOST_FOREACH(DataPair cur_data, data) {
             char buf[5];
             memset(buf, 0, 5);
-            if (isc::util::io::read_data(client_fd, buf, 4) != 4) {
+            if (isc::util::io::recv_data(client_fd, buf, 4) != 4) {
                 isc_throw(Unexpected, "unable to receive socket token");
             }
             if (cur_data.first != buf) {
@@ -476,10 +584,10 @@ private:
             bool result;
             if (cur_data.second == -1) {
                 // send 'CREATOR_SOCKET_UNAVAILABLE'
-                result = isc::util::io::write_data(client_fd, "0\n", 2);
+                result = isc::util::io::send_data(client_fd, "0\n", 2);
             } else if (cur_data.second == -2) {
                 // send 'CREATOR_SOCKET_OK' first
-                result = isc::util::io::write_data(client_fd, "1\n", 2);
+                result = isc::util::io::send_data(client_fd, "1\n", 2);
                 if (result) {
                     if (send(client_fd, "a", 1, 0) != 1) {
                         result = false;
@@ -487,7 +595,7 @@ private:
                 }
             } else {
                 // send 'CREATOR_SOCKET_OK' first
-                result = isc::util::io::write_data(client_fd, "1\n", 2);
+                result = isc::util::io::send_data(client_fd, "1\n", 2);
                 if (result) {
                     if (isc::util::io::send_fd(client_fd,
                                                cur_data.second) != 0) {
@@ -496,26 +604,49 @@ private:
                 }
             }
             if (!result) {
+#ifdef _WIN32
+                isc_throw(Exception, "Error in send_fd(): " <<
+                          strerror(WSAGetLastError()));
+#else
                 isc_throw(Exception, "Error in send_fd(): " <<
                           strerror(errno));
+#endif
             }
         }
+#ifdef _WIN32
+        closesocket(client_fd);
+#else
         close(client_fd);
+#endif
     }
 
+#ifdef _WIN32
+    SOCKET fd_;
+#else
     int fd_;
+#endif
     char* path_;
 };
 
+#ifdef _WIN32
+DWORD WINAPI childproc(void *args) {
+    childargs *cargs = static_cast<childargs *>(args);
+    TestSocket child;
+    child.fd_ = cargs->fd_;
+    child.serve(cargs->data);
+    return 0;
+}
+#endif
+
 TEST_F(SocketRequestorTest, testSocketPassing) {
     TestSocket ts;
-    std::vector<std::pair<std::string, int> > data;
-    data.push_back(std::pair<std::string, int>("foo\n", 1));
-    data.push_back(std::pair<std::string, int>("bar\n", 2));
-    data.push_back(std::pair<std::string, int>("foo\n", 3));
-    data.push_back(std::pair<std::string, int>("foo\n", 1));
-    data.push_back(std::pair<std::string, int>("foo\n", -1));
-    data.push_back(std::pair<std::string, int>("foo\n", -2));
+    std::vector<DataPair> data;
+    data.push_back(DataPair("foo\n", 1));
+    data.push_back(DataPair("bar\n", 2));
+    data.push_back(DataPair("foo\n", 3));
+    data.push_back(DataPair("foo\n", 1));
+    data.push_back(DataPair("foo\n", -1));
+    data.push_back(DataPair("foo\n", -2));
 
     // run() returns true iff we can specify read timeout so we avoid a
     // deadlock.  Unless there's a bug the test should succeed even without the
@@ -528,27 +659,39 @@ TEST_F(SocketRequestorTest, testSocketPassing) {
         addAnswer("foo", ts.getPath());
         socket_id = doRequest();
         EXPECT_EQ("foo", socket_id.second);
+#ifdef _WIN32
+        EXPECT_EQ(0, closesocket(socket_id.first));
+#else
         EXPECT_EQ(0, close(socket_id.first));
+#endif
 
         // 2 should be ok too
         addAnswer("bar", ts.getPath());
         socket_id = doRequest();
         EXPECT_EQ("bar", socket_id.second);
+#ifdef _WIN32
+        EXPECT_EQ(0, closesocket(socket_id.first));
+#else
         EXPECT_EQ(0, close(socket_id.first));
+#endif
 
         // 3 should be ok too (reuse earlier token)
         addAnswer("foo", ts.getPath());
         socket_id = doRequest();
         EXPECT_EQ("foo", socket_id.second);
+#ifdef _WIN32
+        EXPECT_EQ(0, closesocket(socket_id.first));
+#else
         EXPECT_EQ(0, close(socket_id.first));
+#endif
     }
 
     // Create a second socket server, to test that multiple different
     // domains sockets would work as well (even though we don't actually
     // use that feature)
     TestSocket ts2;
-    std::vector<std::pair<std::string, int> > data2;
-    data2.push_back(std::pair<std::string, int>("foo\n", 1));
+    std::vector<DataPair> data2;
+    data2.push_back(DataPair("foo\n", 1));
     const bool timo_ok2 = ts2.run(data2);
 
     if (timo_ok2) {
@@ -556,7 +699,11 @@ TEST_F(SocketRequestorTest, testSocketPassing) {
         addAnswer("foo", ts2.getPath());
         socket_id = doRequest();
         EXPECT_EQ("foo", socket_id.second);
+#ifdef _WIN32
+        EXPECT_EQ(0, closesocket(socket_id.first));
+#else
         EXPECT_EQ(0, close(socket_id.first));
+#endif
     }
 
     if (timo_ok) {
@@ -564,7 +711,11 @@ TEST_F(SocketRequestorTest, testSocketPassing) {
         addAnswer("foo", ts.getPath());
         socket_id = doRequest();
         EXPECT_EQ("foo", socket_id.second);
+#ifdef _WIN32
+        EXPECT_EQ(0, closesocket(socket_id.first));
+#else
         EXPECT_EQ(0, close(socket_id.first));
+#endif
 
         // -1 is a "normal" error
         addAnswer("foo", ts.getPath());

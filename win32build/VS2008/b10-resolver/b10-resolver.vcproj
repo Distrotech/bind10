@@ -62,10 +62,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libexceptions.lib libutil.lib liblog.lib libcryptolink.lib libdns++.lib libcc.lib libcfgclient.lib libacl.lib libdnsacl.lib libasiolink.lib libasiodns.lib libnsas.lib libcache.lib libresolve.lib libserver_common.lib log4cplusSD.lib botan.lib"
+				AdditionalDependencies="libexceptions.lib libutil.lib libutil_io.lib liblog.lib libcryptolink.lib libdns++.lib libcc.lib libcfgclient.lib libacl.lib libdnsacl.lib libasiolink.lib libasiodns.lib libnsas.lib libcache.lib libresolve.lib libserver_common.lib log4cplusSD.lib botan.lib"
 				OutputFile="$(OutDir)\b10-resolver.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\libcryptolink\$(ConfigurationName)&quot;;&quot;..\libdns++\$(ConfigurationName)&quot;;&quot;..\libcc\$(ConfigurationName)&quot;;&quot;..\libcfgclient\$(ConfigurationName)&quot;;&quot;..\libacl\$(ConfigurationName)&quot;;&quot;..\libdnsacl\$(ConfigurationName)&quot;;&quot;..\libasiolink\$(ConfigurationName)&quot;;&quot;..\libasiodns\$(ConfigurationName)&quot;;&quot;..\libnsas\$(ConfigurationName)&quot;;&quot;..\libcache\$(ConfigurationName)&quot;;&quot;..\libresolve\$(ConfigurationName)&quot;;&quot;..\libserver_common\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\botan\md9\$(ConfigurationName)&quot;;&quot;$(BOOST)\lib&quot;"
+				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_io\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\libcryptolink\$(ConfigurationName)&quot;;&quot;..\libdns++\$(ConfigurationName)&quot;;&quot;..\libcc\$(ConfigurationName)&quot;;&quot;..\libcfgclient\$(ConfigurationName)&quot;;&quot;..\libacl\$(ConfigurationName)&quot;;&quot;..\libdnsacl\$(ConfigurationName)&quot;;&quot;..\libasiolink\$(ConfigurationName)&quot;;&quot;..\libasiodns\$(ConfigurationName)&quot;;&quot;..\libnsas\$(ConfigurationName)&quot;;&quot;..\libcache\$(ConfigurationName)&quot;;&quot;..\libresolve\$(ConfigurationName)&quot;;&quot;..\libserver_common\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\botan\md9\$(ConfigurationName)&quot;;&quot;$(BOOST)\lib&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -139,10 +139,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libexceptions.lib libutil.lib liblog.lib libcryptolink.lib libdns++.lib libcc.lib libcfgclient.lib libacl.lib libdnsacl.lib libasiolink.lib libasiodns.lib libnsas.lib libcache.lib libresolve.lib libserver_common.lib log4cplusS.lib botan.lib"
+				AdditionalDependencies="libexceptions.lib libutil.lib libutil_io.lib liblog.lib libcryptolink.lib libdns++.lib libcc.lib libcfgclient.lib libacl.lib libdnsacl.lib libasiolink.lib libasiodns.lib libnsas.lib libcache.lib libresolve.lib libserver_common.lib log4cplusS.lib botan.lib"
 				OutputFile="$(OutDir)\b10-resolver.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\libcryptolink\$(ConfigurationName)&quot;;&quot;..\libdns++\$(ConfigurationName)&quot;;&quot;..\libcc\$(ConfigurationName)&quot;;&quot;..\libcfgclient\$(ConfigurationName)&quot;;&quot;..\libacl\$(ConfigurationName)&quot;;&quot;..\libdnsacl\$(ConfigurationName)&quot;;&quot;..\libasiolink\$(ConfigurationName)&quot;;&quot;..\libasiodns\$(ConfigurationName)&quot;;&quot;..\libnsas\$(ConfigurationName)&quot;;&quot;..\libcache\$(ConfigurationName)&quot;;&quot;..\libresolve\$(ConfigurationName)&quot;;&quot;..\libserver_common\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\botan\md9\$(ConfigurationName)&quot;;&quot;$(BOOST)\lib&quot;"
+				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_io\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\libcryptolink\$(ConfigurationName)&quot;;&quot;..\libdns++\$(ConfigurationName)&quot;;&quot;..\libcc\$(ConfigurationName)&quot;;&quot;..\libcfgclient\$(ConfigurationName)&quot;;&quot;..\libacl\$(ConfigurationName)&quot;;&quot;..\libdnsacl\$(ConfigurationName)&quot;;&quot;..\libasiolink\$(ConfigurationName)&quot;;&quot;..\libasiodns\$(ConfigurationName)&quot;;&quot;..\libnsas\$(ConfigurationName)&quot;;&quot;..\libcache\$(ConfigurationName)&quot;;&quot;..\libresolve\$(ConfigurationName)&quot;;&quot;..\libserver_common\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\botan\md9\$(ConfigurationName)&quot;;&quot;$(BOOST)\lib&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -181,6 +181,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\..\..\src\bin\resolver\common.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\getopt.cc"
 				>
 			</File>
@@ -210,6 +214,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath="..\..\..\src\bin\resolver\common.h"
+				>
+			</File>
 			<File
 				RelativePath="..\..\getopt.h"
 				>

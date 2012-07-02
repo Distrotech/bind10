@@ -172,6 +172,10 @@
 				RelativePath="..\..\..\src\lib\server_common\server_common_messages.cc"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\lib\server_common\socket_request.cc"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -196,6 +200,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\server_common\server_common_messages.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\server_common\socket_request.h"
 				>
 			</File>
 		</Filter>

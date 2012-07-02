@@ -14,6 +14,21 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <getopt.h>
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#include <process.h>
+#define getpid _getpid
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/select.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#endif
+
 #include <resolver/spec_config.h>
 #include <resolver/resolver.h>
 #include "resolver_log.h"
@@ -48,18 +63,6 @@
 #include <log/logger_level.h>
 #include "resolver_log.h"
 
-#ifdef _WIN32
-#include <getopt.h>
-#include <ws2tcpip.h>
-#include <mswsock.h>
-#else
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/select.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#endif
 #include <stdlib.h>
 #include <errno.h>
 

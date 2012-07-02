@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libexceptions.lib libutil.lib libutil_unittests.lib liblog.lib libasiolink.lib libdhcp.lib log4cplusSD.lib gtestd.lib"
+				AdditionalDependencies="libexceptions.lib libutil.lib libutil_unittests.lib liblog.lib libasiolink.lib libdhcp.lib log4cplusSD.lib gtestd.lib iphlpapi.lib"
 				OutputFile="$(OutDir)\run_unittests.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\libasiolink\$(ConfigurationName)&quot;;&quot;..\libdhcp\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;;&quot;$(BOOST)\lib&quot;"
@@ -137,7 +137,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libexceptions.lib libutil.lib libutil_unittests.lib liblog.lib libasiolink.lib libdhcp.lib log4cplusS.lib gtest.lib"
+				AdditionalDependencies="libexceptions.lib libutil.lib libutil_unittests.lib liblog.lib libasiolink.lib libdhcp.lib log4cplusS.lib gtest.lib iphlpapi.lib"
 				OutputFile="$(OutDir)\run_unittests.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\libasiolink\$(ConfigurationName)&quot;;&quot;..\libdhcp\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;;&quot;$(BOOST)\lib&quot;"
@@ -178,6 +178,10 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
+			<File
+				RelativePath="..\..\..\src\lib\dhcp\tests\iface_mgr_unittest.cc"
+				>
+			</File>
 			<File
 				RelativePath="..\..\..\src\lib\dhcp\tests\libdhcp++_unittest.cc"
 				>

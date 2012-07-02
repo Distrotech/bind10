@@ -21,7 +21,11 @@
 
 #include <string>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <sys/socket.h>
+#endif
 
 namespace isc {
 namespace util {
@@ -181,7 +185,13 @@ public:
     virtual ~BaseSocketSessionForwarder() {}
     virtual void connectToReceiver() = 0;
     virtual void close() = 0;
-    virtual void push(int sock, int family, int type, int protocol,
+    virtual void push(
+#ifdef _WIN32
+                      SOCKET sock,
+#else
+                      int sock,
+#endif
+                      int family, int type, int protocol,
                       const struct sockaddr& local_end,
                       const struct sockaddr& remote_end,
                       const void* data, size_t data_len) = 0;
@@ -309,7 +319,13 @@ public:
     /// \param data A pointer to the beginning of the memory region for the
     ///             session data
     /// \param data_len The size of the session data in bytes.
-    virtual void push(int sock, int family, int type, int protocol,
+    virtual void push(
+#ifdef _WIN32
+                      SOCKET sock,
+#else
+                      int sock,
+#endif
+                      int family, int type, int protocol,
                       const struct sockaddr& local_end,
                       const struct sockaddr& remote_end,
                       const void* data, size_t data_len);
@@ -359,12 +375,22 @@ public:
     /// session data.  Must not be NULL, and the subsequent \c data_len bytes
     /// must be valid.
     /// \param data_len The size of the session data in bytes.  Must not be 0.
-    SocketSession(int sock, int family, int type, int protocol,
+    SocketSession(
+#ifdef _WIN32
+                  SOCKET sock,
+#else
+                  int sock,
+#endif
+                  int family, int type, int protocol,
                   const sockaddr* local_end, const sockaddr* remote_end,
                   const void* data, size_t data_len);
 
     /// Return the socket file descriptor.
+#ifdef _WIN32
+    SOCKET getSocket() const { return (sock_); }
+#else
     int getSocket() const { return (sock_); }
+#endif
 
     /// Return the address family (such as AF_INET6) of the socket.
     int getFamily() const { return (family_); }
@@ -394,7 +420,11 @@ public:
     size_t getDataLength() const { return (data_len_); }
 
 private:
+#ifdef _WIN32
+    const SOCKET sock_;
+#else
     const int sock_;
+#endif
     const int family_;
     const int type_;
     const int protocol_;
@@ -433,7 +463,11 @@ public:
     ///
     /// \param fd A UNIX domain socket for an established connection with
     /// a forwarder.
+#ifdef _WIN32
+    explicit SocketSessionReceiver(SOCKET fd);
+#else
     explicit SocketSessionReceiver(int fd);
+#endif
 
     /// The destructor.
     ///

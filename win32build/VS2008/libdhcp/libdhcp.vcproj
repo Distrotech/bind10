@@ -151,6 +151,26 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\..\..\src\lib\dhcp\iface_mgr.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\dhcp\iface_mgr_bsd.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\dhcp\iface_mgr_linux.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\dhcp\iface_mgr_sun.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\dhcp\iface_mgr_windows.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\dhcp\libdhcp++.cc"
 				>
 			</File>

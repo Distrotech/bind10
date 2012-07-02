@@ -63,10 +63,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="false"
-				AdditionalDependencies="libexceptions.lib libutil.lib libutil_unittests.lib liblog.lib libcryptolink.lib libdns++.lib libcc.lib libcfgclient.lib libfake_session.lib libacl.lib libasiolink.lib libasiodns.lib libserver_common.lib log4cplusSD.lib botan.lib gtestd.lib"
+				AdditionalDependencies="libexceptions.lib libutil.lib libutil_io.lib libutil_unittests.lib liblog.lib libcryptolink.lib libdns++.lib libcc.lib libcfgclient.lib libfake_session.lib libacl.lib libasiolink.lib libasiodns.lib libserver_common.lib log4cplusSD.lib botan.lib gtestd.lib"
 				OutputFile="$(OutDir)\run_unittests.exe"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\libcryptolink\$(ConfigurationName)&quot;;&quot;..\libdns++\$(ConfigurationName)&quot;;&quot;..\libcc\$(ConfigurationName)&quot;;&quot;..\libcfgclient\$(ConfigurationName)&quot;;&quot;..\libfake_session\$(ConfigurationName)&quot;;&quot;..\libacl\$(ConfigurationName)&quot;;&quot;..\libasiolink\$(ConfigurationName)&quot;;&quot;..\libasiodns\$(ConfigurationName)&quot;;&quot;..\libserver_common\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\botan\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;;&quot;$(BOOST)\lib&quot;"
+				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_io\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\libcryptolink\$(ConfigurationName)&quot;;&quot;..\libdns++\$(ConfigurationName)&quot;;&quot;..\libcc\$(ConfigurationName)&quot;;&quot;..\libcfgclient\$(ConfigurationName)&quot;;&quot;..\libfake_session\$(ConfigurationName)&quot;;&quot;..\libacl\$(ConfigurationName)&quot;;&quot;..\libasiolink\$(ConfigurationName)&quot;;&quot;..\libasiodns\$(ConfigurationName)&quot;;&quot;..\libserver_common\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\botan\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;;&quot;$(BOOST)\lib&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -141,10 +141,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="false"
-				AdditionalDependencies="libexceptions.lib libutil.lib libutil_unittests.lib liblog.lib libcryptolink.lib libdns++.lib libcc.lib libcfgclient.lib libfake_session.lib libacl.lib libasiolink.lib libasiodns.lib libserver_common.lib log4cplusS.lib botan.lib gtest.lib"
+				AdditionalDependencies="libexceptions.lib libutil.lib libutil_io.lib libutil_unittests.lib liblog.lib libcryptolink.lib libdns++.lib libcc.lib libcfgclient.lib libfake_session.lib libacl.lib libasiolink.lib libasiodns.lib libserver_common.lib log4cplusS.lib botan.lib gtest.lib"
 				OutputFile="$(OutDir)\run_unittests.exe"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\libcryptolink\$(ConfigurationName)&quot;;&quot;..\libdns++\$(ConfigurationName)&quot;;&quot;..\libcc\$(ConfigurationName)&quot;;&quot;..\libcfgclient\$(ConfigurationName)&quot;;&quot;..\libfake_session\$(ConfigurationName)&quot;;&quot;..\libacl\$(ConfigurationName)&quot;;&quot;..\libasiolink\$(ConfigurationName)&quot;;&quot;..\libasiodns\$(ConfigurationName)&quot;;&quot;..\libserver_common\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\botan\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;;&quot;$(BOOST)\lib&quot;"
+				AdditionalLibraryDirectories="&quot;..\libexceptions\$(ConfigurationName)&quot;;&quot;..\libutil\$(ConfigurationName)&quot;;&quot;..\libutil_io\$(ConfigurationName)&quot;;&quot;..\libutil_unittests\$(ConfigurationName)&quot;;&quot;..\liblog\$(ConfigurationName)&quot;;&quot;..\libcryptolink\$(ConfigurationName)&quot;;&quot;..\libdns++\$(ConfigurationName)&quot;;&quot;..\libcc\$(ConfigurationName)&quot;;&quot;..\libcfgclient\$(ConfigurationName)&quot;;&quot;..\libfake_session\$(ConfigurationName)&quot;;&quot;..\libacl\$(ConfigurationName)&quot;;&quot;..\libasiolink\$(ConfigurationName)&quot;;&quot;..\libasiodns\$(ConfigurationName)&quot;;&quot;..\libserver_common\$(ConfigurationName)&quot;;&quot;..\..\..\..\log4cplus\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\botan\md9\$(ConfigurationName)&quot;;&quot;..\..\..\..\gtest\md9\$(ConfigurationName)&quot;;&quot;$(BOOST)\lib&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -192,6 +192,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\server_common\tests\run_unittests.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\server_common\tests\socket_requestor_test.cc"
 				>
 			</File>
 		</Filter>

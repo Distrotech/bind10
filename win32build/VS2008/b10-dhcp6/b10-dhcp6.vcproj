@@ -189,10 +189,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\bin\dhcp6\iface_mgr.cc"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\bin\dhcp6\main.cc"
 				>
 			</File>
@@ -208,10 +204,6 @@
 			</File>
 			<File
 				RelativePath="..\..\getopt.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\bin\dhcp6\iface_mgr.h"
 				>
 			</File>
 			<File

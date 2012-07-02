@@ -14,12 +14,17 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <process.h>
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
 #include <sys/un.h>
 
 #include <netinet/in.h>
+#endif
 
 #include <fcntl.h>
 #include <stdint.h>
@@ -81,6 +86,8 @@ const size_t INITIAL_BUFSIZE = 512;
 // may want to customize this value in future.
 const int SOCKSESSION_BUFSIZE = (DEFAULT_HEADER_BUFLEN + MAX_DATASIZE) * 2;
 
+#ifndef _WIN32
+
 struct SocketSessionForwarder::ForwarderImpl {
     ForwarderImpl() : buf_(DEFAULT_HEADER_BUFLEN) {}
     struct sockaddr_un sock_un_;
@@ -94,6 +101,7 @@ SocketSessionForwarder::SocketSessionForwarder(const std::string& unix_file) :
 {
     // We need to filter SIGPIPE for subsequent push().  See the class
     // description.
+
     if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
         isc_throw(Unexpected, "Failed to filter SIGPIPE: " << strerror(errno));
     }
@@ -428,6 +436,343 @@ SocketSessionReceiver::pop() {
                   ex.what());
     }
 }
+
+#else
+
+/* Windows version */
+
+struct SocketSessionForwarder::ForwarderImpl {
+    ForwarderImpl() : buf_(DEFAULT_HEADER_BUFLEN) {}
+    struct sockaddr_in sock_in_;
+    socklen_t sock_in_len_;
+    SOCKET fd_;
+    OutputBuffer buf_;
+};
+
+SocketSessionForwarder::SocketSessionForwarder(const std::string& unix_file) :
+    impl_(NULL)
+{
+    ForwarderImpl impl;
+    if (atoi(unix_file.c_str()) <= 0) {
+        isc_throw(SocketSessionError, "Port name is not valid: " << unix_file);
+    }
+    impl.sock_in_.sin_family = AF_INET;
+    impl.sock_in_.sin_addr.s_addr = inet_addr("127.0.0.1");
+    impl.sock_in_.sin_port = htons(atoi(unix_file.c_str()));
+    impl.sock_in_len_ = sizeof(struct sockaddr_in);
+    impl.fd_ = INVALID_SOCKET;
+
+    impl_ = new ForwarderImpl;
+    *impl_ = impl;
+}
+
+SocketSessionForwarder::~SocketSessionForwarder() {
+    if (impl_->fd_ != INVALID_SOCKET) {
+        close();
+    }
+    delete impl_;
+}
+
+void
+SocketSessionForwarder::connectToReceiver() {
+    if (impl_->fd_ != INVALID_SOCKET) {
+        isc_throw(BadValue, "Duplicate connect to IP domain "
+                  "endpoint " << ntohs(impl_->sock_in_.sin_port));
+    }
+
+    impl_->fd_ = socket(AF_INET, SOCK_STREAM, 0);
+    if (impl_->fd_ == INVALID_SOCKET) {
+        isc_throw(SocketSessionError, "Failed to create a socket: "
+                  << strerror(WSAGetLastError()));
+    }
+    // Make the socket non blocking
+    u_long nbio_flags = 1;
+    if (ioctlsocket(impl_->fd_, FIONBIO, &nbio_flags) != 0) {
+        close();   // note: this is the internal method, not ::close()
+        isc_throw(SocketSessionError,
+                  "Failed to make socket non blocking: " <<
+                  strerror(WSAGetLastError()));
+    }
+    // Ensure the socket send buffer is large enough.  If we can't get the
+    // current size, simply set the sufficient size.
+    int sndbuf_size;
+    socklen_t sndbuf_size_len = sizeof(sndbuf_size);
+    if (getsockopt(impl_->fd_, SOL_SOCKET, SO_SNDBUF,
+                   (char *)&sndbuf_size, &sndbuf_size_len) == -1 ||
+        sndbuf_size < SOCKSESSION_BUFSIZE) {
+        if (setsockopt(impl_->fd_, SOL_SOCKET, SO_SNDBUF,
+                       (char *)&SOCKSESSION_BUFSIZE,
+                       sizeof(SOCKSESSION_BUFSIZE)) == -1) {
+            close();
+            isc_throw(SocketSessionError, "Failed to set send buffer size");
+        }
+    }
+    if (connect(impl_->fd_, (struct sockaddr *) &impl_->sock_in_,
+                impl_->sock_in_len_) == -1) {
+        close();
+        isc_throw(SocketSessionError, "Failed to connect to endpoint "
+                  << ntohs(impl_->sock_in_.sin_port) << ": " <<
+                  strerror(WSAGetLastError()));
+    }
+}
+
+void
+SocketSessionForwarder::close() {
+    if (impl_->fd_ == INVALID_SOCKET) {
+        isc_throw(BadValue, "Attempt of close before connect");
+    }
+    closesocket(impl_->fd_);
+    impl_->fd_ = INVALID_SOCKET;
+}
+
+void
+SocketSessionForwarder::push(SOCKET sock,
+                             int family, int type, int protocol,
+                             const struct sockaddr& local_end,
+                             const struct sockaddr& remote_end,
+                             const void* data, size_t data_len)
+{
+    if (impl_->fd_ == INVALID_SOCKET) {
+        isc_throw(BadValue, "Attempt of push before connect");
+    }
+    if ((local_end.sa_family != AF_INET && local_end.sa_family != AF_INET6) ||
+        (remote_end.sa_family != AF_INET && remote_end.sa_family != AF_INET6))
+    {
+        isc_throw(BadValue, "Invalid address family: must be "
+                  "AF_INET or AF_INET6; " <<
+                  static_cast<int>(local_end.sa_family) << ", " <<
+                  static_cast<int>(remote_end.sa_family) << " given");
+    }
+    if (family != local_end.sa_family || family != remote_end.sa_family) {
+        isc_throw(BadValue, "Inconsistent address family: must be "
+                  << static_cast<int>(family) << "; "
+                  << static_cast<int>(local_end.sa_family) << ", "
+                  << static_cast<int>(remote_end.sa_family) << " given");
+    }
+    if (data_len == 0 || data == NULL) {
+        isc_throw(BadValue, "Data for a socket session must not be empty");
+    }
+    if (data_len > MAX_DATASIZE) {
+        isc_throw(BadValue, "Invalid socket session data size: " <<
+                  data_len << ", must not exceed " << MAX_DATASIZE);
+    }
+
+    if (send_fd(impl_->fd_, sock) != 0) {
+        isc_throw(SocketSessionError, "FD passing failed: " <<
+                  strerror(errno));
+    }
+
+    impl_->buf_.clear();
+    // Leave the space for the header length
+    impl_->buf_.skip(sizeof(uint16_t));
+    // Socket properties: family, type, protocol
+    impl_->buf_.writeUint32(static_cast<uint32_t>(family));
+    impl_->buf_.writeUint32(static_cast<uint32_t>(type));
+    impl_->buf_.writeUint32(static_cast<uint32_t>(protocol));
+    // Local endpoint
+    impl_->buf_.writeUint32(static_cast<uint32_t>(getSALength(local_end)));
+    impl_->buf_.writeData(&local_end, getSALength(local_end));
+    // Remote endpoint
+    impl_->buf_.writeUint32(static_cast<uint32_t>(getSALength(remote_end)));
+    impl_->buf_.writeData(&remote_end, getSALength(remote_end));
+    // Data length.  Must be fit uint32 due to the range check above.
+    const uint32_t data_len32 = static_cast<uint32_t>(data_len);
+    assert(data_len == data_len32); // shouldn't cause overflow.
+    impl_->buf_.writeUint32(data_len32);
+    // Write the resulting header length at the beginning of the buffer
+    impl_->buf_.writeUint16At(impl_->buf_.getLength() - sizeof(uint16_t), 0);
+
+    WSABUF iov[2] = {
+        { impl_->buf_.getLength(), (char *) impl_->buf_.getData() },
+        { data_len, (char *) data }
+    };
+    DWORD cc;
+    if (WSASend(impl_->fd_, iov, 2, &cc, 0, NULL, NULL) == SOCKET_ERROR) {
+        isc_throw(SocketSessionError,
+                  "Write failed in forwarding a socket session: " <<
+                  strerror(WSAGetLastError()));
+    }
+    if (cc != impl_->buf_.getLength() + data_len) {
+        isc_throw(SocketSessionError,
+                  "Incomplete write in forwarding a socket session: " << cc <<
+                  "/" << (impl_->buf_.getLength() + data_len));
+    }
+}
+
+SocketSession::SocketSession(SOCKET sock,
+                             int family, int type, int protocol,
+                             const sockaddr* local_end,
+                             const sockaddr* remote_end,
+                             const void* data, size_t data_len) :
+    sock_(sock), family_(family), type_(type), protocol_(protocol),
+    local_end_(local_end), remote_end_(remote_end),
+    data_(data), data_len_(data_len)
+{
+    if (local_end == NULL || remote_end == NULL) {
+        isc_throw(BadValue, "sockaddr must be non NULL for SocketSession");
+    }
+    if (data_len == 0) {
+        isc_throw(BadValue, "data_len must be non 0 for SocketSession");
+    }
+    if (data == NULL) {
+        isc_throw(BadValue, "data must be non NULL for SocketSession");
+    }
+}
+
+struct SocketSessionReceiver::ReceiverImpl {
+    ReceiverImpl(SOCKET fd) : fd_(fd),
+                              sa_local_((struct sockaddr *) &ss_local_),
+                              sa_remote_((struct sockaddr *) &ss_remote_),
+                              header_buf_(DEFAULT_HEADER_BUFLEN),
+                              data_buf_(INITIAL_BUFSIZE)
+    {
+        if (setsockopt(fd_, SOL_SOCKET, SO_RCVBUF,
+                       (char *) &SOCKSESSION_BUFSIZE,
+                       sizeof(SOCKSESSION_BUFSIZE)) == -1) {
+            isc_throw(SocketSessionError,
+                      "Failed to set receive buffer size");
+        }
+    }
+
+    const SOCKET fd_;
+    struct sockaddr_storage ss_local_; // placeholder for local endpoint
+    struct sockaddr* const sa_local_;
+    struct sockaddr_storage ss_remote_; // placeholder for remote endpoint
+    struct sockaddr* const sa_remote_;
+
+    // placeholder for session header and data
+    vector<uint8_t> header_buf_;
+    vector<uint8_t> data_buf_;
+};
+
+SocketSessionReceiver::SocketSessionReceiver(SOCKET fd) :
+    impl_(new ReceiverImpl(fd))
+{
+}
+
+SocketSessionReceiver::~SocketSessionReceiver() {
+    delete impl_;
+}
+
+namespace {
+// A shortcut to throw common exception on failure of recv(2)
+void
+readFail(int actual_len, int expected_len) {
+    if (expected_len < 0) {
+        isc_throw(SocketSessionError, "Failed to receive data from "
+                  "SocketSessionForwarder: " << strerror(WSAGetLastError()));
+    }
+    isc_throw(SocketSessionError, "Incomplete data from "
+              "SocketSessionForwarder: " << actual_len << "/" <<
+              expected_len);
+}
+
+// A helper container for a (socket) file descriptor used in
+// SocketSessionReceiver::pop that ensures the socket is closed unless it
+// can be safely passed to the caller via release().
+struct ScopedSocket : boost::noncopyable {
+    ScopedSocket(SOCKET fd) : fd_(fd) {}
+    ~ScopedSocket() {
+        if (fd_ != INVALID_SOCKET) {
+            closesocket(fd_);
+        }
+    }
+    SOCKET release() {
+        const SOCKET fd = fd_;
+        fd_ = INVALID_SOCKET;
+        return (fd);
+    }
+    SOCKET fd_;
+};
+}
+
+SocketSession
+SocketSessionReceiver::pop() {
+    ScopedSocket passed_sock(recv_fd(impl_->fd_));
+    if (passed_sock.fd_ == FD_SYSTEM_ERROR) {
+        isc_throw(SocketSessionError, "Receiving a forwarded FD failed: " <<
+                  strerror(WSAGetLastError()));
+    } else if (passed_sock.fd_ == FD_OTHER_ERROR) {
+        isc_throw(SocketSessionError, "No FD forwarded");
+    }
+
+    uint16_t header_len;
+    const int cc_hlen = recv(impl_->fd_, (char *) &header_len,
+                             sizeof(header_len), MSG_WAITALL);
+    if (cc_hlen < sizeof(header_len)) {
+        readFail(cc_hlen, sizeof(header_len));
+    }
+    header_len = InputBuffer(&header_len, sizeof(header_len)).readUint16();
+    if (header_len > DEFAULT_HEADER_BUFLEN) {
+        isc_throw(SocketSessionError, "Too large header length: " <<
+                  header_len);
+    }
+    impl_->header_buf_.clear();
+    impl_->header_buf_.resize(header_len);
+    const int cc_hdr = recv(impl_->fd_, (char *) &impl_->header_buf_[0],
+                            header_len, MSG_WAITALL);
+    if (cc_hdr < header_len) {
+        readFail(cc_hdr, header_len);
+    }
+
+    InputBuffer ibuffer(&impl_->header_buf_[0], header_len);
+    try {
+        const int family = static_cast<int>(ibuffer.readUint32());
+        if (family != AF_INET && family != AF_INET6) {
+            isc_throw(SocketSessionError,
+                      "Unsupported address family is passed: " << family);
+        }
+        const int type = static_cast<int>(ibuffer.readUint32());
+        const int protocol = static_cast<int>(ibuffer.readUint32());
+        const socklen_t local_end_len = ibuffer.readUint32();
+        const socklen_t endpoint_minlen = (family == AF_INET) ?
+            sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
+        if (local_end_len < endpoint_minlen ||
+            local_end_len > sizeof(impl_->ss_local_)) {
+            isc_throw(SocketSessionError, "Invalid local SA length: " <<
+                      local_end_len);
+        }
+        ibuffer.readData(&impl_->ss_local_, local_end_len);
+        const socklen_t remote_end_len = ibuffer.readUint32();
+        if (remote_end_len < endpoint_minlen ||
+            remote_end_len > sizeof(impl_->ss_remote_)) {
+            isc_throw(SocketSessionError, "Invalid remote SA length: " <<
+                      remote_end_len);
+        }
+        ibuffer.readData(&impl_->ss_remote_, remote_end_len);
+        if (family != impl_->sa_local_->sa_family ||
+            family != impl_->sa_remote_->sa_family) {
+            isc_throw(SocketSessionError, "SA family inconsistent: " <<
+                      static_cast<int>(impl_->sa_local_->sa_family) << ", " <<
+                      static_cast<int>(impl_->sa_remote_->sa_family) <<
+                      " given, must be " << family);
+        }
+        const size_t data_len = ibuffer.readUint32();
+        if (data_len == 0 || data_len > MAX_DATASIZE) {
+            isc_throw(SocketSessionError,
+                      "Invalid socket session data size: " << data_len <<
+                      ", must be > 0 and <= " << MAX_DATASIZE);
+        }
+
+        impl_->data_buf_.clear();
+        impl_->data_buf_.resize(data_len);
+        const int cc_data = recv(impl_->fd_, (char *) &impl_->data_buf_[0],
+                                 data_len, MSG_WAITALL);
+        if (cc_data < (int) data_len) {
+            readFail(cc_data, data_len);
+        }
+
+        return (SocketSession(passed_sock.release(), family, type, protocol,
+                              impl_->sa_local_, impl_->sa_remote_,
+                              &impl_->data_buf_[0], data_len));
+    } catch (const InvalidBufferPosition& ex) {
+        // We catch the case where the given header is too short and convert
+        // the exception to SocketSessionError.
+        isc_throw(SocketSessionError, "bogus socket session header: " <<
+                  ex.what());
+    }
+}
+#endif
 
 }
 }

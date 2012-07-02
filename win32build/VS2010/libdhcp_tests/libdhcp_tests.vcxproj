@@ -60,7 +60,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;liblog.lib;libasiolink.lib;libdhcp.lib;log4cplusSD.lib;gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;liblog.lib;libasiolink.lib;libdhcp.lib;log4cplusSD.lib;gtestd.lib;%(AdditionalDependencies);iphlpapi.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\libutil_unittests\$(Configuration);..\liblog\$(Configuration);..\libasiolink\$(Configuration);..\libdhcp\$(Configuration);..\..\..\..\log4cplus\md10\$(Configuration);..\..\..\..\gtest\md10\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -82,10 +82,11 @@
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\libutil_unittests\$(Configuration);..\liblog\$(Configuration);..\libasiolink\$(Configuration);..\libdhcp\$(Configuration);..\..\..\..\log4cplus\md10\$(Configuration);..\..\..\..\gtest\md10\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;liblog.lib;libasiolink.lib;libdhcp.lib;log4cplusS.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;liblog.lib;libasiolink.lib;libdhcp.lib;log4cplusS.lib;gtest.lib;%(AdditionalDependencies);iphlpapi.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\lib\dhcp\tests\iface_mgr_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dhcp\tests\libdhcp++_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dhcp\tests\option4_addrlst_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\dhcp\tests\option6_addrlst_unittest.cc" />

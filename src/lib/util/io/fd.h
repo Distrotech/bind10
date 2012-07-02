@@ -17,7 +17,9 @@
 
 #include <config.h>
 
-#ifndef _WIN32
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <unistd.h>
 #endif
 
@@ -44,6 +46,13 @@ namespace io {
  */
 bool
 write_data(const int fd, const void *data, const size_t length);
+#ifdef _WIN32
+bool
+send_data(const SOCKET fd, const void *data, const size_t length);
+#else
+bool
+send_data(const int fd, const void *data, const size_t length);
+#endif
 
 /*
  * \short read() that reads everything.
@@ -57,6 +66,13 @@ write_data(const int fd, const void *data, const size_t length);
  */
 ssize_t
 read_data(const int fd, void *buffer, const size_t length);
+#ifdef _WIN32
+ssize_t
+recv_data(const SOCKET fd, void *buffer, const size_t length);
+#else
+ssize_t
+recv_data(const int fd, void *buffer, const size_t length);
+#endif
 
 }
 }

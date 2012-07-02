@@ -204,18 +204,18 @@ SOCKET
 recv_fd(const SOCKET sock) {
     int ret(send_pid(sock));
     if (ret != 0) {
-      return ((SOCKET) ret);
+        return ((SOCKET) ret);
     }
     WSAPROTOCOL_INFO pi;
     if (recv(sock, (char *)&pi, sizeof(pi), 0) != sizeof(pi)) {
-      return ((SOCKET) FD_SYSTEM_ERROR);
+        return ((SOCKET) FD_SYSTEM_ERROR);
     }
     SOCKET nsock = WSASocket(pi.iAddressFamily,
                              pi.iSocketType,
                              pi.iProtocol,
                              &pi, 0, 0);
     if (nsock == INVALID_SOCKET) {
-      return ((SOCKET) FD_OTHER_ERROR);
+        return ((SOCKET) FD_OTHER_ERROR);
     }
     return (nsock);
 }

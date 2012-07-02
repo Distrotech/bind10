@@ -30,6 +30,9 @@
     <ClInclude Include="..\..\..\src\lib\server_common\server_common_messages.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\server_common\socket_request.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\server_common\portconfig.cc">
@@ -45,6 +48,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\lib\server_common\server_common_messages.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\server_common\socket_request.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

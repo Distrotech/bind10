@@ -100,6 +100,7 @@
     <ClCompile Include="..\..\..\src\lib\util\tests\range_utilities_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\util\tests\run_unittests.cc" />
     <ClCompile Include="..\..\..\src\lib\util\tests\sha1_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\util\tests\socketsession_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\util\tests\strutil_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\util\tests\time_utilities_unittest.cc" />
   </ItemGroup>

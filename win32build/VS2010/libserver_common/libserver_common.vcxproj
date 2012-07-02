@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -16,6 +16,7 @@
     <ClInclude Include="..\..\..\src\lib\server_common\logger.h" />
     <ClInclude Include="..\..\..\src\lib\server_common\portconfig.h" />
     <ClInclude Include="..\..\..\src\lib\server_common\server_common_messages.h" />
+    <ClInclude Include="..\..\..\src\lib\server_common\socket_request.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\server_common\client.cc" />
@@ -23,6 +24,7 @@
     <ClCompile Include="..\..\..\src\lib\server_common\logger.cc" />
     <ClCompile Include="..\..\..\src\lib\server_common\portconfig.cc" />
     <ClCompile Include="..\..\..\src\lib\server_common\server_common_messages.cc" />
+    <ClCompile Include="..\..\..\src\lib\server_common\socket_request.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{66C9A5EC-514B-4BDC-AC74-ED4CB465CAAF}</ProjectGuid>

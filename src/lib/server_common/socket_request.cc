@@ -13,6 +13,13 @@
 // PERFORMANCE OF THIS SOFTWARE.
 #include <config.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
+#include <sys/un.h>
+#include <sys/socket.h>
+#endif
+
 #include "socket_request.h"
 #include <server_common/logger.h>
 
@@ -22,8 +29,6 @@
 #include <util/io/fd.h>
 #include <util/io/fd_share.h>
 
-#include <sys/un.h>
-#include <sys/socket.h>
 #include <cerrno>
 #include <csignal>
 #include <cstddef>
@@ -170,6 +175,7 @@ readRequestSocketAnswer(isc::data::ConstElementPtr recv_msg,
 // \return the socket file descriptor
 int
 createFdShareSocket(const std::string& path) {
+#ifndef _WIN32
     // TODO: Current master has socketsession code and better way
     // of handling errors without potential leaks for this. It is
     // not public there at this moment, but when this is merged
@@ -203,17 +209,56 @@ createFdShareSocket(const std::string& path) {
                   ": " << strerror(errno));
     }
     return (sock_pass_fd);
+#else
+    // TODO: Current master has socketsession code and better way
+    // of handling errors without potential leaks for this. It is
+    // not public there at this moment, but when this is merged
+    // we should make a ticket to move this functionality to the
+    // SocketSessionReceiver and use that.
+    const SOCKET sock_pass_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock_pass_fd == INVALID_SOCKET) {
+        isc_throw(SocketRequestor::SocketError,
+                  "Unable to open ip socket " << path <<
+                  ": " << strerror(WSAGetLastError()));
+    }
+    struct sockaddr_in sock_pass_addr;
+    sock_pass_addr.sin_family = AF_INET;
+    if (atoi(path.c_str()) == 0) {
+        closesocket(sock_pass_fd);
+        isc_throw(SocketRequestor::SocketError,
+                  "Unable to open ip socket " << path <<
+                  ": bad port");
+    }
+    sock_pass_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    sock_pass_addr.sin_port = htons(atoi(path.c_str()));
+    const socklen_t len = sizeof(sock_pass_addr);
+    // Yes, C-style cast bad. See previous comment about SocketSessionReceiver.
+    if (connect(sock_pass_fd, (const struct sockaddr*)&sock_pass_addr,
+                len) == SOCKET_ERROR) {
+        closesocket(sock_pass_fd);
+        isc_throw(SocketRequestor::SocketError,
+                  "Unable to open ip socket " << path <<
+                  ": " << strerror(WSAGetLastError()));
+    }
+    return (sock_pass_fd);
+#endif
 }
 
 // Reads a socket fd over the given socket (using recv_fd()).
 //
 // \exception SocketError if the socket cannot be read
 // \return the socket fd that has been read
+#ifdef _WIN32
+SOCKET
+getSocketFd(const std::string& token, SOCKET sock_pass_fd)
+#else
 int
-getSocketFd(const std::string& token, int sock_pass_fd) {
+getSocketFd(const std::string& token, int sock_pass_fd)
+#endif
+{
     // Tell the boss the socket token.
     const std::string token_data = token + "\n";
-    if (!isc::util::io::write_data(sock_pass_fd, token_data.c_str(),
+    if (!isc::util::io::send_data(sock_pass_fd, token_data.c_str(),
                                    token_data.size())) {
         isc_throw(SocketRequestor::SocketError, "Error writing socket token");
     }
@@ -222,7 +267,7 @@ getSocketFd(const std::string& token, int sock_pass_fd) {
     // from its cache succeeded
     char status[3];        // We need a space for trailing \0, hence 3
     memset(status, 0, 3);
-    if (isc::util::io::read_data(sock_pass_fd, status, 2) < 2) {
+    if (isc::util::io::recv_data(sock_pass_fd, status, 2) < 2) {
         isc_throw(SocketRequestor::SocketError,
                   "Error reading status code while requesting socket");
     }
@@ -236,10 +281,14 @@ getSocketFd(const std::string& token, int sock_pass_fd) {
                   "'");
     }
 
+#ifdef _WIN32
+    const SOCKET passed_sock_fd = isc::util::io::recv_fd(sock_pass_fd);
+#else
     const int passed_sock_fd = isc::util::io::recv_fd(sock_pass_fd);
+#endif
 
     // check for error values of passed_sock_fd (see fd_share.h)
-    if (passed_sock_fd < 0) {
+    if ((int)passed_sock_fd < 0) {
         switch (passed_sock_fd) {
         case isc::util::io::FD_SYSTEM_ERROR:
             isc_throw(SocketRequestor::SocketError,
@@ -269,6 +318,7 @@ public:
         session_(session),
         app_name_(app_name)
     {
+#ifndef _WIN32
         // We need to filter SIGPIPE to prevent it from happening in
         // getSocketFd() while writing to the UNIX domain socket after the
         // remote end closed it.  See lib/util/io/socketsession for more
@@ -280,6 +330,7 @@ public:
             isc_throw(Unexpected, "Failed to filter SIGPIPE: " <<
                       strerror(errno));
         }
+#endif
         LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, SOCKETREQUESTOR_CREATED).
             arg(app_name);
     }
@@ -356,10 +407,18 @@ public:
 private:
     // Returns the domain socket file descriptor
     // If we had not opened it yet, opens it now
+#ifdef _WIN32
+    SOCKET
+#else
     int
+#endif
     getFdShareSocket(const std::string& path) {
         if (fd_share_sockets_.find(path) == fd_share_sockets_.end()) {
+#ifdef _WIN32
+            const SOCKET new_fd = createFdShareSocket(path);
+#else
             const int new_fd = createFdShareSocket(path);
+#endif
             // Technically, the (creation and) assignment of the new map entry
             // could thrown an exception and lead to FD leak.  This should be
             // cleaned up later (see comment about SocketSessionReceiver above)
@@ -373,17 +432,30 @@ private:
     // Closes the sockets that has been used for fd_share
     void
     closeFdShareSockets() {
+#ifdef _WIN32
+        for (std::map<std::string, SOCKET>::const_iterator it =
+                fd_share_sockets_.begin();
+             it != fd_share_sockets_.end();
+             ++it) {
+            closesocket((*it).second);
+        }
+#else
         for (std::map<std::string, int>::const_iterator it =
                 fd_share_sockets_.begin();
              it != fd_share_sockets_.end();
              ++it) {
             close((*it).second);
         }
+#endif
     }
 
     cc::AbstractSession& session_;
     const std::string app_name_;
+#ifdef _WIN32
+    std::map<std::string, SOCKET> fd_share_sockets_;
+#else
     std::map<std::string, int> fd_share_sockets_;
+#endif
 };
 
 }

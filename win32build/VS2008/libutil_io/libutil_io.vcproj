@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;&quot;$(BOOST)&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -105,7 +105,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib"
+				AdditionalIncludeDirectories="..;..\..;..\..\..\src\lib;&quot;$(BOOST)&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -158,6 +158,10 @@
 				RelativePath="..\..\..\src\lib\util\io\fd_share.cc"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\lib\util\io\socketsession.cc"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -170,6 +174,18 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\lib\util\io\fd_share.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\util\io\pktinfo_utilities.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\util\io\sockaddr_util.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\lib\util\io\socketsession.h"
 				>
 			</File>
 		</Filter>

@@ -15,9 +15,13 @@
 #ifndef __SOCKADDR_UTIL_H_
 #define __SOCKADDR_UTIL_H_ 1
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#endif
 
 #include <cassert>
 
@@ -43,7 +47,7 @@ getSALength(const struct sockaddr& sa) {
 // Lower level C-APIs require conversion between various variants of
 // sockaddr's, which is not friendly with C++.  The following templates
 // are a shortcut of common workaround conversion in such cases.
-
+#ifndef _MSC_VER
 template <typename SAType>
 const struct sockaddr*
 convertSockAddr(const SAType* sa) {
@@ -71,6 +75,7 @@ convertSockAddr(struct sockaddr* sa) {
     void* p = sa;
     return (static_cast<SAType*>(p));
 }
+#endif
 
 }
 }

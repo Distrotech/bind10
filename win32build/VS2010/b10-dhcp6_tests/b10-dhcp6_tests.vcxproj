@@ -87,14 +87,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\bin\dhcp6\dhcp6_srv.h" />
-    <ClInclude Include="..\..\..\src\bin\dhcp6\iface_mgr.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\bin\dhcp6\dhcp6_srv.cc" />
-    <ClCompile Include="..\..\..\src\bin\dhcp6\iface_mgr.cc" />
     <ClCompile Include="..\..\..\src\bin\dhcp6\tests\dhcp6_srv_unittest.cc" />
     <ClCompile Include="..\..\..\src\bin\dhcp6\tests\dhcp6_unittests.cc" />
-    <ClCompile Include="..\..\..\src\bin\dhcp6\tests\iface_mgr_unittest.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

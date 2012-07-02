@@ -238,7 +238,7 @@ createSocket(const char* address, const char* port) {
         isc_throw(TestConfigError, "socket system call failed: " <<
                   strerror(WSAGetLastError()));
     }
-    if (bind(s, res->ai_addr, res->ai_addrlen) == -1) {
+    if (::bind(s, res->ai_addr, res->ai_addrlen) == -1) {
         closesocket(s);
         isc_throw(TestConfigError, "bind system call failed: " <<
                   strerror(WSAGetLastError()));

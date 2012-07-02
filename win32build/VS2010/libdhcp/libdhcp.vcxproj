@@ -24,6 +24,11 @@
     <ClInclude Include="..\..\..\src\lib\dhcp\pkt6.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\lib\dhcp\iface_mgr.cc" />
+    <ClCompile Include="..\..\..\src\lib\dhcp\iface_mgr_bsd.cc" />
+    <ClCompile Include="..\..\..\src\lib\dhcp\iface_mgr_linux.cc" />
+    <ClCompile Include="..\..\..\src\lib\dhcp\iface_mgr_sun.cc" />
+    <ClCompile Include="..\..\..\src\lib\dhcp\iface_mgr_windows.cc" />
     <ClCompile Include="..\..\..\src\lib\dhcp\libdhcp++.cc" />
     <ClCompile Include="..\..\..\src\lib\dhcp\option.cc" />
     <ClCompile Include="..\..\..\src\lib\dhcp\option4_addrlst.cc" />

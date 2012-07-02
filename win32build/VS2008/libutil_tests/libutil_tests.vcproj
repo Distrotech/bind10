@@ -237,6 +237,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\lib\util\tests\socketsession_unittest.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\lib\util\tests\strutil_unittest.cc"
 				>
 			</File>

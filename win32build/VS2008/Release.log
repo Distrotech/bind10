@@ -1,0 +1,1563 @@
+------ Build started: Project: libexceptions, Configuration: Release Win32 ------
+Compiling...
+exceptions.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libexceptions\Release\BuildLog.htm"
+libexceptions - 0 error(s), 0 warning(s)
+------ Build started: Project: libutil, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+        1 file(s) copied.
+        1 file(s) copied.
+Compiling...
+base_n.cc
+time_utilities.cc
+..\..\..\src\lib\util\time_utilities.cc(96) : warning C4244: '=' : conversion from 'uint64_t' to 'int', possible loss of data
+..\..\..\src\lib\util\time_utilities.cc(190) : warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdio.h(324) : see declaration of 'sscanf'
+..\..\..\src\lib\util\time_utilities.cc(222) : warning C4244: 'return' : conversion from 'uint64_t' to 'uint32_t', possible loss of data
+strutil.cc
+sha1.cc
+qid_gen.cc
+interprocess_sync_null.cc
+interprocess_sync_file.cc
+..\..\..\src\lib\util\interprocess_sync_file.cc(65) : warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdlib.h(447) : see declaration of 'getenv'
+..\..\..\src\lib\util\interprocess_sync_file.cc(70) : warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdlib.h(447) : see declaration of 'getenv'
+..\..\..\src\lib\util\interprocess_sync_file.cc(75) : warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdlib.h(447) : see declaration of 'getenv'
+filename.cc
+Creating library...
+Performing Post-Build Event...
+A subdirectory or file \Temp\locks already exists.
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libutil\Release\BuildLog.htm"
+libutil - 0 error(s), 6 warning(s)
+------ Build started: Project: libutil_io, Configuration: Release Win32 ------
+Compiling...
+fd.cc
+socketsession.cc
+..\..\..\src\lib\util\io\socketsession.cc(486) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\util\io\socketsession.cc(494) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\util\io\socketsession.cc(515) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\util\io\socketsession.cc(562) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\util\io\socketsession.cc(593) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\util\io\socketsession.cc(663) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\util\io\socketsession.cc(694) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+fd_share.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libutil_io\Release\BuildLog.htm"
+libutil_io - 0 error(s), 7 warning(s)
+------ Build started: Project: pydutil_io, Configuration: Release Win32 ------
+Compiling...
+fdshare_python.cc
+Linking...
+   Creating library Release\libutil_io_python.lib and object Release\libutil_io_python.exp
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\pydutil_io\Release\BuildLog.htm"
+pydutil_io - 0 error(s), 0 warning(s)
+------ Build started: Project: libutil_unittests, Configuration: Release Win32 ------
+Compiling...
+fork.cc
+testdata.cc
+run_all.cc
+..\..\..\src\lib\util\unittests\run_all.cc(44) : warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdlib.h(447) : see declaration of 'getenv'
+resource.cc
+newhook.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libutil_unittests\Release\BuildLog.htm"
+libutil_unittests - 0 error(s), 1 warning(s)
+------ Build started: Project: liblog, Configuration: Release Win32 ------
+Compiling...
+dummylog.cc
+output_option.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+message_reader.cc
+..\..\..\src\lib\log\message_reader.cc(52) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\log\message_reader.cc(70) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+message_initializer.cc
+message_dictionary.cc
+logimpl_messages.cc
+logger_unittest_support.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+..\..\..\src\lib\log\logger_unittest_support.cc(41) : warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdlib.h(447) : see declaration of 'getenv'
+..\..\..\src\lib\log\logger_unittest_support.cc(53) : warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdlib.h(447) : see declaration of 'getenv'
+..\..\..\src\lib\log\logger_unittest_support.cc(105) : warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdlib.h(447) : see declaration of 'getenv'
+..\..\..\src\lib\log\logger_unittest_support.cc(161) : warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdlib.h(447) : see declaration of 'getenv'
+..\..\..\src\lib\log\logger_unittest_support.cc(167) : warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdlib.h(447) : see declaration of 'getenv'
+logger_support.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+logger_name.cc
+logger_manager_impl.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+logger_manager.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+logger_level_impl.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+logger_level.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+logger_impl.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+logger.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+log_messages.cc
+log_formatter.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\liblog\Release\BuildLog.htm"
+liblog - 0 error(s), 16 warning(s)
+------ Build started: Project: liblog_compiler, Configuration: Release Win32 ------
+Compiling...
+message.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+..\..\..\src\lib\log\compiler\message.cc(114) : warning C4996: 'ctime': This function or variable may be unsafe. Consider using ctime_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\time.inl(88) : see declaration of 'ctime'
+..\..\..\src\lib\log\compiler\message.cc(334) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\log\compiler\message.cc(369) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\log\compiler\message.cc(436) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\log\compiler\message.cc(495) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+getopt.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\liblog_compiler\Release\BuildLog.htm"
+liblog_compiler - 0 error(s), 6 warning(s)
+------ Build started: Project: libcryptolink, Configuration: Release Win32 ------
+Compiling...
+crypto_hmac.cc
+cryptolink.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libcryptolink\Release\BuildLog.htm"
+libcryptolink - 0 error(s), 0 warning(s)
+------ Build started: Project: libdns++, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+        1 file(s) copied.
+skip generating ./rdataclass.cc
+skip generating ./rdataclass.h
+skip generating ./rrtype.h
+skip generating ./rrclass.h
+skip generating ./rrparamregistry.cc
+Compiling...
+character_string.cc
+serial.cc
+nsec3hash.cc
+tsigrecord.cc
+tsigkey.cc
+tsigerror.cc
+tsig.cc
+..\..\..\src\lib\dns\tsig.cc(199) : warning C4244: 'argument' : conversion from 'uint64_t' to 'uint16_t', possible loss of data
+..\..\..\src\lib\dns\tsig.cc(382) : warning C4244: 'argument' : conversion from 'const uint64_t' to 'uint16_t', possible loss of data
+rrtype.cc
+rrttl.cc
+rrsetlist.cc
+rrset.cc
+rrparamregistry.cc
+rrclass.cc
+rdatafields.cc
+rdataclass.cc
+..\..\..\src\lib\dns\rdataclass.cc(1109) : warning C4244: 'argument' : conversion from 'uint16_t' to 'uint8_t', possible loss of data
+..\..\..\src\lib\dns\rdataclass.cc(1109) : warning C4244: 'argument' : conversion from 'uint16_t' to 'uint8_t', possible loss of data
+c:\cygwin\home\dupont\bind10\src\lib\dns/rdata/generic/detail/txt_like.h(56) : warning C4018: '<' : signed/unsigned mismatch
+        c:\cygwin\home\dupont\bind10\src\lib\dns/rdata/generic/detail/txt_like.h(44) : while compiling class template member function 'isc::dns::rdata::generic::TXTLikeImpl<Type,typeCode>::TXTLikeImpl(isc::util::InputBuffer &,size_t)'
+        with
+        [
+            Type=isc::dns::rdata::generic::SPF,
+            typeCode=99
+        ]
+        ..\..\..\src\lib\dns\rdataclass.cc(3406) : see reference to class template instantiation 'isc::dns::rdata::generic::TXTLikeImpl<Type,typeCode>' being compiled
+        with
+        [
+            Type=isc::dns::rdata::generic::SPF,
+            typeCode=99
+        ]
+c:\cygwin\home\dupont\bind10\src\lib\dns/rdata/generic/detail/txt_like.h(56) : warning C4018: '<' : signed/unsigned mismatch
+        c:\cygwin\home\dupont\bind10\src\lib\dns/rdata/generic/detail/txt_like.h(44) : while compiling class template member function 'isc::dns::rdata::generic::TXTLikeImpl<Type,typeCode>::TXTLikeImpl(isc::util::InputBuffer &,size_t)'
+        with
+        [
+            Type=isc::dns::rdata::generic::TXT,
+            typeCode=16
+        ]
+        ..\..\..\src\lib\dns\rdataclass.cc(3700) : see reference to class template instantiation 'isc::dns::rdata::generic::TXTLikeImpl<Type,typeCode>' being compiled
+        with
+        [
+            Type=isc::dns::rdata::generic::TXT,
+            typeCode=16
+        ]
+..\..\..\src\lib\dns\rdataclass.cc(311) : warning C4244: 'argument' : conversion from 'const uint64_t' to 'uint16_t', possible loss of data
+        ..\..\..\src\lib\dns\rdataclass.cc(338) : see reference to function template instantiation 'void isc::dns::rdata::any::TSIG::TSIGImpl::toWireCommon<isc::util::OutputBuffer>(Output &) const' being compiled
+        with
+        [
+            Output=isc::util::OutputBuffer
+        ]
+..\..\..\src\lib\dns\rdataclass.cc(311) : warning C4244: 'argument' : conversion from 'const uint64_t' to 'uint16_t', possible loss of data
+        ..\..\..\src\lib\dns\rdataclass.cc(358) : see reference to function template instantiation 'void isc::dns::rdata::any::TSIG::TSIGImpl::toWireCommon<isc::dns::AbstractMessageRenderer>(Output &) const' being compiled
+        with
+        [
+            Output=isc::dns::AbstractMessageRenderer
+        ]
+rdata.cc
+..\..\..\src\lib\dns\rdata.cc(149) : warning C4018: '<' : signed/unsigned mismatch
+rcode.cc
+question.cc
+opcode.cc
+nsec_bitmap.cc
+Compiling...
+nsec3param_common.cc
+name.cc
+messagerenderer.cc
+message.cc
+..\..\..\src\lib\dns\message.cc(660) : warning C4018: '<' : signed/unsigned mismatch
+..\..\..\src\lib\dns\message.cc(734) : warning C4018: '<' : signed/unsigned mismatch
+..\..\..\src\lib\dns\message.cc(834) : warning C4244: 'argument' : conversion from 'uint16_t' to 'const uint8_t', possible loss of data
+masterload.cc
+labelsequence.cc
+exceptions.cc
+edns.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libdns++\Release\BuildLog.htm"
+libdns++ - 0 error(s), 12 warning(s)
+------ Build started: Project: libdns++_python, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+        1 file(s) copied.
+Compiling...
+edns_python.cc
+..\..\..\src\lib\dns\python\edns_python.cc(261) : warning C4244: 'argument' : conversion from 'long' to 'const uint16_t', possible loss of data
+tsigrecord_python.cc
+tsigkey_python.cc
+tsigerror_python.cc
+..\..\..\src\lib\dns\python\tsigerror_python.cc(99) : warning C4244: 'argument' : conversion from 'long' to 'uint16_t', possible loss of data
+tsig_rdata_python.cc
+tsig_python.cc
+..\..\..\src\lib\dns\python\tsig_python.cc(179) : warning C4244: 'argument' : conversion from 'long' to 'const uint16_t', possible loss of data
+serial_python.cc
+..\..\..\src\lib\dns\python\serial_python.cc(107) : warning C4244: 'argument' : conversion from '__int64' to 'uint32_t', possible loss of data
+rrtype_python.cc
+..\..\..\src\lib\dns\python\rrtype_python.cc(136) : warning C4244: 'argument' : conversion from 'long' to 'uint16_t', possible loss of data
+rrttl_python.cc
+..\..\..\src\lib\dns\python\rrttl_python.cc(94) : warning C4244: 'argument' : conversion from '__int64' to 'uint32_t', possible loss of data
+rrset_python.cc
+rrclass_python.cc
+..\..\..\src\lib\dns\python\rrclass_python.cc(115) : warning C4244: 'argument' : conversion from 'long' to 'uint16_t', possible loss of data
+rdata_python.cc
+rcode_python.cc
+..\..\..\src\lib\dns\python\rcode_python.cc(147) : warning C4244: 'argument' : conversion from 'long' to 'const uint16_t', possible loss of data
+..\..\..\src\lib\dns\python\rcode_python.cc(149) : warning C4244: 'argument' : conversion from 'long' to 'const uint8_t', possible loss of data
+question_python.cc
+pydnspp_common.cc
+opcode_python.cc
+nsec3hash_python.cc
+name_python.cc
+messagerenderer_python.cc
+message_python.cc
+..\..\..\src\lib\dns\python\message_python.cc(289) : warning C4244: 'argument' : conversion from 'long' to 'isc::dns::qid_t', possible loss of data
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libdns++_python\Release\BuildLog.htm"
+libdns++_python - 0 error(s), 10 warning(s)
+------ Build started: Project: pyddns++, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+        1 file(s) copied.
+Compiling...
+pydnspp.cc
+Linking...
+   Creating library Release\pydnspp.lib and object Release\pydnspp.exp
+Generating code
+Finished generating code
+Embedding manifest...
+Performing Post-Build Event...
+        1 file(s) copied.
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\pyddns++\Release\BuildLog.htm"
+pyddns++ - 0 error(s), 0 warning(s)
+------ Build started: Project: libcc, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+        1 file(s) copied.
+Compiling...
+cc_messages.cc
+session.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+..\..\..\src\lib\cc\session.cc(352) : warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdlib.h(447) : see declaration of 'getenv'
+logger.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+data.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libcc\Release\BuildLog.htm"
+libcc - 0 error(s), 3 warning(s)
+------ Build started: Project: libcfgclient, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+Compiling...
+ccsession.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+..\..\..\src\lib\config\ccsession.cc(407) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\config\ccsession.cc(408) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+strptime.cc
+module_spec.cc
+..\..\..\src\lib\config\module_spec.cc(327) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+config_messages.cc
+config_log.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+config_data.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libcfgclient\Release\BuildLog.htm"
+libcfgclient - 0 error(s), 5 warning(s)
+------ Build started: Project: libfake_session, Configuration: Release Win32 ------
+Compiling...
+fake_session.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libfake_session\Release\BuildLog.htm"
+libfake_session - 0 error(s), 0 warning(s)
+------ Build started: Project: libacl, Configuration: Release Win32 ------
+Compiling...
+ip_check.cc
+loader.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libacl\Release\BuildLog.htm"
+libacl - 0 error(s), 0 warning(s)
+------ Build started: Project: libdnsacl, Configuration: Release Win32 ------
+Compiling...
+dns.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libdnsacl\Release\BuildLog.htm"
+libdnsacl - 0 error(s), 0 warning(s)
+------ Build started: Project: libxfr, Configuration: Release Win32 ------
+Compiling...
+xfrout_client.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libxfr\Release\BuildLog.htm"
+libxfr - 0 error(s), 0 warning(s)
+------ Build started: Project: libbench, Configuration: Release Win32 ------
+Compiling...
+benchmark_util.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libbench\Release\BuildLog.htm"
+libbench - 0 error(s), 0 warning(s)
+------ Build started: Project: libasiolink, Configuration: Release Win32 ------
+Compiling...
+interval_timer.cc
+io_socket.cc
+io_service.cc
+io_endpoint.cc
+io_address.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libasiolink\Release\BuildLog.htm"
+libasiolink - 0 error(s), 0 warning(s)
+------ Build started: Project: libasiodns, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+Compiling...
+asiodns_messages.cc
+udp_server.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+tcp_server.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+sync_udp_server.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+logger.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+io_fetch.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+dns_service.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libasiodns\Release\BuildLog.htm"
+libasiodns - 0 error(s), 5 warning(s)
+------ Build started: Project: libnsas, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+Compiling...
+address_entry.cc
+zone_entry.cc
+c:\cygwin\home\dupont\bind10\src\lib\util/random/random_number_generator.h(82) : warning C4244: 'argument' : conversion from 'time_t' to 'const boost::uint32_t', possible loss of data
+c:\cygwin\home\dupont\bind10\src\lib\util/random/random_number_generator.h(125) : warning C4244: 'argument' : conversion from 'time_t' to 'const boost::uint32_t', possible loss of data
+nsas_messages.cc
+nsas_log.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+nameserver_entry.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+nameserver_address_store.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+c:\cygwin\home\dupont\bind10\src\lib\util/random/random_number_generator.h(82) : warning C4244: 'argument' : conversion from 'time_t' to 'const boost::uint32_t', possible loss of data
+c:\cygwin\home\dupont\bind10\src\lib\util/random/random_number_generator.h(125) : warning C4244: 'argument' : conversion from 'time_t' to 'const boost::uint32_t', possible loss of data
+nameserver_address.cc
+hash_key.cc
+hash.cc
+glue_hints.cc
+..\..\..\src\lib\nsas\glue_hints.cc(122) : warning C4018: '<' : signed/unsigned mismatch
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libnsas\Release\BuildLog.htm"
+libnsas - 0 error(s), 8 warning(s)
+------ Build started: Project: libcache, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+Compiling...
+cache_entry_key.cc
+rrset_entry.cc
+..\..\..\src\lib\cache\rrset_entry.cc(59) : warning C4244: 'initializing' : conversion from 'time_t' to 'uint32_t', possible loss of data
+..\..\..\src\lib\cache\rrset_entry.cc(60) : warning C4244: 'initializing' : conversion from 'time_t' to 'uint32_t', possible loss of data
+rrset_copy.cc
+rrset_cache.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+resolver_cache.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+message_utility.cc
+message_entry.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+message_cache.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+logger.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+local_zone_data.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+cache_messages.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libcache\Release\BuildLog.htm"
+libcache - 0 error(s), 8 warning(s)
+------ Build started: Project: libresolve, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+Compiling...
+recursive_query.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+response_classifier.cc
+resolver_callback.cc
+resolve_messages.cc
+resolve_log.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+resolve.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libresolve\Release\BuildLog.htm"
+libresolve - 0 error(s), 2 warning(s)
+------ Build started: Project: libtestutils, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+Compiling...
+dnsmessage_test.cc
+srv_test.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libtestutils\Release\BuildLog.htm"
+libtestutils - 0 error(s), 0 warning(s)
+------ Build started: Project: libdatasrc, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+        1 file(s) copied.
+        1 file(s) copied.
+Compiling...
+cache.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+zonetable.cc
+zone_finder_context.cc
+static_datasrc_link.cc
+static_datasrc.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+sqlite3_datasrc.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+..\..\..\src\lib\datasrc\sqlite3_datasrc.cc(235) : warning C4018: '>' : signed/unsigned mismatch
+..\..\..\src\lib\datasrc\sqlite3_datasrc.cc(250) : warning C4018: '>' : signed/unsigned mismatch
+sqlite3_accessor_link.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+sqlite3_accessor.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+query.cc
+memory_datasrc_link.cc
+memory_datasrc.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+logger.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+factory.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+datasrc_messages.cc
+database.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+data_source.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+client_list.cc
+Creating library...
+Performing Post-Build Event...
+        1 file(s) copied.
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libdatasrc\Release\BuildLog.htm"
+libdatasrc - 0 error(s), 12 warning(s)
+------ Build started: Project: libserver_common, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+Compiling...
+client.cc
+socket_request.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+..\..\..\src\lib\server_common\socket_request.cc(222) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\server_common\socket_request.cc(241) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+server_common_messages.cc
+portconfig.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+..\..\..\src\lib\server_common\portconfig.cc(68) : warning C4244: 'argument' : conversion from 'long' to 'const uint16_t', possible loss of data
+logger.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+keyring.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libserver_common\Release\BuildLog.htm"
+libserver_common - 0 error(s), 7 warning(s)
+------ Build started: Project: libdhcp, Configuration: Release Win32 ------
+Compiling...
+iface_mgr.cc
+..\..\..\src\lib\dhcp\iface_mgr.cc(919) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+pkt6.cc
+pkt4.cc
+..\..\..\src\lib\dhcp\pkt4.cc(294) : warning C4244: 'argument' : conversion from 'uint16_t' to 'uint8_t', possible loss of data
+option6_iaaddr.cc
+option6_ia.cc
+option6_addrlst.cc
+option4_addrlst.cc
+..\..\..\src\lib\dhcp\option4_addrlst.cc(79) : warning C4244: 'argument' : conversion from 'uint16_t' to 'uint8_t', possible loss of data
+option.cc
+..\..\..\src\lib\dhcp\option.cc(105) : warning C4244: 'argument' : conversion from 'uint16_t' to 'uint8_t', possible loss of data
+libdhcp++.cc
+..\..\..\src\lib\dhcp\libdhcp++.cc(119) : warning C4065: switch statement contains 'default' but no 'case' labels
+iface_mgr_windows.cc
+iface_mgr_sun.cc
+iface_mgr_linux.cc
+iface_mgr_bsd.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libdhcp\Release\BuildLog.htm"
+libdhcp - 0 error(s), 5 warning(s)
+------ Build started: Project: b10-resolver, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+        1 file(s) copied.
+        1 file(s) copied.
+Compiling...
+response_scrubber.cc
+..\..\..\src\bin\resolver\response_scrubber.cc(70) : warning C4018: '<' : signed/unsigned mismatch
+resolver_messages.cc
+resolver_log.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+resolver.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+main.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+..\..\..\src\bin\resolver\main.cc(177) : warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdlib.h(447) : see declaration of 'getenv'
+..\..\..\src\bin\resolver\main.cc(179) : warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdlib.h(447) : see declaration of 'getenv'
+getopt.cc
+common.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\b10-resolver\Release\BuildLog.htm"
+b10-resolver - 0 error(s), 6 warning(s)
+------ Build started: Project: tt-badpacket, Configuration: Release Win32 ------
+Compiling...
+scan.cc
+option_info.cc
+getopt_long.cc
+..\..\getopt_long.cc(65) : warning C4996: '_vsnprintf': This function or variable may be unsafe. Consider using _vsnprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdio.h(358) : see declaration of '_vsnprintf'
+..\..\getopt_long.cc(235) : warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdlib.h(447) : see declaration of 'getenv'
+..\..\getopt_long.cc(243) : warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdlib.h(447) : see declaration of 'getenv'
+command_options.cc
+badpacket.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\tt-badpacket\Release\BuildLog.htm"
+tt-badpacket - 0 error(s), 4 warning(s)
+------ Build started: Project: b10-dhcp6, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+        1 file(s) copied.
+Compiling...
+main.cc
+..\..\..\src\bin\dhcp6\main.cc(116) : warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdlib.h(447) : see declaration of 'getenv'
+..\..\..\src\bin\dhcp6\main.cc(118) : warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdlib.h(447) : see declaration of 'getenv'
+getopt.cc
+dhcp6_srv.cc
+..\..\..\src\bin\dhcp6\dhcp6_srv.cc(226) : warning C4244: 'argument' : conversion from 'time_t' to 'unsigned int', possible loss of data
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\b10-dhcp6\Release\BuildLog.htm"
+b10-dhcp6 - 0 error(s), 3 warning(s)
+------ Build started: Project: libbench_example, Configuration: Release Win32 ------
+Compiling...
+search_bench.cc
+getopt.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libbench_example\Release\BuildLog.htm"
+libbench_example - 0 error(s), 0 warning(s)
+------ Build started: Project: libbench_tests, Configuration: Release Win32 ------
+Compiling...
+run_unittests.cc
+loadquery_unittest.cc
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1449) : warning C4018: '<' : signed/unsigned mismatch
+        ..\..\..\src\lib\bench\tests\loadquery_unittest.cc(183) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperLT<int,unsigned int>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=int,
+            T2=unsigned int
+        ]
+benchmark_unittest.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libbench_tests\Release\BuildLog.htm"
+libbench_tests - 0 error(s), 1 warning(s)
+------ Build started: Project: b10-resolver_tests, Configuration: Release Win32 ------
+Compiling...
+unittest_util.cc
+run_unittests.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+response_scrubber_unittest.cc
+response_scrubber.cc
+..\..\..\src\bin\resolver\response_scrubber.cc(70) : warning C4018: '<' : signed/unsigned mismatch
+resolver_unittest.cc
+resolver_messages.cc
+resolver_log.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+resolver_config_unittest.cc
+..\..\..\src\bin\resolver\tests\resolver_config_unittest.cc(239) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\bin\resolver\tests\resolver_config_unittest.cc(244) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+resolver.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\b10-resolver_tests\Release\BuildLog.htm"
+b10-resolver_tests - 0 error(s), 6 warning(s)
+------ Build started: Project: libexceptions_tests, Configuration: Release Win32 ------
+Compiling...
+run_unittests.cc
+exceptions_unittest.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libexceptions_tests\Release\BuildLog.htm"
+libexceptions_tests - 0 error(s), 0 warning(s)
+------ Build started: Project: libdns++_rbench, Configuration: Release Win32 ------
+Compiling...
+rdatarender_bench.cc
+getopt.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libdns++_rbench\Release\BuildLog.htm"
+libdns++_rbench - 0 error(s), 0 warning(s)
+------ Build started: Project: b10-host, Configuration: Release Win32 ------
+Compiling...
+host.cc
+getopt.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\b10-host\Release\BuildLog.htm"
+b10-host - 0 error(s), 0 warning(s)
+------ Build started: Project: pydlog, Configuration: Release Win32 ------
+Compiling...
+log.cc
+..\..\..\src\lib\python\isc\log\log.cc(521) : warning C4018: '<' : signed/unsigned mismatch
+        ..\..\..\src\lib\python\isc\log\log.cc(578) : see reference to function template instantiation 'PyObject *`anonymous-namespace'::Logger_performOutput<boost::_bi::bind_t<R,F,L>>(Function,PyObject *,bool)' being compiled
+        with
+        [
+            R=isc::log::Logger::Formatter,
+            F=boost::_mfi::mf2<isc::log::Logger::Formatter,isc::log::Logger,int,const isc::log::MessageID &>,
+            L=boost::_bi::list3<boost::_bi::value<isc::log::Logger *>,boost::arg<1>,boost::arg<2>>,
+            Function=boost::_bi::bind_t<isc::log::Logger::Formatter,boost::_mfi::mf2<isc::log::Logger::Formatter,isc::log::Logger,int,const isc::log::MessageID &>,boost::_bi::list3<boost::_bi::value<isc::log::Logger *>,boost::arg<1>,boost::arg<2>>>
+        ]
+..\..\..\src\lib\python\isc\log\log.cc(546) : warning C4018: '<' : signed/unsigned mismatch
+..\..\..\src\lib\python\isc\log\log.cc(521) : warning C4018: '<' : signed/unsigned mismatch
+        ..\..\..\src\lib\python\isc\log\log.cc(585) : see reference to function template instantiation 'PyObject *`anonymous-namespace'::Logger_performOutput<boost::_bi::bind_t<R,F,L>>(Function,PyObject *,bool)' being compiled
+        with
+        [
+            R=isc::log::Logger::Formatter,
+            F=boost::_mfi::mf1<isc::log::Logger::Formatter,isc::log::Logger,const isc::log::MessageID &>,
+            L=boost::_bi::list2<boost::_bi::value<isc::log::Logger *>,boost::arg<2>>,
+            Function=boost::_bi::bind_t<isc::log::Logger::Formatter,boost::_mfi::mf1<isc::log::Logger::Formatter,isc::log::Logger,const isc::log::MessageID &>,boost::_bi::list2<boost::_bi::value<isc::log::Logger *>,boost::arg<2>>>
+        ]
+..\..\..\src\lib\python\isc\log\log.cc(546) : warning C4018: '<' : signed/unsigned mismatch
+Linking...
+   Creating library Release\log.lib and object Release\log.exp
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\pydlog\Release\BuildLog.htm"
+pydlog - 0 error(s), 4 warning(s)
+------ Build started: Project: pyddatasrc, Configuration: Release Win32 ------
+Compiling...
+updater_inc.cc
+journal_reader_inc.cc
+iterator_inc.cc
+finder_inc.cc
+client_inc.cc
+updater_python.cc
+journal_reader_python.cc
+iterator_python.cc
+finder_python.cc
+datasrc.cc
+client_python.cc
+Linking...
+   Creating library Release\datasrc.lib and object Release\datasrc.exp
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\pyddatasrc\Release\BuildLog.htm"
+pyddatasrc - 0 error(s), 0 warning(s)
+------ Build started: Project: libresolve_tests, Configuration: Release Win32 ------
+Compiling...
+unittest_util.cc
+run_unittests.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+response_classifier_unittest.cc
+resolver_callback_unittest.cc
+resolve_unittest.cc
+recursive_query_unittest_3.cc
+..\..\..\src\lib\resolve\tests\recursive_query_unittest_3.cc(363) : warning C4065: switch statement contains 'default' but no 'case' labels
+..\..\..\src\lib\resolve\tests\recursive_query_unittest_3.cc(572) : warning C4018: '<' : signed/unsigned mismatch
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1453) : warning C4018: '>' : signed/unsigned mismatch
+        ..\..\..\src\lib\resolve\tests\recursive_query_unittest_3.cc(571) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperGT<unsigned int,int>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=unsigned int,
+            T2=int
+        ]
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1449) : warning C4018: '<' : signed/unsigned mismatch
+        ..\..\..\src\lib\resolve\tests\recursive_query_unittest_3.cc(573) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperLT<unsigned int,int>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=unsigned int,
+            T2=int
+        ]
+recursive_query_unittest_2.cc
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1453) : warning C4018: '>' : signed/unsigned mismatch
+        ..\..\..\src\lib\resolve\tests\recursive_query_unittest_2.cc(708) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperGT<unsigned int,int>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=unsigned int,
+            T2=int
+        ]
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1449) : warning C4018: '<' : signed/unsigned mismatch
+        ..\..\..\src\lib\resolve\tests\recursive_query_unittest_2.cc(710) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperLT<unsigned int,int>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=unsigned int,
+            T2=int
+        ]
+recursive_query_unittest.cc
+..\..\..\src\lib\resolve\tests\recursive_query_unittest.cc(282) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\resolve\tests\recursive_query_unittest.cc(312) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\resolve\tests\recursive_query_unittest.cc(317) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\resolve\tests\recursive_query_unittest.cc(817) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libresolve_tests\Release\BuildLog.htm"
+libresolve_tests - 0 error(s), 11 warning(s)
+------ Build started: Project: pyddnsacl, Configuration: Release Win32 ------
+Compiling...
+dnsacl_inc.cc
+dns_requestloader_python.cc
+dns_requestloader_inc.cc
+dns_requestcontext_python.cc
+dns_requestcontext_inc.cc
+dns_requestacl_python.cc
+dns_requestacl_inc.cc
+dns.cc
+Linking...
+   Creating library Release\_dns.lib and object Release\_dns.exp
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\pyddnsacl\Release\BuildLog.htm"
+pyddnsacl - 0 error(s), 0 warning(s)
+------ Build started: Project: libcache_tests, Configuration: Release Win32 ------
+Compiling...
+unittest_util.cc
+run_unittests.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+rrset_entry_unittest.cc
+..\..\..\src\lib\cache\tests\rrset_entry_unittest.cc(116) : warning C4244: 'initializing' : conversion from 'time_t' to 'uint32_t', possible loss of data
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1449) : warning C4018: '<' : signed/unsigned mismatch
+        ..\..\..\src\lib\cache\tests\rrset_entry_unittest.cc(105) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperLT<uint32_t,int>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=uint32_t,
+            T2=int
+        ]
+rrset_cache_unittest.cc
+resolver_cache_unittest.cc
+negative_cache_unittest.cc
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1451) : warning C4018: '>=' : signed/unsigned mismatch
+        ..\..\..\src\lib\cache\tests\negative_cache_unittest.cc(64) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperGE<uint32_t,int>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=uint32_t,
+            T2=int
+        ]
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1447) : warning C4018: '<=' : signed/unsigned mismatch
+        ..\..\..\src\lib\cache\tests\negative_cache_unittest.cc(65) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperLE<uint32_t,int>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=uint32_t,
+            T2=int
+        ]
+message_entry_unittest.cc
+message_cache_unittest.cc
+local_zone_data_unittest.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libcache_tests\Release\BuildLog.htm"
+libcache_tests - 0 error(s), 5 warning(s)
+------ Build started: Project: liblog_example, Configuration: Release Win32 ------
+Compiling...
+logger_example.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+getopt.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Performing Post-Build Event...
+        1 file(s) copied.
+        1 file(s) copied.
+        1 file(s) copied.
+        1 file(s) copied.
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\liblog_example\Release\BuildLog.htm"
+liblog_example - 0 error(s), 1 warning(s)
+------ Build started: Project: libnsas_tests, Configuration: Release Win32 ------
+Compiling...
+zone_entry_unittest.cc
+c:\cygwin\home\dupont\bind10\src\lib\util/random/random_number_generator.h(82) : warning C4244: 'argument' : conversion from 'time_t' to 'const boost::uint32_t', possible loss of data
+c:\cygwin\home\dupont\bind10\src\lib\util/random/random_number_generator.h(125) : warning C4244: 'argument' : conversion from 'time_t' to 'const boost::uint32_t', possible loss of data
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1451) : warning C4018: '>=' : signed/unsigned mismatch
+        ..\..\..\src\lib\nsas\tests\zone_entry_unittest.cc(365) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperGE<unsigned int,int>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=unsigned int,
+            T2=int
+        ]
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1449) : warning C4018: '<' : signed/unsigned mismatch
+        ..\..\..\src\lib\nsas\tests\zone_entry_unittest.cc(650) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperLT<size_t,int>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=size_t,
+            T2=int
+        ]
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1453) : warning C4018: '>' : signed/unsigned mismatch
+        ..\..\..\src\lib\nsas\tests\zone_entry_unittest.cc(663) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperGT<unsigned int,int>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=unsigned int,
+            T2=int
+        ]
+run_unittests.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+nsas_entry_compare_unittest.cc
+nameserver_entry_unittest.cc
+c:\cygwin\home\dupont\bind10\src\lib\util/random/random_number_generator.h(82) : warning C4244: 'argument' : conversion from 'time_t' to 'const boost::uint32_t', possible loss of data
+c:\cygwin\home\dupont\bind10\src\lib\util/random/random_number_generator.h(125) : warning C4244: 'argument' : conversion from 'time_t' to 'const boost::uint32_t', possible loss of data
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1453) : warning C4018: '>' : signed/unsigned mismatch
+        ..\..\..\src\lib\nsas\tests\nameserver_entry_unittest.cc(131) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperGT<uint32_t,int>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=uint32_t,
+            T2=int
+        ]
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1449) : warning C4018: '<' : signed/unsigned mismatch
+        ..\..\..\src\lib\nsas\tests\nameserver_entry_unittest.cc(133) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperLT<uint32_t,int>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=uint32_t,
+            T2=int
+        ]
+nameserver_address_unittest.cc
+nameserver_address_store_unittest.cc
+c:\cygwin\home\dupont\bind10\src\lib\util/random/random_number_generator.h(82) : warning C4244: 'argument' : conversion from 'time_t' to 'const boost::uint32_t', possible loss of data
+c:\cygwin\home\dupont\bind10\src\lib\util/random/random_number_generator.h(125) : warning C4244: 'argument' : conversion from 'time_t' to 'const boost::uint32_t', possible loss of data
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1453) : warning C4018: '>' : signed/unsigned mismatch
+        ..\..\..\src\lib\nsas\tests\nameserver_address_store_unittest.cc(399) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperGT<unsigned int,int>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=unsigned int,
+            T2=int
+        ]
+hash_unittest.cc
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1449) : warning C4018: '<' : signed/unsigned mismatch
+        ..\..\..\src\lib\nsas\tests\hash_unittest.cc(87) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperLT<uint32_t,int>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=uint32_t,
+            T2=int
+        ]
+hash_table_unittest.cc
+hash_key_unittest.cc
+hash_deleter_unittest.cc
+fetchable_unittest.cc
+address_entry_unittest.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libnsas_tests\Release\BuildLog.htm"
+libnsas_tests - 0 error(s), 14 warning(s)
+------ Build started: Project: pydacl, Configuration: Release Win32 ------
+Compiling...
+acl_inc.cc
+acl.cc
+Linking...
+   Creating library Release\acl.lib and object Release\acl.exp
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\pydacl\Release\BuildLog.htm"
+pydacl - 0 error(s), 0 warning(s)
+------ Build started: Project: libasiodns_tests, Configuration: Release Win32 ------
+Compiling...
+unittest_util.cc
+run_unittests.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+io_fetch_unittest.cc
+..\..\..\src\lib\asiodns\tests\io_fetch_unittest.cc(203) : warning C4996: 'std::equal': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\xutility(3071) : see declaration of 'std::equal'
+..\..\..\src\lib\asiodns\tests\io_fetch_unittest.cc(311) : warning C4996: 'std::equal': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\xutility(3071) : see declaration of 'std::equal'
+..\..\..\src\lib\asiodns\tests\io_fetch_unittest.cc(465) : warning C4996: 'std::equal': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\xutility(3071) : see declaration of 'std::equal'
+dns_service_unittest.cc
+dns_server_unittest.cc
+..\..\..\src\lib\asiodns\tests\dns_server_unittest.cc(514) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+        ..\..\..\src\lib\asiodns\tests\dns_server_unittest.cc(511) : while compiling class template member function 'void `anonymous-namespace'::FdInit<UDPServerClass>::SetUp(void)'
+        with
+        [
+            UDPServerClass=isc::asiodns::SyncUDPServer
+        ]
+        ..\..\..\src\lib\asiodns\tests\dns_server_unittest.cc(737) : see reference to class template instantiation '`anonymous-namespace'::FdInit<UDPServerClass>' being compiled
+        with
+        [
+            UDPServerClass=isc::asiodns::SyncUDPServer
+        ]
+..\..\..\src\lib\asiodns\tests\dns_server_unittest.cc(524) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\asiodns\tests\dns_server_unittest.cc(514) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+        ..\..\..\src\lib\asiodns\tests\dns_server_unittest.cc(511) : while compiling class template member function 'void `anonymous-namespace'::FdInit<UDPServerClass>::SetUp(void)'
+        with
+        [
+            UDPServerClass=isc::asiodns::UDPServer
+        ]
+        ..\..\..\src\lib\asiodns\tests\dns_server_unittest.cc(537) : see reference to class template instantiation '`anonymous-namespace'::FdInit<UDPServerClass>' being compiled
+        with
+        [
+            UDPServerClass=isc::asiodns::UDPServer
+        ]
+        ..\..\..\src\lib\asiodns\tests\dns_server_unittest.cc(555) : see reference to class template instantiation '`anonymous-namespace'::DNSServerTest<Parent>' being compiled
+        with
+        [
+            Parent=Type
+        ]
+        c:\cygwin\home\dupont\gtest\include\gtest/internal/gtest-internal.h(661) : see reference to class template instantiation '`anonymous-namespace'::DNSServerTest_stopUDPServerAfterOneQuery_Test<gtest_TypeParam_>' being compiled
+        with
+        [
+            gtest_TypeParam_=Type
+        ]
+        c:\cygwin\home\dupont\gtest\include\gtest/internal/gtest-internal.h(647) : while compiling class template member function 'bool testing::internal::TypeParameterizedTest<Fixture,TestSel,Types>::Register(const char *,const char *,const char *,int)'
+        with
+        [
+            Fixture=`anonymous-namespace'::DNSServerTest,
+            TestSel=testing::internal::TemplateSel<`anonymous-namespace'::DNSServerTest_stopUDPServerAfterOneQuery_Test>,
+            Types=`anonymous-namespace'::gtest_type_params_DNSServerTest_
+        ]
+        ..\..\..\src\lib\asiodns\tests\dns_server_unittest.cc(555) : see reference to class template instantiation 'testing::internal::TypeParameterizedTest<Fixture,TestSel,Types>' being compiled
+        with
+        [
+            Fixture=`anonymous-namespace'::DNSServerTest,
+            TestSel=testing::internal::TemplateSel<`anonymous-namespace'::DNSServerTest_stopUDPServerAfterOneQuery_Test>,
+            Types=`anonymous-namespace'::gtest_type_params_DNSServerTest_
+        ]
+..\..\..\src\lib\asiodns\tests\dns_server_unittest.cc(524) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libasiodns_tests\Release\BuildLog.htm"
+libasiodns_tests - 0 error(s), 8 warning(s)
+------ Build started: Project: liblog_iltest, Configuration: Release Win32 ------
+Compiling...
+init_logger_test.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Performing Post-Build Event...
+        1 file(s) copied.
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\liblog_iltest\Release\BuildLog.htm"
+liblog_iltest - 0 error(s), 1 warning(s)
+------ Build started: Project: libasiolink_tests, Configuration: Release Win32 ------
+Compiling...
+udp_socket_unittest.cc
+..\..\..\src\lib\asiolink\tests\udp_socket_unittest.cc(214) : warning C4996: 'std::equal': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\xutility(3071) : see declaration of 'std::equal'
+..\..\..\src\lib\asiolink\tests\udp_socket_unittest.cc(334) : warning C4996: 'std::equal': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\xutility(3071) : see declaration of 'std::equal'
+udp_endpoint_unittest.cc
+tcp_socket_unittest.cc
+..\..\..\src\lib\asiolink\tests\tcp_socket_unittest.cc(306) : warning C4996: 'std::equal': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\xutility(3071) : see declaration of 'std::equal'
+..\..\..\src\lib\asiolink\tests\tcp_socket_unittest.cc(319) : warning C4996: 'std::equal': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\xutility(3071) : see declaration of 'std::equal'
+..\..\..\src\lib\asiolink\tests\tcp_socket_unittest.cc(405) : warning C4996: 'std::equal': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\xutility(3071) : see declaration of 'std::equal'
+..\..\..\src\lib\asiolink\tests\tcp_socket_unittest.cc(420) : warning C4996: 'std::copy': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\xutility(2576) : see declaration of 'std::copy'
+..\..\..\src\lib\asiolink\tests\tcp_socket_unittest.cc(516) : warning C4996: 'std::equal': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\xutility(3071) : see declaration of 'std::equal'
+tcp_endpoint_unittest.cc
+run_unittests.cc
+io_socket_unittest.cc
+io_endpoint_unittest.cc
+io_address_unittest.cc
+interval_timer_unittest.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libasiolink_tests\Release\BuildLog.htm"
+libasiolink_tests - 0 error(s), 7 warning(s)
+------ Build started: Project: libacl_tests, Configuration: Release Win32 ------
+Compiling...
+run_unittests.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+logic_check_test.cc
+loader_test.cc
+ip_check_unittest.cc
+dnsname_check_unittest.cc
+dns_test.cc
+check_test.cc
+acl_test.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libacl_tests\Release\BuildLog.htm"
+libacl_tests - 0 error(s), 1 warning(s)
+------ Build started: Project: libdhcp_tests, Configuration: Release Win32 ------
+Compiling...
+run_unittests.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+pkt6_unittest.cc
+pkt4_unittest.cc
+option_unittest.cc
+option6_iaaddr_unittest.cc
+option6_ia_unittest.cc
+option6_addrlst_unittest.cc
+option4_addrlst_unittest.cc
+libdhcp++_unittest.cc
+iface_mgr_unittest.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libdhcp_tests\Release\BuildLog.htm"
+libdhcp_tests - 0 error(s), 1 warning(s)
+------ Build started: Project: liblog_tests, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+        1 file(s) copied.
+Compiling...
+run_unittests.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+output_option.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+message_reader_unittest.cc
+message_dictionary_unittest.cc
+logger_unittest.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+logger_support_unittest.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+logger_specification_unittest.cc
+logger_name_unittest.cc
+logger_manager_unittest.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+..\..\..\src\lib\log\tests\logger_manager_unittest.cc(119) : warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(74) : see declaration of 'strcpy'
+logger_level_unittest.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+logger_level_impl_unittest.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+log_test_messages.cc
+log_formatter_unittest.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\liblog_tests\Release\BuildLog.htm"
+liblog_tests - 0 error(s), 8 warning(s)
+------ Build started: Project: b10-dhcp6_tests, Configuration: Release Win32 ------
+Compiling...
+dhcp6_unittests.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+dhcp6_srv_unittest.cc
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1451) : warning C4018: '>=' : signed/unsigned mismatch
+        ..\..\..\src\bin\dhcp6\tests\dhcp6_srv_unittest.cc(111) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperGE<int,size_t>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=int,
+            T2=size_t
+        ]
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1447) : warning C4018: '<=' : signed/unsigned mismatch
+        ..\..\..\src\bin\dhcp6\tests\dhcp6_srv_unittest.cc(121) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperLE<uint32_t,int>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=uint32_t,
+            T2=int
+        ]
+dhcp6_srv.cc
+..\..\..\src\bin\dhcp6\dhcp6_srv.cc(226) : warning C4244: 'argument' : conversion from 'time_t' to 'unsigned int', possible loss of data
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\b10-dhcp6_tests\Release\BuildLog.htm"
+b10-dhcp6_tests - 0 error(s), 4 warning(s)
+------ Build started: Project: libcfgclient_tests, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+        1 file(s) copied.
+Compiling...
+run_unittests.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+module_spec_unittests.cc
+config_data_unittests.cc
+ccsession_unittests.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libcfgclient_tests\Release\BuildLog.htm"
+libcfgclient_tests - 0 error(s), 1 warning(s)
+------ Build started: Project: libdatasrc_tests, Configuration: Release Win32 ------
+Compiling...
+zonetable_unittest.cc
+zone_finder_context_unittest.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+unittest_util.cc
+test_datasrc.cc
+test_client.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+static_unittest.cc
+sqlite3_unittest.cc
+sqlite3_accessor_unittest.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+..\..\..\src\lib\datasrc\tests\sqlite3_accessor_unittest.cc(1338) : warning C4018: '<' : signed/unsigned mismatch
+run_unittests.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+rbtree_unittest.cc
+rbnode_rrset_unittest.cc
+query_unittest.cc
+memory_datasrc_unittest.cc
+logger_unittest.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+faked_nsec3.cc
+factory_unittest.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+datasrc_unittest.cc
+database_unittest.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+client_unittest.cc
+client_list_unittest.cc
+Compiling...
+cache_unittest.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libdatasrc_tests\Release\BuildLog.htm"
+libdatasrc_tests - 0 error(s), 8 warning(s)
+------ Build started: Project: libcc_tests, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+        1 file(s) copied.
+Compiling...
+session_unittests.cc
+run_unittests.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+data_unittests.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libcc_tests\Release\BuildLog.htm"
+libcc_tests - 0 error(s), 1 warning(s)
+------ Build started: Project: tt-badpacket_tests, Configuration: Release Win32 ------
+Compiling...
+run_unittests.cc
+option_info_unittest.cc
+option_info.cc
+header_flags_unittest.cc
+getopt_long.cc
+..\..\getopt_long.cc(65) : warning C4996: '_vsnprintf': This function or variable may be unsafe. Consider using _vsnprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdio.h(358) : see declaration of '_vsnprintf'
+..\..\getopt_long.cc(235) : warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdlib.h(447) : see declaration of 'getenv'
+..\..\getopt_long.cc(243) : warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\stdlib.h(447) : see declaration of 'getenv'
+command_options_unittest.cc
+command_options.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\tt-badpacket_tests\Release\BuildLog.htm"
+tt-badpacket_tests - 0 error(s), 3 warning(s)
+------ Build started: Project: libstatistics, Configuration: Release Win32 ------
+Compiling...
+counter.cc
+counter_dict.cc
+Creating library...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libstatistics\Release\BuildLog.htm"
+libstatistics - 0 error(s), 0 warning(s)
+------ Build started: Project: libdns++_tests, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+Compiling...
+unittest_util.cc
+tsigrecord_unittest.cc
+tsigkey_unittest.cc
+tsigerror_unittest.cc
+tsig_unittest.cc
+serial_unittest.cc
+run_unittests.cc
+rrtype_unittest.cc
+rrttl_unittest.cc
+rrsetlist_unittest.cc
+rrset_unittest.cc
+rrparamregistry_unittest.cc
+rrclass_unittest.cc
+rdatafields_unittest.cc
+rdata_unittest.cc
+rdata_txt_like_unittest.cc
+rdata_tsig_unittest.cc
+rdata_sshfp_unittest.cc
+rdata_srv_unittest.cc
+rdata_soa_unittest.cc
+Compiling...
+rdata_rrsig_unittest.cc
+rdata_rp_unittest.cc
+rdata_ptr_unittest.cc
+rdata_opt_unittest.cc
+rdata_nsecbitmap_unittest.cc
+rdata_nsec_unittest.cc
+rdata_nsec3param_unittest.cc
+rdata_nsec3param_like_unittest.cc
+rdata_nsec3_unittest.cc
+rdata_ns_unittest.cc
+rdata_naptr_unittest.cc
+rdata_mx_unittest.cc
+rdata_minfo_unittest.cc
+rdata_in_aaaa_unittest.cc
+rdata_in_a_unittest.cc
+rdata_hinfo_unittest.cc
+rdata_ds_like_unittest.cc
+rdata_dnskey_unittest.cc
+rdata_dname_unittest.cc
+rdata_dhcid_unittest.cc
+Compiling...
+rdata_cname_unittest.cc
+rdata_afsdb_unittest.cc
+rcode_unittest.cc
+question_unittest.cc
+opcode_unittest.cc
+nsec3hash_unittest.cc
+name_unittest.cc
+messagerenderer_unittest.cc
+message_unittest.cc
+masterload_unittest.cc
+labelsequence_unittest.cc
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1451) : warning C4018: '>=' : signed/unsigned mismatch
+        ..\..\..\src\lib\dns\tests\labelsequence_unittest.cc(328) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperGE<int,unsigned int>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=int,
+            T2=unsigned int
+        ]
+edns_unittest.cc
+character_string_unittest.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libdns++_tests\Release\BuildLog.htm"
+libdns++_tests - 0 error(s), 1 warning(s)
+------ Build started: Project: libutil_tests, Configuration: Release Win32 ------
+Compiling...
+time_utilities_unittest.cc
+strutil_unittest.cc
+socketsession_unittest.cc
+..\..\..\src\lib\util\tests\socketsession_unittest.cc(115) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\util\tests\socketsession_unittest.cc(160) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+sha1_unittest.cc
+run_unittests.cc
+range_utilities_unittest.cc
+..\..\..\src\lib\util\tests\range_utilities_unittest.cc(45) : warning C4244: 'argument' : conversion from 'time_t' to 'unsigned int', possible loss of data
+random_number_generator_unittest.cc
+c:\cygwin\home\dupont\bind10\src\lib\util/random/random_number_generator.h(82) : warning C4244: 'argument' : conversion from 'time_t' to 'const boost::uint32_t', possible loss of data
+c:\cygwin\home\dupont\bind10\src\lib\util/random/random_number_generator.h(125) : warning C4244: 'argument' : conversion from 'time_t' to 'const boost::uint32_t', possible loss of data
+qid_gen_unittest.cc
+lru_list_unittest.cc
+io_utilities_unittest.cc
+interprocess_sync_null_unittest.cc
+hex_unittest.cc
+filename_unittest.cc
+fd_tests.cc
+buffer_unittest.cc
+..\..\..\src\lib\util\tests\buffer_unittest.cc(152) : warning C4244: 'argument' : conversion from 'uint16_t' to 'uint8_t', possible loss of data
+..\..\..\src\lib\util\tests\buffer_unittest.cc(154) : warning C4244: 'argument' : conversion from 'uint16_t' to 'uint8_t', possible loss of data
+c:\cygwin\home\dupont\gtest\include\gtest/gtest.h(1449) : warning C4018: '<' : signed/unsigned mismatch
+        ..\..\..\src\lib\util\tests\buffer_unittest.cc(91) : see reference to function template instantiation 'testing::AssertionResult testing::internal::CmpHelperLT<int,size_t>(const char *,const char *,const T1 &,const T2 &)' being compiled
+        with
+        [
+            T1=int,
+            T2=size_t
+        ]
+base64_unittest.cc
+base32hex_unittest.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libutil_tests\Release\BuildLog.htm"
+libutil_tests - 0 error(s), 8 warning(s)
+------ Build started: Project: libcryptolink_tests, Configuration: Release Win32 ------
+Compiling...
+run_unittests.cc
+crypto_unittests.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libcryptolink_tests\Release\BuildLog.htm"
+libcryptolink_tests - 0 error(s), 0 warning(s)
+------ Build started: Project: libserver_common_tests, Configuration: Release Win32 ------
+Performing Pre-Build Event...
+        1 file(s) copied.
+Compiling...
+socket_requestor_test.cc
+..\..\..\src\lib\server_common\tests\socket_requestor_test.cc(350) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\server_common\tests\socket_requestor_test.cc(386) : warning C4996: 'strdup': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _strdup. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(207) : see declaration of 'strdup'
+..\..\..\src\lib\server_common\tests\socket_requestor_test.cc(448) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\server_common\tests\socket_requestor_test.cc(489) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\server_common\tests\socket_requestor_test.cc(495) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\server_common\tests\socket_requestor_test.cc(559) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+..\..\..\src\lib\server_common\tests\socket_requestor_test.cc(609) : warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(126) : see declaration of 'strerror'
+run_unittests.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+keyring_test.cc
+client_unittest.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libserver_common_tests\Release\BuildLog.htm"
+libserver_common_tests - 0 error(s), 8 warning(s)
+------ Build started: Project: liblog_i1utests, Configuration: Release Win32 ------
+Compiling...
+run_initializer_unittests.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+message_initializer_1a_unittest.cc
+message_initializer_1_unittest.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\liblog_i1utests\Release\BuildLog.htm"
+liblog_i1utests - 0 error(s), 1 warning(s)
+------ Build started: Project: liblog_lltest, Configuration: Release Win32 ------
+Compiling...
+logger_lock_test.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+log_test_messages.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Performing Post-Build Event...
+        1 file(s) copied.
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\liblog_lltest\Release\BuildLog.htm"
+liblog_lltest - 0 error(s), 1 warning(s)
+------ Build started: Project: libstatistics_tests, Configuration: Release Win32 ------
+Compiling...
+run_unittests.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+counter_unittest.cc
+counter_dict_unittest.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libstatistics_tests\Release\BuildLog.htm"
+libstatistics_tests - 0 error(s), 1 warning(s)
+------ Build started: Project: libdns++_mbench, Configuration: Release Win32 ------
+Compiling...
+oldmessagerenderer.cc
+message_renderer_bench.cc
+..\..\..\src\lib\dns\benchmarks\message_renderer_bench.cc(110) : warning C4373: '`anonymous-namespace'::DumbMessageRenderer::setLengthLimit': virtual function overrides 'isc::dns::AbstractMessageRenderer::setLengthLimit', previous versions of the compiler did not override when parameters only differed by const/volatile qualifiers
+        c:\cygwin\home\dupont\bind10\src\lib\dns/messagerenderer.h(225) : see declaration of 'isc::dns::AbstractMessageRenderer::setLengthLimit'
+..\..\..\src\lib\dns\benchmarks\message_renderer_bench.cc(114) : warning C4373: '`anonymous-namespace'::DumbMessageRenderer::setCompressMode': virtual function overrides 'isc::dns::AbstractMessageRenderer::setCompressMode', previous versions of the compiler did not override when parameters only differed by const/volatile qualifiers
+        c:\cygwin\home\dupont\bind10\src\lib\dns/messagerenderer.h(232) : see declaration of 'isc::dns::AbstractMessageRenderer::setCompressMode'
+..\..\..\src\lib\dns\benchmarks\message_renderer_bench.cc(115) : warning C4373: '`anonymous-namespace'::DumbMessageRenderer::writeName': virtual function overrides 'isc::dns::AbstractMessageRenderer::writeName', previous versions of the compiler did not override when parameters only differed by const/volatile qualifiers
+        c:\cygwin\home\dupont\bind10\src\lib\dns/messagerenderer.h(333) : see declaration of 'isc::dns::AbstractMessageRenderer::writeName'
+getopt.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\libdns++_mbench\Release\BuildLog.htm"
+libdns++_mbench - 0 error(s), 3 warning(s)
+------ Build started: Project: liblog_i2utests, Configuration: Release Win32 ------
+Compiling...
+run_initializer_unittests.cc
+c:\cygwin\home\dupont\bind10\src\lib\log/logger.h(154) : warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+        c:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\include\string.h(157) : see declaration of 'strncpy'
+message_initializer_2_unittest.cc
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\liblog_i2utests\Release\BuildLog.htm"
+liblog_i2utests - 0 error(s), 1 warning(s)
+------ Build started: Project: BINDInstall, Configuration: Release Win32 ------
+Compiling...
+stdafx.cpp
+BINDInstall.cpp
+Linking...
+Generating code
+Finished generating code
+Embedding manifest...
+Build log was saved at "file://c:\cygwin\home\dupont\bind10\win32build\VS2008\BINDInstall\Release\BuildLog.htm"
+BINDInstall - 0 error(s), 0 warning(s)
+========== Build: 66 succeeded, 0 failed, 0 up-to-date, 0 skipped ==========
