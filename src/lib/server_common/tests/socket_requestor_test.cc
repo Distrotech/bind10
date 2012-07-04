@@ -638,6 +638,7 @@ DWORD WINAPI childproc(void *args) {
 }
 #endif
 
+#ifndef _WIN32
 TEST_F(SocketRequestorTest, testSocketPassing) {
     TestSocket ts;
     std::vector<DataPair> data;
@@ -736,5 +737,6 @@ TEST_F(SocketRequestorTest, testSocketPassing) {
     addAnswer("foo", ts2.getPath());
     EXPECT_THROW(doRequest(), SocketRequestor::SocketError);
 }
+#endif
 
 }

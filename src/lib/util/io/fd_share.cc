@@ -228,6 +228,7 @@ send_fd(const SOCKET sock, const SOCKET fd) {
     }
 
     WSAPROTOCOL_INFO pi;
+    // this will fail with WSAENOTSOCK when fd is not a socket
     if (WSADuplicateSocket(fd, peerpid, &pi) != 0) {
         return (FD_OTHER_ERROR);
     }
