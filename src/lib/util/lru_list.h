@@ -21,6 +21,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include <util/lib.h>
 #include <util/locks.h>
 
 namespace isc {
@@ -37,7 +38,7 @@ namespace util {
 /// It is not intended that the class be copied, and the derivation from
 /// boost::noncopyable enforces this.
 template <typename T>
-class LruList : boost::noncopyable {
+class ISC_LIBUTIL_API LruList : boost::noncopyable {
 public:
     typedef typename std::list<boost::shared_ptr<T> > lru_list;
     typedef typename lru_list::iterator               iterator;

@@ -50,6 +50,9 @@
  *      without express or implied warranty of any kind.
  *      
  */
+
+#define ISC_LIBUTIL_EXPORT
+
 #include <util/hash/sha1.h>
 
 namespace isc {

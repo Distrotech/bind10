@@ -16,7 +16,7 @@
 
 #include <exceptions/exceptions.h>
 
-#ifdef EXPECT_DEATH
+#if defined(EXPECT_DEATH) && !defined(NO_EXPECT_DEATH)
 #include <util/unittests/resource.h>
 #endif /* EXPECT_DEATH */
 
@@ -186,7 +186,7 @@ TEST_F(BufferTest, outputBufferReadat) {
     for (int i = 0; i < sizeof(testdata); i ++) {
         EXPECT_EQ(testdata[i], obuffer[i]);
     }
-#ifdef EXPECT_DEATH
+#if defined(EXPECT_DEATH) && !defined(NO_EXPECT_DEATH)
     // We use assert now, so we check it dies
     EXPECT_DEATH({
         isc::util::unittests::dontCreateCoreDumps();

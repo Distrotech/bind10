@@ -15,11 +15,17 @@
 #ifndef __SOCKADDR_UTIL_H_
 #define __SOCKADDR_UTIL_H_ 1
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#endif
 
 #include <cassert>
+
+#include <util/io/lib.h>
 
 // These definitions in this file are for the convenience of internal
 // implementation and test code, and are not intended to be used publicly.
@@ -43,34 +49,35 @@ getSALength(const struct sockaddr& sa) {
 // Lower level C-APIs require conversion between various variants of
 // sockaddr's, which is not friendly with C++.  The following templates
 // are a shortcut of common workaround conversion in such cases.
-
+#ifndef _MSC_VER
 template <typename SAType>
-const struct sockaddr*
+ISC_LIBUTIL_IO_API const struct sockaddr*
 convertSockAddr(const SAType* sa) {
     const void* p = sa;
     return (static_cast<const struct sockaddr*>(p));
 }
 
 template <typename SAType>
-const SAType*
+ISC_LIBUTIL_IO_API const SAType*
 convertSockAddr(const struct sockaddr* sa) {
     const void* p = sa;
     return (static_cast<const SAType*>(p));
 }
 
 template <typename SAType>
-struct sockaddr*
+ISC_LIBUTIL_IO_API struct sockaddr*
 convertSockAddr(SAType* sa) {
     void* p = sa;
     return (static_cast<struct sockaddr*>(p));
 }
 
 template <typename SAType>
-SAType*
+ISC_LIBUTIL_IO_API SAType*
 convertSockAddr(struct sockaddr* sa) {
     void* p = sa;
     return (static_cast<SAType*>(p));
 }
+#endif
 
 }
 }

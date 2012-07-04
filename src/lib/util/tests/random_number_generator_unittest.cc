@@ -14,6 +14,8 @@
 
 #include <config.h>
 
+#include <time.h>
+
 #include <gtest/gtest.h>
 #include <boost/shared_ptr.hpp>
 
@@ -22,6 +24,13 @@
 #include <vector>
 
 #include <util/random/random_number_generator.h>
+
+#if defined(_WIN32) && defined(min)
+#undef min
+#endif
+#if defined(_WIN32) && defined(max)
+#undef max
+#endif
 
 namespace isc {
 namespace util {

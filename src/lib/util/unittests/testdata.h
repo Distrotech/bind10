@@ -15,6 +15,8 @@
 #ifndef __UTIL_UNITTESTS_TESTDATA_H
 #define __UTIL_UNITTESTS_TESTDATA_H 1
 
+#include <util/unittests/lib.h>
+
 /**
  * @file testdata.h
  * @short Manipulating test data files.
@@ -28,7 +30,7 @@ namespace util {
 namespace unittests {
 /// Add a path (directory) that \c openTestData() will search for test data
 /// files.
-void addTestDataPath(const std::string& path);
+ISC_LIBUTIL_UNITTESTS_API void addTestDataPath(const std::string& path);
 
 /// Open a file specified by 'datafile' using the data paths registered via
 /// addTestDataPath().  On success, ifs will be ready for reading the data
@@ -42,6 +44,7 @@ void addTestDataPath(const std::string& path);
 /// is to use a different \c ifstream object for a new call to this function;
 /// alternatively make sure you explicitly clear the error bit by calling
 /// \c ifstream::clear() on \c ifs.
+ISC_LIBUTIL_UNITTESTS_API
 void openTestData(const char* const datafile, std::ifstream& ifs);
 }
 }

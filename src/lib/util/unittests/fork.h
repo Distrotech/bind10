@@ -15,7 +15,13 @@
 #ifndef __UTIL_UNITTESTS_FORK_H
 #define __UTIL_UNITTESTS_FORK_H 1
 
+#include <config.h>
+
+#ifndef _WIN32
 #include <unistd.h>
+#endif
+
+#include <util/unittests/lib.h>
 
 /**
  * @file fork.h
@@ -36,13 +42,13 @@ namespace unittests {
  * @return True if the process terminates with 0, false otherwise.
  * @param process The ID of process to wait for.
  */
-bool
+ISC_LIBUTIL_UNITTESTS_API bool
 process_ok(pid_t process);
 
-pid_t
+ISC_LIBUTIL_UNITTESTS_API pid_t
 provide_input(int *read_pipe, const void *input, const size_t length);
 
-pid_t
+ISC_LIBUTIL_UNITTESTS_API pid_t
 check_output(int *write_pipe, const void *output, const size_t length);
 
 } // End of the namespace

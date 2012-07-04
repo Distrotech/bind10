@@ -15,6 +15,7 @@
 #ifndef __INTERPROCESS_SYNC_FILE_H__
 #define __INTERPROCESS_SYNC_FILE_H__
 
+#include <util/lib.h>
 #include <util/interprocess_sync.h>
 #include <exceptions/exceptions.h>
 
@@ -25,7 +26,7 @@ namespace util {
 ///
 /// Exception that is thrown if it's not possible to open the
 /// lock file.
-class InterprocessSyncFileError : public Exception {
+class ISC_LIBUTIL_API InterprocessSyncFileError : public Exception {
 public:
     InterprocessSyncFileError(const char* file, size_t line,
                               const char* what) :
@@ -46,7 +47,7 @@ public:
 /// This implementation opens lock files lazily (only when
 /// necessary). It also leaves the lock files lying around as multiple
 /// processes may have locks on them.
-class InterprocessSyncFile : public InterprocessSync {
+class ISC_LIBUTIL_API InterprocessSyncFile : public InterprocessSync {
 public:
     /// \brief Constructor
     ///
@@ -56,7 +57,11 @@ public:
     /// identical among the various processes that need to be
     /// synchronized for the same task.
     InterprocessSyncFile(const std::string& task_name) :
+#ifdef _WIN32
+        InterprocessSync(task_name), fd_(INVALID_HANDLE_VALUE)
+#else
         InterprocessSync(task_name), fd_(-1)
+#endif
     {}
 
     /// \brief Destructor
@@ -82,7 +87,11 @@ protected:
 private:
     bool do_lock(int cmd, short l_type);
 
+#ifdef _WIN32
+    HANDLE fd_; ///< The handle for the open file
+#else
     int fd_; ///< The descriptor for the open file
+#endif
 };
 
 } // namespace util

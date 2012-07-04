@@ -18,6 +18,10 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#endif
+
 #include "fd_share.h"
 
 
@@ -27,7 +31,7 @@ fdshare_recv_fd(PyObject*, PyObject* args) {
     if (!PyArg_ParseTuple(args, "i", &sock)) {
         return (NULL);
     }
-    fd = isc::util::io::recv_fd(sock);
+    fd = (int) isc::util::io::recv_fd((SOCKET) sock);
     return (Py_BuildValue("i", fd));
 }
 
@@ -37,7 +41,7 @@ fdshare_send_fd(PyObject*, PyObject* args) {
     if (!PyArg_ParseTuple(args, "ii", &sock, &fd)) {
         return (NULL);
     }
-    result = isc::util::io::send_fd(sock, fd);
+    result = isc::util::io::send_fd((SOCKET) sock, (SOCKET) fd);
     return (Py_BuildValue("i", result));
 }
 
@@ -60,6 +64,9 @@ static PyModuleDef bind10_fdshare_python = {
     NULL
 };
 
+#if defined(_WIN32) && !defined(USE_STATIC_LINK)
+__declspec(dllexport)
+#endif
 PyMODINIT_FUNC
 PyInit_libutil_io_python(void) {
     PyObject *mod = PyModule_Create(&bind10_fdshare_python);

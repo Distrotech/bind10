@@ -15,6 +15,9 @@
 #include <config.h>
 #include <stdint.h>
 #include <stdlib.h>
+#ifdef _WIN32
+#include <time.h>
+#endif
 
 #include <gtest/gtest.h>
 #include <vector>

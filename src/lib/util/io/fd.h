@@ -15,7 +15,15 @@
 #ifndef __UTIL_IO_FD_H
 #define __UTIL_IO_FD_H 1
 
+#include <config.h>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <unistd.h>
+#endif
+
+#include <util/io/lib.h>
 
 /**
  * @file fd.h
@@ -38,8 +46,15 @@ namespace io {
  * \param data The buffer to write.
  * \param length How much data is there to write.
  */
-bool
+ISC_LIBUTIL_IO_API bool
 write_data(const int fd, const void *data, const size_t length);
+#ifdef _WIN32
+ISC_LIBUTIL_IO_API bool
+send_data(const SOCKET fd, const void *data, const size_t length);
+#else
+ISC_LIBUTIL_IO_API bool
+send_data(const int fd, const void *data, const size_t length);
+#endif
 
 /*
  * \short read() that reads everything.
@@ -51,8 +66,15 @@ write_data(const int fd, const void *data, const size_t length);
  * \param data Where to put the data.
  * \param length How many of them.
  */
-ssize_t
+ISC_LIBUTIL_IO_API ssize_t
 read_data(const int fd, void *buffer, const size_t length);
+#ifdef _WIN32
+ISC_LIBUTIL_IO_API ssize_t
+recv_data(const SOCKET fd, void *buffer, const size_t length);
+#else
+ISC_LIBUTIL_IO_API ssize_t
+recv_data(const int fd, void *buffer, const size_t length);
+#endif
 
 }
 }

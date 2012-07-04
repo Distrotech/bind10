@@ -29,6 +29,8 @@ namespace std{
 // See base32hex_from_binary.h for why we need base64_from...hpp here.
 #include <boost/archive/iterators/base64_from_binary.hpp>
 
+#include <util/lib.h>
+
 namespace boost { 
 namespace archive {
 namespace iterators {
@@ -39,7 +41,7 @@ namespace iterators {
 namespace detail {
 
 template<class CharType>
-struct from_4_bit {
+struct ISC_LIBUTIL_API from_4_bit {
     typedef CharType result_type;
     CharType operator()(CharType t) const{
         const char * lookup_table = 
@@ -70,7 +72,7 @@ template<
     class Base, 
     class CharType = BOOST_DEDUCED_TYPENAME boost::iterator_value<Base>::type
 >
-class base16_from_binary : 
+class ISC_LIBUTIL_API base16_from_binary : 
     public transform_iterator<
         detail::from_4_bit<CharType>,
         Base

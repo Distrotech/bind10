@@ -23,6 +23,8 @@
 #include <exceptions/exceptions.h>
 #include <boost/lexical_cast.hpp>
 
+#include <util/lib.h>
+
 namespace isc {
 namespace util {
 namespace str {
@@ -33,7 +35,7 @@ namespace str {
 /// \brief A standard string util exception that is thrown if getToken or
 /// numToToken are called with bad input data
 ///
-class StringTokenError : public Exception {
+class ISC_LIBUTIL_API StringTokenError : public Exception {
 public:
     StringTokenError(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -47,7 +49,7 @@ public:
 /// if not the command line).
 ///
 /// \param name Name to be substituted
-void normalizeSlash(std::string& name);
+ISC_LIBUTIL_API void normalizeSlash(std::string& name);
 
 
 /// \brief Trim Leading and Trailing Spaces
@@ -85,6 +87,7 @@ std::string trim(const std::string& instring);
 /// \param delim Delimiter characters
 ///
 /// \return Vector of tokens.
+ISC_LIBUTIL_API
 std::vector<std::string> tokens(const std::string& text,
         const std::string& delim = std::string(" \t\n"));
 
@@ -162,7 +165,7 @@ std::string format(const std::string& format,
 /// \param iss stringstream to read one token from
 ///
 /// \return the first token read from the stringstream
-std::string getToken(std::istringstream& iss);
+ISC_LIBUTIL_API std::string getToken(std::istringstream& iss);
 
 /// \brief Converts a string token to an *unsigned* integer.
 ///

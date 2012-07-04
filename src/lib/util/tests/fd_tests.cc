@@ -18,6 +18,10 @@
 
 #include <gtest/gtest.h>
 
+#ifdef _WIN32
+#define close(x) _close(x)
+#endif
+
 using namespace isc::util::io;
 using namespace isc::util::unittests;
 

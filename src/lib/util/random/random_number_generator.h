@@ -26,23 +26,25 @@
 #include <boost/random/uniform_real.hpp>
 #include <boost/random/variate_generator.hpp>
 
+#include <util/lib.h>
+
 namespace isc {
 namespace util {
 namespace random {
 
-class InvalidLimits : public isc::BadValue {
+class ISC_LIBUTIL_API InvalidLimits : public isc::BadValue {
 public:
     InvalidLimits(const char* file, size_t line, const char* what) :
         isc::BadValue(file, line, what) {}
 };
 
-class SumNotOne : public isc::BadValue {
+class ISC_LIBUTIL_API SumNotOne : public isc::BadValue {
 public:
     SumNotOne(const char* file, size_t line, const char* what) :
         isc::BadValue(file, line, what) {}
 };
 
-class InvalidProbValue : public isc::BadValue {
+class ISC_LIBUTIL_API InvalidProbValue : public isc::BadValue {
 public:
     InvalidProbValue(const char* file, size_t line, const char* what) :
         isc::BadValue(file, line, what) {}
@@ -53,7 +55,7 @@ public:
 /// \brief Uniform random integer generator
 ///
 /// Generate uniformly distributed integers in range of [min, max]
-class UniformRandomIntegerGenerator{
+class ISC_LIBUTIL_API UniformRandomIntegerGenerator{
 public:
     /// \brief Constructor
     ///
@@ -92,7 +94,7 @@ private:
 /// \brief Weighted random integer generator
 ///
 /// Generate random integers according different probabilities
-class WeightedRandomIntegerGenerator {
+class ISC_LIBUTIL_API WeightedRandomIntegerGenerator {
 public:
     /// \brief Constructor
     ///

@@ -19,6 +19,16 @@
 #include <string>
 #include <sstream>
 
+#if !defined(_WIN32) || defined(USE_STATIC_LINK)
+#define ISC_EXCEPTIONS_API
+#else
+#ifdef ISC_EXCEPTIONS_EXPORT
+#define ISC_EXCEPTIONS_API __declspec(dllexport)
+#else
+#defineISC_EXCEPTIONS_API __declspec(dllimport)
+#endif
+#endif
+
 namespace isc {
 
 ///
@@ -28,7 +38,7 @@ namespace isc {
 /// exception such as the file name and line number where the exception is
 /// triggered.
 ///
-class Exception : public std::exception {
+class ISC_EXCEPTIONS_API Exception : public std::exception {
 public:
     ///
     /// \name Constructors and Destructor
@@ -103,7 +113,7 @@ private:
 
 /// \brief A generic exception that is thrown if a parameter given
 /// to a method would refer to or modify out-of-range data.
-class OutOfRange : public Exception {
+class ISC_EXCEPTIONS_API OutOfRange : public Exception {
 public:
     OutOfRange(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -112,7 +122,7 @@ public:
 /// \brief A generic exception that is thrown if a parameter given
 /// to a method or function is considered invalid and no other specific
 /// exceptions are suitable to describe the error.
-class InvalidParameter : public Exception {
+class ISC_EXCEPTIONS_API InvalidParameter : public Exception {
 public:
     InvalidParameter(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -120,7 +130,7 @@ public:
 
 /// \brief A generic exception that is thrown if a parameter given
 /// to a method is considered invalid in that context.
-class BadValue : public Exception {
+class ISC_EXCEPTIONS_API BadValue : public Exception {
 public:
     BadValue(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -131,7 +141,7 @@ public:
 ///
 /// For example, this can happen if a class method is called when the object's
 /// state does not allow that particular method.
-class InvalidOperation : public Exception {
+class ISC_EXCEPTIONS_API InvalidOperation : public Exception {
 public:
     InvalidOperation(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -141,7 +151,7 @@ public:
 /// \brief A generic exception that is thrown when an unexpected
 /// error condition occurs.
 ///
-class Unexpected : public Exception {
+class ISC_EXCEPTIONS_API Unexpected : public Exception {
 public:
     Unexpected(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -153,7 +163,7 @@ public:
 ///
 /// This may be due to unfinished implementation or in case the
 /// function isn't even planned to be provided for that situation.
-class NotImplemented : public Exception {
+class ISC_EXCEPTIONS_API NotImplemented : public Exception {
 public:
     NotImplemented(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -180,36 +190,84 @@ public:
 /// this is defined as a macro.  The convenience for the ostream is a secondary
 /// purpose (if that were the only possible reason we should rather avoid
 /// using a macro).
+#ifdef _MSC_VER
+#define isc_throw(type, stream) \
+    __pragma(warning(push)) \
+    __pragma(warning(disable: 4127)) \
+    do { \
+        std::ostringstream oss__; \
+        oss__ << stream; \
+        throw type(__FILE__, __LINE__, oss__.str().c_str()); \
+    } while (1) \
+    __pragma(warning(pop))
+#else
 #define isc_throw(type, stream) \
     do { \
         std::ostringstream oss__; \
         oss__ << stream; \
         throw type(__FILE__, __LINE__, oss__.str().c_str()); \
     } while (1)
+#endif
 
 ///
 /// Similar as isc_throw, but allows the exception to have one additional
 /// parameter (the stream/text goes first)
+#ifdef _MSC_VER
+#define isc_throw_1(type, stream, param1) \
+    __pragma(warning(push)) \
+    __pragma(warning(disable: 4127)) \
+    do { \
+        std::ostringstream oss__; \
+        oss__ << stream; \
+        throw type(__FILE__, __LINE__, oss__.str().c_str(), param1); \
+    } while (1) \
+    __pragma(warning(pop))
+#else
 #define isc_throw_1(type, stream, param1) \
     do { \
         std::ostringstream oss__; \
         oss__ << stream; \
         throw type(__FILE__, __LINE__, oss__.str().c_str(), param1); \
     } while (1)
+#endif
 
 ///
 /// Similar as isc_throw, but allows the exception to have two additional
 /// parameters (the stream/text goes first)
+#ifdef _MSC_VER
+#define isc_throw_2(type, stream, param1, param2) \
+    __pragma(warning(push)) \
+    __pragma(warning(disable: 4127)) \
+    do { \
+        std::ostringstream oss__; \
+        oss__ << stream; \
+        throw type(__FILE__, __LINE__, oss__.str().c_str(), param1, param2); \
+    } while (1) \
+    __pragma(warning(pop))
+#else
 #define isc_throw_2(type, stream, param1, param2) \
     do { \
         std::ostringstream oss__; \
         oss__ << stream; \
         throw type(__FILE__, __LINE__, oss__.str().c_str(), param1, param2); \
     } while (1)
+#endif
 
 ///
 /// Similar as isc_throw, but allows the exception to have three additional
 /// parameters (the stream/text goes first)
+#ifdef _MSC_VER
+#define isc_throw_3(type, stream, param1, param2, param3) \
+    __pragma(warning(push)) \
+    __pragma(warning(disable: 4127)) \
+    do { \
+        std::ostringstream oss__; \
+        oss__ << stream; \
+        throw type(__FILE__, __LINE__, oss__.str().c_str(), param1, param2,\
+                   param3); \
+    } while (1) \
+    __pragma(warning(pop))
+#else
 #define isc_throw_3(type, stream, param1, param2, param3) \
     do { \
         std::ostringstream oss__; \
@@ -217,10 +275,23 @@ public:
         throw type(__FILE__, __LINE__, oss__.str().c_str(), param1, param2,\
                    param3); \
     } while (1)
+#endif
 
 ///
 /// Similar as isc_throw, but allows the exception to have four additional
 /// parameters (the stream/text goes first)
+#ifdef _MSC_VER
+#define isc_throw_4(type, stream, param1, param2, param3, param4) \
+    __pragma(warning(push)) \
+    __pragma(warning(disable: 4127)) \
+    do { \
+        std::ostringstream oss__; \
+        oss__ << stream; \
+        throw type(__FILE__, __LINE__, oss__.str().c_str(), param1, param2,\
+                   param3, param4); \
+    } while (1) \
+    __pragma(warning(pop))
+#else
 #define isc_throw_4(type, stream, param1, param2, param3, param4) \
     do { \
         std::ostringstream oss__; \
@@ -228,6 +299,7 @@ public:
         throw type(__FILE__, __LINE__, oss__.str().c_str(), param1, param2,\
                    param3, param4); \
     } while (1)
+#endif
 
 }
 #endif // __EXCEPTIONS_H

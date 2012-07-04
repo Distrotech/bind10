@@ -21,12 +21,14 @@
  * \todo This interface is very C-ish. Should we have some kind of exceptions?
  */
 
+#include <util/io/lib.h>
+
 namespace isc {
 namespace util {
 namespace io {
 
-const int FD_SYSTEM_ERROR = -2;
-const int FD_OTHER_ERROR = -1;
+ISC_LIBUTIL_IO_API const int FD_SYSTEM_ERROR = -2;
+ISC_LIBUTIL_IO_API const int FD_OTHER_ERROR = -1;
 
 /**
  * \short Receives a file descriptor.
@@ -41,7 +43,12 @@ const int FD_OTHER_ERROR = -1;
  * \param sock The unix domain socket to read from. Tested and it does
  *     not work with a pipe.
  */
+ISC_LIBUTIL_IO_API
+#ifdef _WIN32
+SOCKET recv_fd(const SOCKET sock);
+#else
 int recv_fd(const int sock);
+#endif
 
 /**
  * \short Sends a file descriptor.
@@ -56,7 +63,12 @@ int recv_fd(const int sock);
  * \param fd The file descriptor to send. It should work with any valid
  *     file descriptor.
  */
+ISC_LIBUTIL_IO_API
+#ifdef _WIN32
+int send_fd(const SOCKET sock, const SOCKET fd);
+#else
 int send_fd(const int sock, const int fd);
+#endif
 
 } // End for namespace io
 } // End for namespace util

@@ -23,6 +23,8 @@
 
 #include <exceptions/exceptions.h>
 
+#include <util/lib.h>
+
 namespace boost { 
 namespace archive {
 namespace iterators {
@@ -33,7 +35,7 @@ namespace iterators {
 namespace detail {
 
 template<class CharType>
-struct to_4_bit {
+struct ISC_LIBUTIL_API to_4_bit {
     typedef CharType result_type;
     CharType operator()(CharType t) const{
         const char lookup_table[] = {
@@ -79,7 +81,7 @@ template<
     class Base, 
     class CharType = BOOST_DEDUCED_TYPENAME boost::iterator_value<Base>::type
 >
-class binary_from_base16 : public
+class ISC_LIBUTIL_API binary_from_base16 : public
     transform_iterator<
         detail::to_4_bit<CharType>,
         Base

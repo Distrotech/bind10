@@ -12,6 +12,13 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBCRYPTOLINK_EXPORT
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4290 4512)
+#endif
+
 #include <cryptolink.h>
 #include <cryptolink/crypto_hmac.h>
 
@@ -281,3 +288,7 @@ deleteHMAC(HMAC* hmac) {
 
 } // namespace cryptolink
 } // namespace isc
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

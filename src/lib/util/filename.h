@@ -17,6 +17,7 @@
 
 #include <string>
 
+#include <util/lib.h>
 #include <util/strutil.h>
 
 namespace isc {
@@ -55,7 +56,7 @@ namespace util {
 /// substituting components.
 
 
-class Filename {
+class ISC_LIBUTIL_API Filename {
 public:
 
     /// \brief Constructor

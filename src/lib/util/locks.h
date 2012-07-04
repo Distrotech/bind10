@@ -26,27 +26,29 @@
 #ifndef __LOCKS_
 #define __LOCKS_
 
+#include <util/lib.h>
+
 namespace isc {
 namespace util {
 namespace locks {
 
-class mutex {
+class ISC_LIBUTIL_API mutex {
 };
 
-class recursive_mutex {
+class ISC_LIBUTIL_API recursive_mutex {
 };
 
-class upgradable_mutex {
+class ISC_LIBUTIL_API upgradable_mutex {
 };
 
 template <typename T>
-class sharable_lock {
+class ISC_LIBUTIL_API sharable_lock {
 public:
     sharable_lock(T) { }
 };
 
 template <typename T>
-class scoped_lock {
+class ISC_LIBUTIL_API scoped_lock {
 public:
     scoped_lock(T) { }
 

@@ -14,6 +14,9 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -22,6 +25,7 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <unistd.h>
+#endif
 
 #include <cerrno>
 #include <cstring>
@@ -51,7 +55,11 @@ using namespace isc::util::io::internal;
 
 namespace {
 
+#ifdef _WIN32
+const char* const TEST_UNIX_FILE = "12345";
+#else
 const char* const TEST_UNIX_FILE = TEST_DATA_TOPBUILDDIR "/test.unix";
+#endif
 const char* const TEST_PORT = "53535";
 const char* const TEST_PORT2 = "53536"; // use this in case we need 2 ports
 const char TEST_DATA[] = "BIND10 test";
@@ -59,6 +67,24 @@ const char TEST_DATA[] = "BIND10 test";
 // A simple helper structure to automatically close test sockets on return
 // or exception in a RAII manner.  non copyable to prevent duplicate close.
 struct ScopedSocket : boost::noncopyable {
+#ifdef _WIN32
+    ScopedSocket() : fd(INVALID_SOCKET) {}
+    ScopedSocket(SOCKET sock) : fd(sock) {}
+    ~ScopedSocket() {
+        closeSocket();
+    }
+    void reset(SOCKET sock) {
+        closeSocket();
+        fd = sock;
+    }
+    SOCKET fd;
+private:
+    void closeSocket() {
+        if (fd != INVALID_SOCKET) {
+            closesocket(fd);
+        }
+    }
+#else
     ScopedSocket() : fd(-1) {}
     ScopedSocket(int sock) : fd(sock) {}
     ~ScopedSocket() {
@@ -75,10 +101,21 @@ private:
             close(fd);
         }
     }
+#endif
 };
 
 // A helper function that makes a test socket non block so that a certain
 // kind of test failure (such as missing send) won't cause hangup.
+#ifdef _WIN32
+void
+setNonBlock(SOCKET s, bool on) {
+    u_long nbio_flags = on ? 1 : 0;
+    if (ioctlsocket(s, FIONBIO, &nbio_flags) == SOCKET_ERROR) {
+        isc_throw(isc::Unexpected, "ioctl(FIONBIO) failed: " <<
+                  strerror(WSAGetLastError()));
+    }
+}
+#else
 void
 setNonBlock(int s, bool on) {
     int fcntl_flags = fcntl(s, F_GETFL, 0);
@@ -92,20 +129,39 @@ setNonBlock(int s, bool on) {
                   strerror(errno));
     }
 }
+#endif
 
 // A helper to impose some reasonable amount of wait on recv(from)
 // if possible.  It returns an option flag to be set for the system call
 // (when necessary).
 int
-setRecvDelay(int s) {
+#ifdef _WIN32
+setRecvDelay(SOCKET s)
+#else
+setRecvDelay(int s)
+#endif
+{
     const struct timeval timeo = { 10, 0 };
-    if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &timeo, sizeof(timeo)) == -1) {
+    if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO,
+                   (char *) &timeo, sizeof(timeo)) == -1) {
+#ifndef ENOPROTOOPT
+#define ENOPROTOOPT 123
+#endif
         if (errno == ENOPROTOOPT) {
             // Workaround for Solaris: see recursive_query_unittest
+#ifdef _WIN32
+            return (/* MSG_DONTWAIT */ 0);
+#else
             return (MSG_DONTWAIT);
+#endif
         } else {
+#ifdef _WIN32
+            isc_throw(isc::Unexpected, "set RCVTIMEO failed: " <<
+                      strerror(WSAGetLastError()));
+#else
             isc_throw(isc::Unexpected, "set RCVTIMEO failed: " <<
                       strerror(errno));
+#endif
         }
     }
     return (0);
@@ -120,6 +176,7 @@ typedef pair<const struct sockaddr*, socklen_t> SockAddrInfo;
 // pair).  Its get method uses getaddrinfo(3) for the conversion and stores
 // the result in the addrinfo_list_ vector until the object is destructed.
 // The allocated resources will be automatically freed in an RAII manner.
+#ifndef _WIN32
 class SockAddrCreator {
 public:
     ~SockAddrCreator() {
@@ -849,4 +906,5 @@ TEST(SocketSessionTest, badValue) {
                                addr_creator.get("192.0.2.2", "5300").first,
                                NULL, sizeof(TEST_DATA)), BadValue);
 }
+#endif
 }

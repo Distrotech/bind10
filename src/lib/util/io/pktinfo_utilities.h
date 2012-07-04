@@ -15,8 +15,12 @@
 #ifndef __PKTINFO_UTIL_H_
 #define __PKTINFO_UTIL_H_ 1
 
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
+#endif
+
+#include <util/io/lib.h>
 
 // These definitions in this file are for the convenience of internal
 // implementation and test code, and are not intended to be used publicly.

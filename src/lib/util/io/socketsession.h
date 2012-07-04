@@ -21,7 +21,13 @@
 
 #include <string>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <sys/socket.h>
+#endif
+
+#include <util/io/lib.h>
 
 namespace isc {
 namespace util {
@@ -152,7 +158,7 @@ namespace io {
 /// In general the errors are unusual but possible failures such as unexpected
 /// connection reset, and suggest the application to close the connection and
 /// (if necessary) reestablish it.
-class SocketSessionError: public Exception {
+class ISC_LIBUTIL_IO_API SocketSessionError: public Exception {
 public:
     SocketSessionError(const char *file, size_t line, const char *what):
         isc::Exception(file, line, what) {}
@@ -173,7 +179,7 @@ public:
 /// version of this base class, while it's not prohibited at the API level.
 ///
 /// See description of \c SocketSessionForwarder for the expected interface.
-class BaseSocketSessionForwarder  {
+class ISC_LIBUTIL_IO_API BaseSocketSessionForwarder  {
 protected:
     BaseSocketSessionForwarder() {}
 
@@ -181,7 +187,13 @@ public:
     virtual ~BaseSocketSessionForwarder() {}
     virtual void connectToReceiver() = 0;
     virtual void close() = 0;
-    virtual void push(int sock, int family, int type, int protocol,
+    virtual void push(
+#ifdef _WIN32
+                      SOCKET sock,
+#else
+                      int sock,
+#endif
+                      int family, int type, int protocol,
                       const struct sockaddr& local_end,
                       const struct sockaddr& remote_end,
                       const void* data, size_t data_len) = 0;
@@ -195,8 +207,8 @@ public:
 ///
 /// See the description of \ref SocketSessionUtility for other details of how
 /// the session forwarding works.
-class SocketSessionForwarder : boost::noncopyable,
-                               public BaseSocketSessionForwarder
+class ISC_LIBUTIL_IO_API SocketSessionForwarder :
+ boost::noncopyable, public BaseSocketSessionForwarder
 {
 public:
     /// The constructor.
@@ -309,7 +321,13 @@ public:
     /// \param data A pointer to the beginning of the memory region for the
     ///             session data
     /// \param data_len The size of the session data in bytes.
-    virtual void push(int sock, int family, int type, int protocol,
+    virtual void push(
+#ifdef _WIN32
+                      SOCKET sock,
+#else
+                      int sock,
+#endif
+                      int family, int type, int protocol,
                       const struct sockaddr& local_end,
                       const struct sockaddr& remote_end,
                       const void* data, size_t data_len);
@@ -334,7 +352,7 @@ private:
 /// (e.g. a class or a function that constructs it) is responsible for validity
 /// of the data passed to the object.  See the description of
 /// \c SocketSessionReceiver::pop() for the specific case of that usage.
-class SocketSession {
+class ISC_LIBUTIL_IO_API SocketSession {
 public:
     /// The constructor.
     ///
@@ -359,12 +377,22 @@ public:
     /// session data.  Must not be NULL, and the subsequent \c data_len bytes
     /// must be valid.
     /// \param data_len The size of the session data in bytes.  Must not be 0.
-    SocketSession(int sock, int family, int type, int protocol,
+    SocketSession(
+#ifdef _WIN32
+                  SOCKET sock,
+#else
+                  int sock,
+#endif
+                  int family, int type, int protocol,
                   const sockaddr* local_end, const sockaddr* remote_end,
                   const void* data, size_t data_len);
 
     /// Return the socket file descriptor.
+#ifdef _WIN32
+    SOCKET getSocket() const { return (sock_); }
+#else
     int getSocket() const { return (sock_); }
+#endif
 
     /// Return the address family (such as AF_INET6) of the socket.
     int getFamily() const { return (family_); }
@@ -394,7 +422,11 @@ public:
     size_t getDataLength() const { return (data_len_); }
 
 private:
+#ifdef _WIN32
+    const SOCKET sock_;
+#else
     const int sock_;
+#endif
     const int family_;
     const int type_;
     const int protocol_;
@@ -423,7 +455,7 @@ private:
 ///
 /// See the description of \ref SocketSessionUtility for other details of how
 /// the session forwarding works.
-class SocketSessionReceiver : boost::noncopyable {
+class ISC_LIBUTIL_IO_API SocketSessionReceiver : boost::noncopyable {
 public:
     /// The constructor.
     ///
@@ -433,7 +465,11 @@ public:
     ///
     /// \param fd A UNIX domain socket for an established connection with
     /// a forwarder.
+#ifdef _WIN32
+    explicit SocketSessionReceiver(SOCKET fd);
+#else
     explicit SocketSessionReceiver(int fd);
+#endif
 
     /// The destructor.
     ///

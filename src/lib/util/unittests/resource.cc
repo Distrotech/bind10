@@ -12,12 +12,18 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBUTIL_UNITTESTS_EXPORT
+
+#include <config.h>
+
 #include "resource.h"
 
 #include <gtest/gtest.h>
 
+#ifndef _WIN32
 #include <sys/time.h>
 #include <sys/resource.h>
+#endif
 
 namespace isc {
 namespace util {
@@ -25,9 +31,11 @@ namespace unittests {
 
 void
 dontCreateCoreDumps() {
+#ifndef _WIN32
     const rlimit core_limit = {0, 0};
 
     EXPECT_EQ(setrlimit(RLIMIT_CORE, &core_limit), 0);
+#endif
 }
 
 } // end of namespace unittests
