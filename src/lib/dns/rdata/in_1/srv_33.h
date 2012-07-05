@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 
+#include <dns/lib.h>
 #include <dns/name.h>
 #include <dns/rdata.h>
 
@@ -34,7 +35,7 @@ struct SRVImpl;
 /// This class implements the basic interfaces inherited from the abstract
 /// \c rdata::Rdata class, and provides trivial accessors specific to the
 /// SRV RDATA.
-class SRV : public Rdata {
+class ISC_LIBDNS_API SRV : public Rdata {
 public:
     // BEGIN_COMMON_MEMBERS
     // END_COMMON_MEMBERS

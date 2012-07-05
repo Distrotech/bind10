@@ -17,16 +17,18 @@
 
 #include <Python.h>
 
+#include <dns/python/lib.h>
+
 namespace isc {
 namespace dns {
 class TSIGContext;
 
 namespace python {
 
-extern PyTypeObject tsigcontext_type;
+extern ISC_LIBDNS_PYTHON_API PyTypeObject tsigcontext_type;
 
 // Class specific exceptions
-extern PyObject* po_TSIGContextError;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_TSIGContextError;
 
 /// \brief Checks if the given python object is a TSIGContext object
 ///

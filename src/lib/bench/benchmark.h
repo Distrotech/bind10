@@ -15,7 +15,12 @@
 #ifndef __BENCHMARK_H
 #define __BENCHMARK_H 1
 
+#ifdef _WIN32
+#include <time.h>
+#define gettimeofday(tv, tz) win32_gettimeofday(tv)
+#else
 #include <sys/time.h>
+#endif
 
 #include <cassert>
 #include <iostream>
@@ -23,6 +28,28 @@
 
 namespace isc {
 namespace bench {
+
+#ifdef _WIN32
+static void
+win32_gettimeofday(struct timeval *tv)
+{
+    SYSTEMTIME epoch = { 1970, 1, 4, 1, 0, 0, 0, 0 };
+    FILETIME temp;
+    SystemTimeToFileTime(&epoch, &temp);
+    ULARGE_INTEGER t;
+    t.LowPart = temp.dwLowDateTime;
+    t.HighPart = temp.dwHighDateTime;
+    FILETIME now;
+    GetSystemTimeAsFileTime(&now);
+    ULARGE_INTEGER n;
+    n.LowPart = now.dwLowDateTime;
+    n.HighPart = now.dwHighDateTime;
+    n.QuadPart -= t.QuadPart;
+    tv->tv_sec = (long) (n.QuadPart / 10000000);
+    n.QuadPart -= tv->tv_sec * 10000000;
+    tv->tv_usec = (long) (n.QuadPart / 10);
+}
+#endif
 
 /// \brief Templated micro benchmark framework.
 ///

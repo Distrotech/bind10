@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_EXPORT
+
 #include <stdint.h>
 
 #include <sstream>
@@ -67,7 +69,7 @@ RRTTL::toWire(AbstractMessageRenderer& renderer) const {
     renderer.writeUint32(ttlval_);
 }
 
-ostream&
+ISC_LIBDNS_API ostream&
 operator<<(ostream& os, const RRTTL& rrttl) {
     os << rrttl.toText();
     return (os);

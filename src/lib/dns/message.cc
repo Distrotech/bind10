@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_EXPORT
+
 #include <stdint.h>
 
 #include <algorithm>
@@ -1149,7 +1151,7 @@ Message::endSection(const Section section) const {
     return (RRsetIterator(RRsetIteratorImpl(impl_->rrsets_[section].end())));
 }
 
-ostream&
+ISC_LIBDNS_API ostream&
 operator<<(ostream& os, const Message& message) {
     return (os << message.toText());
 }

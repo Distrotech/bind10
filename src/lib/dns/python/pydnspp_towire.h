@@ -20,6 +20,7 @@
 #include <stdexcept>
 #include <string>
 
+#include <dns/python/lib.h>
 #include <dns/messagerenderer.h>
 
 #include <util/buffer.h>

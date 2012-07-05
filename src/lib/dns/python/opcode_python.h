@@ -17,13 +17,15 @@
 
 #include <Python.h>
 
+#include <dns/python/lib.h>
+
 namespace isc {
 namespace dns {
 class Opcode;
 
 namespace python {
 
-extern PyTypeObject opcode_type;
+extern ISC_LIBDNS_PYTHON_API PyTypeObject opcode_type;
 
 /// This is a simple shortcut to create a python Opcode object (in the
 /// form of a pointer to PyObject) with minimal exception safety.

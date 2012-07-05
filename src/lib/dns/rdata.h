@@ -20,17 +20,18 @@
 #include <boost/shared_ptr.hpp>
 
 #include <exceptions/exceptions.h>
+#include <dns/lib.h>
 
 namespace isc {
 namespace util {
-class InputBuffer;
-class OutputBuffer;
+class ISC_LIBDNS_API InputBuffer;
+class ISC_LIBDNS_API OutputBuffer;
 }
 namespace dns {
-class AbstractMessageRenderer;
-class RRType;
-class RRClass;
-class Name;
+class ISC_LIBDNS_API AbstractMessageRenderer;
+class ISC_LIBDNS_API RRType;
+class ISC_LIBDNS_API RRClass;
+class ISC_LIBDNS_API Name;
 
 namespace rdata {
 
@@ -38,7 +39,7 @@ namespace rdata {
 /// \brief A standard DNS module exception that is thrown if RDATA parser
 /// encounters an invalid or inconsistent data length.
 ///
-class InvalidRdataLength : public Exception {
+class ISC_LIBDNS_API InvalidRdataLength : public Exception {
 public:
     InvalidRdataLength(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -48,7 +49,7 @@ public:
 /// \brief A standard DNS module exception that is thrown if RDATA parser
 /// fails to recognize a given textual representation.
 ///
-class InvalidRdataText : public Exception {
+class ISC_LIBDNS_API InvalidRdataText : public Exception {
 public:
     InvalidRdataText(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -59,14 +60,14 @@ public:
 /// parser encounters a character-string (as defined in RFC1035) exceeding
 /// the maximum allowable length (\c MAX_CHARSTRING_LEN).
 ///
-class CharStringTooLong : public Exception {
+class ISC_LIBDNS_API CharStringTooLong : public Exception {
 public:
     CharStringTooLong(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
 };
 
 // Forward declaration to define RdataPtr.
-class Rdata;
+class ISC_LIBDNS_API Rdata;
 
 ///
 /// The \c RdataPtr type is a pointer-like type, pointing to an
@@ -124,7 +125,7 @@ const unsigned int MAX_CHARSTRING_LEN = 255;
 /// specifically concerned about a particular type.
 /// So, this API generally handles \c Rdata in a polymorphic way through
 /// a pointer or reference to this base abstract class.
-class Rdata {
+class ISC_LIBDNS_API Rdata {
     ///
     /// \name Constructors and Destructor
     ///
@@ -235,7 +236,7 @@ struct GenericImpl;
 /// This class is used as a placeholder for all non well-known type of RDATA.
 /// By definition, the stored data is regarded as opaque binary without
 /// assuming any structure.
-class Generic : public Rdata {
+class ISC_LIBDNS_API Generic : public Rdata {
 public:
     ///
     /// \name Constructors, Assignment Operator and Destructor.
@@ -385,7 +386,8 @@ private:
 /// \param rdata The \c Generic object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-std::ostream& operator<<(std::ostream& os, const Generic& rdata);
+ISC_LIBDNS_API std::ostream&
+operator<<(std::ostream& os, const Generic& rdata);
 } // end of namespace "generic"
 
 //
@@ -430,6 +432,7 @@ std::ostream& operator<<(std::ostream& os, const Generic& rdata);
 /// \param rdata_string A string of textual representation of the \c Rdata.
 /// \return An \c RdataPtr object pointing to the created \c Rdata
 /// object.
+ISC_LIBDNS_API
 RdataPtr createRdata(const RRType& rrtype, const RRClass& rrclass,
                      const std::string& rdata_string);
 
@@ -454,6 +457,7 @@ RdataPtr createRdata(const RRType& rrtype, const RRClass& rrclass,
 /// \param len The length in buffer of the \c Rdata.  In bytes.
 /// \return An \c RdataPtr object pointing to the created \c Rdata
 /// object.
+ISC_LIBDNS_API
 RdataPtr createRdata(const RRType& rrtype, const RRClass& rrclass,
                      isc::util::InputBuffer& buffer, size_t len);
 
@@ -470,6 +474,7 @@ RdataPtr createRdata(const RRType& rrtype, const RRClass& rrclass,
 /// is to be copied to the created \c Rdata object.
 /// \return An \c RdataPtr object pointing to the created
 /// \c Rdata object.
+ISC_LIBDNS_API
 RdataPtr createRdata(const RRType& rrtype, const RRClass& rrclass,
                      const Rdata& source);
 //@}
@@ -504,7 +509,7 @@ RdataPtr createRdata(const RRType& rrtype, const RRClass& rrclass,
 /// \return 0 if \c n1 is identical to \c n2 in terms of sorting order.
 /// \return 1 if \c n1 would be sorted after \c n2.
 ///
-int compareNames(const Name& n1, const Name& n2);
+ISC_LIBDNS_API int compareNames(const Name& n1, const Name& n2);
 
 } // end of namespace "rdata"
 }

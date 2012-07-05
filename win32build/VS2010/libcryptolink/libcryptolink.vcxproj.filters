@@ -21,6 +21,9 @@
     <ClInclude Include="..\..\..\src\lib\cryptolink\cryptolink.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\cryptolink\lib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\cryptolink\crypto_hmac.cc">

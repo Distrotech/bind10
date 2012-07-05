@@ -16,6 +16,7 @@
 #define __NSEC3PARAM_COMMON_H 1
 
 #include <util/buffer.h>
+#include <dns/lib.h>
 
 #include <stdint.h>
 

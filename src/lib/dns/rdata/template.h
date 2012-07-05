@@ -16,6 +16,7 @@
 
 #include <string>
 
+#include <dns/lib.h>
 #include <dns/rdata.h>
 
 // BEGIN_ISC_NAMESPACE
@@ -40,7 +41,7 @@
 // These are markers used by a script for auto-generating build-able source
 // files.
 
-class MyType : public Rdata {
+class ISC_LIBDNS_API MyType : public Rdata {
 public:
     // BEGIN_COMMON_MEMBERS
     // Do not remove the BEGIN_xxx and END_xxx comment lines.

@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 
 #include <dns/opcode.h>
@@ -290,7 +292,7 @@ namespace isc {
 namespace dns {
 namespace python {
 
-PyTypeObject opcode_type = {
+ISC_LIBDNS_PYTHON_API PyTypeObject opcode_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.Opcode",
     sizeof(s_Opcode),                   // tp_basicsize

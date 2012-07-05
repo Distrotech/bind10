@@ -175,10 +175,10 @@ TYPED_TEST(NSEC3PARAMLikeTest, badText) {
 
 TYPED_TEST(NSEC3PARAMLikeTest, toText) {
     // normal case
-    EXPECT_EQ(this->salt_txt, this->fromText(this->salt_txt).toText());
+    EXPECT_TRUE(this->salt_txt == this->fromText(this->salt_txt).toText());
 
     // empty salt case
-    EXPECT_EQ(this->nosalt_txt, this->fromText(this->nosalt_txt).toText());
+    EXPECT_TRUE(this->nosalt_txt == this->fromText(this->nosalt_txt).toText());
 }
 
 TYPED_TEST(NSEC3PARAMLikeTest, createFromWire) {

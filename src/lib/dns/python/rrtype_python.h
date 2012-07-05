@@ -17,16 +17,18 @@
 
 #include <Python.h>
 
+#include <dns/python/lib.h>
+
 namespace isc {
 namespace dns {
 class RRType;
 
 namespace python {
 
-extern PyObject* po_InvalidRRType;
-extern PyObject* po_IncompleteRRType;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_InvalidRRType;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_IncompleteRRType;
 
-extern PyTypeObject rrtype_type;
+extern ISC_LIBDNS_PYTHON_API PyTypeObject rrtype_type;
 
 /// This is a simple shortcut to create a python RRType object (in the
 /// form of a pointer to PyObject) with minimal exception safety.

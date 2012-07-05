@@ -12,7 +12,13 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_EXPORT
+
+#include <config.h>
+
+#ifndef _WIN32
 #include <sys/time.h>
+#endif
 
 #include <stdint.h>
 

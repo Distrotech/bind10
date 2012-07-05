@@ -16,12 +16,13 @@
 #define __MESSAGERENDERER_H 1
 
 #include <util/buffer.h>
+#include <dns/lib.h>
 
 namespace isc {
 
 namespace dns {
 // forward declarations
-class Name;
+class ISC_LIBDNS_API Name;
 
 /// \brief The \c AbstractMessageRenderer class is an abstract base class
 /// that provides common interfaces for rendering a DNS message into a buffer
@@ -70,7 +71,7 @@ class Name;
 ///     The only one that is virtual is writeName and it's because this
 ///     function is much more complicated, therefore there's a lot of space
 ///     for different implementations or behaviours.
-class AbstractMessageRenderer {
+class ISC_LIBDNS_API AbstractMessageRenderer {
 public:
     /// \brief Compression mode constants.
     ///
@@ -345,7 +346,7 @@ public:
 /// end of the buffer at the time of construction.  However, if the
 /// pre-existing portion of the buffer contains DNS names, these names won't
 /// be considered for name compression.
-class MessageRenderer : public AbstractMessageRenderer {
+class ISC_LIBDNS_API MessageRenderer : public AbstractMessageRenderer {
 public:
     using AbstractMessageRenderer::CASE_INSENSITIVE;
     using AbstractMessageRenderer::CASE_SENSITIVE;

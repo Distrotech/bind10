@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_PYTHON_EXPORT
+
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
@@ -285,7 +287,7 @@ namespace python {
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_TSIG
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject tsig_type = {
+ISC_LIBDNS_PYTHON_API PyTypeObject tsig_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.TSIG",
     sizeof(s_TSIG),                 // tp_basicsize

@@ -15,6 +15,10 @@
 #ifndef __LIBUTIL_PYTHON_H
 #define __LIBUTIL_PYTHON_H 1
 
+#ifdef ISC_LIBDNS_PYTHON_EXPORT
+#define ISC_LIBUTIL_PYTHON_EXPORT
+#endif
+
 #if !defined(_WIN32) || defined(USE_STATIC_LINK)
 #define ISC_LIBUTIL_PYTHON_API
 #else

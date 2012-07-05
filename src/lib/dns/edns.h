@@ -21,22 +21,23 @@
 
 #include <ostream>
 
+#include <dns/lib.h>
 #include <dns/rdata.h>
 
 namespace isc {
 namespace util {
-class OutputBuffer;
+class ISC_LIBDNS_API OutputBuffer;
 }
 
 namespace dns {
 
-class EDNS;
-class Name;
-class AbstractMessageRenderer;
-class RRClass;
-class RRTTL;
-class RRType;
-class Rcode;
+class ISC_LIBDNS_API EDNS;
+class ISC_LIBDNS_API Name;
+class ISC_LIBDNS_API AbstractMessageRenderer;
+class ISC_LIBDNS_API RRClass;
+class ISC_LIBDNS_API RRTTL;
+class ISC_LIBDNS_API RRType;
+class ISC_LIBDNS_API Rcode;
 
 /// \brief A pointer-like type pointing to an \c EDNS object.
 typedef boost::shared_ptr<EDNS> EDNSPtr;
@@ -128,7 +129,7 @@ typedef boost::shared_ptr<const EDNS> ConstEDNSPtr;
 /// If a future version of the %EDNS protocol introduces further relationship
 /// between the message and the %EDNS, we might reconsider the interface,
 /// probably with higher abstraction.
-class EDNS {
+class ISC_LIBDNS_API EDNS {
 public:
     ///
     /// \name Constructors and Destructor
@@ -421,6 +422,7 @@ private:
 /// \param extended_rcode A placeholder to store the topmost 8 bits of the
 /// extended Rcode.
 /// \return A pointer to the created \c EDNS object.
+ISC_LIBDNS_API
 EDNS* createEDNSFromRR(const Name& name, const RRClass& rrclass,
                        const RRType& rrtype, const RRTTL& ttl,
                        const rdata::Rdata& rdata, uint8_t& extended_rcode);
@@ -435,7 +437,8 @@ EDNS* createEDNSFromRR(const Name& name, const RRClass& rrclass,
 /// \param edns A reference to an \c EDNS object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-std::ostream& operator<<(std::ostream& os, const EDNS& edns);
+ISC_LIBDNS_API std::ostream&
+operator<<(std::ostream& os, const EDNS& edns);
 }
 }
 #endif  // __EDNS_H

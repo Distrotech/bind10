@@ -18,23 +18,24 @@
 #include <stdint.h>
 
 #include <exceptions/exceptions.h>
+#include <dns/lib.h>
 
 namespace isc {
 namespace util {
-class InputBuffer;
-class OutputBuffer;
+class ISC_LIBDNS_API InputBuffer;
+class ISC_LIBDNS_API OutputBuffer;
 }
 
 namespace dns {
 
 // forward declarations
-class AbstractMessageRenderer;
+class ISC_LIBDNS_API AbstractMessageRenderer;
 
 ///
 /// \brief A standard DNS module exception that is thrown if an RRTTL object
 /// is being constructed from an unrecognized string.
 ///
-class InvalidRRTTL : public Exception {
+class ISC_LIBDNS_API InvalidRRTTL : public Exception {
 public:
     InvalidRRTTL(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -44,7 +45,7 @@ public:
 /// \brief A standard DNS module exception that is thrown if an RRTTL object
 /// is being constructed from a incomplete (too short) wire-format data.
 ///
-class IncompleteRRTTL : public Exception {
+class ISC_LIBDNS_API IncompleteRRTTL : public Exception {
 public:
     IncompleteRRTTL(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -58,7 +59,7 @@ public:
 /// of this class is to provide convenient interfaces to convert a textual
 /// representation into the integer TTL value and vice versa, and to handle
 /// wire-format representations.
-class RRTTL {
+class ISC_LIBDNS_API RRTTL {
 public:
     ///
     /// \name Constructors and Destructor
@@ -251,7 +252,7 @@ private:
 /// \param rrttl The \c RRTTL object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-std::ostream&
+ISC_LIBDNS_API std::ostream&
 operator<<(std::ostream& os, const RRTTL& rrttl);
 }
 }

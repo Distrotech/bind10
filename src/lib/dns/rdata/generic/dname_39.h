@@ -16,6 +16,7 @@
 
 #include <string>
 
+#include <dns/lib.h>
 #include <dns/name.h>
 #include <dns/rdata.h>
 
@@ -26,7 +27,7 @@
 
 // BEGIN_RDATA_NAMESPACE
 
-class DNAME : public Rdata {
+class ISC_LIBDNS_API DNAME : public Rdata {
 public:
     // BEGIN_COMMON_MEMBERS
     // END_COMMON_MEMBERS

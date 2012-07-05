@@ -21,16 +21,17 @@
 
 #include <exceptions/exceptions.h>
 
+#include <dns/lib.h>
 #include <dns/rrset.h>
 
 namespace isc {
 namespace dns {
-class Name;
-class RRClass;
+class ISC_LIBDNS_API Name;
+class ISC_LIBDNS_API RRClass;
 
 /// \brief An exception that is thrown if an error occurs while loading a
 /// master zone data.
-class MasterLoadError : public isc::Exception {
+class ISC_LIBDNS_API MasterLoadError : public isc::Exception {
 public:
     MasterLoadError(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -214,6 +215,7 @@ typedef boost::function<void(RRsetPtr)> MasterLoadCallback;
 /// \param zone_class The RR class of the zone.
 /// \param callback A callback functor or function that is to be called
 /// for each RRset.
+ISC_LIBDNS_API
 void masterLoad(const char* const filename, const Name& origin,
                 const RRClass& zone_class, MasterLoadCallback callback);
 
@@ -232,6 +234,7 @@ void masterLoad(const char* const filename, const Name& origin,
 /// \param zone_class The RR class of the zone.
 /// \param callback A callback functor or function that is to be called for
 /// each RRset.
+ISC_LIBDNS_API
 void masterLoad(std::istream& input, const Name& origin,
                 const RRClass& zone_class, MasterLoadCallback callback);
 }

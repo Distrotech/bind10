@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 
 #include <util/python/pycppwrapper_util.h>
@@ -347,9 +349,9 @@ namespace python {
 // Initialization and addition of these go in the module init at the
 // end
 //
-PyObject* po_EmptyRRset;
+ISC_LIBDNS_PYTHON_API PyObject* po_EmptyRRset;
 
-PyTypeObject rrset_type = {
+ISC_LIBDNS_PYTHON_API PyTypeObject rrset_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.RRset",
     sizeof(s_RRset),                    // tp_basicsize

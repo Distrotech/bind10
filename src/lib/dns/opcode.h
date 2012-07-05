@@ -14,12 +14,14 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef __OPCODE_H
+#define __OPCODE_H 1
+
 #include <stdint.h>
 
 #include <ostream>
 
-#ifndef __OPCODE_H
-#define __OPCODE_H 1
+#include <dns/lib.h>
 
 namespace isc {
 namespace dns {
@@ -37,7 +39,7 @@ namespace dns {
 /// to handle OPCODEs through this class.  In fact, public interfaces of
 /// this library uses this class to pass or return OPCODEs instead of the
 /// bare code values.
-class Opcode {
+class ISC_LIBDNS_API Opcode {
 public:
     /// Constants for standard OPCODE values.
     enum CodeValue {
@@ -280,7 +282,8 @@ Opcode::RESERVED15() {
 /// \param opcode A reference to an \c Opcode object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-std::ostream& operator<<(std::ostream& os, const Opcode& opcode);
+ISC_LIBDNS_API std::ostream&
+operator<<(std::ostream& os, const Opcode& opcode);
 }
 }
 #endif  // OPCODE_H

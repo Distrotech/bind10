@@ -17,18 +17,20 @@
 
 #include <Python.h>
 
+#include <dns/python/lib.h>
+
 namespace isc {
 namespace dns {
 class Message;
 
 namespace python {
 
-extern PyObject* po_MessageTooShort;
-extern PyObject* po_InvalidMessageSection;
-extern PyObject* po_InvalidMessageOperation;
-extern PyObject* po_InvalidMessageUDPSize;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_MessageTooShort;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_InvalidMessageSection;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_InvalidMessageOperation;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_InvalidMessageUDPSize;
 
-extern PyTypeObject message_type;
+extern ISC_LIBDNS_PYTHON_API PyTypeObject message_type;
 
 } // namespace python
 } // namespace dns

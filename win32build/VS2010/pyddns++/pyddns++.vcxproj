@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -40,13 +40,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(Configuration)\</OutDir>
+    <OutDir>$(Solutiondir)$(Configuration)\</OutDir>
     <TargetName>pydnspp_d</TargetName>
     <TargetExt>.pyd</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(Configuration)\</OutDir>
+    <OutDir>$(Solutiondir)$(Configuration)\</OutDir>
     <TargetName>pydnspp</TargetName>
     <TargetExt>.pyd</TargetExt>
   </PropertyGroup>
@@ -63,8 +63,8 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)pydnspp_d.pyd</OutputFile>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libcryptolink.lib;libdns++.lib;libdns++_python.lib;botan.lib;python32_d.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\libcryptolink\$(Configuration);..\libdns++\$(Configuration);..\libdns++_python\$(Configuration);..\..\..\..\botan\md10\$(Configuration);C:\Python32\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libexceptionsd.lib;libutild.lib;libcryptolinkd.lib;libdns++d.lib;libdns++_pythond.lib;botand.lib;python32_d.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);C:\Python32\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
       <Command>cd ..\..\..\src\lib\python
@@ -72,8 +72,8 @@ copy bind10_config.py.win32 bind10_config.py
 </Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>copy ..\..\..\src\lib\util\pyunittests\pyunittests_util.py.win32 ..\..\..\src\lib\dns\python\tests\pyunittests_util.py
-</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -94,7 +94,7 @@ copy bind10_config.py.win32 bind10_config.py
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)pydnspp.pyd</OutputFile>
       <AdditionalDependencies>libexceptions.lib;libutil.lib;libcryptolink.lib;libdns++.lib;libdns++_python.lib;botan.lib;python32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\libcryptolink\$(Configuration);..\libdns++\$(Configuration);..\libdns++_python\$(Configuration);..\..\..\..\botan\md10\$(Configuration);C:\Python32\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);C:\Python32\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
       <Command>cd ..\..\..\src\lib\python
@@ -102,8 +102,8 @@ copy bind10_config.py.win32 bind10_config.py
 </Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>copy ..\..\..\src\lib\util\pyunittests\pyunittests_util.py.win32 ..\..\..\src\lib\dns\python\tests\pyunittests_util.py
-</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

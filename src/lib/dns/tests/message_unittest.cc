@@ -61,19 +61,23 @@ using namespace isc::dns::rdata;
 // class, at which point we'll also revise the tests including more cases.
 //
 
+#ifndef _MSC_VER
 const uint16_t Message::DEFAULT_MAX_UDPSIZE;
+#endif
 
 namespace isc {
 namespace util {
 namespace detail {
-extern int64_t (*gettimeFunction)();
+extern ISC_LIBDNS_API int64_t (*gettimeFunction)();
 }
 }
 }
 
 // XXX: this is defined as class static constants, but some compilers
 // seemingly cannot find the symbol when used in the EXPECT_xxx macros.
+#ifndef _MSC_VER
 const uint16_t TSIGContext::DEFAULT_FUDGE;
+#endif
 
 namespace {
 class MessageTest : public ::testing::Test {

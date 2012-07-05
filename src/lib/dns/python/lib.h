@@ -1,4 +1,4 @@
-// Copyright (C) 2010  Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2012  Internet Systems Consortium, Inc. ("ISC")
 //
 // Permission to use, copy, modify, and/or distribute this software for any
 // purpose with or without fee is hereby granted, provided that the above
@@ -12,35 +12,20 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-// BEGIN_HEADER_GUARD
+#ifndef __LIBDNS_PYTHON_H
+#define __LIBDNS_PYTHON_H 1
 
-#include <string>
+#if !defined(_WIN32) || defined(USE_STATIC_LINK)
+#define ISC_LIBDNS_PYTHON_API
+#else
+#ifdef ISC_LIBDNS_PYTHON_EXPORT
+#define ISC_LIBDNS_PYTHON_API __declspec(dllexport)
+#else
+#define ISC_LIBDNS_PYTHON_API __declspec(dllimport)
+#endif
+#endif
 
-#include <dns/lib.h>
-#include <dns/rdata.h>
-
-// BEGIN_ISC_NAMESPACE
-
-// BEGIN_COMMON_DECLARATIONS
-// END_COMMON_DECLARATIONS
-
-// BEGIN_RDATA_NAMESPACE
-
-class ISC_LIBDNS_API A : public Rdata {
-public:
-    // BEGIN_COMMON_MEMBERS
-    // END_COMMON_MEMBERS
-
-    //We can use the default destructor.
-    //virtual ~A() {}
-    // notyet:
-    //const struct in_addr& getAddress() const { return (addr_); }
-private:
-    uint32_t addr_;             // raw IPv4 address (network byte order)
-};
-// END_RDATA_NAMESPACE
-// END_ISC_NAMESPACE
-// END_HEADER_GUARD
+#endif // __LIBDNS_PYTHON_H
 
 // Local Variables: 
 // mode: c++

@@ -766,8 +766,68 @@ PyModuleDef pydnspp = {
 };
 }
 
+#if defined(_WIN32) && defined(USE_STATIC_LINK)
+
+// From src/lib/util/pyunittests/pyunittests_util.cc
+// must be here or there will be two gettimeFunctions in two .pyd!
+
+// see util/time_utilities.h
+namespace isc {
+namespace util {
+namespace detail {
+extern ISC_LIBDNS_API int64_t (*gettimeFunction)();
+}
+}
+}
+
+namespace {
+int64_t fake_current_time;
+
+int64_t
+getFakeTime() {
+    return (fake_current_time);
+}
+
+PyObject*
+fixCurrentTime(PyObject*, PyObject* args) {
+    PyObject* maybe_none;
+    if (PyArg_ParseTuple(args, "L", &fake_current_time)) {
+        isc::util::detail::gettimeFunction = getFakeTime;
+    } else if (PyArg_ParseTuple(args, "O", &maybe_none) &&
+               maybe_none == Py_None) {
+        isc::util::detail::gettimeFunction = NULL;
+    } else {
+         PyErr_SetString(PyExc_TypeError, "Invalid arguments to "
+                         "pyunittests_util.fix_current_time");
+         return (NULL);
+    }
+
+    PyErr_Clear();
+    Py_RETURN_NONE;
+}
+
+PyMethodDef PyUnittestsUtilMethods[] = {
+    { "fix_current_time", fixCurrentTime, METH_VARARGS,
+      "Fix the current system time at the specified (fake) value.\n\n"
+      "This is useful for testing modules that depend on the current time.\n"
+      "Note that it only affects C++ modules that use gettimeWrapper() "
+      "defined in libutil, which allows a hook for testing.\n"
+      "If an integer (signed 64bit) is given, the current time will be fixed "
+      "to that value; if None is specified (which is the default) the use of "
+      "faked time will be canceled."
+    },
+    { NULL, NULL, 0, NULL}
+};
+
+} // end of unnamed namespace
+
+#endif
+
 PyMODINIT_FUNC
 PyInit_pydnspp(void) {
+#if defined(_WIN32) && defined(USE_STATIC_LINK)
+    pydnspp.m_methods = PyUnittestsUtilMethods;
+#endif
     PyObject* mod = PyModule_Create(&pydnspp);
     if (mod == NULL) {
         return (NULL);

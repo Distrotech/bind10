@@ -17,8 +17,12 @@
 
 #include <string>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <arpa/inet.h> // XXX: for inet_pton/ntop(), not exist in C++ standards
 #include <sys/socket.h> // for AF_INET/AF_INET6
+#endif
 
 #include <exceptions/exceptions.h>
 
@@ -78,7 +82,14 @@ string
 A::toText() const {
     char addr_string[sizeof("255.255.255.255")];
 
-    if (inet_ntop(AF_INET, &addr_, addr_string, sizeof(addr_string)) == NULL) {
+#ifdef _WIN32
+#define DECONST (void *)
+#else
+#define DECONST
+#endif
+
+    if (inet_ntop(AF_INET, DECONST &addr_,
+                  addr_string, sizeof(addr_string)) == NULL) {
         isc_throw(Unexpected,
                   "Failed to convert IN/A RDATA to textual IPv4 address");
     }

@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 
 #include <string>
@@ -228,7 +230,7 @@ namespace python {
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_TSIGError
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject tsigerror_type = {
+ISC_LIBDNS_PYTHON_API PyTypeObject tsigerror_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.TSIGError",
     sizeof(s_TSIGError),                 // tp_basicsize
@@ -280,7 +282,7 @@ PyTypeObject tsigerror_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+ISC_LIBDNS_PYTHON_API PyObject*
 createTSIGErrorObject(const TSIGError& source) {
     TSIGErrorContainer container(PyObject_New(s_TSIGError, &tsigerror_type));
     container.set(new TSIGError(source));

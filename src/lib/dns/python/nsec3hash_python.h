@@ -17,6 +17,8 @@
 
 #include <Python.h>
 
+#include <dns/python/lib.h>
+
 namespace isc {
 namespace dns {
 class NSEC3Hash;
@@ -30,12 +32,12 @@ public:
     NSEC3Hash* cppobj;
 };
 
-extern PyTypeObject nsec3hash_type;
+extern ISC_LIBDNS_PYTHON_API PyTypeObject nsec3hash_type;
 
 // Public exception object.
-extern PyObject* po_UnknownNSEC3HashAlgorithm;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_UnknownNSEC3HashAlgorithm;
 
-bool initModulePart_NSEC3Hash(PyObject* mod);
+ISC_LIBDNS_PYTHON_API bool initModulePart_NSEC3Hash(PyObject* mod);
 
 } // namespace python
 } // namespace dns

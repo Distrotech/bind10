@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_PYTHON_EXPORT
+
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <dns/question.h>
@@ -239,7 +241,7 @@ namespace python {
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_Question
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject question_type = {
+ISC_LIBDNS_PYTHON_API PyTypeObject question_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.Question",
     sizeof(s_Question),                 // tp_basicsize

@@ -18,11 +18,12 @@
 
 #include <string>
 
+#include <dns/lib.h>
 #include <dns/rdata.h>
 
 namespace isc {
 namespace dns {
-class Name;
+class ISC_LIBDNS_API Name;
 }
 }
 
@@ -39,7 +40,7 @@ class Name;
 /// This class implements the basic interfaces inherited from the abstract
 /// \c rdata::Rdata class, and provides trivial accessors specific to the
 /// TSIG RDATA.
-class TSIG : public Rdata {
+class ISC_LIBDNS_API TSIG : public Rdata {
 public:
     // BEGIN_COMMON_MEMBERS
     // END_COMMON_MEMBERS

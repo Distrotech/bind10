@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 
 #include <util/buffer.h>
@@ -180,7 +182,7 @@ MessageRenderer_clear(s_MessageRenderer* self) {
 namespace isc {
 namespace dns {
 namespace python {
-PyTypeObject messagerenderer_type = {
+ISC_LIBDNS_PYTHON_API PyTypeObject messagerenderer_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.MessageRenderer",
     sizeof(s_MessageRenderer),          // tp_basicsize

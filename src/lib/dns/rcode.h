@@ -14,12 +14,18 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef __RCODE_H
+#define __RCODE_H 1
+
 #include <stdint.h>
 
 #include <ostream>
 
-#ifndef __RCODE_H
-#define __RCODE_H 1
+#include <dns/lib.h>
+
+#if defined(_WIN32) && defined(NOERROR)
+#undef NOERROR
+#endif
 
 namespace isc {
 namespace dns {
@@ -45,7 +51,7 @@ namespace dns {
 /// to handle RCODEs through this class.  In fact, public interfaces of
 /// this library uses this class to pass or return RCODEs instead of the
 /// bare code values.
-class Rcode {
+class ISC_LIBDNS_API Rcode {
 public:
     /// Constants for pre-defined RCODE values.
     enum CodeValue {
@@ -336,7 +342,8 @@ Rcode::BADVERS() {
 /// \param rcode A reference to an \c Rcode object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-std::ostream& operator<<(std::ostream& os, const Rcode& rcode);
+ISC_LIBDNS_API std::ostream&
+operator<<(std::ostream& os, const Rcode& rcode);
 }
 }
 #endif  // RCODE_H

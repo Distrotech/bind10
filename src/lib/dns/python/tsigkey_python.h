@@ -17,6 +17,8 @@
 
 #include <Python.h>
 
+#include <dns/python/lib.h>
+
 namespace isc {
 namespace dns {
 class TSIGKey;
@@ -24,8 +26,8 @@ class TSIGKeyRing;
 
 namespace python {
 
-extern PyTypeObject tsigkey_type;
-extern PyTypeObject tsigkeyring_type;
+extern ISC_LIBDNS_PYTHON_API PyTypeObject tsigkey_type;
+extern ISC_LIBDNS_PYTHON_API PyTypeObject tsigkeyring_type;
 
 /// \brief Checks if the given python object is a TSIGKey object
 ///

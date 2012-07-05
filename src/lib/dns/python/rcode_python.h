@@ -17,13 +17,15 @@
 
 #include <Python.h>
 
+#include <dns/python/lib.h>
+
 namespace isc {
 namespace dns {
 class Rcode;
 
 namespace python {
 
-extern PyTypeObject rcode_type;
+extern ISC_LIBDNS_PYTHON_API PyTypeObject rcode_type;
 
 /// This is a simple shortcut to create a python Rcode object (in the
 /// form of a pointer to PyObject) with minimal exception safety.

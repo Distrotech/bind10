@@ -21,23 +21,28 @@
 #include <ostream>
 
 #include <exceptions/exceptions.h>
+#include <dns/lib.h>
+
+#if defined(_WIN32) && defined(IN)
+#undef IN
+#endif
 
 namespace isc {
 namespace util {
-class InputBuffer;
-class OutputBuffer;
+class ISC_LIBDNS_API InputBuffer;
+class ISC_LIBDNS_API OutputBuffer;
 }
 
 namespace dns {
 
 // forward declarations
-class AbstractMessageRenderer;
+class ISC_LIBDNS_API AbstractMessageRenderer;
 
 ///
 /// \brief A standard DNS module exception that is thrown if an RRClass object
 /// is being constructed from an unrecognized string.
 ///
-class InvalidRRClass : public Exception {
+class ISC_LIBDNS_API InvalidRRClass : public Exception {
 public:
     InvalidRRClass(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -47,7 +52,7 @@ public:
 /// \brief A standard DNS module exception that is thrown if an RRClass object
 /// is being constructed from a incomplete (too short) wire-format data.
 ///
-class IncompleteRRClass : public Exception {
+class ISC_LIBDNS_API IncompleteRRClass : public Exception {
 public:
     IncompleteRRClass(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -87,7 +92,7 @@ public:
 /// the proxy function.
 ///
 /// Note to developers: same note as \c RRType applies.
-class RRClass {
+class ISC_LIBDNS_API RRClass {
 public:
     ///
     /// \name Constructors and Destructor
@@ -279,7 +284,7 @@ RRClass::NONE() {
 /// \param rrclass The \c RRClass object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-std::ostream&
+ISC_LIBDNS_API std::ostream&
 operator<<(std::ostream& os, const RRClass& rrclass);
 }
 }

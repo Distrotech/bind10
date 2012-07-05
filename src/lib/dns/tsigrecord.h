@@ -22,15 +22,16 @@
 
 #include <util/buffer.h>
 
+#include <dns/lib.h>
 #include <dns/name.h>
 #include <dns/rdataclass.h>
 
 namespace isc {
 namespace util {
-class OutputBuffer;
+class ISC_LIBDNS_API OutputBuffer;
 }
 namespace dns {
-class AbstractMessageRenderer;
+class ISC_LIBDNS_API AbstractMessageRenderer;
 
 /// TSIG resource record.
 ///
@@ -59,7 +60,7 @@ class AbstractMessageRenderer;
 /// handle it through a generic interface in a polymorphic way.
 /// We therefore chose to define it as a separate class.  This is also
 /// similar to why \c EDNS is a separate class.
-class TSIGRecord {
+class ISC_LIBDNS_API TSIGRecord {
 public:
     ///
     /// \name Constructors
@@ -297,7 +298,8 @@ typedef boost::shared_ptr<const TSIGRecord> ConstTSIGRecordPtr;
 /// \param record A \c TSIGRecord object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-std::ostream& operator<<(std::ostream& os, const TSIGRecord& record);
+ISC_LIBDNS_API std::ostream&
+operator<<(std::ostream& os, const TSIGRecord& record);
 }
 }
 

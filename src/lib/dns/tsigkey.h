@@ -16,11 +16,12 @@
 #define __TSIGKEY_H 1
 
 #include <cryptolink/cryptolink.h>
+#include <dns/lib.h>
 
 namespace isc {
 namespace dns {
 
-class Name;
+class ISC_LIBDNS_API Name;
 
 /// \brief TSIG key.
 ///
@@ -60,7 +61,7 @@ class Name;
 /// remember the actual domain names defined in the protocol specification.
 /// We may also have to add conversion routines between domain names
 /// and more intuitive representations (e.g. strings) for algorithms.
-class TSIGKey {
+class ISC_LIBDNS_API TSIGKey {
 public:
     ///
     /// \name Constructors, Assignment Operator and Destructor.
@@ -234,7 +235,7 @@ private:
 /// in different DNS transactions).
 /// If this assumption does not hold and memory consumption becomes an issue
 /// we may have to revisit the design.
-class TSIGKeyRing {
+class ISC_LIBDNS_API TSIGKeyRing {
 public:
     /// Result codes of various public methods of \c TSIGKeyRing
     enum Result {

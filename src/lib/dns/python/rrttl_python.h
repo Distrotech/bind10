@@ -17,16 +17,18 @@
 
 #include <Python.h>
 
+#include <dns/python/lib.h>
+
 namespace isc {
 namespace dns {
 class RRTTL;
 
 namespace python {
 
-extern PyObject* po_InvalidRRTTL;
-extern PyObject* po_IncompleteRRTTL;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_InvalidRRTTL;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_IncompleteRRTTL;
 
-extern PyTypeObject rrttl_type;
+extern ISC_LIBDNS_PYTHON_API PyTypeObject rrttl_type;
 
 /// This is a simple shortcut to create a python RRTTL object (in the
 /// form of a pointer to PyObject) with minimal exception safety.

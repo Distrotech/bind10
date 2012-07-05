@@ -16,6 +16,7 @@
 
 #include <string>
 
+#include <dns/lib.h>
 #include <dns/name.h>
 #include <dns/rdata.h>
 #include <dns/serial.h>
@@ -27,7 +28,7 @@
 
 // BEGIN_RDATA_NAMESPACE
 
-class SOA : public Rdata {
+class ISC_LIBDNS_API SOA : public Rdata {
 public:
     // BEGIN_COMMON_MEMBERS
     // END_COMMON_MEMBERS

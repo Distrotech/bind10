@@ -17,6 +17,8 @@
 
 #include <Python.h>
 
+#include <dns/python/lib.h>
+
 namespace isc {
 namespace dns {
 namespace rdata {
@@ -27,7 +29,7 @@ class TSIG;
 
 namespace python {
 
-extern PyTypeObject tsig_type;
+extern ISC_LIBDNS_PYTHON_API PyTypeObject tsig_type;
 
 /// This is A simple shortcut to create a python TSIG object (in the
 /// form of a pointer to PyObject) with minimal exception safety.

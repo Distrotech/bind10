@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 
 #include <stdexcept>
@@ -181,7 +183,7 @@ namespace python {
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_EDNS
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject tsigkey_type = {
+ISC_LIBDNS_PYTHON_API PyTypeObject tsigkey_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.TSIGKey",
     sizeof(s_TSIGKey),                  // tp_basicsize
@@ -394,7 +396,7 @@ TSIGKeyRing_find(const s_TSIGKeyRing* self, PyObject* args) {
 namespace isc {
 namespace dns {
 namespace python {
-PyTypeObject tsigkeyring_type = {
+ISC_LIBDNS_PYTHON_API PyTypeObject tsigkeyring_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.TSIGKeyRing",
     sizeof(s_TSIGKeyRing),              // tp_basicsize

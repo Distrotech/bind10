@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 
 #include <string>
@@ -212,7 +214,7 @@ namespace python {
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_TSIGRecord
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject tsigrecord_type = {
+ISC_LIBDNS_PYTHON_API PyTypeObject tsigrecord_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.TSIGRecord",
     sizeof(s_TSIGRecord),                 // tp_basicsize

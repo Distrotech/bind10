@@ -17,6 +17,8 @@
 
 #include <Python.h>
 
+#include <dns/python/lib.h>
+
 namespace isc {
 namespace dns {
 class TSIGRecord;
@@ -24,7 +26,7 @@ class TSIGRecord;
 namespace python {
 
 
-extern PyTypeObject tsigrecord_type;
+extern ISC_LIBDNS_PYTHON_API PyTypeObject tsigrecord_type;
 
 /// This is A simple shortcut to create a python TSIGRecord object (in the
 /// form of a pointer to PyObject) with minimal exception safety.

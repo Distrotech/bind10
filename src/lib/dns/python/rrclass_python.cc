@@ -11,6 +11,9 @@
 // LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
+
+#define ISC_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 
 #include <dns/rrclass.h>
@@ -282,14 +285,14 @@ namespace python {
 // Initialization and addition of these go in the initModulePart
 // function in pydnspp.cc
 //
-PyObject* po_InvalidRRClass;
-PyObject* po_IncompleteRRClass;
+ISC_LIBDNS_PYTHON_API PyObject* po_InvalidRRClass;
+ISC_LIBDNS_PYTHON_API PyObject* po_IncompleteRRClass;
 
 
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_RRClass
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject rrclass_type = {
+ISC_LIBDNS_PYTHON_API PyTypeObject rrclass_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.RRClass",
     sizeof(s_RRClass),                  // tp_basicsize

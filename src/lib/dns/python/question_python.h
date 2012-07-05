@@ -17,15 +17,17 @@
 
 #include <Python.h>
 
+#include <dns/python/lib.h>
+
 namespace isc {
 namespace dns {
 class Question;
 
 namespace python {
 
-extern PyObject* po_EmptyQuestion;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_EmptyQuestion;
 
-extern PyTypeObject question_type;
+extern ISC_LIBDNS_PYTHON_API PyTypeObject question_type;
 
 /// This is a simple shortcut to create a python Question object (in the
 /// form of a pointer to PyObject) with minimal exception safety.

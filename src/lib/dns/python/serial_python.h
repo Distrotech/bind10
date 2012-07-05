@@ -17,13 +17,15 @@
 
 #include <Python.h>
 
+#include <dns/python/lib.h>
+
 namespace isc {
 namespace dns {
 class Serial;
 
 namespace python {
 
-extern PyTypeObject serial_type;
+extern ISC_LIBDNS_PYTHON_API PyTypeObject serial_type;
 
 /// This is a simple shortcut to create a python Serial object (in the
 /// form of a pointer to PyObject) with minimal exception safety.

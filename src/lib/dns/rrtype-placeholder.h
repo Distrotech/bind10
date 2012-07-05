@@ -21,6 +21,7 @@
 #include <ostream>
 
 #include <exceptions/exceptions.h>
+#include <dns/lib.h>
 
 // Solaris x86 defines DS in <sys/regset.h>, which gets pulled in by Boost
 #if defined(__sun) && defined(DS)
@@ -29,20 +30,20 @@
 
 namespace isc {
 namespace util {
-class InputBuffer;
-class OutputBuffer;
+class ISC_LIBDNS_API InputBuffer;
+class ISC_LIBDNS_API OutputBuffer;
 }
 
 namespace dns {
 
 // forward declarations
-class AbstractMessageRenderer;
+class ISC_LIBDNS_API AbstractMessageRenderer;
 
 ///
 /// \brief A standard DNS module exception that is thrown if an RRType object
 /// is being constructed from an unrecognized string.
 ///
-class InvalidRRType : public Exception {
+class ISC_LIBDNS_API InvalidRRType : public Exception {
 public:
     InvalidRRType(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -52,7 +53,7 @@ public:
 /// \brief A standard DNS module exception that is thrown if an RRType object
 /// is being constructed from a incomplete (too short) wire-format data.
 ///
-class IncompleteRRType : public Exception {
+class ISC_LIBDNS_API IncompleteRRType : public Exception {
 public:
     IncompleteRRType(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -104,7 +105,7 @@ public:
 /// this assumption, but if we encounter memory bloat due to this problem with
 /// particular compilers we need to revisit the design or think about
 /// workaround.
-class RRType {
+class ISC_LIBDNS_API RRType {
 public:
     ///
     /// \name Constructors and Destructor
@@ -313,7 +314,7 @@ RRType::ANY() {
 /// \param rrtype The \c RRType object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-std::ostream&
+ISC_LIBDNS_API std::ostream&
 operator<<(std::ostream& os, const RRType& rrtype);
 }
 }

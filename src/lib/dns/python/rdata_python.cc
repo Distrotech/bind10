@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_PYTHON_EXPORT
+
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <dns/rdata.h>
@@ -284,14 +286,14 @@ namespace python {
 // Initialization and addition of these go in the initModulePart
 // function in pydnspp
 //
-PyObject* po_InvalidRdataLength;
-PyObject* po_InvalidRdataText;
-PyObject* po_CharStringTooLong;
+ISC_LIBDNS_PYTHON_API PyObject* po_InvalidRdataLength;
+ISC_LIBDNS_PYTHON_API PyObject* po_InvalidRdataText;
+ISC_LIBDNS_PYTHON_API PyObject* po_CharStringTooLong;
 
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_Rdata
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject rdata_type = {
+ISC_LIBDNS_PYTHON_API PyTypeObject rdata_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.Rdata",
     sizeof(s_Rdata),                    // tp_basicsize

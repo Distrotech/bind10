@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 
 #include <util/buffer.h>
@@ -537,23 +539,23 @@ namespace python {
 // Initialization and addition of these go in the module init at the
 // end
 //
-PyObject* po_EmptyLabel;
-PyObject* po_TooLongName;
-PyObject* po_TooLongLabel;
-PyObject* po_BadLabelType;
-PyObject* po_BadEscape;
-PyObject* po_IncompleteName;
-PyObject* po_InvalidBufferPosition;
-PyObject* po_DNSMessageFORMERR;
+ISC_LIBDNS_PYTHON_API PyObject* po_EmptyLabel;
+ISC_LIBDNS_PYTHON_API PyObject* po_TooLongName;
+ISC_LIBDNS_PYTHON_API PyObject* po_TooLongLabel;
+ISC_LIBDNS_PYTHON_API PyObject* po_BadLabelType;
+ISC_LIBDNS_PYTHON_API PyObject* po_BadEscape;
+ISC_LIBDNS_PYTHON_API PyObject* po_IncompleteName;
+ISC_LIBDNS_PYTHON_API PyObject* po_InvalidBufferPosition;
+ISC_LIBDNS_PYTHON_API PyObject* po_DNSMessageFORMERR;
 
 //
 // Definition of enums
 // Initialization and addition of these go in the module init at the
 // end
 //
-PyObject* po_NameRelation;
+ISC_LIBDNS_PYTHON_API PyObject* po_NameRelation;
 
-PyTypeObject name_comparison_result_type = {
+ISC_LIBDNS_PYTHON_API PyTypeObject name_comparison_result_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.NameComparisonResult",
     sizeof(s_NameComparisonResult),           // tp_basicsize
@@ -609,7 +611,7 @@ PyTypeObject name_comparison_result_type = {
     0                                         // tp_version_tag
 };
 
-PyTypeObject name_type = {
+ISC_LIBDNS_PYTHON_API PyTypeObject name_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.Name",
     sizeof(s_Name),                     // tp_basicsize
@@ -664,7 +666,7 @@ PyTypeObject name_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+ISC_LIBDNS_PYTHON_API PyObject*
 createNameObject(const Name& source) {
     NameContainer container(PyObject_New(s_Name, &name_type));
     container.set(new Name(source));

@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 #include <vector>
 
@@ -230,13 +232,13 @@ namespace python {
 // Initialization and addition of these go in the initModulePart
 // function in pydnspp.cc
 //
-PyObject* po_InvalidRRTTL;
-PyObject* po_IncompleteRRTTL;
+ISC_LIBDNS_PYTHON_API PyObject* po_InvalidRRTTL;
+ISC_LIBDNS_PYTHON_API PyObject* po_IncompleteRRTTL;
 
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_RRTTL
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject rrttl_type = {
+ISC_LIBDNS_PYTHON_API PyTypeObject rrttl_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.RRTTL",
     sizeof(s_RRTTL),                    // tp_basicsize

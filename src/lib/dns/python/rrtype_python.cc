@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 #include <vector>
 
@@ -374,13 +376,13 @@ namespace isc {
 namespace dns {
 namespace python {
 
-PyObject* po_InvalidRRType;
-PyObject* po_IncompleteRRType;
+ISC_LIBDNS_PYTHON_API PyObject* po_InvalidRRType;
+ISC_LIBDNS_PYTHON_API PyObject* po_IncompleteRRType;
 
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_RRType
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject rrtype_type = {
+ISC_LIBDNS_PYTHON_API PyTypeObject rrtype_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.RRType",
     sizeof(s_RRType),                   // tp_basicsize

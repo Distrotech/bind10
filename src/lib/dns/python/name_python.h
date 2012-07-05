@@ -17,30 +17,32 @@
 
 #include <Python.h>
 
+#include <dns/python/lib.h>
+
 namespace isc {
 namespace dns {
 class Name;
 
 namespace python {
 
-extern PyObject* po_EmptyLabel;
-extern PyObject* po_TooLongName;
-extern PyObject* po_TooLongLabel;
-extern PyObject* po_BadLabelType;
-extern PyObject* po_BadEscape;
-extern PyObject* po_IncompleteName;
-extern PyObject* po_InvalidBufferPosition;
-extern PyObject* po_DNSMessageFORMERR;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_EmptyLabel;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_TooLongName;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_TooLongLabel;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_BadLabelType;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_BadEscape;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_IncompleteName;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_InvalidBufferPosition;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_DNSMessageFORMERR;
 
 //
 // Declaration of enums
 // Initialization and addition of these go in the module init at the
 // end
 //
-extern PyObject* po_NameRelation;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_NameRelation;
 
-extern PyTypeObject name_comparison_result_type;
-extern PyTypeObject name_type;
+extern ISC_LIBDNS_PYTHON_API PyTypeObject name_comparison_result_type;
+extern ISC_LIBDNS_PYTHON_API PyTypeObject name_type;
 
 /// This is A simple shortcut to create a python Name object (in the
 /// form of a pointer to PyObject) with minimal exception safety.
@@ -49,7 +51,7 @@ extern PyTypeObject name_type;
 /// returns a NULL pointer).
 /// This function is expected to be called with in a try block
 /// followed by necessary setup for python exception.
-PyObject* createNameObject(const Name& source);
+ISC_LIBDNS_PYTHON_API PyObject* createNameObject(const Name& source);
 
 /// \brief Checks if the given python object is a Name object
 ///

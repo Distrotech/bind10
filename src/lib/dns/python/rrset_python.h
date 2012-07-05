@@ -17,6 +17,7 @@
 
 #include <Python.h>
 
+#include <dns/python/lib.h>
 #include <dns/rrset.h>
 
 #include <util/python/pycppwrapper_util.h>
@@ -25,9 +26,9 @@ namespace isc {
 namespace dns {
 namespace python {
 
-extern PyObject* po_EmptyRRset;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_EmptyRRset;
 
-extern PyTypeObject rrset_type;
+extern ISC_LIBDNS_PYTHON_API PyTypeObject rrset_type;
 
 /// This is a simple shortcut to create a python RRset object (in the
 /// form of a pointer to PyObject) with minimal exception safety.

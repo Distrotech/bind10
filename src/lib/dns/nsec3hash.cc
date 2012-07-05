@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_EXPORT
+
 #include <stdint.h>
 
 #include <cassert>
@@ -186,7 +188,7 @@ DefaultNSEC3HashCreator::create(const generic::NSEC3& nsec3) const {
                                  nsec3.getSalt()));
 }
 
-void
+ISC_LIBDNS_API void
 setNSEC3HashCreator(const NSEC3HashCreator* new_creator) {
     creator = new_creator;
 }

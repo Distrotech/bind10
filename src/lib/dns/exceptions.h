@@ -21,6 +21,7 @@
 #define __DNS_EXCEPTIONS_H 1
 
 #include <exceptions/exceptions.h>
+#include <dns/lib.h>
 
 namespace isc {
 namespace dns {
@@ -28,23 +29,23 @@ namespace dns {
 ///
 /// \brief A standard DNS module exception ...[TBD]
 ///
-class Rcode;                    // forward declaration
+class ISC_LIBDNS_API Rcode;                    // forward declaration
 
-class DNSProtocolError : public isc::Exception {
+class ISC_LIBDNS_API DNSProtocolError : public isc::Exception {
 public:
     DNSProtocolError(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
     virtual const Rcode& getRcode() const = 0;
 };
 
-class DNSMessageFORMERR : public DNSProtocolError {
+class ISC_LIBDNS_API DNSMessageFORMERR : public DNSProtocolError {
 public:
     DNSMessageFORMERR(const char* file, size_t line, const char* what) :
         DNSProtocolError(file, line, what) {}
     virtual const Rcode& getRcode() const;
 };
 
-class DNSMessageBADVERS : public DNSProtocolError {
+class ISC_LIBDNS_API DNSMessageBADVERS : public DNSProtocolError {
 public:
     DNSMessageBADVERS(const char* file, size_t line, const char* what) :
         DNSProtocolError(file, line, what) {}

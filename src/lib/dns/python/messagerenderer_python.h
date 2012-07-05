@@ -18,6 +18,7 @@
 #include <Python.h>
 
 #include <util/buffer.h>
+#include <dns/python/lib.h>
 
 namespace isc {
 namespace dns {
@@ -25,7 +26,7 @@ class MessageRenderer;
 
 namespace python {
 
-extern PyTypeObject messagerenderer_type;
+extern ISC_LIBDNS_PYTHON_API PyTypeObject messagerenderer_type;
 
 /// \brief Checks if the given python object is a MessageRenderer object
 ///

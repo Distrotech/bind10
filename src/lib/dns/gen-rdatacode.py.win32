@@ -1,4 +1,4 @@
-#!@PYTHON@
+#!/usr/bin/python
 
 # Copyright (C) 2010  Internet Systems Consortium, Inc. ("ISC")
 #
@@ -132,8 +132,8 @@ def import_definitions(classcode2txt, typecode2txt, typeandclass):
     global rdatadef_mtime
     global rdatahdr_mtime
 
-    if classdir_mtime < getmtime('@srcdir@/rdata'):
-        classdir_mtime = getmtime('@srcdir@/rdata')
+    if classdir_mtime < getmtime('./rdata'):
+        classdir_mtime = getmtime('./rdata')
 
     # Sort directories before iterating through them so that the directory
     # list is processed in the same order on all systems.  The resulting
@@ -141,10 +141,10 @@ def import_definitions(classcode2txt, typecode2txt, typeandclass):
     # are included but...  Having a fixed order for the directories should
     # eliminate system-dependent problems.  (Note that the drectory names
     # in BIND 10 are ASCII, so the order should be locale-independent.)
-    dirlist = os.listdir('@srcdir@/rdata')
+    dirlist = os.listdir('./rdata')
     dirlist.sort()
     for dir in dirlist:
-        classdir = '@srcdir@/rdata' + os.sep + dir
+        classdir = './rdata' + os.sep + dir
         m = re_typecode.match(dir)
         if os.path.isdir(classdir) and (m != None or dir == 'generic'):
             if dir == 'generic':
@@ -220,8 +220,8 @@ def generate_rdatahdr(file, declarations, basemtime):
     rdata_header.close()
 
 def generate_typeclasscode(fileprefix, basemtime, code2txt, type_or_class):
-    placeholder = '@srcdir@/' + fileprefix + '-placeholder.h'
-    outputfile = '@builddir@/' + fileprefix + '.h'
+    placeholder = './' + fileprefix + '-placeholder.h'
+    outputfile = './' + fileprefix + '.h'
     upper_key = type_or_class.upper() # TYPE or CLASS
     lower_key = 'rr' + type_or_class.lower() # rrtype or rrclass
     cap_key = type_or_class           # Type or Class
@@ -254,8 +254,8 @@ RR''' + cap_key + '''::''' + codetxt + '''() {
     header_temp.close()
 
 def generate_rrparam(fileprefix, basemtime):
-    placeholder = '@srcdir@/' + fileprefix + '-placeholder.cc'
-    outputfile = '@builddir@/' + fileprefix + '.cc'
+    placeholder = './' + fileprefix + '-placeholder.cc'
+    outputfile = './' + fileprefix + '.cc'
     if not need_generate(outputfile, basemtime) and getmtime(outputfile) > getmtime(placeholder):
         print('skip generating ' + outputfile)
         return
@@ -297,8 +297,8 @@ def generate_rrparam(fileprefix, basemtime):
 if __name__ == "__main__":
     try:
         import_definitions(classcode2txt, typecode2txt, typeandclass)
-        generate_rdatadef('@builddir@/rdataclass.cc', rdatadef_mtime)
-        generate_rdatahdr('@builddir@/rdataclass.h', rdata_declarations,
+        generate_rdatadef('./rdataclass.cc', rdatadef_mtime)
+        generate_rdatahdr('./rdataclass.h', rdata_declarations,
                           rdatahdr_mtime)
         generate_typeclasscode('rrtype', rdatahdr_mtime, typecode2txt, 'Type')
         generate_typeclasscode('rrclass', classdir_mtime,

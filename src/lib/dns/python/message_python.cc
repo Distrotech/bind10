@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_PYTHON_EXPORT
+
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
@@ -789,15 +791,15 @@ namespace python {
 // Initialization and addition of these go in the initModulePart
 // function in pydnspp.cc
 //
-PyObject* po_MessageTooShort;
-PyObject* po_InvalidMessageSection;
-PyObject* po_InvalidMessageOperation;
-PyObject* po_InvalidMessageUDPSize;
+ISC_LIBDNS_PYTHON_API PyObject* po_MessageTooShort;
+ISC_LIBDNS_PYTHON_API PyObject* po_InvalidMessageSection;
+ISC_LIBDNS_PYTHON_API PyObject* po_InvalidMessageOperation;
+ISC_LIBDNS_PYTHON_API PyObject* po_InvalidMessageUDPSize;
 
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_Message
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject message_type = {
+ISC_LIBDNS_PYTHON_API PyTypeObject message_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.Message",
     sizeof(s_Message),                  // tp_basicsize

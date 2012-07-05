@@ -15,6 +15,7 @@
 #ifndef __LABELSEQUENCE_H
 #define __LABELSEQUENCE_H 1
 
+#include <dns/lib.h>
 #include <dns/name.h>
 #include <util/buffer.h>
 
@@ -40,7 +41,7 @@ namespace dns {
 /// data can be requested (which then points to part of the original
 /// data of the associated Name object).
 ///
-class LabelSequence {
+class ISC_LIBDNS_API LabelSequence {
 public:
     /// \brief Constructs a LabelSequence for the given name
     ///

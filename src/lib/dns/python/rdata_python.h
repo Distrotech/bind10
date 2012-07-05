@@ -17,17 +17,18 @@
 
 #include <Python.h>
 
+#include <dns/python/lib.h>
 #include <dns/rdata.h>
 
 namespace isc {
 namespace dns {
 namespace python {
 
-extern PyObject* po_InvalidRdataLength;
-extern PyObject* po_InvalidRdataText;
-extern PyObject* po_CharStringTooLong;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_InvalidRdataLength;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_InvalidRdataText;
+extern ISC_LIBDNS_PYTHON_API PyObject* po_CharStringTooLong;
 
-extern PyTypeObject rdata_type;
+extern ISC_LIBDNS_PYTHON_API PyTypeObject rdata_type;
 
 /// This is a simple shortcut to create a python Rdata object (in the
 /// form of a pointer to PyObject) with minimal exception safety.

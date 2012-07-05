@@ -16,6 +16,7 @@
 
 #include <string>
 
+#include <dns/lib.h>
 #include <dns/name.h>
 #include <dns/rdata.h>
 #include <util/buffer.h>
@@ -33,7 +34,7 @@
 /// This class implements the basic interfaces inherited from the
 /// \c rdata::Rdata class, and provides accessors specific to the
 /// NAPTR rdata.
-class NAPTR : public Rdata {
+class ISC_LIBDNS_API NAPTR : public Rdata {
 public:
     // BEGIN_COMMON_MEMBERS
     // END_COMMON_MEMBERS

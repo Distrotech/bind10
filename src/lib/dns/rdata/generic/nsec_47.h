@@ -16,6 +16,7 @@
 
 #include <string>
 
+#include <dns/lib.h>
 #include <dns/name.h>
 #include <dns/rrtype.h>
 #include <dns/rrttl.h>
@@ -32,7 +33,7 @@
 
 struct NSECImpl;
 
-class NSEC : public Rdata {
+class ISC_LIBDNS_API NSEC : public Rdata {
 public:
     // BEGIN_COMMON_MEMBERS
     // END_COMMON_MEMBERS

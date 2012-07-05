@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_EXPORT
+
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -147,7 +149,7 @@ AbstractRRset::isSameKind(const AbstractRRset& other) const {
 	  getClass() == other.getClass());
 }
 
-ostream&
+ISC_LIBDNS_API ostream&
 operator<<(ostream& os, const AbstractRRset& rrset) {
     os << rrset.toText();
     return (os);

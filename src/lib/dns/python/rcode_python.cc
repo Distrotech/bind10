@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 
 #include <exceptions/exceptions.h>
@@ -330,7 +332,7 @@ Rcode_richcmp(const s_Rcode* const self, const s_Rcode* const other,
 namespace isc {
 namespace dns {
 namespace python {
-PyTypeObject rcode_type = {
+ISC_LIBDNS_PYTHON_API PyTypeObject rcode_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.Rcode",
     sizeof(s_Rcode),                    // tp_basicsize

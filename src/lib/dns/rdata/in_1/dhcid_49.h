@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include <dns/lib.h>
 #include <dns/rdata.h>
 
 // BEGIN_ISC_NAMESPACE
@@ -32,7 +33,7 @@
 /// This class implements the basic interfaces inherited from the abstract
 /// \c rdata::Rdata class, and provides trivial accessors specific to the
 /// DHCID RDATA.
-class DHCID : public Rdata {
+class ISC_LIBDNS_API DHCID : public Rdata {
 public:
     // BEGIN_COMMON_MEMBERS
     // END_COMMON_MEMBERS

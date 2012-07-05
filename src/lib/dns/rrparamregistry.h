@@ -23,6 +23,7 @@
 
 #include <exceptions/exceptions.h>
 
+#include <dns/lib.h>
 #include <dns/rdata.h>
 
 namespace isc {
@@ -35,7 +36,7 @@ struct RRParamRegistryImpl;
 /// \brief A standard DNS module exception that is thrown if a new RR type is
 /// being registered with a different type string.
 ///
-class RRTypeExists : public Exception {
+class ISC_LIBDNS_API RRTypeExists : public Exception {
 public:
     RRTypeExists(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -45,7 +46,7 @@ public:
 /// \brief A standard DNS module exception that is thrown if a new RR class is
 /// being registered with a different type string.
 ///
-class RRClassExists : public Exception {
+class ISC_LIBDNS_API RRClassExists : public Exception {
 public:
     RRClassExists(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -62,7 +63,7 @@ namespace rdata {
 /// For other users of this API normally do not have to care about this class
 /// or its derived classes; this class is generally intended to be used
 /// as an internal utility of the API implementation.
-class AbstractRdataFactory {
+class ISC_LIBDNS_API AbstractRdataFactory {
     ///
     /// \name Constructors and Destructor
     ///
@@ -166,7 +167,7 @@ typedef boost::shared_ptr<AbstractRdataFactory> RdataFactoryPtr;
 /// Note: the implementation of this class is incomplete: we should at least
 /// add RDATA related parameters.  This will be done in a near future version,
 /// at which point some of method signatures will be changed.
-class RRParamRegistry {
+class ISC_LIBDNS_API RRParamRegistry {
     ///
     /// \name Constructors and Destructor
     ///

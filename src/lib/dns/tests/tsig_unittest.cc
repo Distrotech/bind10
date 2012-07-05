@@ -53,7 +53,7 @@ using isc::UnitTestUtil;
 namespace isc {
 namespace util {
 namespace detail {
-extern int64_t (*gettimeFunction)();
+extern ISC_LIBDNS_API int64_t (*gettimeFunction)();
 }
 }
 }

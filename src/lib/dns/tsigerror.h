@@ -18,6 +18,7 @@
 #include <ostream>
 #include <string>
 
+#include <dns/lib.h>
 #include <dns/rcode.h>
 
 namespace isc {
@@ -27,7 +28,7 @@ namespace dns {
 /// The \c TSIGError class objects represent standard errors related to
 /// TSIG protocol operations as defined in related specifications, mainly
 /// in RFC2845.
-class TSIGError {
+class ISC_LIBDNS_API TSIGError {
 public:
     /// Constants for pre-defined TSIG error values.
     ///
@@ -327,7 +328,8 @@ TSIGError::BAD_TIME() {
 /// \param tsig_error An \c TSIGError object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-std::ostream& operator<<(std::ostream& os, const TSIGError& tsig_error);
+ISC_LIBDNS_API std::ostream&
+operator<<(std::ostream& os, const TSIGError& tsig_error);
 }
 }
 
