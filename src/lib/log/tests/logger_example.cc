@@ -21,7 +21,11 @@
 /// See the usage() method for details of use.
 
 #include <stdlib.h>
+#ifdef _WIN32
+#include <getopt.h>
+#else
 #include <unistd.h>
+#endif
 #include <string.h>
 
 #include <boost/lexical_cast.hpp>

@@ -15,9 +15,12 @@
 #ifndef __LOGGER_SUPPORT_H
 #define __LOGGER_SUPPORT_H
 
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 #include <string>
+#include <log/lib.h>
 #include <log/logger.h>
 #include <log/logger_unittest_support.h>
 
@@ -38,13 +41,13 @@ namespace log {
 /// and throw an exception if logging is not initialized at that point.
 ///
 /// \return true if logging has been initialized, false if not
-bool isLoggingInitialized();
+ISC_LIBLOG_API bool isLoggingInitialized();
 
 /// \brief Set state of "logging initialized" flag
 ///
 /// \param state State to set the flag to. (This is expected to be "true" - the
 ///        default - for all code apart from specific unit tests.)
-void setLoggingInitialized(bool state = true);
+ISC_LIBLOG_API void setLoggingInitialized(bool state = true);
 
 /// \brief Run-time initialization
 ///
@@ -61,6 +64,7 @@ void setLoggingInitialized(bool state = true);
 /// \param severity Severity at which to log
 /// \param dbglevel Debug severity (ignored if "severity" is not "DEBUG")
 /// \param file Name of the local message file.
+ISC_LIBLOG_API
 void initLogger(const std::string& root,
                 isc::log::Severity severity = isc::log::INFO,
                 int dbglevel = 0, const char* file = NULL);

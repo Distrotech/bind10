@@ -17,6 +17,8 @@
 
 #include <string.h>
 
+#include <log/lib.h>
+
 namespace isc {
 namespace log {
 
@@ -27,11 +29,9 @@ typedef const char* MessageID;
 /// \param m1 First message ID
 /// \param m2 Second message ID
 /// \return true if they are equal, false if not
-bool equalMessageID(const MessageID& m1, const MessageID& m2);
+ISC_LIBLOG_API bool equalMessageID(const MessageID& m1, const MessageID& m2);
 
 } // namespace log
 } // namespace isc
-
-
 
 #endif // __MESSAGE_TYPES_H

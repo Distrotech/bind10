@@ -46,8 +46,8 @@ operator delete(void* p) throw() {
 namespace isc {
 namespace util {
 namespace unittests {
-bool force_throw_on_new = false;
-size_t throw_size_on_new = 0;
+ISC_LIBUTIL_UNITTESTS_API bool force_throw_on_new = false;
+ISC_LIBUTIL_UNITTESTS_API size_t throw_size_on_new = 0;
 }
 }
 }

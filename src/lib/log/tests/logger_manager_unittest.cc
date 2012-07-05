@@ -13,7 +13,11 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <stdio.h>
+#ifdef _WIN32
+#define unlink _unlink
+#else
 #include <unistd.h>
+#endif
 
 #include <fstream>
 #include <iostream>
@@ -96,6 +100,7 @@ public:
         return name_;
     }
 
+
     // Create temporary filename
     //
     // The compiler warns against tmpnam() and suggests mkstemp instead.
@@ -115,15 +120,18 @@ public:
 
         // Create file, close and delete it, and store the name for later.
         // There is still a race condition here, albeit a small one.
+#ifdef _WIN32
+        _mktemp_s(tname.get(), filename.size() + 1);
+#else
         int filenum = mkstemp(tname.get());
         if (filenum == -1) {
             isc_throw(Exception, "Unable to obtain unique filename");
         }
         close(filenum);
+#endif
 
         return (string(tname.get()));
     }
-
 
 private:
     LoggerSpecification     spec_;      // Specification for this file logger

@@ -16,11 +16,13 @@
 
 #include <stdint.h>
 
+#include <util/lib.h>
+
 // see util/time_utilities.h
 namespace isc {
 namespace util {
 namespace detail {
-extern int64_t (*gettimeFunction)();
+extern ISC_LIBUTIL_API int64_t (*gettimeFunction)();
 }
 }
 }

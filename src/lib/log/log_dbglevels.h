@@ -15,6 +15,8 @@
 #ifndef __LOG_DBGLVLS_H
 #define __LOG_DBGLVLS_H
 
+#include <log/lib.h>
+
 /// \file
 ///
 /// When a message is logged with DEBUG severity, the debug level associated

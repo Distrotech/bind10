@@ -26,7 +26,7 @@ namespace isc {
 namespace cryptolink {
 
 /// Forward declaration, pimpl style
-class ISC_LIBCRYPTOLINK_API HMACImpl;
+class HMACImpl;
 
 /// \brief HMAC support
 ///

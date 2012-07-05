@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <log/lib.h>
 #include <log/logger_level.h>
 #include <log/output_option.h>
 
@@ -34,7 +35,7 @@
 namespace isc {
 namespace log {
 
-class LoggerSpecification {
+class ISC_LIBLOG_API LoggerSpecification {
 public:
     typedef std::vector<OutputOption>::iterator         iterator;
     typedef std::vector<OutputOption>::const_iterator   const_iterator;

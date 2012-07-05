@@ -60,7 +60,7 @@ ISC_LIBUTIL_API void normalizeSlash(std::string& name);
 /// \param instring Input string to modify
 ///
 /// \return String with leading and trailing spaces removed
-std::string trim(const std::string& instring);
+ISC_LIBUTIL_API std::string trim(const std::string& instring);
 
 
 /// \brief Split String into Tokens
@@ -152,8 +152,8 @@ inline void lowercase(std::string& text) {
 /// \param args Vector of argument strings
 ///
 /// \return Resultant string
-std::string format(const std::string& format,
-    const std::vector<std::string>& args);
+ISC_LIBUTIL_API std::string format(const std::string& format,
+                                   const std::vector<std::string>& args);
 
 
 /// \brief Returns one token from the given stringstream

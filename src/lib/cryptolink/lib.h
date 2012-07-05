@@ -21,7 +21,7 @@
 #ifdef ISC_LIBCRYPTOLINK_EXPORT
 #define ISC_LIBCRYPTOLINK_API __declspec(dllexport)
 #else
-#defineISC_LIBCRYPTOLINK_API __declspec(dllimport)
+#define ISC_LIBCRYPTOLINK_API __declspec(dllimport)
 #endif
 #endif
 

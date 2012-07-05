@@ -25,7 +25,7 @@
 #ifdef ISC_EXCEPTIONS_EXPORT
 #define ISC_EXCEPTIONS_API __declspec(dllexport)
 #else
-#defineISC_EXCEPTIONS_API __declspec(dllimport)
+#define ISC_EXCEPTIONS_API __declspec(dllimport)
 #endif
 #endif
 

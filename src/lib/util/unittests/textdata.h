@@ -40,7 +40,7 @@ namespace unittests {
 /// This templated function takes two standard input streams, extracts
 /// strings from them, and compares the two sets of strings line by line.
 template <typename EXPECTED_STREAM, typename ACTUAL_STREAM>
-ISC_LIBUTIL_UNITTESTS_API void
+void
 matchTextData(EXPECTED_STREAM& expected, ACTUAL_STREAM& actual) {
     std::string actual_line;
     std::string expected_line;
@@ -69,7 +69,7 @@ matchTextData(EXPECTED_STREAM& expected, ACTUAL_STREAM& actual) {
 /// so that the test code doesn't have to create a string stream with the
 /// string data just for testing.
 template <typename EXPECTED_STREAM>
-ISC_LIBUTIL_UNITTESTS_API void
+void
 matchTextData(EXPECTED_STREAM& expected, const std::string& actual_text) {
     std::istringstream iss(actual_text);
     matchTextData(expected, iss);
@@ -77,7 +77,7 @@ matchTextData(EXPECTED_STREAM& expected, const std::string& actual_text) {
 
 /// Same for the previous version, but the first argument is string.
 template <typename ACTUAL_STREAM>
-ISC_LIBUTIL_UNITTESTS_API void
+void
 matchTextData(const std::string& expected_text, ACTUAL_STREAM& actual) {
     std::istringstream iss(expected_text);
     matchTextData(iss, actual);
@@ -85,7 +85,7 @@ matchTextData(const std::string& expected_text, ACTUAL_STREAM& actual) {
 
 /// Same for the previous two, but takes strings for both expected and
 /// actual data.
-ISC_LIBUTIL_UNITTESTS_API void
+void
 matchTextData(const std::string& expected_text,
               const std::string& actual_text)
 {

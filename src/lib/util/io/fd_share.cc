@@ -86,7 +86,7 @@ cmsg_space(const socklen_t len) {
 }
 }
 
-int
+ISC_LIBUTIL_IO_API int
 recv_fd(const int sock) {
     struct msghdr msghdr;
     struct iovec iov_dummy;
@@ -137,7 +137,7 @@ recv_fd(const int sock) {
     return (new_fd);
 }
 
-int
+ISC_LIBUTIL_IO_API int
 send_fd(const int sock, const int fd) {
     struct msghdr msghdr;
     struct iovec iov_dummy;
@@ -202,7 +202,7 @@ recv_pid(const SOCKET sock) {
 }
 }
 
-SOCKET
+ISC_LIBUTIL_IO_API SOCKET
 recv_fd(const SOCKET sock) {
     int ret(send_pid(sock));
     if (ret != 0) {
@@ -222,7 +222,7 @@ recv_fd(const SOCKET sock) {
     return (nsock);
 }
 
-int
+ISC_LIBUTIL_IO_API int
 send_fd(const SOCKET sock, const SOCKET fd) {
     pid_t peerpid(recv_pid(sock));
     if (peerpid == FD_SYSTEM_ERROR) {

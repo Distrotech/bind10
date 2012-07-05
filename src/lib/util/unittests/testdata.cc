@@ -40,7 +40,7 @@ addTestDataPath(const string& path) {
     getDataPaths().push_back(path);
 }
 
-void
+ISC_LIBUTIL_UNITTESTS_API void
 openTestData(const char* const datafile, ifstream& ifs) {
     vector<string>::const_iterator it = getDataPaths().begin();
     for (; it != getDataPaths().end(); ++it) {

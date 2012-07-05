@@ -64,9 +64,6 @@ static PyModuleDef bind10_fdshare_python = {
     NULL
 };
 
-#if defined(_WIN32) && !defined(USE_STATIC_LINK)
-__declspec(dllexport)
-#endif
 PyMODINIT_FUNC
 PyInit_libutil_io_python(void) {
     PyObject *mod = PyModule_Create(&bind10_fdshare_python);

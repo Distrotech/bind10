@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <string>
 #include <vector>
+#include <log/lib.h>
 #include <log/message_dictionary.h>
 
 namespace isc {
@@ -63,7 +64,7 @@ namespace log {
 /// global dictionary's overflow vector whence they can be retrieved at
 /// run-time.
 
-class MessageInitializer {
+class ISC_LIBLOG_API MessageInitializer {
 public:
     /// Maximum number of message arrays that can be initialized in this way
     static const size_t MAX_MESSAGE_ARRAYS = 256;

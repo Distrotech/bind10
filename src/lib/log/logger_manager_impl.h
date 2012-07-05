@@ -18,6 +18,7 @@
 #include <string>
 
 #include <log4cplus/appender.h>
+#include <log/lib.h>
 #include <log/logger_level.h>
 
 // Forward declaration to avoid need to include log4cplus header file here.
@@ -30,8 +31,8 @@ namespace isc {
 namespace log {
 
 // Forward declarations
-class LoggerSpecification;
-struct OutputOption;
+class ISC_LIBLOG_API LoggerSpecification;
+struct ISC_LIBLOG_API OutputOption;
 
 /// \brief Logger Manager Implementation
 ///

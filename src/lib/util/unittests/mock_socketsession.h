@@ -15,6 +15,13 @@
 #ifndef __UTIL_UNITTESTS_MOCKSOCKETSESSION_H
 #define __UTIL_UNITTESTS_MOCKSOCKETSESSION_H 1
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
+#include <sys/socket.h>
+#endif
+#include <stdint.h>
+
 #include <exceptions/exceptions.h>
 
 #include <util/io/socketsession.h>
@@ -23,9 +30,6 @@
 #include <cassert>
 #include <cstring>
 #include <vector>
-
-#include <sys/socket.h>
-#include <stdint.h>
 
 #include <util/unittests/lib.h>
 
@@ -133,10 +137,12 @@ public:
     int getPushedType() const { return (pushed_type_); }
     int getPushedProtocol() const { return (pushed_protocol_); }
     const struct sockaddr& getPushedLocalend() const {
-        return (*io::internal::convertSockAddr(&pushed_local_end_ss_));
+        return (*io::internal::convertSockAddr<struct sockaddr>
+                        (&pushed_local_end_ss_));
     }
     const struct sockaddr& getPushedRemoteend() const {
-        return (*io::internal::convertSockAddr(&pushed_remote_end_ss_));
+        return (*io::internal::convertSockAddr<struct sockaddr>
+                        (&pushed_remote_end_ss_));
     }
     const std::vector<uint8_t>& getPushedData() const {
         return (pushed_data_);

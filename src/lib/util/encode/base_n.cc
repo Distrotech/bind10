@@ -390,32 +390,32 @@ typedef BaseNTransformer<4, '0', base16_encoder, base16_decoder>
 Base16Transformer;
 }
 
-string
+ISC_LIBUTIL_API string
 encodeBase64(const vector<uint8_t>& binary) {
     return (Base64Transformer::encode(binary));
 }
 
-void
+ISC_LIBUTIL_API void
 decodeBase64(const string& input, vector<uint8_t>& result) {
     Base64Transformer::decode("base64", input, result);
 }
 
-string
+ISC_LIBUTIL_API string
 encodeBase32Hex(const vector<uint8_t>& binary) {
     return (Base32HexTransformer::encode(binary));
 }
 
-void
+ISC_LIBUTIL_API void
 decodeBase32Hex(const string& input, vector<uint8_t>& result) {
     Base32HexTransformer::decode("base32hex", input, result);
 }
 
-string
+ISC_LIBUTIL_API string
 encodeHex(const vector<uint8_t>& binary) {
     return (Base16Transformer::encode(binary));
 }
 
-void
+ISC_LIBUTIL_API void
 decodeHex(const string& input, vector<uint8_t>& result) {
     Base16Transformer::decode("base16", input, result);
 }

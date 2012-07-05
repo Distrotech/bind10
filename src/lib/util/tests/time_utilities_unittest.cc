@@ -27,7 +27,7 @@ using namespace isc::util;
 namespace isc {
 namespace util {
 namespace detail {
-extern int64_t (*gettimeFunction)();
+extern ISC_LIBUTIL_API int64_t (*gettimeFunction)();
 }
 }
 }

@@ -12,6 +12,10 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE
 
+#define ISC_LIBLOG_EXPORT
+
+#include <config.h>
+
 #include <log/logger_level.h>
 #include <log/macros.h>
 #include <log/log_messages.h>
@@ -22,7 +26,7 @@
 namespace isc {
 namespace log {
 
-isc::log::Severity
+ISC_LIBLOG_API isc::log::Severity
 getSeverity(const std::string& sev_str) {
     if (boost::iequals(sev_str, "DEBUG")) {
         return isc::log::DEBUG;

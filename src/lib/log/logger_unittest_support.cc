@@ -12,6 +12,10 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBLOG_EXPORT
+
+#include <config.h>
+
 #include <iostream>
 #include <algorithm>
 #include <string>
@@ -34,7 +38,7 @@ namespace log {
 // of "FATAL".  (Note that the string must be in upper case with no leading
 // of trailing blanks.)  If not present, the default severity passed to the
 // function is returned.
-isc::log::Severity
+ISC_LIBLOG_API isc::log::Severity
 b10LoggerSeverity(isc::log::Severity defseverity) {
     const char* sev_char = getenv("B10_LOGGER_SEVERITY");
     if (sev_char) {
@@ -46,7 +50,7 @@ b10LoggerSeverity(isc::log::Severity defseverity) {
 // Get the debug level.  This is defined by the envornment variable
 // B10_LOGGER_DBGLEVEL.  If not defined, a default value passed to the function
 // is returned.
-int
+ISC_LIBLOG_API int
 b10LoggerDbglevel(int defdbglevel) {
     const char* dbg_char = getenv("B10_LOGGER_DBGLEVEL");
     if (dbg_char) {
@@ -79,14 +83,18 @@ b10LoggerDbglevel(int defdbglevel) {
 // Reset characteristics of the root logger to that set by the environment
 // variables B10_LOGGER_SEVERITY, B10_LOGGER_DBGLEVEL and B10_LOGGER_DESTINATION.
 
-void
+ISC_LIBLOG_API void
 resetUnitTestRootLogger() {
 
     using namespace isc::log;
 
     // Constants: not declared static as this is function is expected to be
     // called once only
+#ifdef _WIN32
+    const string DEVNULL = "NUL";
+#else
     const string DEVNULL = "/dev/null";
+#endif
     const string STDOUT = "stdout";
     const string STDERR = "stderr";
     const string SYSLOG = "syslog";
@@ -147,7 +155,7 @@ resetUnitTestRootLogger() {
 
 
 // Logger Run-Time Initialization via Environment Variables
-void initLogger(isc::log::Severity severity, int dbglevel) {
+ISC_LIBLOG_API void initLogger(isc::log::Severity severity, int dbglevel) {
 
     // Root logger name is defined by the environment variable B10_LOGGER_ROOT.
     // If not present, the name is "bind10".
@@ -161,7 +169,12 @@ void initLogger(isc::log::Severity severity, int dbglevel) {
     const char* localfile = getenv("B10_LOGGER_LOCALMSG");
 
     // Set a directory for creating lockfiles when running tests
+#ifdef _WIN32
+    string vv("B10_LOCKFILE_DIR_FROM_BUILD" TOP_BUILDDIR);
+    _putenv(vv.c_str());
+#else
     setenv("B10_LOCKFILE_DIR_FROM_BUILD", TOP_BUILDDIR, 1);
+#endif
 
     // Initialize logging
     initLogger(root, isc::log::DEBUG, isc::log::MAX_DEBUG_LEVEL, localfile);

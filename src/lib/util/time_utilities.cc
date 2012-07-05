@@ -58,7 +58,7 @@ monthSecs(const int month, const int year) {
 namespace isc {
 namespace util {
 
-string
+ISC_LIBUTIL_API string
 timeToText64(uint64_t value) {
     struct tm tm;
     unsigned int secs;
@@ -115,9 +115,9 @@ timeToText64(uint64_t value) {
 // intended for testing purposes, so, even if it's visible outside of this
 // library, it's not even declared in a header file.
 namespace detail {
-int64_t (*gettimeFunction)() = NULL;
+ISC_LIBUTIL_API int64_t (*gettimeFunction)() = NULL;
 
-int64_t
+ISC_LIBUTIL_API int64_t
 gettimeWrapper() {
     if (gettimeFunction != NULL) {
         return (gettimeFunction());
@@ -145,7 +145,7 @@ gettimeWrapper() {
 }
 }
 
-string
+ISC_LIBUTIL_API string
 timeToText32(const uint32_t value) {
     // We first adjust the time to the closest epoch based on the current time.
     // Note that the following variables must be signed in order to handle
@@ -175,7 +175,7 @@ checkRange(const int min, const int max, const int value,
 }
 }
 
-uint64_t
+ISC_LIBUTIL_API uint64_t
 timeFromText64(const string& time_txt) {
     // Confirm the source only consists digits.  sscanf() allows some
     // minor exceptions.
@@ -217,7 +217,7 @@ timeFromText64(const string& time_txt) {
     return (timeval);
 }
 
-uint32_t
+ISC_LIBUTIL_API uint32_t
 timeFromText32(const string& time_txt) {
     // The implicit conversion from uint64_t to uint32_t should just work here,
     // because we only need to drop higher 32 bits.

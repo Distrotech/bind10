@@ -70,3 +70,11 @@ typedef int ssize_t;
 #include <windows.h>
 
 /* #pragma warning(disable: 4512) */
+
+#ifdef ERROR
+#undef ERROR
+#endif
+
+#ifdef UNICODE
+#undef UNICODE
+#endif

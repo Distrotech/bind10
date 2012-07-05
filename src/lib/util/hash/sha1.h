@@ -81,8 +81,8 @@ typedef struct ISC_LIBUTIL_API SHA1Context
  *  Function Prototypes
  */
 extern ISC_LIBUTIL_API int SHA1Reset(SHA1Context *);
-extern ISC_LIBUTIL_APIint SHA1Input(SHA1Context *, const uint8_t *bytes,
-                                    unsigned int bytecount);
+extern ISC_LIBUTIL_API int SHA1Input(SHA1Context *, const uint8_t *bytes,
+                                     unsigned int bytecount);
 extern ISC_LIBUTIL_API int SHA1FinalBits(SHA1Context *, const uint8_t bits,
                                          unsigned int bitcount);
 extern ISC_LIBUTIL_API int SHA1Result(SHA1Context *,

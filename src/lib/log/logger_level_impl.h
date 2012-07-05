@@ -16,6 +16,7 @@
 #define __LOGGER_LEVEL_IMPL_H
 
 #include <log4cplus/logger.h>
+#include <log/lib.h>
 #include <log/logger_level.h>
 
 namespace isc {
@@ -62,7 +63,7 @@ namespace log {
 /// of logging levels between log4cplus and BIND 10, and to register those
 /// levels with log4cplus.
 
-class LoggerLevelImpl {
+class ISC_LIBLOG_API LoggerLevelImpl {
 public:
 
     /// \brief Convert BIND 10 level to log4cplus logging level

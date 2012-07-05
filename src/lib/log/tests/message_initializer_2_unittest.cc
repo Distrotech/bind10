@@ -41,7 +41,7 @@ TEST(MessageInitializerTest2, MessageLoadTest) {
 
     // Note: Not all systems have EXPECT_DEATH.  As it is a macro we can just
     // test for its presence and bypass the test if not available.
-#ifdef EXPECT_DEATH
+#if defined(EXPECT_DEATH) && !defined(NO_EXPECT_DEATH)
     // Adding one more should take us over the limit.
     EXPECT_DEATH({
         isc::util::unittests::dontCreateCoreDumps();

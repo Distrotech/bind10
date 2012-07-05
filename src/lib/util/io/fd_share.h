@@ -27,8 +27,8 @@ namespace isc {
 namespace util {
 namespace io {
 
-ISC_LIBUTIL_IO_API const int FD_SYSTEM_ERROR = -2;
-ISC_LIBUTIL_IO_API const int FD_OTHER_ERROR = -1;
+const int FD_SYSTEM_ERROR = -2;
+const int FD_OTHER_ERROR = -1;
 
 /**
  * \short Receives a file descriptor.

@@ -21,7 +21,7 @@
 #ifdef ISC_LIBUTIL_UNITTESTS_EXPORT
 #define ISC_LIBUTIL_UNITTESTS_API __declspec(dllexport)
 #else
-#defineISC_LIBUTIL_UNITTESTS_API __declspec(dllimport)
+#define ISC_LIBUTIL_UNITTESTS_API __declspec(dllimport)
 #endif
 #endif
 

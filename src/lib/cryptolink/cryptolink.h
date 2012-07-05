@@ -92,7 +92,7 @@ public:
 };
 
 /// Forward declaration for pimpl
-class ISC_LIBCRYPTOLINK_API CryptoLinkImpl;
+class CryptoLinkImpl;
 
 /// \brief Singleton entry point and factory class
 ///

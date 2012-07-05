@@ -73,7 +73,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libutil", "libutil\libutil.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libcryptolink", "libcryptolink\libcryptolink.vcxproj", "{13215E3E-E75D-463D-A0EF-93A1C9A20896}"
 	ProjectSection(ProjectDependencies) = postProject
-		{2E64F6CC-3AD9-4DA7-8E05-ABBB83F9AFC4} = {2E64F6CC-3AD9-4DA7-8E05-ABBB83F9AFC4}
+		{7D04222B-643C-446C-A2B8-93AF74A86246} = {7D04222B-643C-446C-A2B8-93AF74A86246}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libdns++", "libdns++\libdns++.vcxproj", "{F6E728D3-A0B2-40F6-9B91-7D4474D778F3}"
@@ -96,7 +96,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libutil_tests", "libutil_te
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libutil_unittests", "libutil_unittests\libutil_unittests.vcxproj", "{2844FDFB-A0A1-4FA4-A654-15D69CC717DD}"
 	ProjectSection(ProjectDependencies) = postProject
-		{564B0ADE-76A4-4833-9610-8DEEA6A15423} = {564B0ADE-76A4-4833-9610-8DEEA6A15423}
+		{7D04222B-643C-446C-A2B8-93AF74A86246} = {7D04222B-643C-446C-A2B8-93AF74A86246}
+		{8F120666-1A69-4506-8546-0F665E80FFB7} = {8F120666-1A69-4506-8546-0F665E80FFB7}
+		{AC4806D1-C2CC-444B-8F0D-209851A969D2} = {AC4806D1-C2CC-444B-8F0D-209851A969D2}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libcryptolink_tests", "libcryptolink_tests\libcryptolink_tests.vcxproj", "{8412D26C-6C2B-4FCC-ABB4-E9509E833951}"
@@ -154,7 +156,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libcfgclient_tests", "libcf
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "liblog", "liblog\liblog.vcxproj", "{AEF3DFFE-B566-4E6A-B299-B59B81022C06}"
 	ProjectSection(ProjectDependencies) = postProject
-		{2844FDFB-A0A1-4FA4-A654-15D69CC717DD} = {2844FDFB-A0A1-4FA4-A654-15D69CC717DD}
+		{7D04222B-643C-446C-A2B8-93AF74A86246} = {7D04222B-643C-446C-A2B8-93AF74A86246}
+		{8F120666-1A69-4506-8546-0F665E80FFB7} = {8F120666-1A69-4506-8546-0F665E80FFB7}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "liblog_tests", "liblog_tests\liblog_tests.vcxproj", "{9F69DE07-D285-4B5C-8528-DF975C59ED3B}"
@@ -568,6 +571,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libstatistics_tests", "libs
 		{AEF3DFFE-B566-4E6A-B299-B59B81022C06} = {AEF3DFFE-B566-4E6A-B299-B59B81022C06}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pydutil_unittests", "pydutil_unittests\pydutil_unittests.vcxproj", "{08075CA0-4E2C-451E-BAA6-E422353A5FC1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8F120666-1A69-4506-8546-0F665E80FFB7} = {8F120666-1A69-4506-8546-0F665E80FFB7}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -838,6 +846,10 @@ Global
 		{2D4553C4-1AA7-4524-ABC0-6FDF4EEE6F2E}.Debug|Win32.Build.0 = Debug|Win32
 		{2D4553C4-1AA7-4524-ABC0-6FDF4EEE6F2E}.Release|Win32.ActiveCfg = Release|Win32
 		{2D4553C4-1AA7-4524-ABC0-6FDF4EEE6F2E}.Release|Win32.Build.0 = Release|Win32
+		{08075CA0-4E2C-451E-BAA6-E422353A5FC1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{08075CA0-4E2C-451E-BAA6-E422353A5FC1}.Debug|Win32.Build.0 = Debug|Win32
+		{08075CA0-4E2C-451E-BAA6-E422353A5FC1}.Release|Win32.ActiveCfg = Release|Win32
+		{08075CA0-4E2C-451E-BAA6-E422353A5FC1}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

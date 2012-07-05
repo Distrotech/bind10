@@ -12,12 +12,20 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBLOG_EXPORT
+
+#include <config.h>
+
 #include <algorithm>
 #include <string.h>
 #include <iostream>
 #include <boost/lexical_cast.hpp>
 
 #include <log4cplus/logger.h>
+
+#ifdef _WIN32
+#define strncasecmp _strnicmp
+#endif
 
 #include <log/logger_level.h>
 #include <log/logger_level_impl.h>

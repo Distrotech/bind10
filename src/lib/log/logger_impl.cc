@@ -12,6 +12,10 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE
 
+#define ISC_LIBLOG_EXPORT
+
+#include <config.h>
+
 #include <iostream>
 #include <iomanip>
 #include <algorithm>

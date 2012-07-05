@@ -16,11 +16,12 @@
 #define __LOGGER_MANAGER_H
 
 #include "exceptions/exceptions.h"
+#include <log/lib.h>
 #include <log/logger_specification.h>
 
 // Generated if, when updating the logging specification, an unknown
 // destination is encountered.
-class UnknownLoggingDestination : public isc::Exception {
+class ISC_LIBLOG_API UnknownLoggingDestination : public isc::Exception {
 public:
     UnknownLoggingDestination(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what)
@@ -40,7 +41,7 @@ class LoggerManagerImpl;
 /// To isolate the underlying implementation from basic processing, the
 /// LoggerManager is implemented using the "pimpl" idiom.
 
-class LoggerManager {
+class ISC_LIBLOG_API LoggerManager {
 public:
     /// \brief Constructor
     LoggerManager();

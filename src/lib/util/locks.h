@@ -42,13 +42,13 @@ class ISC_LIBUTIL_API upgradable_mutex {
 };
 
 template <typename T>
-class ISC_LIBUTIL_API sharable_lock {
+class sharable_lock {
 public:
     sharable_lock(T) { }
 };
 
 template <typename T>
-class ISC_LIBUTIL_API scoped_lock {
+class scoped_lock {
 public:
     scoped_lock(T) { }
 

@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{D09B618B-D0E4-468D-A4BD-E204B4344C18}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>libserver_common_tests</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(Configuration)\</OutDir>
+    <TargetName>run_unittests</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(Configuration)\</OutDir>
+    <TargetName>run_unittests</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;BIND10HOME="%BIND10HOME%";_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\server_common;..\..\..\ext\asio;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_io.lib;libutil_unittests.lib;liblog.lib;libcryptolink.lib;libdns++.lib;libcc.lib;libcfgclient.lib;libfake_session.lib;libasiolink.lib;libasiodns.lib;libacl.lib;libserver_common.lib;log4cplusSD.lib;botan.lib;gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\libutil_io\$(Configuration);..\libutil_unittests\$(Configuration);..\liblog\$(Configuration);..\libcryptolink\$(Configuration);..\libdns++\$(Configuration);..\libcc\$(Configuration);..\libcfgclient\$(Configuration);..\libfake_session\$(Configuration);..\libasiolink\$(Configuration);..\libasiodns\$(Configuration);..\libacl\$(Configuration);..\libserver_common\$(Configuration);..\..\..\..\log4cplus\md10\$(Configuration);..\..\..\..\botan\md10\$(Configuration);..\..\..\..\gtest\md10\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PreBuildEvent>
+      <Command>cd ..\..\..\src\lib\server_common\tests
+copy data_path.h.win32 data_path.h
+</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;BIND10HOME="%BIND10HOME%";NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\server_common;..\..\..\ext\asio;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_io.lib;libutil_unittests.lib;liblog.lib;libcryptolink.lib;libdns++.lib;libcc.lib;libcfgclient.lib;libfake_session.lib;libasiolink.lib;libasiodns.lib;libacl.lib;libserver_common.lib;log4cplusS.lib;botan.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\libutil_io\$(Configuration);..\libutil_unittests\$(Configuration);..\liblog\$(Configuration);..\libcryptolink\$(Configuration);..\libdns++\$(Configuration);..\libcc\$(Configuration);..\libcfgclient\$(Configuration);..\libfake_session\$(Configuration);..\libasiolink\$(Configuration);..\libasiodns\$(Configuration);..\libacl\$(Configuration);..\libserver_common\$(Configuration);..\..\..\..\log4cplus\md10\$(Configuration);..\..\..\..\botan\md10\$(Configuration);..\..\..\..\gtest\md10\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PreBuildEvent>
+      <Command>cd ..\..\..\src\lib\server_common\tests
+copy data_path.h.win32 data_path.h
+</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\lib\server_common\tests\client_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\server_common\tests\keyring_test.cc" />
+    <ClCompile Include="..\..\..\src\lib\server_common\tests\run_unittests.cc" />
+    <ClCompile Include="..\..\..\src\lib\server_common\tests\socket_requestor_test.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\lib\server_common\tests\data_path.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

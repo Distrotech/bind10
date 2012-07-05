@@ -29,7 +29,7 @@ namespace isc {
 namespace util {
 namespace io {
 
-bool
+ISC_LIBUTIL_IO_API bool
 write_data(const int fd, const void *buffer_v, const size_t length) {
     const unsigned char* buffer(static_cast<const unsigned char*>(buffer_v));
     size_t remaining = length;  // Amount remaining to be written
@@ -60,7 +60,7 @@ write_data(const int fd, const void *buffer_v, const size_t length) {
     return (true);
 }
 
-ssize_t
+ISC_LIBUTIL_IO_API ssize_t
 read_data(const int fd, void *buffer_v, const size_t length) {
     unsigned char* buffer(static_cast<unsigned char*>(buffer_v));
     size_t remaining = length;   // Amount remaining to be read
@@ -87,7 +87,7 @@ read_data(const int fd, void *buffer_v, const size_t length) {
     return (static_cast<ssize_t>(length - remaining));
 }
 
-bool
+ISC_LIBUTIL_IO_API bool
 send_data(
 #ifdef _WIN32
           const SOCKET fd,
@@ -124,7 +124,7 @@ send_data(
     return (true);
 }
 
-ssize_t
+ISC_LIBUTIL_IO_API ssize_t
 recv_data(
 #ifdef _WIN32
           const SOCKET fd,

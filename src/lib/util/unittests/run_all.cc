@@ -27,7 +27,7 @@ namespace isc {
 namespace util {
 namespace unittests {
 
-int
+ISC_LIBUTIL_UNITTESTS_API int
 run_all() {
     int ret = 0;
 

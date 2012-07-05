@@ -29,7 +29,7 @@ namespace isc {
 namespace util {
 namespace unittests {
 
-void
+ISC_LIBUTIL_UNITTESTS_API void
 dontCreateCoreDumps() {
 #ifndef _WIN32
     const rlimit core_limit = {0, 0};

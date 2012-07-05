@@ -12,6 +12,10 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBLOG_EXPORT
+
+#include <config.h>
+
 #include <algorithm>
 #include <iostream>
 
@@ -80,9 +84,11 @@ LoggerManagerImpl::processSpecification(const LoggerSpecification& spec) {
                 createFileAppender(logger, *i);
                 break;
 
+#ifndef _WIN32
             case OutputOption::DEST_SYSLOG:
                 createSyslogAppender(logger, *i);
                 break;
+#endif
 
             default:
                 // Not a valid destination.  As we are in the middle of updating
@@ -138,10 +144,12 @@ void
 LoggerManagerImpl::createSyslogAppender(log4cplus::Logger& logger,
                                          const OutputOption& opt)
 {
+#ifndef _WIN32
     log4cplus::SharedAppenderPtr syslogapp(
         new log4cplus::SysLogAppender(opt.facility));
     setSyslogAppenderLayout(syslogapp);
     logger.addAppender(syslogapp);
+#endif
 }
 
 

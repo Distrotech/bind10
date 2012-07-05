@@ -115,7 +115,7 @@ TEST_F(FormatterTest, mismatchedPlaceholders) {
                  arg("argument").arg("missing"),
                  isc::log::MismatchedPlaceholders);
 
-#ifdef EXPECT_DEATH
+#if defined(EXPECT_DEATH) && !defined(NO_EXPECT_DEATH)
     // Likewise, if there's a redundant placeholder (or missing argument), the
     // check detects it and aborts the program.  Due to the restriction of the
     // current implementation, it doesn't throw.

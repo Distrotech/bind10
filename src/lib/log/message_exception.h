@@ -16,6 +16,7 @@
 #define __MESSAGE_EXCEPTION_H
 
 #include <exceptions/exceptions.h>
+#include <log/lib.h>
 #include <log/message_types.h>
 
 #include <stdexcept>
@@ -33,7 +34,7 @@ namespace log {
 /// code and its arguments to be encapsulated in an exception and thrown
 /// up the stack.
 
-class MessageException : public isc::Exception {
+class ISC_LIBLOG_API MessageException : public isc::Exception {
 public:
 
     /// \brief Constructor

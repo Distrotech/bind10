@@ -49,35 +49,20 @@ getSALength(const struct sockaddr& sa) {
 // Lower level C-APIs require conversion between various variants of
 // sockaddr's, which is not friendly with C++.  The following templates
 // are a shortcut of common workaround conversion in such cases.
-#ifndef _MSC_VER
-template <typename SAType>
-ISC_LIBUTIL_IO_API const struct sockaddr*
-convertSockAddr(const SAType* sa) {
+
+template <typename DSAType, typename SSAType>
+const DSAType*
+convertSockAddr(const SSAType* sa) {
     const void* p = sa;
-    return (static_cast<const struct sockaddr*>(p));
+    return (static_cast<const DSAType*>(p));
 }
 
-template <typename SAType>
-ISC_LIBUTIL_IO_API const SAType*
-convertSockAddr(const struct sockaddr* sa) {
-    const void* p = sa;
-    return (static_cast<const SAType*>(p));
-}
-
-template <typename SAType>
-ISC_LIBUTIL_IO_API struct sockaddr*
-convertSockAddr(SAType* sa) {
+template <typename DSAType, typename SSAType>
+DSAType*
+convertSockAddr(SSAType* sa) {
     void* p = sa;
-    return (static_cast<struct sockaddr*>(p));
+    return (static_cast<DSAType*>(p));
 }
-
-template <typename SAType>
-ISC_LIBUTIL_IO_API SAType*
-convertSockAddr(struct sockaddr* sa) {
-    void* p = sa;
-    return (static_cast<SAType*>(p));
-}
-#endif
 
 }
 }
