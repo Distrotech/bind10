@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
 #include <algorithm>
 #include <cstdlib>
 #include <string>
@@ -40,6 +42,11 @@
 #include <asiolink/io_endpoint.h>
 #include <asiolink/io_service.h>
 #include <asiodns/io_fetch.h>
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4351 4355)
+#endif
 
 using namespace asio;
 using namespace isc::dns;
@@ -741,3 +748,7 @@ TEST_F(IOFetchTest, TcpSendReceive8192ShortSend) {
 
 } // namespace asiodns
 } // namespace isc
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

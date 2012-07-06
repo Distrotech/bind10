@@ -14,6 +14,10 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#endif
+
 #include <gtest/gtest.h>
 
 #include <config/tests/fake_session.h>

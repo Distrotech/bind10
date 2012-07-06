@@ -18,13 +18,16 @@
 // IMPORTANT NOTE: only very few ASIO headers files can be included in
 // this file.  In particular, asio.hpp should never be included here.
 // See the description of the namespace below.
+#ifndef _WIN32
 #include <unistd.h>             // for some network system calls
+#endif
 
 #include <functional>
 #include <string>
 
 #include <exceptions/exceptions.h>
 
+#include <asiolink/lib.h>
 #include <asiolink/io_endpoint.h>
 #include <asiolink/io_socket.h>
 
@@ -43,7 +46,7 @@ namespace asiolink {
 /// It only provides a minimal level of support that is necessary for
 /// the current implementation of the authoritative server.
 /// A future version of this class will definitely support more.
-class IOMessage {
+class ISC_LIBASIOLINK_API IOMessage {
     ///
     /// \name Constructors and Destructor
     ///

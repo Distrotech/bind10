@@ -13,6 +13,8 @@
 // NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
 // WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBCONFIG_EXPORT
+
 #include <config/module_spec.h>
 
 #include <sstream>
@@ -20,7 +22,17 @@
 #include <fstream>
 #include <cerrno>
 
+#ifdef _WIN32
+#include <time.h>
+#include <strptime.h>
+#endif
+
 #include <boost/foreach.hpp>
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4290)
+#endif
 
 // todo: add more context to thrown ModuleSpecErrors?
 
@@ -498,3 +510,7 @@ ModuleSpec::validateSpecList(ConstElementPtr spec, ConstElementPtr data,
 
 }
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

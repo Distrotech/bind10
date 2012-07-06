@@ -15,8 +15,6 @@
 #ifndef __IP_CHECK_H
 #define __IP_CHECK_H
 
-#include <sys/socket.h>
-
 #include <algorithm>
 #include <cassert>
 #include <functional>
@@ -25,10 +23,15 @@
 #include <boost/static_assert.hpp>
 
 #include <stdint.h>
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <arpa/inet.h>
 #include <sys/socket.h> // for AF_INET/AF_INET6
 #include <netinet/in.h>
+#endif
 
+#include <acl/lib.h>
 #include <acl/check.h>
 #include <exceptions/exceptions.h>
 #include <util/strutil.h>
@@ -57,7 +60,7 @@ namespace internal {
 ///
 /// \exception OutOfRange prefixlen is too large for the data type.
 
-uint8_t createMask(size_t prefixlen);
+ISC_LIBACL_API uint8_t createMask(size_t prefixlen);
 
 /// \brief Split IP Address Prefix
 ///
@@ -78,7 +81,7 @@ uint8_t createMask(size_t prefixlen);
 ///
 /// \exception InvalidParameter Address prefix not of the expected syntax
 
-std::pair<std::string, int>
+ISC_LIBACL_API std::pair<std::string, int>
 splitIPAddress(const std::string& ipprefix);
 
 } // namespace internal
@@ -108,7 +111,7 @@ splitIPAddress(const std::string& ipprefix);
 ///
 /// In future, we may introduce the default constructor to further improve
 /// reusability.
-struct IPAddress {
+struct ISC_LIBACL_API IPAddress {
     /// The constructor from socket address structure.
     ///
     /// This constructor set up the internal data based on the actual type

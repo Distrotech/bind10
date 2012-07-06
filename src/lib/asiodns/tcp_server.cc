@@ -12,11 +12,18 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#include <config.h>
+#define ISC_LIBASIODNS_EXPORT
 
+#include <config.h>
+#include <stdint.h>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <unistd.h>             // for some IPC/network system calls
 #include <netinet/in.h>
 #include <sys/socket.h>
+#endif
 #include <errno.h>
 
 #include <boost/shared_array.hpp>
@@ -47,7 +54,13 @@ namespace asiodns {
 /// The following functions implement the \c TCPServer class.
 ///
 /// The constructor
-TCPServer::TCPServer(io_service& io_service, int fd, int af,
+TCPServer::TCPServer(io_service& io_service,
+#ifdef _WIN32
+                     SOCKET fd,
+#else
+                     int fd,
+#endif
+                     int af,
                      const SimpleCallback* checkin,
                      const DNSLookup* lookup,
                      const DNSAnswer* answer) :

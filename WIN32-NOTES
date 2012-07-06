@@ -8,7 +8,8 @@ What is needed:
  - Visual Studio C++ (versions 2008 and 2010 were tested,
   (note older versions could fail to correctly compile,
   cf. C4373 warning), 2010 express and 64 bit support
-  from the 7.1 SDK work too)
+  from the 7.1 SDK work too. 2012 RC can't compile gtest
+  with its standard environment...)
 
  - python >= 3.1 (I got Cpython 3.2 MSI from python.org,
   note the pre-built python can give C++ runtime issue with
@@ -46,21 +47,32 @@ What is needed:
 
 Environment variables (with examples):
 
- - BOOST -> C:\Program Files\boost\boost_1_44
+ - BOOST -> C:\Program Files (x86)\boost\boost_1_47
 
  - BIND10HOME -> c:/cygwin/home/dupont/bind10
 
 How to compile google test:
 
  - remove the /MD -> /MT line in the CMakeLists.txt, use cmake
+  (in theory but it doesn't work for me)
 
- - *or* open the solution gtest-md in msvc (please note the rights
+ - *or* open the solution gtest[-md] in msvc (please note the rights
   of files in this directory must be fixed before)
+
+ - change the project to build a DLL, define GTEST_CREATE_SHARED_LIBRARY
+  to 1 (cf. the README), put /W4 for Debug, etc
 
  - please remember the same Visual Studio version must be used
   for gtest and bind10
 
- - msvc gives the gtestd.lib (in place of gtest.lib) for the debug version
+ - msvc gives the gtestd.dll (in place of gtest.dll) for the debug version
+  (a good thing when both Release and Debug are in path)
+
+How to compile botan:
+
+ - works well with a (second) Python in version 2.x installed
+
+ - modify the Debug (--enable-debug) Makefile to produce a botand.{dll,lib}
 
 How to recompile python:
 
@@ -91,19 +103,20 @@ How to recompile python:
 
 Where I put things (hardwired paths):
 
+ - previous versions use md10 or md9 for v100
+
  - <home>\bind10 for bind10 (BIND10HOME environment variable)
 
  - <home>\gtest\include
 
- - <home>\gtest\md10\{Debug,Release} gtest{d,}.lib and vc100.[ip]db, or,
-   <home>\gtest\md9\{Debug,Release} gtest{d,}.lib and vc90.[ip]db
+ - <home>\gtest\v100\{Debug,Release} gtest{d,}.{dll,lib} and vc100.*
 
- - <home>\botan\include and <home>\botan\md{9,10}\{Debug,Release}
+ - <home>\botan\include and <home>\botan\v100\{Debug,Release}
    (--disable-shared to get static libs, no DLL)
 
- - <home>\log4cplus\include and <home>\log4cplus\md{9,10}\{Debug,Release}
+ - <home>\log4cplus\include and <home>\log4cplus\v100\{Debug,Release}
 
- - "C:\Program Files\boost\boost_1_44" (the include and
+ - "C:\Program Files (x86)\boost\boost_1_47" (the include and
   sometimes the libraries (in lib, called by the auto_link) too,
   BOOST environment variable)
 
@@ -115,8 +128,8 @@ Where I put things (hardwired paths):
 
 How to compile:
 
- - open win32build\VS2010\bind10.sln file with Visual Studio 2010, or,
-   open win32build\VS2008\bind10.sln file with Visual Studio 2008
+ - open win32build\VS2010\bind10.sln file with Visual Studio 2010
+   (older win32build\VS2008\bind10.sln file with Visual Studio 2008)
 
  - fix the paths (\ becomes \\\ in grep/ed/etc)
 
@@ -131,33 +144,47 @@ Random notes (for porting new code):
  - cmake?
 
  - ifdefs: _WIN32 and _MSC_VER
- - for(int i; ... -very-often-> for(unsigned int i; ...
  - *no* <unistd.h> (or network includes)
- - <sys/time.h> -> <time.h>
+ - <sys/time.h> -> <time.h> alternative
  - missing general defines -> include <config.h> in front
  - missing less general defines -> conditionally include <winsock2.h>
  - missing TCP/IP defines -> conditionally include <ws2tcpip.h>
-  and perhaps <mswsock> too *before* asio
+  and perhaps <mswsock> too *before* asio (SIO_UDP_CONNRESET,
+  a Microsoft extension, is in mswsock for instance)
  - integer posix types -> include <stdint.h> (or <cstdint>)
- - "this" used too soon -> move to body
- - "=" with contants: standard private C4512 declaration
+ - assignment with contants: standard private C4512 declaration
+  (to be revised into derived from notassignable)
  - reuse_address is different in Windows
  - missing namespace:
   * error_code -> asio::error_code (both type and function)
   * shared_ptr -> boost::shared_ptr
+   (all should be fixed now)
  - *no* PF_UNIX (aka asio::local) sockets
  - *no* fork() (but can use threads)
  - unused variable in catch: simply remove it
  - sleep() or nanosleep() -> Sleep()
  - gettimeofday() -> GetSystemTimeAsFileTime() - SystemTimeToFileTime(epoch)
  - underscored function names: _getid, _read, _write (caution: convert
-  the handle before), 
- - defined misc names: min, max, IN, ERROR, NOERROR
+  the file handle before, for sockets WSAXxx calls), 
+ - defined misc names: IN, ERROR, NOERROR (done in config.h but used
+  in other system includes... undefining UNICODE can help too)
  - different names: close -> closesocket (and error is INVALID_SOCKET
   not < 0), errno -> WSAGetLastError()
- - different declarations: send, recv, 
+  (can use the asio socket_type too?)
+ - different declarations: send, recv, ...
  - WSAStartup/WSACleanup in main()
 
-Test status: (unittests failures)
- b10-dhcp6: can't work as Windows has no loopback interface...
-
+DLL specific:
+ - add dllmain.cc (it doesn't seem to be required anyway?)
+ - standard declaration trick in lib.h, included in all headers
+ - ISC_XXX_API for exported classes in headers, exported functions
+  and data (usually with extern for data) in headers and code files
+ - ISC_XXX_EXPORT at the top of all code files
+ - nothing for the templates, already done for Python modules
+ - can be required to instantiate classes (cf. util/buffer.cc)
+ - DLLs should go to .../win32build/VSxxxx/{Release,Debug}
+  (greatly simplify the PATH environment variable, BTW settable on the
+   Computer property, Advanced stuff)
+ - Release and Debug DLLs MUST get different names (put a final 'd' on
+  Debug) or the system runtime will select the wrong DLL!
+ - define GTEST_LINKED_AS_SHARED_LIBRARY=1 for gtest DLL users

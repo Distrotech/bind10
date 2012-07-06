@@ -20,13 +20,14 @@
 #include <string>
 
 #include <exceptions/exceptions.h>
+#include <xfr/lib.h>
 
 namespace isc {
 namespace xfr {
 
 struct XfroutClientImpl;
 
-class XfroutError: public Exception {
+class ISC_LIBXFR_API XfroutError: public Exception {
 public:
     XfroutError(const char *file, size_t line, const char *what):
         isc::Exception(file, line, what) {}
@@ -37,7 +38,7 @@ public:
 ///
 /// The intended primary usage of abstraction is to allow tests for the
 /// user class of XfroutClient without requiring actual communication.
-class AbstractXfroutClient {
+class ISC_LIBXFR_API AbstractXfroutClient {
     ///
     /// \name Constructors, Assignment Operator and Destructor.
     ///
@@ -60,11 +61,17 @@ public:
     //@}
     virtual void connect() = 0;
     virtual void disconnect() = 0;
-    virtual int sendXfroutRequestInfo(int tcp_sock, const void* msg_data,
+    virtual int sendXfroutRequestInfo(
+#ifdef _WIN32
+                                      SOCKET tcp_sock,
+#else
+                                      int tcp_sock,
+#endif
+                                      const void* msg_data,
                                       uint16_t msg_len) = 0;
 };
 
-class XfroutClient : public AbstractXfroutClient {
+class ISC_LIBXFR_API XfroutClient : public AbstractXfroutClient {
 public:
     XfroutClient(const std::string& file);
     ~XfroutClient();
@@ -75,7 +82,13 @@ private:
 public:
     virtual void connect();
     virtual void disconnect();
-    virtual int sendXfroutRequestInfo(int tcp_sock, const void* msg_data,
+    virtual int sendXfroutRequestInfo(
+#ifdef _WIN32
+                                      SOCKET tcp_sock,
+#else
+                                      int tcp_sock,
+#endif
+                                      const void* msg_data,
                                       uint16_t msg_len);
 private:
     XfroutClientImpl* impl_;

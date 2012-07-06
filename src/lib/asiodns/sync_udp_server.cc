@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBASIODNS_EXPORT
+
 #include <config.h>
 
 #include <asio.hpp>
@@ -26,10 +28,14 @@
 
 #include <boost/bind.hpp>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>             // for some IPC/network system calls
+#endif
 #include <errno.h>
 
 using namespace std;
@@ -38,7 +44,12 @@ using namespace isc::asiolink;
 namespace isc {
 namespace asiodns {
 
-SyncUDPServer::SyncUDPServer(asio::io_service& io_service, const int fd,
+SyncUDPServer::SyncUDPServer(asio::io_service& io_service,
+#ifdef _WIN32
+                             const SOCKET fd,
+#else
+                             const int fd,
+#endif
                              const int af, asiolink::SimpleCallback* checkin,
                              DNSLookup* lookup, DNSAnswer* answer) :
     output_buffer_(new isc::util::OutputBuffer(0)),

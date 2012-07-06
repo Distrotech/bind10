@@ -18,7 +18,9 @@
 // IMPORTANT NOTE: only very few ASIO headers files can be included in
 // this file.  In particular, asio.hpp should never be included here.
 // See the description of the namespace below.
+#ifndef _WIN32
 #include <unistd.h>             // for some network system calls
+#endif
 #include <stdint.h>             // for uint32_t
 #include <asio/ip/address.hpp>
 
@@ -26,6 +28,7 @@
 #include <string>
 
 #include <exceptions/exceptions.h>
+#include <asiolink/lib.h>
 
 namespace isc {
 namespace asiolink {
@@ -40,7 +43,7 @@ namespace asiolink {
 /// agnostic)
 ///
 /// This class is a wrapper for the ASIO \c ip::address class.
-class IOAddress {
+class ISC_LIBASIOLINK_API IOAddress {
 public:
     ///
     /// \name Constructors and Destructor

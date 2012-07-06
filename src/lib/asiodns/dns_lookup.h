@@ -16,6 +16,7 @@
 #define __ASIOLINK_DNS_LOOKUP_H 1
 
 #include <asiolink/io_message.h>
+#include <asiodns/lib.h>
 #include <asiodns/dns_server.h>
 #include <dns/message.h>
 #include <util/buffer.h>
@@ -36,7 +37,7 @@ namespace asiodns {
 /// a DNS query (e.g., from authoritative data source, cache, or upstream
 /// query).  After it has run, the OutputBuffer object passed to it
 /// should contain the answer to the query, in an internal representation.
-class DNSLookup {
+class ISC_LIBASIODNS_API DNSLookup {
     ///
     /// \name Constructors and Destructor
     ///

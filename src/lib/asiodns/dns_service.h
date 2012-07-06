@@ -20,11 +20,13 @@
 #include <asiolink/io_service.h>
 #include <asiolink/simple_callback.h>
 
+#include <asiodns/lib.h>
+
 namespace isc {
 namespace asiodns {
 
-class DNSLookup;
-class DNSAnswer;
+class ISC_LIBASIODNS_API DNSLookup;
+class ISC_LIBASIODNS_API DNSAnswer;
 class DNSServiceImpl;
 
 /// \brief A base class for common \c DNSService interfaces.
@@ -38,7 +40,7 @@ class DNSServiceImpl;
 /// For this reason most of the detailed description are given in the
 /// \c DNSService class.  See that for further details of specific methods
 /// and class behaviors.
-class DNSServiceBase {
+class ISC_LIBASIODNS_API DNSServiceBase {
 protected:
     /// \brief Default constructor.
     ///
@@ -79,9 +81,15 @@ public:
     /// \brief The destructor.
     virtual ~DNSServiceBase() {}
 
+#ifdef _WIN32
+    virtual void addServerTCPFromFD(SOCKET fd, int af) = 0;
+    virtual void addServerUDPFromFD(SOCKET fd, int af,
+                                    ServerFlag options = SERVER_DEFAULT) = 0;
+#else
     virtual void addServerTCPFromFD(int fd, int af) = 0;
     virtual void addServerUDPFromFD(int fd, int af,
                                     ServerFlag options = SERVER_DEFAULT) = 0;
+#endif
     virtual void clearServers() = 0;
 
     virtual asiolink::IOService& getIOService() = 0;
@@ -94,7 +102,7 @@ public:
 /// logic that is shared between the authoritative and the recursive
 /// server implementations. As such, it handles asio, including config
 /// updates (through the 'Checkinprovider'), and listening sockets.
-class DNSService : public DNSServiceBase {
+class ISC_LIBASIODNS_API DNSService : public DNSServiceBase {
     ///
     /// \name Constructors and Destructor
     ///
@@ -148,7 +156,11 @@ public:
     /// \throw isc::InvalidParameter if af is neither AF_INET nor AF_INET6.
     /// \throw isc::asiolink::IOError when a low-level error happens, like the
     ///     fd is not a valid descriptor or it can't be listened on.
+#ifdef _WIN32
+    virtual void addServerTCPFromFD(SOCKET fd, int af);
+#else
     virtual void addServerTCPFromFD(int fd, int af);
+#endif
 
     /// \brief Add another UDP server to the service from already opened
     ///    file descriptor
@@ -168,8 +180,13 @@ public:
     ///     or the given \c options include an unsupported or invalid value.
     /// \throw isc::asiolink::IOError when a low-level error happens, like the
     ///     fd is not a valid descriptor or it can't be listened on.
+#ifdef _WIN32
+    virtual void addServerUDPFromFD(SOCKET fd, int af,
+                                    ServerFlag options = SERVER_DEFAULT);
+#else
     virtual void addServerUDPFromFD(int fd, int af,
                                     ServerFlag options = SERVER_DEFAULT);
+#endif
 
     /// \brief Remove all servers from the service
     void clearServers();

@@ -17,6 +17,7 @@
 #define __IO_ERROR_H
 
 #include <exceptions/exceptions.h>
+#include <asiolink/lib.h>
 
 namespace isc {
 namespace asiolink {
@@ -24,7 +25,7 @@ namespace asiolink {
 /// \brief An exception that is thrown if an error occurs within the IO
 /// module.  This is mainly intended to be a wrapper exception class for
 /// ASIO specific exceptions.
-class IOError : public isc::Exception {
+class ISC_LIBASIOLINK_API IOError : public isc::Exception {
 public:
     IOError(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}

@@ -15,9 +15,13 @@
 #ifndef __ACL_TEST_SOCKADDR_H
 #define __ACL_TEST_SOCKADDR_H 1
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#endif
 #include <string.h>
 
 #include <exceptions/exceptions.h>

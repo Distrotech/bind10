@@ -20,14 +20,17 @@
 #endif
 
 #include <log/dummylog.h>
+#ifndef _WIN32
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>             // for some IPC/network system calls
+#endif
 
 #include <cstddef>
 
 #include <config.h>
 
+#include <asiolink/lib.h>
 #include <asiolink/io_asio_socket.h>
 #include <asiolink/io_endpoint.h>
 #include <asiolink/io_service.h>
@@ -71,7 +74,12 @@ public:
     virtual ~UDPSocket();
 
     /// \brief Return file descriptor of underlying socket
-    virtual int getNative() const {
+#ifdef _WIN32
+    virtual SOCKET getNative() const
+#else
+    virtual int getNative() const
+#endif
+    {
         return (socket_.native());
     }
 

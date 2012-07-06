@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBCC_EXPORT
+
 #include <config.h>
 
 #include <cc/data.h>
@@ -27,6 +29,11 @@
 #include <boost/algorithm/string.hpp> // for iequals
 
 #include <cmath>
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4290)
+#endif
 
 using namespace std;
 
@@ -182,17 +189,18 @@ throwJSONError(const std::string& error, const std::string& file, int line,
 }
 }
 
-std::ostream&
+ISC_LIBCC_API std::ostream&
 operator<<(std::ostream &out, const Element& e) {
     return (out << e.str());
 }
 
-bool
+ISC_LIBCC_API bool
 operator==(const Element& a, const Element& b) {
     return (a.equals(b));
 }
 
-bool operator!=(const Element& a, const Element& b) {
+ISC_LIBCC_API bool
+operator!=(const Element& a, const Element& b) {
     return (!a.equals(b));
 };
 
@@ -906,12 +914,12 @@ MapElement::equals(const Element& other) const {
     }
 }
 
-bool
+ISC_LIBCC_API bool
 isNull(ConstElementPtr p) {
     return (!p);
 }
 
-void
+ISC_LIBCC_API void
 removeIdentical(ElementPtr a, ConstElementPtr b) {
     if (!b) {
         return;
@@ -935,7 +943,7 @@ removeIdentical(ElementPtr a, ConstElementPtr b) {
     }
 }
 
-ConstElementPtr
+ISC_LIBCC_API ConstElementPtr
 removeIdentical(ConstElementPtr a, ConstElementPtr b) {
     ElementPtr result = Element::createMap();
 
@@ -959,7 +967,7 @@ removeIdentical(ConstElementPtr a, ConstElementPtr b) {
     return (result);
 }
 
-void
+ISC_LIBCC_API void
 merge(ElementPtr element, ConstElementPtr other) {
     if (element->getType() != Element::map ||
         other->getType() != Element::map) {
@@ -979,3 +987,7 @@ merge(ElementPtr element, ConstElementPtr other) {
 
 }
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

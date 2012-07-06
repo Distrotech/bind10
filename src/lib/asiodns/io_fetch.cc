@@ -12,12 +12,19 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#include <config.h>
+#define ISC_LIBASIODNS_EXPORT
 
+#include <config.h>
+#include <stdint.h>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#else
 #include <unistd.h>             // for some IPC/network system calls
 #include <netinet/in.h>
-#include <stdint.h>
 #include <sys/socket.h>
+#endif
 
 #include <boost/bind.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -45,6 +52,11 @@
 #include <util/random/qid_gen.h>
 
 #include <asiodns/logger.h>
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4351)
+#endif
 
 using namespace asio;
 using namespace isc::asiolink;
@@ -420,3 +432,7 @@ void IOFetch::logIOFailure(asio::error_code ec) {
 
 } // namespace asiodns
 } // namespace isc {
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

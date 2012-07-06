@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -21,6 +21,7 @@
     <ClInclude Include="..\..\..\src\lib\asiolink\io_message.h" />
     <ClInclude Include="..\..\..\src\lib\asiolink\io_service.h" />
     <ClInclude Include="..\..\..\src\lib\asiolink\io_socket.h" />
+    <ClInclude Include="..\..\..\src\lib\asiolink\lib.h" />
     <ClInclude Include="..\..\..\src\lib\asiolink\simple_callback.h" />
     <ClInclude Include="..\..\..\src\lib\asiolink\tcp_endpoint.h" />
     <ClInclude Include="..\..\..\src\lib\asiolink\tcp_socket.h" />
@@ -28,11 +29,16 @@
     <ClInclude Include="..\..\..\src\lib\asiolink\udp_socket.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\lib\asiolink\dummy_io_cb.cc" />
     <ClCompile Include="..\..\..\src\lib\asiolink\interval_timer.cc" />
     <ClCompile Include="..\..\..\src\lib\asiolink\io_address.cc" />
     <ClCompile Include="..\..\..\src\lib\asiolink\io_endpoint.cc" />
+    <ClCompile Include="..\..\..\src\lib\asiolink\io_error.cc" />
+    <ClCompile Include="..\..\..\src\lib\asiolink\io_message.cc" />
     <ClCompile Include="..\..\..\src\lib\asiolink\io_service.cc" />
     <ClCompile Include="..\..\..\src\lib\asiolink\io_socket.cc" />
+    <ClCompile Include="..\..\..\src\lib\asiolink\simple_callback.cc" />
+    <ClCompile Include="..\..\dllmain.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{69048307-9655-4AAA-B07E-B67345C1DEF9}</ProjectGuid>
@@ -41,12 +47,12 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
@@ -62,10 +68,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(Configuration)\</OutDir>
+    <OutDir>$(Solutiondir)$(Configuration)\</OutDir>
+    <TargetName>$(ProjectName)d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(Configuration)\</OutDir>
+    <OutDir>$(Solutiondir)$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -79,6 +86,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>..\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libexceptionsd.lib;liblogd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -97,6 +106,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>..\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libexceptions.lib;liblog.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

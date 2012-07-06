@@ -75,6 +75,10 @@ typedef int ssize_t;
 #undef ERROR
 #endif
 
+#ifdef NOERROR
+#undef NOERROR
+#endif
+
 #ifdef UNICODE
 #undef UNICODE
 #endif

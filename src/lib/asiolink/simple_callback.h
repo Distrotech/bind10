@@ -15,6 +15,7 @@
 #ifndef __ASIOLINK_SIMPLE_CALLBACK_H
 #define __ASIOLINK_SIMPLE_CALLBACK_H 1
 
+#include <asiolink/lib.h>
 #include <asiolink/io_message.h>
 
 namespace isc {
@@ -34,7 +35,7 @@ namespace asiolink {
 /// The \c SimpleCallback is expected to be used for basic, generic
 /// tasks such as checking for configuration changes.  It may also be
 /// used for testing purposes.
-class SimpleCallback {
+class ISC_LIBASIOLINK_API SimpleCallback {
     ///
     /// \name Constructors and Destructor
     ///

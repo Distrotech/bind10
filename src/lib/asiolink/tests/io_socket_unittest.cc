@@ -15,7 +15,11 @@
 #include <config.h>
 #include <gtest/gtest.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <netinet/in.h>
+#endif
 
 #include <asio.hpp>
 #include <asiolink/io_socket.h>
@@ -25,8 +29,13 @@ using namespace isc::asiolink;
 TEST(IOSocketTest, dummySockets) {
     EXPECT_EQ(IPPROTO_UDP, IOSocket::getDummyUDPSocket().getProtocol());
     EXPECT_EQ(IPPROTO_TCP, IOSocket::getDummyTCPSocket().getProtocol());
+#ifdef _WIN32
+    EXPECT_EQ(INVALID_SOCKET, IOSocket::getDummyUDPSocket().getNative());
+    EXPECT_EQ(INVALID_SOCKET, IOSocket::getDummyTCPSocket().getNative());
+#else
     EXPECT_EQ(-1, IOSocket::getDummyUDPSocket().getNative());
     EXPECT_EQ(-1, IOSocket::getDummyTCPSocket().getNative());
+#endif
 }
 
 

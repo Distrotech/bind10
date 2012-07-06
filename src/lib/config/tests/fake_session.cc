@@ -12,9 +12,19 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_FAKE_SESSION_EXPORT
+
 #include <config.h>
 
 #include <stdint.h>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#endif
 
 #include <cstdio>
 #include <vector>
@@ -31,10 +41,6 @@
 using namespace std;
 using namespace isc::cc;
 using namespace isc::data;
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 
 // ok i want these in cc/data 
 bool

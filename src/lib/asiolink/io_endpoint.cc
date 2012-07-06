@@ -12,7 +12,17 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBASIOLINK_EXPORT
+
 #include <config.h>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
+#include <unistd.h>             // for some IPC/network system calls
+#include <sys/socket.h>
+#include <netinet/in.h>
+#endif
 
 #include <asio.hpp>
 
@@ -25,9 +35,6 @@
 #include <boost/lexical_cast.hpp>
 
 #include <cassert>
-#include <unistd.h>             // for some IPC/network system calls
-#include <sys/socket.h>
-#include <netinet/in.h>
 
 using namespace std;
 
@@ -61,7 +68,7 @@ IOEndpoint::operator!=(const IOEndpoint& other) const {
     return (!operator==(other));
 }
 
-ostream&
+ISC_LIBASIOLINK_API ostream&
 operator<<(ostream& os, const IOEndpoint& endpoint) {
     if (endpoint.getFamily() == AF_INET6) {
         os << "[" << endpoint.getAddress().toText() << "]";

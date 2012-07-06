@@ -12,12 +12,18 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBXFR_EXPORT
+
+#include <config.h>
+
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
 
 // for some IPC/network system calls in asio/detail/pipe_select_interrupter.hpp
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <asio.hpp>
 
 #include <util/io/fd_share.h>
@@ -25,7 +31,13 @@
 
 using namespace std;
 using namespace isc::util::io;
+#ifndef _WIN32
 using asio::local::stream_protocol;
+#else
+#include <boost/lexical_cast.hpp>
+using asio::ip::tcp;
+#define stream_protocol tcp
+#endif
 
 namespace isc {
 namespace xfr {
@@ -53,7 +65,20 @@ XfroutClient::~XfroutClient() {
 void
 XfroutClient::connect() {
     try {
-        impl_->socket_.connect(stream_protocol::endpoint(impl_->file_path_));
+#ifndef _WIN32
+        stream_protocol::endpoint ep(impl_->file_path_);
+#else
+        asio::ip::address addr;
+        if (impl_->file_path_.find("v4_") == 0)
+            addr = asio::ip::address_v4::loopback();
+        else if (impl_->file_path_.find("v6_") == 0)
+            addr = asio::ip::address_v6::loopback();
+        else
+            isc_throw(XfroutError, "bad endpoint: " << impl_->file_path_);
+        uint16_t port = boost::lexical_cast<uint16_t>(impl_->file_path_.substr(3));
+        stream_protocol::endpoint ep(addr, port);
+#endif
+        impl_->socket_.connect(ep);
     } catch (const asio::system_error& err) {
         isc_throw(XfroutError, "socket connect failed for " <<
                   impl_->file_path_ << ": " << err.what());
@@ -70,7 +95,12 @@ XfroutClient::disconnect() {
 }
 
 int
-XfroutClient::sendXfroutRequestInfo(const int tcp_sock,
+XfroutClient::sendXfroutRequestInfo(
+#ifdef _WIN32
+                                    const SOCKET tcp_sock,
+#else
+                                    const int tcp_sock,
+#endif
                                     const void* const msg_data,
                                     const uint16_t msg_len)
 {
@@ -90,6 +120,7 @@ XfroutClient::sendXfroutRequestInfo(const int tcp_sock,
     // performed. For reference, see 8.5.4/6 of n3225.
     const uint8_t lenbuf[2] = { static_cast<uint8_t>(msg_len >> 8),
                                 static_cast<uint8_t>(msg_len & 0xff) };
+#ifndef _WIN32
     if (send(impl_->socket_.native(), lenbuf, sizeof(lenbuf), 0) !=
         sizeof(lenbuf)) {
         isc_throw(XfroutError,
@@ -99,6 +130,20 @@ XfroutClient::sendXfroutRequestInfo(const int tcp_sock,
         isc_throw(XfroutError,
                   "failed to send XFR request data to xfrout module");
     }
+#else
+    if (send(impl_->socket_.native(),
+             (const char *)lenbuf,
+             sizeof(lenbuf), 0) != sizeof(lenbuf)) {
+        isc_throw(XfroutError,
+                  "failed to send XFR request length to xfrout module");
+    }
+    if (send(impl_->socket_.native(),
+             (const char *)msg_data,
+             msg_len, 0) != msg_len) {
+        isc_throw(XfroutError,
+                  "failed to send XFR request data to xfrout module");
+    }
+#endif
 
     return (0);
 }

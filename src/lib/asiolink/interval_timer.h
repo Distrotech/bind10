@@ -18,6 +18,7 @@
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include <asiolink/lib.h>
 #include <asiolink/io_service.h>
 
 namespace isc {
@@ -55,7 +56,7 @@ class IntervalTimerImpl;
 ///  intervalTimer.setup(function_to_call_back, interval_in_milliseconds);
 ///  io_service.run();
 /// \endcode
-class IntervalTimer {
+class ISC_LIBASIOLINK_API IntervalTimer {
 public:
     /// \name The type of timer callback function
     typedef boost::function<void()> Callback;

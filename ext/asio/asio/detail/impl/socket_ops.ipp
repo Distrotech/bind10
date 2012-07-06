@@ -282,6 +282,9 @@ int close(socket_type s, state_type& state,
   int result = 0;
   if (s != invalid_socket)
   {
+    // We don't want the destructor to block, so set the socket to linger in
+    // the background. If the user doesn't like this behaviour then they need
+    // to explicitly close the socket.
     if (destruction && (state & user_set_linger))
     {
       ::linger opt;
@@ -303,21 +306,32 @@ int close(socket_type s, state_type& state,
         && (ec == asio::error::would_block
           || ec == asio::error::try_again))
     {
-#if defined(__SYMBIAN32__)
+      // According to UNIX Network Programming Vol. 1, it is possible for
+      // close() to fail with EWOULDBLOCK under certain circumstances. What
+      // isn't clear is the state of the descriptor after this error. The one
+      // current OS where this behaviour is seen, Windows, says that the socket
+      // remains open. Therefore we'll put the descriptor back into blocking
+      // mode and have another attempt at closing it.
+#if defined(BOOST_WINDOWS) || defined(__CYGWIN__)
+      ioctl_arg_type arg = 0;
+      ::ioctlsocket(s, FIONBIO, &arg);
+#else // defined(BOOST_WINDOWS) || defined(__CYGWIN__)
+# if defined(__SYMBIAN32__)
       int flags = ::fcntl(s, F_GETFL, 0);
       if (flags >= 0)
         ::fcntl(s, F_SETFL, flags & ~O_NONBLOCK);
-#else // defined(__SYMBIAN32__)
+# else // defined(__SYMBIAN32__)
       ioctl_arg_type arg = 0;
       ::ioctl(s, FIONBIO, &arg);
-#endif // defined(__SYMBIAN32__)
+# endif // defined(__SYMBIAN32__)
+#endif // defined(BOOST_WINDOWS) || defined(__CYGWIN__)
       state &= ~non_blocking;
 
-    clear_last_error();
+      clear_last_error();
 #if defined(BOOST_WINDOWS) || defined(__CYGWIN__)
-    result = error_wrapper(::closesocket(s), ec);
+      result = error_wrapper(::closesocket(s), ec);
 #else // defined(BOOST_WINDOWS) || defined(__CYGWIN__)
-    result = error_wrapper(::close(s), ec);
+      result = error_wrapper(::close(s), ec);
 #endif // defined(BOOST_WINDOWS) || defined(__CYGWIN__)
     }
   }
@@ -1721,7 +1735,8 @@ const char* inet_ntop(int af, const void* src, char* dest, size_t length,
     using namespace std; // For strcat and sprintf.
     char if_name[IF_NAMESIZE + 1] = "%";
     const in6_addr_type* ipv6_address = static_cast<const in6_addr_type*>(src);
-    bool is_link_local = IN6_IS_ADDR_LINKLOCAL(ipv6_address);
+    bool is_link_local = ((ipv6_address->s6_addr[0] == 0xfe)
+        && ((ipv6_address->s6_addr[1] & 0xc0) == 0x80));
     if (!is_link_local || if_indextoname(scope_id, if_name + 1) == 0)
       sprintf(if_name + 1, "%lu", scope_id);
     strcat(dest, if_name);
@@ -1806,7 +1821,8 @@ int inet_pton(int af, const char* src, void* dest,
     if (const char* if_name = strchr(src, '%'))
     {
       in6_addr_type* ipv6_address = static_cast<in6_addr_type*>(dest);
-      bool is_link_local = IN6_IS_ADDR_LINKLOCAL(ipv6_address);
+      bool is_link_local = ((ipv6_address->s6_addr[0] == 0xfe)
+          && ((ipv6_address->s6_addr[1] & 0xc0) == 0x80));
       if (is_link_local)
         *scope_id = if_nametoindex(if_name + 1);
       if (*scope_id == 0)

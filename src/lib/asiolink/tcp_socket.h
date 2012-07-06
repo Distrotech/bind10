@@ -20,9 +20,11 @@
 #endif
 
 #include <log/dummylog.h>
+#ifndef _WIN32
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>             // for some IPC/network system calls
+#endif
 
 #include <algorithm>
 #include <cassert>
@@ -36,6 +38,7 @@
 #include <util/buffer.h>
 #include <util/io_utilities.h>
 
+#include <asiolink/lib.h>
 #include <asiolink/io_asio_socket.h>
 #include <asiolink/io_endpoint.h>
 #include <asiolink/io_service.h>
@@ -47,7 +50,7 @@ namespace asiolink {
 /// \brief Buffer Too Large
 ///
 /// Thrown on an attempt to send a buffer > 64k
-class BufferTooLarge : public IOError {
+class ISC_LIBASIOLINK_API BufferTooLarge : public IOError {
 public:
     BufferTooLarge(const char* file, size_t line, const char* what) :
         IOError(file, line, what) {}
@@ -85,7 +88,12 @@ public:
     virtual ~TCPSocket();
 
     /// \brief Return file descriptor of underlying socket
-    virtual int getNative() const {
+#ifdef _WIN32
+    virtual SOCKET getNative() const
+#else
+    virtual int getNative() const
+#endif
+    {
         return (socket_.native());
     }
 

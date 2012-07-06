@@ -12,14 +12,21 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBASIODNS_EXPORT
+
+#include <config.h>
+#include <stdint.h>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <unistd.h>             // for some IPC/network system calls
 #include <netinet/in.h>
 #include <sys/socket.h>
+#endif
 #include <errno.h>
 
 #include <boost/shared_array.hpp>
-
-#include <config.h>
 
 #include <log/dummylog.h>
 
@@ -69,13 +76,21 @@ struct UDPServer::Data {
         // otherwise ASIO will bind to both
         udp proto = addr.is_v4() ? udp::v4() : udp::v6();
         socket_.reset(new udp::socket(io_service, proto));
+#ifndef _WIN32
         socket_->set_option(socket_base::reuse_address(true));
+#endif
         if (addr.is_v6()) {
             socket_->set_option(asio::ip::v6_only(true));
         }
         socket_->bind(udp::endpoint(addr, port));
     }
-    Data(io_service& io_service, int fd, int af, SimpleCallback* checkin,
+    Data(io_service& io_service,
+#ifdef _WIN32
+         SOCKET fd,
+#else
+         int fd,
+#endif
+         int af, SimpleCallback* checkin,
          DNSLookup* lookup, DNSAnswer* answer) :
          io_(io_service), done_(false),
          checkin_callback_(checkin),lookup_callback_(lookup),
@@ -182,8 +197,13 @@ struct UDPServer::Data {
 ///
 /// The constructor. It just creates new internal state object
 /// and lets it handle the initialization.
-UDPServer::UDPServer(io_service& io_service, int fd, int af,
-                     SimpleCallback* checkin, DNSLookup* lookup,
+UDPServer::UDPServer(io_service& io_service,
+#ifdef _WIN32
+                     SOCKET fd,
+#else
+                     int fd,
+#endif
+                     int af, SimpleCallback* checkin, DNSLookup* lookup,
                      DNSAnswer* answer) :
     data_(new Data(io_service, fd, af, checkin, lookup, answer))
 { }

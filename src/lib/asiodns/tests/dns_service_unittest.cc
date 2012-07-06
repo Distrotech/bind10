@@ -26,11 +26,13 @@
 
 #include <csignal>
 
+#ifndef _WIN32
 #include <sys/types.h>
 #include <sys/socket.h>
 
 #include <unistd.h>
 #include <netdb.h>
+#endif
 
 using namespace isc::asiolink;
 using namespace isc::asiodns;
@@ -108,6 +110,16 @@ protected:
 
         // set a signal-based alarm to prevent the test from hanging up
         // due to a bug.
+#ifdef _WIN32
+        UINT_PTR id = 1;
+        SetTimer(NULL, id, IO_SERVICE_TIME_OUT * 1000,
+                 UDPDNSServiceTest::stopIOService);
+        current_service = &io_service;
+        io_service.run();
+        io_service.get_io_service().reset();
+        //cancel scheduled alarm
+        KillTimer(NULL, id);
+#else
         void (*prev_handler)(int) =
             std::signal(SIGALRM, UDPDNSServiceTest::stopIOService);
         current_service = &io_service;
@@ -117,10 +129,20 @@ protected:
         //cancel scheduled alarm
         alarm(0);
         std::signal(SIGALRM, prev_handler);
+#endif
     }
 
     // last resort service stopper by signal
-    static void stopIOService(int) {
+#ifdef _WIN32
+        static void CALLBACK stopIOService(
+            HWND _no_use_hwnd,
+            UINT _no_use_umsg,
+            UINT_PTR _no_use_idevent,
+            DWORD _no_use_dwtime)
+#else
+    static void stopIOService(int)
+#endif
+    {
         io_service_is_time_out = true;
         if (current_service != NULL) {
             current_service->stop();
@@ -157,7 +179,11 @@ bool UDPDNSServiceTest::io_service_is_time_out;
 // A helper socket FD creator for given address and port.  It's generally
 // expected to succeed; on failure it simply throws an exception to make
 // the test fail.
+#ifdef _WIN32
+SOCKET
+#else
 int
+#endif
 getSocketFD(int family, const char* const address, const char* const port) {
     struct addrinfo hints, *res = NULL;
     memset(&hints, 0, sizeof(hints));
@@ -165,7 +191,11 @@ getSocketFD(int family, const char* const address, const char* const port) {
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_protocol = IPPROTO_UDP;
     hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
+#ifdef _WIN32
+    SOCKET s = INVALID_SOCKET;
+#else
     int s = -1;
+#endif
     int error = getaddrinfo(address, port, &hints, &res);
     if (error == 0) {
         // If getaddrinfo returns 0, res should be set to a non NULL valid
@@ -173,16 +203,28 @@ getSocketFD(int family, const char* const address, const char* const port) {
         // it, so we satisfy them here.
         if (res != NULL) {
             s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+#ifdef _WIN32
+            if (s != INVALID_SOCKET) {
+                error = bind(s, res->ai_addr, res->ai_addrlen);
+            }
+#else
             if (s >= 0) {
                 error = bind(s, res->ai_addr, res->ai_addrlen);
             }
+#endif
             freeaddrinfo(res);
         }
     }
     if (error != 0) {
+#ifdef _WIN32
+        if (s != INVALID_SOCKET) {
+            closesocket(s);
+        }
+#else
         if (s >= 0) {
             close(s);
         }
+#endif
         isc_throw(isc::Unexpected, "failed to open test socket");
     }
     return (s);

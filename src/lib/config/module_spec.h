@@ -17,8 +17,14 @@
 #define _MODULE_SPEC_H 1
 
 #include <cc/data.h>
+#include <config/lib.h>
 
 #include <sstream>
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4290)
+#endif
 
 namespace isc { namespace config {
 
@@ -26,7 +32,7 @@ namespace isc { namespace config {
     /// A standard ModuleSpec exception that is thrown when a
     /// specification is not in the correct form.
     ///
-    class ModuleSpecError : public isc::Exception {
+    class ISC_LIBCONFIG_API ModuleSpecError : public isc::Exception {
     public:
         ModuleSpecError(const char* file, size_t line,
                         const char* what = "Module specification is invalid") :
@@ -43,7 +49,7 @@ namespace isc { namespace config {
     ///
     /// The form of the specification is described in doc/ (TODO)
     ///
-    class ModuleSpec {
+    class ISC_LIBCONFIG_API ModuleSpec {
     public:
         ModuleSpec() {};
         /// Create a \c ModuleSpec instance with the given data as
@@ -184,7 +190,7 @@ namespace isc { namespace config {
     /// \param file_name The file to be opened and parsed
     /// \param check If true, the module specification in the file
     /// is checked to be of the correct form
-    ModuleSpec
+    ISC_LIBCONFIG_API ModuleSpec
     moduleSpecFromFile(const std::string& file_name, const bool check = true)
         throw(isc::data::JSONError, ModuleSpecError);
 
@@ -196,10 +202,14 @@ namespace isc { namespace config {
     /// \param in The std::istream containing the .spec file data
     /// \param check If true, the module specification is checked
     /// to be of the correct form
-    ModuleSpec
+    ISC_LIBCONFIG_API ModuleSpec
     moduleSpecFromFile(std::ifstream& in, const bool check = true)
                        throw(isc::data::JSONError, ModuleSpecError);
 } }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #endif // _DATA_DEF_H
 

@@ -12,12 +12,19 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBASIOLINK_EXPORT
+
 #include <config.h>
 
-#include <unistd.h>             // for some IPC/network system calls
 #include <stdint.h>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
+#include <unistd.h>             // for some IPC/network system calls
 #include <sys/socket.h>
 #include <netinet/in.h>
+#endif
 
 #include <asio.hpp>
 
@@ -72,7 +79,12 @@ IOAddress::from_bytes(short family, const uint8_t* data) {
 
     BOOST_STATIC_ASSERT(INET6_ADDRSTRLEN >= INET_ADDRSTRLEN);
     char addr_str[INET6_ADDRSTRLEN];
-    inet_ntop(family, data, addr_str, INET6_ADDRSTRLEN);
+#ifdef _WIN32
+#define DECONST (void *)
+#else
+#define DECONST
+#endif
+    inet_ntop(family, DECONST data, addr_str, INET6_ADDRSTRLEN);
     return IOAddress(string(addr_str));
 }
 

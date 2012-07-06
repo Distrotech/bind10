@@ -15,6 +15,8 @@
 #ifndef __ASIOLINK_IO_SERVICE_H
 #define __ASIOLINK_IO_SERVICE_H 1
 
+#include <asiolink/lib.h>
+
 namespace asio {
     class io_service;
 }
@@ -27,7 +29,7 @@ class IOServiceImpl;
 /// \brief The \c IOService class is a wrapper for the ASIO \c io_service
 /// class.
 ///
-class IOService {
+class ISC_LIBASIOLINK_API IOService {
     ///
     /// \name Constructors and Destructor
     ///

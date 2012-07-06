@@ -12,6 +12,10 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBASIOLINK_EXPORT
+
+#include <config.h>
+
 #include "io_socket.h"
 
 #include <asio.hpp>
@@ -42,7 +46,11 @@ public:
     ///
     /// This version of method always returns -1 as the object is not
     /// associated with a real (native) socket.
+#ifdef _WIN32
+    virtual SOCKET getNative() const { return (INVALID_SOCKET); }
+#else
     virtual int getNative() const { return (-1); }
+#endif
 
     virtual int getProtocol() const { return (protocol_); }
 private:

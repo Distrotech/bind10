@@ -16,6 +16,7 @@
 #define __ASIOLINK_DNS_SERVER_H 1
 
 #include <asiolink/io_message.h>
+#include <asiodns/lib.h>
 
 namespace isc {
 namespace asiodns {
@@ -45,7 +46,7 @@ namespace asiodns {
 ///
 /// Because these objects are frequently copied, it is recommended
 /// that derived classes be kept small to reduce copy overhead.
-class DNSServer {
+class ISC_LIBASIODNS_API DNSServer {
 protected:
     ///
     /// \name Constructors and destructors

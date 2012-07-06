@@ -12,8 +12,12 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBACL_EXPORT
+
+#ifndef _WIN32
 #include <sys/types.h>
 #include <sys/socket.h>
+#endif
 
 #include <exceptions/exceptions.h>
 
@@ -28,7 +32,7 @@ namespace isc {
 namespace acl {
 namespace internal {
 
-uint8_t
+ISC_LIBACL_API uint8_t
 createMask(size_t prefixlen) {
 
     if (prefixlen == 0) {
@@ -63,7 +67,7 @@ createMask(size_t prefixlen) {
     isc_throw(isc::OutOfRange, "prefixlen argument must be between 0 and 8");
 }
 
-pair<string, int>
+ISC_LIBACL_API pair<string, int>
 splitIPAddress(const string& ipprefix) {
 
     // Split string into its components - an address and a prefix length.

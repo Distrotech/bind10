@@ -12,7 +12,14 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBASIODNS_EXPORT
+
 #include <config.h>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#endif
 
 #include <exceptions/exceptions.h>
 
@@ -32,8 +39,8 @@ using namespace isc::asiolink;
 namespace isc {
 namespace asiodns {
 
-class DNSLookup;
-class DNSAnswer;
+class ISC_LIBASIODNS_API DNSLookup;
+class ISC_LIBASIODNS_API DNSAnswer;
 
 class DNSServiceImpl {
 public:
@@ -54,7 +61,12 @@ public:
     DNSLookup* lookup_;
     DNSAnswer* answer_;
 
-    template<class Ptr, class Server> void addServerFromFD(int fd, int af) {
+#ifdef _WIN32
+    template<class Ptr, class Server> void addServerFromFD(SOCKET fd, int af)
+#else
+    template<class Ptr, class Server> void addServerFromFD(int fd, int af)
+#endif
+    {
         Ptr server(new Server(io_service_.get_io_service(), fd, af, checkin_,
                               lookup_, answer_));
         (*server)();
@@ -73,11 +85,21 @@ DNSService::~DNSService() {
     delete impl_;
 }
 
-void DNSService::addServerTCPFromFD(int fd, int af) {
+#ifdef _WIN32
+void DNSService::addServerTCPFromFD(SOCKET fd, int af)
+#else
+void DNSService::addServerTCPFromFD(int fd, int af)
+#endif
+{
     impl_->addServerFromFD<DNSServiceImpl::TCPServerPtr, TCPServer>(fd, af);
 }
 
-void DNSService::addServerUDPFromFD(int fd, int af, ServerFlag options) {
+#ifdef _WIN32
+void DNSService::addServerUDPFromFD(SOCKET fd, int af, ServerFlag options)
+#else
+void DNSService::addServerUDPFromFD(int fd, int af, ServerFlag options)
+#endif
+{
     if ((~SERVER_DEFINED_FLAGS & static_cast<unsigned int>(options)) != 0) {
         isc_throw(isc::InvalidParameter, "Invalid DNS/UDP server option: "
                   << options);

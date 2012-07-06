@@ -17,6 +17,7 @@
 
 #include <iostream>
 
+#include <asiolink/lib.h>
 #include <asio/error.hpp>
 #include <asio/error_code.hpp>
 
@@ -34,7 +35,7 @@ namespace asiolink {
 /// template parameter.  This is the reason for this class - it is the dummy
 /// template parameter.
 
-class DummyIOCallback {
+class ISC_LIBASIOLINK_API DummyIOCallback {
 public:
 
     /// \brief Asynchronous I/O callback method

@@ -19,6 +19,7 @@
 #error "asio.hpp must be included before including this, see asiolink.h as to why"
 #endif
 
+#include <asiolink/lib.h>
 #include <asiolink/io_endpoint.h>
 
 namespace isc {
@@ -28,7 +29,7 @@ namespace asiolink {
 /// \c IOEndpoint that represents an endpoint of a UDP packet.
 ///
 /// Other notes about \c TCPEndpoint applies to this class, too.
-class UDPEndpoint : public IOEndpoint {
+class ISC_LIBASIOLINK_API UDPEndpoint : public IOEndpoint {
 public:
     ///
     /// \name Constructors and Destructor.

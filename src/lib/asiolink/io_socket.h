@@ -18,12 +18,17 @@
 // IMPORTANT NOTE: only very few ASIO headers files can be included in
 // this file.  In particular, asio.hpp should never be included here.
 // See the description of the namespace below.
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <unistd.h>             // for some network system calls
+#endif
 
 #include <functional>
 #include <string>
 
 #include <exceptions/exceptions.h>
+#include <asiolink/lib.h>
 
 namespace isc {
 namespace asiolink {
@@ -42,7 +47,7 @@ namespace asiolink {
 /// modules use it.  Also, at that point we may define a separate (visible)
 /// derived class for testing purposes rather than providing factory methods
 /// (i.e., getDummy variants below).
-class IOSocket {
+class ISC_LIBASIOLINK_API IOSocket {
     ///
     /// \name Constructors and Destructor
     ///
@@ -83,7 +88,11 @@ public:
     ///
     /// \return The native representation of the socket.  This is the socket
     /// file descriptor for UNIX-like systems.
+#ifdef _WIN32
+    virtual SOCKET getNative() const = 0;
+#else
     virtual int getNative() const = 0;
+#endif
 
     /// \brief Return the transport protocol of the socket.
     ///

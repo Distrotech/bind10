@@ -24,9 +24,19 @@
 #include <cc/data.h>
 #include <cc/session.h>
 
+#if !defined(_WIN32) || defined(USE_STATIC_LINK)
+#define ISC_FAKE_SESSION_API
+#else
+#ifdef ISC_FAKE_SESSION_EXPORT
+#define ISC_FAKE_SESSION_API __declspec(dllexport)
+#else
+#define ISC_FAKE_SESSION_API __declspec(dllimport)
+#endif
+#endif
+
 namespace isc {
 namespace cc {
-class FakeSession : public AbstractSession {
+class ISC_FAKE_SESSION_API FakeSession : public AbstractSession {
 private:
     FakeSession(const Session& source);
     FakeSession& operator=(const Session& source);

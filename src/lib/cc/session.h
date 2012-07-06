@@ -21,6 +21,7 @@
 
 #include <exceptions/exceptions.h>
 
+#include <cc/lib.h>
 #include <cc/data.h>
 #include <cc/session_config.h>
 
@@ -32,7 +33,7 @@ namespace isc {
     namespace cc {
         class SessionImpl;
 
-        class SessionError : public isc::Exception {
+        class ISC_LIBCC_API SessionError : public isc::Exception {
         public:
             SessionError(const char* file, size_t line, const char* what) :
                 isc::Exception(file, line, what) {}
@@ -41,7 +42,7 @@ namespace isc {
         /// \brief A standard Exception class that is thrown when a
         /// blocking readData call does not read the given number of
         /// bytes before the timeout expires
-        class SessionTimeout : public isc::Exception {
+        class ISC_LIBCC_API SessionTimeout : public isc::Exception {
         public:
             SessionTimeout(const char* file, size_t line, const char* what) :
                 isc::Exception(file, line, what) {}
@@ -55,7 +56,7 @@ namespace isc {
         /// For simplicity we only define the methods that are necessary for
         /// existing test cases that use this base class.  Eventually we'll
         /// probably have to extend them.
-        class AbstractSession {
+        class ISC_LIBCC_API AbstractSession {
             ///
             /// \name Constructors, Assignment Operator and Destructor.
             ///
@@ -108,7 +109,7 @@ namespace isc {
             virtual size_t getTimeout() const = 0;
         };
 
-    class Session : public AbstractSession {
+    class ISC_LIBCC_API Session : public AbstractSession {
         private:
             SessionImpl* impl_;
 
@@ -145,7 +146,11 @@ namespace isc {
             /// @brief returns socket descriptor from underlying socket connection
             ///
             /// @param returns socket descriptor used for session connection
+#ifdef _WIN32
+            virtual SOCKET getSocketDesc() const;
+#else
             virtual int getSocketDesc() const;
+#endif
     private:
             void sendmsg(isc::data::ConstElementPtr msg);
             void sendmsg(isc::data::ConstElementPtr env,

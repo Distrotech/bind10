@@ -18,12 +18,18 @@
 /// receive-close sequence and checking that the asynchronous notifications
 /// work.
 
+#include <config.h>
+
 #include <string>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#endif
 
 #include <algorithm>
 #include <cstdlib>

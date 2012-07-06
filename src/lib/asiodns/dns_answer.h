@@ -18,6 +18,7 @@
 #include <asiolink/io_message.h>
 #include <util/buffer.h>
 #include <dns/message.h>
+#include <asiodns/lib.h>
 
 namespace isc {
 namespace asiodns {
@@ -35,7 +36,7 @@ namespace asiodns {
 /// from a DNS Lookup provider functon and readies it to be sent to the
 /// client.  After it has run, the OutputBuffer object passed to it should
 /// contain the answer to the query rendered into wire format.
-class DNSAnswer {
+class ISC_LIBASIODNS_API DNSAnswer {
     ///
     /// \name Constructors and Destructor
     ///

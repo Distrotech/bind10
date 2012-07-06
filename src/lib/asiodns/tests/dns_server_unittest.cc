@@ -13,6 +13,7 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <config.h>
+#include <stdint.h>
 #include <gtest/gtest.h>
 
 #include <asio.hpp>
@@ -27,14 +28,18 @@
 #include <cstring>
 #include <cerrno>
 #include <csignal>
+#ifndef _WIN32
 #include <unistd.h> //for alarm
+#endif
 
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 
+#ifndef _WIN32
 #include <sys/types.h>
 #include <sys/socket.h>
+#endif
 
 /// The following tests focus on stop interface for udp and
 /// tcp server, there are lots of things can be shared to test
@@ -376,6 +381,16 @@ class DNSServerTestBase : public::testing::Test {
             // Since thread hasn't been introduced into the tool box, using
             // signal to make sure run function will eventually return even
             // server stop failed
+#ifdef _WIN32
+            UINT_PTR id = 1;
+            SetTimer(NULL, id, IO_SERVICE_TIME_OUT * 1000,
+                     DNSServerTestBase::stopIOService);
+            current_service = &service;
+            service.run();
+            service.reset();
+            //cancel scheduled alarm
+            KillTimer(NULL, id);
+#else
             void (*prev_handler)(int) =
                 std::signal(SIGALRM, DNSServerTestBase::stopIOService);
             current_service = &service;
@@ -385,9 +400,19 @@ class DNSServerTestBase : public::testing::Test {
             //cancel scheduled alarm
             alarm(0);
             std::signal(SIGALRM, prev_handler);
+#endif
         }
 
-        static void stopIOService(int _no_use_parameter) {
+#ifdef _WIN32
+        static void CALLBACK stopIOService(
+            HWND _no_use_hwnd,
+            UINT _no_use_umsg,
+            UINT_PTR _no_use_idevent,
+            DWORD _no_use_dwtime)
+#else
+        static void stopIOService(int _no_use_parameter)
+#endif
+        {
             io_service_is_time_out = true;
             if (current_service != NULL) {
                 current_service->stop();
@@ -422,7 +447,12 @@ private:
     // It uses the low-level C api, as it seems to be the easiest way to get
     // a raw file descriptor. It also is what the socket creator does and this
     // API is aimed to it.
-    int getFd(int type) {
+#ifdef _WIN32
+    SOCKET getFd(int type)
+#else
+    int getFd(int type)
+#endif
+        {
         struct addrinfo hints;
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_UNSPEC;
@@ -437,24 +467,41 @@ private:
             isc_throw(IOError, "getaddrinfo failed: " << gai_strerror(error));
         }
 
+#ifdef _WIN32
+        SOCKET sock;
+#else
         int sock;
-        const int on(1);
+#endif
         // Go as far as you can and stop on failure
         // Create the socket
         // set the options
         // and bind it
+#ifdef _WIN32
+        const bool failed((sock = socket(res->ai_family, res->ai_socktype,
+                                         res->ai_protocol)) == INVALID_SOCKET ||
+                          bind(sock, res->ai_addr, res->ai_addrlen) == -1);
+#else
+        const int on(1);
         const bool failed((sock = socket(res->ai_family, res->ai_socktype,
                                          res->ai_protocol)) == -1 ||
                           setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on,
                                      sizeof(on)) == -1 ||
                           bind(sock, res->ai_addr, res->ai_addrlen) == -1);
+#endif
         // No matter if it succeeded or not, free the address info
         freeaddrinfo(res);
         if (failed) {
+#ifdef _WIN32
+            if (sock != INVALID_SOCKET) {
+                closesocket(sock);
+            }
+            return (INVALID_SOCKET);
+#else
             if (sock != -1) {
                 close(sock);
             }
             return (-1);
+#endif
         } else {
             return (sock);
         }
@@ -462,13 +509,23 @@ private:
 protected:
     // Using SetUp here so we can ASSERT_*
     void SetUp() {
+#ifdef _WIN32
+        const SOCKET fdUDP(getFd(SOCK_DGRAM));
+        ASSERT_NE(INVALID_SOCKET, fdUDP) << strerror(errno);
+#else
         const int fdUDP(getFd(SOCK_DGRAM));
         ASSERT_NE(-1, fdUDP) << strerror(errno);
+#endif
         this->udp_server_ = new UDPServerClass(this->service, fdUDP, AF_INET6,
                                                this->checker_, this->lookup_,
                                                this->answer_);
+#ifdef _WIN32
+        const SOCKET fdTCP(getFd(SOCK_STREAM));
+        ASSERT_NE(INVALID_SOCKET, fdTCP) << strerror(errno);
+#else
         const int fdTCP(getFd(SOCK_STREAM));
         ASSERT_NE(-1, fdTCP) << strerror(errno);
+#endif
         this->tcp_server_ = new TCPServer(this->service, fdTCP, AF_INET6,
                                           this->checker_, this->lookup_,
                                           this->answer_);
@@ -641,9 +698,16 @@ TYPED_TEST(DNSServerTestBase, invalidTCPFD) {
     EXPECT_THROW(UDPServer(service, -1, AF_INET, checker_, lookup_,
                            answer_), isc::asiolink::IOError);
     */
+#ifdef _WIN32
+    EXPECT_THROW(TCPServer(this->service, INVALID_SOCKET,
+                           AF_INET, this->checker_,
+                           this->lookup_, this->answer_),
+                 isc::asiolink::IOError);
+#else
     EXPECT_THROW(TCPServer(this->service, -1, AF_INET, this->checker_,
                            this->lookup_, this->answer_),
                  isc::asiolink::IOError);
+#endif
 }
 
 TYPED_TEST(DNSServerTestBase, DISABLED_invalidUDPFD) {
@@ -654,9 +718,16 @@ TYPED_TEST(DNSServerTestBase, DISABLED_invalidUDPFD) {
      not the others, maybe we could make it run this at least on epoll-based
      systems).
     */
+#ifdef _WIN32
+    EXPECT_THROW(TypeParam(this->service, INVALID_SOCKET,
+                           AF_INET, this->checker_,
+                           this->lookup_, this->answer_),
+                 isc::asiolink::IOError);
+#else
     EXPECT_THROW(TypeParam(this->service, -1, AF_INET, this->checker_,
                            this->lookup_, this->answer_),
                  isc::asiolink::IOError);
+#endif
 }
 
 // A specialized test type for SyncUDPServer.

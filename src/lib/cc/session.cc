@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBCC_EXPORT
+
 #include <config.h>
 #include <cc/session_config.h>
 #include <cc/logger.h>
@@ -24,7 +26,9 @@
 // A middle term solution is to generalize our local wrapper interface
 // (currently only available for the auth server), where all such portability
 // issues are hidden, and to have other modules use the wrapper.
+#ifndef _WIN32
 #include <unistd.h>             // for some IPC/network system calls
+#endif
 #include <asio.hpp>
 #include <asio/error_code.hpp>
 #include <asio/deadline_timer.hpp>
@@ -35,9 +39,12 @@
 #include <iostream>
 #include <sstream>
 
+#ifndef _WIN32
 #include <sys/un.h>
+#endif
 
 #include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/optional.hpp>
 #include <boost/function.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
@@ -88,7 +95,11 @@ public:
     void startRead(boost::function<void()> user_handler);
     void setTimeout(size_t seconds) { timeout_ = seconds; };
     size_t getTimeout() const { return timeout_; };
+#ifdef _WIN32
+    SOCKET getSocketDesc();
+#else
     int getSocketDesc();
+#endif
 
     long int sequence_; // the next sequence number to use
     std::string lname_;
@@ -100,7 +111,11 @@ private:
 
 private:
     io_service& io_service_;
+#ifndef _WIN32
     asio::local::stream_protocol::socket socket_;
+#else
+    asio::ip::tcp::socket socket_;
+#endif
     uint32_t data_length_;
     boost::function<void()> user_handler_;
     asio::error_code error_;
@@ -121,12 +136,30 @@ void
 SessionImpl::establish(const char& socket_file) {
     try {
         LOG_DEBUG(logger, DBG_TRACE_BASIC, CC_ESTABLISH).arg(&socket_file);
-        socket_.connect(asio::local::stream_protocol::endpoint(&socket_file),
-                        error_);
+#ifndef _WIN32
+        asio::local::stream_protocol::endpoint ep(&socket_file);
+#else
+        const std::string spec(&socket_file);
+        asio::ip::address addr;
+        if (spec.find("v4_") == 0)
+            addr = asio::ip::address_v4::loopback();
+        else if (spec.find("v6_") == 0)
+            addr = asio::ip::address_v6::loopback();
+        else {
+             isc_throw(SessionError, "bad endpoint: " << spec);
+        }
+        uint16_t port = boost::lexical_cast<uint16_t>(spec.substr(3));
+        asio::ip::tcp::endpoint ep(addr, port);
+#endif
+        socket_.connect(ep, error_);
         LOG_DEBUG(logger, DBG_TRACE_BASIC, CC_ESTABLISHED);
     } catch(const asio::system_error& se) {
         LOG_FATAL(logger, CC_CONN_ERROR).arg(se.what());
         isc_throw(SessionError, se.what());
+#ifdef _WIN32
+    } catch(const boost::bad_lexical_cast&) {
+        isc_throw(SessionError, "bad port");
+#endif
     }
     if (error_) {
         LOG_FATAL(logger, CC_NO_MSGQ).arg(error_.message());
@@ -255,12 +288,17 @@ SessionImpl::internalRead(const asio::error_code& error,
     }
 }
 
+#ifdef _WIN32
+SOCKET
+#else
 int
+#endif
 SessionImpl::getSocketDesc() {
     /// @todo boost 1.42 uses native() method, but it is deprecated
     /// in 1.49 and native_handle() is recommended instead
     if (!socket_.is_open()) {
-        isc_throw(InvalidOperation, "Can't return socket desciptor: no socket opened.");
+        isc_throw(InvalidOperation,
+                  "Can't return socket descriptor: no socket opened.");
     }
     return socket_.native();
 }
@@ -284,7 +322,11 @@ Session::startRead(boost::function<void()> read_callback) {
     impl_->startRead(read_callback);
 }
 
+#ifdef _WIN32
+SOCKET
+#else
 int
+#endif
 Session::getSocketDesc() const {
     return impl_->getSocketDesc();
 }

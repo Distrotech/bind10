@@ -18,7 +18,9 @@
 // IMPORTANT NOTE: only very few ASIO headers files can be included in
 // this file.  In particular, asio.hpp should never be included here.
 // See the description of the namespace below.
+#ifndef _WIN32
 #include <unistd.h>             // for some network system calls
+#endif
 
 #include <functional>
 #include <string>
@@ -28,6 +30,7 @@
 
 #include <util/buffer.h>
 
+#include <asiolink/lib.h>
 #include <asiolink/io_error.h>
 #include <asiolink/io_socket.h>
 
@@ -37,7 +40,7 @@ namespace asiolink {
 /// \brief Socket not open
 ///
 /// Thrown on an attempt to do read/write to a socket that is not open.
-class SocketNotOpen : public IOError {
+class ISC_LIBASIOLINK_API SocketNotOpen : public IOError {
 public:
     SocketNotOpen(const char* file, size_t line, const char* what) :
         IOError(file, line, what) {}
@@ -46,7 +49,7 @@ public:
 /// \brief Error setting socket options
 ///
 /// Thrown if attempt to change socket options fails.
-class SocketSetError : public IOError {
+class ISC_LIBASIOLINK_API SocketSetError : public IOError {
 public:
     SocketSetError(const char* file, size_t line, const char* what) :
         IOError(file, line, what) {}
@@ -56,14 +59,14 @@ public:
 ///
 /// Thrown if an attempt is made to receive into an area beyond the end of
 /// the receive data buffer.
-class BufferOverflow : public IOError {
+class ISC_LIBASIOLINK_API BufferOverflow : public IOError {
 public:
     BufferOverflow(const char* file, size_t line, const char* what) :
         IOError(file, line, what) {}
 };
 
 /// Forward declaration of an IOEndpoint
-class IOEndpoint;
+class ISC_LIBASIOLINK_API IOEndpoint;
 
 
 /// \brief I/O Socket with asynchronous operations
@@ -125,7 +128,11 @@ public:
     ///
     /// \return The native representation of the socket.  This is the socket
     ///         file descriptor for UNIX-like systems.
+#ifdef _WIN32
+    virtual SOCKET getNative() const = 0;
+#else
     virtual int getNative() const = 0;
+#endif
 
     /// \brief Return the transport protocol of the socket.
     ///
@@ -307,7 +314,11 @@ public:
     ///
     /// \return Always returns -1 as the object is not associated with a real
     /// (native) socket.
+#ifdef _WIN32
+    virtual SOCKET getNative() const { return (INVALID_SOCKET); }
+#else
     virtual int getNative() const { return (-1); }
+#endif
 
     /// \brief A dummy derived method of \c IOAsioSocket::getProtocol().
     ///

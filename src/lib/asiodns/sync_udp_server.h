@@ -19,6 +19,7 @@
 #error "asio.hpp must be included before including this, see asiolink.h as to why"
 #endif
 
+#include <asiodns/lib.h>
 #include "dns_answer.h"
 #include "dns_lookup.h"
 #include "dns_server.h"
@@ -40,7 +41,8 @@ namespace asiodns {
 /// That means, the lookup handler must provide the answer right away.
 /// This allows for implementation with less overhead, compared with
 /// the UDPClass.
-class SyncUDPServer : public DNSServer, public boost::noncopyable {
+class ISC_LIBASIODNS_API SyncUDPServer :
+ public DNSServer, public boost::noncopyable {
 public:
     /// \brief Constructor
     /// \param io_service the asio::io_service to work with
@@ -52,7 +54,13 @@ public:
     /// \throw isc::InvalidParameter if af is neither AF_INET nor AF_INET6
     /// \throw isc::asiolink::IOError when a low-level error happens, like the
     ///     fd is not a valid descriptor.
-    SyncUDPServer(asio::io_service& io_service, const int fd, const int af,
+    SyncUDPServer(asio::io_service& io_service,
+#ifdef _WIN32
+                  const SOCKET fd,
+#else
+                  const int fd,
+#endif
+                  const int af,
                   isc::asiolink::SimpleCallback* checkin = NULL,
                   DNSLookup* lookup = NULL, DNSAnswer* answer = NULL);
 

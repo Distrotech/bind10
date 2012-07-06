@@ -26,6 +26,7 @@
 #include <asio/error_code.hpp>
 #include <asiolink/io_address.h>
 #include <asiolink/io_service.h>
+#include <asiodns/lib.h>
 
 #include <util/buffer.h>
 #include <dns/question.h>
@@ -43,7 +44,7 @@ struct IOFetchData;
 ///
 /// \param E Endpoint type to use.
 
-class IOFetch : public coroutine {
+class ISC_LIBASIODNS_API IOFetch : public coroutine {
 public:
     /// \brief Protocol to use on the fetch
     enum Protocol {

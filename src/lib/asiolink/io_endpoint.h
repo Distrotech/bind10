@@ -18,18 +18,20 @@
 // IMPORTANT NOTE: only very few ASIO headers files can be included in
 // this file.  In particular, asio.hpp should never be included here.
 // See the description of the namespace below.
+#ifndef _WIN32
+#include <unistd.h>             // for some network system calls
+
+#include <sys/socket.h>         // for sockaddr
+#endif
 
 #include <functional>
 #include <string>
 
 #include <exceptions/exceptions.h>
+#include <asiolink/lib.h>
 #include <asiolink/io_address.h>
 
 # include <ostream>
-
-#include <unistd.h>             // for some network system calls
-
-#include <sys/socket.h>         // for sockaddr
 
 namespace isc {
 namespace asiolink {
@@ -43,7 +45,7 @@ namespace asiolink {
 /// Derived class implementations are completely hidden within the
 /// implementation.  User applications only get access to concrete
 /// \c IOEndpoint objects via the abstract interfaces.
-class IOEndpoint {
+class ISC_LIBASIOLINK_API IOEndpoint {
     ///
     /// \name Constructors and Destructor
     ///
@@ -181,7 +183,8 @@ public:
 /// operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-std::ostream& operator<<(std::ostream& os, const IOEndpoint& endpoint);
+ISC_LIBASIOLINK_API std::ostream&
+operator<<(std::ostream& os, const IOEndpoint& endpoint);
 } // namespace asiolink
 } // namespace isc
 #endif // __IO_ENDPOINT_H

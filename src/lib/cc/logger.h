@@ -15,6 +15,7 @@
 #ifndef CC_LOGGER_H
 #define CC_LOGGER_H
 
+#include <cc/lib.h>
 #include <cc/cc_messages.h>
 #include <log/macros.h>
 

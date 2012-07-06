@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBACL_EXPORT
+
 #include "loader.h"
 
 using namespace std;
@@ -19,7 +21,8 @@ using namespace std;
 namespace isc {
 namespace acl {
 
-BasicAction defaultActionLoader(data::ConstElementPtr actionEl) {
+ISC_LIBACL_API BasicAction
+defaultActionLoader(data::ConstElementPtr actionEl) {
     try {
         const string action(actionEl->stringValue());
         if (action == "ACCEPT") {

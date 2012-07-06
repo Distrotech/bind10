@@ -24,6 +24,7 @@
 
 #include <asiolink/asiolink.h>
 #include <coroutine.h>
+#include <asiodns/lib.h>
 #include "dns_server.h"
 #include "dns_lookup.h"
 #include "dns_answer.h"
@@ -35,7 +36,8 @@ namespace asiodns {
 ///
 /// This class inherits from both \c DNSServer and from \c coroutine,
 /// defined in coroutine.h. 
-class TCPServer : public virtual DNSServer, public virtual coroutine {
+class ISC_LIBASIODNS_API TCPServer :
+ public virtual DNSServer, public virtual coroutine {
 public:
     /// \brief Constructor
     /// \param io_service the asio::io_service to work with
@@ -47,7 +49,13 @@ public:
     /// \throw isc::InvalidParameter if af is neither AF_INET nor AF_INET6
     /// \throw isc::asiolink::IOError when a low-level error happens, like the
     ///     fd is not a valid descriptor or it can't be listened on.
-    TCPServer(asio::io_service& io_service, int fd, int af,
+    TCPServer(asio::io_service& io_service,
+#ifdef _WIN32
+              SOCKET fd,
+#else
+              int fd,
+#endif
+              int af,
               const isc::asiolink::SimpleCallback* checkin = NULL,
               const DNSLookup* lookup = NULL, const DNSAnswer* answer = NULL);
 
