@@ -67,9 +67,14 @@ class ResolverContext:
         self.__create_query()
         self.__nest = nest      # CNAME loop prevention
         self.__debug = False    # debug mode, will dump detailed log
+        self.__fetch_queries = set()
+        self.__parent = None    # set for internal fetch contexts
 
     def set_debug(self, on_off):
         self.__debug = on_off
+
+    def get_aux_queries(self):
+        return list(self.__fetch_queries)
 
     def __create_query(self):
         '''Create a template query.  QID will be filled on send.'''
@@ -111,8 +116,9 @@ class ResolverContext:
             sys.stderr.write('unexpected response: QID mismatch')
 
         # Look into the response
+        next_qry = None
         if resp_msg.get_header_flag(Message.HEADERFLAG_AA):
-            return self.__handle_auth_answer(resp_msg)
+            next_qry = self.__handle_auth_answer(resp_msg)
         elif resp_msg.get_rcode() == Rcode.NOERROR() and \
                 (not resp_msg.get_header_flag(Message.HEADERFLAG_AA)):
             authorities = resp_msg.get_section(Message.SECTION_AUTHORITY)
@@ -120,7 +126,16 @@ class ResolverContext:
             for ns_rrset in authorities:
                 if ns_rrset.get_type() == RRType.NS():
                     ns_addr = self.__handle_referral(resp_msg, ns_rrset)
-                    return ResQuery(self, self.__qid, ns_addr), None
+                    if ns_addr is not None:
+                        next_qry = ResQuery(self, self.__qid, ns_addr)
+                    break
+        else:
+            if self.__debug:
+                sys.stderr.write('lame server for zone%s\n' % self.__cur_zone)
+        if next_qry is None and self.__parent is not None:
+            # This context is completed, resume the parent
+            next_qry = self.__parent.__resume(self)
+        return next_qry
 
     def __handle_auth_answer(self, resp_msg):
         '''Subroutine of handle_response, handling an authoritative answer.'''
@@ -134,7 +149,7 @@ class ResolverContext:
                     if self.__debug:
                         sys.stdout.write('got a response: ' +
                                          str(answer_rrset))
-                    return None, None
+                    return None
                 elif answer_rrset.get_type() == RRType.CNAME():
                     if self.__debug:
                         sys.stdout.write('got an alias: ' + str(answer_rrset))
@@ -143,7 +158,12 @@ class ResolverContext:
                     if self.__nest > self.CNAME_LOOP_MAX:
                         if self.__debug:
                             sys.stdout.write('possible CNAME loop detected\n')
-                        return None, None
+                        return None
+                    if self.__parent is not None:
+                        # Don't chase CNAME in an internal fetch context
+                        if self.__debug:
+                            sys.stdout.write('CNAME found in internal fetch\n')
+                        return None
                     cname = Name(answer_rrset.get_rdata()[0].to_text())
                     cname_ctx = ResolverContext(self.__sock4, self.__sock6,
                                                 self.__renderer, cname,
@@ -151,13 +171,15 @@ class ResolverContext:
                                                 self.__cache, self.__nest + 1)
                     cname_ctx.set_debug(self.__debug)
                     (qid, ns_addr) = cname_ctx.start()
-                    return ResQuery(cname_ctx, qid, ns_addr), cname_ctx
-                                    
+                    return ResQuery(cname_ctx, qid, ns_addr)
         elif resp_msg.get_rcode() == Rcode.NXDOMAIN() or \
                 (resp_msg.get_rcode() == Rcode.NOERROR() and
                  resp_msg.get_rr_count(Message.SECTION_ANSWER) == 0):
             self.__handle_negative_answer(resp_msg)
-            return None, None
+            return None
+
+        sys.stdout.write('unexpected answer\n')
+        return None
 
     def __handle_negative_answer(self, resp_msg):
         rcode = resp_msg.get_rcode()
@@ -182,6 +204,8 @@ class ResolverContext:
 
                 # Ignore any other records once we find SOA
                 return
+        if self.__debug:
+            sys.stdout.write('unexpected negative answer (missing SOA)\n')
 
     def __handle_referral(self, resp_msg, ns_rrset):
         if self.__debug:
@@ -241,7 +265,7 @@ class ResolverContext:
         zname = self.__qname
         ns_rrset = None
         for l in range(0, zname.get_labelcount()):
-            zname = zname.split(l)
+            zname = self.__qname.split(l)
             ns_rrset = self.__cache.find(zname, self.__qclass, RRType.NS(),
                                          SimpleDNSCache.FIND_ALLOW_GLUE)
             if ns_rrset is not None:
@@ -249,24 +273,58 @@ class ResolverContext:
         raise MiniResolverException('no name server found for ' +
                                     str(self.__qname))
 
-    def __find_ns_addrs(self, nameservers):
+    def __find_ns_addrs(self, nameservers, fetch_if_notfound=True):
         v4_addrs = []
         v6_addrs = []
+        ns_names = []
         ns_class = nameservers.get_class()
         for ns in nameservers.get_rdata():
             ns_name = Name(ns.to_text())
-            rrset = self.__cache.find(ns_name, ns_class, RRType.A(),
-                                      SimpleDNSCache.FIND_ALLOW_GLUE)
-            if rrset is not None:
-                for rdata in rrset.get_rdata():
+            ns_names.append(ns_name)
+            rrset4 = self.__cache.find(ns_name, ns_class, RRType.A(),
+                                       SimpleDNSCache.FIND_ALLOW_GLUE)
+            if rrset4 is not None:
+                for rdata in rrset4.get_rdata():
                     v4_addrs.append((rdata.to_text(), DNS_PORT))
-            rrset = self.__cache.find(ns_name, ns_class, RRType.AAAA(),
+            rrset6 = self.__cache.find(ns_name, ns_class, RRType.AAAA(),
                                       SimpleDNSCache.FIND_ALLOW_GLUE)
-            if rrset is not None:
-                for rdata in rrset.get_rdata():
+            if rrset6 is not None:
+                for rdata in rrset6.get_rdata():
                     # specify 0 for flowinfo and scopeid unconditionally
                     v6_addrs.append((rdata.to_text(), DNS_PORT, 0, 0))
+        if fetch_if_notfound and not v4_addrs and not v6_addrs:
+            if self.__debug:
+                print('no address found for any nameservers on zone ' +
+                      str(self.__cur_zone))
+            self.__cur_nameservers = nameservers
+            for ns in ns_names:
+                self.__fetch_ns_addrs(ns)
         return (v4_addrs, v6_addrs)
+
+    def __fetch_ns_addrs(self, ns_name):
+        for type in [RRType.A(), RRType.AAAA()]:
+            res_ctx = ResolverContext(self.__sock4, self.__sock6,
+                                      self.__renderer, ns_name, self.__qclass,
+                                      type, self.__cache, 0)
+            res_ctx.set_debug(self.__debug)
+            res_ctx.__parent = self
+            (qid, ns_addr) = res_ctx.start()
+            query = ResQuery(res_ctx, qid, ns_addr)
+            self.__fetch_queries.add(query)
+
+    def __resume(self, fetch_ctx):
+        for qry in self.__fetch_queries:
+            if qry.res_ctx == fetch_ctx:
+                self.__fetch_queries.remove(qry)
+                if not self.__fetch_queries:
+                    # all fetch queries done, continue the original context
+                    (self.__ns_addr4, self.__ns_addr6) = \
+                        self.__find_ns_addrs(self.__cur_nameservers, False)
+                    ns_addr = self.__try_next_server()
+                    return ResQuery(self, self.__qid, ns_addr)
+                else:
+                    return None
+        raise MiniResolverException('unexpected case: fetch query not found')
 
 class TimerQueue:
     '''A simple timer management queue'''
@@ -300,14 +358,17 @@ class TimerQueue:
         return None
 
     def get_expired(self, now):
+        expired_items = []
         while self.__timerq:
             cur = self.__timerq[0]
             if cur[-1] == self.ITEM_REMOVED:
                 heapq.heappop(self.__timerq)
             elif now >= cur[0]:
                 expired_entry = heapq.heappop(self.__timerq)
-                return expired_entry[1]
-        return None
+                expired_items.append(expired_entry[1])
+            else:
+                break
+        return expired_items
 
 class QueryTimer:
     '''A timer item for a separate external query.'''
@@ -345,13 +406,14 @@ if __name__ == '__main__':
     queries = [(Name('ns.jinmei.org'), RRType.AAAA()),
                (Name('ns.jinmei.org'), RRType.TXT()), # for NXRRSET
                (Name('nxdomain.jinmei.org'), RRType.A()), # for NXDOMAIN
+               (Name('www.apple.com'), RRType.A()),
                (Name('www.jinmei.org'), RRType.AAAA())] # for CNAME
     ctxs = set([ResolverContext(sock4, sock6, renderer, x[0], qclass, x[1],
                                 cache) for x in queries])
     query_table = {}
     timerq = TimerQueue()
     for ctx in ctxs:
-        #ctx.set_debug(True)
+        ctx.set_debug(True)
         (qid, addr) = ctx.start()
         res_qry = ResQuery(ctx, qid, addr)
         query_table[(qid, addr)] = res_qry
@@ -368,8 +430,8 @@ if __name__ == '__main__':
         if not r:
             # timeout
             now = time.time()
-            timo_item = timerq.get_expired(now)
-            timo_item.timeout()
+            for timo_item in timerq.get_expired(now):
+                timo_item.timeout()
             continue
         ready_socks = []
         if sock4 in r:
@@ -385,15 +447,12 @@ if __name__ == '__main__':
             if res_qry is not None:
                 del query_table[(msg.get_qid(), remote)]
                 ctx = res_qry.res_ctx
-                (res_qry, new_ctx) = ctx.handle_response(msg)
-                if new_ctx is not None:
-                    ctxs.remove(ctx)
-                    ctx = new_ctx
-                    ctxs.add(ctx)
-                if res_qry is None:
-                    # resolution completed
-                    ctxs.remove(ctx)
-                else:
+                ctxs.remove(ctx) # maybe re-inserted below
+                res_qry = ctx.handle_response(msg)
+                next_queries = [] if res_qry is None else [res_qry]
+                next_queries.extend(ctx.get_aux_queries())
+                for res_qry in next_queries:
+                    ctxs.add(res_qry.res_ctx)
                     query_table[(res_qry.qid, res_qry.ns_addr)] = res_qry
                     timerq.add(res_qry.expire, QueryTimer(res_qry, timerq,
                                                           query_table))
