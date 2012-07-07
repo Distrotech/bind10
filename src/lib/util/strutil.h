@@ -23,7 +23,7 @@
 #include <exceptions/exceptions.h>
 #include <boost/lexical_cast.hpp>
 
-#include <util/lib.h>
+#include <util/dll.h>
 
 namespace isc {
 namespace util {

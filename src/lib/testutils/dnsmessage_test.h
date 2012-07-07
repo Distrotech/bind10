@@ -28,7 +28,7 @@
 #include <dns/rrclass.h>
 #include <dns/rrset.h>
 
-#include <testutils/lib.h>
+#include <testutils/dll.h>
 
 #include <gtest/gtest.h>
 

@@ -21,7 +21,7 @@
 
 #include <gtest/gtest.h>
 
-#include <util/unittests/lib.h>
+#include <util/unittests/dll.h>
 
 namespace isc {
 namespace util {

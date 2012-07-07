@@ -16,7 +16,7 @@
 #define __ASIOLINK_DNS_LOOKUP_H 1
 
 #include <asiolink/io_message.h>
-#include <asiodns/lib.h>
+#include <asiodns/dll.h>
 #include <asiodns/dns_server.h>
 #include <dns/message.h>
 #include <util/buffer.h>

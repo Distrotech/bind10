@@ -24,7 +24,7 @@
 #include <map>
 #include <utility>
 
-#include <log/lib.h>
+#include <log/dll.h>
 
 // log4cplus logger header file
 #include <log4cplus/logger.h>

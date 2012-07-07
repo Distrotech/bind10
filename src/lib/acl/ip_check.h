@@ -31,7 +31,7 @@
 #include <netinet/in.h>
 #endif
 
-#include <acl/lib.h>
+#include <acl/dll.h>
 #include <acl/check.h>
 #include <exceptions/exceptions.h>
 #include <util/strutil.h>

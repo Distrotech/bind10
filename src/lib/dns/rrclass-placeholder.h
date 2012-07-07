@@ -21,7 +21,7 @@
 #include <ostream>
 
 #include <exceptions/exceptions.h>
-#include <dns/lib.h>
+#include <dns/dll.h>
 
 #if defined(_WIN32) && defined(IN)
 #undef IN

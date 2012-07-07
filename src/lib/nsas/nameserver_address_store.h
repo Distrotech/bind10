@@ -22,7 +22,7 @@
 
 #include <resolve/resolver_interface.h>
 
-#include <nsas/lib.h>
+#include <nsas/dll.h>
 #include "nsas_types.h"
 #include "glue_hints.h"
 

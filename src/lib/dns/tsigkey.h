@@ -16,7 +16,7 @@
 #define __TSIGKEY_H 1
 
 #include <cryptolink/cryptolink.h>
-#include <dns/lib.h>
+#include <dns/dll.h>
 
 namespace isc {
 namespace dns {

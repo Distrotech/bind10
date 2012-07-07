@@ -26,7 +26,7 @@
 
 #include <exceptions/exceptions.h>
 
-#include <dns/lib.h>
+#include <dns/dll.h>
 #include <dns/messagerenderer.h>
 #include <dns/name.h>
 #include <dns/rdata.h>

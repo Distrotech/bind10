@@ -18,7 +18,7 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <dns/message.h>
-#include <cache/lib.h>
+#include <cache/dll.h>
 #include "message_entry.h"
 #include <nsas/hash_table.h>
 #include <util/lru_list.h>

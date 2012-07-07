@@ -28,7 +28,7 @@
 #include <util/locks.h>
 #include <util/random/random_number_generator.h>
 
-#include <nsas/lib.h>
+#include <nsas/dll.h>
 #include "hash_key.h"
 #include "nsas_entry.h"
 #include "asiolink.h"

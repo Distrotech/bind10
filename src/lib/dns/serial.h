@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include <iostream>
 
-#include <dns/lib.h>
+#include <dns/dll.h>
 
 namespace isc {
 namespace dns {

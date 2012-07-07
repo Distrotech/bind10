@@ -19,7 +19,7 @@
 #include <vector>
 
 #include <exceptions/exceptions.h>
-#include <nsas/lib.h>
+#include <nsas/dll.h>
 
 #include "hash_key.h"
 

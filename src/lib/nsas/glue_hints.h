@@ -19,7 +19,7 @@
 
 #include <dns/message.h>
 
-#include <nsas/lib.h>
+#include <nsas/dll.h>
 #include "nsas_types.h"
 #include "nameserver_address.h"
 

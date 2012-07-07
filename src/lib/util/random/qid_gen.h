@@ -25,7 +25,7 @@
 #include <boost/random/uniform_int.hpp>
 #include <boost/random/variate_generator.hpp>
 
-#include <util/lib.h>
+#include <util/dll.h>
 
 namespace isc {
 namespace util {

@@ -3,7 +3,7 @@
 #ifndef __LOGIMPL_MESSAGES_H
 #define __LOGIMPL_MESSAGES_H
 
-#include <log/lib.h>
+#include <log/dll.h>
 #include <log/message_types.h>
 
 namespace isc {

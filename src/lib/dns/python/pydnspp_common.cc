@@ -20,7 +20,7 @@
 
 #include <util/buffer.h>
 
-#include <dns/python/lib.h>
+#include <dns/python/dll.h>
 #include <dns/exceptions.h>
 #include <dns/name.h>
 #include <dns/messagerenderer.h>

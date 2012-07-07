@@ -16,7 +16,7 @@
 
 #include <stdint.h>
 
-#include <util/lib.h>
+#include <util/dll.h>
 
 // see util/time_utilities.h
 namespace isc {

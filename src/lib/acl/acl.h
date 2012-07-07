@@ -15,7 +15,7 @@
 #ifndef ACL_ACL_H
 #define ACL_ACL_H
 
-#include <acl/lib.h>
+#include <acl/dll.h>
 #include "check.h"
 #include <vector>
 

@@ -21,7 +21,7 @@
  * \todo This interface is very C-ish. Should we have some kind of exceptions?
  */
 
-#include <util/io/lib.h>
+#include <util/io/dll.h>
 
 namespace isc {
 namespace util {

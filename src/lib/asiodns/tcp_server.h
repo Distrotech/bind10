@@ -24,7 +24,7 @@
 
 #include <asiolink/asiolink.h>
 #include <coroutine.h>
-#include <asiodns/lib.h>
+#include <asiodns/dll.h>
 #include "dns_server.h"
 #include "dns_lookup.h"
 #include "dns_answer.h"

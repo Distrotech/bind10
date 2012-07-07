@@ -21,7 +21,7 @@
 #include <ostream>
 
 #include <exceptions/exceptions.h>
-#include <dns/lib.h>
+#include <dns/dll.h>
 
 // Solaris x86 defines DS in <sys/regset.h>, which gets pulled in by Boost
 #if defined(__sun) && defined(DS)

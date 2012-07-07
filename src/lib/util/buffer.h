@@ -15,7 +15,7 @@
 #ifndef __BUFFER_H
 #define __BUFFER_H 1
 
-#include <stdlib.h>
+#include <stddll.h>
 #include <cstring>
 #include <vector>
 
@@ -25,7 +25,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <util/lib.h>
+#include <util/dll.h>
 
 namespace isc {
 namespace util {

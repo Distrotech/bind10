@@ -20,7 +20,7 @@
 #include <stdexcept>
 #include <string>
 
-#include <dns/python/lib.h>
+#include <dns/python/dll.h>
 
 namespace isc {
 namespace dns {

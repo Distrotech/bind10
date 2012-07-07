@@ -16,7 +16,7 @@
 #define __LOGGER_UNITTEST_SUPPORT_H
 
 #include <string>
-#include <log/lib.h>
+#include <log/dll.h>
 #include <log/logger.h>
 
 /// \file

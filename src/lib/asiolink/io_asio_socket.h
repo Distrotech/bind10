@@ -30,7 +30,7 @@
 
 #include <util/buffer.h>
 
-#include <asiolink/lib.h>
+#include <asiolink/dll.h>
 #include <asiolink/io_error.h>
 #include <asiolink/io_socket.h>
 

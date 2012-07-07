@@ -26,7 +26,7 @@
 #ifndef __LOCKS_
 #define __LOCKS_
 
-#include <util/lib.h>
+#include <util/dll.h>
 
 namespace isc {
 namespace util {

@@ -15,7 +15,7 @@
 #ifndef __INTERPROCESS_SYNC_FILE_H__
 #define __INTERPROCESS_SYNC_FILE_H__
 
-#include <util/lib.h>
+#include <util/dll.h>
 #include <util/interprocess_sync.h>
 #include <exceptions/exceptions.h>
 

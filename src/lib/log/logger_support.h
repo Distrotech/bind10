@@ -20,7 +20,7 @@
 #endif
 
 #include <string>
-#include <log/lib.h>
+#include <log/dll.h>
 #include <log/logger.h>
 #include <log/logger_unittest_support.h>
 

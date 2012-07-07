@@ -23,7 +23,7 @@
 #include <unistd.h>
 #endif
 
-#include <util/io/lib.h>
+#include <util/io/dll.h>
 
 /**
  * @file fd.h

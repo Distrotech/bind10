@@ -16,7 +16,7 @@
 #define ACL_LOADER_H
 
 #include <exceptions/exceptions.h>
-#include <acl/lib.h>
+#include <acl/dll.h>
 #include <acl/acl.h>
 #include <cc/data.h>
 #include <boost/function.hpp>

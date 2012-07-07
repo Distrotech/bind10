@@ -21,7 +21,7 @@
 #include <dns/rrclass.h>
 #include <dns/message.h>
 #include <exceptions/exceptions.h>
-#include <cache/lib.h>
+#include <cache/dll.h>
 #include "message_cache.h"
 #include "rrset_cache.h"
 #include "local_zone_data.h"

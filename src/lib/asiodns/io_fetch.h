@@ -26,7 +26,7 @@
 #include <asio/error_code.hpp>
 #include <asiolink/io_address.h>
 #include <asiolink/io_service.h>
-#include <asiodns/lib.h>
+#include <asiodns/dll.h>
 
 #include <util/buffer.h>
 #include <dns/question.h>

@@ -18,7 +18,7 @@
 #include <asiodns/dns_server.h>
 #include <dns/message.h>
 
-#include <resolve/lib.h>
+#include <resolve/dll.h>
 #include <resolve/resolver_interface.h>
 
 namespace isc {

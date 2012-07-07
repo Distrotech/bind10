@@ -31,7 +31,7 @@
 #include <vector>
 
 #include <exceptions/exceptions.h>
-#include <bench/lib.h>
+#include <bench/dll.h>
 
 namespace isc {
 namespace dns {

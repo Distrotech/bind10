@@ -16,7 +16,7 @@
 #define _ISC_DUMMYLOG_H 1
 
 #include <string>
-#include <log/lib.h>
+#include <log/dll.h>
 
 namespace isc {
 namespace log {

@@ -18,7 +18,7 @@
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <asiolink/lib.h>
+#include <asiolink/dll.h>
 #include <asiolink/io_service.h>
 
 namespace isc {

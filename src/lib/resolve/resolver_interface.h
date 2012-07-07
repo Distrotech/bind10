@@ -16,7 +16,7 @@
 #define __RESOLVER_INTERFACE_H
 
 #include <dns/message.h>
-#include <resolve/lib.h>
+#include <resolve/dll.h>
 
 ///
 /// \file resolver_interface.h

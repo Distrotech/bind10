@@ -23,7 +23,7 @@
 #include <time.h>
 #include <stdint.h>
 #include <asiolink/io_address.h>
-#include <nsas/lib.h>
+#include <nsas/dll.h>
 
 namespace isc {
 namespace nsas {

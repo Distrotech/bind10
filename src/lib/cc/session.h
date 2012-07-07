@@ -21,7 +21,7 @@
 
 #include <exceptions/exceptions.h>
 
-#include <cc/lib.h>
+#include <cc/dll.h>
 #include <cc/data.h>
 #include <cc/session_config.h>
 

@@ -15,7 +15,7 @@
 #ifndef __ASIOLINK_IO_SERVICE_H
 #define __ASIOLINK_IO_SERVICE_H 1
 
-#include <asiolink/lib.h>
+#include <asiolink/dll.h>
 
 namespace asio {
     class io_service;

@@ -29,7 +29,7 @@ namespace std{
 // See base32hex_from_binary.h for why we need base64_from...hpp here.
 #include <boost/archive/iterators/base64_from_binary.hpp>
 
-#include <util/lib.h>
+#include <util/dll.h>
 
 namespace boost { 
 namespace archive {

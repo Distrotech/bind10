@@ -16,7 +16,7 @@
 #define __MESSAGERENDERER_H 1
 
 #include <util/buffer.h>
-#include <dns/lib.h>
+#include <dns/dll.h>
 
 namespace isc {
 

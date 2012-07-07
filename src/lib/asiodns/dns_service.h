@@ -20,7 +20,7 @@
 #include <asiolink/io_service.h>
 #include <asiolink/simple_callback.h>
 
-#include <asiodns/lib.h>
+#include <asiodns/dll.h>
 
 namespace isc {
 namespace asiodns {

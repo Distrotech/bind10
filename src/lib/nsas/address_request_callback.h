@@ -15,7 +15,7 @@
 #ifndef __ADDRESS_REQUEST_CALLBACK_H
 #define __ADDRESS_REQUEST_CALLBACK_H
 
-#include <nsas/lib.h>
+#include <nsas/dll.h>
 #include "asiolink.h"
 #include "nameserver_address.h"
 

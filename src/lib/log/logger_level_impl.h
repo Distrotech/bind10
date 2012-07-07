@@ -16,7 +16,7 @@
 #define __LOGGER_LEVEL_IMPL_H
 
 #include <log4cplus/logger.h>
-#include <log/lib.h>
+#include <log/dll.h>
 #include <log/logger_level.h>
 
 namespace isc {

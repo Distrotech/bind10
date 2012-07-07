@@ -23,7 +23,7 @@
 
 #include <exceptions/exceptions.h>
 
-#include <util/lib.h>
+#include <util/dll.h>
 
 namespace boost { 
 namespace archive {

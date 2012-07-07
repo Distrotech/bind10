@@ -28,7 +28,7 @@
 #include <string>
 
 #include <exceptions/exceptions.h>
-#include <asiolink/lib.h>
+#include <asiolink/dll.h>
 #include <asiolink/io_address.h>
 
 # include <ostream>

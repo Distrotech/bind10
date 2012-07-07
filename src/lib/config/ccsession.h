@@ -15,7 +15,7 @@
 #ifndef __CCSESSION_H
 #define __CCSESSION_H 1
 
-#include <config/lib.h>
+#include <config/dll.h>
 #include <config/config_data.h>
 #include <config/module_spec.h>
 

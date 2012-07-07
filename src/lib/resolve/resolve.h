@@ -18,7 +18,7 @@
 /// This file includes all other libresolve headers, and provides
 /// several helper functions used in resolving.
 
-#include <resolve/lib.h>
+#include <resolve/dll.h>
 #include <resolve/resolver_interface.h>
 #include <resolve/resolver_callback.h>
 #include <resolve/response_classifier.h>

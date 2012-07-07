@@ -15,7 +15,7 @@
 #ifndef __LOG_DBGLVLS_H
 #define __LOG_DBGLVLS_H
 
-#include <log/lib.h>
+#include <log/dll.h>
 
 /// \file
 ///

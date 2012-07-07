@@ -18,7 +18,7 @@
 #include <boost/shared_ptr.hpp>
 #include <util/lru_list.h>
 
-#include <nsas/lib.h>
+#include <nsas/dll.h>
 #include "hash_table.h"
 
 namespace isc {

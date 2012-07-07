@@ -17,7 +17,7 @@
 
 #include <dns/name.h>
 
-#include <acl/lib.h>
+#include <acl/dll.h>
 #include <acl/check.h>
 
 namespace isc {

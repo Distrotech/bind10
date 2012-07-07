@@ -21,7 +21,7 @@
 #include <boost/shared_ptr.hpp>
 #include <stdexcept>
 #include <exceptions/exceptions.h>
-#include <cc/lib.h>
+#include <cc/dll.h>
 
 #ifdef _MSC_VER
 #pragma warning(push)

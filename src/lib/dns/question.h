@@ -20,7 +20,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <dns/lib.h>
+#include <dns/dll.h>
 #include <dns/name.h>
 #include <dns/rrclass.h>
 #include <dns/rrtype.h>

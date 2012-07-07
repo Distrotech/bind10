@@ -15,7 +15,7 @@
 #ifndef __UTIL_UNITTESTS_NEWHOOK_H
 #define __UTIL_UNITTESTS_NEWHOOK_H 1
 
-#include <util/unittests/lib.h>
+#include <util/unittests/dll.h>
 
 /**
  * @file newhook.h

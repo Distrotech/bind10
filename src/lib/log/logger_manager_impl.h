@@ -18,7 +18,7 @@
 #include <string>
 
 #include <log4cplus/appender.h>
-#include <log/lib.h>
+#include <log/dll.h>
 #include <log/logger_level.h>
 
 // Forward declaration to avoid need to include log4cplus header file here.

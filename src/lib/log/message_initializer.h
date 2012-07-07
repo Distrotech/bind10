@@ -18,7 +18,7 @@
 #include <cstdlib>
 #include <string>
 #include <vector>
-#include <log/lib.h>
+#include <log/dll.h>
 #include <log/message_dictionary.h>
 
 namespace isc {

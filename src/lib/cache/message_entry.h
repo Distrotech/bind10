@@ -19,7 +19,7 @@
 #include <dns/message.h>
 #include <dns/rrset.h>
 #include <nsas/nsas_entry.h>
-#include <cache/lib.h>
+#include <cache/dll.h>
 #include "rrset_cache.h"
 #include "rrset_entry.h"
 

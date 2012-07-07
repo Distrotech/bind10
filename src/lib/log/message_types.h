@@ -17,7 +17,7 @@
 
 #include <string.h>
 
-#include <log/lib.h>
+#include <log/dll.h>
 
 namespace isc {
 namespace log {

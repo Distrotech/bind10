@@ -20,7 +20,7 @@
 
 #include <util/lru_list.h>
 
-#include <cache/lib.h>
+#include <cache/dll.h>
 
 using namespace isc::nsas;
 

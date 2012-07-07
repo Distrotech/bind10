@@ -21,7 +21,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <util/lib.h>
+#include <util/dll.h>
 #include <util/locks.h>
 
 namespace isc {

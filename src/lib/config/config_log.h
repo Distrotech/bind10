@@ -16,7 +16,7 @@
 #define __CONFIG_LOG__H
 
 #include <log/macros.h>
-#include <config/lib.h>
+#include <config/dll.h>
 #include "config_messages.h"
 
 namespace isc {

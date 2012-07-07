@@ -20,7 +20,7 @@
 #include <asiodns/dns_server.h>
 #include <nsas/nameserver_address_store.h>
 #include <cache/resolver_cache.h>
-#include <resolve/lib.h>
+#include <resolve/dll.h>
 
 namespace isc {
 namespace asiodns {

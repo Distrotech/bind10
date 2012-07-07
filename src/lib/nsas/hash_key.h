@@ -16,7 +16,7 @@
 #define __HASH_KEY_H
 
 #include <dns/rrclass.h>
-#include <nsas/lib.h>
+#include <nsas/dll.h>
 
 #include <stdint.h>
 #include <string>

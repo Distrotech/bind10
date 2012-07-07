@@ -24,7 +24,7 @@
 
 #include <memory>
 
-#include <cryptolink/lib.h>
+#include <cryptolink/dll.h>
 
 namespace isc {
 namespace cryptolink {

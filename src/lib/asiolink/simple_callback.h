@@ -15,7 +15,7 @@
 #ifndef __ASIOLINK_SIMPLE_CALLBACK_H
 #define __ASIOLINK_SIMPLE_CALLBACK_H 1
 
-#include <asiolink/lib.h>
+#include <asiolink/dll.h>
 #include <asiolink/io_message.h>
 
 namespace isc {

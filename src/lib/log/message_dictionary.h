@@ -22,7 +22,7 @@
 
 #include <boost/lexical_cast.hpp>
 
-#include <log/lib.h>
+#include <log/dll.h>
 #include <log/message_types.h>
 
 namespace isc {

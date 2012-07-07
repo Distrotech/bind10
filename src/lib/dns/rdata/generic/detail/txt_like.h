@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-#include <dns/lib.h>
+#include <dns/dll.h>
 
 using namespace std;
 using namespace isc::util;

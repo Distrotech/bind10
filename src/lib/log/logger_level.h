@@ -16,7 +16,7 @@
 #define __LOGGER_LEVEL_H
 
 #include <string>
-#include <log/lib.h>
+#include <log/dll.h>
 
 namespace isc {
 namespace log {

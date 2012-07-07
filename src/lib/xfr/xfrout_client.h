@@ -20,7 +20,7 @@
 #include <string>
 
 #include <exceptions/exceptions.h>
-#include <xfr/lib.h>
+#include <xfr/dll.h>
 
 namespace isc {
 namespace xfr {

@@ -18,7 +18,7 @@
 #include <string>
 #include <exceptions/exceptions.h>
 #include <util/buffer.h>
-#include <dns/lib.h>
+#include <dns/dll.h>
 
 namespace isc {
 namespace dns {

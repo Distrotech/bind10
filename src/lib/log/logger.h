@@ -21,7 +21,7 @@
 #include <cstring>
 
 #include <exceptions/exceptions.h>
-#include <log/lib.h>
+#include <log/dll.h>
 #include <log/logger_level.h>
 #include <log/message_types.h>
 #include <log/log_formatter.h>

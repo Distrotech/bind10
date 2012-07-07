@@ -15,10 +15,10 @@
 #ifndef __RANGE_UTIL_H_
 #define __RANGE_UTIL_H_ 1
 
-#include <stdlib.h>
+#include <stddll.h>
 #include <algorithm>
 
-#include <util/lib.h>
+#include <util/dll.h>
 
 // This header contains useful methods for conduction operations on
 // a range of container elements. Currently the collection is limited,

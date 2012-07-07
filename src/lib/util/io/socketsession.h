@@ -27,7 +27,7 @@
 #include <sys/socket.h>
 #endif
 
-#include <util/io/lib.h>
+#include <util/io/dll.h>
 
 namespace isc {
 namespace util {

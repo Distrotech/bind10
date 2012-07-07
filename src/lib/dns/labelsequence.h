@@ -15,7 +15,7 @@
 #ifndef __LABELSEQUENCE_H
 #define __LABELSEQUENCE_H 1
 
-#include <dns/lib.h>
+#include <dns/dll.h>
 #include <dns/name.h>
 #include <util/buffer.h>
 

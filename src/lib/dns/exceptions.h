@@ -21,7 +21,7 @@
 #define __DNS_EXCEPTIONS_H 1
 
 #include <exceptions/exceptions.h>
-#include <dns/lib.h>
+#include <dns/dll.h>
 
 namespace isc {
 namespace dns {

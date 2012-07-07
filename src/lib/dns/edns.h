@@ -21,7 +21,7 @@
 
 #include <ostream>
 
-#include <dns/lib.h>
+#include <dns/dll.h>
 #include <dns/rdata.h>
 
 namespace isc {

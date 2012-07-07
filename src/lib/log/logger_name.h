@@ -16,7 +16,7 @@
 #define __LOGGER_NAME_H
 
 #include <string>
-#include <log/lib.h>
+#include <log/dll.h>
 
 /// \brief Define Name of Root Logger
 ///

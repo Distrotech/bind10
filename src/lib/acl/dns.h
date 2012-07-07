@@ -22,7 +22,7 @@
 
 #include <cc/data.h>
 
-#include <acl/lib.h>
+#include <acl/dll.h>
 #include <acl/ip_check.h>
 #include <acl/dnsname_check.h>
 #include <acl/loader.h>

@@ -16,7 +16,7 @@
 #define __ASIOLINK_DNS_SERVER_H 1
 
 #include <asiolink/io_message.h>
-#include <asiodns/lib.h>
+#include <asiodns/dll.h>
 
 namespace isc {
 namespace asiodns {

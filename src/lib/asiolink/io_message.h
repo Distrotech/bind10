@@ -27,7 +27,7 @@
 
 #include <exceptions/exceptions.h>
 
-#include <asiolink/lib.h>
+#include <asiolink/dll.h>
 #include <asiolink/io_endpoint.h>
 #include <asiolink/io_socket.h>
 

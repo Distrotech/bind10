@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-#include <util/lib.h>
+#include <util/dll.h>
 
 //
 // Note: this helper module isn't specific to the DNS protocol per se.

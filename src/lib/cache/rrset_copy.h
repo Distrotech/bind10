@@ -16,7 +16,7 @@
 #define __RRSET_COPY_
 
 #include <dns/rrset.h>
-#include <cache/lib.h>
+#include <cache/dll.h>
 
 namespace isc {
 namespace cache {

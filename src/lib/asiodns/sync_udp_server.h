@@ -19,7 +19,7 @@
 #error "asio.hpp must be included before including this, see asiolink.h as to why"
 #endif
 
-#include <asiodns/lib.h>
+#include <asiodns/dll.h>
 #include "dns_answer.h"
 #include "dns_lookup.h"
 #include "dns_server.h"

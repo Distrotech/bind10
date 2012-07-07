@@ -19,7 +19,7 @@
 
 #include <exceptions/exceptions.h>
 
-#include <util/python/lib.h>
+#include <util/python/dll.h>
 
 /**
  * @file pycppwrapper_util.h

@@ -15,7 +15,7 @@
 #ifndef __FETCHABLE_H
 #define __FETCHABLE_H
 
-#include <nsas/lib.h>
+#include <nsas/dll.h>
 
 /**
  * \file fetchable.h

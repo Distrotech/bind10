@@ -18,7 +18,7 @@
 #include <asiolink/io_message.h>
 #include <util/buffer.h>
 #include <dns/message.h>
-#include <asiodns/lib.h>
+#include <asiodns/dll.h>
 
 namespace isc {
 namespace asiodns {

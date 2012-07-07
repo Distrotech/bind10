@@ -24,7 +24,7 @@
 #include <dns/rrclass.h>
 #include <dns/rrtype.h>
 
-#include <testutils/lib.h>
+#include <testutils/dll.h>
 #include "mockups.h"
 
 namespace asiolink {

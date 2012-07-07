@@ -26,7 +26,7 @@
 #include <iostream>
 #include <ios>
 
-#include <bench/lib.h>
+#include <bench/dll.h>
 
 namespace isc {
 namespace bench {

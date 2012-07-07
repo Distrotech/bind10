@@ -16,7 +16,7 @@
 
 #include <string>
 
-#include <dns/lib.h>
+#include <dns/dll.h>
 #include <dns/name.h>
 #include <dns/rdata.h>
 #include <util/buffer.h>

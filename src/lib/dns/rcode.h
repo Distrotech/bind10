@@ -21,7 +21,7 @@
 
 #include <ostream>
 
-#include <dns/lib.h>
+#include <dns/dll.h>
 
 #if defined(_WIN32) && defined(NOERROR)
 #undef NOERROR

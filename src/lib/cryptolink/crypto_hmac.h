@@ -16,7 +16,7 @@
 
 #include <boost/noncopyable.hpp>
 
-#include <cryptolink/lib.h>
+#include <cryptolink/dll.h>
 #include <cryptolink/cryptolink.h>
 
 #ifndef _ISC_CRYPTO_HMAC_H

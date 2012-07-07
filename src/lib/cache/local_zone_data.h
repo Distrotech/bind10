@@ -19,7 +19,7 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <dns/rrset.h>
-#include <cache/lib.h>
+#include <cache/dll.h>
 
 namespace isc {
 namespace cache {

@@ -21,7 +21,7 @@
 
 #include <exceptions/exceptions.h>
 #include <boost/lexical_cast.hpp>
-#include <log/lib.h>
+#include <log/dll.h>
 #include <log/logger_level.h>
 
 namespace isc {

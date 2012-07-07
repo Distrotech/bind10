@@ -26,7 +26,7 @@
 
 #include <asiodns/asiodns.h>
 
-#include <testutils/lib.h>
+#include <testutils/dll.h>
 
 #include <utility>
 #include <vector>

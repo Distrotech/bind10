@@ -35,7 +35,7 @@
 
 #include <stdint.h>
 
-#include <util/lib.h>
+#include <util/dll.h>
 
 namespace isc {
 namespace util {

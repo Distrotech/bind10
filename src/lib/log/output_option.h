@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string>
 
-#include <log/lib.h>
+#include <log/dll.h>
 
 /// \brief Logger Output Option
 ///

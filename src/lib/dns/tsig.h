@@ -19,7 +19,7 @@
 
 #include <exceptions/exceptions.h>
 
-#include <dns/lib.h>
+#include <dns/dll.h>
 #include <dns/tsigerror.h>
 #include <dns/tsigkey.h>
 #include <dns/tsigrecord.h>

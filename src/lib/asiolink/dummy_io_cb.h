@@ -17,7 +17,7 @@
 
 #include <iostream>
 
-#include <asiolink/lib.h>
+#include <asiolink/dll.h>
 #include <asio/error.hpp>
 #include <asio/error_code.hpp>
 

@@ -15,7 +15,7 @@
 #ifndef __UTIL_UNITTESTS_TESTDATA_H
 #define __UTIL_UNITTESTS_TESTDATA_H 1
 
-#include <util/unittests/lib.h>
+#include <util/unittests/dll.h>
 
 /**
  * @file testdata.h

@@ -20,7 +20,7 @@
 #endif
 
 #include <asiolink/simple_callback.h>
-#include <asiodns/lib.h>
+#include <asiodns/dll.h>
 #include <asiodns/dns_answer.h>
 #include <asiodns/dns_lookup.h>
 #include <asiodns/dns_server.h>

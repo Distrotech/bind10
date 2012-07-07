@@ -17,7 +17,7 @@
 
 #include <Python.h>
 
-#include <dns/python/lib.h>
+#include <dns/python/dll.h>
 #include <dns/rdata.h>
 
 namespace isc {

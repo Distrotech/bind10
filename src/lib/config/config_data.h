@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-#include <config/lib.h>
+#include <config/dll.h>
 #include <config/module_spec.h>
 #include <exceptions/exceptions.h>
 

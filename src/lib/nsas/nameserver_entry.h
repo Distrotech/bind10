@@ -27,7 +27,7 @@
 
 #include <util/lru_list.h>
 
-#include <nsas/lib.h>
+#include <nsas/dll.h>
 #include "address_entry.h"
 #include "asiolink.h"
 #include "nsas_types.h"

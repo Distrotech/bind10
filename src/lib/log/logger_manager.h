@@ -16,7 +16,7 @@
 #define __LOGGER_MANAGER_H
 
 #include "exceptions/exceptions.h"
-#include <log/lib.h>
+#include <log/dll.h>
 #include <log/logger_specification.h>
 
 // Generated if, when updating the logging specification, an unknown

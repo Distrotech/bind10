@@ -23,7 +23,7 @@
 
 #include <exceptions/exceptions.h>
 
-#include <dns/lib.h>
+#include <dns/dll.h>
 #include <dns/rdata.h>
 
 namespace isc {

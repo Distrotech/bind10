@@ -20,7 +20,7 @@
 #pragma warning(disable: 4512)
 #endif
 
-#include <acl/lib.h>
+#include <acl/dll.h>
 #include "check.h"
 #include "loader.h"
 

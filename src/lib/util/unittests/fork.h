@@ -21,7 +21,7 @@
 #include <unistd.h>
 #endif
 
-#include <util/unittests/lib.h>
+#include <util/unittests/dll.h>
 
 /**
  * @file fork.h

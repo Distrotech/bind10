@@ -16,7 +16,7 @@
 #define __MESSAGE_EXCEPTION_H
 
 #include <exceptions/exceptions.h>
-#include <log/lib.h>
+#include <log/dll.h>
 #include <log/message_types.h>
 
 #include <stdexcept>

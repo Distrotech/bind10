@@ -15,7 +15,7 @@
 #ifndef __UTIL_UNITTESTS_RESOURCE_H
 #define __UTIL_UNITTESTS_RESOURCE_H 1
 
-#include <util/unittests/lib.h>
+#include <util/unittests/dll.h>
 
 namespace isc {
 namespace util {

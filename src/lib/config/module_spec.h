@@ -17,7 +17,7 @@
 #define _MODULE_SPEC_H 1
 
 #include <cc/data.h>
-#include <config/lib.h>
+#include <config/dll.h>
 
 #include <sstream>
 

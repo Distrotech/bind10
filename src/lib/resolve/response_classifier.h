@@ -22,7 +22,7 @@
 #include <dns/question.h>
 #include <dns/message.h>
 #include <dns/question.h>
-#include <resolve/lib.h>
+#include <resolve/dll.h>
 
 #define RESOLVER_MAX_CNAME_CHAIN    16
 

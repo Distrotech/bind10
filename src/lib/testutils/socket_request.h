@@ -20,7 +20,7 @@
 
 #include <asiodns/asiodns.h>
 
-#include <testutils/lib.h>
+#include <testutils/dll.h>
 
 #include <gtest/gtest.h>
 #include <boost/lexical_cast.hpp>

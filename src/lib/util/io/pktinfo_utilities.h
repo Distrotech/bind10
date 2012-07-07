@@ -20,7 +20,7 @@
 #include <netinet/in.h>
 #endif
 
-#include <util/io/lib.h>
+#include <util/io/dll.h>
 
 // These definitions in this file are for the convenience of internal
 // implementation and test code, and are not intended to be used publicly.

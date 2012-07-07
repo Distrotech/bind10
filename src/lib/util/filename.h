@@ -17,7 +17,7 @@
 
 #include <string>
 
-#include <util/lib.h>
+#include <util/dll.h>
 #include <util/strutil.h>
 
 namespace isc {

@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <log/lib.h>
+#include <log/dll.h>
 #include <log/logger_level.h>
 #include <log/output_option.h>
 

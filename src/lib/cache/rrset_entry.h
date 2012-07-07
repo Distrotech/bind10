@@ -20,7 +20,7 @@
 #include <dns/rrttl.h>
 #include <nsas/nsas_entry.h>
 #include <nsas/fetchable.h>
-#include <cache/lib.h>
+#include <cache/dll.h>
 #include "cache_entry_key.h"
 
 using namespace isc::nsas;

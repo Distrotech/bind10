@@ -18,7 +18,7 @@
 #include <string>
 #include <dns/name.h>
 #include <dns/rrtype.h>
-#include <cache/lib.h>
+#include <cache/dll.h>
 
 namespace isc {
 namespace cache {

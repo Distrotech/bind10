@@ -15,7 +15,7 @@
 #ifndef __NSAS_TYPES_H
 #define __NSAS_TYPES_H
 
-#include <nsas/lib.h>
+#include <nsas/dll.h>
 
 /// \file nsas_types.h
 /// \brief Nameserver Address Store Types

@@ -18,7 +18,7 @@
 
 #include <string>
 
-#include <dns/lib.h>
+#include <dns/dll.h>
 #include <dns/name.h>
 #include <dns/rrtype.h>
 #include <dns/rrttl.h>
