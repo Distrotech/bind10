@@ -17,6 +17,7 @@
 
 from isc.dns import *
 from dns_cache import SimpleDNSCache, install_root_hint
+import datetime
 import heapq
 import random
 import sys
@@ -87,14 +88,16 @@ class ResolverContext:
         '''Dump a debug/log message.'''
         if self.__debug_level < level:
             return
-        prefix = '[%s/%s/%s at %s' % (self.__qname.to_text(True),
-                                      str(self.__qclass), str(self.__qtype),
-                                      self.__cur_zone)
+        date_time = str(datetime.datetime.today())
+        postfix = '[%s/%s/%s at %s' % (self.__qname.to_text(True),
+                                       str(self.__qclass), str(self.__qtype),
+                                       self.__cur_zone)
         if self.__cur_ns_addr is not None:
-            prefix += ' to ' + self.__cur_ns_addr[0]
-        prefix += ']'
-        sys.stdout.write((msg + ' %s\n') %
-                         tuple([str(p) for p in params] + [prefix]))
+            postfix += ' to ' + self.__cur_ns_addr[0]
+        postfix += ']'
+        sys.stdout.write(('%s ' + msg + ' %s\n') %
+                         tuple([date_time] + [str(p) for p in params] +
+                               [postfix]))
 
     def get_aux_queries(self):
         return list(self.__fetch_queries)
