@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\lib\resolve\lib.h" />
+    <ClInclude Include="..\..\..\src\lib\resolve\dll.h" />
     <ClInclude Include="..\..\..\src\lib\resolve\recursive_query.h" />
     <ClInclude Include="..\..\..\src\lib\resolve\resolve.h" />
     <ClInclude Include="..\..\..\src\lib\resolve\resolver_callback.h" />

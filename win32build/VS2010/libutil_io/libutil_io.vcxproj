@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\lib\util\io\dll.h" />
     <ClInclude Include="..\..\..\src\lib\util\io\fd.h" />
     <ClInclude Include="..\..\..\src\lib\util\io\fd_share.h" />
-    <ClInclude Include="..\..\..\src\lib\util\io\lib.h" />
     <ClInclude Include="..\..\..\src\lib\util\io\pktinfo_utilities.h" />
     <ClInclude Include="..\..\..\src\lib\util\io\sockaddr_util.h" />
     <ClInclude Include="..\..\..\src\lib\util\io\socketsession.h" />

@@ -36,7 +36,7 @@
     <ClInclude Include="..\..\..\src\lib\resolve\resolve_messages.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\lib\resolve\lib.h">
+    <ClInclude Include="..\..\..\src\lib\resolve\dll.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

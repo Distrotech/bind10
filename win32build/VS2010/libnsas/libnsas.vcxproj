@@ -14,13 +14,13 @@
     <ClInclude Include="..\..\..\src\lib\nsas\address_entry.h" />
     <ClInclude Include="..\..\..\src\lib\nsas\address_request_callback.h" />
     <ClInclude Include="..\..\..\src\lib\nsas\asiolink.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\dll.h" />
     <ClInclude Include="..\..\..\src\lib\nsas\fetchable.h" />
     <ClInclude Include="..\..\..\src\lib\nsas\glue_hints.h" />
     <ClInclude Include="..\..\..\src\lib\nsas\hash.h" />
     <ClInclude Include="..\..\..\src\lib\nsas\hash_deleter.h" />
     <ClInclude Include="..\..\..\src\lib\nsas\hash_key.h" />
     <ClInclude Include="..\..\..\src\lib\nsas\hash_table.h" />
-    <ClInclude Include="..\..\..\src\lib\nsas\lib.h" />
     <ClInclude Include="..\..\..\src\lib\nsas\nameserver_address.h" />
     <ClInclude Include="..\..\..\src\lib\nsas\nameserver_address_store.h" />
     <ClInclude Include="..\..\..\src\lib\nsas\nameserver_entry.h" />

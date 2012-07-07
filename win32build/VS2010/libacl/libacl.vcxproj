@@ -13,8 +13,8 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\src\lib\acl\acl.h" />
     <ClInclude Include="..\..\..\src\lib\acl\check.h" />
+    <ClInclude Include="..\..\..\src\lib\acl\dll.h" />
     <ClInclude Include="..\..\..\src\lib\acl\ip_check.h" />
-    <ClInclude Include="..\..\..\src\lib\acl\lib.h" />
     <ClInclude Include="..\..\..\src\lib\acl\loader.h" />
     <ClInclude Include="..\..\..\src\lib\acl\logic_check.h" />
   </ItemGroup>

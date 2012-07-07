@@ -69,7 +69,7 @@
     <ClInclude Include="..\..\..\src\lib\nsas\nsas_log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\lib\nsas\lib.h">
+    <ClInclude Include="..\..\..\src\lib\nsas\dll.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

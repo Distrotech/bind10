@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\lib\acl\dll.h" />
     <ClInclude Include="..\..\..\src\lib\acl\dns.h" />
     <ClInclude Include="..\..\..\src\lib\acl\dnsname_check.h" />
-    <ClInclude Include="..\..\..\src\lib\acl\lib.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\acl\dns.cc" />

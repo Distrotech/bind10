@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\lib\dns\tests\unittest_util.h" />
+    <ClInclude Include="..\..\..\src\lib\testutils\dll.h" />
     <ClInclude Include="..\..\..\src\lib\testutils\dnsmessage_test.h" />
     <ClInclude Include="..\..\..\src\lib\testutils\mockups.h" />
     <ClInclude Include="..\..\..\src\lib\testutils\portconfig.h" />
@@ -22,6 +23,7 @@
     <ClCompile Include="..\..\..\src\lib\dns\tests\unittest_util.cc" />
     <ClCompile Include="..\..\..\src\lib\testutils\dnsmessage_test.cc" />
     <ClCompile Include="..\..\..\src\lib\testutils\srv_test.cc" />
+    <ClCompile Include="..\..\dllmain.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{55BCB364-62B0-4F93-8B88-38F3349B22C8}</ProjectGuid>

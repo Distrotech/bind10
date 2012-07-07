@@ -33,7 +33,7 @@
     <ClInclude Include="..\..\..\src\lib\util\unittests\resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\lib\util\unittests\lib.h">
+    <ClInclude Include="..\..\..\src\lib\util\unittests\dll.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

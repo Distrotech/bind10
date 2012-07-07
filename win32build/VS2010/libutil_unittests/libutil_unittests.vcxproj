@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\lib\util\unittests\dll.h" />
     <ClInclude Include="..\..\..\src\lib\util\unittests\fork.h" />
-    <ClInclude Include="..\..\..\src\lib\util\unittests\lib.h" />
     <ClInclude Include="..\..\..\src\lib\util\unittests\newhook.h" />
     <ClInclude Include="..\..\..\src\lib\util\unittests\resource.h" />
     <ClInclude Include="..\..\..\src\lib\util\unittests\run_all.h" />

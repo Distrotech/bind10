@@ -48,7 +48,7 @@
     <ClInclude Include="..\..\..\src\lib\asiodns\sync_udp_server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\lib\asiodns\lib.h">
+    <ClInclude Include="..\..\..\src\lib\asiodns\dll.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

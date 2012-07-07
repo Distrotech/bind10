@@ -15,7 +15,7 @@
     <ClInclude Include="..\..\..\src\lib\config\config_data.h" />
     <ClInclude Include="..\..\..\src\lib\config\config_log.h" />
     <ClInclude Include="..\..\..\src\lib\config\config_messages.h" />
-    <ClInclude Include="..\..\..\src\lib\config\lib.h" />
+    <ClInclude Include="..\..\..\src\lib\config\dll.h" />
     <ClInclude Include="..\..\..\src\lib\config\module_spec.h" />
     <ClInclude Include="..\..\strptime.h" />
   </ItemGroup>

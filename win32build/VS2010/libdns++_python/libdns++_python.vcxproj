@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\lib\dns\python\dll.h" />
     <ClInclude Include="..\..\..\src\lib\dns\python\edns_python.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\python\lib.h" />
     <ClInclude Include="..\..\..\src\lib\dns\python\messagerenderer_python.h" />
     <ClInclude Include="..\..\..\src\lib\dns\python\message_python.h" />
     <ClInclude Include="..\..\..\src\lib\dns\python\name_python.h" />

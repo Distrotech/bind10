@@ -18,7 +18,7 @@
     <ClInclude Include="..\..\..\src\lib\xfr\xfrout_client.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\lib\xfr\lib.h">
+    <ClInclude Include="..\..\..\src\lib\xfr\dll.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

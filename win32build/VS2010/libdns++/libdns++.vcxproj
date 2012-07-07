@@ -12,10 +12,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\lib\dns\character_string.h" />
+    <ClInclude Include="..\..\..\src\lib\dns\dll.h" />
     <ClInclude Include="..\..\..\src\lib\dns\edns.h" />
     <ClInclude Include="..\..\..\src\lib\dns\exceptions.h" />
     <ClInclude Include="..\..\..\src\lib\dns\labelsequence.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\lib.h" />
     <ClInclude Include="..\..\..\src\lib\dns\masterload.h" />
     <ClInclude Include="..\..\..\src\lib\dns\message.h" />
     <ClInclude Include="..\..\..\src\lib\dns\messagerenderer.h" />

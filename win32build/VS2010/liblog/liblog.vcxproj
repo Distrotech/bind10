@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\lib\log\dll.h" />
     <ClInclude Include="..\..\..\src\lib\log\dummylog.h" />
-    <ClInclude Include="..\..\..\src\lib\log\lib.h" />
     <ClInclude Include="..\..\..\src\lib\log\log_dbglevels.h" />
     <ClInclude Include="..\..\..\src\lib\log\log_formatter.h" />
     <ClInclude Include="..\..\..\src\lib\log\logger.h" />

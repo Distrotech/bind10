@@ -13,7 +13,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\src\lib\cache\cache_entry_key.h" />
     <ClInclude Include="..\..\..\src\lib\cache\cache_messages.h" />
-    <ClInclude Include="..\..\..\src\lib\cache\lib.h" />
+    <ClInclude Include="..\..\..\src\lib\cache\dll.h" />
     <ClInclude Include="..\..\..\src\lib\cache\local_zone_data.h" />
     <ClInclude Include="..\..\..\src\lib\cache\logger.h" />
     <ClInclude Include="..\..\..\src\lib\cache\message_cache.h" />

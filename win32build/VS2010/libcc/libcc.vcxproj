@@ -13,7 +13,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\src\lib\cc\cc_messages.h" />
     <ClInclude Include="..\..\..\src\lib\cc\data.h" />
-    <ClInclude Include="..\..\..\src\lib\cc\lib.h" />
+    <ClInclude Include="..\..\..\src\lib\cc\dll.h" />
     <ClInclude Include="..\..\..\src\lib\cc\logger.h" />
     <ClInclude Include="..\..\..\src\lib\cc\session.h" />
     <ClInclude Include="..\..\..\src\lib\cc\session_config.h" />

@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\lib\xfr\lib.h" />
+    <ClInclude Include="..\..\..\src\lib\xfr\dll.h" />
     <ClInclude Include="..\..\..\src\lib\xfr\xfrout_client.h" />
   </ItemGroup>
   <ItemGroup>

@@ -60,7 +60,7 @@
     <ClInclude Include="..\..\..\src\lib\asiolink\udp_socket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\lib\asiolink\lib.h">
+    <ClInclude Include="..\..\..\src\lib\asiolink\dll.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

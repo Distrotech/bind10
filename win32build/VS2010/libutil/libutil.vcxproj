@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\lib\util\buffer.h" />
+    <ClInclude Include="..\..\..\src\lib\util\dll.h" />
     <ClInclude Include="..\..\..\src\lib\util\encode\base16_from_binary.h" />
     <ClInclude Include="..\..\..\src\lib\util\encode\base32hex.h" />
     <ClInclude Include="..\..\..\src\lib\util\encode\base32hex_from_binary.h" />
@@ -25,7 +26,6 @@
     <ClInclude Include="..\..\..\src\lib\util\interprocess_sync_file.h" />
     <ClInclude Include="..\..\..\src\lib\util\interprocess_sync_null.h" />
     <ClInclude Include="..\..\..\src\lib\util\io_utilities.h" />
-    <ClInclude Include="..\..\..\src\lib\util\lib.h" />
     <ClInclude Include="..\..\..\src\lib\util\locks.h" />
     <ClInclude Include="..\..\..\src\lib\util\lru_list.h" />
     <ClInclude Include="..\..\..\src\lib\util\random\qid_gen.h" />

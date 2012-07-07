@@ -78,7 +78,7 @@
     <ClInclude Include="..\..\..\src\lib\dns\python\serial_python.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\lib\dns\python\lib.h">
+    <ClInclude Include="..\..\..\src\lib\dns\python\dll.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

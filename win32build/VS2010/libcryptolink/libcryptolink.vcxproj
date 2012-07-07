@@ -13,7 +13,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\src\lib\cryptolink\cryptolink.h" />
     <ClInclude Include="..\..\..\src\lib\cryptolink\crypto_hmac.h" />
-    <ClInclude Include="..\..\..\src\lib\cryptolink\lib.h" />
+    <ClInclude Include="..\..\..\src\lib\cryptolink\dll.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\cryptolink\cryptolink.cc" />

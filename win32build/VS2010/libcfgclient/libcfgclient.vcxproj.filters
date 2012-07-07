@@ -33,7 +33,7 @@
     <ClInclude Include="..\..\strptime.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\lib\config\lib.h">
+    <ClInclude Include="..\..\..\src\lib\config\dll.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

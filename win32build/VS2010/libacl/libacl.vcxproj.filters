@@ -30,7 +30,7 @@
     <ClInclude Include="..\..\..\src\lib\acl\logic_check.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\lib\acl\lib.h">
+    <ClInclude Include="..\..\..\src\lib\acl\dll.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
