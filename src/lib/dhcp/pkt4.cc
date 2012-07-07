@@ -12,6 +12,10 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDHCP_EXPORT
+
+#include <config.h>
+
 #include <dhcp/pkt4.h>
 #include <dhcp/libdhcp++.h>
 #include <dhcp/dhcp4.h>

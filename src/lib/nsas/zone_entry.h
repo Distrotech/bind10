@@ -28,6 +28,7 @@
 #include <util/locks.h>
 #include <util/random/random_number_generator.h>
 
+#include <nsas/lib.h>
 #include "hash_key.h"
 #include "nsas_entry.h"
 #include "asiolink.h"
@@ -38,8 +39,8 @@
 namespace isc {
 namespace nsas {
 
-class NameserverEntry;
-class AddressRequestCallback;
+class ISC_LIBNSAS_API NameserverEntry;
+class ISC_LIBNSAS_API AddressRequestCallback;
 
 /// \brief Zone Entry
 ///
@@ -52,7 +53,8 @@ class AddressRequestCallback;
 ///
 /// It uses shared_from_this in its methods. It must live inside a shared_ptr.
 
-class ZoneEntry : public NsasEntry<ZoneEntry>, public Fetchable {
+class ISC_LIBNSAS_API ZoneEntry :
+ public NsasEntry<ZoneEntry>, public Fetchable {
 public:
 
     /**

@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBNSAS_EXPORT
+
 #include <config.h>
 
 #include <algorithm>
@@ -22,7 +24,12 @@
 #include <boost/foreach.hpp>
 
 #include <ctype.h>
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#else
 #include <strings.h>
+#endif
 
 #include <config.h>
 
@@ -41,6 +48,11 @@
 #include "nameserver_address.h"
 #include "nameserver_entry.h"
 #include "nsas_log.h"
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4373)
+#endif
 
 using namespace isc::asiolink;
 using namespace isc::nsas;
@@ -470,3 +482,7 @@ NameserverEntry::askIP(isc::resolve::ResolverInterface* resolver,
 
 } // namespace dns
 } // namespace isc
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

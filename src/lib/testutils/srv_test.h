@@ -24,12 +24,13 @@
 #include <dns/rrclass.h>
 #include <dns/rrtype.h>
 
+#include <testutils/lib.h>
 #include "mockups.h"
 
 namespace asiolink {
-class IOSocket;
-class IOMessage;
-class IOEndpoint;
+class ISC_LIBTESTUTILS_API IOSocket;
+class ISC_LIBTESTUTILS_API IOMessage;
+class ISC_LIBTESTUTILS_API IOEndpoint;
 }
 
 namespace isc {
@@ -49,7 +50,7 @@ extern const unsigned int AD_FLAG;
 extern const unsigned int CD_FLAG;
 
 /// \brief The base class for Auth and Recurse test case
-class SrvTestBase : public ::testing::Test {
+class ISC_LIBTESTUTILS_API SrvTestBase : public ::testing::Test {
 protected:
     SrvTestBase();
     virtual ~SrvTestBase();

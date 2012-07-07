@@ -15,6 +15,7 @@
 #ifndef __NSAS_ENTRY_COMPARE_H
 #define __NSAS_ENTRY_COMPARE_H
 
+#include <nsas/lib.h>
 #include "hash_key.h"
 #include "hash_table.h"
 

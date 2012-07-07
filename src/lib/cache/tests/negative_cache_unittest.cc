@@ -86,7 +86,11 @@ TEST_F(NegativeCacheTest, testNXDOMAIN){
     // Sleep for 2 seconds. 2 seconds to make sure the final range check
     // does not overlap with the original ones (in which case this test
     // would erroneously pass if the ttl value is not changed)
+#ifdef _WIN32
+    Sleep(2000);
+#else
     sleep(2);
+#endif
 
     // Query nonexist.example.com again
     Message msg_nxdomain2(Message::PARSE);
@@ -215,7 +219,11 @@ TEST_F(NegativeCacheTest, testNoerrorNodata){
     // Sleep for 2 seconds. 2 seconds to make sure the final range check
     // does not overlap with the original ones (in which case this test
     // would erroneously pass if the ttl value is not changed)
+#ifdef _WIN32
+    Sleep(2000);
+#else
     sleep(2);
+#endif
 
     EXPECT_TRUE(cache->lookup(example_dot_com, RRType::MX(), RRClass::IN(), msg_nodata2));
 

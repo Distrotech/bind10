@@ -18,6 +18,7 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <dns/message.h>
+#include <cache/lib.h>
 #include "message_entry.h"
 #include <nsas/hash_table.h>
 #include <util/lru_list.h>
@@ -32,7 +33,7 @@ namespace cache {
 ///
 /// \todo The message cache class should provide the interfaces for
 ///       loading, dumping and resizing.
-class MessageCache {
+class ISC_LIBCACHE_API MessageCache {
 // Noncopyable
 private:
     MessageCache(const MessageCache& source);

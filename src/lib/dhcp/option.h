@@ -15,11 +15,13 @@
 #ifndef OPTION_H_
 #define OPTION_H_
 
+#include <stdint.h>
 #include <string>
 #include <map>
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <util/buffer.h>
+#include <dhcp/dll.h>
 
 namespace isc {
 namespace dhcp {
@@ -39,11 +41,11 @@ typedef OptionBuffer::const_iterator OptionBufferConstIter;
 typedef boost::shared_ptr<OptionBuffer> OptionBufferPtr;
 
 /// shared pointer to Option object
-class Option;
+class ISC_LIBDHCP_API Option;
 typedef boost::shared_ptr<Option> OptionPtr;
 
 
-class Option {
+class ISC_LIBDHCP_API Option {
 public:
     /// length of the usual DHCPv4 option header (there are exceptions)
     const static size_t OPTION4_HDR_LEN = 2;

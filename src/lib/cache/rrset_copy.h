@@ -16,6 +16,7 @@
 #define __RRSET_COPY_
 
 #include <dns/rrset.h>
+#include <cache/lib.h>
 
 namespace isc {
 namespace cache {
@@ -32,7 +33,7 @@ namespace cache {
 ///       doing RRset copy. But in cache's code, sometime
 ///       we have to do the copy.
 
-void
+ISC_LIBCACHE_API void
 rrsetCopy(const isc::dns::AbstractRRset& src, isc::dns::AbstractRRset& dst);
 
 } // namespace cache

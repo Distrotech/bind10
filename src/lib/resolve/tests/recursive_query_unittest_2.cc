@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
 #include <algorithm>
 #include <cstdlib>
 #include <iomanip>
@@ -46,6 +48,11 @@
 #include <asiolink/io_service.h>
 #include <resolve/recursive_query.h>
 #include <resolve/resolver_interface.h>
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4351)
+#endif
 
 using namespace asio;
 using namespace asio::ip;
@@ -706,3 +713,7 @@ TEST_F(RecursiveQueryTest2, Resolve) {
 
 } // namespace asiodns
 } // namespace isc
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

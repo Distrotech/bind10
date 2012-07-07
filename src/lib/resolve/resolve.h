@@ -18,6 +18,7 @@
 /// This file includes all other libresolve headers, and provides
 /// several helper functions used in resolving.
 
+#include <resolve/lib.h>
 #include <resolve/resolver_interface.h>
 #include <resolve/resolver_callback.h>
 #include <resolve/response_classifier.h>
@@ -38,8 +39,9 @@ namespace resolve {
 ///
 /// \param answer_message The message to clear and place the error in
 /// \param error_code The error Rcode
-void makeErrorMessage(isc::dns::MessagePtr answer_message,
-                      const isc::dns::Rcode& error_code);
+ISC_LIBRESOLVE_API void
+makeErrorMessage(isc::dns::MessagePtr answer_message,
+                 const isc::dns::Rcode& error_code);
 
 
 /// \brief Initialize a response message
@@ -56,8 +58,9 @@ void makeErrorMessage(isc::dns::MessagePtr answer_message,
 ///                      and Opcode from.
 /// \param response_message The fresh response message to initialize
 ///                         (must be in RENDER mode)
-void initResponseMessage(const isc::dns::Message& query_message,
-                         isc::dns::Message& response_message);
+ISC_LIBRESOLVE_API void
+initResponseMessage(const isc::dns::Message& query_message,
+                    isc::dns::Message& response_message);
 
 
 /// \brief Initialize a response message
@@ -73,8 +76,9 @@ void initResponseMessage(const isc::dns::Message& query_message,
 /// \param question The question to place in the Question section
 /// \param response_message The fresh response message to initialize
 ///                         (must be in RENDER mode)
-void initResponseMessage(const isc::dns::Question& question,
-                         isc::dns::Message& response_message);
+ISC_LIBRESOLVE_API void
+initResponseMessage(const isc::dns::Question& question,
+                    isc::dns::Message& response_message);
 
 
 /// \brief Copies the parts relevant for a DNS response to the
@@ -85,8 +89,9 @@ void initResponseMessage(const isc::dns::Question& question,
 /// code
 /// \param source The Message to copy the data from
 /// \param target The Message to copy the data to
-void copyResponseMessage(const isc::dns::Message& source,
-                         isc::dns::MessagePtr target);
+ISC_LIBRESOLVE_API void
+copyResponseMessage(const isc::dns::Message& source,
+                    isc::dns::MessagePtr target);
 
 
 } // namespace resolve

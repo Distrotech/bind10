@@ -18,6 +18,7 @@
 #include <asiodns/dns_server.h>
 #include <dns/message.h>
 
+#include <resolve/lib.h>
 #include <resolve/resolver_interface.h>
 
 namespace isc {
@@ -31,7 +32,8 @@ namespace resolve {
 ///
 /// This class will ignore the response MessagePtr in the callback,
 /// as the server itself should also have a reference.
-class ResolverCallbackServer : public ResolverInterface::Callback {
+class ISC_LIBRESOLVE_API ResolverCallbackServer :
+ public ResolverInterface::Callback {
 public:
     ResolverCallbackServer(asiodns::DNSServer* server) :
         server_(server->clone()) {}

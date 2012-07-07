@@ -17,11 +17,12 @@
 
 #include <stdint.h>
 #include "option.h"
+#include <dhcp/dll.h>
 
 namespace isc {
 namespace dhcp {
 
-class Option6IA: public Option {
+class ISC_LIBDHCP_API Option6IA: public Option {
 
 public:
     /// Length of IA_NA and IA_PD content

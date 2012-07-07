@@ -12,9 +12,12 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBCACHE_EXPORT
+
 #include <config.h>
 
 #include <limits>
+#include <ctime>
 #include <dns/message.h>
 #include <nsas/nsas_entry.h>
 #include "message_entry.h"
@@ -156,7 +159,7 @@ MessageEntry::genMessage(const time_t& time_now,
         msg.setHeaderFlag(Message::HEADERFLAG_AA, false);
         msg.setHeaderFlag(Message::HEADERFLAG_TC, headerflag_tc_);
 
-        bool dnssec_need = msg.getEDNS().get();
+        bool dnssec_need = msg.getEDNS().get() != 0;
         addRRset(msg, rrset_entry_vec, Message::SECTION_ANSWER, dnssec_need);
         addRRset(msg, rrset_entry_vec, Message::SECTION_AUTHORITY, dnssec_need);
         addRRset(msg, rrset_entry_vec, Message::SECTION_ADDITIONAL, dnssec_need);

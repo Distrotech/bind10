@@ -19,6 +19,7 @@
 #include <dns/message.h>
 #include <dns/rrset.h>
 #include <nsas/nsas_entry.h>
+#include <cache/lib.h>
 #include "rrset_cache.h"
 #include "rrset_entry.h"
 
@@ -27,13 +28,13 @@ using namespace isc::nsas;
 namespace isc {
 namespace cache {
 
-class RRsetEntry;
+class ISC_LIBCACHE_API RRsetEntry;
 
 /// \brief Message Entry
 ///
 /// The object of MessageEntry represents one response message
 /// answered to the resolver client.
-class MessageEntry : public NsasEntry<MessageEntry> {
+class ISC_LIBCACHE_API MessageEntry : public NsasEntry<MessageEntry> {
 // Noncopyable
 private:
     MessageEntry(const MessageEntry& source);

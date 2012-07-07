@@ -14,9 +14,15 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#include <time.h>
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#endif
 
 #include <cstring>
 
@@ -133,6 +139,27 @@ struct ScopedAddrInfo {
 // This is made non copyable to avoid making an accidental copy, which could
 // result in duplicate close.
 struct ScopedSocket : private boost::noncopyable {
+#ifdef _WIN32
+    ScopedSocket() : s_(INVALID_SOCKET) {}
+    ScopedSocket(SOCKET s) : s_(s) {}
+    ~ScopedSocket() {
+        if (s_ != INVALID_SOCKET) {
+            closesocket(s_);
+        }
+    }
+    void reset(SOCKET new_s) {
+        if (s_ != INVALID_SOCKET) {
+            closesocket(s_);
+        }
+        s_ = new_s;
+    }
+    SOCKET release() {
+        SOCKET s = s_;
+        s_ = INVALID_SOCKET;
+        return (s);
+    }
+    SOCKET s_;
+#else
     ScopedSocket() : s_(-1) {}
     ScopedSocket(int s) : s_(s) {}
     ~ScopedSocket() {
@@ -152,6 +179,7 @@ struct ScopedSocket : private boost::noncopyable {
         return (s);
     }
     int s_;
+#endif
 };
 
 // This fixture is a framework for various types of network operations
@@ -186,11 +214,20 @@ protected:
 
         sock_.reset(socket(res->ai_family, res->ai_socktype,
                            res->ai_protocol));
+#ifdef _WIN32
+        if (sock_.s_ == INVALID_SOCKET) {
+            isc_throw(IOError, "failed to open test socket");
+        }
+        const int cc = sendto(sock_.s_,
+                              (const char *) test_data, sizeof(test_data), 0,
+                              res->ai_addr, res->ai_addrlen);
+#else
         if (sock_.s_ < 0) {
             isc_throw(IOError, "failed to open test socket");
         }
         const int cc = sendto(sock_.s_, test_data, sizeof(test_data), 0,
                               res->ai_addr, res->ai_addrlen);
+#endif
         if (cc != sizeof(test_data)) {
             isc_throw(IOError, "unexpected sendto result: " << cc);
         }
@@ -204,13 +241,24 @@ protected:
 
         sock_.reset(socket(res->ai_family, res->ai_socktype,
                            res->ai_protocol));
+#ifdef _WIN32
+        if (sock_.s_ == INVALID_SOCKET) {
+            isc_throw(IOError, "failed to open test socket");
+        }
+#else
         if (sock_.s_ < 0) {
             isc_throw(IOError, "failed to open test socket");
         }
+#endif
         if (connect(sock_.s_, res->ai_addr, res->ai_addrlen) < 0) {
             isc_throw(IOError, "failed to connect to the test server");
         }
+#ifdef _WIN32
+        const int cc = send(sock_.s_,
+                            (const char *) test_data, sizeof(test_data), 0);
+#else
         const int cc = send(sock_.s_, test_data, sizeof(test_data), 0);
+#endif
         if (cc != sizeof(test_data)) {
             isc_throw(IOError, "unexpected send result: " << cc);
         }
@@ -226,13 +274,21 @@ protected:
 
         sock_.reset(socket(res->ai_family, res->ai_socktype,
                            res->ai_protocol));
+#ifdef _WIN32
+        if (sock_.s_ == INVALID_SOCKET) {
+            isc_throw(IOError, "failed to open test socket");
+        }
+        if (::bind(sock_.s_, res->ai_addr, res->ai_addrlen) < 0) {
+            isc_throw(IOError, "bind failed: " << strerror(WSAGetLastError()));
+        }
+#else
         if (sock_.s_ < 0) {
             isc_throw(IOError, "failed to open test socket");
         }
-
         if (bind(sock_.s_, res->ai_addr, res->ai_addrlen) < 0) {
             isc_throw(IOError, "bind failed: " << strerror(errno));
         }
+#endif
 
         // The IO service queue should have a RecursiveQuery object scheduled
         // to run at this point.  This call will cause it to begin an
@@ -250,6 +306,18 @@ protected:
         // we add an ad hoc timeout.
         const struct timeval timeo = { 10, 0 };
         int recv_options = 0;
+#ifdef _WIN32
+        if (setsockopt(sock_.s_, SOL_SOCKET, SO_RCVTIMEO,
+                       (const char *) &timeo, sizeof(timeo))) {
+            isc_throw(IOError,
+                      "set RCVTIMEO failed: " << strerror(WSAGetLastError()));
+        }
+        const int ret = recv(sock_.s_, (char *) buffer, size, recv_options);
+        if (ret < 0) {
+            isc_throw(IOError,
+                      "recvfrom failed: " << strerror(WSAGetLastError()));
+        }
+#else
         if (setsockopt(sock_.s_, SOL_SOCKET, SO_RCVTIMEO, &timeo,
                        sizeof(timeo))) {
             if (errno == ENOPROTOOPT) {
@@ -267,7 +335,7 @@ protected:
         if (ret < 0) {
             isc_throw(IOError, "recvfrom failed: " << strerror(errno));
         }
-        
+#endif        
         // Pass the message size back via the size parameter
         size = ret;
     }
@@ -280,6 +348,23 @@ protected:
 
         ScopedSocket sock(socket(res->ai_family, res->ai_socktype,
                                  res->ai_protocol));
+#ifdef _WIN32
+        const SOCKET s = sock.s_;
+        if (s == INVALID_SOCKET) {
+            isc_throw(isc::Unexpected, "failed to open a test socket");
+        }
+        const int on = 1;
+        if (family == AF_INET6) {
+            if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY,
+                           (const char *) &on, sizeof(on)) == -1) {
+                isc_throw(isc::Unexpected,
+                          "failed to set socket option(IPV6_V6ONLY)");
+            }
+        }
+        if (::bind(s, res->ai_addr, res->ai_addrlen) != 0) {
+            isc_throw(isc::Unexpected, "failed to bind a test socket");
+        }
+#else
         const int s = sock.s_;
         if (s < 0) {
             isc_throw(isc::Unexpected, "failed to open a test socket");
@@ -299,6 +384,7 @@ protected:
         if (bind(s, res->ai_addr, res->ai_addrlen) != 0) {
             isc_throw(isc::Unexpected, "failed to bind a test socket");
         }
+#endif
         if (protocol == IPPROTO_TCP) {
             dns_service_->addServerTCPFromFD(sock.release(), family);
         } else {
@@ -502,7 +588,11 @@ protected:
     isc::cache::ResolverCache cache_;
     scoped_ptr<ASIOCallBack> callback_;
     int callback_protocol_;
+#ifdef _WIN32
+    SOCKET callback_native_;
+#else
     int callback_native_;
+#endif
     string callback_address_;
     vector<uint8_t> callback_data_;
     ScopedSocket sock_;
@@ -511,7 +601,12 @@ protected:
 
 RecursiveQueryTest::RecursiveQueryTest() :
     dns_service_(NULL), callback_(NULL), callback_protocol_(0),
-    callback_native_(-1), resolver_(new isc::util::unittests::TestResolver())
+#ifdef _WIN32
+    callback_native_(INVALID_SOCKET),
+#else
+    callback_native_(-1),
+#endif
+    resolver_(new isc::util::unittests::TestResolver())
 {
     nsas_.reset(new isc::nsas::NameserverAddressStore(resolver_));
 }
@@ -610,9 +705,9 @@ TEST_F(RecursiveQueryTest, v4TCPOnly) {
 
 vector<pair<string, uint16_t> >
 singleAddress(const string &address, uint16_t port) {
-    vector<pair<string, uint16_t> > result;
-    result.push_back(pair<string, uint16_t>(address, port));
-    return (result);
+    vector<pair<string, uint16_t> > results;
+    results.push_back(pair<string, uint16_t>(address, port));
+    return (results);
 }
 
 TEST_F(RecursiveQueryTest, recursiveSetupV4) {
@@ -677,26 +772,51 @@ TEST_F(RecursiveQueryTest, forwarderSend) {
     EXPECT_EQ(q.getClass(), q2->getClass());
 }
 
+#ifdef _WIN32
+SOCKET
+#else
 int
+#endif
 createTestSocket() {
     ScopedAddrInfo sai(resolveAddress(AF_INET, IPPROTO_UDP, true));
     struct addrinfo* res = sai.res_;
 
     ScopedSocket sock(socket(res->ai_family, res->ai_socktype,
                              res->ai_protocol));
+#ifdef _WIN32
+    if (sock.s_ == INVALID_SOCKET) {
+        isc_throw(IOError, "failed to open test socket");
+    }
+    if (::bind(sock.s_, res->ai_addr, res->ai_addrlen) < 0) {
+        isc_throw(IOError, "failed to bind test socket");
+    }
+#else
     if (sock.s_ < 0) {
         isc_throw(IOError, "failed to open test socket");
     }
     if (bind(sock.s_, res->ai_addr, res->ai_addrlen) < 0) {
         isc_throw(IOError, "failed to bind test socket");
     }
+#endif
     return (sock.release());
 }
 
 int
-setSocketTimeout(int sock, size_t tv_sec, size_t tv_usec) {
+#ifdef _WIN32
+setSocketTimeout(SOCKET sock, size_t tv_sec, size_t tv_usec)
+#else
+setSocketTimeout(int sock, size_t tv_sec, size_t tv_usec)
+#endif
+{
     const struct timeval timeo = { tv_sec, tv_usec };
     int recv_options = 0;
+#ifdef _WIN32
+    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,
+                   (const char *) &timeo, sizeof(timeo))) {
+        isc_throw(IOError,
+                 "set RCVTIMEO failed: " << strerror(WSAGetLastError()));
+    }
+#else
     if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeo, sizeof(timeo))) {
         if (errno == ENOPROTOOPT) { // see RecursiveQueryTest::recvUDP()
             recv_options = MSG_DONTWAIT;
@@ -704,13 +824,19 @@ setSocketTimeout(int sock, size_t tv_sec, size_t tv_usec) {
             isc_throw(IOError, "set RCVTIMEO failed: " << strerror(errno));
         }
     }
+#endif
     return (recv_options);
 }
 
 // try to read from the socket max time
 // *num is incremented for every succesfull read
 // returns true if it can read max times, false otherwise
-bool tryRead(int sock, int recv_options, size_t max, int* num) {
+#ifdef _WIN32
+bool tryRead(SOCKET sock, int recv_options, size_t max, int* num)
+#else
+bool tryRead(int sock, int recv_options, size_t max, int* num)
+#endif
+{
     size_t i = 0;
     do {
         char inbuff[512];
@@ -734,7 +860,7 @@ public:
     };
 
     MockResolverCallback(DNSServer* server):
-        result(DEFAULT),
+        result_(DEFAULT),
         server_(server->clone())
     {}
 
@@ -743,16 +869,16 @@ public:
     }
 
     void success(const isc::dns::MessagePtr response) {
-        result = SUCCESS;
+        result_ = SUCCESS;
         server_->resume(true);
     }
 
     void failure() {
-        result = FAILURE;
+        result_ = FAILURE;
         server_->resume(false);
     }
 
-    uint32_t result;
+    uint32_t result_;
 private:
     DNSServer* server_;
 };
@@ -787,7 +913,7 @@ TEST_F(RecursiveQueryTest, forwardQueryTimeout) {
     query.forward(ConstMessagePtr(&query_message), answer, buffer, &server, callback);
     // Run the test
     io_service_.run();
-    EXPECT_EQ(callback->result, MockResolverCallback::FAILURE);
+    EXPECT_EQ(callback->result_, MockResolverCallback::FAILURE);
 }
 
 // If we set client timeout to lower than querytimeout, we should
@@ -822,7 +948,7 @@ TEST_F(RecursiveQueryTest, forwardClientTimeout) {
     query.forward(ConstMessagePtr(&query_message), answer, buffer, &server, callback);
     // Run the test
     io_service_.run();
-    EXPECT_EQ(callback->result, MockResolverCallback::FAILURE);
+    EXPECT_EQ(callback->result_, MockResolverCallback::FAILURE);
 }
 
 // If we set lookup timeout to lower than querytimeout, the lookup
@@ -857,7 +983,7 @@ TEST_F(RecursiveQueryTest, forwardLookupTimeout) {
     query.forward(ConstMessagePtr(&query_message), answer, buffer, &server, callback);
     // Run the test
     io_service_.run();
-    EXPECT_EQ(callback->result, MockResolverCallback::FAILURE);
+    EXPECT_EQ(callback->result_, MockResolverCallback::FAILURE);
 }
 
 // Set everything very low and see if this doesn't cause weird
@@ -892,7 +1018,7 @@ TEST_F(RecursiveQueryTest, lowtimeouts) {
     query.forward(ConstMessagePtr(&query_message), answer, buffer, &server, callback);
     // Run the test
     io_service_.run();
-    EXPECT_EQ(callback->result, MockResolverCallback::FAILURE);
+    EXPECT_EQ(callback->result_, MockResolverCallback::FAILURE);
 }
 
 // as mentioned above, we need a more better framework for this,

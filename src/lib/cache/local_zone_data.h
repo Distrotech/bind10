@@ -19,6 +19,7 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <dns/rrset.h>
+#include <cache/lib.h>
 
 namespace isc {
 namespace cache {
@@ -27,7 +28,7 @@ namespace cache {
 /// The object of LocalZoneData represents the data of one
 /// local zone. It provides the interface for lookup the rrsets
 /// in the zone.
-class LocalZoneData {
+class ISC_LIBCACHE_API LocalZoneData {
 public:
     LocalZoneData(uint16_t rrset_class) : class_(rrset_class)
     {}

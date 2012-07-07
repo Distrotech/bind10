@@ -31,8 +31,6 @@
 #include <cstring>
 #include <vector>
 
-#include <util/unittests/lib.h>
-
 namespace isc {
 namespace util {
 namespace unittests {
@@ -42,7 +40,7 @@ namespace unittests {
 /// It emulates the behavior of SocketSessionForwarder without involving
 /// network communication, and allowing the tester to customize the behavior
 /// and to examine forwarded data afterwards.
-class ISC_LIBUTIL_UNITTESTS_API MockSocketSessionForwarder :
+class MockSocketSessionForwarder :
     public isc::util::io::BaseSocketSessionForwarder
 {
 public:

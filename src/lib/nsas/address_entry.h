@@ -20,13 +20,15 @@
 /// Lightweight class that couples an address with a RTT and provides some
 /// convenience methods for accessing and updating the information.
 
+#include <time.h>
 #include <stdint.h>
 #include <asiolink/io_address.h>
+#include <nsas/lib.h>
 
 namespace isc {
 namespace nsas {
 
-class AddressEntry {
+class ISC_LIBNSAS_API AddressEntry {
 public:
     /// Creates an address entry given IOAddress entry and RTT
     /// This is the only constructor; the default copy constructor and

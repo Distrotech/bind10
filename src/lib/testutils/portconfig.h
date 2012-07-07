@@ -18,6 +18,7 @@
 #include <gtest/gtest.h>
 #include <cc/data.h>
 #include <server_common/portconfig.h>
+#include <testutils/lib.h>
 
 namespace isc {
 namespace testutils {

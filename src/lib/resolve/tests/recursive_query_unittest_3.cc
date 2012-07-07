@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
 #include <algorithm>
 #include <cstdlib>
 #include <iomanip>
@@ -46,6 +48,11 @@
 #include <asiolink/io_service.h>
 #include <resolve/recursive_query.h>
 #include <resolve/resolver_interface.h>
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4351)
+#endif
 
 using namespace asio;
 using namespace asio::ip;
@@ -200,7 +207,8 @@ public:
     /// \param ec ASIO error code, completion code of asynchronous I/O issued
     ///        by the "server" to receive data.
     /// \param length Amount of data received.
-    void udpReceiveHandler(error_code ec = error_code(), size_t length = 0) {
+    void udpReceiveHandler(asio::error_code ec = asio::error_code(),
+                           size_t length = 0) {
         // Expected state should be one greater than the last state.
         EXPECT_EQ(static_cast<int>(expected_), static_cast<int>(last_) + 1);
         last_ = expected_;
@@ -263,7 +271,8 @@ public:
     ///
     /// \param ec Completion error code of the send.
     /// \param length Actual number of bytes sent.
-    void udpSendHandler(error_code ec = error_code(), size_t length = 0) {
+    void udpSendHandler(asio::error_code ec = asio::error_code(),
+                        size_t length = 0) {
         // Check send was OK
         EXPECT_EQ(0, ec.value());
         EXPECT_EQ(udp_length_, length);
@@ -283,7 +292,8 @@ public:
     ///
     /// \param socket Socket on which data will be received
     /// \param ec Boost error code, value should be zero.
-    void tcpAcceptHandler(error_code ec = error_code(), size_t length = 0) {
+    void tcpAcceptHandler(asio::error_code ec = asio::error_code(),
+                          size_t length = 0) {
         // Expect that the accept completed without a problem.
         EXPECT_EQ(0, ec.value());
 
@@ -305,7 +315,8 @@ public:
     /// \param ec ASIO error code, completion code of asynchronous I/O issued
     ///        by the "server" to receive data.
     /// \param length Amount of data received.
-    void tcpReceiveHandler(error_code ec = error_code(), size_t length = 0) {
+    void tcpReceiveHandler(asio::error_code ec = asio::error_code(),
+                           size_t length = 0) {
         // Expect that the receive completed without a problem.
         EXPECT_EQ(0, ec.value());
 
@@ -391,7 +402,7 @@ public:
     /// \param ec Boost error code, value should be zero.
     /// \param length Number of bytes sent.
     void tcpSendHandler(size_t expected_length = 0,
-                        error_code ec = error_code(),
+                        asio::error_code ec = asio::error_code(),
                         size_t length = 0)
     {
         EXPECT_EQ(0, ec.value());       // Expect no error
@@ -565,3 +576,7 @@ TEST_F(RecursiveQueryTest3, Resolve) {
 
 } // namespace asiodns
 } // namespace isc
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

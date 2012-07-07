@@ -48,6 +48,9 @@
     <ClInclude Include="..\..\..\src\lib\cache\cache_messages.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\cache\lib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\cache\cache_entry_key.cc">
@@ -81,6 +84,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\lib\cache\cache_messages.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dllmain.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

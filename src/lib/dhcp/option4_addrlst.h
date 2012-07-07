@@ -21,6 +21,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/shared_array.hpp>
 #include <util/buffer.h>
+#include <dhcp/dll.h>
 #include <dhcp/option.h>
 
 namespace isc {
@@ -31,7 +32,7 @@ namespace dhcp {
 ///
 /// This class handles a list of IPv4 addresses. An example of such option
 /// is dns-servers option. It can also be used to handle a single address.
-class Option4AddrLst : public isc::dhcp::Option {
+class ISC_LIBDHCP_API Option4AddrLst : public isc::dhcp::Option {
 public:
 
     /// Defines a collection of IPv4 addresses.

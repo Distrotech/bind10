@@ -18,6 +18,9 @@
     <ClInclude Include="..\..\..\src\lib\nsas\tests\nsas_test.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\util\unittests\resolver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\nsas\tests\address_entry_unittest.cc">

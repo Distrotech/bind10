@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBCACHE_EXPORT
+
 #include <dns/rrset.h>
 #include "local_zone_data.h"
 #include "cache_entry_key.h"

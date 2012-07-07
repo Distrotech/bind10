@@ -17,12 +17,13 @@
 
 #include <iostream>
 #include <util/buffer.h>
+#include <dhcp/dll.h>
 #include <dhcp/pkt6.h>
 
 namespace isc {
 namespace dhcp {
 
-class LibDHCP {
+class ISC_LIBDHCP_API LibDHCP {
 
 public:
     /// Builds collection of options.

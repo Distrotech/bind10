@@ -12,14 +12,21 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBUTIL_UNITTESTS_EXPORT
+#ifndef __LIBCACHE_H
+#define __LIBCACHE_H 1
 
-#include <util/unittests/resolver.h>
+#if !defined(_WIN32) || defined(USE_STATIC_LINK)
+#define ISC_LIBCACHE_API
+#else
+#ifdef ISC_LIBCACHE_EXPORT
+#define ISC_LIBCACHE_API __declspec(dllexport)
+#else
+#define ISC_LIBCACHE_API __declspec(dllimport)
+#endif
+#endif
 
-// Instantiate class
+#endif // __LIBCACHE_H
 
-class ISC_LIBUTIL_UNITTESTS_API TestResolver;
-
-// Local Variables:
+// Local Variables: 
 // mode: c++
-// End:
+// End: 

@@ -20,12 +20,14 @@
 
 #include <util/lru_list.h>
 
+#include <cache/lib.h>
+
 using namespace isc::nsas;
 
 namespace isc {
 namespace cache {
 
-class RRsetEntry;
+class ISC_LIBCACHE_API RRsetEntry;
 
 /// \brief RRset Cache
 /// The object of RRsetCache represented the cache for class-specific
@@ -33,7 +35,7 @@ class RRsetEntry;
 ///
 /// \todo The rrset cache class should provide the interfaces for
 ///       loading, dumping and resizing.
-class RRsetCache{
+class ISC_LIBCACHE_API RRsetCache{
     ///
     /// \name Constructors and Destructor
     ///

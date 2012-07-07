@@ -21,13 +21,14 @@
 #include <boost/shared_array.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include "asiolink/io_address.h"
+#include <dhcp/dll.h>
 #include "dhcp/option.h"
 
 namespace isc {
 
 namespace dhcp {
 
-class Pkt6 {
+class ISC_LIBDHCP_API Pkt6 {
 public:
     /// specifes DHCPv6 packet header length
     const static size_t DHCPV6_PKT_HDR_LEN = 4;

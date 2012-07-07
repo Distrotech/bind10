@@ -20,6 +20,7 @@
 #include <boost/scoped_array.hpp>
 #include <boost/noncopyable.hpp>
 #include <asiolink/io_address.h>
+#include <dhcp/dll.h>
 #include <dhcp/dhcp6.h>
 #include <dhcp/dhcp4.h>
 #include <dhcp/pkt4.h>
@@ -34,7 +35,7 @@ namespace dhcp {
 /// interfaces, configured addresses, link-local addresses, and provides
 /// API for using sockets.
 ///
-class IfaceMgr : public boost::noncopyable {
+class ISC_LIBDHCP_API IfaceMgr : public boost::noncopyable {
 public:
     /// type that defines list of addresses
     typedef std::vector<isc::asiolink::IOAddress> AddressCollection;
@@ -56,7 +57,11 @@ public:
 
     /// Holds information about socket.
     struct SocketInfo {
-        uint16_t sockfd_; /// socket descriptor
+#ifdef _WIN32
+        SOCKET sockfd_; /// socket descriptor
+#else
+        int sockfd_; /// socket descriptor
+#endif
         isc::asiolink::IOAddress addr_; /// bound address
         uint16_t port_;   /// socket port
         uint16_t family_; /// IPv4 or IPv6
@@ -66,8 +71,13 @@ public:
         /// @param sockfd socket descriptor
         /// @param addr an address the socket is bound to
         /// @param port a port the socket is bound to
-        SocketInfo(uint16_t sockfd, const isc::asiolink::IOAddress& addr,
-                   uint16_t port)
+        SocketInfo(
+#ifdef _WIN32
+                   SOCKET sockfd,
+#else
+                   int sockfd,
+#endif
+                   const isc::asiolink::IOAddress& addr, uint16_t port)
         :sockfd_(sockfd), addr_(addr), port_(port), family_(addr.getFamily()) { }
     };
 
@@ -190,7 +200,11 @@ public:
         ///
         /// @param sockfd socket descriptor to be closed/removed.
         /// @return true if there was such socket, false otherwise
-        bool delSocket(uint16_t sockfd);
+#ifdef _WIN32
+        bool delSocket(SOCKET sockfd);
+#else
+        bool delSocket(int sockfd);
+#endif
 
         /// socket used to sending data
         /// TODO: this should be protected
@@ -292,7 +306,11 @@ public:
     /// @param pkt a packet to be transmitted
     ///
     /// @return a socket descriptor
-    uint16_t getSocket(const isc::dhcp::Pkt6& pkt);
+#ifdef _WIN32
+    SOCKET getSocket(const isc::dhcp::Pkt6& pkt);
+#else
+    int getSocket(const isc::dhcp::Pkt6& pkt);
+#endif
 
     /// @brief Return most suitable socket for transmitting specified IPv6 packet.
     ///
@@ -305,7 +323,11 @@ public:
     /// @param pkt a packet to be transmitted
     ///
     /// @return a socket descriptor
-    uint16_t getSocket(const isc::dhcp::Pkt4& pkt);
+#ifdef _WIN32
+    SOCKET getSocket(const isc::dhcp::Pkt4& pkt);
+#else
+    int getSocket(const isc::dhcp::Pkt4& pkt);
+#endif
 
     /// debugging method that prints out all available interfaces
     ///
@@ -373,8 +395,13 @@ public:
     ///
     /// @return socket descriptor, if socket creation, binding and multicast
     /// group join were all successful.
-    int openSocket(const std::string& ifname,
-                   const isc::asiolink::IOAddress& addr, const uint16_t port);
+#ifdef _WIN32
+    SOCKET
+#else
+    int 
+#endif
+    openSocket(const std::string& ifname,
+               const isc::asiolink::IOAddress& addr, const uint16_t port);
 
     /// Opens IPv6 sockets on detected interfaces.
     ///
@@ -409,13 +436,20 @@ public:
     ///
     /// @param socketfd socket descriptor
     /// @param callback callback function
-    void set_session_socket(int socketfd, SessionCallback callback) {
+#ifdef _WIN32
+    void set_session_socket(SOCKET socketfd, SessionCallback callback)
+#else
+    void set_session_socket(int socketfd, SessionCallback callback)
+#endif
+    {
         session_socket_ = socketfd;
         session_callback_ = callback;
     }
 
     /// A value of socket descriptor representing "not specified" state.
+#ifndef _WIN32
     static const int INVALID_SOCKET = -1;
+#endif
 
     // don't use private, we need derived classes in tests
 protected:
@@ -439,7 +473,12 @@ protected:
     /// @param port a port that created socket should be bound to
     ///
     /// @return socket descriptor
-    int openSocket4(Iface& iface, const isc::asiolink::IOAddress& addr, uint16_t port);
+#ifdef _WIN32
+    SOCKET
+#else
+    int
+#endif
+    openSocket4(Iface& iface, const isc::asiolink::IOAddress& addr, uint16_t port);
 
     /// @brief Opens IPv6 socket.
     ///
@@ -452,7 +491,12 @@ protected:
     /// @param port a port that created socket should be bound to
     ///
     /// @return socket descriptor
-    int openSocket6(Iface& iface, const isc::asiolink::IOAddress& addr, uint16_t port);
+#ifdef _WIN32
+    SOCKET
+#else
+    int
+#endif
+    openSocket6(Iface& iface, const isc::asiolink::IOAddress& addr, uint16_t port);
 
     /// @brief Adds an interface to list of known interfaces.
     ///
@@ -509,7 +553,13 @@ protected:
     /// @param control_buf buffer to be used during transmission
     /// @param control_buf_len buffer length
     /// @param pkt packet to be sent
-    void os_send4(struct msghdr& m, boost::scoped_array<char>& control_buf,
+    void os_send4(
+#ifdef _WIN32
+                  WSAMSG& m,
+#else
+                  struct msghdr& m,
+#endif
+                  boost::scoped_array<char>& control_buf,
                   size_t control_buf_len, const Pkt4Ptr& pkt);
 
     /// @brief OS-specific operations during IPv4 packet reception
@@ -518,10 +568,20 @@ protected:
     /// @param pkt packet received (some fields will be set here)
     ///
     /// @return true if successful, false otherwise
-    bool os_receive4(struct msghdr& m, Pkt4Ptr& pkt);
+    bool os_receive4(
+#ifdef _WIN32
+                     WSAMSG& m,
+#else
+                     struct msghdr& m,
+#endif
+                     Pkt4Ptr& pkt);
 
     /// socket descriptor of the session socket
+#ifdef _WIN32
+    SOCKET session_socket_;
+#else
     int session_socket_;
+#endif
 
     /// a callback that will be called when data arrives over session_socket_
     SessionCallback session_callback_;
@@ -545,8 +605,13 @@ private:
     /// @return true if multicast join was successful
     ///
     bool
-    joinMulticast(int sock, const std::string& ifname,
-                  const std::string& mcast);
+    joinMulticast(
+#ifdef _WIN32
+                  SOCKET sock,
+#else
+                  int sock,
+#endif
+                  const std::string& ifname, const std::string& mcast);
 
 };
 

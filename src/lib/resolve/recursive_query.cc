@@ -12,12 +12,19 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBRESOLVE_EXPORT
+
 #include <config.h>
 
-#include <stdlib.h>
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#else
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>             // for some IPC/network system calls
+#endif
+#include <stdlib.h>
 #include <string>
 
 #include <boost/lexical_cast.hpp>
@@ -87,7 +94,7 @@ questionText(const isc::dns::Question& question) {
 /// \param name The name we want to delegate to.
 /// \param rrclass The class.
 /// \param cache The place too look for known delegations.
-std::string
+ISC_LIBRESOLVE_API std::string
 deepestDelegation(Name name, RRClass rrclass,
                   isc::cache::ResolverCache& cache)
 {
@@ -145,6 +152,28 @@ RecursiveQuery::RecursiveQuery(DNSServiceBase& dns_service,
     lookup_timeout_(lookup_timeout), retries_(retries), rtt_recorder_()
 {
 }
+
+#ifdef _WIN32
+static void
+win32_gettimeofday(struct timeval *tv)
+{
+    SYSTEMTIME epoch = { 1970, 1, 4, 1, 0, 0, 0, 0 };
+    FILETIME temp;
+    SystemTimeToFileTime(&epoch, &temp);
+    ULARGE_INTEGER t;
+    t.LowPart = temp.dwLowDateTime;
+    t.HighPart = temp.dwHighDateTime;
+    FILETIME now;
+    GetSystemTimeAsFileTime(&now);
+    ULARGE_INTEGER n;
+    n.LowPart = now.dwLowDateTime;
+    n.HighPart = now.dwHighDateTime;
+    n.QuadPart -= t.QuadPart;
+    tv->tv_sec = (long) (n.QuadPart / 10000000);
+    n.QuadPart -= tv->tv_sec * 10000000;
+    tv->tv_usec = (long) (n.QuadPart / 10);
+}
+#endif
 
 // Set the test server - only used for unit testing.
 void
@@ -349,7 +378,11 @@ private:
         // We need to keep track of the Address, so that we can update
         // the RTT
         current_ns_address = address;
+#ifdef _WIN32
+        win32_gettimeofday(&current_ns_qsent_time);
+#else
         gettimeofday(&current_ns_qsent_time, NULL);
+#endif
         ++outstanding_events_;
         if (test_server_.second != 0) {
             IOFetch query(protocol_, io_, question_,
@@ -375,7 +408,11 @@ private:
             LOG_DEBUG(isc::resolve::logger,
                       RESLIB_DBG_TRACE, RESLIB_TEST_UPSTREAM)
                 .arg(questionText(question_)).arg(test_server_.first);
+#ifdef _WIN32
+            win32_gettimeofday(&current_ns_qsent_time);
+#else
             gettimeofday(&current_ns_qsent_time, NULL);
+#endif
             ++outstanding_events_;
             IOFetch query(protocol, io_, question_,
                 test_server_.first,
@@ -816,7 +853,11 @@ public:
 
             // Update the NSAS with the time it took
             struct timeval cur_time;
+#ifdef _WIN32
+            win32_gettimeofday(&cur_time);
+#else
             gettimeofday(&cur_time, NULL);
+#endif
             uint32_t rtt = 0;
 
             // Only calculate RTT if it is positive
@@ -898,7 +939,7 @@ public:
     }
 };
 
-class ForwardQuery : public IOFetch::Callback {
+class ISC_LIBRESOLVE_API ForwardQuery : public IOFetch::Callback {
 private:
     // The io service to handle async calls
     IOService& io_;
@@ -1045,8 +1086,10 @@ public:
         client_timer.cancel();
         if (outstanding_events_ > 0) {
             return;
+#ifndef _MSC_VER
         } else {
             delete this;
+#endif
         }
     }
 

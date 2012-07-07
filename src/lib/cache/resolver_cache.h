@@ -21,6 +21,7 @@
 #include <dns/rrclass.h>
 #include <dns/message.h>
 #include <exceptions/exceptions.h>
+#include <cache/lib.h>
 #include "message_cache.h"
 #include "rrset_cache.h"
 #include "local_zone_data.h"
@@ -37,7 +38,7 @@ class RRsetCache;
 /// \brief Cache Size Information.
 ///
 /// Used to initialize the size of class-specific rrset/message cache.
-struct CacheSizeInfo
+struct ISC_LIBCACHE_API CacheSizeInfo
 {
 public:
     /// \brief Constructor
@@ -62,7 +63,7 @@ public:
 ///
 /// Thrown if the given message has no question section when looking up
 /// the message in cache.
-class MessageNoQuestionSection : public isc::Exception {
+class ISC_LIBCACHE_API MessageNoQuestionSection : public isc::Exception {
 public:
     MessageNoQuestionSection(const char*file, size_t line, const char*what) :
         isc::Exception(file, line, what)
@@ -79,7 +80,7 @@ public:
 ///
 /// \todo The resolver cache class should provide the interfaces for
 ///       loading, dumping and resizing.
-class ResolverClassCache {
+class ISC_LIBCACHE_API ResolverClassCache {
 public:
     /// \brief Default Constructor.
     ///
@@ -199,7 +200,7 @@ private:
     RRsetCachePtr negative_soa_cache_;
 };
 
-class ResolverCache {
+class ISC_LIBCACHE_API ResolverCache {
 public:
     /// \brief Default Constructor.
     ///

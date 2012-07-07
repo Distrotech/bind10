@@ -16,6 +16,7 @@
 #define __HASH_KEY_H
 
 #include <dns/rrclass.h>
+#include <nsas/lib.h>
 
 #include <stdint.h>
 #include <string>
@@ -41,7 +42,7 @@ namespace nsas {
 ///
 /// To avoid passing round three elements (key, key length, and class), they
 /// have been combined into this simple struct.
-struct HashKey {
+struct ISC_LIBNSAS_API HashKey {
 
     /// \brief Constructor
     ///

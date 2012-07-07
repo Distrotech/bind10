@@ -12,13 +12,20 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDHCP_EXPORT
+
 #include <config.h>
 #include <sstream>
 #include <fstream>
 #include <string.h>
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <netioapi.h>
+#else
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/select.h>
+#endif
 
 #include <dhcp/dhcp4.h>
 #include <dhcp/dhcp6.h>
@@ -75,7 +82,7 @@ IfaceMgr::Iface::getPlainMac() const {
     ostringstream tmp;
     tmp.fill('0');
     tmp << hex;
-    for (int i = 0; i < mac_len_; i++) {
+    for (size_t i = 0; i < mac_len_; i++) {
         tmp.width(2);
         tmp <<  static_cast<int>(mac_[i]);
         if (i < mac_len_-1) {
@@ -107,11 +114,20 @@ bool IfaceMgr::Iface::delAddress(const isc::asiolink::IOAddress& addr) {
     return (false);
 }
 
-bool IfaceMgr::Iface::delSocket(uint16_t sockfd) {
+#ifdef _WIN32
+bool IfaceMgr::Iface::delSocket(SOCKET sockfd)
+#else
+bool IfaceMgr::Iface::delSocket(int sockfd)
+#endif
+{
     list<SocketInfo>::iterator sock = sockets_.begin();
     while (sock!=sockets_.end()) {
         if (sock->sockfd_ == sockfd) {
+#ifdef _WIN32
+            closesocket(sockfd);
+#else
             close(sockfd);
+#endif
             sockets_.erase(sock);
             return (true); //socket found
         }
@@ -121,7 +137,11 @@ bool IfaceMgr::Iface::delSocket(uint16_t sockfd) {
 }
 
 IfaceMgr::IfaceMgr()
+#ifdef _WIN32
+    :control_buf_len_(WSA_CMSG_SPACE(sizeof(struct in6_pktinfo))),
+#else
     :control_buf_len_(CMSG_SPACE(sizeof(struct in6_pktinfo))),
+#endif
      control_buf_(new char[control_buf_len_]),
      session_socket_(INVALID_SOCKET), session_callback_(NULL)
 {
@@ -155,7 +175,11 @@ void IfaceMgr::closeSockets() {
         for (SocketCollection::iterator sock = iface->sockets_.begin();
              sock != iface->sockets_.end(); ++sock) {
             cout << "Closing socket " << sock->sockfd_ << endl;
+#ifdef _WIN32
+            closesocket(sock->sockfd_);
+#else
             close(sock->sockfd_);
+#endif
         }
         iface->sockets_.clear();
     }
@@ -212,7 +236,7 @@ void IfaceMgr::stubDetectIfaces() {
 
         cout << "Detected interface " << ifaceName << "/" << v4addr << "/"
              << v6addr << endl;
-    } catch (const std::exception& ex) {
+    } catch (const std::exception&) {
         // TODO: deallocate whatever memory we used
         // not that important, since this function is going to be
         // thrown away as soon as we get proper interface detection
@@ -225,7 +249,11 @@ void IfaceMgr::stubDetectIfaces() {
 }
 
 bool IfaceMgr::openSockets4(const uint16_t port) {
+#ifdef _WIN32
+    SOCKET sock;
+#else
     int sock;
+#endif
     int count = 0;
 
     for (IfaceCollection::iterator iface=ifaces_.begin();
@@ -254,7 +282,7 @@ bool IfaceMgr::openSockets4(const uint16_t port) {
             }
 
             sock = openSocket(iface->getName(), *addr, port);
-            if (sock<0) {
+            if (sock == INVALID_SOCKET) {
                 cout << "Failed to open unicast socket." << endl;
                 return (false);
             }
@@ -267,7 +295,11 @@ bool IfaceMgr::openSockets4(const uint16_t port) {
 }
 
 bool IfaceMgr::openSockets6(const uint16_t port) {
+#ifdef _WIN32
+    SOCKET sock;
+#else
     int sock;
+#endif
     int count = 0;
 
     for (IfaceCollection::iterator iface=ifaces_.begin();
@@ -292,7 +324,7 @@ bool IfaceMgr::openSockets6(const uint16_t port) {
             }
 
             sock = openSocket(iface->getName(), *addr, port);
-            if (sock<0) {
+            if (sock == INVALID_SOCKET) {
                 cout << "Failed to open unicast socket." << endl;
                 return (false);
             }
@@ -302,7 +334,11 @@ bool IfaceMgr::openSockets6(const uint16_t port) {
             // on Linux.
             if ( !joinMulticast(sock, iface->getName(),
                                 string(ALL_DHCP_RELAY_AGENTS_AND_SERVERS) ) ) {
+#ifdef _WIN32
+                closesocket(sock);
+#else
                 close(sock);
+#endif
                 isc_throw(Unexpected, "Failed to join " << ALL_DHCP_RELAY_AGENTS_AND_SERVERS
                           << " multicast group.");
             }
@@ -380,8 +416,13 @@ IfaceMgr::getIface(const std::string& ifname) {
     return (NULL); // not found
 }
 
-int IfaceMgr::openSocket(const std::string& ifname, const IOAddress& addr,
-                         const uint16_t port) {
+#ifdef _WIN32
+SOCKET
+#else
+int
+#endif
+IfaceMgr::openSocket(const std::string& ifname, const IOAddress& addr,
+                     const uint16_t port) {
     Iface* iface = getIface(ifname);
     if (!iface) {
         isc_throw(BadValue, "There is no " << ifname << " interface present.");
@@ -397,7 +438,12 @@ int IfaceMgr::openSocket(const std::string& ifname, const IOAddress& addr,
     }
 }
 
-int IfaceMgr::openSocket4(Iface& iface, const IOAddress& addr, uint16_t port) {
+#ifdef _WIN32
+SOCKET
+#else
+int
+#endif
+IfaceMgr::openSocket4(Iface& iface, const IOAddress& addr, uint16_t port) {
 
     cout << "Creating UDP4 socket on " << iface.getFullName()
          << " " << addr.toText() << "/port=" << port << endl;
@@ -411,23 +457,40 @@ int IfaceMgr::openSocket4(Iface& iface, const IOAddress& addr, uint16_t port) {
     //addr4.sin_addr.s_addr = 0; // anyaddr: this will receive 0.0.0.0 => 255.255.255.255 traffic
     // addr4.sin_addr.s_addr = 0xffffffffu; // broadcast address. This will receive 0.0.0.0 => 255.255.255.255 as well
 
+#ifdef _WIN32
+    SOCKET sock = socket(AF_INET, SOCK_DGRAM, 0);
+#else
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sock < 0) {
+#endif
+    if (sock == INVALID_SOCKET) {
         isc_throw(Unexpected, "Failed to create UDP6 socket.");
     }
 
+#ifdef _WIN32
+    if (::bind(sock, (struct sockaddr *)&addr4, sizeof(addr4)) < 0) {
+        closesocket(sock);
+        isc_throw(Unexpected, "Failed to bind socket " << sock << " to " << addr.toText()
+                  << "/port=" << port);
+    }
+#else
     if (bind(sock, (struct sockaddr *)&addr4, sizeof(addr4)) < 0) {
         close(sock);
         isc_throw(Unexpected, "Failed to bind socket " << sock << " to " << addr.toText()
                   << "/port=" << port);
     }
+#endif
 
     // if there is no support for IP_PKTINFO, we are really out of luck
     // it will be difficult to undersand, where this packet came from
 #if defined(IP_PKTINFO)
     int flag = 1;
-    if (setsockopt(sock, IPPROTO_IP, IP_PKTINFO, &flag, sizeof(flag)) != 0) {
+    if (setsockopt(sock, IPPROTO_IP, IP_PKTINFO,
+                   (char *) &flag, sizeof(flag)) != 0) {
+#ifdef _WIN32
+        closesocket(sock);
+#else
         close(sock);
+#endif
         isc_throw(Unexpected, "setsockopt: IP_PKTINFO: failed.");
     }
 #endif
@@ -441,7 +504,12 @@ int IfaceMgr::openSocket4(Iface& iface, const IOAddress& addr, uint16_t port) {
     return (sock);
 }
 
-int IfaceMgr::openSocket6(Iface& iface, const IOAddress& addr, uint16_t port) {
+#ifdef _WIN32
+SOCKET
+#else
+int
+#endif
+IfaceMgr::openSocket6(Iface& iface, const IOAddress& addr, uint16_t port) {
 
     cout << "Creating UDP6 socket on " << iface.getFullName()
          << " " << addr.toText() << "/port=" << port << endl;
@@ -463,37 +531,60 @@ int IfaceMgr::openSocket6(Iface& iface, const IOAddress& addr, uint16_t port) {
     // TODO: use sockcreator once it becomes available
 
     // make a socket
+#ifdef _WIN32
+    SOCKET sock = socket(AF_INET6, SOCK_DGRAM, 0);
+#else
     int sock = socket(AF_INET6, SOCK_DGRAM, 0);
-    if (sock < 0) {
+#endif
+    if (sock == INVALID_SOCKET) {
         isc_throw(Unexpected, "Failed to create UDP6 socket.");
     }
 
     // Set the REUSEADDR option so that we don't fail to start if
     // we're being restarted.
     int flag = 1;
+#ifndef _WIN32
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
                    (char *)&flag, sizeof(flag)) < 0) {
         close(sock);
         isc_throw(Unexpected, "Can't set SO_REUSEADDR option on dhcpv6 socket.");
     }
+#endif
 
+#ifdef _WIN32
+    if (::bind(sock, (struct sockaddr *)&addr6, sizeof(addr6)) < 0) {
+        closesocket(sock);
+        isc_throw(Unexpected, "Failed to bind socket " << sock << " to " << addr.toText()
+                  << "/port=" << port);
+    }
+#else
     if (bind(sock, (struct sockaddr *)&addr6, sizeof(addr6)) < 0) {
         close(sock);
         isc_throw(Unexpected, "Failed to bind socket " << sock << " to " << addr.toText()
                   << "/port=" << port);
     }
+#endif
+
 #ifdef IPV6_RECVPKTINFO
     // RFC3542 - a new way
     if (setsockopt(sock, IPPROTO_IPV6, IPV6_RECVPKTINFO,
-                   &flag, sizeof(flag)) != 0) {
+                   (char *) &flag, sizeof(flag)) != 0) {
+#ifdef _WIN32
+        closesocket(sock);
+#else
         close(sock);
+#endif
         isc_throw(Unexpected, "setsockopt: IPV6_RECVPKTINFO failed.");
     }
 #else
     // RFC2292 - an old way
     if (setsockopt(sock, IPPROTO_IPV6, IPV6_PKTINFO,
-                   &flag, sizeof(flag)) != 0) {
+                   (char *) &flag, sizeof(flag)) != 0) {
+#ifdef _WIN32
+        closesocket(sock);
+#else
         close(sock);
+#endif
         isc_throw(Unexpected, "setsockopt: IPV6_PKTINFO: failed.");
     }
 #endif
@@ -506,7 +597,11 @@ int IfaceMgr::openSocket6(Iface& iface, const IOAddress& addr, uint16_t port) {
 
         if ( !joinMulticast( sock, iface.getName(),
                          string(ALL_DHCP_RELAY_AGENTS_AND_SERVERS) ) ) {
+#ifdef _WIN32
+            closesocket(sock);
+#else
             close(sock);
+#endif
             isc_throw(Unexpected, "Failed to join " << ALL_DHCP_RELAY_AGENTS_AND_SERVERS
                       << " multicast group.");
         }
@@ -522,8 +617,13 @@ int IfaceMgr::openSocket6(Iface& iface, const IOAddress& addr, uint16_t port) {
 }
 
 bool
-IfaceMgr::joinMulticast(int sock, const std::string& ifname,
-const std::string & mcast) {
+IfaceMgr::joinMulticast(
+#ifdef _WIN32
+                        SOCKET sock,
+#else
+                        int sock,
+#endif
+                        const std::string& ifname, const std::string & mcast) {
 
     struct ipv6_mreq mreq;
 
@@ -536,7 +636,7 @@ const std::string & mcast) {
 
     mreq.ipv6mr_interface = if_nametoindex(ifname.c_str());
     if (setsockopt(sock, IPPROTO_IPV6, IPV6_JOIN_GROUP,
-                   &mreq, sizeof(mreq)) < 0) {
+                   (char *)&mreq, sizeof(mreq)) < 0) {
         cout << "Failed to join " << mcast << " multicast group." << endl;
         return (false);
     }
@@ -570,10 +670,19 @@ IfaceMgr::send(const Pkt6Ptr& pkt) {
     to.sin6_scope_id = pkt->getIndex();
 
     // Initialize our message header structure.
+#ifdef _WIN32
+    WSAMSG m;
+#else
     struct msghdr m;
+#endif
     memset(&m, 0, sizeof(m));
-    m.msg_name = &to;
+#ifdef _WIN32
+    m.name = (struct sockaddr *)&to;
+    m.namelen = sizeof(to);
+#else
+    m.msg_name = (struct sockaddr *)&to;
     m.msg_namelen = sizeof(to);
+#endif
 
     // Set the data buffer we're sending. (Using this wacky
     // "scatter-gather" stuff... we only have a single chunk
@@ -586,12 +695,23 @@ IfaceMgr::send(const Pkt6Ptr& pkt) {
     // (defined as void*) we must use const cast from void *.
     // Otherwise C++ compiler would complain that we are trying
     // to assign const void* to void*.
+#ifdef _WIN32
+    WSABUF v;
+#else
     struct iovec v;
+#endif
     memset(&v, 0, sizeof(v));
+#ifdef _WIN32
+    v.buf = (char *)(pkt->getBuffer().getData());
+    v.len = pkt->getBuffer().getLength();
+    m.lpBuffers = &v;
+    m.dwBufferCount = 1;
+#else
     v.iov_base = const_cast<void *>(pkt->getBuffer().getData());
     v.iov_len = pkt->getBuffer().getLength();
     m.msg_iov = &v;
     m.msg_iovlen = 1;
+#endif
 
     // Setting the interface is a bit more involved.
     //
@@ -599,6 +719,15 @@ IfaceMgr::send(const Pkt6Ptr& pkt) {
     // define the IPv6 packet information. We could set the
     // source address if we wanted, but we can safely let the
     // kernel decide what that should be.
+#ifdef _WIN32
+    m.Control.buf = &control_buf_[0];
+    m.Control.len = control_buf_len_;
+    WSACMSGHDR *cmsg = WSA_CMSG_FIRSTHDR(&m);
+    cmsg->cmsg_level = IPPROTO_IPV6;
+    cmsg->cmsg_type = IPV6_PKTINFO;
+    cmsg->cmsg_len = WSA_CMSG_LEN(sizeof(struct in6_pktinfo));
+    struct in6_pktinfo *pktinfo = convertPktInfo6(WSA_CMSG_DATA(cmsg));
+#else
     m.msg_control = &control_buf_[0];
     m.msg_controllen = control_buf_len_;
     struct cmsghdr *cmsg = CMSG_FIRSTHDR(&m);
@@ -606,13 +735,26 @@ IfaceMgr::send(const Pkt6Ptr& pkt) {
     cmsg->cmsg_type = IPV6_PKTINFO;
     cmsg->cmsg_len = CMSG_LEN(sizeof(struct in6_pktinfo));
     struct in6_pktinfo *pktinfo = convertPktInfo6(CMSG_DATA(cmsg));
+#endif
     memset(pktinfo, 0, sizeof(struct in6_pktinfo));
     pktinfo->ipi6_ifindex = pkt->getIndex();
+#ifdef _WIN32
+    m.Control.len = cmsg->cmsg_len;
+#else
     m.msg_controllen = cmsg->cmsg_len;
+#endif
 
     pkt->updateTimestamp();
 
+#ifdef _WIN32
+    DWORD bsent;
+    if (WSASendMsg(getSocket(*pkt), &m, 0, &bsent, NULL, NULL) == SOCKET_ERROR)
+        result = -1;
+    else
+        result = (int) bsent;
+#else
     result = sendmsg(getSocket(*pkt), &m, 0);
+#endif
     if (result < 0) {
         isc_throw(Unexpected, "Pkt6 send failed: sendmsg() returned " << result);
     }
@@ -622,7 +764,7 @@ IfaceMgr::send(const Pkt6Ptr& pkt) {
          << ", src=" << pkt->getLocalAddr().toText() << "]:" << pkt->getLocalPort()
          << endl;
 
-    return (result);
+    return (result >= 0);
 }
 
 bool
@@ -645,23 +787,43 @@ IfaceMgr::send(const Pkt4Ptr& pkt)
     to.sin_port = htons(pkt->getRemotePort());
     to.sin_addr.s_addr = htonl(pkt->getRemoteAddr());
 
+#ifdef _WIN32
+    WSAMSG m;
+#else
     struct msghdr m;
+#endif
     // Initialize our message header structure.
     memset(&m, 0, sizeof(m));
-    m.msg_name = &to;
+#ifdef _WIN32
+    m.name = (struct sockaddr *)&to;
+    m.namelen = sizeof(to);
+#else
+    m.msg_name = (struct sockaddr *)&to;
     m.msg_namelen = sizeof(to);
+#endif
 
     // Set the data buffer we're sending. (Using this wacky
     // "scatter-gather" stuff... we only have a single chunk
     // of data to send, so we declare a single vector entry.)
+#ifdef _WIN32
+    WSABUF v;
+#else
     struct iovec v;
+#endif
     memset(&v, 0, sizeof(v));
     // iov_base field is of void * type. We use it for packet
     // transmission, so this buffer will not be modified.
+#ifdef _WIN32
+    v.buf = (char *)(pkt->getBuffer().getData());
+    v.len = pkt->getBuffer().getLength();
+    m.lpBuffers = &v;
+    m.dwBufferCount = 1;
+#else
     v.iov_base = const_cast<void *>(pkt->getBuffer().getData());
     v.iov_len = pkt->getBuffer().getLength();
     m.msg_iov = &v;
     m.msg_iovlen = 1;
+#endif
 
     // call OS-specific routines (like setting interface index)
     os_send4(m, control_buf_, control_buf_len_, pkt);
@@ -673,7 +835,14 @@ IfaceMgr::send(const Pkt4Ptr& pkt)
 
     pkt->updateTimestamp();
 
+#ifdef _WIN32
+    DWORD bsent;
+    int result = -1;
+    if (WSASendMsg(getSocket(*pkt), &m, 0, &bsent, NULL, NULL) != SOCKET_ERROR)
+        result = (int) bsent;
+#else
     int result = sendmsg(getSocket(*pkt), &m, 0);
+#endif
     if (result < 0) {
         isc_throw(Unexpected, "Pkt4 send failed.");
     }
@@ -684,7 +853,7 @@ IfaceMgr::send(const Pkt4Ptr& pkt)
          << ", src=" << pkt->getLocalAddr().toText() << ":" << pkt->getLocalPort()
          << endl;
 
-    return (result);
+    return (result >= 0);
 }
 
 
@@ -714,9 +883,11 @@ IfaceMgr::receive4(uint32_t timeout) {
 
                 // Add this socket to listening set
                 FD_SET(s->sockfd_, &sockets);
+#ifndef _WIN32
                 if (maxfd < s->sockfd_) {
                     maxfd = s->sockfd_;
                 }
+#endif
             }
         }
     }
@@ -725,8 +896,10 @@ IfaceMgr::receive4(uint32_t timeout) {
     if (session_socket_ != INVALID_SOCKET) {
         // at it to the set as well
         FD_SET(session_socket_, &sockets);
+#ifndef _WIN32
         if (maxfd < session_socket_)
             maxfd = session_socket_;
+#endif
         names << session_socket_ << "(session)";
     }
 
@@ -744,7 +917,11 @@ IfaceMgr::receive4(uint32_t timeout) {
         // nothing received and timeout has been reached
         return (Pkt4Ptr()); // NULL
     } else if (result < 0) {
+#ifdef _WIN32
+        cout << "Socket read error: " << strerror(WSAGetLastError()) << endl;
+#else
         cout << "Socket read error: " << strerror(errno) << endl;
+#endif
 
         /// @todo: perhaps throw here?
         return (Pkt4Ptr()); // NULL
@@ -798,18 +975,37 @@ IfaceMgr::receive4(uint32_t timeout) {
     memset(&from_addr, 0, sizeof(from_addr));
 
     // Initialize our message header structure.
+#ifdef _WIN32
+    GUID WSARecvMsg_GUID = WSAID_WSARECVMSG;
+    LPFN_WSARECVMSG WSARecvMsg;
+    WSAMSG m;
+#else
     struct msghdr m;
+#endif
     memset(&m, 0, sizeof(m));
 
     // Point so we can get the from address.
-    m.msg_name = &from_addr;
+#ifdef _WIN32
+    m.name = (struct sockaddr *)&from_addr;
+    m.namelen = sizeof(from_addr);
+#else
+    m.msg_name = (struct sockaddr *)&from_addr;
     m.msg_namelen = sizeof(from_addr);
+#endif
 
+#ifdef _WIN32
+    WSABUF v;
+    v.buf = (char *)buf;
+    v.len = RCVBUFSIZE;
+    m.lpBuffers = &v;
+    m.dwBufferCount = 1;
+#else
     struct iovec v;
     v.iov_base = static_cast<void*>(buf);
     v.iov_len = RCVBUFSIZE;
     m.msg_iov = &v;
     m.msg_iovlen = 1;
+#endif
 
     // Getting the interface is a bit more involved.
     //
@@ -817,10 +1013,29 @@ IfaceMgr::receive4(uint32_t timeout) {
     // previously asked the kernel to give us packet
     // information (when we initialized the interface), so we
     // should get the destination address from that.
+#ifdef _WIN32
+    m.Control.buf = &control_buf_[0];
+    m.Control.len = control_buf_len_;
+#else
     m.msg_control = &control_buf_[0];
     m.msg_controllen = control_buf_len_;
+#endif
 
+#ifdef _WIN32
+    DWORD brecv;
+    if ((WSAIoctl(candidate->sockfd_,
+                  SIO_GET_EXTENSION_FUNCTION_POINTER,
+                  &WSARecvMsg_GUID, sizeof(WSARecvMsg_GUID),
+                  &WSARecvMsg, sizeof(WSARecvMsg),
+                  &brecv, NULL, NULL) == SOCKET_ERROR) ||
+        (WSARecvMsg(candidate->sockfd_, &m,
+                    &brecv, NULL, NULL) == SOCKET_ERROR))
+        result = -1;
+    else
+        result = (int) brecv;
+#else
     result = recvmsg(candidate->sockfd_, &m, 0);
+#endif
     if (result < 0) {
         cout << "Failed to receive UDP4 data." << endl;
         return (Pkt4Ptr()); // NULL
@@ -866,22 +1081,44 @@ Pkt6Ptr IfaceMgr::receive6() {
     memset(&from, 0, sizeof(from));
 
     // Initialize our message header structure.
+#ifdef _WIN32
+    GUID WSARecvMsg_GUID = WSAID_WSARECVMSG;
+    LPFN_WSARECVMSG WSARecvMsg;
+    WSAMSG m;
+#else
     struct msghdr m;
+#endif
     memset(&m, 0, sizeof(m));
 
     // Point so we can get the from address.
-    m.msg_name = &from;
+#ifdef _WIN32
+    m.name = (struct sockaddr *)&from;
+    m.namelen = sizeof(from);
+#else
+    m.msg_name = (struct sockaddr *)&from;
     m.msg_namelen = sizeof(from);
+#endif
 
     // Set the data buffer we're receiving. (Using this wacky
     // "scatter-gather" stuff... but we that doesn't really make
     // sense for us, so we use a single vector entry.)
+#ifdef _WIN32
+    WSABUF v;
+#else
     struct iovec v;
+#endif
     memset(&v, 0, sizeof(v));
+#ifdef _WIN32
+    v.buf = (char *)buf;
+    v.len = RCVBUFSIZE;
+    m.lpBuffers = &v;
+    m.dwBufferCount = 1;
+#else
     v.iov_base = static_cast<void*>(buf);
     v.iov_len = RCVBUFSIZE;
     m.msg_iov = &v;
     m.msg_iovlen = 1;
+#endif
 
     // Getting the interface is a bit more involved.
     //
@@ -889,8 +1126,13 @@ Pkt6Ptr IfaceMgr::receive6() {
     // previously asked the kernel to give us packet
     // information (when we initialized the interface), so we
     // should get the destination address from that.
+#ifdef _WIN32
+    m.Control.buf = &control_buf_[0];
+    m.Control.len = control_buf_len_;
+#else
     m.msg_control = &control_buf_[0];
     m.msg_controllen = control_buf_len_;
+#endif
 
     /// TODO: Need to move to select() and pool over
     /// all available sockets. For now, we just take the
@@ -928,7 +1170,20 @@ Pkt6Ptr IfaceMgr::receive6() {
     cout << "Trying to receive over UDP6 socket " << candidate->sockfd_ << " bound to "
          << candidate->addr_.toText() << "/port=" << candidate->port_ << " on "
          << iface->getFullName() << endl;
+#ifdef _WIN32
+    DWORD brecv;
+    int result = -1;
+    if ((WSAIoctl(candidate->sockfd_,
+                  SIO_GET_EXTENSION_FUNCTION_POINTER,
+                  &WSARecvMsg_GUID, sizeof(WSARecvMsg_GUID),
+                  &WSARecvMsg, sizeof(WSARecvMsg),
+                  &brecv, NULL, NULL) != SOCKET_ERROR) &&
+        (WSARecvMsg(candidate->sockfd_, &m,
+                    &brecv, NULL, NULL) != SOCKET_ERROR))
+        result = (int) brecv;
+#else
     int result = recvmsg(candidate->sockfd_, &m, 0);
+#endif
 
     struct in6_addr to_addr;
     memset(&to_addr, 0, sizeof(to_addr));
@@ -945,17 +1200,29 @@ Pkt6Ptr IfaceMgr::receive6() {
         // We also keep a flag to see if we found it. If we
         // didn't, then we consider this to be an error.
         bool found_pktinfo = false;
+#ifdef _WIN32
+        WSACMSGHDR* cmsg = WSA_CMSG_FIRSTHDR(&m);
+#else
         struct cmsghdr* cmsg = CMSG_FIRSTHDR(&m);
+#endif
         while (cmsg != NULL) {
             if ((cmsg->cmsg_level == IPPROTO_IPV6) &&
                 (cmsg->cmsg_type == IPV6_PKTINFO)) {
+#ifdef _WIN32
+                pktinfo = convertPktInfo6(WSA_CMSG_DATA(cmsg));
+#else
                 pktinfo = convertPktInfo6(CMSG_DATA(cmsg));
+#endif
                 to_addr = pktinfo->ipi6_addr;
                 ifindex = pktinfo->ipi6_ifindex;
                 found_pktinfo = true;
                 break;
             }
+#ifdef _WIN32
+            cmsg = WSA_CMSG_NXTHDR(&m, cmsg);
+#else
             cmsg = CMSG_NXTHDR(&m, cmsg);
+#endif
         }
         if (!found_pktinfo) {
             cout << "Unable to find pktinfo" << endl;
@@ -970,7 +1237,7 @@ Pkt6Ptr IfaceMgr::receive6() {
     Pkt6Ptr pkt;
     try {
         pkt = Pkt6Ptr(new Pkt6(buf, result));
-    } catch (const std::exception& ex) {
+    } catch (const std::exception&) {
         cout << "Failed to create new packet." << endl;
         return (Pkt6Ptr()); // NULL
     }
@@ -1003,7 +1270,12 @@ Pkt6Ptr IfaceMgr::receive6() {
     return (pkt);
 }
 
-uint16_t IfaceMgr::getSocket(const isc::dhcp::Pkt6& pkt) {
+#ifdef _WIN32
+SOCKET
+#else
+int
+#endif
+IfaceMgr::getSocket(const isc::dhcp::Pkt6& pkt) {
     Iface* iface = getIface(pkt.getIface());
     if (iface == NULL) {
         isc_throw(BadValue, "Tried to find socket for non-existent interface "
@@ -1025,7 +1297,12 @@ uint16_t IfaceMgr::getSocket(const isc::dhcp::Pkt6& pkt) {
               << " does not have any suitable IPv6 sockets open.");
 }
 
-uint16_t IfaceMgr::getSocket(isc::dhcp::Pkt4 const& pkt) {
+#ifdef _WIN32
+SOCKET
+#else
+int
+#endif
+IfaceMgr::getSocket(isc::dhcp::Pkt4 const& pkt) {
     Iface* iface = getIface(pkt.getIface());
     if (iface == NULL) {
         isc_throw(BadValue, "Tried to find socket for non-existent interface "

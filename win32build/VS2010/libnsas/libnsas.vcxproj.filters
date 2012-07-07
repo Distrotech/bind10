@@ -69,6 +69,9 @@
     <ClInclude Include="..\..\..\src\lib\nsas\nsas_log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\nsas\lib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\nsas\address_entry.cc">
@@ -99,6 +102,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\lib\nsas\nsas_log.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dllmain.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

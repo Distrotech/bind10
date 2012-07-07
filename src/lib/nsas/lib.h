@@ -12,14 +12,21 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBUTIL_UNITTESTS_EXPORT
+#ifndef __LIBNSAS_H
+#define __LIBNSAS_H 1
 
-#include <util/unittests/mock_socketsession.h>
+#if !defined(_WIN32) || defined(USE_STATIC_LINK)
+#define ISC_LIBNSAS_API
+#else
+#ifdef ISC_LIBNSAS_EXPORT
+#define ISC_LIBNSAS_API __declspec(dllexport)
+#else
+#define ISC_LIBNSAS_API __declspec(dllimport)
+#endif
+#endif
 
-// Instantiate class
+#endif // __LIBNSAS_H
 
-class ISC_LIBUTIL_UNITTESTS_API MockSocketSessionForwarder;
-
-// Local Variables:
+// Local Variables: 
 // mode: c++
-// End:
+// End: 

@@ -26,6 +26,8 @@
 
 #include <asiodns/asiodns.h>
 
+#include <testutils/lib.h>
+
 #include <utility>
 #include <vector>
 
@@ -35,7 +37,7 @@ namespace testutils {
 // A minimal mock configuration session.  Most the methods are
 // stubbed out, except for a very basic group_sendmsg() and
 // group_recvmsg().  hasQueuedMessages() always returns false.
-class MockSession : public isc::cc::AbstractSession {
+class ISC_LIBTESTUTILS_API MockSession : public isc::cc::AbstractSession {
 public:
     MockSession() :
         // by default we return a simple "success" message.
@@ -106,15 +108,29 @@ private:
 
 // This mock object does nothing except for recording passed parameters
 // to addServerXXX methods so the test code subsequently checks the parameters.
-class MockDNSService : public isc::asiodns::DNSServiceBase {
+class ISC_LIBTESTUTILS_API MockDNSService :
+ public isc::asiodns::DNSServiceBase {
 public:
     // A helper tuple of parameters passed to addServerUDPFromFD().
     struct UDPFdParams {
+#ifdef _WIN32
+        SOCKET fd;
+#else
         int fd;
+#endif
         int af;
         ServerFlag options;
     };
 
+#ifdef _WIN32
+    virtual void addServerTCPFromFD(SOCKET fd, int af) {
+        tcp_fd_params_.push_back(std::pair<SOCKET, int>(fd, af));
+    }
+    virtual void addServerUDPFromFD(SOCKET fd, int af, ServerFlag options) {
+        UDPFdParams params = { fd, af, options };
+        udp_fd_params_.push_back(params);
+    }
+#else
     virtual void addServerTCPFromFD(int fd, int af) {
         tcp_fd_params_.push_back(std::pair<int, int>(fd, af));
     }
@@ -122,6 +138,7 @@ public:
         UDPFdParams params = { fd, af, options };
         udp_fd_params_.push_back(params);
     }
+#endif
     virtual void clearServers() {}
 
     virtual asiolink::IOService& getIOService() {
@@ -131,7 +148,12 @@ public:
 
     // These two allow the tests to check how the servers have been created
     // through this object.
-    const std::vector<std::pair<int, int> >& getTCPFdParams() const {
+#ifdef _WIN32
+    const std::vector<std::pair<SOCKET, int> >& getTCPFdParams() const
+#else
+    const std::vector<std::pair<int, int> >& getTCPFdParams() const
+#endif
+    {
         return (tcp_fd_params_);
     }
     const std::vector<UDPFdParams>& getUDPFdParams() const {
@@ -139,12 +161,16 @@ public:
     }
 
 private:
+#ifdef _WIN32
+    std::vector<std::pair<SOCKET, int> > tcp_fd_params_;
+#else
     std::vector<std::pair<int, int> > tcp_fd_params_;
+#endif
     std::vector<UDPFdParams> udp_fd_params_;
 };
 
 // A nonoperative DNSServer object to be used in calls to processMessage().
-class MockServer : public isc::asiodns::DNSServer {
+class ISC_LIBTESTUTILS_API MockServer : public isc::asiodns::DNSServer {
 public:
     MockServer() : done_(false) {}
     void operator()(asio::error_code, size_t) {}
@@ -156,7 +182,8 @@ private:
 };
 
 // Mock Xfrout client
-class MockXfroutClient : public isc::xfr::AbstractXfroutClient {
+class ISC_LIBTESTUTILS_API MockXfroutClient :
+ public isc::xfr::AbstractXfroutClient {
 public:
     MockXfroutClient() :
         is_connected_(false), connect_ok_(true), send_ok_(true),
@@ -179,7 +206,12 @@ public:
         is_connected_ = false;
     }
 
-    virtual int sendXfroutRequestInfo(int, const void*, uint16_t) {
+#ifdef _WIN32
+    virtual int sendXfroutRequestInfo(SOCKET, const void*, uint16_t)
+#else
+    virtual int sendXfroutRequestInfo(int, const void*, uint16_t)
+#endif
+    {
         if (!send_ok_) {
             isc_throw(isc::xfr::XfroutError,
                        "xfrout connection send is disabled for test");

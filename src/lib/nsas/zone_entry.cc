@@ -12,9 +12,17 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBNSAS_EXPORT
+
 #include <map>
 
 #include <config.h>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#include <time.h>
+#endif
 
 #include "zone_entry.h"
 #include "address_request_callback.h"
@@ -26,6 +34,11 @@
 #include <dns/rrttl.h>
 #include <dns/rcode.h>
 #include <dns/rdataclass.h>
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4373)
+#endif
 
 using namespace std;
 
@@ -568,3 +581,7 @@ ZoneEntry::insertCallback(NameserverPtr ns, AddressFamily family) {
 
 }; // namespace nsas
 }; // namespace isc
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

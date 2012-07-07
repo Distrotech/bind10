@@ -12,9 +12,21 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+#include <stdint.h>
+
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
+
 #include <gtest/gtest.h>
 #include <asiodns/dns_server.h>
 #include <resolve/resolver_callback.h>
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4373)
+#endif
 
 using namespace isc::resolve;
 
@@ -88,3 +100,7 @@ TEST_F(ResolverCallbackServerTest, testFailure) {
     EXPECT_TRUE(getResumeCalled());
     EXPECT_FALSE(getResumeValue());
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

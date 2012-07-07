@@ -12,7 +12,11 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBCACHE_EXPORT
+
 #include <config.h>
+
+#include <time.h>
 
 #include <dns/message.h>
 #include <nsas/nsas_entry.h>

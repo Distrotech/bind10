@@ -14,6 +14,9 @@
 
 #include <config.h>
 #include <string>
+#ifdef _WIN32
+#include <ctime>
+#endif
 #include <gtest/gtest.h>
 #include <dns/tests/unittest_util.h>
 #include <dns/message.h>

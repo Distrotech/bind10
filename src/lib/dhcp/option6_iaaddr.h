@@ -16,12 +16,13 @@
 #define OPTION6_IAADDR_H_
 
 #include "asiolink/io_address.h"
+#include <dhcp/dll.h>
 #include "dhcp/option.h"
 
 namespace isc {
 namespace dhcp {
 
-class Option6IAAddr: public Option {
+class ISC_LIBDHCP_API Option6IAAddr: public Option {
 
 public:
     /// length of the fixed part of the IAADDR option

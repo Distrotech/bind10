@@ -12,10 +12,17 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBTESTUTILS_EXPORT
+
 #include <config.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#else
 #include <sys/types.h>
 #include <netinet/in.h>
+#endif
 
 #include <dns/message.h>
 #include <dns/rcode.h>

@@ -15,7 +15,11 @@
 #include <config.h>
 #include <iostream>
 #include <sstream>
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <arpa/inet.h>
+#endif
 #include <gtest/gtest.h>
 #include <asiolink/io_address.h>
 #include <dhcp/dhcp6.h>

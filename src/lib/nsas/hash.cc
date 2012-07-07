@@ -52,6 +52,8 @@ or otherwise) arising in any way out of the use of this software, even
 if advised of the possibility of such damage.
 */
 
+#define ISC_LIBNSAS_EXPORT
+
 #include <cassert>
 #include <stdlib.h>
 #include <algorithm>
@@ -59,6 +61,8 @@ if advised of the possibility of such damage.
 #include <string>
 
 #include <config.h>
+
+#include <time.h>
 
 #include "hash.h"
 

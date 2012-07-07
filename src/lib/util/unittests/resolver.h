@@ -28,8 +28,6 @@
 #include <resolve/resolver_interface.h>
 #include <gtest/gtest.h>
 
-#include <util/unittests/lib.h>
-
 namespace isc {
 namespace util {
 namespace unittests {
@@ -51,8 +49,7 @@ createResponseMessage(isc::dns::RRsetPtr answer_rrset)
 /// This class pretends to be a resolver. However, it only stores the
 /// requests and can answer them right away by prepared answers. It doesn't
 /// do any real work and is intended for testing purposes.
-class ISC_LIBUTIL_UNITTESTS_API TestResolver :
- public isc::resolve::ResolverInterface {
+class TestResolver : public isc::resolve::ResolverInterface {
     private:
         bool checkIndex(size_t index) {
             return (requests.size() > index);

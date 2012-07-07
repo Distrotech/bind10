@@ -15,7 +15,11 @@
 #include <config.h>
 #include <iostream>
 #include <sstream>
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <arpa/inet.h>
+#endif
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <gtest/gtest.h>
 

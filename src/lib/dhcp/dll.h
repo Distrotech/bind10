@@ -1,4 +1,4 @@
-// Copyright (C) 2009  Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2012  Internet Systems Consortium, Inc. ("ISC")
 //
 // Permission to use, copy, modify, and/or distribute this software for any
 // purpose with or without fee is hereby granted, provided that the above
@@ -12,30 +12,21 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#include <config.h>
+#ifndef __LIBDHCP_H
+#define __LIBDHCP_H 1
 
-#ifdef _WIN32
-#include <winsock2.h>
-#endif
-
-#include <gtest/gtest.h>
-#include <util/unittests/run_all.h>
-
-#include <dns/tests/unittest_util.h>
-#include <log/logger_support.h>
-
-int
-main(int argc, char* argv[]) {
-    ::testing::InitGoogleTest(&argc, argv);
-    isc::log::initLogger();
-
-#ifdef _WIN32
-    WSADATA wsaData;
-    WSAStartup(MAKEWORD(2,2), &wsaData);
-    int ret = isc::util::unittests::run_all();
-    WSACleanup();
-    return (ret);
+#if !defined(_WIN32) || defined(USE_STATIC_LINK)
+#define ISC_LIBDHCP_API
 #else
-    return (isc::util::unittests::run_all());
+#ifdef ISC_LIBDHCP_EXPORT
+#define ISC_LIBDHCP_API __declspec(dllexport)
+#else
+#define ISC_LIBDHCP_API __declspec(dllimport)
 #endif
-}
+#endif
+
+#endif // __LIBDHCP_H
+
+// Local Variables: 
+// mode: c++
+// End: 

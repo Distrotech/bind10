@@ -17,8 +17,13 @@
 #include <fstream>
 #include <sstream>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#define unlink _unlink
+#else
 #include <unistd.h>
 #include <arpa/inet.h>
+#endif
 #include <gtest/gtest.h>
 
 #include <asiolink/io_address.h>
@@ -62,6 +67,7 @@ public:
 
 // NOTE: At this stage of development, write access to current directory
 // during running tests is required.
+#ifndef _WIN32
 TEST_F(IfaceMgrTest, loDetect) {
 
     // poor man's interface detection
@@ -79,6 +85,7 @@ TEST_F(IfaceMgrTest, loDetect) {
         FAIL();
     }
 }
+#endif
 
 // uncomment this test to create packet writer. It will
 // write incoming DHCPv6 packets as C arrays. That is useful
@@ -142,12 +149,14 @@ TEST_F(IfaceMgrTest, dhcp6Sniffer) {
 }
 #endif
 
+#if defined(OS_LINUX)
 TEST_F(IfaceMgrTest, basic) {
     // checks that IfaceManager can be instantiated
 
     IfaceMgr & ifacemgr = IfaceMgr::instance();
     ASSERT_TRUE(&ifacemgr != 0);
 }
+#endif
 
 TEST_F(IfaceMgrTest, ifaceClass) {
     // basic tests for Iface inner class
@@ -161,6 +170,7 @@ TEST_F(IfaceMgrTest, ifaceClass) {
 
 // TODO: Implement getPlainMac() test as soon as interface detection
 // is implemented.
+#if defined(OS_LINUX)
 TEST_F(IfaceMgrTest, getIface) {
 
     cout << "Interface checks. Please ignore socket binding errors." << endl;
@@ -223,20 +233,33 @@ TEST_F(IfaceMgrTest, sockets6) {
     pkt6.setIface(LOOPBACK);
 
     // bind multicast socket to port 10547
+#ifdef _WIN32
+    SOCKET socket1 = ifacemgr->openSocket(LOOPBACK, loAddr, 10547);
+#else
     int socket1 = ifacemgr->openSocket(LOOPBACK, loAddr, 10547);
-    EXPECT_GT(socket1, 0); // socket > 0
+#endif
+    EXPECT_NE(socket1, INVALID_SOCKET); // socket > 0
 
     EXPECT_EQ(socket1, ifacemgr->getSocket(pkt6));
 
     // bind unicast socket to port 10548
+#ifdef _WIN32
+    SOCKET socket2 = ifacemgr->openSocket(LOOPBACK, loAddr, 10548);
+#else
     int socket2 = ifacemgr->openSocket(LOOPBACK, loAddr, 10548);
-    EXPECT_GT(socket2, 0);
+#endif
+    EXPECT_NE(socket2, INVALID_SOCKET);
 
     // removed code for binding socket twice to the same address/port
     // as it caused problems on some platforms (e.g. Mac OS X)
 
+#ifdef _WIN32
+    closesocket(socket1);
+    closesocket(socket2);
+#else
     close(socket1);
     close(socket2);
+#endif
 
     delete ifacemgr;
 }
@@ -253,21 +276,34 @@ TEST_F(IfaceMgrTest, DISABLED_sockets6Mcast) {
     IOAddress mcastAddr("ff02::1:2");
 
     // bind multicast socket to port 10547
+#ifdef _WIN32
+    SOCKET socket1 = ifacemgr->openSocket(LOOPBACK, mcastAddr, 10547);
+#else
     int socket1 = ifacemgr->openSocket(LOOPBACK, mcastAddr, 10547);
-    EXPECT_GT(socket1, 0); // socket > 0
+#endif
+    EXPECT_NE(socket1, INVALID_SOCKET); // socket > 0
 
     // expect success. This address/port is already bound, but
     // we are using SO_REUSEADDR, so we can bind it twice
+#ifdef _WIN32
+    SOCKET socket2 = ifacemgr->openSocket(LOOPBACK, mcastAddr, 10547);
+#else
     int socket2 = ifacemgr->openSocket(LOOPBACK, mcastAddr, 10547);
-    EXPECT_GT(socket2, 0);
+#endif
+    EXPECT_NE(socket2, INVALID_SOCKET);
 
     // there's no good way to test negative case here.
     // we would need non-multicast interface. We will be able
     // to iterate thru available interfaces and check if there
     // are interfaces without multicast-capable flag.
 
+#ifdef _WIN32
+    closesocket(socket1);
+    closesocket(socket2);
+#else
     close(socket1);
     close(socket2);
+#endif
 
     delete ifacemgr;
 }
@@ -281,14 +317,18 @@ TEST_F(IfaceMgrTest, sendReceive6) {
 
     // let's assume that every supported OS have lo interface
     IOAddress loAddr("::1");
-    int socket1 = 0, socket2 = 0;
+#ifdef _WIN32
+    SOCKET socket1 = INVALID_SOCKET, socket2 = INVALID_SOCKET;
+#else
+    int socket1 = INVALID_SOCKET, socket2 = INVALID_SOCKET;
+#endif
     EXPECT_NO_THROW(
         socket1 = ifacemgr->openSocket(LOOPBACK, loAddr, 10547);
         socket2 = ifacemgr->openSocket(LOOPBACK, loAddr, 10546);
     );
 
-    EXPECT_GT(socket1, 0);
-    EXPECT_GT(socket2, 0);
+    EXPECT_NE(socket1, INVALID_SOCKET);
+    EXPECT_NE(socket2, INVALID_SOCKET);
 
 
     // prepare dummy payload
@@ -338,14 +378,18 @@ TEST_F(IfaceMgrTest, sendReceive4) {
 
     // let's assume that every supported OS have lo interface
     IOAddress loAddr("127.0.0.1");
-    int socket1 = 0, socket2 = 0;
+#ifdef _WIN32
+    SOCKET socket1 = INVALID_SOCKET, socket2 = INVALID_SOCKET;
+#else
+    int socket1 = INVALID_SOCKET, socket2 = INVALID_SOCKET;
+#endif
     EXPECT_NO_THROW(
         socket1 = ifacemgr->openSocket(LOOPBACK, loAddr, DHCP4_SERVER_PORT + 10000);
         socket2 = ifacemgr->openSocket(LOOPBACK, loAddr, DHCP4_SERVER_PORT + 10000 + 1);
     );
 
-    EXPECT_GE(socket1, 0);
-    EXPECT_GE(socket2, 0);
+    EXPECT_NE(socket1, INVALID_SOCKET);
+    EXPECT_NE(socket2, INVALID_SOCKET);
 
     boost::shared_ptr<Pkt4> sendPkt(new Pkt4(DHCPDISCOVER, 1234) );
 
@@ -428,13 +472,17 @@ TEST_F(IfaceMgrTest, socket4) {
     // Let's assume that every supported OS have lo interface.
     IOAddress loAddr("127.0.0.1");
     // Use unprivileged port (it's convenient for running tests as non-root).
-    int socket1 = 0;
+#ifdef _WIN32
+    SOCKET socket1 = INVALID_SOCKET;
+#else
+    int socket1 = INVALID_SOCKET;
+#endif
 
     EXPECT_NO_THROW(
         socket1 = ifacemgr->openSocket(LOOPBACK, loAddr, DHCP4_SERVER_PORT + 10000);
     );
 
-    EXPECT_GT(socket1, 0);
+    EXPECT_NE(socket1, INVALID_SOCKET);
 
     Pkt4 pkt(DHCPDISCOVER, 1234);
     pkt.setIface(LOOPBACK);
@@ -442,10 +490,15 @@ TEST_F(IfaceMgrTest, socket4) {
     // Expect that we get the socket that we just opened.
     EXPECT_EQ(socket1, ifacemgr->getSocket(pkt));
 
+#ifdef _WIN32
+    closesocket(socket1);
+#else
     close(socket1);
+#endif
 
     delete ifacemgr;
 }
+#endif
 
 // Test the Iface structure itself
 TEST_F(IfaceMgrTest, iface) {
@@ -521,6 +574,7 @@ TEST_F(IfaceMgrTest, iface_methods) {
     EXPECT_EQ(0, memcmp(mac, iface.getMac(), iface.getMacLen()));
 }
 
+#if defined(OS_LINUX)
 TEST_F(IfaceMgrTest, socketInfo) {
 
     // check that socketinfo for IPv4 socket is functional
@@ -540,7 +594,7 @@ TEST_F(IfaceMgrTest, socketInfo) {
     // now let's test if IfaceMgr handles socket info properly
     NakedIfaceMgr* ifacemgr = new NakedIfaceMgr();
     IfaceMgr::Iface* loopback = ifacemgr->getIface(LOOPBACK);
-    ASSERT_TRUE(loopback);
+    ASSERT_TRUE(loopback != NULL);
     loopback->addSocket(sock1);
     loopback->addSocket(sock2);
 
@@ -607,8 +661,6 @@ TEST_F(IfaceMgrTest, socketInfo) {
 
     delete ifacemgr;
 }
-
-#if defined(OS_LINUX)
 
 /// @brief parses text representation of MAC address
 ///
@@ -900,6 +952,7 @@ TEST_F(IfaceMgrTest, DISABLED_detectIfaces_linux) {
 }
 #endif
 
+#ifndef _WIN32
 volatile bool callback_ok;
 
 void my_callback(void) {
@@ -947,5 +1000,6 @@ TEST_F(IfaceMgrTest, controlSession) {
     close(pipefd[1]);
     close(pipefd[0]);
 }
+#endif
 
 }

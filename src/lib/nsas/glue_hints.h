@@ -19,13 +19,14 @@
 
 #include <dns/message.h>
 
+#include <nsas/lib.h>
 #include "nsas_types.h"
 #include "nameserver_address.h"
 
 namespace isc {
 namespace nsas {
 
-class GlueHints {
+class ISC_LIBNSAS_API GlueHints {
 public:
     /// \brief Empty constructor
     GlueHints() {};

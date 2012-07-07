@@ -20,6 +20,7 @@
 #include <dns/rrttl.h>
 #include <nsas/nsas_entry.h>
 #include <nsas/fetchable.h>
+#include <cache/lib.h>
 #include "cache_entry_key.h"
 
 using namespace isc::nsas;
@@ -60,7 +61,7 @@ enum RRsetTrustLevel {
 /// The object of RRsetEntry represents one cached RRset.
 /// Each RRset entry may be refered using shared_ptr by several message
 /// entries.
-class RRsetEntry : public NsasEntry<RRsetEntry>
+class ISC_LIBCACHE_API RRsetEntry : public NsasEntry<RRsetEntry>
 {
     ///
     /// \name Constructors and Destructor

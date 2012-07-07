@@ -16,7 +16,11 @@
 #include <iostream>
 #include <sstream>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <arpa/inet.h>
+#endif
 #include <gtest/gtest.h>
 #include <boost/shared_ptr.hpp>
 #include <exceptions/exceptions.h>

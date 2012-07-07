@@ -27,6 +27,7 @@
 
 #include <util/lru_list.h>
 
+#include <nsas/lib.h>
 #include "address_entry.h"
 #include "asiolink.h"
 #include "nsas_types.h"
@@ -38,13 +39,13 @@
 namespace isc {
 namespace nsas {
 
-class NameserverAddress;
+class ISC_LIBNSAS_API NameserverAddress;
 
 /// \brief Inconsistent Owner Names
 ///
 /// Thrown if a NameserverEntry is constructed from both an A and AAAA RRset
 /// where the owner names do not match.
-class InconsistentOwnerNames : public Exception {
+class ISC_LIBNSAS_API InconsistentOwnerNames : public Exception {
 public:
     InconsistentOwnerNames(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what)
@@ -54,7 +55,7 @@ public:
 /// \brief RTT is zero
 ///
 /// Thrown if a RTT related with an address is 0.
-class RTTIsZero : public Exception {
+class ISC_LIBNSAS_API RTTIsZero : public Exception {
 public:
     RTTIsZero(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what)
@@ -65,14 +66,14 @@ public:
 ///
 /// Thrown if a NameserverEntry is constructed from both an A and AAAA RRset
 /// where the classes do not match.
-class InconsistentClass : public Exception {
+class ISC_LIBNSAS_API InconsistentClass : public Exception {
 public:
     InconsistentClass(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what)
     {}
 };
 
-class ZoneEntry;
+class ISC_LIBNSAS_API ZoneEntry;
 
 /// \brief Nameserver Entry
 ///
@@ -91,7 +92,8 @@ class ZoneEntry;
 ///
 /// It uses shared_from_this in its methods. It must live inside a shared_ptr.
 
-class NameserverEntry : public NsasEntry<NameserverEntry>, public Fetchable {
+class ISC_LIBNSAS_API NameserverEntry :
+ public NsasEntry<NameserverEntry>, public Fetchable {
 public:
     /// List of addresses associated with this nameserver
     typedef std::vector<NameserverAddress>   AddressVector;

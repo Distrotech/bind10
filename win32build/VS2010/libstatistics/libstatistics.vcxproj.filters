@@ -21,12 +21,18 @@
     <ClInclude Include="..\..\..\src\lib\statistics\counter_dict.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\statistics\dll.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\statistics\counter.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\lib\statistics\counter_dict.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dllmain.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

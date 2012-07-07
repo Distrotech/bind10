@@ -13,9 +13,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\src\lib\util\unittests\fork.h" />
     <ClInclude Include="..\..\..\src\lib\util\unittests\lib.h" />
-    <ClInclude Include="..\..\..\src\lib\util\unittests\mock_socketsession.h" />
     <ClInclude Include="..\..\..\src\lib\util\unittests\newhook.h" />
-    <ClInclude Include="..\..\..\src\lib\util\unittests\resolver.h" />
     <ClInclude Include="..\..\..\src\lib\util\unittests\resource.h" />
     <ClInclude Include="..\..\..\src\lib\util\unittests\run_all.h" />
     <ClInclude Include="..\..\..\src\lib\util\unittests\testdata.h" />
@@ -23,7 +21,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\util\unittests\fork.cc" />
-    <ClCompile Include="..\..\..\src\lib\util\unittests\mock_socketsession.cc" />
     <ClCompile Include="..\..\..\src\lib\util\unittests\newhook.cc" />
     <ClCompile Include="..\..\..\src\lib\util\unittests\resource.cc" />
     <ClCompile Include="..\..\..\src\lib\util\unittests\run_all.cc" />

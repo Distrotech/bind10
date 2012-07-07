@@ -30,12 +30,18 @@
     <ClInclude Include="..\..\..\src\lib\testutils\socket_request.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\dns\tests\unittest_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\testutils\dnsmessage_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\lib\testutils\srv_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\dns\tests\unittest_util.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

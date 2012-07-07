@@ -13,6 +13,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBCACHE_EXPORT
+
 #include <config.h>
 
 #include <nsas/nsas_entry_compare.h>

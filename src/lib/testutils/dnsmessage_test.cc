@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBTESTUTILS_EXPORT
+
 #include <dns/message.h>
 #include <dns/opcode.h>
 #include <dns/rdata.h>

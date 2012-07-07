@@ -20,6 +20,11 @@
 #include <boost/lexical_cast.hpp>
 #include <cmath>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#endif
+
 #include <dns/rrclass.h>
 #include <dns/rdataclass.h>
 
