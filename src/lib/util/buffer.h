@@ -15,7 +15,7 @@
 #ifndef __BUFFER_H
 #define __BUFFER_H 1
 
-#include <stddll.h>
+#include <stdlib.h>
 #include <cstring>
 #include <vector>
 

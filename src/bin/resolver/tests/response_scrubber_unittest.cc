@@ -14,6 +14,7 @@
 
 #include <config.h>
 
+#include <stdint.h>
 #include <string>
 #include <iostream>
 
@@ -21,7 +22,9 @@
 
 #include <asiolink/io_endpoint.h>
 #include <asiolink/io_address.h>
+#ifndef _WIN32
 #include <netinet/in.h>
+#endif
 
 #include <dns/name.h>
 #include <dns/opcode.h>

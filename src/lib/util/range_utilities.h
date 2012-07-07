@@ -15,7 +15,7 @@
 #ifndef __RANGE_UTIL_H_
 #define __RANGE_UTIL_H_ 1
 
-#include <stddll.h>
+#include <stdlib.h>
 #include <algorithm>
 
 #include <util/dll.h>

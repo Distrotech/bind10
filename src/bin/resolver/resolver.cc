@@ -15,8 +15,13 @@
 #include <config.h>
 
 #include <stdint.h>
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#else
 #include <sys/types.h>
 #include <netinet/in.h>
+#endif
 
 #include <algorithm>
 #include <vector>

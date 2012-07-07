@@ -14,6 +14,21 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <getopt.h>
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#include <process.h>
+#define getpid _getpid
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/select.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#endif
+
 #include <resolver/spec_config.h>
 #include <resolver/resolver.h>
 #include "resolver_log.h"
@@ -37,7 +52,9 @@
 
 #include <xfr/xfrout_client.h>
 
+#ifndef _WIN32
 #include <auth/common.h>
+#endif
 
 #include <cache/resolver_cache.h>
 #include <nsas/nameserver_address_store.h>
@@ -46,14 +63,8 @@
 #include <log/logger_level.h>
 #include "resolver_log.h"
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/select.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <unistd.h>
 
 #include <string>
 #include <iostream>
@@ -138,6 +149,11 @@ main(int argc, char* argv[]) {
     if (argc - optind > 0) {
         usage();
     }
+
+#ifdef _WIN32
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2,2), &wsaData);
+#endif
 
     // Until proper logging comes along, initialize the logging with the
     // temporary initLogger() code.  If verbose, we'll use maximum verbosity.
@@ -255,5 +271,8 @@ main(int argc, char* argv[]) {
     delete cc_session;
 
     LOG_INFO(resolver_logger, RESOLVER_SHUTDOWN);
+#ifdef _WIN32
+    WSACleanup();
+#endif
     return (ret);
 }

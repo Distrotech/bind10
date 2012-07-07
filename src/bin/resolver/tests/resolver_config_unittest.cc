@@ -14,10 +14,15 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#endif
 
 #include <cerrno>
 #include <cstring>
@@ -194,14 +199,26 @@ private:
 };
 
 struct ScopedSocket : public boost::noncopyable {
+#ifdef _WIN32
+public:
+    ScopedSocket(SOCKET fd) : fd_(fd) {}
+    ~ScopedSocket() { closesocket(fd_); }
+private:
+    const SOCKET fd_;
+#else
 public:
     ScopedSocket(int fd) : fd_(fd) {}
     ~ScopedSocket() { close(fd_); }
 private:
     const int fd_;
+#endif
 };
 
+#ifdef _WIN32
+SOCKET
+#else
 int
+#endif
 createSocket(const char* address, const char* port) {
     struct addrinfo hints, *res;
     memset(&hints, 0, sizeof(hints));
@@ -215,6 +232,18 @@ createSocket(const char* address, const char* port) {
                   gai_strerror(error));
     }
     ScopedAddrInfo scoped_res(res);
+#ifdef _WIN32
+    const SOCKET s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if (s == INVALID_SOCKET) {
+        isc_throw(TestConfigError, "socket system call failed: " <<
+                  strerror(WSAGetLastError()));
+    }
+    if (::bind(s, res->ai_addr, res->ai_addrlen) == -1) {
+        closesocket(s);
+        isc_throw(TestConfigError, "bind system call failed: " <<
+                  strerror(WSAGetLastError()));
+    }
+#else
     const int s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
     if (s == -1) {
         isc_throw(TestConfigError, "socket system call failed: " <<
@@ -225,6 +254,7 @@ createSocket(const char* address, const char* port) {
         isc_throw(TestConfigError, "bind system call failed: " <<
                   strerror(errno));
     }
+#endif
     return (s);
 }
 

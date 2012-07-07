@@ -12,30 +12,24 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#ifndef __LIBRESOLVE_H
-#define __LIBRESOLVE_H 1
+#ifndef __LIBUTIL_PYTHON_H
+#define __LIBUTIL_PYTHON_H 1
 
-#if !defined(_WIN32) || defined(USE_STATIC_LINK)
-#define ISC_LIBRESOLVE_API
-#else
-#ifdef ISC_LIBRESOLVE_EXPORT
-#define ISC_LIBRESOLVE_API __declspec(dllexport)
-#else
-#define ISC_LIBRESOLVE_API __declspec(dllimport)
-#endif
+#ifdef ISC_LIBDNS_PYTHON_EXPORT
+#define ISC_LIBUTIL_PYTHON_EXPORT
 #endif
 
 #if !defined(_WIN32) || defined(USE_STATIC_LINK)
-#define ISC_LIBNSASRESOLVE_API
+#define ISC_LIBUTIL_PYTHON_API
 #else
-#if defined(ISC_LIBNSAS_EXPORT) || defined(ISC_LIBRESOLVE_EXPORT)
-#define ISC_LIBNSASRESOLVE_API __declspec(dllexport)
+#ifdef ISC_LIBUTIL_PYTHON_EXPORT
+#define ISC_LIBUTIL_PYTHON_API __declspec(dllexport)
 #else
-#define ISC_LIBNSASRESOLVE_API __declspec(dllimport)
+#define ISC_LIBUTIL_PYTHON_API __declspec(dllimport)
 #endif
 #endif
 
-#endif // __LIBRESOLVE_H
+#endif // __LIBUTIL_PYTHON_H
 
 // Local Variables: 
 // mode: c++

@@ -59,8 +59,8 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)b10-dhcp6$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;liblog.lib;libcc.lib;libcfgclient.lib;libasiolink.lib;libdhcp.lib;log4cplusSD.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\liblog\$(Configuration);..\libcc\$(Configuration);..\libcfgclient\$(Configuration);..\libasiolink\$(Configuration);..\libdhcp\$(Configuration);..\..\..\..\log4cplus\md10\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libexceptionsd.lib;libutild.lib;liblogdlib;libccd.lib;libcfgclientd.lib;libasiolinkd.lib;libdhcpd.lib;log4cplusD.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
       <Command>cd ..\..\..\src\bin\dhcp6
@@ -84,8 +84,8 @@ copy spec_config.h.win32 spec_config.h
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)b10-dhcp6$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;liblog.lib;libcc.lib;libcfgclient.lib;libasiolink.lib;libdhcp.lib;log4cplusS.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\liblog\$(Configuration);..\libcc\$(Configuration);..\libcfgclient\$(Configuration);..\libasiolink\$(Configuration);..\libdhcp\$(Configuration);..\..\..\..\log4cplus\md10\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;liblog.lib;libcc.lib;libcfgclient.lib;libasiolink.lib;libdhcp.lib;log4cplus.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
       <Command>cd ..\..\..\src\bin\dhcp6

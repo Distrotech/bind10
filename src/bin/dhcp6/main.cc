@@ -14,11 +14,18 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <getopt.h>
+#include <ws2tcpip.h>
+#include <process.h>
+#define getpid _getpid
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#endif
 #include <stdlib.h>
 #include <errno.h>
 
@@ -90,6 +97,11 @@ main(int argc, char* argv[]) {
         usage();
     }
 
+#ifdef _WIN32
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2,2), &wsaData);
+#endif
+
     int ret = EXIT_SUCCESS;
 
     // TODO remainder of auth to dhcp6 code copy. We need to enable this in
@@ -118,6 +130,10 @@ main(int argc, char* argv[]) {
         cerr << "[b10-dhcp6] Server failed: " << ex.what() << endl;
         ret = EXIT_FAILURE;
     }
+
+#ifdef _WIN32
+    WSACleanup();
+#endif
 
     return (ret);
 }

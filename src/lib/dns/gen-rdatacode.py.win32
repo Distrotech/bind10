@@ -40,6 +40,8 @@ heading_txt = '''///////////////
 ///////////////   DO NOT EDIT!
 ///////////////
 ///////////////
+'''
+export_txt = '''
 
 #define ISC_LIBDNS_EXPORT
 
@@ -202,6 +204,7 @@ def generate_rdatadef(file, basemtime):
         return
     rdata_deffile = open(file, 'w')
     rdata_deffile.write(heading_txt)
+    rdata_deffile.write(export_txt)
     rdata_deffile.write(class_definitions)
     rdata_deffile.close()
 
@@ -287,6 +290,7 @@ def generate_rrparam(fileprefix, basemtime):
     rrparam_temp = open(placeholder, 'r')
     rrparam_out = open(outputfile, 'w')
     rrparam_out.write(heading_txt)
+    rrparam_out.write(export_txt)
     for line in rrparam_temp.readlines():
         rrparam_out.write(line)
         if re.match('\s+// BEGIN_WELL_KNOWN_PARAMS', line):

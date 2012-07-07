@@ -14,17 +14,24 @@
 
 // host rewritten in C++ using BIND 10 DNS library
 
+#include <config.h>
+
+#ifdef _WIN32
+#include <getopt.h>
+#include <ws2tcpip.h>
+#else
 #include <arpa/inet.h>
 #include <netdb.h>          // for getaddrinfo
-#include <sys/time.h>       // for gettimeofday
 #include <sys/socket.h>     // networking functions and definitions on FreeBSD
 
 #include <unistd.h>
+#endif
 
 #include <string>
 #include <iostream>
 
 #include <util/buffer.h>
+#include <util/time_utilities.h>
 
 #include <dns/name.h>
 #include <dns/message.h>
@@ -49,7 +56,7 @@ bool verbose = false;
 bool dns_any = false;
 int first_time = 1;
 bool recursive_bit = true;
-struct timeval before_time, after_time;
+int64_t before_time, after_time;
 
 int
 host_lookup(const char* const name, const char* const dns_class,
@@ -107,11 +114,11 @@ host_lookup(const char* const name, const char* const dns_class,
     }
 
     if (verbose) {
-        gettimeofday(&before_time, NULL);
+        before_time = detail::gettimeWrapper();
     }
 
-    sendto(s, renderer.getData(), renderer.getLength(), 0, res->ai_addr,
-           res->ai_addrlen);
+    sendto(s, (const char *) renderer.getData(), renderer.getLength(),
+           0, res->ai_addr, res->ai_addrlen);
 
     struct sockaddr_storage ss;
     struct sockaddr* sa;
@@ -156,19 +163,12 @@ host_lookup(const char* const name, const char* const dns_class,
                       }
                   }
             } else {
-                gettimeofday(&after_time, NULL);
+                after_time = detail::gettimeWrapper();
 
                 // HEADER and QUESTION, ANSWER, AUTHORITY, and ADDITIONAL
                 std::cout << rmsg.toText() << std::endl;
 
-                if (before_time.tv_usec > after_time.tv_usec) {
-                    after_time.tv_usec += 1000000;
-                    --after_time.tv_sec;
-                }
-
-                int elapsed_time =
-                    (after_time.tv_sec - before_time.tv_sec)
-                    + ((after_time.tv_usec - before_time.tv_usec))/1000;
+                int elapsed_time = (int) (after_time - before_time);
 
                 // TODO: if NXDOMAIN, host(1) doesn't show HEADER
                 // Host hsdjkfhksjhdfkj not found: 3(NXDOMAIN)
@@ -240,6 +240,11 @@ main(int argc, char* argv[]) {
       server = argv[1];
     }
 
+#ifdef _WIN32
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2,2), &wsaData);
+#endif
+
     if (dns_type == NULL) {
         host_lookup(argv[0], dns_class, "A", dns_any);
         // TODO: don't do next if A doesn't exist
@@ -249,5 +254,10 @@ main(int argc, char* argv[]) {
         // -t overrides -a, regardless of order
         host_lookup(argv[0], dns_class, dns_type, false);
     }
+
+#ifdef _WIN32
+    WSACleanup();
+#endif
+
     return (0);
 }

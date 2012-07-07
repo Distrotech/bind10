@@ -60,8 +60,8 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)b10-resolver.exe</OutputFile>
-      <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\libutil_io\$(Configuration);..\liblog\$(Configuration);..\libcryptolink\$(Configuration);..\libdns++\$(Configuration);..\libcc\$(Configuration);..\libcfgclient\$(Configuration);..\libacl\$(Configuration);..\libdnsacl\$(Configuration);..\libasiolink\$(Configuration);..\libasiodns\$(Configuration);..\libnsas\$(Configuration);..\libcache\$(Configuration);..\libresolve\$(Configuration);..\libserver_common\$(Configuration);..\..\..\..\botan\md10\$(Configuration);..\..\..\..\log4cplus\md10\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_io.lib;liblog.lib;libcryptolink.lib;libdns++.lib;libcc.lib;libcfgclient.lib;libacl.lib;libdnsacl.lib;libasiolink.lib;libasiodns.lib;libnsas.lib;libcache.lib;libresolve.lib;libserver_common.lib;botan.lib;log4cplusSD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libexceptionsd.lib;libutild.lib;libutil_iod.lib;liblogd.lib;libcryptolinkd.lib;libdns++d.lib;libccd.lib;libcfgclientd.lib;libacld.lib;libdnsacld.lib;libasiolinkd.lib;libasiodnsd.lib;libnsasd.lib;libcached.lib;libresolved.lib;libserver_commond.lib;botand.lib;log4cplusD.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>cd ..\..\..\src\bin\resolver
@@ -88,8 +88,8 @@ copy spec_config.h.pre.win32 spec_config.h
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)b10-resolver.exe</OutputFile>
-      <AdditionalLibraryDirectories>..\libexceptions\$(Configuration);..\libutil\$(Configuration);..\libutil_io\$(Configuration);..\liblog\$(Configuration);..\libcryptolink\$(Configuration);..\libdns++\$(Configuration);..\libcc\$(Configuration);..\libcfgclient\$(Configuration);..\libacl\$(Configuration);..\libdnsacl\$(Configuration);..\libasiolink\$(Configuration);..\libasiodns\$(Configuration);..\libnsas\$(Configuration);..\libcache\$(Configuration);..\libresolve\$(Configuration);..\libserver_common\$(Configuration);..\..\..\..\botan\md10\$(Configuration);..\..\..\..\log4cplus\md10\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_io.lib;liblog.lib;libcryptolink.lib;libdns++.lib;libcc.lib;libcfgclient.lib;libacl.lib;libdnsacl.lib;libasiolink.lib;libasiodns.lib;libnsas.lib;libcache.lib;libresolve.lib;libserver_common.lib;botan.lib;log4cplusS.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_io.lib;liblog.lib;libcryptolink.lib;libdns++.lib;libcc.lib;libcfgclient.lib;libacl.lib;libdnsacl.lib;libasiolink.lib;libasiodns.lib;libnsas.lib;libcache.lib;libresolve.lib;libserver_common.lib;botan.lib;log4cplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>cd ..\..\..\src\bin\resolver
