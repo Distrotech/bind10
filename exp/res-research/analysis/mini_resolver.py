@@ -38,6 +38,9 @@ def get_soa_ttl(soa_rdata):
 class MiniResolverException(Exception):
     pass
 
+class InternalLame(Exception):
+    pass
+
 class ResQuery:
     '''Encapsulates a single query from the resolver.'''
     # Constant of timeout for eqch query in seconds
@@ -50,9 +53,14 @@ class ResQuery:
         self.expire = time.time() + self.QUERY_TIMEOUT
         self.timer = None       # will be set when timer is associated
 
-# servers = initially root servers
 class ResolverContext:
     CNAME_LOOP_MAX = 15
+
+    LOGLVL_INFO = 0
+    LOGLVL_DEBUG1 = 1
+    LOGLVL_DEBUG3 = 3    # rare event, but can happen in real world
+    LOGLVL_DEBUG5 = 5           # some unexpected event, but sometimes happen
+    LOGLVL_DEBUG10 = 10         # detailed trace
 
     def __init__(self, sock4, sock6, renderer, qname, qclass, qtype, cache,
                  nest=0):
@@ -66,12 +74,27 @@ class ResolverContext:
         self.__cache = cache
         self.__create_query()
         self.__nest = nest      # CNAME loop prevention
-        self.__debug = False    # debug mode, will dump detailed log
+        self.__debug_level = self.LOGLVL_INFO
         self.__fetch_queries = set()
         self.__parent = None    # set for internal fetch contexts
+        self.__cur_zone = None
+        self.__cur_ns_addr = None
 
-    def set_debug(self, on_off):
-        self.__debug = on_off
+    def set_debug_level(self, level):
+        self.__debug_level = level
+
+    def __dprint(self, level, msg, params=[]):
+        '''Dump a debug/log message.'''
+        if self.__debug_level < level:
+            return
+        prefix = '[%s/%s/%s at %s' % (self.__qname.to_text(True),
+                                      str(self.__qclass), str(self.__qtype),
+                                      self.__cur_zone)
+        if self.__cur_ns_addr is not None:
+            prefix += ' to ' + self.__cur_ns_addr[0]
+        prefix += ']'
+        sys.stdout.write((msg + ' %s\n') %
+                         tuple([str(p) for p in params] + [prefix]))
 
     def get_aux_queries(self):
         return list(self.__fetch_queries)
@@ -87,21 +110,22 @@ class ResolverContext:
     def start(self):
         # identify the deepest zone cut
         self.__cur_zone, nameservers = self.__find_deepest_nameserver()
-        if self.__debug:
-            print('Located deepest zone cut for ' + str(self.__qname) +
-                  ': ' + str(self.__cur_zone))
+        self.__dprint(self.LOGLVL_DEBUG10, 'Located deepest zone cut')
 
-        # get server addresses, only from those available in the cache
-        # (i.e., do not chase missing glues)
+        # get server addresses
         (self.__ns_addr4, self.__ns_addr6) = self.__find_ns_addrs(nameservers)
         cur_ns_addr = self.__try_next_server()
-        return self.__qid, cur_ns_addr
+        if cur_ns_addr is not None:
+            return self.__qid, cur_ns_addr
+        return None, None
 
     def query_timeout(self, ns_addr):
-        if self.__debug:
-            sys.stdout.write('query timeout: server=%s\n' % str(ns_addr[0]))
+        self.__dprint(self.LOGLVL_DEBUG5, 'query timeout')
         cur_ns_addr = self.__try_next_server()
-        return self.__qid, cur_ns_addr
+        if cur_ns_addr is not None:
+            return self.__qid, cur_ns_addr
+        self.__dprint(self.LOGLVL_DEBUG1, 'no reachable server')
+        return None, None
 
     def handle_response(self, resp_msg):
         # Minimal validation
@@ -117,21 +141,28 @@ class ResolverContext:
 
         # Look into the response
         next_qry = None
-        if resp_msg.get_header_flag(Message.HEADERFLAG_AA):
-            next_qry = self.__handle_auth_answer(resp_msg)
-        elif resp_msg.get_rcode() == Rcode.NOERROR() and \
-                (not resp_msg.get_header_flag(Message.HEADERFLAG_AA)):
-            authorities = resp_msg.get_section(Message.SECTION_AUTHORITY)
-            new_zone = None
-            for ns_rrset in authorities:
-                if ns_rrset.get_type() == RRType.NS():
-                    ns_addr = self.__handle_referral(resp_msg, ns_rrset)
-                    if ns_addr is not None:
-                        next_qry = ResQuery(self, self.__qid, ns_addr)
-                    break
-        else:
-            if self.__debug:
-                sys.stderr.write('lame server for zone%s\n' % self.__cur_zone)
+        try:
+            if resp_msg.get_header_flag(Message.HEADERFLAG_AA):
+                next_qry = self.__handle_auth_answer(resp_msg)
+            elif resp_msg.get_rcode() == Rcode.NOERROR() and \
+                    (not resp_msg.get_header_flag(Message.HEADERFLAG_AA)):
+                authorities = resp_msg.get_section(Message.SECTION_AUTHORITY)
+                new_zone = None
+                for ns_rrset in authorities:
+                    if ns_rrset.get_type() == RRType.NS():
+                        ns_addr = self.__handle_referral(resp_msg, ns_rrset)
+                        if ns_addr is not None:
+                            next_qry = ResQuery(self, self.__qid, ns_addr)
+                        break
+            else:
+                raise InternalLame('lame server')
+        except InternalLame as ex:
+            self.__dprint(self.LOGLVL_INFO, '%s', [ex])
+            ns_addr = self.__try_next_server()
+            if ns_addr is not None:
+                next_qry = ResQuery(self, self.__qid, ns_addr)
+            else:
+                self.__dprint(self.LOGLVL_DEBUG1, 'no usable server')
         if next_qry is None and self.__parent is not None:
             # This context is completed, resume the parent
             next_qry = self.__parent.__resume(self)
@@ -146,40 +177,39 @@ class ResolverContext:
                     answer_rrset.get_class() == self.__qclass:
                 self.__cache.add(answer_rrset, SimpleDNSCache.TRUST_ANSWER)
                 if answer_rrset.get_type() == self.__qtype:
-                    if self.__debug:
-                        sys.stdout.write('got a response: ' +
-                                         str(answer_rrset))
+                    self.__dprint(self.LOGLVL_DEBUG10, 'got a response: %s',
+                                  [answer_rrset])
                     return None
                 elif answer_rrset.get_type() == RRType.CNAME():
-                    if self.__debug:
-                        sys.stdout.write('got an alias: ' + str(answer_rrset))
+                    self.__dprint(self.LOGLVL_DEBUG10, 'got an alias: %s',
+                                  [answer_rrset])
                     # Chase CNAME with a separate resolver context with loop
                     # prevention
                     if self.__nest > self.CNAME_LOOP_MAX:
-                        if self.__debug:
-                            sys.stdout.write('possible CNAME loop detected\n')
+                        self.__dprint(self.LOGLVL_INFO, 'possible CNAME loop')
                         return None
                     if self.__parent is not None:
                         # Don't chase CNAME in an internal fetch context
-                        if self.__debug:
-                            sys.stdout.write('CNAME found in internal fetch\n')
+                        self.__dprint(self.LOGLVL_INFO,
+                                      'CNAME in internal fetch')
                         return None
                     cname = Name(answer_rrset.get_rdata()[0].to_text())
                     cname_ctx = ResolverContext(self.__sock4, self.__sock6,
                                                 self.__renderer, cname,
                                                 self.__qclass, self.__qtype,
                                                 self.__cache, self.__nest + 1)
-                    cname_ctx.set_debug(self.__debug)
+                    cname_ctx.set_debug_level(self.__debug_level)
                     (qid, ns_addr) = cname_ctx.start()
-                    return ResQuery(cname_ctx, qid, ns_addr)
+                    if ns_addr is not None:
+                        return ResQuery(cname_ctx, qid, ns_addr)
+                    return None
         elif resp_msg.get_rcode() == Rcode.NXDOMAIN() or \
                 (resp_msg.get_rcode() == Rcode.NOERROR() and
                  resp_msg.get_rr_count(Message.SECTION_ANSWER) == 0):
             self.__handle_negative_answer(resp_msg)
             return None
 
-        sys.stdout.write('unexpected answer\n')
-        return None
+        raise InternalLame('unexpected answer')
 
     def __handle_negative_answer(self, resp_msg):
         rcode = resp_msg.get_rcode()
@@ -193,23 +223,20 @@ class ResolverContext:
                 if cmp_reln == NameComparisonResult.EQUAL or \
                         cmp_reln == NameComparisonResult.SUPERDOMAIN:
                     neg_ttl = get_soa_ttl(auth_rrset.get_rdata()[0])
-                if self.__debug:
-                    sys.stdout.write('got a negative response for '+
-                                     '%s/%s/%s, code=%s, negTTL=%d\n' %
-                                     (str(self.__qname), str(self.__qclass),
-                                      str(self.__qtype), str(rcode), neg_ttl))
+                self.__dprint(self.LOGLVL_DEBUG10,
+                              'got a negative response, code=%s, negTTL=%s',
+                              [rcode, neg_ttl])
                 neg_rrset = RRset(self.__qname, self.__qclass, self.__qtype,
                                   RRTTL(neg_ttl))
                 self.__cache.add(neg_rrset, SimpleDNSCache.TRUST_ANSWER, rcode)
 
                 # Ignore any other records once we find SOA
                 return
-        if self.__debug:
-            sys.stdout.write('unexpected negative answer (missing SOA)\n')
+        delf.dprint(self.LOGLVL_INFO,
+                    'unexpected negative answer (missing SOA)')
 
     def __handle_referral(self, resp_msg, ns_rrset):
-        if self.__debug:
-            sys.stdout.write('got a referral: ' + str(ns_rrset))
+        self.__dprint(self.LOGLVL_DEBUG10, 'got a referral: %s', [ns_rrset])
         self.__cache.add(ns_rrset, SimpleDNSCache.TRUST_GLUE)
         self.__cur_zone = ns_rrset.get_name()
         additionals = resp_msg.get_section(Message.SECTION_ADDITIONAL)
@@ -218,19 +245,19 @@ class ResolverContext:
                 self.__cur_zone.compare(ad_rrset.get_name()).get_relation()
             if cmp_reln != NameComparisonResult.EQUAL and \
                     cmp_reln != NameComparisonResult.SUPERDOMAIN:
-                if self.__debug:
-                    sys.stdout.write('ignore out-of-zone additional: ' +
-                                     str(ad_rrset))
+                self.__dprint(self.LOGLVL_DEBUG10,
+                              'ignore out-of-zone additional: %s', [ad_rrset])
                 continue
             if ad_rrset.get_type() == RRType.A() or \
                     ad_rrset.get_type() == RRType.AAAA():
-                if self.__debug:
-                    sys.stdout.write('got glue for referral: ' + str(ad_rrset))
+                self.__dprint(self.LOGLVL_DEBUG10, 'got glue for referral:%s',
+                              [ad_rrset])
                 self.__cache.add(ad_rrset, SimpleDNSCache.TRUST_GLUE)
         (self.__ns_addr4, self.__ns_addr6) = self.__find_ns_addrs(ns_rrset)
         return self.__try_next_server()
 
     def __try_next_server(self):
+        self.__cur_ns_addr = None
         ns_addr = None
         if len(self.__ns_addr4) > 0:
             ns_addr, self.__ns_addr4 = self.__ns_addr4[0], self.__ns_addr4[1:]
@@ -250,10 +277,8 @@ class ResolverContext:
             self.__sock4.sendto(qdata, ns_addr)
         else:
             self.__sock6.sendto(qdata, ns_addr)
-        if self.__debug:
-            print('Sent query ' + str(self.__qname) + '/' +
-                  str(self.__qclass) + '/' + str(self.__qtype) + ' to ' +
-                  ns_addr[0])
+        self.__cur_ns_addr = ns_addr
+        self.__dprint(self.LOGLVL_DEBUG10, 'sent query')
         return ns_addr
 
     def __find_deepest_nameserver(self):
@@ -293,9 +318,8 @@ class ResolverContext:
                     # specify 0 for flowinfo and scopeid unconditionally
                     v6_addrs.append((rdata.to_text(), DNS_PORT, 0, 0))
         if fetch_if_notfound and not v4_addrs and not v6_addrs:
-            if self.__debug:
-                print('no address found for any nameservers on zone ' +
-                      str(self.__cur_zone))
+            self.__dprint(self.LOGLVL_DEBUG5,
+                          'no address found for any nameservers')
             self.__cur_nameservers = nameservers
             for ns in ns_names:
                 self.__fetch_ns_addrs(ns)
@@ -306,11 +330,12 @@ class ResolverContext:
             res_ctx = ResolverContext(self.__sock4, self.__sock6,
                                       self.__renderer, ns_name, self.__qclass,
                                       type, self.__cache, 0)
-            res_ctx.set_debug(self.__debug)
+            res_ctx.set_debug_level(self.__debug_level)
             res_ctx.__parent = self
             (qid, ns_addr) = res_ctx.start()
-            query = ResQuery(res_ctx, qid, ns_addr)
-            self.__fetch_queries.add(query)
+            if ns_addr is not None:
+                query = ResQuery(res_ctx, qid, ns_addr)
+                self.__fetch_queries.add(query)
 
     def __resume(self, fetch_ctx):
         for qry in self.__fetch_queries:
@@ -321,7 +346,10 @@ class ResolverContext:
                     (self.__ns_addr4, self.__ns_addr6) = \
                         self.__find_ns_addrs(self.__cur_nameservers, False)
                     ns_addr = self.__try_next_server()
-                    return ResQuery(self, self.__qid, ns_addr)
+                    if ns_addr is not None:
+                        return ResQuery(self, self.__qid, ns_addr)
+                    else:
+                        return None
                 else:
                     return None
         raise MiniResolverException('unexpected case: fetch query not found')
@@ -381,10 +409,11 @@ class QueryTimer:
     def timeout(self):
         (qid, addr) = \
             self.__res_qry.res_ctx.query_timeout(self.__res_qry.ns_addr)
-        next_res_qry = ResQuery(self.__res_qry.res_ctx, qid, addr)
-        self.__qtable[(qid, addr)] = next_res_qry
-        timer = QueryTimer(next_res_qry, self.__timerq, self.__qtable)
-        self.__timerq.add(next_res_qry.expire, timer)
+        if addr is not None:
+            next_res_qry = ResQuery(self.__res_qry.res_ctx, qid, addr)
+            self.__qtable[(qid, addr)] = next_res_qry
+            timer = QueryTimer(next_res_qry, self.__timerq, self.__qtable)
+            self.__timerq.add(next_res_qry.expire, timer)
 
 if __name__ == '__main__':
     # prepare cache, install root hints
@@ -413,7 +442,7 @@ if __name__ == '__main__':
     query_table = {}
     timerq = TimerQueue()
     for ctx in ctxs:
-        ctx.set_debug(True)
+        ctx.set_debug_level(ResolverContext.LOGLVL_INFO)
         (qid, addr) = ctx.start()
         res_qry = ResQuery(ctx, qid, addr)
         query_table[(qid, addr)] = res_qry
