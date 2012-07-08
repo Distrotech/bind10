@@ -34,7 +34,9 @@ using namespace isc::datasrc;
 
 // XXX: some compilers cannot find class static constants used in
 // EXPECT_xxx macros, for which we need an explicit empty definition.
+#ifndef _MSC_VER
 const size_t Name::MAX_LABELS;
+#endif
 
 /* The initial structure of rbtree
  *

@@ -12,6 +12,10 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDATASRC_EXPORT
+
+#include <config.h>
+
 #include <sqlite3.h>
 
 #include <string>
@@ -376,10 +380,14 @@ prepare(sqlite3* const db, const char* const statement) {
 // exclusive database locks (which should only occur on startup, and only
 // when the database has not been created yet)
 void doSleep() {
+#ifdef _WIN32
+    Sleep(100);
+#else
     struct timespec req;
     req.tv_sec = 0;
     req.tv_nsec = 100000000;
     nanosleep(&req, NULL);
+#endif
 }
 
 // returns the schema version if the schema version table exists

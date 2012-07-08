@@ -292,7 +292,7 @@ ISC_LIBDNS_PYTHON_API PyTypeObject question_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+ISC_LIBDNS_PYTHON_API PyObject*
 createQuestionObject(const Question& source) {
     s_Question* question =
         static_cast<s_Question*>(question_type.tp_alloc(&question_type, 0));
@@ -300,7 +300,7 @@ createQuestionObject(const Question& source) {
     return (question);
 }
 
-bool
+ISC_LIBDNS_PYTHON_API bool
 PyQuestion_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -308,7 +308,7 @@ PyQuestion_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &question_type));
 }
 
-const Question&
+ISC_LIBDNS_PYTHON_API const Question&
 PyQuestion_ToQuestion(const PyObject* question_obj) {
     if (question_obj == NULL) {
         isc_throw(PyCPPWrapperException,

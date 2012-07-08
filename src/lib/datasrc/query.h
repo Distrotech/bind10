@@ -17,6 +17,7 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <datasrc/dll.h>
 #include <datasrc/cache.h>
 #include <datasrc/data_source.h>
 
@@ -30,11 +31,11 @@
 namespace isc {
 namespace datasrc {
 
-class Query;
+class ISC_LIBDATASRC_API Query;
 typedef boost::shared_ptr<Query> QueryPtr;
 
 // An individual task to be carried out by the query logic
-class QueryTask {
+class ISC_LIBDATASRC_API QueryTask {
 private:
     /// Note: The copy constructor and the assignment operator are intentionally
     /// defined as private.
@@ -158,7 +159,7 @@ typedef boost::shared_ptr<QueryTask> QueryTaskPtr;
 typedef std::queue<QueryTaskPtr> QueryTaskQueue;
 
 // Data Source query
-class Query {
+class ISC_LIBDATASRC_API Query {
 public:
     // The state of a query: pending or answered.
     enum Status {

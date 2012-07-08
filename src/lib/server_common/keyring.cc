@@ -12,6 +12,14 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBSERVER_COMMON_EXPORT
+
+#include <config.h>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#endif
+
 #include <server_common/keyring.h>
 #include <server_common/logger.h>
 
@@ -23,7 +31,7 @@ namespace server_common {
 
 typedef boost::shared_ptr<TSIGKeyRing> KeyringPtr;
 
-KeyringPtr keyring;
+ISC_LIBSERVER_COMMON_API KeyringPtr keyring;
 
 namespace {
 
@@ -46,7 +54,7 @@ updateKeyring(const std::string&, ConstElementPtr data,
 
 }
 
-void
+ISC_LIBSERVER_COMMON_API void
 initKeyring(config::ModuleCCSession& session) {
     if (keyring) {
         // We are already initialized
@@ -56,7 +64,7 @@ initKeyring(config::ModuleCCSession& session) {
     session.addRemoteConfig("tsig_keys", updateKeyring, false);
 }
 
-void
+ISC_LIBSERVER_COMMON_API void
 deinitKeyring(config::ModuleCCSession& session) {
     if (!keyring) {
         // Not initialized, ignore it

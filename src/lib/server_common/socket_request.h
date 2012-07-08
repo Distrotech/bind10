@@ -16,6 +16,7 @@
 #define __SOCKET_REQUEST_H 1
 
 #include <exceptions/exceptions.h>
+#include <server_common/dll.h>
 
 #include <boost/noncopyable.hpp>
 #include <utility>
@@ -43,7 +44,7 @@ namespace server_common {
 /// subclass when needed.
 ///
 /// \see socketRequestor function to access the object of this class.
-class SocketRequestor : boost::noncopyable {
+class ISC_LIBSERVER_COMMON_API SocketRequestor : boost::noncopyable {
 protected:
     /// \brief Protected constructor
     ///
@@ -66,7 +67,11 @@ public:
     /// socket (you might want to use it directly with functions like recv,
     /// or fill it into an asio socket). The other part is the token
     /// representing the socket, which allows it to be given up again.
+#ifdef _WIN32
     typedef std::pair<int, std::string> SocketID;
+#else
+    typedef std::pair<SOCKET, std::string> SocketID;
+#endif
 
     /// \brief The protocol of requested socket
     ///
@@ -97,7 +102,7 @@ public:
     /// This is thrown if the other side doesn't want to comply to our
     /// requests, like when we ask for a socket already held by someone
     /// else or ask for nonsense (releasing a socket we don't own).
-    class SocketError : public Exception {
+    class ISC_LIBSERVER_COMMON_API SocketError : public Exception {
     public:
         SocketError(const char* file, size_t line, const char* what) :
             Exception(file, line, what)
@@ -115,7 +120,7 @@ public:
     ///
     /// \see ShareError
     /// \see SocketAllocateError
-    class NonFatalSocketError : public SocketError {
+    class ISC_LIBSERVER_COMMON_API NonFatalSocketError : public SocketError {
     public:
         NonFatalSocketError(const char* file, size_t line, const char* what) :
             SocketError(file, line, what)
@@ -129,7 +134,7 @@ public:
     /// allocated by bind10, but other bind10 module(s) is using it and
     /// the sharing parameters are incompatible (the socket can't be shared
     /// between the module and our module).
-    class ShareError : public NonFatalSocketError {
+    class ISC_LIBSERVER_COMMON_API ShareError : public NonFatalSocketError {
     public:
         ShareError(const char* file, size_t line, const char* what) :
             NonFatalSocketError(file, line, what)
@@ -143,7 +148,8 @@ public:
     /// creator. This can happen when the address/port pair is already taken
     /// by a different application, the socket creator doesn't have enough
     /// privileges, or for some kind of similar reason.
-    class SocketAllocateError : public NonFatalSocketError {
+    class ISC_LIBSERVER_COMMON_API SocketAllocateError :
+     public NonFatalSocketError {
     public:
         SocketAllocateError(const char* file, size_t line, const char* what) :
             NonFatalSocketError(file, line, what)
@@ -225,7 +231,7 @@ public:
 /// \return the active socket requestor object.
 /// \throw InvalidOperation if the object was not yet initialized.
 /// \see SocketRequestor::init to initialize the object.
-SocketRequestor& socketRequestor();
+ISC_LIBSERVER_COMMON_API SocketRequestor& socketRequestor();
 
 /// \brief Initialize the singleton object
 ///
@@ -242,8 +248,9 @@ SocketRequestor& socketRequestor();
 ///                 to avoid them and provide the name of the application
 ///                 here.
 /// \throw InvalidOperation when it is called more than once
-void initSocketRequestor(cc::AbstractSession& session,
-                         const std::string& app_name);
+ISC_LIBSERVER_COMMON_API void
+initSocketRequestor(cc::AbstractSession& session,
+                    const std::string& app_name);
 
 /// \brief Initialization for tests
 ///
@@ -260,7 +267,8 @@ void initSocketRequestor(cc::AbstractSession& session,
 /// \param requestor the object to be used. It can be NULL to reset to
 ///     an "virgin" state (which acts as if initTest or init was never
 ///     called before).
-void initTestSocketRequestor(SocketRequestor* requestor);
+ISC_LIBSERVER_COMMON_API void
+initTestSocketRequestor(SocketRequestor* requestor);
 
 /// \brief Destroy the singleton instance
 ///
@@ -270,7 +278,7 @@ void initTestSocketRequestor(SocketRequestor* requestor);
 /// that want to be completely clean on exit.
 /// After this function has been called, all operations except init
 /// will fail.
-void cleanupSocketRequestor();
+ISC_LIBSERVER_COMMON_API void cleanupSocketRequestor();
 
 }
 }

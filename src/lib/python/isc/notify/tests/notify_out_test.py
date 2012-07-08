@@ -22,13 +22,14 @@ import socket
 from isc.notify import notify_out, SOCK_DATA
 import isc.log
 from isc.dns import *
+from isc.util.socketpair import socketpair
 
 TESTDATA_SRCDIR = os.getenv("TESTDATASRCDIR")
 
 # our fake socket, where we can read and insert messages
 class MockSocket():
     def __init__(self):
-        self._local_sock, self._remote_sock = socket.socketpair()
+        self._local_sock, self._remote_sock = socketpair.socketpair()
 
     def connect(self, to):
         pass
@@ -200,7 +201,8 @@ class TestNotifyOut(unittest.TestCase):
             self._notify._read_sock.close()
         if self._notify._write_sock is not None:
             self._notify._write_sock.close()
-        self._notify._read_sock, self._notify._write_sock = socket.socketpair()
+        self._notify._read_sock, self._notify._write_sock = \
+            socketpair.socketpair()
         self._notify._write_sock.send(SOCK_DATA)
         replied_zones, timeout_zones = self._notify._wait_for_notify_reply()
         self.assertEqual(0, len(replied_zones))

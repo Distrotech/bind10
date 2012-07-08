@@ -22,6 +22,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\dns\tests\unittest_util.cc" />
     <ClCompile Include="..\..\..\src\lib\testutils\dnsmessage_test.cc" />
+    <ClCompile Include="..\..\..\src\lib\testutils\socket_request.cc" />
     <ClCompile Include="..\..\..\src\lib\testutils\srv_test.cc" />
     <ClCompile Include="..\..\dllmain.cc" />
   </ItemGroup>
@@ -72,7 +73,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libexceptionsd.lib;libutild.lib;libdns++d.lib;libccd.lib;libxfrd.lib;libasiolinkd.lib;libasiodnsd.lib;gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libexceptionsd.lib;libutild.lib;libdns++d.lib;libccd.lib;libxfrd.lib;libasiolinkd.lib;libasiodnsd.lib;libserver_commond.lib;gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>cd ..\..\..\src\lib\testutils\testdata
@@ -108,7 +109,7 @@ python %BIND10HOME%/src/lib/util/python/gen_wiredata.py -o simpleresponse_fromWi
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libdns++.lib;libcc.lib;libxfr.lib;libasiolink.lib;libasiodns.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libdns++.lib;libcc.lib;libxfr.lib;libasiolink.lib;libasiodns.lib;libserver_common.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>cd ..\..\..\src\lib\testutils\testdata

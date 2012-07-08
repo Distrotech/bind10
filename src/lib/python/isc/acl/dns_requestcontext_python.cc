@@ -20,10 +20,14 @@
 // http://docs.python.org/py3k/extending/extending.html#a-simple-example
 #include <Python.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#endif
 #include <string.h>
 
 #include <cassert>

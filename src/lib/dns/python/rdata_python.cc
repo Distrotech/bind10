@@ -344,7 +344,7 @@ ISC_LIBDNS_PYTHON_API PyTypeObject rdata_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+ISC_LIBDNS_PYTHON_API PyObject*
 createRdataObject(ConstRdataPtr source) {
     s_Rdata* py_rdata =
         static_cast<s_Rdata*>(rdata_type.tp_alloc(&rdata_type, 0));
@@ -356,7 +356,7 @@ createRdataObject(ConstRdataPtr source) {
     return (py_rdata);
 }
 
-bool
+ISC_LIBDNS_PYTHON_API bool
 PyRdata_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -364,7 +364,7 @@ PyRdata_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &rdata_type));
 }
 
-const Rdata&
+ISC_LIBDNS_PYTHON_API const Rdata&
 PyRdata_ToRdata(const PyObject* rdata_obj) {
     if (rdata_obj == NULL) {
         isc_throw(PyCPPWrapperException,

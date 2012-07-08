@@ -34,7 +34,7 @@ extern ISC_LIBDNS_PYTHON_API PyTypeObject opcode_type;
 /// returns a NULL pointer).
 /// This function is expected to be called within a try block
 /// followed by necessary setup for python exception.
-PyObject* createOpcodeObject(const Opcode& source);
+ISC_LIBDNS_PYTHON_API PyObject* createOpcodeObject(const Opcode& source);
 
 /// \brief Checks if the given python object is a Opcode object
 ///
@@ -42,7 +42,7 @@ PyObject* createOpcodeObject(const Opcode& source);
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type Opcode, false otherwise
-bool PyOpcode_Check(PyObject* obj);
+ISC_LIBDNS_PYTHON_API bool PyOpcode_Check(PyObject* obj);
 
 /// \brief Returns a reference to the Opcode object contained within the given
 ///        Python object.
@@ -54,7 +54,8 @@ bool PyOpcode_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param opcode_obj The opcode object to convert
-const Opcode& PyOpcode_ToOpcode(const PyObject* opcode_obj);
+ISC_LIBDNS_PYTHON_API const Opcode&
+PyOpcode_ToOpcode(const PyObject* opcode_obj);
 
 } // namespace python
 } // namespace dns

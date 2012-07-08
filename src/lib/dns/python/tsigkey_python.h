@@ -35,7 +35,7 @@ extern ISC_LIBDNS_PYTHON_API PyTypeObject tsigkeyring_type;
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type TSIGKey, false otherwise
-bool PyTSIGKey_Check(PyObject* obj);
+ISC_LIBDNS_PYTHON_API bool PyTSIGKey_Check(PyObject* obj);
 
 /// \brief Returns a reference to the TSIGKey object contained within the given
 ///        Python object.
@@ -47,13 +47,14 @@ bool PyTSIGKey_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param tsigkey_obj The tsigkey object to convert
-const TSIGKey& PyTSIGKey_ToTSIGKey(const PyObject* tsigkey_obj);
+ISC_LIBDNS_PYTHON_API const TSIGKey&
+PyTSIGKey_ToTSIGKey(const PyObject* tsigkey_obj);
 
 /// \brief Checks if the given python object is a TSIGKeyRing object
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type TSIGKeyRing, false otherwise
-bool PyTSIGKeyRing_Check(PyObject* obj);
+ISC_LIBDNS_PYTHON_API bool PyTSIGKeyRing_Check(PyObject* obj);
 
 /// \brief Returns a reference to the TSIGKeyRing object contained within the given
 ///        Python object.
@@ -65,7 +66,8 @@ bool PyTSIGKeyRing_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param tsigkeyring_obj The tsigkeyring object to convert
-const TSIGKeyRing& PyTSIGKeyRing_ToTSIGKeyRing(const PyObject* tsigkeyring_obj);
+ISC_LIBDNS_PYTHON_API const TSIGKeyRing&
+PyTSIGKeyRing_ToTSIGKeyRing(const PyObject* tsigkeyring_obj);
 
 } // namespace python
 } // namespace dns

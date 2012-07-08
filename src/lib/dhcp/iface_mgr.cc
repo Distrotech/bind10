@@ -20,7 +20,7 @@
 #include <string.h>
 #ifdef _WIN32
 #include <ws2tcpip.h>
-#include <netioapi.h>
+#include <iphlpapi.h>
 #else
 #include <netinet/in.h>
 #include <arpa/inet.h>

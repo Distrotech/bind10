@@ -24,6 +24,7 @@
 #include <dns/rrset.h>
 #include <dns/rrtype.h>
 
+#include <datasrc/dll.h>
 #include <datasrc/data_source.h>
 #include <datasrc/client.h>
 #include <datasrc/zone.h>
@@ -59,7 +60,7 @@ namespace datasrc {
 ///     database, having multiple instances of this class. If the database
 ///     allows having multiple open queries at one connection, the connection
 ///     class may share it.
-class DatabaseAccessor : boost::noncopyable {
+class ISC_LIBDATASRC_API DatabaseAccessor : boost::noncopyable {
 public:
     /// \brief Data columns for by IteratorContext::getNext()
     ///
@@ -809,7 +810,7 @@ public:
 /// While it is possible to subclass it for specific database in case
 /// of special needs, it is not expected to be needed. This should just
 /// work as it is with whatever DatabaseAccessor.
-class DatabaseClient : public DataSourceClient {
+class ISC_LIBDATASRC_API DatabaseClient : public DataSourceClient {
 public:
     /// \brief Constructor
     ///

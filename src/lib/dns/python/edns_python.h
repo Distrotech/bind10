@@ -34,7 +34,7 @@ extern ISC_LIBDNS_PYTHON_API PyTypeObject edns_type;
 /// returns a NULL pointer).
 /// This function is expected to be called within a try block
 /// followed by necessary setup for python exception.
-PyObject* createEDNSObject(const EDNS& source);
+ISC_LIBDNS_PYTHON_API PyObject* createEDNSObject(const EDNS& source);
 
 /// \brief Checks if the given python object is a EDNS object
 ///
@@ -42,7 +42,7 @@ PyObject* createEDNSObject(const EDNS& source);
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type EDNS, false otherwise
-bool PyEDNS_Check(PyObject* obj);
+ISC_LIBDNS_PYTHON_API bool PyEDNS_Check(PyObject* obj);
 
 /// \brief Returns a reference to the EDNS object contained within the given
 ///        Python object.
@@ -54,7 +54,7 @@ bool PyEDNS_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param edns_obj The edns object to convert
-const EDNS& PyEDNS_ToEDNS(const PyObject* edns_obj);
+ISC_LIBDNS_PYTHON_API const EDNS& PyEDNS_ToEDNS(const PyObject* edns_obj);
 
 } // namespace python
 } // namespace dns

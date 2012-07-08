@@ -38,7 +38,8 @@ extern ISC_LIBDNS_PYTHON_API PyTypeObject tsig_type;
 /// returns a NULL pointer).
 /// This function is expected to be called with in a try block
 /// followed by necessary setup for python exception.
-PyObject* createTSIGObject(const rdata::any::TSIG& source);
+ISC_LIBDNS_PYTHON_API PyObject*
+createTSIGObject(const rdata::any::TSIG& source);
 
 /// \brief Checks if the given python object is a TSIG object
 ///
@@ -46,7 +47,7 @@ PyObject* createTSIGObject(const rdata::any::TSIG& source);
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type TSIG, false otherwise
-bool PyTSIG_Check(PyObject* obj);
+ISC_LIBDNS_PYTHON_API bool PyTSIG_Check(PyObject* obj);
 
 /// \brief Returns a reference to the TSIG object contained within the given
 ///        Python object.
@@ -58,7 +59,8 @@ bool PyTSIG_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param tsig_obj The tsig object to convert
-const rdata::any::TSIG& PyTSIG_ToTSIG(const PyObject* tsig_obj);
+ISC_LIBDNS_PYTHON_API const rdata::any::TSIG&
+PyTSIG_ToTSIG(const PyObject* tsig_obj);
 
 } // namespace python
 } // namespace dns

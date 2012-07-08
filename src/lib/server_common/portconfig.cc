@@ -12,6 +12,15 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBSERVER_COMMON_EXPORT
+
+#include <config.h>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#endif
+
 #include <server_common/portconfig.h>
 #include <server_common/logger.h>
 #include <server_common/socket_request.h>
@@ -31,7 +40,7 @@ namespace isc {
 namespace server_common {
 namespace portconfig {
 
-AddressList
+ISC_LIBSERVER_COMMON_API AddressList
 parseAddresses(isc::data::ConstElementPtr addresses,
                const std::string& elemName)
 {
@@ -108,7 +117,7 @@ setAddresses(DNSServiceBase& service, const AddressList& addresses,
 
 }
 
-void
+ISC_LIBSERVER_COMMON_API void
 installListenAddresses(const AddressList& new_addresses,
                        AddressList& address_store,
                        DNSServiceBase& service,

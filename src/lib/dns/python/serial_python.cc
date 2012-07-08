@@ -252,14 +252,14 @@ ISC_LIBDNS_PYTHON_API PyTypeObject serial_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+ISC_LIBDNS_PYTHON_API PyObject*
 createSerialObject(const Serial& source) {
     SerialContainer container(PyObject_New(s_Serial, &serial_type));
     container.set(new Serial(source));
     return (container.release());
 }
 
-bool
+ISC_LIBDNS_PYTHON_API bool
 PySerial_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException,
@@ -268,7 +268,7 @@ PySerial_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &serial_type));
 }
 
-const Serial&
+ISC_LIBDNS_PYTHON_API const Serial&
 PySerial_ToSerial(const PyObject* serial_obj) {
     if (serial_obj == NULL) {
         isc_throw(PyCPPWrapperException,

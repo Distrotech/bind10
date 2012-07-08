@@ -12,6 +12,10 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDATASRC_EXPORT
+
+#include <config.h>
+
 #include <string>
 #include <sstream>
 #include <utility>
@@ -49,7 +53,7 @@ using namespace isc::dns::rdata;
 namespace isc {
 namespace datasrc {
 
-struct Sqlite3Parameters {
+struct ISC_LIBDATASRC_API Sqlite3Parameters {
     Sqlite3Parameters() :  db_(NULL), major_version_(-1), minor_version_(-1),
         q_zone_(NULL), q_record_(NULL), q_addrs_(NULL), q_referral_(NULL),
         q_any_(NULL), q_count_(NULL), q_previous_(NULL), q_nsec3_(NULL),
@@ -692,10 +696,14 @@ prepare(sqlite3* const db, const char* const statement) {
 // exclusive database locks (which should only occur on startup, and only
 // when the database has not been created yet)
 void do_sleep() {
+#ifdef _WIN32
+    Sleep(100);
+#else
     struct timespec req;
     req.tv_sec = 0;
     req.tv_nsec = 100000000;
     nanosleep(&req, NULL);
+#endif
 }
 
 // returns the schema version element if the schema version table exists

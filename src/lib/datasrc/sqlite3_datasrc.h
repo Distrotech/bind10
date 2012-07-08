@@ -19,35 +19,41 @@
 
 #include <exceptions/exceptions.h>
 
+#include <datasrc/dll.h>
 #include <datasrc/data_source.h>
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4373)
+#endif
 
 namespace isc {
 
 namespace dns {
-class Name;
-class RRClass;
-class RRType;
-class RRsetList;
+class ISC_LIBDATASRC_API Name;
+class ISC_LIBDATASRC_API RRClass;
+class ISC_LIBDATASRC_API RRType;
+class ISC_LIBDATASRC_API RRsetList;
 }
 
 namespace datasrc {
 
-class Query;
-struct Sqlite3Parameters;
+class ISC_LIBDATASRC_API Query;
+struct ISC_LIBDATASRC_API Sqlite3Parameters;
 
-class Sqlite3Error : public Exception {
+class ISC_LIBDATASRC_API Sqlite3Error : public Exception {
 public:
     Sqlite3Error(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
 };
 
-class IncompatibleDbVersion : public Exception {
+class ISC_LIBDATASRC_API IncompatibleDbVersion : public Exception {
 public:
     IncompatibleDbVersion(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
 };
 
-class Sqlite3DataSrc : public DataSrc {
+class ISC_LIBDATASRC_API Sqlite3DataSrc : public DataSrc {
     ///
     /// \name Constructors, Assignment Operator and Destructor.
     ///
@@ -122,6 +128,10 @@ private:
 
 }
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #endif // __DATA_SOURCE_SQLITE3_H
 

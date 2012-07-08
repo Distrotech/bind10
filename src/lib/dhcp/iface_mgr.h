@@ -89,7 +89,7 @@ public:
     /// Iface structure represents network interface with all useful
     /// information, like name, interface index, MAC address and
     /// list of assigned addresses
-    class Iface {
+    class ISC_LIBDHCP_API Iface {
     public:
         /// @brief Iface constructor.
         ///

@@ -293,14 +293,14 @@ ISC_LIBDNS_PYTHON_API PyTypeObject rrttl_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+ISC_LIBDNS_PYTHON_API PyObject*
 createRRTTLObject(const RRTTL& source) {
     RRTTLContainer container(PyObject_New(s_RRTTL, &rrttl_type));
     container.set(new RRTTL(source));
     return (container.release());
 }
 
-bool
+ISC_LIBDNS_PYTHON_API bool
 PyRRTTL_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -308,7 +308,7 @@ PyRRTTL_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &rrttl_type));
 }
 
-const RRTTL&
+ISC_LIBDNS_PYTHON_API const RRTTL&
 PyRRTTL_ToRRTTL(const PyObject* rrttl_obj) {
     if (rrttl_obj == NULL) {
         isc_throw(PyCPPWrapperException,

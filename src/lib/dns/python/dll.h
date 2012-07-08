@@ -25,6 +25,16 @@
 #endif
 #endif
 
+#if !defined(_WIN32) || defined(USE_STATIC_LINK) || defined(USE_STATIC_WRAPPER)
+#define ISC_PYTHON_WRAPPER_API
+#else
+#ifdef ISC_LIBDNS_PYTHON_EXPORT
+#define ISC_PYTHON_WRAPPER_API __declspec(dllexport)
+#else
+#define ISC_PYTHON_WRAPPER_API __declspec(dllimport)
+#endif
+#endif
+
 #endif // __LIBDNS_PYTHON_H
 
 // Local Variables: 

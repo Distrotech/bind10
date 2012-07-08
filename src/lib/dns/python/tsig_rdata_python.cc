@@ -339,14 +339,14 @@ ISC_LIBDNS_PYTHON_API PyTypeObject tsig_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+ISC_LIBDNS_PYTHON_API PyObject*
 createTSIGObject(const any::TSIG& source) {
     TSIGContainer container(PyObject_New(s_TSIG, &tsig_type));
     container.set(new any::TSIG(source));
     return (container.release());
 }
 
-bool
+ISC_LIBDNS_PYTHON_API bool
 PyTSIG_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -354,7 +354,7 @@ PyTSIG_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &tsig_type));
 }
 
-const any::TSIG&
+ISC_LIBDNS_PYTHON_API const any::TSIG&
 PyTSIG_ToTSIG(const PyObject* tsig_obj) {
     if (tsig_obj == NULL) {
         isc_throw(PyCPPWrapperException,

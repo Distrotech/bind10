@@ -12,6 +12,13 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#endif
+
 #include <gtest/gtest.h>
 
 #include <server_common/portconfig.h>
@@ -307,7 +314,7 @@ typedef InstallListenAddresses InstallListenAddressesDeathTest;
 // There are systems which don't have EXPECT_DEATH. We skip the tests there.
 // We're lucky, EXPECT_DEATH is a macro, so we can test for its existence this
 // easily.
-#ifdef EXPECT_DEATH
+#if defined(EXPECT_DEATH) && !defined(NO_EXPECT_DEATH)
 // We make the socket requestor throw a "fatal" exception, one where we can't be
 // sure the state between processes is consistent. So we abort in that case.
 TEST_F(InstallListenAddressesDeathTest, inconsistent) {

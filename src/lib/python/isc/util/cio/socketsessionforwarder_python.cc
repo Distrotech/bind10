@@ -20,9 +20,11 @@
 // http://docs.python.org/py3k/extending/extending.html#a-simple-example
 #include <Python.h>
 
+#ifndef _WIN32
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#endif
 
 #include <string>
 #include <stdexcept>
@@ -181,15 +183,34 @@ SocketSessionForwarder_push(PyObject* po_self, PyObject* args) {
         static_cast<s_SocketSessionForwarder*>(po_self);
 
     try {
-        int fd, family, type, protocol;
+#ifdef _WIN32
+        SOCKET fd,
+#else
+        int fd,
+#endif
+        int family, type, protocol;
         PyObject* po_local_end;
         PyObject* po_remote_end;
         Py_buffer py_buf;
 
+#ifdef _WIN32
+#ifdef _WIN64
+        if (!PyArg_ParseTuple(args, "LiiiOOy*", &fd, &family, &type, &protocol,
+                              &po_local_end, &po_remote_end, &py_buf)) {
+            return (NULL);
+        }
+#else
+        if (!PyArg_ParseTuple(args, "liiiOOy*", &fd, &family, &type, &protocol,
+                              &po_local_end, &po_remote_end, &py_buf)) {
+            return (NULL);
+        }
+#endif
+#else
         if (!PyArg_ParseTuple(args, "iiiiOOy*", &fd, &family, &type, &protocol,
                               &po_local_end, &po_remote_end, &py_buf)) {
             return (NULL);
         }
+#endif
         struct sockaddr_storage ss_local, ss_remote;
         parsePySocketAddress(po_local_end, type, protocol, &ss_local);
         parsePySocketAddress(po_remote_end, type, protocol, &ss_remote);

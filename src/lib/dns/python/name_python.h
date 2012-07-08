@@ -59,7 +59,7 @@ ISC_LIBDNS_PYTHON_API PyObject* createNameObject(const Name& source);
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type Name, false otherwise
-bool PyName_Check(PyObject* obj);
+ISC_LIBDNS_PYTHON_API bool PyName_Check(PyObject* obj);
 
 /// \brief Returns a reference to the Name object contained within the given
 ///        Python object.
@@ -71,7 +71,7 @@ bool PyName_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param name_obj The name object to convert
-const Name& PyName_ToName(const PyObject* name_obj);
+ISC_LIBDNS_PYTHON_API const Name& PyName_ToName(const PyObject* name_obj);
 
 } // namespace python
 } // namespace dns

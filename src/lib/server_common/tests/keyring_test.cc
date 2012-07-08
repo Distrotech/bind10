@@ -12,6 +12,10 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#endif
+
 #include <server_common/keyring.h>
 #include <server_common/tests/data_path.h>
 

@@ -16,6 +16,7 @@
 #define __SERVER_COMMON_LOGGER_H
 
 #include <log/macros.h>
+#include <server_common/dll.h>
 #include <server_common/server_common_messages.h>
 
 /// \file server_common/logger.h

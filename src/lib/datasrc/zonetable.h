@@ -19,12 +19,13 @@
 
 #include <dns/rrset.h>
 
+#include <datasrc/dll.h>
 #include <datasrc/zone.h>
 
 namespace isc {
 namespace dns {
-class Name;
-class RRClass;
+class ISC_LIBDATASRC_API Name;
+class ISC_LIBDATASRC_API RRClass;
 }
 
 namespace datasrc {
@@ -38,7 +39,7 @@ namespace datasrc {
 ///
 /// For more descriptions about its struct and interfaces, please refer to the
 /// corresponding struct and interfaces of \c MemoryDataSrc.
-class ZoneTable {
+class ISC_LIBDATASRC_API ZoneTable {
 public:
     struct FindResult {
         FindResult(result::Result param_code, const ZoneFinderPtr param_zone) :

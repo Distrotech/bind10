@@ -16,6 +16,7 @@
 import threading
 import socket
 import select
+from sys.util.socketpair import socketpair
 
 SOCK_DATA = b'somedata'
 class NoPollMixIn:
@@ -53,7 +54,7 @@ class NoPollMixIn:
     some other thread.
     '''
     def __init__(self):
-        self.__read_sock, self.__write_sock = socket.socketpair()
+        self.__read_sock, self.__write_sock = socketpair.socketpair()
         self._is_shut_down = threading.Event()
 
     def serve_forever(self, poll_interval=None):

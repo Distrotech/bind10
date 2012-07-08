@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDATASRC_EXPORT
+
 #include "client.h"
 #include "memory_datasrc.h"
 
@@ -29,13 +31,18 @@ using namespace std;
 namespace isc {
 namespace datasrc {
 
-DataSourceClient*
-createInstance(ConstElementPtr config, string& error) {
+ISC_LIBDATASRC_API DataSourceClient*
+#if defined(_WIN32) && defined(USE_STATIC_LINK)
+StaticCreateInstance
+#else
+createInstance
+#endif
+(ConstElementPtr config, string& error) {
     try {
         // Create the data source
         auto_ptr<InMemoryClient> client(new InMemoryClient());
         // Hardcode the origin and class
-        shared_ptr<InMemoryZoneFinder>
+	boost::shared_ptr<InMemoryZoneFinder>
             finder(new InMemoryZoneFinder(RRClass::CH(), Name("BIND")));
         // Fill it with data
         const string path(config->stringValue());
@@ -53,8 +60,13 @@ createInstance(ConstElementPtr config, string& error) {
     return (NULL);
 }
 
-void
-destroyInstance(DataSourceClient* instance) {
+ISC_LIBDATASRC_API void
+#if defined(_WIN32) && defined(USE_STATIC_LINK)
+StaticDestroyInstance
+#else
+destroyInstance
+#endif
+(DataSourceClient* instance) {
     delete instance;
 }
 

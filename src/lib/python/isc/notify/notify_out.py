@@ -25,6 +25,7 @@ from isc.datasrc import DataSourceClient
 from isc.net import addr
 import isc
 from isc.log_messages.notify_out_messages import *
+from isc.util.socketpair import socketpair
 
 logger = isc.log.Logger("notify_out")
 
@@ -132,7 +133,7 @@ class NotifyOut:
         self._waiting_zones = []
         self._notifying_zones = []
         self._serving = False
-        self._read_sock, self._write_sock = socket.socketpair()
+        self._read_sock, self._write_sock = socketpair.socketpair()
         self._read_sock.setblocking(False)
         self.notify_num = 0  # the count of in progress notifies
         self._verbose = verbose

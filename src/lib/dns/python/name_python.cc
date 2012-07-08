@@ -673,7 +673,7 @@ createNameObject(const Name& source) {
     return (container.release());
 }
 
-bool
+ISC_LIBDNS_PYTHON_API bool
 PyName_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -681,7 +681,7 @@ PyName_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &name_type));
 }
 
-const Name&
+ISC_LIBDNS_PYTHON_API const Name&
 PyName_ToName(const PyObject* name_obj) {
     if (name_obj == NULL) {
         isc_throw(PyCPPWrapperException,

@@ -20,6 +20,8 @@
 // http://docs.python.org/py3k/extending/extending.html#a-simple-example
 #include <Python.h>
 
+#include <config.h>
+
 #include <util/python/pycppwrapper_util.h>
 
 #include <datasrc/client.h>

@@ -304,7 +304,7 @@ ISC_LIBDNS_PYTHON_API PyTypeObject tsigcontext_type = {
     0                                   // tp_version_tag
 };
 
-bool
+ISC_LIBDNS_PYTHON_API bool
 PyTSIGContext_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -312,7 +312,7 @@ PyTSIGContext_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &tsigcontext_type));
 }
 
-TSIGContext&
+ISC_LIBDNS_PYTHON_API TSIGContext&
 PyTSIGContext_ToTSIGContext(PyObject* tsigcontext_obj) {
     if (tsigcontext_obj == NULL) {
         isc_throw(PyCPPWrapperException,

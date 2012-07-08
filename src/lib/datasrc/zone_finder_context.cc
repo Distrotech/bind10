@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDATASRC_EXPORT
+
 #include <dns/rdata.h>
 #include <dns/rrset.h>
 #include <dns/rrtype.h>

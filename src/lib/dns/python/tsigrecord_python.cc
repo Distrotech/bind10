@@ -264,14 +264,14 @@ ISC_LIBDNS_PYTHON_API PyTypeObject tsigrecord_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+ISC_LIBDNS_PYTHON_API PyObject*
 createTSIGRecordObject(const TSIGRecord& source) {
     TSIGRecordContainer container(PyObject_New(s_TSIGRecord, &tsigrecord_type));
     container.set(new TSIGRecord(source));
     return (container.release());
 }
 
-bool
+ISC_LIBDNS_PYTHON_API bool
 PyTSIGRecord_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -279,7 +279,7 @@ PyTSIGRecord_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &tsigrecord_type));
 }
 
-const TSIGRecord&
+ISC_LIBDNS_PYTHON_API const TSIGRecord&
 PyTSIGRecord_ToTSIGRecord(PyObject* tsigrecord_obj) {
     if (tsigrecord_obj == NULL) {
         isc_throw(PyCPPWrapperException,

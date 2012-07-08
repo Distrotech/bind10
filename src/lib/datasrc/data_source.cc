@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDATASRC_EXPORT
+
 #include <config.h>
 
 #include <cassert>
@@ -40,11 +42,22 @@
 
 #include <cc/data.h>
 
+#ifdef _MSC_VER
+#define RETERR(x) __pragma(warning(push)) \
+                  __pragma(warning(disable: 4127)) \
+                  do { \
+                      DataSrc::Result r = (x); \
+                      if (r != DataSrc::SUCCESS) \
+                          return (r); \
+                      } while (0) \
+                    __pragma(warning(pop))
+#else
 #define RETERR(x) do { \
                       DataSrc::Result r = (x); \
                       if (r != DataSrc::SUCCESS) \
                           return (r); \
                       } while (0)
+#endif
 
 using namespace std;
 using namespace isc::util;

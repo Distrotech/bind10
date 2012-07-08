@@ -12,10 +12,12 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#include <unistd.h>
-#include <iostream>
-
 #include <config.h>
+
+#ifndef _WIN32
+#include <unistd.h>
+#endif
+#include <iostream>
 
 #include <exceptions/exceptions.h>
 #include <log/logger_support.h>

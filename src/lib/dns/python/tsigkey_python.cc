@@ -234,7 +234,7 @@ ISC_LIBDNS_PYTHON_API PyTypeObject tsigkey_type = {
     0                                   // tp_version_tag
 };
 
-bool
+ISC_LIBDNS_PYTHON_API bool
 PyTSIGKey_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -242,7 +242,7 @@ PyTSIGKey_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &tsigkey_type));
 }
 
-const TSIGKey&
+ISC_LIBDNS_PYTHON_API const TSIGKey&
 PyTSIGKey_ToTSIGKey(const PyObject* tsigkey_obj) {
     const s_TSIGKey* tsigkey = static_cast<const s_TSIGKey*>(tsigkey_obj);
     return (*tsigkey->cppobj);
@@ -446,7 +446,7 @@ ISC_LIBDNS_PYTHON_API PyTypeObject tsigkeyring_type = {
     0                                   // tp_version_tag
 };
 
-bool
+ISC_LIBDNS_PYTHON_API bool
 PyTSIGKeyRing_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -454,7 +454,7 @@ PyTSIGKeyRing_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &tsigkeyring_type));
 }
 
-const TSIGKeyRing&
+ISC_LIBDNS_PYTHON_API const TSIGKeyRing&
 PyTSIGKeyRing_ToTSIGKeyRing(const PyObject* tsigkeyring_obj) {
     if (tsigkeyring_obj == NULL) {
         isc_throw(PyCPPWrapperException,

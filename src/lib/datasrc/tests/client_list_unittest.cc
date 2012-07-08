@@ -43,14 +43,14 @@ public:
         RRClass getClass() const {
             isc_throw(isc::NotImplemented, "Not implemented");
         }
-        shared_ptr<Context> find(const Name&, const RRType&,
-                                 const FindOptions)
+        boost::shared_ptr<Context> find(const Name&, const RRType&,
+                                        const FindOptions)
         {
             isc_throw(isc::NotImplemented, "Not implemented");
         }
-        shared_ptr<Context> findAll(const Name&,
-                                    vector<ConstRRsetPtr>&,
-                                    const FindOptions)
+        boost::shared_ptr<Context> findAll(const Name&,
+                                           vector<ConstRRsetPtr>&,
+                                           const FindOptions)
         {
             isc_throw(isc::NotImplemented, "Not implemented");
         }
@@ -62,7 +62,7 @@ public:
     };
     // Constructor from a list of zones.
     MockDataSourceClient(const char* zone_names[]) {
-        for (const char** zone(zone_names); *zone; ++zone) {
+        for (const char** zone = zone_names; *zone; ++zone) {
             zones.insert(Name(*zone));
         }
     }
@@ -125,7 +125,7 @@ public:
         if (type == "error") {
             isc_throw(DataSourceError, "The error data source type");
         }
-        shared_ptr<MockDataSourceClient>
+        boost::shared_ptr<MockDataSourceClient>
             ds(new MockDataSourceClient(type, configuration));
         // Make sure it is deleted when the test list is deleted.
         to_delete_.push_back(ds);
@@ -134,7 +134,7 @@ public:
 private:
     // Hold list of data sources created internally, so they are preserved
     // until the end of the test and then deleted.
-    vector<shared_ptr<MockDataSourceClient> > to_delete_;
+    vector<boost::shared_ptr<MockDataSourceClient> > to_delete_;
 };
 
 const char* ds_zones[][3] = {
@@ -171,7 +171,7 @@ public:
             "}]"))
     {
         for (size_t i(0); i < ds_count; ++ i) {
-            shared_ptr<MockDataSourceClient>
+            boost::shared_ptr<MockDataSourceClient>
                 ds(new MockDataSourceClient(ds_zones[i]));
             ds_.push_back(ds);
             ds_info_.push_back(ConfigurableClientList::DataSourceInfo(ds.get(),
@@ -180,7 +180,7 @@ public:
     }
     // Check the positive result is as we expect it.
     void positiveResult(const ClientList::FindResult& result,
-                        const shared_ptr<MockDataSourceClient>& dsrc,
+                        const boost::shared_ptr<MockDataSourceClient>& dsrc,
                         const Name& name, bool exact,
                         const char* test)
     {
@@ -231,9 +231,9 @@ public:
         EXPECT_EQ(type, ds->type_);
         EXPECT_TRUE(Element::fromJSON(params)->equals(*ds->configuration_));
     }
-    shared_ptr<TestedList> list_;
+    boost::shared_ptr<TestedList> list_;
     const ClientList::FindResult negativeResult_;
-    vector<shared_ptr<MockDataSourceClient> > ds_;
+    vector<boost::shared_ptr<MockDataSourceClient> > ds_;
     vector<ConfigurableClientList::DataSourceInfo> ds_info_;
     const ConstElementPtr config_elem_;
 };
@@ -386,7 +386,7 @@ TEST_F(ListTest, configureParams) {
         "{}",
         NULL
     };
-    for (const char** param(params); *param; ++param) {
+    for (const char** param = params; *param; ++param) {
         SCOPED_TRACE(*param);
         ConstElementPtr elem(Element::fromJSON(string("["
             "{"
@@ -424,7 +424,7 @@ TEST_F(ListTest, wrongConfig) {
     // Put something inside to see it survives the exception
     list_->configure(*config_elem_, true);
     checkDS(0, "test_type", "{}");
-    for (const char** config(configs); *config; ++config) {
+    for (const char** config = configs; *config; ++config) {
         SCOPED_TRACE(*config);
         ConstElementPtr elem(Element::fromJSON(*config));
         EXPECT_THROW(list_->configure(*elem, true),

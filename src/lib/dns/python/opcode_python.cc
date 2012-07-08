@@ -343,14 +343,14 @@ ISC_LIBDNS_PYTHON_API PyTypeObject opcode_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+ISC_LIBDNS_PYTHON_API PyObject*
 createOpcodeObject(const Opcode& source) {
     OpcodeContainer container(PyObject_New(s_Opcode, &opcode_type));
     container.set(new Opcode(source));
     return (container.release());
 }
 
-bool
+ISC_LIBDNS_PYTHON_API bool
 PyOpcode_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -358,7 +358,7 @@ PyOpcode_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &opcode_type));
 }
 
-const Opcode&
+ISC_LIBDNS_PYTHON_API const Opcode&
 PyOpcode_ToOpcode(const PyObject* opcode_obj) {
     if (opcode_obj == NULL) {
         isc_throw(PyCPPWrapperException,

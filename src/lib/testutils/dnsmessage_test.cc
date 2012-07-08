@@ -35,13 +35,13 @@ using namespace isc::dns;
 
 namespace isc {
 namespace testutils {
-const unsigned int QR_FLAG = 0x1;
-const unsigned int AA_FLAG = 0x2;
-const unsigned int TC_FLAG = 0x4;
-const unsigned int RD_FLAG = 0x8;
-const unsigned int RA_FLAG = 0x10;
-const unsigned int AD_FLAG = 0x20;
-const unsigned int CD_FLAG = 0x40;
+ISC_LIBTESTUTILS_API const unsigned int QR_FLAG = 0x1;
+ISC_LIBTESTUTILS_API const unsigned int AA_FLAG = 0x2;
+ISC_LIBTESTUTILS_API const unsigned int TC_FLAG = 0x4;
+ISC_LIBTESTUTILS_API const unsigned int RD_FLAG = 0x8;
+ISC_LIBTESTUTILS_API const unsigned int RA_FLAG = 0x10;
+ISC_LIBTESTUTILS_API const unsigned int AD_FLAG = 0x20;
+ISC_LIBTESTUTILS_API const unsigned int CD_FLAG = 0x40;
 
 void
 headerCheck(const Message& message, const qid_t qid, const Rcode& rcode,

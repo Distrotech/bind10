@@ -435,14 +435,14 @@ ISC_LIBDNS_PYTHON_API PyTypeObject rrtype_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+ISC_LIBDNS_PYTHON_API PyObject*
 createRRTypeObject(const RRType& source) {
     RRTypeContainer container(PyObject_New(s_RRType, &rrtype_type));
     container.set(new RRType(source));
     return (container.release());
 }
 
-bool
+ISC_LIBDNS_PYTHON_API bool
 PyRRType_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -450,7 +450,7 @@ PyRRType_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &rrtype_type));
 }
 
-const RRType&
+ISC_LIBDNS_PYTHON_API const RRType&
 PyRRType_ToRRType(const PyObject* rrtype_obj) {
     if (rrtype_obj == NULL) {
         isc_throw(PyCPPWrapperException,

@@ -416,7 +416,7 @@ ISC_LIBDNS_PYTHON_API PyTypeObject rrset_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+ISC_LIBDNS_PYTHON_API PyObject*
 createRRsetObject(const AbstractRRset& source) {
 
     // RRsets are noncopyable, so as a workaround we recreate a new one
@@ -444,7 +444,7 @@ createRRsetObject(const AbstractRRset& source) {
     return (py_rrset);
 }
 
-bool
+ISC_LIBDNS_PYTHON_API bool
 PyRRset_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -452,13 +452,13 @@ PyRRset_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &rrset_type));
 }
 
-AbstractRRset&
+ISC_LIBDNS_PYTHON_API AbstractRRset&
 PyRRset_ToRRset(PyObject* rrset_obj) {
     s_RRset* rrset = static_cast<s_RRset*>(rrset_obj);
     return (*rrset->cppobj);
 }
 
-RRsetPtr
+ISC_LIBDNS_PYTHON_API RRsetPtr
 PyRRset_ToRRsetPtr(PyObject* rrset_obj) {
     if (rrset_obj == NULL) {
         isc_throw(PyCPPWrapperException,

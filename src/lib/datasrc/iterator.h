@@ -19,6 +19,7 @@
 
 #include <boost/noncopyable.hpp>
 
+#include <datasrc/dll.h>
 #include <datasrc/zone.h>
 
 namespace isc {
@@ -34,7 +35,7 @@ namespace datasrc {
  *
  * There's no way to start iterating from the beginning again or return.
  */
-class ZoneIterator : public boost::noncopyable {
+class ISC_LIBDATASRC_API ZoneIterator : public boost::noncopyable {
 public:
     /**
      * \brief Destructor

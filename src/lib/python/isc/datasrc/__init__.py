@@ -7,9 +7,10 @@ import os
 # is that exceptions are not recognized by type. So to make
 # sure this doesn't happen, we temporarily set RTLD_GLOBAL
 # during the loading of the datasource wrappers.
-import ctypes
-flags = sys.getdlopenflags()
-sys.setdlopenflags(flags | ctypes.RTLD_GLOBAL)
+if sys.platform != 'win32':
+    import ctypes
+    flags = sys.getdlopenflags()
+    sys.setdlopenflags(flags | ctypes.RTLD_GLOBAL)
 
 # this setup is a temporary workaround to deal with the problem of
 # having both 'normal' python modules and a wrapper module
@@ -28,7 +29,8 @@ else:
     from isc.datasrc.datasrc import *
 
 # revert to the default dlopen flags
-sys.setdlopenflags(flags)
+if sys.platform != 'win32':
+    sys.setdlopenflags(flags)
 
 from isc.datasrc.sqlite3_ds import *
 from isc.datasrc.master import *

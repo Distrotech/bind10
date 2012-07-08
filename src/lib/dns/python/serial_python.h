@@ -34,7 +34,7 @@ extern ISC_LIBDNS_PYTHON_API PyTypeObject serial_type;
 /// returns a NULL pointer).
 /// This function is expected to be called within a try block
 /// followed by necessary setup for python exception.
-PyObject* createSerialObject(const Serial& source);
+ISC_LIBDNS_PYTHON_API PyObject* createSerialObject(const Serial& source);
 
 /// \brief Checks if the given python object is a Serial object
 ///
@@ -42,7 +42,7 @@ PyObject* createSerialObject(const Serial& source);
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type Serial, false otherwise
-bool PySerial_Check(PyObject* obj);
+ISC_LIBDNS_PYTHON_API bool PySerial_Check(PyObject* obj);
 
 /// \brief Returns a reference to the Serial object contained within the given
 ///        Python object.
@@ -54,7 +54,8 @@ bool PySerial_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param Serial_obj The Serial object to convert
-const Serial& PySerial_ToSerial(const PyObject* Serial_obj);
+ISC_LIBDNS_PYTHON_API const Serial&
+PySerial_ToSerial(const PyObject* Serial_obj);
 
 } // namespace python
 } // namespace dns

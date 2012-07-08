@@ -12,6 +12,10 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDATASRC_EXPORT
+
+#include <config.h>
+
 #include <cc/data.h>
 
 #include <dns/rrclass.h>
@@ -35,7 +39,7 @@ namespace datasrc {
 
 /// This exception is raised if there is an error in the configuration
 /// that has been passed; missing information, duplicate values, etc.
-class InMemoryConfigError : public isc::Exception {
+class ISC_LIBDATASRC_API InMemoryConfigError : public isc::Exception {
 public:
     InMemoryConfigError(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -245,8 +249,13 @@ applyConfig(isc::datasrc::InMemoryClient& client,
 
 } // end unnamed namespace
 
-DataSourceClient *
-createInstance(isc::data::ConstElementPtr config, std::string& error) {
+ISC_LIBDATASRC_API DataSourceClient *
+#if defined(_WIN32) && defined(USE_STATIC_LINK)
+MemoryCreateInstance
+#else
+createInstance
+#endif
+(isc::data::ConstElementPtr config, std::string& error) {
     ElementPtr errors(Element::createList());
     if (!checkConfig(config, errors)) {
         error = "Configuration error: " + errors->str();
@@ -269,7 +278,13 @@ createInstance(isc::data::ConstElementPtr config, std::string& error) {
     }
 }
 
-void destroyInstance(DataSourceClient* instance) {
+ISC_LIBDATASRC_API void
+#if defined(_WIN32) && defined(USE_STATIC_LINK)
+MemoryDestroyInstance
+#else
+destroyInstance
+#endif
+(DataSourceClient* instance) {
     delete instance;
 }
 

@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDATASRC_EXPORT
+
 #include <cc/data.h>
 
 #include <dns/rrclass.h>
@@ -75,8 +77,13 @@ checkConfig(ConstElementPtr config, ElementPtr errors) {
 
 } // end unnamed namespace
 
-DataSourceClient *
-createInstance(isc::data::ConstElementPtr config, std::string& error) {
+ISC_LIBDATASRC_API DataSourceClient *
+#if defined(_WIN32) && defined(USE_STATIC_LINK)
+SQLCreateInstance
+#else
+createInstance
+#endif
+(isc::data::ConstElementPtr config, std::string& error) {
     ElementPtr errors(Element::createList());
     if (!checkConfig(config, errors)) {
         error = "Configuration error: " + errors->str();
@@ -99,7 +106,13 @@ createInstance(isc::data::ConstElementPtr config, std::string& error) {
     }
 }
 
-void destroyInstance(DataSourceClient* instance) {
+ISC_LIBDATASRC_API void
+#if defined(_WIN32) && defined(USE_STATIC_LINK)
+SQLDestroyInstance
+#else
+destroyInstance
+#endif
+(DataSourceClient* instance) {
     delete instance;
 }
 

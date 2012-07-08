@@ -49,7 +49,7 @@ namespace {
 const char* const TEST_ZONE_FILE = TEST_DATA_DIR "/contexttest.zone";
 
 // Convenient shortcut
-typedef shared_ptr<DataSourceClient> DataSourceClientPtr;
+typedef boost::shared_ptr<DataSourceClient> DataSourceClientPtr;
 
 // This is the type used as the test parameter.  Note that this is
 // intentionally a plain old type (i.e. a function pointer), not a class;
@@ -59,9 +59,9 @@ typedef DataSourceClientPtr (*ClientCreator)(RRClass, const Name&);
 // Creator for the in-memory client to be tested
 DataSourceClientPtr
 createInMemoryClient(RRClass zclass, const Name& zname) {
-    shared_ptr<InMemoryClient> client(new InMemoryClient);
+    boost::shared_ptr<InMemoryClient> client(new InMemoryClient);
 
-    shared_ptr<InMemoryZoneFinder> finder(
+    boost::shared_ptr<InMemoryZoneFinder> finder(
         new InMemoryZoneFinder(zclass, zname));
     finder->load(TEST_ZONE_FILE);
 

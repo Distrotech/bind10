@@ -18,6 +18,10 @@
 
 #include <config.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#endif
+
 #include <log/message_dictionary.h>
 #include <log/logger_manager.h>
 #include <log/logger_support.h>

@@ -26,28 +26,33 @@
 #include <dns/name.h>
 #include <dns/rrclass.h>
 #include <cc/data.h>
+#include <datasrc/dll.h>
+
+#if defined(_WIN32) && defined(ERROR)
+#undef ERROR
+#endif
 
 namespace isc {
 
 namespace dns {
-class Name;
-class RRType;
-class RRset;
-class RRsetList;
+class ISC_LIBDATASRC_API Name;
+class ISC_LIBDATASRC_API RRType;
+class ISC_LIBDATASRC_API RRset;
+class ISC_LIBDATASRC_API RRsetList;
 }
 
 namespace datasrc {
 
-class DataSrcMatch;
-class Query;
+class ISC_LIBDATASRC_API DataSrcMatch;
+class ISC_LIBDATASRC_API Query;
 
-class DataSrc;
+class ISC_LIBDATASRC_API DataSrc;
 typedef boost::shared_ptr<DataSrc> DataSrcPtr;
 typedef boost::shared_ptr<const DataSrc> ConstDataSrcPtr;
 
 /// This exception represents Backend-independent errors relating to
 /// data source operations.
-class DataSourceError : public Exception {
+class ISC_LIBDATASRC_API DataSourceError : public Exception {
 public:
     DataSourceError(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -59,14 +64,14 @@ public:
 /// combination does not exist in the differences table.  (Note that this
 /// includes the case where the differences table contains no records related
 /// to that zone.)
-class NoSuchSerial : public DataSourceError {
+class ISC_LIBDATASRC_API NoSuchSerial : public DataSourceError {
 public:
     NoSuchSerial(const char* file, size_t line, const char* what) :
         DataSourceError(file, line, what) {}
 };
 
 
-class AbstractDataSrc {
+class ISC_LIBDATASRC_API AbstractDataSrc {
     ///
     /// \name Constructors, Assignment Operator and Destructor.
     ///
@@ -172,7 +177,7 @@ public:
 };
 
 // Base class for a DNS Data Source
-class DataSrc : public AbstractDataSrc {
+class ISC_LIBDATASRC_API DataSrc : public AbstractDataSrc {
     ///
     /// \name Constructors, Assignment Operator and Destructor.
     ///
@@ -238,7 +243,7 @@ private:
     isc::dns::RRClass rrclass;
 };
 
-class MetaDataSrc : public DataSrc {
+class ISC_LIBDATASRC_API MetaDataSrc : public DataSrc {
     ///
     /// \name Constructors, Assignment Operator and Destructor.
     ///
@@ -323,7 +328,7 @@ private:
 ///  - There is no matching %data source and name found (which is probably
 ///    wrong, see below), or the given enclosing name gives a longer match
 ///    than the currently stored enclosing name against the specified name.
-class DataSrcMatch {
+class ISC_LIBDATASRC_API DataSrcMatch {
     ///
     /// \name Constructors, Assignment Operator and Destructor.
     ///
@@ -409,7 +414,7 @@ private:
     const isc::dns::RRClass& rrclass_;
 };
 
-class Nsec3Param {
+class ISC_LIBDATASRC_API Nsec3Param {
 public:
     Nsec3Param(uint8_t a, uint8_t f, uint16_t i, const std::vector<uint8_t>& s);
     std::string getHash(const isc::dns::Name& name) const;

@@ -1170,9 +1170,23 @@ public:
         // probably move this to some specialized templated method specific
         // to SQLite3 (or for even a longer term we should add an API to
         // purge the diffs table).
+#ifdef _WIN32
+        const char* const install_pcmd = "copy" " " TEST_DATA_COMMONDIR
+            "/rwtest.sqlite3 " TEST_DATA_BUILDDIR
+            "/rwtest.sqlite3.copied";
+        char install_cmd[1024];
+        for (unsigned int i = 0;; i++) {
+          install_cmd[i] = install_pcmd[i];
+            if (install_cmd[i] == '/')
+                install_cmd[i] = '\\';
+            if (install_cmd[i] == 0)
+                break;
+        }
+#else
         const char* const install_cmd = INSTALL_PROG " -c " TEST_DATA_COMMONDIR
             "/rwtest.sqlite3 " TEST_DATA_BUILDDIR
             "/rwtest.sqlite3.copied";
+#endif
         if (system(install_cmd) != 0) {
             // any exception will do, this is failure in test setup, but nice
             // to show the command that fails, and shouldn't be caught
@@ -1487,7 +1501,8 @@ TYPED_TEST(DatabaseClientTest, iterator) {
     ASSERT_NE(ConstRRsetPtr(), rrset);
 
     // The first name should be the zone origin.
-    EXPECT_EQ(this->zname_, rrset->getName());
+    const Name origin = this->zname_;
+    EXPECT_EQ(origin, rrset->getName());
 }
 
 // Supplemental structure used in the couple of tests below.  It represents
@@ -1805,8 +1820,8 @@ TEST_F(MockDatabaseClientTest, ttldiff_separate_rrs) {
     // Walk through the full iterator, we should see 1 rrset with name
     // ttldiff1.example.org., and two rdatas. Same for ttldiff2
     Name name("ttldiff.example.org.");
-    int found1 = false;
-    int found2 = false;
+    bool found1 = false;
+    bool found2 = false;
     ConstRRsetPtr rrset = it->getNextRRset();
     while(rrset != ConstRRsetPtr()) {
         if (rrset->getName() == name) {
@@ -2943,7 +2958,8 @@ TYPED_TEST(DatabaseClientTest, getOrigin) {
     if (this->is_mock_) {
         EXPECT_EQ(READONLY_ZONE_ID, finder->zone_id());
     }
-    EXPECT_EQ(this->zname_, finder->getOrigin());
+    const Name origin = this->zname_;
+    EXPECT_EQ(origin, finder->getOrigin());
 }
 
 TYPED_TEST(DatabaseClientTest, updaterFinder) {

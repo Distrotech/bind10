@@ -383,14 +383,14 @@ ISC_LIBDNS_PYTHON_API PyTypeObject rcode_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+ISC_LIBDNS_PYTHON_API PyObject*
 createRcodeObject(const Rcode& source) {
     RcodeContainer container(PyObject_New(s_Rcode, &rcode_type));
     container.set(new Rcode(source));
     return (container.release());
 }
 
-bool
+ISC_LIBDNS_PYTHON_API bool
 PyRcode_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -398,7 +398,7 @@ PyRcode_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &rcode_type));
 }
 
-const Rcode&
+ISC_LIBDNS_PYTHON_API const Rcode&
 PyRcode_ToRcode(const PyObject* rcode_obj) {
     if (rcode_obj == NULL) {
         isc_throw(PyCPPWrapperException,

@@ -35,7 +35,8 @@ extern ISC_LIBDNS_PYTHON_API PyTypeObject tsigrecord_type;
 /// returns a NULL pointer).
 /// This function is expected to be called with in a try block
 /// followed by necessary setup for python exception.
-PyObject* createTSIGRecordObject(const TSIGRecord& source);
+ISC_LIBDNS_PYTHON_API PyObject*
+createTSIGRecordObject(const TSIGRecord& source);
 
 /// \brief Checks if the given python object is a TSIGRecord object
 ///
@@ -43,7 +44,7 @@ PyObject* createTSIGRecordObject(const TSIGRecord& source);
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type TSIGRecord, false otherwise
-bool PyTSIGRecord_Check(PyObject* obj);
+ISC_LIBDNS_PYTHON_API bool PyTSIGRecord_Check(PyObject* obj);
 
 /// \brief Returns a reference to the TSIGRecord object contained within the given
 ///        Python object.
@@ -55,7 +56,8 @@ bool PyTSIGRecord_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param rrtype_obj The rrtype object to convert
-const TSIGRecord& PyTSIGRecord_ToTSIGRecord(PyObject* tsigrecord_obj);
+ISC_LIBDNS_PYTHON_API const TSIGRecord&
+PyTSIGRecord_ToTSIGRecord(PyObject* tsigrecord_obj);
 
 } // namespace python
 } // namespace dns

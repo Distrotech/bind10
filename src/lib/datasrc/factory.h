@@ -15,6 +15,7 @@
 #ifndef __DATA_SOURCE_FACTORY_H
 #define __DATA_SOURCE_FACTORY_H 1
 
+#include <datasrc/dll.h>
 #include <datasrc/data_source.h>
 #include <datasrc/client.h>
 
@@ -29,7 +30,7 @@ namespace datasrc {
 
 /// \brief Raised if there is an error loading the datasource implementation
 ///        library
-class DataSourceLibraryError : public DataSourceError {
+class ISC_LIBDATASRC_API DataSourceLibraryError : public DataSourceError {
 public:
     DataSourceLibraryError(const char* file, size_t line, const char* what) :
         DataSourceError(file, line, what) {}
@@ -37,7 +38,8 @@ public:
 
 /// \brief Raised if there is an error reading a symbol from the datasource
 ///        implementation library
-class DataSourceLibrarySymbolError : public DataSourceError {
+class ISC_LIBDATASRC_API DataSourceLibrarySymbolError :
+ public DataSourceError {
 public:
     DataSourceLibrarySymbolError(const char* file, size_t line,
                                  const char* what) :
@@ -60,7 +62,7 @@ typedef void ds_destructor(DataSourceClient* instance);
 ///       in other places than for dynamically loading datasources, then, apart
 ///       from moving it to another location, we also need to make the
 ///       exceptions raised more general.
-class LibraryContainer : boost::noncopyable {
+class ISC_LIBDATASRC_API LibraryContainer : boost::noncopyable {
 public:
     /// \brief Constructor
     ///
@@ -93,10 +95,22 @@ public:
     ///       argument in the constructor). This argument is always a fixed
     ///       string in the code, while the other can be read from
     ///       configuration, and needs modification
+#ifndef _WIN32
     void* getSym(const char* name);
+#else
+    FARPROC getSym(const char* name);
+#endif
 private:
     /// Pointer to the dynamically loaded library structure
+#ifndef _WIN32
     void *ds_lib_;
+#else
+#ifndef USE_STATIC_LINK
+    HMODULE ds_lib_;
+#else
+    int ds_lib_;
+#endif
+#endif
 };
 
 
@@ -141,7 +155,7 @@ private:
 /// derived classes as well. Currently, the class is actually derived in some
 /// of the tests, which is rather unclean (as this class as written is really
 /// intended to be used directly).
-class DataSourceClientContainer : boost::noncopyable {
+class ISC_LIBDATASRC_API DataSourceClientContainer : boost::noncopyable {
 public:
     /// \brief Constructor
     ///

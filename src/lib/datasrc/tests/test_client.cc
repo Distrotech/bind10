@@ -48,7 +48,7 @@ addRRset(ZoneUpdaterPtr updater, ConstRRsetPtr rrset) {
 }
 }
 
-shared_ptr<DataSourceClient>
+boost::shared_ptr<DataSourceClient>
 createSQLite3Client(RRClass zclass, const Name& zname,
                     const char* const db_file, const char* const zone_file)
 {
@@ -60,24 +60,35 @@ createSQLite3Client(RRClass zclass, const Name& zname,
     return (createSQLite3Client(zclass, zname, db_file, ifs));
 }
 
-shared_ptr<DataSourceClient>
+boost::shared_ptr<DataSourceClient>
 createSQLite3Client(RRClass zclass, const Name& zname,
                     const char* const db_file, istream& rr_stream)
 {
     // We always begin with an empty template SQLite3 DB file and install
     // the zone data from the zone file to ensure both cases have the
     // same test data.
+#ifdef _WIN32
+    const char* const install_cmd_prefix = "copy" " " TEST_DATA_COMMONDIR
+        "/rwtest.sqlite3 ";
+    string install_cmd = string(install_cmd_prefix) + db_file;
+    size_t pos = 0;
+    while ((pos = install_cmd.find('/', pos)) != std::string::npos) {
+        install_cmd[pos] = '\\';
+    }
+#else
     const char* const install_cmd_prefix = INSTALL_PROG " -c " TEST_DATA_COMMONDIR
         "/rwtest.sqlite3 ";
     const string install_cmd = string(install_cmd_prefix) + db_file;
+#endif
     if (system(install_cmd.c_str()) != 0) {
         isc_throw(isc::Unexpected,
                   "Error setting up; command failed: " << install_cmd);
     }
 
-    shared_ptr<SQLite3Accessor> accessor(
+    boost::shared_ptr<SQLite3Accessor> accessor(
         new SQLite3Accessor(db_file, zclass.toText()));
-    shared_ptr<DatabaseClient> client(new DatabaseClient(zclass, accessor));
+    boost::shared_ptr<DatabaseClient> client(
+        new DatabaseClient(zclass, accessor));
 
     ZoneUpdaterPtr updater = client->getUpdater(zname, true);
     masterLoad(rr_stream, zname, zclass, boost::bind(addRRset, updater, _1));

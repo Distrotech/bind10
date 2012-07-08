@@ -12,6 +12,10 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDATASRC_EXPORT
+
+#include <config.h>
+
 #include "factory.h"
 
 #include "data_source.h"
@@ -25,7 +29,9 @@
 
 #include <exceptions/exceptions.h>
 
+#ifndef _WIN32
 #include <dlfcn.h>
+#endif
 #include <cstdlib>
 
 using namespace std;
@@ -58,6 +64,7 @@ getDataSourceLibFile(const std::string& type) {
     if (ext_pos == std::string::npos || ext_pos + 3 != lib_file.length()) {
         lib_file.append("_ds.so");
     }
+#ifndef _WIN32
     // And if it is not an absolute path, prepend it with our
     // loadable backend library path
     if (type[0] != '/') {
@@ -70,6 +77,20 @@ getDataSourceLibFile(const std::string& type) {
             lib_file = isc::datasrc::BACKEND_LIBRARY_PATH + lib_file;
         }
     }
+#else
+    // And if it is not an absolute path, prepend it with our
+    // loadable backend library path
+    if (type[0] != '\\') {
+        // When running from the build tree, we do NOT want
+        // to load the installed loadable library
+        if (getenv("B10_FROM_BUILD") != NULL) {
+            lib_file = std::string(getenv("B10_FROM_BUILD")) +
+                       "\\win32build\\VS2010\\Release\\" + lib_file;
+        } else {
+            lib_file = isc::datasrc::BACKEND_LIBRARY_PATH + lib_file;
+        }
+    }
+#endif
     return (lib_file);
 }
 } // end anonymous namespace
@@ -78,6 +99,7 @@ namespace isc {
 namespace datasrc {
 
 LibraryContainer::LibraryContainer(const std::string& name) {
+#ifndef _WIN32
     // use RTLD_GLOBAL so that shared symbols (e.g. exceptions)
     // are recognized as such
     ds_lib_ = dlopen(name.c_str(), RTLD_NOW | RTLD_GLOBAL);
@@ -87,14 +109,45 @@ LibraryContainer::LibraryContainer(const std::string& name) {
         isc_throw(DataSourceLibraryError, "dlopen failed for " << name << 
                                           ": " << dlerror());
     }
+#else
+#ifndef USE_STATIC_LINK
+    ds_lib_ = LoadLibraryA(name.c_str());
+    if (ds_lib_ == NULL) {
+        isc_throw(DataSourceLibraryError, "dLoadLibrary failed for " << name <<
+                                          ": " << strerror(GetLastError()));
+    }
+#else
+    if (strcmp(name.c_str(), "sqlite3_ds.so") == 0)
+        ds_lib_ = 1;
+    else if (strcmp(name.c_str(), "memory_ds.so") == 0)
+        ds_lib_ = 2;
+    else if (strcmp(name.c_str(), "static_ds.so") == 0)
+        ds_lib_ = 3;
+    else {
+        isc_throw(DataSourceLibraryError,
+                  "only \"sqlite3\", \"memory\" and \"static\" are supported");
+    }
+#endif
+#endif
 }
 
 LibraryContainer::~LibraryContainer() {
+#ifndef _WIN32
     dlclose(ds_lib_);
+#else
+#ifndef USE_STATIC_LINK
+    FreeLibrary(ds_lib_);
+#endif
+#endif
 }
 
+#ifndef _WIN32
 void*
+#else
+FARPROC
+#endif
 LibraryContainer::getSym(const char* name) {
+#ifndef _WIN32
     // Since dlsym can return NULL on success, we check for errors by
     // first clearing any existing errors with dlerror(), then calling dlsym,
     // and finally checking for errors with dlerror()
@@ -108,6 +161,34 @@ LibraryContainer::getSym(const char* name) {
     }
 
     return (sym);
+#else
+#ifndef USE_STATIC_LINK
+    FARPROC sym = GetProcAddress(ds_lib_, name);
+    if (sym == NULL) {
+        isc_throw(DataSourceLibrarySymbolError, strerror(GetLastError()));
+    }
+    return (sym);
+#else
+    if (strcmp(name, "createInstance") == 0) {
+        if (ds_lib_ == 1)
+            return SQLCreateInstance;
+        else if (ds_lib_ == 2)
+            return MemoryCreateInstance;
+        else
+            return StaticCreateInstance;
+    } else if (strcmp(name, "destroyInstance") == 0) {
+        if (ds_lib_ == 1)
+            return SQLDestroyInstance;
+        else if (ds_lib_ == 2)
+            return MemoryDestroyInstance;
+        else
+            return StaticDestroyInstance;
+    } else {
+        isc_throw(DataSourceLibrarySymbolError,
+                  "not \"createInstance\" or \"destroyInstance\"");
+    }
+#endif
+#endif
 }
 
 DataSourceClientContainer::DataSourceClientContainer(const std::string& type,

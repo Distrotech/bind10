@@ -1,0 +1,34 @@
+;; This is the content of the BIND./CH zone. It contains the version and
+;; authors (called VERSION.BIND. and AUTHORS.BIND.). You can add more or
+;; modify the zone. Then you can reload the zone by issuing the command
+;;
+;;   loadzone CH BIND
+;;
+;; in the bindctl.
+
+BIND.           0   CH  SOA bind. authors.bind. 0 28800 7200 604800 86400
+
+VERSION.BIND.   0   CH  TXT "bind10-trac826 20120701"
+;; HOSTNAME.BIND    0   CH  TXT "localhost"
+AUTHORS.BIND.	0	CH	TXT	"Chen Zhengzhang"
+AUTHORS.BIND.	0	CH	TXT	"Dmitriy Volodin"
+AUTHORS.BIND.	0	CH	TXT	"Evan Hunt"
+AUTHORS.BIND.	0	CH	TXT	"Haidong Wang"
+AUTHORS.BIND.	0	CH	TXT	"Haikuo Zhang"
+AUTHORS.BIND.	0	CH	TXT	"Han Feng"
+AUTHORS.BIND.	0	CH	TXT	"Jelte Jansen"
+AUTHORS.BIND.	0	CH	TXT	"Jeremy C. Reed"
+AUTHORS.BIND.	0	CH	TXT	"Xie Jiagui"
+AUTHORS.BIND.	0	CH	TXT	"Jin Jian"
+AUTHORS.BIND.	0	CH	TXT	"JINMEI Tatuya"
+AUTHORS.BIND.	0	CH	TXT	"Kazunori Fujiwara"
+AUTHORS.BIND.	0	CH	TXT	"Michael Graff"
+AUTHORS.BIND.	0	CH	TXT	"Michal Vaner"
+AUTHORS.BIND.	0	CH	TXT	"Mukund Sivaraman"
+AUTHORS.BIND.	0	CH	TXT	"Naoki Kambe"
+AUTHORS.BIND.	0	CH	TXT	"Shane Kerr"
+AUTHORS.BIND.	0	CH	TXT	"Shen Tingting"
+AUTHORS.BIND.	0	CH	TXT	"Stephen Morris"
+AUTHORS.BIND.	0	CH	TXT	"Yoshitaka Aharen"
+AUTHORS.BIND.	0	CH	TXT	"Zhang Likun"
+;AUTHORS.BIND.	0	CH	TXT	"Francis Dupont"

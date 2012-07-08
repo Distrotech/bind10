@@ -42,6 +42,7 @@ extern ISC_LIBDNS_PYTHON_API PyObject* po_DNSMessageBADVERS;
 // The current implementation removes read items from the
 // head of the sequence, unless it fails (and returns -1), in which
 // case nothing is removed
+ISC_LIBDNS_PYTHON_API
 int readDataFromSequence(uint8_t *data, size_t len, PyObject* sequence);
 
 ISC_LIBDNS_PYTHON_API

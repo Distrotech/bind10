@@ -34,7 +34,7 @@ extern ISC_LIBDNS_PYTHON_API PyTypeObject messagerenderer_type;
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type MessageRenderer, false otherwise
-bool PyMessageRenderer_Check(PyObject* obj);
+ISC_LIBDNS_PYTHON_API bool PyMessageRenderer_Check(PyObject* obj);
 
 /// \brief Returns a reference to the MessageRenderer object contained within the given
 ///        Python object.
@@ -46,7 +46,8 @@ bool PyMessageRenderer_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param messagerenderer_obj The messagerenderer object to convert
-MessageRenderer& PyMessageRenderer_ToMessageRenderer(PyObject* messagerenderer_obj);
+ISC_LIBDNS_PYTHON_API MessageRenderer&
+PyMessageRenderer_ToMessageRenderer(PyObject* messagerenderer_obj);
 
 } // namespace python
 } // namespace dns

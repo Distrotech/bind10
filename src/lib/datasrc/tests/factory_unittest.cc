@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <config.h>
+
 #include <boost/scoped_ptr.hpp>
 
 #include <datasrc/datasrc_config.h>
@@ -48,6 +50,7 @@ pathtestHelper(const std::string& file, const std::string& expected_error) {
     EXPECT_EQ(expected_error, error.substr(0, expected_error.size()));
 }
 
+#ifndef _WIN32
 TEST(FactoryTest, paths) {
     // Test whether the paths are made absolute if they are not,
     // by inspecting the error that is raised when they are wrong
@@ -96,6 +99,7 @@ TEST(FactoryTest, paths) {
     ASSERT_THROW(DataSourceClientContainer(".so", ElementPtr()),
                  DataSourceLibraryError);
 }
+#endif
 
 TEST(FactoryTest, sqlite3ClientBadConfig) {
     // We start out by building the configuration data bit by bit,
@@ -283,7 +287,7 @@ TEST(FactoryTest, staticDSBadConfig) {
         "true",
         NULL
     };
-    for (const char** config(configs); *config; ++config) {
+    for (const char** config = configs; *config; ++config) {
         SCOPED_TRACE(*config);
         EXPECT_THROW(DataSourceClientContainer("static",
                                                Element::fromJSON(*config)),

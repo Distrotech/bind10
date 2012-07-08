@@ -42,13 +42,13 @@ namespace testutils {
 /// (The flag values is irrelevant to their wire-format values).
 /// The meaning of the flags should be obvious from the variable names.
 //@{
-extern const unsigned int QR_FLAG;
-extern const unsigned int AA_FLAG;
-extern const unsigned int TC_FLAG;
-extern const unsigned int RD_FLAG;
-extern const unsigned int RA_FLAG;
-extern const unsigned int AD_FLAG;
-extern const unsigned int CD_FLAG;
+extern ISC_LIBTESTUTILS_API const unsigned int QR_FLAG;
+extern ISC_LIBTESTUTILS_API const unsigned int AA_FLAG;
+extern ISC_LIBTESTUTILS_API const unsigned int TC_FLAG;
+extern ISC_LIBTESTUTILS_API const unsigned int RD_FLAG;
+extern ISC_LIBTESTUTILS_API const unsigned int RA_FLAG;
+extern ISC_LIBTESTUTILS_API const unsigned int AD_FLAG;
+extern ISC_LIBTESTUTILS_API const unsigned int CD_FLAG;
 //@}
 
 /// Set of unit tests to examine a DNS message header.

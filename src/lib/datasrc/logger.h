@@ -16,6 +16,7 @@
 #define __DATASRC_LOGGER_H
 
 #include <log/macros.h>
+#include <datasrc/dll.h>
 #include <datasrc/datasrc_messages.h>
 
 /// \file datasrc/logger.h
@@ -29,7 +30,7 @@ namespace isc {
 namespace datasrc {
 
 /// \brief The logger for this library
-extern isc::log::Logger logger;
+extern ISC_LIBDATASRC_API isc::log::Logger logger;
 
 /// \brief Trace basic operations
 const int DBG_TRACE_BASIC = DBGLVL_TRACE_BASIC;

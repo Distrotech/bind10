@@ -19,6 +19,7 @@
 #include <dns/rrset.h>
 #include <dns/rrtype.h>
 
+#include <datasrc/dll.h>
 #include <datasrc/result.h>
 
 #include <utility>
@@ -31,7 +32,7 @@ namespace datasrc {
 ///
 /// This is thrown when a method is called for a name or RRset which
 /// is not in or below the zone.
-class OutOfZone : public Exception {
+class ISC_LIBDATASRC_API OutOfZone : public Exception {
 public:
     OutOfZone(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -62,7 +63,7 @@ public:
 /// same name and type can be different if other threads or programs make
 /// updates to the zone between the lookups.  We should revisit this point
 /// as we gain more experiences.
-class ZoneFinder {
+class ISC_LIBDATASRC_API ZoneFinder {
 public:
     /// Result codes of the \c find() method.
     ///
@@ -167,7 +168,7 @@ public:
     /// ZoneFinder that originally performed the \c find() call, and expects
     /// the finder is valid throughout the lifetime of this object.  It's
     /// caller's responsibility to ensure that assumption.
-    class Context {
+    class ISC_LIBDATASRC_API Context {
     public:
         /// \brief The constructor for the normal find call.
         ///
@@ -376,16 +377,6 @@ public:
     ///   RRsets for that name are searched just like the normal case;
     ///   otherwise, if the search has encountered a zone cut, \c DELEGATION
     ///   with the information of the highest zone cut will be returned.
-    ///   Note: the term "glue" in the DNS protocol standard may sometimes
-    ///   cause confusion: some people use this term strictly for an address
-    ///   record (type AAAA or A) for the name used in the RDATA of an NS RR;
-    ///   some others seem to give it broader flexibility.  Nevertheless,
-    ///   in this API the "GLUE OK" simply means the search by find() can
-    ///   continue beyond a zone cut; the derived class implementation does
-    ///   not have to, and should not, check whether the type is an address
-    ///   record or whether the query name is pointed by some NS RR.
-    ///   It's up to the caller with which definition of "glue" the search
-    ///   result with this option should be used.
     /// - \c FIND_DNSSEC Request that DNSSEC data (like NSEC, RRSIGs) are
     ///   returned with the answer. It is allowed for the data source to
     ///   include them even when not requested.
@@ -695,7 +686,7 @@ typedef boost::shared_ptr<ZoneFinder::Context> ConstZoneFinderContextPtr;
 /// \note This initial implementation provides a quite simple interface of
 /// adding and deleting RRs (see the description of the related methods).
 /// It may be revisited as we gain more experiences.
-class ZoneUpdater {
+class ISC_LIBDATASRC_API ZoneUpdater {
 protected:
     /// The default constructor.
     ///
@@ -913,7 +904,7 @@ typedef boost::shared_ptr<ZoneUpdater> ZoneUpdaterPtr;
 /// over the sequences.  Every time the \c getNextDiff() method is called
 /// it returns one element of the differences in the form of an \c RRset
 /// until it reaches the end of the entire sequences.
-class ZoneJournalReader {
+class ISC_LIBDATASRC_API ZoneJournalReader {
 public:
     /// Result codes used by a factory method for \c ZoneJournalReader
     enum Result {

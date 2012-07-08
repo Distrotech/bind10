@@ -764,9 +764,23 @@ protected:
     SQLite3Update() {
         // Note: if "installing" the test file fails some of the subsequent
         // tests would fail.
+#ifdef _WIN32
+        const char *install_pcmd = "copy" " " TEST_DATA_DIR
+                                   "/test.sqlite3 " TEST_DATA_BUILDDIR
+                                   "/test.sqlite3.copied";
+        char install_cmd[1024];
+        for (unsigned int i = 0;; i++) {
+          install_cmd[i] = install_pcmd[i];
+            if (install_cmd[i] == '/')
+                install_cmd[i] = '\\';
+            if (install_cmd[i] == 0)
+                break;
+        }
+#else
         const char *install_cmd = INSTALL_PROG " -c " TEST_DATA_DIR
                                   "/test.sqlite3 " TEST_DATA_BUILDDIR
                                   "/test.sqlite3.copied";
+#endif
         if (system(install_cmd) != 0) {
             // any exception will do, this is failure in test setup, but nice
             // to show the command that fails, and shouldn't be caught

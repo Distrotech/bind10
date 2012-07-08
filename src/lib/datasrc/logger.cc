@@ -12,12 +12,14 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDATASRC_EXPORT
+
 #include <datasrc/logger.h>
 
 namespace isc {
 namespace datasrc {
 
-isc::log::Logger logger("datasrc");
+ISC_LIBDATASRC_API isc::log::Logger logger("datasrc");
 
 }
 }

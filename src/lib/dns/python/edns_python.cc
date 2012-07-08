@@ -365,14 +365,14 @@ ISC_LIBDNS_PYTHON_API PyTypeObject edns_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+ISC_LIBDNS_PYTHON_API PyObject*
 createEDNSObject(const EDNS& source) {
     EDNSContainer container(PyObject_New(s_EDNS, &edns_type));
     container.set(new EDNS(source));
     return (container.release());
 }
 
-bool
+ISC_LIBDNS_PYTHON_API bool
 PyEDNS_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -380,7 +380,7 @@ PyEDNS_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &edns_type));
 }
 
-const EDNS&
+ISC_LIBDNS_PYTHON_API const EDNS&
 PyEDNS_ToEDNS(const PyObject* edns_obj) {
     if (edns_obj == NULL) {
         isc_throw(PyCPPWrapperException,

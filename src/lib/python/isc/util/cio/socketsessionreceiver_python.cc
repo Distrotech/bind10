@@ -20,10 +20,12 @@
 // http://docs.python.org/py3k/extending/extending.html#a-simple-example
 #include <Python.h>
 
+#ifndef _WIN32
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#endif
 
 #include <string>
 #include <stdexcept>
@@ -78,11 +80,26 @@ SocketSessionReceiver_init(PyObject* po_self, PyObject* args, PyObject*) {
                                                NULL));
             PyObjectContainer fdarg_container(
                 Py_BuildValue("(O)", fd_container.get()));
+#ifdef _WIN32
+            SOCKET fd;
+#ifdef _WIN64
+            if (PyArg_ParseTuple(fdarg_container.get(), "L", &fd)) {
+                self->cppobj = new SocketSessionReceiver(fd);
+                return (0);
+            }
+#else
+            if (PyArg_ParseTuple(fdarg_container.get(), "l", &fd)) {
+                self->cppobj = new SocketSessionReceiver(fd);
+                return (0);
+            }
+#endif
+#else
             int fd;
             if (PyArg_ParseTuple(fdarg_container.get(), "i", &fd)) {
                 self->cppobj = new SocketSessionReceiver(fd);
                 return (0);
             }
+#endif
             PyErr_SetString(PyExc_TypeError, "Given object's fileno() doesn't "
                             "return an integer, probably not a valid socket "
                             "object");
@@ -157,11 +174,19 @@ SocketSessionReceiver_destroy(PyObject* po_self) {
 
 // A helper struct to automatically close a socket in an RAII manner.
 struct ScopedSocket : boost::noncopyable {
+#ifdef _WIN32
+    ScopedSocket(SOCKET fd) : fd_(fd) {}
+    ~ScopedSocket() {
+        closesocket(fd_);
+    }
+    const SOCKET fd_;
+#else
     ScopedSocket(int fd) : fd_(fd) {}
     ~ScopedSocket() {
         close(fd_);
     }
     const int fd_;
+#endif
 };
 
 PyObject*
@@ -180,7 +205,16 @@ SocketSessionReceiver_pop(PyObject* po_self, PyObject*) {
         ScopedSocket sock(session.getSocket());
 
         // Build Python socket object
-        PyObjectContainer c_args(Py_BuildValue("(iiii)", sock.fd_,
+        PyObjectContainer c_args(Py_BuildValue(
+#ifdef _WIN32
+#ifdef _WIN64
+                                               "(Liii)", sock.fd_,
+#else
+                                               "(liii)", sock.fd_,
+#endif
+#else
+                                               "(iiii)", sock.fd_,
+#endif
                                                session.getFamily(),
                                                session.getType(),
                                                session.getProtocol()));

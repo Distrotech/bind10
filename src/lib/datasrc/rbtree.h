@@ -23,12 +23,11 @@
 ///     issue, the design and interface are not fixed, and RBTree isn't ready
 ///     to be used as a base data structure by other modules.
 
-#include <exceptions/exceptions.h>
-
 #include <dns/name.h>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <exceptions/exceptions.h>
+#include <datasrc/dll.h>
 #include <ostream>
 #include <algorithm>
 #include <cassert>
@@ -327,6 +326,11 @@ private:
 
 
 // This is only to support NULL nodes.
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4355)
+#endif
+
 template <typename T>
 RBNode<T>::RBNode() :
     parent_(NULL),
@@ -344,6 +348,10 @@ RBNode<T>::RBNode() :
     right_ = this;
     down_ = this;
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 template <typename T>
 RBNode<T>::RBNode(const isc::dns::Name& name) :

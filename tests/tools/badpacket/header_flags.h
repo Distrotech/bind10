@@ -75,21 +75,18 @@ public:
     ///        hold, a BadValue exception is thrown.
     void set(int index, uint16_t value) {
 
-        // Declare an OptionInfo object for brevity and check the index is
-        // valid.
-        OptionInfo o;
-        o.checkIndex(index);
+        OptionInfo::checkIndex(index);
 
         // Ensure the value is within limits and throw an exception if not. (This
         // should not really be needed, as the command line parsing should have
         // checked the limits.  But be safe.)
-        if ((value < o.minval(index)) || (value > o.maxval(index))) {
+        if ((value < OptionInfo::minval(index)) || (value > OptionInfo::maxval(index))) {
             isc_throw(isc::BadValue, "value of index " << index << " is out of range");
         }
 
         // Clear the field then set it with the value.
-        flags_ &= ~o.mask(index);
-        flags_ |= (value << o.offset(index));
+        flags_ &= ~OptionInfo::mask(index);
+        flags_ |= (value << OptionInfo::offset(index));
     }
 
 private:

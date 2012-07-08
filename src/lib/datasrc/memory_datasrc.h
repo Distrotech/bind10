@@ -19,6 +19,7 @@
 
 #include <boost/noncopyable.hpp>
 
+#include <datasrc/dll.h>
 #include <datasrc/zonetable.h>
 #include <datasrc/client.h>
 
@@ -26,8 +27,8 @@
 
 namespace isc {
 namespace dns {
-class Name;
-class RRsetList;
+class ISC_LIBDATASRC_API Name;
+class ISC_LIBDATASRC_API RRsetList;
 };
 
 namespace datasrc {
@@ -40,7 +41,8 @@ namespace datasrc {
 /// backend).  This is why the class has methods like \c load() or \c add().
 ///
 /// This class is non copyable.
-class InMemoryZoneFinder : boost::noncopyable, public ZoneFinder {
+class ISC_LIBDATASRC_API InMemoryZoneFinder :
+ boost::noncopyable, public ZoneFinder {
     ///
     /// \name Constructors and Destructor.
 public:
@@ -253,7 +255,7 @@ private:
 /// The findZone() method takes a domain name and returns the best matching
 /// \c InMemoryZoneFinder in the form of (Boost) shared pointer, so that it can
 /// provide the general interface for all data sources.
-class InMemoryClient : public DataSourceClient {
+class ISC_LIBDATASRC_API InMemoryClient : public DataSourceClient {
 public:
     ///
     /// \name Constructors and Destructor.
@@ -351,12 +353,25 @@ private:
 ///              during initialization
 /// \return An instance of the memory datasource client, or NULL if there was
 ///         an error
-extern "C" DataSourceClient* createInstance(isc::data::ConstElementPtr config,
-                                            std::string& error);
+
+#if defined(_WIN32) && defined(USE_STATIC_LINK)
+extern "C" ISC_LIBDATASRC_API DataSourceClient*
+MemoryCreateInstance(isc::data::ConstElementPtr config, std::string& error);
+extern "C" ISC_LIBDATASRC_API DataSourceClient*
+StaticCreateInstance(isc::data::ConstElementPtr config, std::string& error);
 
 /// \brief Destroy the instance created by createInstance()
-extern "C" void destroyInstance(DataSourceClient* instance);
+extern "C" ISC_LIBDATASRC_API void
+MemoryDestroyInstance(DataSourceClient* instance);
+extern "C" ISC_LIBDATASRC_API void
+StaticDestroyInstance(DataSourceClient* instance);
+#else
+extern "C" ISC_LIBDATASRC_API DataSourceClient*
+createInstance(isc::data::ConstElementPtr config, std::string& error);
 
+/// \brief Destroy the instance created by createInstance()
+extern "C" ISC_LIBDATASRC_API void destroyInstance(DataSourceClient* instance);
+#endif
 
 }
 }
