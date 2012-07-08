@@ -64,6 +64,7 @@ class ResQuery:
 
 class ResolverContext:
     CNAME_LOOP_MAX = 15
+    FETCH_DEPTH_MAX = 8
 
     def __init__(self, sock4, sock6, renderer, qname, qclass, qtype, cache,
                  query_table, nest=0):
@@ -271,7 +272,6 @@ class ResolverContext:
     def __handle_referral(self, resp_msg, ns_rrset):
         self.dprint(LOGLVL_DEBUG10, 'got a referral: %s', [ns_rrset])
         self.__cache.add(ns_rrset, SimpleDNSCache.TRUST_GLUE)
-        self.__cur_zone = ns_rrset.get_name()
         additionals = resp_msg.get_section(Message.SECTION_ADDITIONAL)
         for ad_rrset in additionals:
             cmp_reln = \
@@ -286,6 +286,7 @@ class ResolverContext:
                 self.dprint(LOGLVL_DEBUG10, 'got glue for referral:%s',
                             [ad_rrset])
                 self.__cache.add(ad_rrset, SimpleDNSCache.TRUST_GLUE)
+        self.__cur_zone = ns_rrset.get_name()
         (self.__ns_addr4, self.__ns_addr6) = self.__find_ns_addrs(ns_rrset)
         return self.__try_next_server()
 
@@ -362,16 +363,20 @@ class ResolverContext:
         if fetch_if_notfound and not v4_addrs and not v6_addrs:
             self.dprint(LOGLVL_DEBUG5,
                         'no address found for any nameservers')
-            self.__cur_nameservers = nameservers
-            for ns in ns_names:
-                self.__fetch_ns_addrs(ns)
+            if self.__nest > self.FETCH_DEPTH_MAX:
+                self.dprint(LOGLVL_INFO, 'reached fetch depth limit')
+            else:
+                self.__cur_nameservers = nameservers
+                for ns in ns_names:
+                    self.__fetch_ns_addrs(ns)
         return (v4_addrs, v6_addrs)
 
     def __fetch_ns_addrs(self, ns_name):
         for type in [RRType.A(), RRType.AAAA()]:
             res_ctx = ResolverContext(self.__sock4, self.__sock6,
                                       self.__renderer, ns_name, self.__qclass,
-                                      type, self.__cache, self.__qtable)
+                                      type, self.__cache, self.__qtable,
+                                      self.__nest + 1)
             res_ctx.set_debug_level(self.__debug_level)
             res_ctx.__parent = self
             (qid, ns_addr) = res_ctx.start()
@@ -490,7 +495,9 @@ class FileResolver:
         self.__log_level = int(options.log_level)
         self.__res_ctxs = set()
         self.__qfile = open(query_file, 'r')
-        self.__max_ctxts = 10
+        self.__max_ctxts = int(options.max_query)
+
+        ResQuery.QUERY_TIMEOUT = int(options.query_timeo)
 
     def dprint(self, level, msg, params=[]):
         '''Dump a debug/log message.'''
@@ -610,6 +617,12 @@ def get_option_parser():
     parser.add_option("-d", "--log-level", dest="log_level", action="store",
                       default=0,
                       help="specify the log level of main resolver")
+    parser.add_option("-n", "--max-query", dest="max_query", action="store",
+                      default="10",
+                      help="specify the max # of queries in parallel")
+    parser.add_option("-t", "--query-timeout", dest="query_timeo",
+                      action="store", default="60",
+                      help="specify query timeout in seconds")
     return parser
 
 if __name__ == '__main__':
