@@ -99,7 +99,9 @@ class ResolverContext:
                                        self.__cur_zone)
         if self.__cur_ns_addr is not None:
             postfix += ' to ' + self.__cur_ns_addr[0]
-        postfix += '] ' + str(self)
+        postfix += ']'
+        if level > LOGLVL_DEBUG1:
+            postfix += ' ' + str(self)
         sys.stdout.write(('%s ' + msg + ' %s\n') %
                          tuple([date_time] + [str(p) for p in params] +
                                [postfix]))
@@ -164,7 +166,7 @@ class ResolverContext:
                             [self.__qid, resp_msg.get_qid()])
                 raise InternalLame('lame server')
 
-        # Look into the response
+            # Look into the response
             if resp_msg.get_header_flag(Message.HEADERFLAG_AA):
                 next_qry = self.__handle_auth_answer(resp_msg)
             elif resp_msg.get_rcode() == Rcode.NOERROR() and \
@@ -183,7 +185,8 @@ class ResolverContext:
                             next_qry = ResQuery(self, self.__qid, ns_addr)
                         break
             else:
-                raise InternalLame('lame server')
+                raise InternalLame('lame server, rcode=' +
+                                   str(resp_msg.get_rcode()))
         except InternalLame as ex:
             self.dprint(LOGLVL_INFO, '%s', [ex])
             ns_addr = self.__try_next_server()
@@ -199,40 +202,47 @@ class ResolverContext:
 
     def __handle_auth_answer(self, resp_msg):
         '''Subroutine of handle_response, handling an authoritative answer.'''
-        if resp_msg.get_rcode() == Rcode.NOERROR() and \
+        if (resp_msg.get_rcode() == Rcode.NOERROR() or
+            resp_msg.get_rcode() == Rcode.NXDOMAIN()) and \
             resp_msg.get_rr_count(Message.SECTION_ANSWER) > 0:
-            answer_rrset = resp_msg.get_section(Message.SECTION_ANSWER)[0]
-            if answer_rrset.get_name() == self.__qname and \
-                    answer_rrset.get_class() == self.__qclass:
-                self.__cache.add(answer_rrset, SimpleDNSCache.TRUST_ANSWER)
-                if answer_rrset.get_type() == self.__qtype:
-                    self.dprint(LOGLVL_DEBUG10, 'got a response: %s',
-                                [answer_rrset])
-                    return None
-                elif answer_rrset.get_type() == RRType.CNAME():
-                    self.dprint(LOGLVL_DEBUG10, 'got an alias: %s',
-                                [answer_rrset])
-                    # Chase CNAME with a separate resolver context with loop
-                    # prevention
-                    if self.__nest > self.CNAME_LOOP_MAX:
-                        self.dprint(LOGLVL_INFO, 'possible CNAME loop')
+            any_query = resp_msg.get_question()[0].get_type() == RRType.ANY()
+            for answer_rrset in resp_msg.get_section(Message.SECTION_ANSWER):
+                if answer_rrset.get_name() == self.__qname and \
+                        answer_rrset.get_class() == self.__qclass:
+                    self.__cache.add(answer_rrset, SimpleDNSCache.TRUST_ANSWER)
+                    if any_query or answer_rrset.get_type() == self.__qtype:
+                        self.dprint(LOGLVL_DEBUG10, 'got a response: %s',
+                                    [answer_rrset])
+                        if not any_query:
+                            # For type any query, examine all RRs; otherwise
+                            # simply ignore the rest.
+                            return None
+                    elif answer_rrset.get_type() == RRType.CNAME():
+                        self.dprint(LOGLVL_DEBUG10, 'got an alias: %s',
+                                    [answer_rrset])
+                        # Chase CNAME with a separate resolver context with
+                        # loop prevention
+                        if self.__nest > self.CNAME_LOOP_MAX:
+                            self.dprint(LOGLVL_INFO, 'possible CNAME loop')
+                            return None
+                        if self.__parent is not None:
+                            # Don't chase CNAME in an internal fetch context
+                            self.dprint(LOGLVL_INFO, 'CNAME in internal fetch')
+                            return None
+                        cname = Name(answer_rrset.get_rdata()[0].to_text())
+                        cname_ctx = ResolverContext(self.__sock4, self.__sock6,
+                                                    self.__renderer, cname,
+                                                    self.__qclass,
+                                                    self.__qtype, self.__cache,
+                                                    self.__qtable,
+                                                    self.__nest + 1)
+                        cname_ctx.set_debug_level(self.__debug_level)
+                        (qid, ns_addr) = cname_ctx.start()
+                        if ns_addr is not None:
+                            return ResQuery(cname_ctx, qid, ns_addr)
                         return None
-                    if self.__parent is not None:
-                        # Don't chase CNAME in an internal fetch context
-                        self.dprint(LOGLVL_INFO,
-                                    'CNAME in internal fetch')
-                        return None
-                    cname = Name(answer_rrset.get_rdata()[0].to_text())
-                    cname_ctx = ResolverContext(self.__sock4, self.__sock6,
-                                                self.__renderer, cname,
-                                                self.__qclass, self.__qtype,
-                                                self.__cache, self.__qtable,
-                                                self.__nest + 1)
-                    cname_ctx.set_debug_level(self.__debug_level)
-                    (qid, ns_addr) = cname_ctx.start()
-                    if ns_addr is not None:
-                        return ResQuery(cname_ctx, qid, ns_addr)
-                    return None
+            if any_query:
+                return None
         elif resp_msg.get_rcode() == Rcode.NXDOMAIN() or \
                 (resp_msg.get_rcode() == Rcode.NOERROR() and
                  resp_msg.get_rr_count(Message.SECTION_ANSWER) == 0):
@@ -564,7 +574,12 @@ class FileResolver:
     def __handle(self, s):
         pkt, remote = s.recvfrom(4096)
         self.__msg.clear(Message.PARSE)
-        self.__msg.from_wire(pkt)
+        try:
+            self.__msg.from_wire(pkt)
+        except Exception as ex:
+            self.dprint(LOGLVL_INFO, 'broken packet from %s: %s',
+                        [remote[0], ex])
+            return
         self.dprint(LOGLVL_DEBUG10, 'received packet from %s, QID=%s',
                     [remote[0], self.__msg.get_qid()])
         res_qry = self.__query_table.get((self.__msg.get_qid(), remote))
