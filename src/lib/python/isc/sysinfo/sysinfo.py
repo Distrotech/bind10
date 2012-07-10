@@ -296,14 +296,6 @@ class SysInfoBSD(SysInfoPOSIX):
             self._hostname = 'Unknown'
 
         try:
-            s = subprocess.check_output(['sysctl', '-n', 'kern.boottime'])
-            t = s.decode('utf-8').strip()
-            sec = time.time() - int(t)
-            self._uptime = int(round(sec))
-        except (subprocess.CalledProcessError, OSError):
-            pass
-
-        try:
             s = subprocess.check_output(['sysctl', '-n', 'vm.loadavg'])
             l = s.decode('utf-8').strip().split(' ')
             if len(l) >= 3:
@@ -317,38 +309,7 @@ class SysInfoBSD(SysInfoPOSIX):
         except (subprocess.CalledProcessError, OSError):
             pass
 
-        try:
-            s = subprocess.check_output(['vmstat'])
-            lines = s.decode('utf-8').split('\n')
-            v = re.split('\s+', lines[2])
-            used = int(v[4]) * 1024
-            self._mem_free = self._mem_total - used
-        except (subprocess.CalledProcessError, OSError):
-            pass
-
         self._platform_distro = self._platform_name + ' ' + self._platform_version
-
-class SysInfoOpenBSD(SysInfoBSD):
-    """OpenBSD implementation of the SysInfo class.
-    See the SysInfo class documentation for more information.
-    """
-    def __init__(self):
-        super().__init__()
-
-        # Don't know how to gather these
-        self._platform_is_smp = False
-        self._mem_cached = -1
-        self._mem_buffers = -1
-
-        try:
-            s = subprocess.check_output(['swapctl', '-s', '-k'])
-            l = s.decode('utf-8').strip()
-            r = re.match('^total: (\d+) 1K-blocks allocated, (\d+) used, (\d+) available', l)
-            if r:
-                self._mem_swap_total = int(r.group(1).strip()) * 1024
-                self._mem_swap_free = int(r.group(3).strip()) * 1024
-        except (subprocess.CalledProcessError, OSError):
-            pass
 
         self._net_interfaces = None
 
@@ -360,17 +321,6 @@ class SysInfoOpenBSD(SysInfoBSD):
 
         if self._net_interfaces is None:
             self._net_interfaces = 'Unknown'
-
-        self._net_routing_table = None
-
-        try:
-            s = subprocess.check_output(['route', '-n', 'show'])
-            self._net_routing_table = s.decode('utf-8')
-        except (subprocess.CalledProcessError, OSError):
-            pass
-
-        if self._net_routing_table is None:
-            self._net_routing_table = 'Unknown'
 
         self._net_stats = None
 
@@ -394,6 +344,108 @@ class SysInfoOpenBSD(SysInfoBSD):
         if self._net_connections is None:
             self._net_connections = 'Unknown'
 
+class SysInfoOpenBSD(SysInfoBSD):
+    """OpenBSD implementation of the SysInfo class.
+    See the SysInfo class documentation for more information.
+    """
+    def __init__(self):
+        super().__init__()
+
+        # Don't know how to gather these
+        self._platform_is_smp = False
+        self._mem_cached = -1
+        self._mem_buffers = -1
+
+        try:
+            s = subprocess.check_output(['sysctl', '-n', 'kern.boottime'])
+            t = s.decode('utf-8').strip()
+            sec = time.time() - int(t)
+            self._uptime = int(round(sec))
+        except (subprocess.CalledProcessError, OSError):
+            pass
+
+        try:
+            s = subprocess.check_output(['vmstat'])
+            lines = s.decode('utf-8').split('\n')
+            v = re.split('\s+', lines[2])
+            used = int(v[4]) * 1024
+            self._mem_free = self._mem_total - used
+        except (subprocess.CalledProcessError, OSError):
+            pass
+
+        try:
+            s = subprocess.check_output(['swapctl', '-s', '-k'])
+            l = s.decode('utf-8').strip()
+            r = re.match('^total: (\d+) 1K-blocks allocated, (\d+) used, (\d+) available', l)
+            if r:
+                self._mem_swap_total = int(r.group(1).strip()) * 1024
+                self._mem_swap_free = int(r.group(3).strip()) * 1024
+        except (subprocess.CalledProcessError, OSError):
+            pass
+
+        self._net_routing_table = None
+
+        try:
+            s = subprocess.check_output(['route', '-n', 'show'])
+            self._net_routing_table = s.decode('utf-8')
+        except (subprocess.CalledProcessError, OSError):
+            pass
+
+        if self._net_routing_table is None:
+            self._net_routing_table = 'Unknown'
+
+class SysInfoFreeBSD(SysInfoBSD):
+    """FreeBSD implementation of the SysInfo class.
+    See the SysInfo class documentation for more information.
+    """
+    def __init__(self):
+        super().__init__()
+
+        # Don't know how to gather these
+        self._platform_is_smp = False
+        self._mem_cached = -1
+        self._mem_buffers = -1
+
+        try:
+            s = subprocess.check_output(['sysctl', '-n', 'kern.boottime'])
+            t = s.decode('utf-8').strip()
+            r = re.match('^\{\s+sec\s+\=\s+(\d+),.*', t)
+            if r:
+                sec = time.time() - int(r.group(1))
+                self._uptime = int(round(sec))
+        except (subprocess.CalledProcessError, OSError):
+            pass
+
+        try:
+            s = subprocess.check_output(['vmstat', '-H'])
+            lines = s.decode('utf-8').split('\n')
+            v = re.split('\s+', lines[2])
+            used = int(v[4]) * 1024
+            self._mem_free = self._mem_total - used
+        except (subprocess.CalledProcessError, OSError):
+            pass
+
+        try:
+            s = subprocess.check_output(['swapctl', '-s', '-k'])
+            l = s.decode('utf-8').strip()
+            r = re.match('^Total:\s+(\d+)\s+(\d+)', l)
+            if r:
+                self._mem_swap_total = int(r.group(1).strip()) * 1024
+                self._mem_swap_free = self._mem_swap_total - (int(r.group(2).strip()) * 1024)
+        except (subprocess.CalledProcessError, OSError):
+            pass
+
+        self._net_routing_table = None
+
+        try:
+            s = subprocess.check_output(['netstat', '-nr'])
+            self._net_routing_table = s.decode('utf-8')
+        except (subprocess.CalledProcessError, OSError):
+            pass
+
+        if self._net_routing_table is None:
+            self._net_routing_table = 'Unknown'
+
 class SysInfoTestcase(SysInfo):
     def __init__(self):
         super().__init__()
@@ -405,6 +457,8 @@ def SysInfoFromFactory():
     osname = platform.system()
     if osname == 'Linux':
         return SysInfoLinux()
+    elif osname == 'FreeBSD':
+        return SysInfoFreeBSD()
     elif osname == 'OpenBSD':
         return SysInfoOpenBSD()
     elif osname == 'BIND10Testcase':
