@@ -75,6 +75,16 @@ class CacheEntry:
 
 # Don't worry about cache expire; just record the RRs
 class SimpleDNSCache:
+    '''A simplified DNS cache database.
+
+    It's a dict from (isc.dns.Name, isc.dns.RRClass) to an entry.
+    Each entry can be of either of the following:
+    - CacheEntry: in case the specified name doesn't exist (NXDOMAIN).
+    - dict from RRType to CacheEntry: this gives a cache entry for the
+      (name, class, type).
+
+    '''
+
     # simplified trust levels for cached records
     TRUST_LOCAL = 0             # specific this implementation, never expires
     TRUST_ANSWER = 1            # authoritative answer
@@ -87,9 +97,7 @@ class SimpleDNSCache:
     FIND_ALLOW_CNAME = 4
 
     def __init__(self):
-        # top level cache table: (name, class) => rdata_map
-        # rdata_map: type=>CacheEntry
-        # TODO: negative cache
+        # top level cache table
         self.__table = {}
 
     def find(self, name, rrclass, rrtype, options=FIND_DEFAULT):
@@ -144,3 +152,28 @@ class SimpleDNSCache:
             cur_entry = table_ent.get(rrset.get_type())
             if cur_entry is None or cur_entry.trust >= trust:
                 table_ent[rrset.get_type()] = new_entry
+
+    def dump(self, dump_file):
+        with open(dump_file, 'w') as f:
+            for key, entry in self.__table.items():
+                name = key[0]
+                rrclass = key[1]
+                if isinstance(entry, CacheEntry):
+                    f.write(';; [%s, TTL=%d, msglen=%d] %s/%s\n' %
+                            (str(Rcode(entry.rcode)), entry.ttl, entry.msglen,
+                             str(name), str(rrclass)))
+                    continue
+                rdata_map = entry
+                for rrtype, entry in rdata_map.items():
+                    if len(entry.rdata_list) == 0:
+                        f.write(';; [%s, TTL=%d, msglen=%d] %s/%s/%s\n' %
+                                (str(Rcode(entry.rcode)), entry.ttl,
+                                 entry.msglen, str(name), str(rrclass),
+                                 str(rrtype)))
+                    else:
+                        f.write(';; [msglen=%d, trust=%d]\n' %
+                                (entry.msglen, entry.trust))
+                        rrset = RRset(name, rrclass, rrtype, RRTTL(entry.ttl))
+                        for rdata in entry.rdata_list:
+                            rrset.add_rdata(rdata)
+                        f.write(rrset.to_text())

@@ -145,7 +145,7 @@ class ResolverContext:
         self.dprint(LOGLVL_DEBUG1, 'no reachable server')
         fail_rrset = RRset(self.__qname, self.__qclass, self.__qtype,
                            RRTTL(self.SERVFAIL_TTL))
-        self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER,
+        self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER, 0,
                          Rcode.SERVFAIL())
         return None, None
 
@@ -203,7 +203,7 @@ class ResolverContext:
                 self.dprint(LOGLVL_DEBUG1, 'no usable server')
                 fail_rrset = RRset(self.__qname, self.__qclass, self.__qtype,
                                    RRTTL(self.SERVFAIL_TTL))
-                self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER,
+                self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER, 0,
                                  Rcode.SERVFAIL())
         if next_qry is None and not self.__fetch_queries and \
                 self.__parent is not None:
@@ -522,6 +522,7 @@ class FileResolver:
         self.__res_ctxs = set()
         self.__qfile = open(query_file, 'r')
         self.__max_ctxts = int(options.max_query)
+        self.__dump_file = options.dump_file
 
         ResQuery.QUERY_TIMEOUT = int(options.query_timeo)
 
@@ -587,6 +588,10 @@ class FileResolver:
             for s in ready_socks:
                 self.__handle(s)
 
+    def done(self):
+        if self.__dump_file is not None:
+            self.__cache.dump(self.__dump_file)
+
     def __handle(self, s):
         pkt, remote = s.recvfrom(4096)
         self.__msg.clear(Message.PARSE)
@@ -648,6 +653,10 @@ def get_option_parser():
     parser.add_option("-d", "--log-level", dest="log_level", action="store",
                       default=0,
                       help="specify the log level of main resolver")
+    parser.add_option("-f", "--dump-file", dest="dump_file", action="store",
+                      default=None,
+                      help="if specified, file name to dump the resulting " + \
+                          "cache")
     parser.add_option("-n", "--max-query", dest="max_query", action="store",
                       default="10",
                       help="specify the max # of queries in parallel")
@@ -662,4 +671,6 @@ if __name__ == '__main__':
 
     if len(args) == 0:
         parser.error('query file is missing')
-    FileResolver(args[0], options).run()
+    resolver = FileResolver(args[0], options)
+    resolver.run()
+    resolver.done()
