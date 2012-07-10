@@ -16,6 +16,7 @@
 # WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 from isc.dns import *
+import struct
 
 # "root hint"
 ROOT_SERVERS = [pfx + '.root-servers.net' for pfx in 'abcdefghijklm']
@@ -178,35 +179,153 @@ class SimpleDNSCache:
 
     def __find_cache_entry(self, entries, trust, exact=False):
         for entry in entries:
-            if exact and entry.trust == trust:
-                return entry
-            if not exact and entry.trust <= trust:
+            if entry.trust == trust or (not exact and entry.trust < trus):
                 return entry
         return None
 
-    def dump(self, dump_file):
-        with open(dump_file, 'w') as f:
-            for key, entry in self.__table.items():
-                name = key[0]
-                rrclass = key[1]
-                if isinstance(entry, CacheEntry):
-                    f.write(';; [%s, TTL=%d, msglen=%d] %s/%s\n' %
-                            (str(Rcode(entry.rcode)), entry.ttl, entry.msglen,
-                             str(name), str(rrclass)))
-                    continue
-                rdata_map = entry
-                for rrtype, entries in rdata_map.items():
-                    for entry in entries:
-                        if len(entry.rdata_list) == 0:
-                            f.write(';; [%s, TTL=%d, msglen=%d] %s/%s/%s\n' %
-                                    (str(Rcode(entry.rcode)), entry.ttl,
-                                     entry.msglen, str(name), str(rrclass),
-                                     str(rrtype)))
-                        else:
-                            f.write(';; [msglen=%d, trust=%d]\n' %
-                                    (entry.msglen, entry.trust))
-                            rrset = RRset(name, rrclass, rrtype,
-                                          RRTTL(entry.ttl))
-                            for rdata in entry.rdata_list:
-                                rrset.add_rdata(rdata)
-                            f.write(rrset.to_text())
+    def dump(self, dump_file, serialize=False):
+        if serialize:
+            with open(dump_file, 'bw') as f:
+                self.__serialize(f)
+        else:
+            with open(dump_file, 'w') as f:
+                self.__dump_text(f)
+
+    def load(self, db_file):
+        with open(db_file, 'br') as f:
+            self.__deserialize(f)
+
+    def __dump_text(self, f):
+        for key, entry in self.__table.items():
+            name = key[0]
+            rrclass = key[1]
+            if isinstance(entry, CacheEntry):
+                f.write(';; [%s, TTL=%d, msglen=%d] %s/%s\n' %
+                        (str(Rcode(entry.rcode)), entry.ttl, entry.msglen,
+                         str(name), str(rrclass)))
+                continue
+            rdata_map = entry
+            for rrtype, entries in rdata_map.items():
+                for entry in entries:
+                    if len(entry.rdata_list) == 0:
+                        f.write(';; [%s, TTL=%d, msglen=%d] %s/%s/%s\n' %
+                                (str(Rcode(entry.rcode)), entry.ttl,
+                                 entry.msglen, str(name), str(rrclass),
+                                 str(rrtype)))
+                    else:
+                        f.write(';; [msglen=%d, trust=%d]\n' %
+                                (entry.msglen, entry.trust))
+                        rrset = RRset(name, rrclass, rrtype, RRTTL(entry.ttl))
+                        for rdata in entry.rdata_list:
+                            rrset.add_rdata(rdata)
+                        f.write(rrset.to_text())
+
+    def __serialize(self, f):
+        '''Dump cache database content to a file in serialized binary format.
+
+        The serialized format is as follows:
+        Common header part:
+          <name length, 1 byte>
+          <domain name (wire)>
+          <RR class (numeric, wire)>
+          <# of cache entries, 2 bytes>
+        If #-of-entries is 0:
+          <Rcode value, 1 byte><TTL value, 4 bytes><msglen, 2 bytes>
+          <trust, 1 byte>
+        Else: sequence of serialized cache entries.  Each of which is:
+          <RR type value, wire>
+          <# of cache entries of the type, 1 byte>
+          sequence of cache entries of the type, each of which is:
+            <RCODE value, 1 byte>
+            <TTL, 4 bytes>
+            <msglen, 2 bytes>
+            <trust, 1 byte>
+            <# of RDATAs, 2 bytes>
+            sequence of RDATA, each of which is:
+              <RDATA length, 2 bytes>
+              <RDATA, wire>
+
+        '''
+        for key, entry in self.__table.items():
+            name = key[0]
+            rrclass = key[1]
+            f.write(struct.pack('B', name.get_length()))
+            f.write(name.to_wire(b''))
+            f.write(rrclass.to_wire(b''))
+
+            if isinstance(entry, CacheEntry):
+                data = struct.pack('H', 0) # #-of-entries is 0
+                data += struct.pack('B', entry.rcode)
+                data += struct.pack('I', entry.ttl)
+                data += struct.pack('H', entry.msglen)
+                data += struct.pack('B', entry.trust)
+                f.write(data)
+                continue
+
+            rdata_map = entry
+            data = struct.pack('H', len(rdata_map)) # #-of-cache entries
+            for rrtype, entries in rdata_map.items():
+                data += rrtype.to_wire(b'')
+                data += struct.pack('B', len(entries))
+
+                for entry in entries:
+                    data += struct.pack('B', entry.rcode)
+                    data += struct.pack('I', entry.ttl)
+                    data += struct.pack('H', entry.msglen)
+                    data += struct.pack('B', entry.trust)
+                    data += struct.pack('H', len(entry.rdata_list))
+                    for rdata in entry.rdata_list:
+                        rdata_data = rdata.to_wire(b'')
+                        data += struct.pack('H', len(rdata_data))
+                        data += rdata_data
+            f.write(data)
+
+    def __deserialize(self, f):
+        '''Load serialized cache DB to memory.
+
+        See __serialize for the format.  Validation is generally omitted
+        for simplicity.
+
+        '''
+        while True:
+            initial_byte = f.read(1)
+            if len(initial_byte) == 0:
+                break
+            ndata = f.read(struct.unpack('B', initial_byte)[0])
+            name = Name(ndata)
+            rrclass = RRClass(f.read(2))
+            key = (name, rrclass)
+            n_types = struct.unpack('H', f.read(2))[0]
+            if n_types == 0:
+                rcode = struct.unpack('B', f.read(1))[0]
+                ttl = struct.unpack('I', f.read(4))[0]
+                msglen = struct.unpack('H', f.read(2))[0]
+                trust = struct.unpack('B', f.read(1))[0]
+                entry = CacheEntry(ttl, [], trust, msglen, Rcode(rcode))
+                self.__table[key] = entry
+                continue
+
+            self.__table[key] = {}
+            while n_types > 0:
+                n_types -= 1
+                rrtype = RRType(f.read(2))
+                n_entries = struct.unpack('B', f.read(1))[0]
+                entries = []
+                while n_entries > 0:
+                    n_entries -= 1
+                    rcode = struct.unpack('B', f.read(1))[0]
+                    ttl = struct.unpack('I', f.read(4))[0]
+                    msglen = struct.unpack('H', f.read(2))[0]
+                    trust = struct.unpack('B', f.read(1))[0]
+                    n_rdata = struct.unpack('H', f.read(2))[0]
+                    rdata_list = []
+                    while n_rdata > 0:
+                        n_rdata -= 1
+                        rdata_len = struct.unpack('H', f.read(2))[0]
+                        rdata_list.append(Rdata(rrtype, rrclass,
+                                                f.read(rdata_len)))
+                    entry = CacheEntry(ttl, rdata_list, trust, msglen,
+                                       Rcode(rcode))
+                    entries.append(entry)
+                entries.sort(key=lambda x: x.trust)
+                self.__table[key][rrtype] = entries

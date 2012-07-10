@@ -546,6 +546,7 @@ class FileResolver:
         self.__qfile = open(query_file, 'r')
         self.__max_ctxts = int(options.max_query)
         self.__dump_file = options.dump_file
+        self.__serialize_file = options.serialize_file
 
         ResQuery.QUERY_TIMEOUT = int(options.query_timeo)
 
@@ -614,6 +615,8 @@ class FileResolver:
     def done(self):
         if self.__dump_file is not None:
             self.__cache.dump(self.__dump_file)
+        if self.__serialize_file is not None:
+            self.__cache.dump(self.__serialize_file, True)
 
     def __handle(self, s):
         pkt, remote = s.recvfrom(4096)
@@ -679,7 +682,11 @@ def get_option_parser():
     parser.add_option("-f", "--dump-file", dest="dump_file", action="store",
                       default=None,
                       help="if specified, file name to dump the resulting " + \
-                          "cache")
+                          "cache in text format")
+    parser.add_option("-s", "--serialize", dest="serialize_file",
+                      action="store", default=None,
+                      help="if specified, file name to dump the resulting " + \
+                          "cache in the serialized binary format")
     parser.add_option("-n", "--max-query", dest="max_query", action="store",
                       default="10",
                       help="specify the max # of queries in parallel")
