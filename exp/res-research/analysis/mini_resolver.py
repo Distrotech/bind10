@@ -175,6 +175,7 @@ class ResolverContext:
             # Look into the response
             if resp_msg.get_header_flag(Message.HEADERFLAG_AA):
                 next_qry = self.__handle_auth_answer(resp_msg, msglen)
+                self.__handle_auth_othersections(resp_msg)
             elif resp_msg.get_rcode() == Rcode.NOERROR() and \
                     (not resp_msg.get_header_flag(Message.HEADERFLAG_AA)):
                 authorities = resp_msg.get_section(Message.SECTION_AUTHORITY)
@@ -263,6 +264,28 @@ class ResolverContext:
 
         raise InternalLame('unexpected answer rcode=' +
                            str(resp_msg.get_rcode()))
+
+    def __handle_auth_othersections(self, resp_msg):
+        ns_names = []
+        for auth_rrset in resp_msg.get_section(Message.SECTION_AUTHORITY):
+            if auth_rrset.get_type() == RRType.NS():
+                ns_owner =  auth_rrset.get_name()
+                cmp_reln = ns_owner.compare(self.__cur_zone).get_relation()
+                if cmp_reln == NameComparisonResult.SUBDOMAIN or \
+                        cmp_reln == NameComparisonResult.EQUAL:
+                    self.__cache.add(auth_rrset,
+                                     SimpleDNSCache.TRUST_AUTHAUTHORITY, 0)
+                    for ns_rdata in auth_rrset.get_rdata():
+                        ns_names.append(Name(ns_rdata.to_text()))
+        for ad_rrset in resp_msg.get_section(Message.SECTION_ADDITIONAL):
+            if ad_rrset.get_type() == RRType.A() or \
+                    ad_rrset.get_type() == RRType.AAAA():
+                for ns_name in ns_names:
+                    if ad_rrset.get_name() == ns_name:
+                        self.__cache.add(ad_rrset,
+                                         SimpleDNSCache.TRUST_AUTHADDITIONAL,
+                                         0)
+                        break
 
     def __handle_negative_answer(self, resp_msg, msglen):
         rcode = resp_msg.get_rcode()
@@ -362,7 +385,7 @@ class ResolverContext:
         for l in range(0, zname.get_labelcount()):
             zname = qname.split(l)
             ns_rrset = self.__cache.find(zname, self.__qclass, RRType.NS(),
-                                         SimpleDNSCache.FIND_ALLOW_GLUE)
+                                         SimpleDNSCache.FIND_ALLOW_NOANSWER)
             if ns_rrset is not None:
                 return zname, ns_rrset
         raise MiniResolverException('no name server found for ' + str(qname))
@@ -376,12 +399,12 @@ class ResolverContext:
             ns_name = Name(ns.to_text())
             ns_names.append(ns_name)
             rrset4 = self.__cache.find(ns_name, ns_class, RRType.A(),
-                                       SimpleDNSCache.FIND_ALLOW_GLUE)
+                                       SimpleDNSCache.FIND_ALLOW_NOANSWER)
             if rrset4 is not None:
                 for rdata in rrset4.get_rdata():
                     v4_addrs.append((rdata.to_text(), DNS_PORT))
             rrset6 = self.__cache.find(ns_name, ns_class, RRType.AAAA(),
-                                      SimpleDNSCache.FIND_ALLOW_GLUE)
+                                      SimpleDNSCache.FIND_ALLOW_NOANSWER)
             if rrset6 is not None:
                 for rdata in rrset6.get_rdata():
                     # specify 0 for flowinfo and scopeid unconditionally

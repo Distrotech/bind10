@@ -73,6 +73,13 @@ class CacheEntry:
         self.msglen = msglen
         self.rcode = rcode.get_code()
 
+    def copy(self, other):
+        self.ttl = other.ttl
+        self.rdata_list = other.rdata_list
+        self.trust = other.trust
+        self.msglen = other.msglen
+        self.rcode = other.rcode
+
 # Don't worry about cache expire; just record the RRs
 class SimpleDNSCache:
     '''A simplified DNS cache database.
@@ -80,20 +87,24 @@ class SimpleDNSCache:
     It's a dict from (isc.dns.Name, isc.dns.RRClass) to an entry.
     Each entry can be of either of the following:
     - CacheEntry: in case the specified name doesn't exist (NXDOMAIN).
-    - dict from RRType to CacheEntry: this gives a cache entry for the
-      (name, class, type).
+    - dict from RRType to list of CacheEntry: this gives a cache entries for
+       the (name, class, type) sorted by the trust levels (more trustworthy
+       ones appear sooner)
 
     '''
 
     # simplified trust levels for cached records
     TRUST_LOCAL = 0             # specific this implementation, never expires
     TRUST_ANSWER = 1            # authoritative answer
-    TRUST_GLUE = 2              # referral or glue
+    TRUST_AUTHAUTHORITY = 2     # authority section records in auth answer
+    TRUST_GLUE = 3              # referral or glue
+    TRUST_AUTHADDITIONAL = 4    # additional section records in auth answer
+
 
     # Search options, can be logically OR'ed.
     FIND_DEFAULT = 0
     FIND_ALLOW_NEGATIVE = 1
-    FIND_ALLOW_GLUE = 2
+    FIND_ALLOW_NOANSWER = 2
     FIND_ALLOW_CNAME = 4
 
     def __init__(self):
@@ -118,9 +129,11 @@ class SimpleDNSCache:
             search_types.append(RRType.CNAME())
         for type in search_types:
             if rdata_map is not None and type in rdata_map:
-                entry = rdata_map[type]
-                if (options & self.FIND_ALLOW_GLUE) == 0 and \
-                        entry.trust > self.TRUST_ANSWER:
+                entries = rdata_map[type]
+                entry = entries[0]
+                if (options & self.FIND_ALLOW_NOANSWER) == 0:
+                    entry = self.__find_cache_entry(entries, self.TRUST_ANSWER)
+                if entry is None:
                     return None
                 (ttl, rdata_list) = (entry.ttl, entry.rdata_list)
                 rrset = RRset(name, rrclass, type, RRTTL(ttl))
@@ -146,12 +159,30 @@ class SimpleDNSCache:
         new_entry = CacheEntry(rrset.get_ttl().get_value(), rrset.get_rdata(),
                                trust, msglen, rcode)
         if not key in self.__table:
-            self.__table[key] = {rrset.get_type(): new_entry}
+            self.__table[key] = {rrset.get_type(): [new_entry]}
         else:
             table_ent = self.__table[key]
-            cur_entry = table_ent.get(rrset.get_type())
-            if cur_entry is None or cur_entry.trust >= trust:
-                table_ent[rrset.get_type()] = new_entry
+            cur_entries = table_ent.get(rrset.get_type())
+            if cur_entries is None:
+                table_ent[rrset.get_type()] = [new_entry]
+            else:
+                self.__insert_cache_entry(cur_entries, new_entry)
+
+    def __insert_cache_entry(self, entries, new_entry):
+        old = self.__find_cache_entry(entries, new_entry.trust, True)
+        if old is not None and old.trust == new_entry.trust:
+            old.copy(new_entry)
+        else:
+            entries.append(new_entry)
+            entries.sort(key=lambda x: x.trust)
+
+    def __find_cache_entry(self, entries, trust, exact=False):
+        for entry in entries:
+            if exact and entry.trust == trust:
+                return entry
+            if not exact and entry.trust <= trust:
+                return entry
+        return None
 
     def dump(self, dump_file):
         with open(dump_file, 'w') as f:
@@ -164,16 +195,18 @@ class SimpleDNSCache:
                              str(name), str(rrclass)))
                     continue
                 rdata_map = entry
-                for rrtype, entry in rdata_map.items():
-                    if len(entry.rdata_list) == 0:
-                        f.write(';; [%s, TTL=%d, msglen=%d] %s/%s/%s\n' %
-                                (str(Rcode(entry.rcode)), entry.ttl,
-                                 entry.msglen, str(name), str(rrclass),
-                                 str(rrtype)))
-                    else:
-                        f.write(';; [msglen=%d, trust=%d]\n' %
-                                (entry.msglen, entry.trust))
-                        rrset = RRset(name, rrclass, rrtype, RRTTL(entry.ttl))
-                        for rdata in entry.rdata_list:
-                            rrset.add_rdata(rdata)
-                        f.write(rrset.to_text())
+                for rrtype, entries in rdata_map.items():
+                    for entry in entries:
+                        if len(entry.rdata_list) == 0:
+                            f.write(';; [%s, TTL=%d, msglen=%d] %s/%s/%s\n' %
+                                    (str(Rcode(entry.rcode)), entry.ttl,
+                                     entry.msglen, str(name), str(rrclass),
+                                     str(rrtype)))
+                        else:
+                            f.write(';; [msglen=%d, trust=%d]\n' %
+                                    (entry.msglen, entry.trust))
+                            rrset = RRset(name, rrclass, rrtype,
+                                          RRTTL(entry.ttl))
+                            for rdata in entry.rdata_list:
+                                rrset.add_rdata(rdata)
+                            f.write(rrset.to_text())
