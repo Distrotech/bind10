@@ -18,10 +18,12 @@
 from isc.dns import *
 from dns_cache import SimpleDNSCache, install_root_hint
 import datetime
+import errno
 import heapq
 from optparse import OptionParser
 import random
 import re
+import signal
 import sys
 import socket
 import select
@@ -152,6 +154,10 @@ class ResolverContext:
     def handle_response(self, resp_msg, msglen):
         next_qry = None
         try:
+            if not resp_msg.get_header_flag(Message.HEADERFLAG_QR):
+                self.dprint(LOGLVL_INFO,
+                            'received query when expecting a response')
+                raise InternalLame('lame server')
             if resp_msg.get_rr_count(Message.SECTION_QUESTION) != 1:
                 self.dprint(LOGLVL_INFO,
                             'unexpected # of question in response: %s',
@@ -191,6 +197,8 @@ class ResolverContext:
                                                          msglen)
                         if ns_addr is not None:
                             next_qry = ResQuery(self, self.__qid, ns_addr)
+                        elif len(self.__fetch_queries) == 0:
+                            raise InternalLame('no further recursion possible')
                         break
             else:
                 raise InternalLame('lame server, rcode=' +
@@ -210,6 +218,16 @@ class ResolverContext:
                 self.__parent is not None:
             # This context is completed, resume the parent
             next_qry = self.__parent.__resume(self)
+            if next_qry is None:
+                # There's no more hope for completing the parent context.
+                # Cache SERVFAIL.
+                self.__parent.dprint(LOGLVL_INFO, 'resumed context failed')
+                fail_rrset = RRset(self.__parent.__qname,
+                                   self.__parent.__qclass,
+                                   self.__parent.__qtype,
+                                   RRTTL(self.SERVFAIL_TTL))
+                self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER, 0,
+                                 Rcode.SERVFAIL())
         return next_qry
 
     def __handle_auth_answer(self, resp_msg, msglen):
@@ -311,8 +329,8 @@ class ResolverContext:
                 break      # Ignore any other records once we find SOA
 
         if neg_ttl is None:
-            self.dprint(LOGLVL_INFO, 'negative answer, code=%s, (missing SOA)',
-                        [rcode])
+            self.dprint(LOGLVL_DEBUG1,
+                        'negative answer, code=%s, (missing SOA)', [rcode])
             neg_ttl = self.DEFAULT_NEGATIVE_TTL
         neg_rrset = RRset(self.__qname, self.__qclass, self.__qtype,
                           RRTTL(neg_ttl))
@@ -384,8 +402,8 @@ class ResolverContext:
         ns_rrset = None
         for l in range(0, zname.get_labelcount()):
             zname = qname.split(l)
-            ns_rrset = self.__cache.find(zname, self.__qclass, RRType.NS(),
-                                         SimpleDNSCache.FIND_ALLOW_NOANSWER)
+            _, ns_rrset = self.__cache.find(zname, self.__qclass, RRType.NS(),
+                                            SimpleDNSCache.FIND_ALLOW_NOANSWER)
             if ns_rrset is not None:
                 return zname, ns_rrset
         raise MiniResolverException('no name server found for ' + str(qname))
@@ -398,18 +416,26 @@ class ResolverContext:
         for ns in nameservers.get_rdata():
             ns_name = Name(ns.to_text())
             ns_names.append(ns_name)
-            rrset4 = self.__cache.find(ns_name, ns_class, RRType.A(),
-                                       SimpleDNSCache.FIND_ALLOW_NOANSWER)
+            rcode4, rrset4 = \
+                self.__cache.find(ns_name, ns_class, RRType.A(),
+                                  SimpleDNSCache.FIND_ALLOW_NOANSWER)
             if rrset4 is not None:
                 for rdata in rrset4.get_rdata():
                     v4_addrs.append((rdata.to_text(), DNS_PORT))
-            rrset6 = self.__cache.find(ns_name, ns_class, RRType.AAAA(),
-                                      SimpleDNSCache.FIND_ALLOW_NOANSWER)
+            rcode6, rrset6 = \
+                self.__cache.find(ns_name, ns_class, RRType.AAAA(),
+                                  SimpleDNSCache.FIND_ALLOW_NOANSWER)
             if rrset6 is not None:
                 for rdata in rrset6.get_rdata():
                     # specify 0 for flowinfo and scopeid unconditionally
                     v6_addrs.append((rdata.to_text(), DNS_PORT, 0, 0))
-        if fetch_if_notfound and not v4_addrs and not v6_addrs:
+
+        # If necessary and required, invoke NS-fetch queries.  If rcodeN is not
+        # None, we know the corresponding AAAA/A is not available (either
+        # due to server failure or because records don't exist), in which case
+        # we don't bother to fetch them.
+        if fetch_if_notfound and not v4_addrs and not v6_addrs and \
+                rcode4 is None and rcode6 is None:
             self.dprint(LOGLVL_DEBUG5,
                         'no address found for any nameservers')
             if self.__nest > self.FETCH_DEPTH_MAX:
@@ -536,6 +562,8 @@ class FileResolver:
         else:
             self.__sock6 = None
 
+        self.__shutdown = False
+
         # Create shared resource
         self.__renderer = MessageRenderer()
         self.__msg = Message(Message.PARSE)
@@ -558,7 +586,13 @@ class FileResolver:
         sys.stdout.write(('%s ' + msg + '\n') %
                          tuple([date_time] + [str(p) for p in params]))
 
+    def shutdown(self):
+        self.dprint(LOGLVL_INFO, 'resolver shutting down')
+        self.__shutdown = True
+
     def __check_status(self):
+        if self.__shutdown:
+            return False
         for i in range(len(self.__res_ctxs), self.__max_ctxts):
             res_ctx = self.__get_next_query()
             if res_ctx is None:
@@ -597,7 +631,12 @@ class FileResolver:
                 timo = expire - now if expire > now else 0
             else:
                 timo = None
-            (r, _, _) = select.select(self.__select_socks, [], [], timo)
+            try:
+                (r, _, _) = select.select(self.__select_socks, [], [], timo)
+            except select.error as ex:
+                self.dprint(LOGLVL_INFO, 'select failure: %s', [ex])
+                if ex.args[0] == errno.EINTR:
+                    continue
             if not r:
                 # timeout
                 now = time.time()
@@ -701,6 +740,11 @@ if __name__ == '__main__':
 
     if len(args) == 0:
         parser.error('query file is missing')
+
     resolver = FileResolver(args[0], options)
+
+    signal.signal(signal.SIGINT, lambda sig, frame: resolver.shutdown())
+    signal.signal(signal.SIGTERM, lambda sig, frame: resolver.shutdown())
+
     resolver.run()
     resolver.done()
