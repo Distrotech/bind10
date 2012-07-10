@@ -16,6 +16,7 @@
 # WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 from isc.dns import *
+from optparse import OptionParser
 import struct
 
 # "root hint"
@@ -118,11 +119,12 @@ class SimpleDNSCache:
             # the name doesn't exist; the dict value is its negative TTL.
             # lazy shortcut: we assume NXDOMAIN is always authoritative,
             # skipping trust level check
+            rcode = Rcode(self.__table[key].rcode)
             if (options & self.FIND_ALLOW_NEGATIVE) != 0:
-                return RRset(name, rrclass, rrtype,
-                             RRTTL(self.__table[key].ttl))
+                return rcode, RRset(name, rrclass, rrtype,
+                                    RRTTL(self.__table[key].ttl))
             else:
-                return None
+                return rcode, None
         rdata_map = self.__table.get((name, rrclass))
         search_types = [rrtype]
         if (options & self.FIND_ALLOW_CNAME) != 0 and \
@@ -135,16 +137,17 @@ class SimpleDNSCache:
                 if (options & self.FIND_ALLOW_NOANSWER) == 0:
                     entry = self.__find_cache_entry(entries, self.TRUST_ANSWER)
                 if entry is None:
-                    return None
+                    return None, None
+                rcode = Rcode(entry.rcode)
                 (ttl, rdata_list) = (entry.ttl, entry.rdata_list)
                 rrset = RRset(name, rrclass, type, RRTTL(ttl))
                 for rdata in rdata_list:
                     rrset.add_rdata(rdata)
                 if rrset.get_rdata_count() == 0 and \
                         (options & self.FIND_ALLOW_NEGATIVE) == 0:
-                    return None
-                return rrset
-        return None
+                    return rcode, None
+                return rcode, rrset
+        return None, None
 
     def add(self, rrset, trust=TRUST_LOCAL, msglen=0, rcode=Rcode.NOERROR()):
         key = (rrset.get_name(), rrset.get_class())
@@ -154,7 +157,7 @@ class SimpleDNSCache:
             self.__table[key] = CacheEntry(rrset.get_ttl().get_value(), [],
                                            trust, msglen, rcode)
             return
-        elif key in self.__table and isinstance(self.__table[key], RRset):
+        elif key in self.__table and isinstance(self.__table[key], CacheEntry):
             # Overriding a previously-NXDOMAIN cache entry
             del self.__table[key]
         new_entry = CacheEntry(rrset.get_ttl().get_value(), rrset.get_rdata(),
@@ -329,3 +332,24 @@ class SimpleDNSCache:
                     entries.append(entry)
                 entries.sort(key=lambda x: x.trust)
                 self.__table[key][rrtype] = entries
+
+def get_option_parser():
+    parser = OptionParser(usage='usage: %prog [options] cache_db_file')
+    parser.add_option("-f", "--dump-file", dest="dump_file", action="store",
+                      default=None,
+                      help="if specified, file name to dump the cache " + \
+                          "content in text format")
+    return parser
+
+def run(db_file, options):
+    cache = SimpleDNSCache()
+    cache.load(db_file)
+    if options.dump_file is not None:
+        cache.dump(options.dump_file)
+
+if __name__ == '__main__':
+    parser = get_option_parser()
+    (options, args) = parser.parse_args()
+    if len(args) == 0:
+        parser.error('cache DB file is missing')
+    run(args[0], options)
