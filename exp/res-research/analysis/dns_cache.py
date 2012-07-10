@@ -51,12 +51,27 @@ def install_root_hint(cache):
         cache.add(rrset, SimpleDNSCache.TRUST_LOCAL)
 
 class CacheEntry:
-    '''Cache entry stored in SimpleDNSCache.'''
+    '''Cache entry stored in SimpleDNSCache.
 
-    def __init__(self, ttl, rdata_list, trust):
+    This is essentially a straightforward tuple, just giving an intuitive name
+    to each entry.  The attributes are:
+    ttl (int) The TTL of the cache entry.
+    rdata_list (list of isc.dns.Rdatas) The list of RDATAs for the entry.
+      Can be an empty list for negative cache entries.
+    trust (SimpleDNSCache.TRUST_xxx) The trust level of the cache entry.
+    msglen (int) The size of the DNS response message from which the cache
+      entry comes; it's 0 if it's not a result of a DNS message.
+    rcode (int) Numeric form of corresponding RCODE (converted to int as it's
+      more memory efficient).
+
+    '''
+
+    def __init__(self, ttl, rdata_list, trust, msglen, rcode):
         self.ttl = ttl
         self.rdata_list = rdata_list
         self.trust = trust
+        self.msglen = msglen
+        self.rcode = rcode.get_code()
 
 # Don't worry about cache expire; just record the RRs
 class SimpleDNSCache:
@@ -79,12 +94,13 @@ class SimpleDNSCache:
 
     def find(self, name, rrclass, rrtype, options=FIND_DEFAULT):
         key = (name, rrclass)
-        if key in self.__table and isinstance(self.__table[key], RRset):
+        if key in self.__table and isinstance(self.__table[key], CacheEntry):
             # the name doesn't exist; the dict value is its negative TTL.
             # lazy shortcut: we assume NXDOMAIN is always authoritative,
             # skipping trust level check
             if (options & self.FIND_ALLOW_NEGATIVE) != 0:
-                return self.__table[key]
+                return RRset(name, rrclass, rrtype,
+                             RRTTL(self.__table[key].ttl))
             else:
                 return None
         rdata_map = self.__table.get((name, rrclass))
@@ -108,18 +124,19 @@ class SimpleDNSCache:
                 return rrset
         return None
 
-    def add(self, rrset, trust=TRUST_LOCAL, rcode=Rcode.NOERROR()):
+    def add(self, rrset, trust=TRUST_LOCAL, msglen=0, rcode=Rcode.NOERROR()):
         key = (rrset.get_name(), rrset.get_class())
         if rcode == Rcode.NXDOMAIN():
-            # Special case for NXDOMAIN: the table consists of a single entry
-            # of its TTL
-            self.__table[key] = rrset
+            # Special case for NXDOMAIN: the table consists of a single cache
+            # entry.
+            self.__table[key] = CacheEntry(rrset.get_ttl().get_value(), [],
+                                           trust, msglen, rcode)
             return
         elif key in self.__table and isinstance(self.__table[key], RRset):
             # Overriding a previously-NXDOMAIN cache entry
             del self.__table[key]
         new_entry = CacheEntry(rrset.get_ttl().get_value(), rrset.get_rdata(),
-                               trust)
+                               trust, msglen, rcode)
         if not key in self.__table:
             self.__table[key] = {rrset.get_type(): new_entry}
         else:

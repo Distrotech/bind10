@@ -66,6 +66,7 @@ class ResolverContext:
     CNAME_LOOP_MAX = 15
     FETCH_DEPTH_MAX = 8
     DEFAULT_NEGATIVE_TTL = 10800 # used when SOA is missing, value from BIND 9.
+    SERVFAIL_TTL = 1800 # cache TTL for 'SERVFAIL' results.  BIND9's lame-ttl.
 
     def __init__(self, sock4, sock6, renderer, qname, qclass, qtype, cache,
                  query_table, nest=0):
@@ -142,9 +143,13 @@ class ResolverContext:
         if cur_ns_addr is not None:
             return self.__qid, cur_ns_addr
         self.dprint(LOGLVL_DEBUG1, 'no reachable server')
+        fail_rrset = RRset(self.__qname, self.__qclass, self.__qtype,
+                           RRTTL(self.SERVFAIL_TTL))
+        self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER,
+                         Rcode.SERVFAIL())
         return None, None
 
-    def handle_response(self, resp_msg):
+    def handle_response(self, resp_msg, msglen):
         next_qry = None
         try:
             if resp_msg.get_rr_count(Message.SECTION_QUESTION) != 1:
@@ -169,7 +174,7 @@ class ResolverContext:
 
             # Look into the response
             if resp_msg.get_header_flag(Message.HEADERFLAG_AA):
-                next_qry = self.__handle_auth_answer(resp_msg)
+                next_qry = self.__handle_auth_answer(resp_msg, msglen)
             elif resp_msg.get_rcode() == Rcode.NOERROR() and \
                     (not resp_msg.get_header_flag(Message.HEADERFLAG_AA)):
                 authorities = resp_msg.get_section(Message.SECTION_AUTHORITY)
@@ -181,7 +186,8 @@ class ResolverContext:
                         if cmp_reln != NameComparisonResult.SUBDOMAIN:
                             raise InternalLame('lame server: ' +
                                                'delegation not for subdomain')
-                        ns_addr = self.__handle_referral(resp_msg, ns_rrset)
+                        ns_addr = self.__handle_referral(resp_msg, ns_rrset,
+                                                         msglen)
                         if ns_addr is not None:
                             next_qry = ResQuery(self, self.__qid, ns_addr)
                         break
@@ -195,13 +201,17 @@ class ResolverContext:
                 next_qry = ResQuery(self, self.__qid, ns_addr)
             else:
                 self.dprint(LOGLVL_DEBUG1, 'no usable server')
+                fail_rrset = RRset(self.__qname, self.__qclass, self.__qtype,
+                                   RRTTL(self.SERVFAIL_TTL))
+                self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER,
+                                 Rcode.SERVFAIL())
         if next_qry is None and not self.__fetch_queries and \
                 self.__parent is not None:
             # This context is completed, resume the parent
             next_qry = self.__parent.__resume(self)
         return next_qry
 
-    def __handle_auth_answer(self, resp_msg):
+    def __handle_auth_answer(self, resp_msg, msglen):
         '''Subroutine of handle_response, handling an authoritative answer.'''
         if (resp_msg.get_rcode() == Rcode.NOERROR() or
             resp_msg.get_rcode() == Rcode.NXDOMAIN()) and \
@@ -210,7 +220,8 @@ class ResolverContext:
             for answer_rrset in resp_msg.get_section(Message.SECTION_ANSWER):
                 if answer_rrset.get_name() == self.__qname and \
                         answer_rrset.get_class() == self.__qclass:
-                    self.__cache.add(answer_rrset, SimpleDNSCache.TRUST_ANSWER)
+                    self.__cache.add(answer_rrset, SimpleDNSCache.TRUST_ANSWER,
+                                     msglen)
                     if any_query or answer_rrset.get_type() == self.__qtype:
                         self.dprint(LOGLVL_DEBUG10, 'got a response: %s',
                                     [answer_rrset])
@@ -247,13 +258,13 @@ class ResolverContext:
         elif resp_msg.get_rcode() == Rcode.NXDOMAIN() or \
                 (resp_msg.get_rcode() == Rcode.NOERROR() and
                  resp_msg.get_rr_count(Message.SECTION_ANSWER) == 0):
-            self.__handle_negative_answer(resp_msg)
+            self.__handle_negative_answer(resp_msg, msglen)
             return None
 
         raise InternalLame('unexpected answer rcode=' +
                            str(resp_msg.get_rcode()))
 
-    def __handle_negative_answer(self, resp_msg):
+    def __handle_negative_answer(self, resp_msg, msglen):
         rcode = resp_msg.get_rcode()
         if rcode == Rcode.NOERROR():
             rcode = Rcode.NXRRSET()
@@ -268,6 +279,8 @@ class ResolverContext:
                     self.dprint(LOGLVL_INFO, 'bogus SOA name for negative: %s',
                                 [auth_rrset.get_name()])
                     continue
+                self.__cache.add(auth_rrset, SimpleDNSCache.TRUST_ANSWER,
+                                 msglen)
                 neg_ttl = get_soa_ttl(auth_rrset.get_rdata()[0])
                 self.dprint(LOGLVL_DEBUG10,
                             'got a negative response, code=%s, negTTL=%s',
@@ -280,11 +293,11 @@ class ResolverContext:
             neg_ttl = self.DEFAULT_NEGATIVE_TTL
         neg_rrset = RRset(self.__qname, self.__qclass, self.__qtype,
                           RRTTL(neg_ttl))
-        self.__cache.add(neg_rrset, SimpleDNSCache.TRUST_ANSWER, rcode)
+        self.__cache.add(neg_rrset, SimpleDNSCache.TRUST_ANSWER, 0, rcode)
 
-    def __handle_referral(self, resp_msg, ns_rrset):
+    def __handle_referral(self, resp_msg, ns_rrset,msglen):
         self.dprint(LOGLVL_DEBUG10, 'got a referral: %s', [ns_rrset])
-        self.__cache.add(ns_rrset, SimpleDNSCache.TRUST_GLUE)
+        self.__cache.add(ns_rrset, SimpleDNSCache.TRUST_GLUE, msglen)
         additionals = resp_msg.get_section(Message.SECTION_ADDITIONAL)
         for ad_rrset in additionals:
             cmp_reln = \
@@ -595,7 +608,7 @@ class FileResolver:
             except KeyError as ex:
                 ctx.dprint(LOGLVL_INFO, 'bug: missing context')
                 raise ex
-            res_qry = ctx.handle_response(self.__msg)
+            res_qry = ctx.handle_response(self.__msg, len(pkt))
             next_queries = [] if res_qry is None else [res_qry]
             next_queries.extend(ctx.get_aux_queries())
             for res_qry in next_queries:
