@@ -65,6 +65,7 @@ class ResQuery:
 class ResolverContext:
     CNAME_LOOP_MAX = 15
     FETCH_DEPTH_MAX = 8
+    DEFAULT_NEGATIVE_TTL = 10800 # used when SOA is missing, value from BIND 9.
 
     def __init__(self, sock4, sock6, renderer, qname, qclass, qtype, cache,
                  query_table, nest=0):
@@ -256,6 +257,7 @@ class ResolverContext:
         rcode = resp_msg.get_rcode()
         if rcode == Rcode.NOERROR():
             rcode = Rcode.NXRRSET()
+        neg_ttl = None
         for auth_rrset in resp_msg.get_section(Message.SECTION_AUTHORITY):
             if auth_rrset.get_class() == self.__qclass and \
                     auth_rrset.get_type() == RRType.SOA():
@@ -270,14 +272,15 @@ class ResolverContext:
                 self.dprint(LOGLVL_DEBUG10,
                             'got a negative response, code=%s, negTTL=%s',
                             [rcode, neg_ttl])
-                neg_rrset = RRset(self.__qname, self.__qclass, self.__qtype,
-                                  RRTTL(neg_ttl))
-                self.__cache.add(neg_rrset, SimpleDNSCache.TRUST_ANSWER, rcode)
+                break      # Ignore any other records once we find SOA
 
-                # Ignore any other records once we find SOA
-                return
-        self.dprint(LOGLVL_INFO,
-                    'unexpected negative answer (missing SOA)')
+        if neg_ttl is None:
+            self.dprint(LOGLVL_INFO, 'negative answer, code=%s, (missing SOA)',
+                        [rcode])
+            neg_ttl = self.DEFAULT_NEGATIVE_TTL
+        neg_rrset = RRset(self.__qname, self.__qclass, self.__qtype,
+                          RRTTL(neg_ttl))
+        self.__cache.add(neg_rrset, SimpleDNSCache.TRUST_ANSWER, rcode)
 
     def __handle_referral(self, resp_msg, ns_rrset):
         self.dprint(LOGLVL_DEBUG10, 'got a referral: %s', [ns_rrset])
@@ -548,7 +551,7 @@ class FileResolver:
                                qname, qclass, qtype, self.__cache,
                                self.__query_table)
 
-    def start(self):
+    def run(self):
         while self.__check_status():
             expire = self.__timerq.get_current_expiration()
             if expire is not None:
@@ -646,4 +649,4 @@ if __name__ == '__main__':
 
     if len(args) == 0:
         parser.error('query file is missing')
-    FileResolver(args[0], options).start()
+    FileResolver(args[0], options).run()
