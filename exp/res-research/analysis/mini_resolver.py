@@ -143,13 +143,50 @@ class ResolverContext:
         self.dprint(LOGLVL_DEBUG5, 'query timeout')
         cur_ns_addr = self.__try_next_server()
         if cur_ns_addr is not None:
-            return self.__qid, cur_ns_addr
+            return ResQuery(self, self.__qid, cur_ns_addr)
         self.dprint(LOGLVL_DEBUG1, 'no reachable server')
         fail_rrset = RRset(self.__qname, self.__qclass, self.__qtype,
                            RRTTL(self.SERVFAIL_TTL))
         self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER, 0,
                          Rcode.SERVFAIL())
-        return None, None
+
+        if not self.__fetch_queries and self.__parent is not None:
+            # This context is completed, resume the parent
+            resumed, next_qry = self.__parent.__resume(self)
+            if resumed and next_qry is None:
+                self.__parent.dprint(LOGLVL_DEBUG1,
+                                     'resumed context failed after timeout')
+                fail_rrset = RRset(self.__parent.__qname,
+                                   self.__parent.__qclass,
+                                   self.__parent.__qtype,
+                                   RRTTL(self.SERVFAIL_TTL))
+                self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER, 0,
+                                 Rcode.SERVFAIL())
+            else:
+                return next_qry
+        return None
+
+    def __resume_parents(self):
+        ctx = self
+        while not ctx.__fetch_queries and ctx.__parent is not None:
+            resumed, next_qry = ctx.__parent.__resume(ctx)
+            if next_qry is not None:
+                return next_qry
+            if not resumed:
+                # this parent is still waiting for some queries.  We're done
+                # for now.
+                return None
+
+            # There's no more hope for completing the parent context.
+            # Cache SERVFAIL.
+            ctx.__parent.dprint(LOGLVL_DEBUG1, 'resumed context failed')
+            fail_rrset = RRset(ctx.__parent.__qname, ctx.__parent.__qclass,
+                               ctx.__parent.__qtype, RRTTL(self.SERVFAIL_TTL))
+            self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER, 0,
+                             Rcode.SERVFAIL())
+            # Recursively check grand parents
+            ctx = ctx.__parent
+        return None
 
     def handle_response(self, resp_msg, msglen):
         next_qry = None
@@ -179,9 +216,15 @@ class ResolverContext:
                 raise InternalLame('lame server')
 
             # Look into the response
-            if resp_msg.get_header_flag(Message.HEADERFLAG_AA):
+            if resp_msg.get_header_flag(Message.HEADERFLAG_AA) or \
+                    self.__is_cname_response(resp_msg):
                 next_qry = self.__handle_auth_answer(resp_msg, msglen)
                 self.__handle_auth_othersections(resp_msg)
+            elif (resp_msg.get_rr_count(Message.SECTION_ANSWER) == 0 and
+                  resp_msg.get_rr_count(Message.SECTION_AUTHORITY) == 0):
+                # Some servers return a negative response without setting AA.
+                # (Leave next_qry None)
+                self.__handle_negative_answer(resp_msg, msglen)
             elif resp_msg.get_rcode() == Rcode.NOERROR() and \
                     (not resp_msg.get_header_flag(Message.HEADERFLAG_AA)):
                 authorities = resp_msg.get_section(Message.SECTION_AUTHORITY)
@@ -217,11 +260,11 @@ class ResolverContext:
         if next_qry is None and not self.__fetch_queries and \
                 self.__parent is not None:
             # This context is completed, resume the parent
-            next_qry = self.__parent.__resume(self)
-            if next_qry is None:
+            resumed, next_qry = self.__parent.__resume(self)
+            if resumed and next_qry is None:
                 # There's no more hope for completing the parent context.
                 # Cache SERVFAIL.
-                self.__parent.dprint(LOGLVL_INFO, 'resumed context failed')
+                self.__parent.dprint(LOGLVL_DEBUG1, 'resumed context failed')
                 fail_rrset = RRset(self.__parent.__qname,
                                    self.__parent.__qclass,
                                    self.__parent.__qtype,
@@ -230,18 +273,33 @@ class ResolverContext:
                                  Rcode.SERVFAIL())
         return next_qry
 
+    def __is_cname_response(self, resp_msg):
+        # From BIND 9: A BIND8 server could return a non-authoritative
+        # answer when a CNAME is followed.  We should treat it as a valid
+        # answer.
+        # This is real; for example some amazon.com servers behave that way.
+        # For simplicity we just check the first answer RR.
+        if (resp_msg.get_rcode() == Rcode.NOERROR() and
+            resp_msg.get_rr_count(Message.SECTION_ANSWER) > 0 and
+            resp_msg.get_section(Message.SECTION_ANSWER)[0].get_type() ==
+            RRType.CNAME()):
+            return True
+        return False
+
     def __handle_auth_answer(self, resp_msg, msglen):
         '''Subroutine of handle_response, handling an authoritative answer.'''
         if (resp_msg.get_rcode() == Rcode.NOERROR() or
             resp_msg.get_rcode() == Rcode.NXDOMAIN()) and \
             resp_msg.get_rr_count(Message.SECTION_ANSWER) > 0:
             any_query = resp_msg.get_question()[0].get_type() == RRType.ANY()
+            found = False
             for answer_rrset in resp_msg.get_section(Message.SECTION_ANSWER):
-                if answer_rrset.get_name() == self.__qname and \
-                        answer_rrset.get_class() == self.__qclass:
+                if (answer_rrset.get_name() == self.__qname and
+                    answer_rrset.get_class() == self.__qclass):
                     self.__cache.add(answer_rrset, SimpleDNSCache.TRUST_ANSWER,
                                      msglen)
                     if any_query or answer_rrset.get_type() == self.__qtype:
+                        found = True
                         self.dprint(LOGLVL_DEBUG10, 'got a response: %s',
                                     [answer_rrset])
                         if not any_query:
@@ -272,8 +330,9 @@ class ResolverContext:
                         if ns_addr is not None:
                             return ResQuery(cname_ctx, qid, ns_addr)
                         return None
-            if any_query:
+            if found:
                 return None
+            raise InternalLame('no answer found in answer section')
         elif resp_msg.get_rcode() == Rcode.NXDOMAIN() or \
                 (resp_msg.get_rcode() == Rcode.NOERROR() and
                  resp_msg.get_rr_count(Message.SECTION_ANSWER) == 0):
@@ -459,6 +518,11 @@ class ResolverContext:
             self.__fetch_queries.add(query)
 
     def __resume(self, fetch_ctx):
+        # Resume the parent if the current context completes the last
+        # outstanding fetch query.
+        # Return (bool, ResQuery): boolean is true/false if the parent is
+        #   actually resumed/still suspended, respectively; ResQuery is not
+        #   None iff the parrent is resumed and restarts a new query.
         for qry in self.__fetch_queries:
             if qry.res_ctx == fetch_ctx:
                 self.__fetch_queries.remove(qry)
@@ -469,11 +533,11 @@ class ResolverContext:
                         self.__find_ns_addrs(self.__cur_nameservers, False)
                     ns_addr = self.__try_next_server()
                     if ns_addr is not None:
-                        return ResQuery(self, self.__qid, ns_addr)
+                        return True, ResQuery(self, self.__qid, ns_addr)
                     else:
-                        return None
+                        return True, None
                 else:
-                    return None
+                    return False, None # still waiting for some queries
         raise MiniResolverException('unexpected case: fetch query not found')
 
 class TimerQueue:
@@ -695,17 +759,21 @@ class FileResolver:
 
     def _qry_timeout(self, res_qry):
         del self.__query_table[(res_qry.qid, res_qry.ns_addr)]
-        (qid, addr) = res_qry.res_ctx.query_timeout(res_qry.ns_addr)
-        if addr is not None:
-            next_res_qry = ResQuery(res_qry.res_ctx, qid, addr)
-            self.__query_table[(qid, addr)] = next_res_qry
-            timer = QueryTimer(self, next_res_qry)
-            self.__timerq.add(next_res_qry.expire, timer)
-        else:
+        next_res_qry = res_qry.res_ctx.query_timeout(res_qry.ns_addr)
+        if next_res_qry is None or next_res_qry.res_ctx != res_qry.res_ctx:
+            # the current context is completed.  remove it from the queue.
             res_qry.res_ctx.dprint(LOGLVL_DEBUG1,
                                    'resolution timeout, remaining ctx=%s',
                                    [len(self.__res_ctxs)])
             self.__res_ctxs.remove(res_qry.res_ctx)
+        if next_res_qry is not None:
+            if next_res_qry.res_ctx != res_qry.res_ctx:
+                # context has been replaced.  push it to the queue
+                self.__res_ctxs.add(next_res_qry.res_ctx)
+            self.__query_table[(next_res_qry.qid, next_res_qry.ns_addr)] = \
+                next_res_qry
+            timer = QueryTimer(self, next_res_qry)
+            self.__timerq.add(next_res_qry.expire, timer)
 
 def get_option_parser():
     parser = OptionParser(usage='usage: %prog [options] query_file')
