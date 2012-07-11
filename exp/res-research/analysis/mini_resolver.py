@@ -356,7 +356,7 @@ class ResolverContext:
                           RRTTL(neg_ttl))
         self.__cache.add(neg_rrset, SimpleDNSCache.TRUST_ANSWER, 0, rcode)
 
-    def __handle_referral(self, resp_msg, ns_rrset,msglen):
+    def __handle_referral(self, resp_msg, ns_rrset, msglen):
         self.dprint(LOGLVL_DEBUG10, 'got a referral: %s', [ns_rrset])
         self.__cache.add(ns_rrset, SimpleDNSCache.TRUST_GLUE, msglen)
         additionals = resp_msg.get_section(Message.SECTION_ADDITIONAL)
@@ -370,7 +370,7 @@ class ResolverContext:
                 continue
             if ad_rrset.get_type() == RRType.A() or \
                     ad_rrset.get_type() == RRType.AAAA():
-                self.dprint(LOGLVL_DEBUG10, 'got glue for referral:%s',
+                self.dprint(LOGLVL_DEBUG10, 'got glue for referral: %s',
                             [ad_rrset])
                 self.__cache.add(ad_rrset, SimpleDNSCache.TRUST_GLUE)
         self.__cur_zone = ns_rrset.get_name()
@@ -431,31 +431,35 @@ class ResolverContext:
     def __find_ns_addrs(self, nameservers, fetch_if_notfound=True):
         v4_addrs = []
         v6_addrs = []
+        rcode4 = None
+        rcode6 = None
         ns_names = []
         ns_class = nameservers.get_class()
         for ns in nameservers.get_rdata():
             ns_name = Name(ns.to_text())
             ns_names.append(ns_name)
-            rcode4, rrset4 = \
-                self.__cache.find(ns_name, ns_class, RRType.A(),
-                                  SimpleDNSCache.FIND_ALLOW_NOANSWER)
-            if rrset4 is not None:
-                for rdata in rrset4.get_rdata():
-                    v4_addrs.append((rdata.to_text(), DNS_PORT))
-            rcode6, rrset6 = \
-                self.__cache.find(ns_name, ns_class, RRType.AAAA(),
-                                  SimpleDNSCache.FIND_ALLOW_NOANSWER)
-            if rrset6 is not None:
-                for rdata in rrset6.get_rdata():
-                    # specify 0 for flowinfo and scopeid unconditionally
-                    v6_addrs.append((rdata.to_text(), DNS_PORT, 0, 0))
+            if self.__sock4:
+                rcode4, rrset4 = \
+                    self.__cache.find(ns_name, ns_class, RRType.A(),
+                                      SimpleDNSCache.FIND_ALLOW_NOANSWER)
+                if rrset4 is not None:
+                    for rdata in rrset4.get_rdata():
+                        v4_addrs.append((rdata.to_text(), DNS_PORT))
+            if self.__sock6:
+                rcode6, rrset6 = \
+                    self.__cache.find(ns_name, ns_class, RRType.AAAA(),
+                                      SimpleDNSCache.FIND_ALLOW_NOANSWER)
+                if rrset6 is not None:
+                    for rdata in rrset6.get_rdata():
+                        # specify 0 for flowinfo and scopeid unconditionally
+                        v6_addrs.append((rdata.to_text(), DNS_PORT, 0, 0))
 
         # If necessary and required, invoke NS-fetch queries.  If rcodeN is not
         # None, we know the corresponding AAAA/A is not available (either
         # due to server failure or because records don't exist), in which case
         # we don't bother to fetch them.
-        if fetch_if_notfound and not v4_addrs and not v6_addrs and \
-                rcode4 is None and rcode6 is None:
+        if (fetch_if_notfound and not v4_addrs and not v6_addrs and
+            rcode4 is None and rcode6 is None):
             self.dprint(LOGLVL_DEBUG5,
                         'no address found for any nameservers')
             if self.__nest > self.FETCH_DEPTH_MAX:
