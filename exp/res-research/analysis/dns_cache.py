@@ -115,16 +115,6 @@ class SimpleDNSCache:
 
     def find(self, name, rrclass, rrtype, options=FIND_DEFAULT):
         key = (name, rrclass)
-        if key in self.__table and isinstance(self.__table[key], CacheEntry):
-            # the name doesn't exist; the dict value is its negative TTL.
-            # lazy shortcut: we assume NXDOMAIN is always authoritative,
-            # skipping trust level check
-            rcode = Rcode(self.__table[key].rcode)
-            if (options & self.FIND_ALLOW_NEGATIVE) != 0:
-                return rcode, RRset(name, rrclass, rrtype,
-                                    RRTTL(self.__table[key].ttl))
-            else:
-                return rcode, None
         rdata_map = self.__table.get((name, rrclass))
         rcode, rrset, trust = self.__find_type(name, rrclass, rrtype,
                                                rdata_map, options)
@@ -139,6 +129,18 @@ class SimpleDNSCache:
                 (trust is None or trust_cname < trust)):
                 return rcode_cname, rrset_cname
         return rcode, rrset
+
+    def __find_nxdomain_dummy(self):
+        if key in self.__table and isinstance(self.__table[key], CacheEntry):
+            # the name doesn't exist.
+            # lazy shortcut: we assume NXDOMAIN is always authoritative,
+            # skipping trust level check
+            rcode = Rcode(self.__table[key].rcode)
+            if (options & self.FIND_ALLOW_NEGATIVE) != 0:
+                return rcode, RRset(name, rrclass, rrtype,
+                                    RRTTL(self.__table[key].ttl))
+            else:
+                return rcode, None
 
     def __find_type(self, name, rrclass, type, rdata_map, options):
         '''A subroutine of find, finding an RRset of a given type.'''
@@ -189,16 +191,14 @@ class SimpleDNSCache:
         return rcode, rrsets
 
     def add(self, rrset, trust=TRUST_LOCAL, msglen=0, rcode=Rcode.NOERROR()):
+        '''Add a new cache item.
+
+        Note: this cache always handles cached data per RR type; even if
+        NXDOMAIN is type independent, it's still specific to the associated
+        type within this cache.
+
+        '''
         key = (rrset.get_name(), rrset.get_class())
-        if rcode == Rcode.NXDOMAIN():
-            # Special case for NXDOMAIN: the table consists of a single cache
-            # entry.
-            self.__table[key] = CacheEntry(rrset.get_ttl().get_value(), [],
-                                           trust, msglen, rcode)
-            return
-        elif key in self.__table and isinstance(self.__table[key], CacheEntry):
-            # Overriding a previously-NXDOMAIN cache entry
-            del self.__table[key]
         new_entry = CacheEntry(rrset.get_ttl().get_value(), rrset.get_rdata(),
                                trust, msglen, rcode)
         if not key in self.__table:
@@ -241,11 +241,6 @@ class SimpleDNSCache:
         for key, entry in self.__table.items():
             name = key[0]
             rrclass = key[1]
-            if isinstance(entry, CacheEntry):
-                f.write(';; [%s, TTL=%d, msglen=%d] %s/%s\n' %
-                        (str(Rcode(entry.rcode)), entry.ttl, entry.msglen,
-                         str(name), str(rrclass)))
-                continue
             rdata_map = entry
             for rrtype, entries in rdata_map.items():
                 for entry in entries:
@@ -271,21 +266,18 @@ class SimpleDNSCache:
           <domain name (wire)>
           <RR class (numeric, wire)>
           <# of cache entries, 2 bytes>
-        If #-of-entries is 0:
-          <Rcode value, 1 byte><TTL value, 4 bytes><msglen, 2 bytes>
-          <trust, 1 byte>
-        Else: sequence of serialized cache entries.  Each of which is:
-          <RR type value, wire>
-          <# of cache entries of the type, 1 byte>
-          sequence of cache entries of the type, each of which is:
-            <RCODE value, 1 byte>
-            <TTL, 4 bytes>
-            <msglen, 2 bytes>
-            <trust, 1 byte>
-            <# of RDATAs, 2 bytes>
-            sequence of RDATA, each of which is:
-              <RDATA length, 2 bytes>
-              <RDATA, wire>
+          Sequence of serialized cache entries.  Each of which is:
+            <RR type value, wire>
+            <# of cache entries of the type, 1 byte>
+            Sequence of cache entries of the type, each of which is:
+              <RCODE value, 1 byte>
+              <TTL, 4 bytes>
+              <msglen, 2 bytes>
+              <trust, 1 byte>
+              <# of RDATAs, 2 bytes>
+              sequence of RDATA, each of which is:
+                <RDATA length, 2 bytes>
+                <RDATA, wire>
 
         '''
         for key, entry in self.__table.items():
@@ -294,15 +286,6 @@ class SimpleDNSCache:
             f.write(struct.pack('B', name.get_length()))
             f.write(name.to_wire(b''))
             f.write(rrclass.to_wire(b''))
-
-            if isinstance(entry, CacheEntry):
-                data = struct.pack('H', 0) # #-of-entries is 0
-                data += struct.pack('B', entry.rcode)
-                data += struct.pack('I', entry.ttl)
-                data += struct.pack('H', entry.msglen)
-                data += struct.pack('B', entry.trust)
-                f.write(data)
-                continue
 
             rdata_map = entry
             data = struct.pack('H', len(rdata_map)) # #-of-cache entries
@@ -338,14 +321,6 @@ class SimpleDNSCache:
             rrclass = RRClass(f.read(2))
             key = (name, rrclass)
             n_types = struct.unpack('H', f.read(2))[0]
-            if n_types == 0:
-                rcode = struct.unpack('B', f.read(1))[0]
-                ttl = struct.unpack('I', f.read(4))[0]
-                msglen = struct.unpack('H', f.read(2))[0]
-                trust = struct.unpack('B', f.read(1))[0]
-                entry = CacheEntry(ttl, [], trust, msglen, Rcode(rcode))
-                self.__table[key] = entry
-                continue
 
             self.__table[key] = {}
             while n_types > 0:
