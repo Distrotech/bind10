@@ -126,28 +126,67 @@ class SimpleDNSCache:
             else:
                 return rcode, None
         rdata_map = self.__table.get((name, rrclass))
-        search_types = [rrtype]
-        if (options & self.FIND_ALLOW_CNAME) != 0 and \
-                rrtype != RRType.CNAME():
-            search_types.append(RRType.CNAME())
-        for type in search_types:
-            if rdata_map is not None and type in rdata_map:
-                entries = rdata_map[type]
-                entry = entries[0]
-                if (options & self.FIND_ALLOW_NOANSWER) == 0:
-                    entry = self.__find_cache_entry(entries, self.TRUST_ANSWER)
-                if entry is None:
-                    return None, None
-                rcode = Rcode(entry.rcode)
-                (ttl, rdata_list) = (entry.ttl, entry.rdata_list)
-                rrset = RRset(name, rrclass, type, RRTTL(ttl))
-                for rdata in rdata_list:
-                    rrset.add_rdata(rdata)
-                if rrset.get_rdata_count() == 0 and \
-                        (options & self.FIND_ALLOW_NEGATIVE) == 0:
-                    return rcode, None
-                return rcode, rrset
-        return None, None
+        rcode, rrset, trust = self.__find_type(name, rrclass, rrtype,
+                                               rdata_map, options)
+        if ((options & self.FIND_ALLOW_CNAME) != 0 and
+            rrtype != RRType.CNAME()):
+            # If CNAME is allowed, see if there is one.  If there is and it
+            # has a higher trust level, we use it.
+            rcode_cname, rrset_cname, trust_cname = \
+                self.__find_type(name, rrclass, RRType.CNAME(), rdata_map,
+                                 options)
+            if (rrset_cname is not None and
+                (trust is None or trust_cname < trust)):
+                return rcode_cname, rrset_cname
+        return rcode, rrset
+
+    def __find_type(self, name, rrclass, type, rdata_map, options):
+        '''A subroutine of find, finding an RRset of a given type.'''
+        if rdata_map is not None and type in rdata_map:
+            entries = rdata_map[type]
+            entry = entries[0]
+            if (options & self.FIND_ALLOW_NOANSWER) == 0:
+                entry = self.__find_cache_entry(entries, self.TRUST_ANSWER)
+            if entry is None:
+                return None, None, None
+            rcode = Rcode(entry.rcode)
+            (ttl, rdata_list) = (entry.ttl, entry.rdata_list)
+            rrset = RRset(name, rrclass, type, RRTTL(ttl))
+            for rdata in rdata_list:
+                rrset.add_rdata(rdata)
+            if rrset.get_rdata_count() == 0 and \
+                    (options & self.FIND_ALLOW_NEGATIVE) == 0:
+                return rcode, None, None
+            return rcode, rrset, entry.trust
+        return None, None, None
+
+    def find_all(self, name, rrclass, options=FIND_DEFAULT):
+        key = (name, rrclass)
+        if key in self.__table and isinstance(self.__table[key], CacheEntry):
+            rcode = Rcode(self.__table[key].rcode)
+            if (options & self.FIND_ALLOW_NEGATIVE) != 0:
+                return rcode, RRset(name, rrclass, RRType.ANY(),
+                                    RRTTL(self.__table[key].ttl))
+            else:
+                return rcode, None
+        rdata_map = self.__table.get((name, rrclass))
+        rrsets = []
+        for rrtype, entries in rdata_map.items():
+            entry = entries[0]
+            if (options & self.FIND_ALLOW_NOANSWER) == 0:
+                entry = self.__find_cache_entry(entries, self.TRUST_ANSWER)
+            if entry is None:
+                continue
+            rcode = Rcode(entry.rcode)
+            (ttl, rdata_list) = (entry.ttl, entry.rdata_list)
+            if len(rdata_list) == 0: # skip empty type
+                continue
+            rrset = RRset(name, rrclass, rrtype, RRTTL(ttl))
+            for rdata in rdata_list:
+                rrset.add_rdata(rdata)
+            rrsets.append(rrset)
+        rcode = Rcode.NOERROR() if len(rrsets) > 0 else Rcode.NXRRSET()
+        return rcode, rrsets
 
     def add(self, rrset, trust=TRUST_LOCAL, msglen=0, rcode=Rcode.NOERROR()):
         key = (rrset.get_name(), rrset.get_class())
