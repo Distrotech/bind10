@@ -182,7 +182,7 @@ class SimpleDNSCache:
 
     def __find_cache_entry(self, entries, trust, exact=False):
         for entry in entries:
-            if entry.trust == trust or (not exact and entry.trust < trus):
+            if entry.trust == trust or (not exact and entry.trust < trust):
                 return entry
         return None
 
