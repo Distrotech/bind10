@@ -20,6 +20,9 @@ import sys
 from isc.dns import *
 from optparse import OptionParser
 
+# ssss.mmm ip_addr#port qname qclass qtype
+RE_LOGLINE = re.compile(r'^([\d\.]*) ([\d\.]*)#\d+ (\S*) (\S*) (\S*)$')
+
 queries = {}
 
 def convert_rrtype(type_txt):
@@ -35,13 +38,11 @@ def convert_rrtype(type_txt):
     return type_txt
 
 def parse_logfile(log_file):
-    # ssss.mmm ip_addr#port qname qclass qtype
-    re_logline = re.compile(r'^([\d\.]*) ([\d\.]*)#\d+ (\S*) (\S*) (\S*)$')
     n_queries = 0
     with open(log_file) as log:
         for log_line in log:
             n_queries += 1
-            m = re.match(re_logline, log_line)
+            m = re.match(RE_LOGLINE, log_line)
             if not m:
                 sys.stderr.write('unexpected line: ' + log_line)
                 continue
