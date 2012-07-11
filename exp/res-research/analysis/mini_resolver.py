@@ -149,44 +149,7 @@ class ResolverContext:
                            RRTTL(self.SERVFAIL_TTL))
         self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER, 0,
                          Rcode.SERVFAIL())
-
-        if not self.__fetch_queries and self.__parent is not None:
-            # This context is completed, resume the parent
-            resumed, next_qry = self.__parent.__resume(self)
-            if resumed and next_qry is None:
-                self.__parent.dprint(LOGLVL_DEBUG1,
-                                     'resumed context failed after timeout')
-                fail_rrset = RRset(self.__parent.__qname,
-                                   self.__parent.__qclass,
-                                   self.__parent.__qtype,
-                                   RRTTL(self.SERVFAIL_TTL))
-                self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER, 0,
-                                 Rcode.SERVFAIL())
-            else:
-                return next_qry
-        return None
-
-    def __resume_parents(self):
-        ctx = self
-        while not ctx.__fetch_queries and ctx.__parent is not None:
-            resumed, next_qry = ctx.__parent.__resume(ctx)
-            if next_qry is not None:
-                return next_qry
-            if not resumed:
-                # this parent is still waiting for some queries.  We're done
-                # for now.
-                return None
-
-            # There's no more hope for completing the parent context.
-            # Cache SERVFAIL.
-            ctx.__parent.dprint(LOGLVL_DEBUG1, 'resumed context failed')
-            fail_rrset = RRset(ctx.__parent.__qname, ctx.__parent.__qclass,
-                               ctx.__parent.__qtype, RRTTL(self.SERVFAIL_TTL))
-            self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER, 0,
-                             Rcode.SERVFAIL())
-            # Recursively check grand parents
-            ctx = ctx.__parent
-        return None
+        return self.__resume_parents()
 
     def handle_response(self, resp_msg, msglen):
         next_qry = None
@@ -216,18 +179,21 @@ class ResolverContext:
                 raise InternalLame('lame server')
 
             # Look into the response
-            if resp_msg.get_header_flag(Message.HEADERFLAG_AA) or \
-                    self.__is_cname_response(resp_msg):
+            if (resp_msg.get_header_flag(Message.HEADERFLAG_AA) or
+                self.__is_cname_response(resp_msg)):
                 next_qry = self.__handle_auth_answer(resp_msg, msglen)
                 self.__handle_auth_othersections(resp_msg)
             elif (resp_msg.get_rr_count(Message.SECTION_ANSWER) == 0 and
-                  resp_msg.get_rr_count(Message.SECTION_AUTHORITY) == 0):
+                  resp_msg.get_rr_count(Message.SECTION_AUTHORITY) == 0 and
+                  (resp_msg.get_rcode() == Rcode.NOERROR() or
+                   resp_msg.get_rcode() == Rcode.NXDOMAIN())):
                 # Some servers return a negative response without setting AA.
                 # (Leave next_qry None)
                 self.__handle_negative_answer(resp_msg, msglen)
-            elif resp_msg.get_rcode() == Rcode.NOERROR() and \
-                    (not resp_msg.get_header_flag(Message.HEADERFLAG_AA)):
+            elif (resp_msg.get_rcode() == Rcode.NOERROR() and
+                  not resp_msg.get_header_flag(Message.HEADERFLAG_AA)):
                 authorities = resp_msg.get_section(Message.SECTION_AUTHORITY)
+                ns_name = None
                 for ns_rrset in authorities:
                     if ns_rrset.get_type() == RRType.NS():
                         ns_name =  ns_rrset.get_name()
@@ -243,6 +209,8 @@ class ResolverContext:
                         elif len(self.__fetch_queries) == 0:
                             raise InternalLame('no further recursion possible')
                         break
+                if ns_name is None:
+                    raise InternalLame('delegation with no NS')
             else:
                 raise InternalLame('lame server, rcode=' +
                                    str(resp_msg.get_rcode()))
@@ -257,20 +225,8 @@ class ResolverContext:
                                    RRTTL(self.SERVFAIL_TTL))
                 self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER, 0,
                                  Rcode.SERVFAIL())
-        if next_qry is None and not self.__fetch_queries and \
-                self.__parent is not None:
-            # This context is completed, resume the parent
-            resumed, next_qry = self.__parent.__resume(self)
-            if resumed and next_qry is None:
-                # There's no more hope for completing the parent context.
-                # Cache SERVFAIL.
-                self.__parent.dprint(LOGLVL_DEBUG1, 'resumed context failed')
-                fail_rrset = RRset(self.__parent.__qname,
-                                   self.__parent.__qclass,
-                                   self.__parent.__qtype,
-                                   RRTTL(self.SERVFAIL_TTL))
-                self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER, 0,
-                                 Rcode.SERVFAIL())
+        if next_qry is None:
+             next_qry = self.__resume_parents()
         return next_qry
 
     def __is_cname_response(self, resp_msg):
@@ -348,12 +304,17 @@ class ResolverContext:
             if auth_rrset.get_type() == RRType.NS():
                 ns_owner =  auth_rrset.get_name()
                 cmp_reln = ns_owner.compare(self.__cur_zone).get_relation()
-                if cmp_reln == NameComparisonResult.SUBDOMAIN or \
-                        cmp_reln == NameComparisonResult.EQUAL:
+                if (cmp_reln == NameComparisonResult.SUBDOMAIN or
+                    cmp_reln == NameComparisonResult.EQUAL):
                     self.__cache.add(auth_rrset,
                                      SimpleDNSCache.TRUST_AUTHAUTHORITY, 0)
                     for ns_rdata in auth_rrset.get_rdata():
-                        ns_names.append(Name(ns_rdata.to_text()))
+                        ns_name = Name(ns_rdata.to_text())
+                        cmp_reln = \
+                            ns_name.compare(self.__cur_zone).get_relation()
+                        if (cmp_reln == NameComparisonResult.SUBDOMAIN or
+                            cmp_reln == NameComparisonResult.EQUAL):
+                            ns_names.append(Name(ns_rdata.to_text()))
         for ad_rrset in resp_msg.get_section(Message.SECTION_ADDITIONAL):
             if ad_rrset.get_type() == RRType.A() or \
                     ad_rrset.get_type() == RRType.AAAA():
@@ -516,6 +477,28 @@ class ResolverContext:
             (qid, ns_addr) = res_ctx.start()
             query = ResQuery(res_ctx, qid, ns_addr)
             self.__fetch_queries.add(query)
+
+    def __resume_parents(self):
+        ctx = self
+        while not ctx.__fetch_queries and ctx.__parent is not None:
+            resumed, next_qry = ctx.__parent.__resume(ctx)
+            if next_qry is not None:
+                return next_qry
+            if not resumed:
+                # this parent is still waiting for some queries.  We're done
+                # for now.
+                return None
+
+            # There's no more hope for completing the parent context.
+            # Cache SERVFAIL.
+            ctx.__parent.dprint(LOGLVL_DEBUG1, 'resumed context failed')
+            fail_rrset = RRset(ctx.__parent.__qname, ctx.__parent.__qclass,
+                               ctx.__parent.__qtype, RRTTL(self.SERVFAIL_TTL))
+            self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER, 0,
+                             Rcode.SERVFAIL())
+            # Recursively check grand parents
+            ctx = ctx.__parent
+        return None
 
     def __resume(self, fetch_ctx):
         # Resume the parent if the current context completes the last
