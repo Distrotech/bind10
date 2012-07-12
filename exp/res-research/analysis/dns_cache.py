@@ -68,12 +68,14 @@ class CacheEntry:
 
     '''
 
-    def __init__(self, ttl, rdata_list, trust, msglen, rcode):
+    def __init__(self, ttl, rdata_list, trust, msglen, rcode, id):
         self.ttl = ttl
         self.rdata_list = rdata_list
         self.trust = trust
         self.msglen = msglen
         self.rcode = rcode.get_code()
+        self.id = id
+        self.time_updated = None # timestamp of 'creation' or 'update'
 
     def copy(self, other):
         self.ttl = other.ttl
@@ -81,6 +83,7 @@ class CacheEntry:
         self.trust = other.trust
         self.msglen = other.msglen
         self.rcode = other.rcode
+        self.id = other.id
 
 # Don't worry about cache expire; just record the RRs
 class SimpleDNSCache:
@@ -112,23 +115,25 @@ class SimpleDNSCache:
     def __init__(self):
         # top level cache table
         self.__table = {}
+        self.__counter = 0      # unique ID for CacheEntry's
+        self.__entries = {}     # ID => CacheEntry
 
     def find(self, name, rrclass, rrtype, options=FIND_DEFAULT):
         key = (name, rrclass)
         rdata_map = self.__table.get((name, rrclass))
-        rcode, rrset, trust = self.__find_type(name, rrclass, rrtype,
-                                               rdata_map, options)
+        rcode, rrset, trust, id = self.__find_type(name, rrclass, rrtype,
+                                                   rdata_map, options)
         if ((options & self.FIND_ALLOW_CNAME) != 0 and
             rrtype != RRType.CNAME()):
             # If CNAME is allowed, see if there is one.  If there is and it
             # has a higher trust level, we use it.
-            rcode_cname, rrset_cname, trust_cname = \
+            rcode_cname, rrset_cname, trust_cname, id_cname = \
                 self.__find_type(name, rrclass, RRType.CNAME(), rdata_map,
                                  options)
             if (rrset_cname is not None and
                 (trust is None or trust_cname < trust)):
-                return rcode_cname, rrset_cname
-        return rcode, rrset
+                return rcode_cname, rrset_cname, id_cname
+        return rcode, rrset, id
 
     def __find_nxdomain_dummy(self):
         if key in self.__table and isinstance(self.__table[key], CacheEntry):
@@ -150,7 +155,7 @@ class SimpleDNSCache:
             if (options & self.FIND_ALLOW_NOANSWER) == 0:
                 entry = self.__find_cache_entry(entries, self.TRUST_ANSWER)
             if entry is None:
-                return None, None, None
+                return None, None, None, None
             rcode = Rcode(entry.rcode)
             (ttl, rdata_list) = (entry.ttl, entry.rdata_list)
             rrset = RRset(name, rrclass, type, RRTTL(ttl))
@@ -158,12 +163,10 @@ class SimpleDNSCache:
                 rrset.add_rdata(rdata)
             if rrset.get_rdata_count() == 0 and \
                     (options & self.FIND_ALLOW_NEGATIVE) == 0:
-                return rcode, None, None
-            return rcode, rrset, entry.trust
-        return None, None, None
+                return rcode, None, None, None
+            return rcode, rrset, entry.trust, entry.id
+        return None, None, None, None
 
-    def find_all(self, name, rrclass, options=FIND_DEFAULT):
-        key = (name, rrclass)
         if key in self.__table and isinstance(self.__table[key], CacheEntry):
             rcode = Rcode(self.__table[key].rcode)
             if (options & self.FIND_ALLOW_NEGATIVE) != 0:
@@ -171,6 +174,8 @@ class SimpleDNSCache:
                                     RRTTL(self.__table[key].ttl))
             else:
                 return rcode, None
+
+    def find_all(self, name, rrclass, options=FIND_DEFAULT):
         rdata_map = self.__table.get((name, rrclass))
         rrsets = []
         for rrtype, entries in rdata_map.items():
@@ -180,15 +185,35 @@ class SimpleDNSCache:
             if entry is None:
                 continue
             rcode = Rcode(entry.rcode)
+
+            # If there's at least one NXDOMAIN result, this cancels all others.
+            if rcode == Rcode.NXDOMAIN():
+                nx_rrset = RRset(name, rrclass, RRType.ANY(),
+                                 RRTTL(entry.ttl))
+                return rcode, [(nx_rrset, entry.id)]
+
             (ttl, rdata_list) = (entry.ttl, entry.rdata_list)
             if len(rdata_list) == 0: # skip empty type
                 continue
             rrset = RRset(name, rrclass, rrtype, RRTTL(ttl))
             for rdata in rdata_list:
                 rrset.add_rdata(rdata)
-            rrsets.append(rrset)
+            rrsets.append((rrset, entry.id))
         rcode = Rcode.NOERROR() if len(rrsets) > 0 else Rcode.NXRRSET()
         return rcode, rrsets
+
+    def update(self, entry_id, now):
+        '''Check the specified cache entry is still "alive" wrt TTL.
+
+        If not, update its update/creation time to "now".
+        Return True if the timestamp is updated; False otherwise.
+
+        '''
+        entry = self.__entries[entry_id]
+        if entry.time_updated is None or entry.time_updated + entry.ttl < now:
+            entry.time_updated = now
+            return True
+        return False
 
     def add(self, rrset, trust=TRUST_LOCAL, msglen=0, rcode=Rcode.NOERROR()):
         '''Add a new cache item.
@@ -199,8 +224,9 @@ class SimpleDNSCache:
 
         '''
         key = (rrset.get_name(), rrset.get_class())
-        new_entry = CacheEntry(rrset.get_ttl().get_value(), rrset.get_rdata(),
-                               trust, msglen, rcode)
+        new_entry = self.__create_cache_entry(rrset.get_ttl().get_value(),
+                                              rrset.get_rdata(), trust, msglen,
+                                              rcode)
         if not key in self.__table:
             self.__table[key] = {rrset.get_type(): [new_entry]}
         else:
@@ -210,6 +236,13 @@ class SimpleDNSCache:
                 table_ent[rrset.get_type()] = [new_entry]
             else:
                 self.__insert_cache_entry(cur_entries, new_entry)
+
+    def __create_cache_entry(self, ttl, rdata_list, trust, msglen, rcode):
+        new_entry = CacheEntry(ttl, rdata_list, trust, msglen, rcode,
+                               self.__counter)
+        self.__entries[self.__counter] = new_entry
+        self.__counter += 1
+        return new_entry
 
     def __insert_cache_entry(self, entries, new_entry):
         old = self.__find_cache_entry(entries, new_entry.trust, True)
@@ -341,8 +374,8 @@ class SimpleDNSCache:
                         rdata_len = struct.unpack('H', f.read(2))[0]
                         rdata_list.append(Rdata(rrtype, rrclass,
                                                 f.read(rdata_len)))
-                    entry = CacheEntry(ttl, rdata_list, trust, msglen,
-                                       Rcode(rcode))
+                    entry = self.__create_cache_entry(ttl, rdata_list, trust,
+                                                      msglen, Rcode(rcode))
                     entries.append(entry)
                 entries.sort(key=lambda x: x.trust)
                 self.__table[key][rrtype] = entries
