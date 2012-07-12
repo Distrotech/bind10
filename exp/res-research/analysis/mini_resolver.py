@@ -252,10 +252,10 @@ class ResolverContext:
             for answer_rrset in resp_msg.get_section(Message.SECTION_ANSWER):
                 if (answer_rrset.get_name() == self.__qname and
                     answer_rrset.get_class() == self.__qclass):
-                    self.__cache.add(answer_rrset, SimpleDNSCache.TRUST_ANSWER,
-                                     msglen)
                     if any_query or answer_rrset.get_type() == self.__qtype:
                         found = True
+                        self.__cache.add(answer_rrset,
+                                         SimpleDNSCache.TRUST_ANSWER, msglen)
                         self.dprint(LOGLVL_DEBUG10, 'got a response: %s',
                                     [answer_rrset])
                         if not any_query:
@@ -263,29 +263,7 @@ class ResolverContext:
                             # simply ignore the rest.
                             return None
                     elif answer_rrset.get_type() == RRType.CNAME():
-                        self.dprint(LOGLVL_DEBUG10, 'got an alias: %s',
-                                    [answer_rrset])
-                        # Chase CNAME with a separate resolver context with
-                        # loop prevention
-                        if self.__nest > self.CNAME_LOOP_MAX:
-                            self.dprint(LOGLVL_INFO, 'possible CNAME loop')
-                            return None
-                        if self.__parent is not None:
-                            # Don't chase CNAME in an internal fetch context
-                            self.dprint(LOGLVL_INFO, 'CNAME in internal fetch')
-                            return None
-                        cname = Name(answer_rrset.get_rdata()[0].to_text())
-                        cname_ctx = ResolverContext(self.__sock4, self.__sock6,
-                                                    self.__renderer, cname,
-                                                    self.__qclass,
-                                                    self.__qtype, self.__cache,
-                                                    self.__qtable,
-                                                    self.__nest + 1)
-                        cname_ctx.set_debug_level(self.__debug_level)
-                        (qid, ns_addr) = cname_ctx.start()
-                        if ns_addr is not None:
-                            return ResQuery(cname_ctx, qid, ns_addr)
-                        return None
+                        return self.__handle_cname(answer_rrset, msglen)
             if found:
                 return None
             raise InternalLame('no answer found in answer section')
@@ -297,6 +275,44 @@ class ResolverContext:
 
         raise InternalLame('unexpected answer rcode=' +
                            str(resp_msg.get_rcode()))
+
+    def __handle_cname(self, cname_rrset, msglen):
+        self.dprint(LOGLVL_DEBUG10, 'got an alias: %s', [cname_rrset])
+        # Chase CNAME with a separate resolver context with
+        # loop prevention
+        if self.__nest > self.CNAME_LOOP_MAX:
+            self.dprint(LOGLVL_INFO, 'possible CNAME loop')
+            return None
+        if self.__parent is not None:
+            # Don't chase CNAME in an internal fetch context
+            self.dprint(LOGLVL_INFO, 'CNAME in internal fetch')
+            return None
+        cname = Name(cname_rrset.get_rdata()[0].to_text())
+
+        # Examine the current cache: Sometimes it's possisble CNAME has
+        # changed at the server side within a short period.
+        # It's not necessarily bogus, but that confuses our experiments.
+        # We consistently use cached one.
+        _, cached_rrset, _ = self.__cache.find(self.__qname, self.__qclass,
+                                               RRType.CNAME())
+        if cached_rrset is not None:
+            cached_cname = Name(cached_rrset.get_rdata()[0].to_text())
+            if cname != cached_cname:
+                self.dprint(LOGLVL_INFO, 'received CNAME %s' +
+                            ' different from cached %s', [cname, cached_cname])
+                cname = cached_cname
+        else:
+            self.__cache.add(cname_rrset, SimpleDNSCache.TRUST_ANSWER, msglen)
+
+        cname_ctx = ResolverContext(self.__sock4, self.__sock6,
+                                    self.__renderer, cname, self.__qclass,
+                                    self.__qtype, self.__cache, self.__qtable,
+                                    self.__nest + 1)
+        cname_ctx.set_debug_level(self.__debug_level)
+        (qid, ns_addr) = cname_ctx.start()
+        if ns_addr is not None:
+            return ResQuery(cname_ctx, qid, ns_addr)
+        return None
 
     def __handle_auth_othersections(self, resp_msg):
         ns_names = []
@@ -422,8 +438,9 @@ class ResolverContext:
         ns_rrset = None
         for l in range(0, zname.get_labelcount()):
             zname = qname.split(l)
-            _, ns_rrset = self.__cache.find(zname, self.__qclass, RRType.NS(),
-                                            SimpleDNSCache.FIND_ALLOW_NOANSWER)
+            _, ns_rrset, _ = \
+                self.__cache.find(zname, self.__qclass, RRType.NS(),
+                                  SimpleDNSCache.FIND_ALLOW_NOANSWER)
             if ns_rrset is not None:
                 return zname, ns_rrset
         raise MiniResolverException('no name server found for ' + str(qname))
@@ -439,14 +456,14 @@ class ResolverContext:
             ns_name = Name(ns.to_text())
             ns_names.append(ns_name)
             if self.__sock4:
-                rcode4, rrset4 = \
+                rcode4, rrset4, _ = \
                     self.__cache.find(ns_name, ns_class, RRType.A(),
                                       SimpleDNSCache.FIND_ALLOW_NOANSWER)
                 if rrset4 is not None:
                     for rdata in rrset4.get_rdata():
                         v4_addrs.append((rdata.to_text(), DNS_PORT))
             if self.__sock6:
-                rcode6, rrset6 = \
+                rcode6, rrset6, _ = \
                     self.__cache.find(ns_name, ns_class, RRType.AAAA(),
                                       SimpleDNSCache.FIND_ALLOW_NOANSWER)
                 if rrset6 is not None:
