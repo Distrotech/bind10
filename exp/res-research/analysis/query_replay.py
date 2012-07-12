@@ -35,8 +35,9 @@ class QueryTrace:
     resp_size(int): estimated size of the response to the query.
 
     '''
-    def __init__(self, ttl, cache_entries):
+    def __init__(self, ttl, cache_entries, rcode):
         self.ttl = ttl
+        self.rcode = rcode
         self.__cache_entries = cache_entries
         self.cname_trace = []
         self.__cache_log = []
@@ -77,11 +78,13 @@ class QueryTrace:
         return expired
 
     def __cache_expired(self, cache, now):
-        updated = 0
+        expired = 0
         for cache_entry_id in self.__cache_entries:
-            if cache.update(cache_entry_id, now):
-                updated += 1
-        return len(self.__cache_entries) == updated
+            entry = cache.get(cache_entry_id)
+            if entry.is_expired(now):
+                expired += 1
+                cache.update(cache_entry_id, now)
+        return len(self.__cache_entries) == expired
 
 class CacheLog:
     '''consists of...
@@ -112,6 +115,8 @@ class QueryReplay:
         self.__query_params = None
         self.__resp_msg = Message(Message.RENDER) # for resp size estimation
         self.__renderer = MessageRenderer()
+        self.__rcode_stat = {}  # RCODE value (int) => query counter
+        self.__qtype_stat = {} # RR type => query counter
 
     def replay(self):
         with open(self.__log_file) as f:
@@ -138,13 +143,21 @@ class QueryReplay:
         qry_type = RRType(convert_rrtype(m.group(5)))
         qry_key = (qry_name, qry_type, qry_class)
 
+        if not qry_type in self.__qtype_stat:
+            self.__qtype_stat[qry_type] = 0
+        self.__qtype_stat[qry_type] += 1
+
         qinfo = self.__queries.get(qry_key)
         if qinfo is None:
             qinfo, rrsets = \
                 self.__get_query_trace(qry_name, qry_class, qry_type)
             qinfo.resp_size = self.__calc_resp_size(qry_name, rrsets)
             self.__queries[qry_key] = qinfo
+        if not qinfo.rcode.get_code() in self.__rcode_stat:
+            self.__rcode_stat[qinfo.rcode.get_code()] = 0
+        self.__rcode_stat[qinfo.rcode.get_code()] += 1
         if qinfo.cache_expired(self.__cache, qry_time):
+            self.__replay_resolve(qry_name, qry_class, qry_type)
             cache_log = CacheLog(qry_time)
             qinfo.add_cache_log(cache_log)
         else:
@@ -153,6 +166,9 @@ class QueryReplay:
                 cache_log = CacheLog(qry_time, False)
                 qinfo.add_cache_log(cache_log)
             cache_log.hits += 1
+
+    def __replay_resolve(self, qname, qclass, qtype):
+        pass
 
     def __calc_resp_size(self, qry_name, rrsets):
         self.__renderer.clear()
@@ -178,12 +194,12 @@ class QueryReplay:
             rcode, val = self.__cache.find_all(qry_name, qry_class,
                                                self.CACHE_OPTIONS)
             ttl, ids, rrsets = self.__get_type_any_info(rcode, val)
-            return QueryTrace(ttl, ids), rrsets
+            return QueryTrace(ttl, ids, rcode), rrsets
 
         rcode, rrset, id = self.__cache.find(qry_name, qry_class, qry_type,
                                              self.CACHE_OPTIONS)
         # Same for type CNAME query or when it's not CNAME substitution.
-        qtrace = QueryTrace(rrset.get_ttl().get_value(), [id])
+        qtrace = QueryTrace(rrset.get_ttl().get_value(), [id], rcode)
         if qry_type == RRType.CNAME() or rrset.get_type() != RRType.CNAME():
             return qtrace, [rrset]
 
@@ -207,7 +223,7 @@ class QueryReplay:
                                                  self.CACHE_OPTIONS)
             try:
                 chain_trace.append(QueryTrace(rrset.get_ttl().get_value(),
-                                              [id]))
+                                              [id], rcode))
                 cnames.append(cname)
                 resp_rrsets.append(rrset)
                 rrtype = rrset.get_type()
@@ -216,6 +232,8 @@ class QueryReplay:
                                  (qry_name, qry_class, qry_type, cname))
                 break
         qtrace.cname_trace = chain_trace
+        # We return the RCODE for the end of the chain
+        qtrace.rcode = rcode
         return qtrace, resp_rrsets
 
     def __get_type_any_info(self, rcode, find_val):
@@ -268,6 +286,20 @@ class QueryReplay:
                                            qry_param[2], qry_param[0],
                                            qry_param[1]))
 
+    def dump_rcode_stat(self):
+        print('\nPer RCODE statistics:')
+        rcodes = list(self.__rcode_stat.keys())
+        rcodes.sort(key=lambda x: -self.__rcode_stat[x])
+        for rcode_val in rcodes:
+            print('%s: %d' % (Rcode(rcode_val), self.__rcode_stat[rcode_val]))
+
+    def dump_qtype_stat(self):
+        print('\nPer Query Type statistics:')
+        qtypes = list(self.__qtype_stat.keys())
+        qtypes.sort(key=lambda x: -self.__qtype_stat[x])
+        for qtype in qtypes:
+            print('%s: %d' % (qtype, self.__qtype_stat[qtype]))
+
 def main(log_file, options):
     cache = dns_cache.SimpleDNSCache()
     cache.load(options.cache_dbfile)
@@ -278,6 +310,10 @@ def main(log_file, options):
         replay.dump_popularity_stat(options.popularity_file)
     if options.query_dump_file is not None:
         replay.dump_queries(options.query_dump_file)
+    if options.dump_rcode_stat:
+        replay.dump_rcode_stat()
+    if options.dump_qtype_stat:
+        replay.dump_qtype_stat()
 
 def get_option_parser():
     parser = OptionParser(usage='usage: %prog [options] log_file')
@@ -290,6 +326,12 @@ def get_option_parser():
     parser.add_option("-q", "--dump-queries",
                       dest="query_dump_file", action="store",
                       help="dump unique queries")
+    parser.add_option("-r", "--dump-rcode-stat",
+                      dest="dump_rcode_stat", action="store_true",
+                      default=False, help="dump per RCODE statistics")
+    parser.add_option("-t", "--dump-qtype-stat",
+                      dest="dump_qtype_stat", action="store_true",
+                      default=False, help="dump per type statistics")
     return parser
 
 if __name__ == "__main__":

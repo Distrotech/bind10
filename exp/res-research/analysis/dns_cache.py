@@ -85,6 +85,11 @@ class CacheEntry:
         self.rcode = other.rcode
         self.id = other.id
 
+    def is_expired(self, now):
+        if self.time_updated is None or self.time_updated + self.ttl < now:
+            return True
+        return False
+
 # Don't worry about cache expire; just record the RRs
 class SimpleDNSCache:
     '''A simplified DNS cache database.
@@ -117,6 +122,9 @@ class SimpleDNSCache:
         self.__table = {}
         self.__counter = 0      # unique ID for CacheEntry's
         self.__entries = {}     # ID => CacheEntry
+
+    def get(self, entry_id):
+        return self.__entries[entry_id]
 
     def find(self, name, rrclass, rrtype, options=FIND_DEFAULT):
         key = (name, rrclass)
@@ -210,7 +218,7 @@ class SimpleDNSCache:
 
         '''
         entry = self.__entries[entry_id]
-        if entry.time_updated is None or entry.time_updated + entry.ttl < now:
+        if entry.is_expired(now):
             entry.time_updated = now
             return True
         return False
@@ -229,6 +237,7 @@ class SimpleDNSCache:
                                               rcode)
         if not key in self.__table:
             self.__table[key] = {rrset.get_type(): [new_entry]}
+            new_entry._table_entry = self.__table[key]
         else:
             table_ent = self.__table[key]
             cur_entries = table_ent.get(rrset.get_type())
