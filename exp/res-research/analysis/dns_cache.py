@@ -63,16 +63,19 @@ class CacheEntry:
     trust (SimpleDNSCache.TRUST_xxx) The trust level of the cache entry.
     msglen (int) The size of the DNS response message from which the cache
       entry comes; it's 0 if it's not a result of a DNS message.
+    resp_type (RESP_xxx below): The type of the DNS response message from
+      which the cache entry comes.
     rcode (int) Numeric form of corresponding RCODE (converted to int as it's
       more memory efficient).
 
     '''
 
-    def __init__(self, ttl, rdata_list, trust, msglen, rcode, id):
+    def __init__(self, ttl, rdata_list, trust, respinfo, rcode, id):
         self.ttl = ttl
         self.rdata_list = rdata_list
         self.trust = trust
-        self.msglen = msglen
+        self.msglen = respinfo[0]
+        self.resp_type = respinfo[1]
         self.rcode = rcode.get_code()
         self.id = id
         self.time_updated = None # timestamp of 'creation' or 'update'
@@ -82,6 +85,7 @@ class CacheEntry:
         self.rdata_list = other.rdata_list
         self.trust = other.trust
         self.msglen = other.msglen
+        self.resp_type = other.resp_type
         self.rcode = other.rcode
         self.id = other.id
 
@@ -122,21 +126,22 @@ class SimpleDNSCache:
     FIND_ALLOW_CNAME = 4
 
     # Response types (when applicable)
-    RESP_FINAL_ANSWER_COMPRESSED = 0
-    RESP_FINAL_ANSWER_UNCOMPRESSED = 1
-    RESP_CNAME_ANSWER_COMPRESSED = 2
-    RESP_CNAME_ANSWER_UNCOMPRESSED = 3
-    RESP_ANSWER_UNEXPECTED = 4
-    RESP_NXDOMAIN_SOA = 5
-    RESP_NXDOMAIN_NOAUTH = 6
-    RESP_NXDOMAIN_UNEXPECTED = 7
-    RESP_NXRRSET_SOA = 8
-    RESP_NXRRSET_NOAUTH = 9
-    RESP_NXRRSET_UNEXPECTED = 10
-    RESP_REFERRAL_WITHGLUE = 11
-    RESP_REFERRAL_WITHOUTGLUE = 12
-    RESP_REFERRAL_UNEXPECTED = 13
-    RESP_UNEXPECTED = 14
+    RESP_FINAL_ANSWER_NONE = 0  # dummy type, for entry not assoc w/ response.
+    RESP_FINAL_ANSWER_COMPRESSED = 1
+    RESP_FINAL_ANSWER_UNCOMPRESSED = 2
+    RESP_CNAME_ANSWER_COMPRESSED = 3
+    RESP_CNAME_ANSWER_UNCOMPRESSED = 4
+    RESP_ANSWER_UNEXPECTED = 5
+    RESP_NXDOMAIN_SOA = 6
+    RESP_NXDOMAIN_NOAUTH = 7
+    RESP_NXDOMAIN_UNEXPECTED = 8
+    RESP_NXRRSET_SOA = 9
+    RESP_NXRRSET_NOAUTH = 10
+    RESP_NXRRSET_UNEXPECTED = 11
+    RESP_REFERRAL_WITHGLUE = 12
+    RESP_REFERRAL_WITHOUTGLUE = 13
+    RESP_REFERRAL_UNEXPECTED = 14
+    RESP_UNEXPECTED = 15
 
     def __init__(self):
         # top level cache table
@@ -253,18 +258,25 @@ class SimpleDNSCache:
             return True
         return False
 
-    def add(self, rrset, trust=TRUST_LOCAL, msglen=0, rcode=Rcode.NOERROR()):
+    def add(self, rrset, trust=TRUST_LOCAL, respinfo=None,
+            rcode=Rcode.NOERROR()):
         '''Add a new cache item.
+
+        respinfo (int, RESP_xxx): if not None, the tuple gives additional
+          information of the response that produced this entry.
+          respinfo[0] is the size of the response.
 
         Note: this cache always handles cached data per RR type; even if
         NXDOMAIN is type independent, it's still specific to the associated
         type within this cache.
 
         '''
+        if respinfo is None:
+            respinfo = (0, self.RESP_FINAL_ANSWER_NONE)
         key = (rrset.get_name(), rrset.get_class())
         new_entry = self.__create_cache_entry(rrset.get_ttl().get_value(),
-                                              rrset.get_rdata(), trust, msglen,
-                                              rcode)
+                                              rrset.get_rdata(), trust,
+                                              respinfo, rcode)
         if not key in self.__table:
             self.__table[key] = {rrset.get_type(): [new_entry]}
             new_entry._table_entry = self.__table[key]
@@ -276,8 +288,8 @@ class SimpleDNSCache:
             else:
                 self.__insert_cache_entry(cur_entries, new_entry)
 
-    def __create_cache_entry(self, ttl, rdata_list, trust, msglen, rcode):
-        new_entry = CacheEntry(ttl, rdata_list, trust, msglen, rcode,
+    def __create_cache_entry(self, ttl, rdata_list, trust, respinfo, rcode):
+        new_entry = CacheEntry(ttl, rdata_list, trust, respinfo, rcode,
                                self.__counter)
         self.__entries[self.__counter] = new_entry
         self.__counter += 1
@@ -317,13 +329,14 @@ class SimpleDNSCache:
             for rrtype, entries in rdata_map.items():
                 for entry in entries:
                     if len(entry.rdata_list) == 0:
-                        f.write(';; [%s, TTL=%d, msglen=%d] %s/%s/%s\n' %
-                                (str(Rcode(entry.rcode)), entry.ttl,
-                                 entry.msglen, str(name), str(rrclass),
-                                 str(rrtype)))
+                        f.write((';; [%s, TTL=%d, msglen=%d, resptype=%d] ' +
+                                 '%s/%s/%s\n') %
+                                (Rcode(entry.rcode), entry.ttl,
+                                 entry.msglen, entry.resp_type, name, rrclass,
+                                 rrtype))
                     else:
-                        f.write(';; [msglen=%d, trust=%d]\n' %
-                                (entry.msglen, entry.trust))
+                        f.write(';; [msglen=%d, resptype=%d, trust=%d]\n' %
+                                (entry.msglen, entry.resp_type, entry.trust))
                         rrset = RRset(name, rrclass, rrtype, RRTTL(entry.ttl))
                         for rdata in entry.rdata_list:
                             rrset.add_rdata(rdata)
@@ -345,6 +358,7 @@ class SimpleDNSCache:
               <RCODE value, 1 byte>
               <TTL, 4 bytes>
               <msglen, 2 bytes>
+              <response type, 1 byte>
               <trust, 1 byte>
               <# of RDATAs, 2 bytes>
               sequence of RDATA, each of which is:
@@ -369,6 +383,7 @@ class SimpleDNSCache:
                     data += struct.pack('B', entry.rcode)
                     data += struct.pack('I', entry.ttl)
                     data += struct.pack('H', entry.msglen)
+                    data += struct.pack('B', entry.resp_type)
                     data += struct.pack('B', entry.trust)
                     data += struct.pack('H', len(entry.rdata_list))
                     for rdata in entry.rdata_list:
@@ -405,6 +420,7 @@ class SimpleDNSCache:
                     rcode = struct.unpack('B', f.read(1))[0]
                     ttl = struct.unpack('I', f.read(4))[0]
                     msglen = struct.unpack('H', f.read(2))[0]
+                    resp_type = struct.unpack('B', f.read(1))[0]
                     trust = struct.unpack('B', f.read(1))[0]
                     n_rdata = struct.unpack('H', f.read(2))[0]
                     rdata_list = []
@@ -414,7 +430,8 @@ class SimpleDNSCache:
                         rdata_list.append(Rdata(rrtype, rrclass,
                                                 f.read(rdata_len)))
                     entry = self.__create_cache_entry(ttl, rdata_list, trust,
-                                                      msglen, Rcode(rcode))
+                                                      (msglen, resp_type),
+                                                      Rcode(rcode))
                     entries.append(entry)
                 entries.sort(key=lambda x: x.trust)
                 self.__table[key][rrtype] = entries

@@ -194,7 +194,8 @@ class ResolverContext:
         self.dprint(LOGLVL_DEBUG1, 'no reachable server')
         fail_rrset = RRset(self.__qname, self.__qclass, self.__qtype,
                            RRTTL(self.SERVFAIL_TTL))
-        self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER, 0,
+        self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER,
+                         (0, SimpleDNSCache.RESP_FINAL_ANSWER_NONE),
                          Rcode.SERVFAIL())
         return self.__resume_parents()
 
@@ -234,11 +235,12 @@ class ResolverContext:
             self.__stat.update_response_stat(resp_type)
             if resp_msg.get_header_flag(Message.HEADERFLAG_TC):
                 self.__stat.response_truncated += 1
+            respinfo = (msglen, resp_type)
 
             # Look into the response
             if (resp_msg.get_header_flag(Message.HEADERFLAG_AA) or
                 self.__is_cname_response(resp_msg)):
-                next_qry = self.__handle_auth_answer(resp_msg, msglen)
+                next_qry = self.__handle_auth_answer(resp_msg, respinfo)
                 self.__handle_auth_othersections(resp_msg)
             elif (resp_msg.get_rr_count(Message.SECTION_ANSWER) == 0 and
                   resp_msg.get_rr_count(Message.SECTION_AUTHORITY) == 0 and
@@ -246,7 +248,7 @@ class ResolverContext:
                    resp_msg.get_rcode() == Rcode.NXDOMAIN())):
                 # Some servers return a negative response without setting AA.
                 # (Leave next_qry None)
-                self.__handle_negative_answer(resp_msg, msglen)
+                self.__handle_negative_answer(resp_msg, respinfo)
             elif (resp_msg.get_rcode() == Rcode.NOERROR() and
                   not resp_msg.get_header_flag(Message.HEADERFLAG_AA)):
                 authorities = resp_msg.get_section(Message.SECTION_AUTHORITY)
@@ -260,7 +262,7 @@ class ResolverContext:
                             raise InternalLame('lame server: ' +
                                                'delegation not for subdomain')
                         ns_addr = self.__handle_referral(resp_msg, ns_rrset,
-                                                         msglen)
+                                                         respinfo)
                         if ns_addr is not None:
                             next_qry = ResQuery(self, self.__qid, ns_addr)
                         elif len(self.__fetch_queries) == 0:
@@ -280,7 +282,8 @@ class ResolverContext:
                 self.dprint(LOGLVL_DEBUG1, 'no usable server')
                 fail_rrset = RRset(self.__qname, self.__qclass, self.__qtype,
                                    RRTTL(self.SERVFAIL_TTL))
-                self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER, 0,
+                self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER,
+                                 (0, SimpleDNSCache.RESP_FINAL_ANSWER_NONE),
                                  Rcode.SERVFAIL())
         if next_qry is None:
              next_qry = self.__resume_parents()
@@ -383,7 +386,7 @@ class ResolverContext:
             return True
         return False
 
-    def __handle_auth_answer(self, resp_msg, msglen):
+    def __handle_auth_answer(self, resp_msg, respinfo):
         '''Subroutine of handle_response, handling an authoritative answer.'''
         if (resp_msg.get_rcode() == Rcode.NOERROR() or
             resp_msg.get_rcode() == Rcode.NXDOMAIN()) and \
@@ -396,7 +399,8 @@ class ResolverContext:
                     if any_query or answer_rrset.get_type() == self.__qtype:
                         found = True
                         self.__cache.add(answer_rrset,
-                                         SimpleDNSCache.TRUST_ANSWER, msglen)
+                                         SimpleDNSCache.TRUST_ANSWER,
+                                         respinfo)
                         self.dprint(LOGLVL_DEBUG10, 'got a response: %s',
                                     [answer_rrset])
                         if not any_query:
@@ -404,20 +408,20 @@ class ResolverContext:
                             # simply ignore the rest.
                             return None
                     elif answer_rrset.get_type() == RRType.CNAME():
-                        return self.__handle_cname(answer_rrset, msglen)
+                        return self.__handle_cname(answer_rrset, respinfo)
             if found:
                 return None
             raise InternalLame('no answer found in answer section')
         elif resp_msg.get_rcode() == Rcode.NXDOMAIN() or \
                 (resp_msg.get_rcode() == Rcode.NOERROR() and
                  resp_msg.get_rr_count(Message.SECTION_ANSWER) == 0):
-            self.__handle_negative_answer(resp_msg, msglen)
+            self.__handle_negative_answer(resp_msg, respinfo)
             return None
 
         raise InternalLame('unexpected answer rcode=' +
                            str(resp_msg.get_rcode()))
 
-    def __handle_cname(self, cname_rrset, msglen):
+    def __handle_cname(self, cname_rrset, respinfo):
         self.dprint(LOGLVL_DEBUG10, 'got an alias: %s', [cname_rrset])
         # Chase CNAME with a separate resolver context with
         # loop prevention
@@ -443,7 +447,8 @@ class ResolverContext:
                             ' different from cached %s', [cname, cached_cname])
                 cname = cached_cname
         else:
-            self.__cache.add(cname_rrset, SimpleDNSCache.TRUST_ANSWER, msglen)
+            self.__cache.add(cname_rrset, SimpleDNSCache.TRUST_ANSWER,
+                             respinfo)
 
         cname_ctx = ResolverContext(self.__sock4, self.__sock6,
                                     self.__renderer, cname, self.__qclass,
@@ -464,7 +469,8 @@ class ResolverContext:
                 if (cmp_reln == NameComparisonResult.SUBDOMAIN or
                     cmp_reln == NameComparisonResult.EQUAL):
                     self.__cache.add(auth_rrset,
-                                     SimpleDNSCache.TRUST_AUTHAUTHORITY, 0)
+                                     SimpleDNSCache.TRUST_AUTHAUTHORITY,
+                                     (0, SimpleDNSCache.RESP_FINAL_ANSWER_NONE))
                     for ns_rdata in auth_rrset.get_rdata():
                         ns_name = Name(ns_rdata.to_text())
                         cmp_reln = \
@@ -479,10 +485,10 @@ class ResolverContext:
                     if ad_rrset.get_name() == ns_name:
                         self.__cache.add(ad_rrset,
                                          SimpleDNSCache.TRUST_AUTHADDITIONAL,
-                                         0)
+                                         (0, SimpleDNSCache.RESP_FINAL_ANSWER_NONE))
                         break
 
-    def __handle_negative_answer(self, resp_msg, msglen):
+    def __handle_negative_answer(self, resp_msg, respinfo):
         rcode = resp_msg.get_rcode()
         if rcode == Rcode.NOERROR():
             rcode = Rcode.NXRRSET()
@@ -497,7 +503,8 @@ class ResolverContext:
                     self.dprint(LOGLVL_INFO, 'bogus SOA name for negative: %s',
                                 [auth_rrset.get_name()])
                     continue
-                self.__cache.add(auth_rrset, SimpleDNSCache.TRUST_ANSWER, 0)
+                self.__cache.add(auth_rrset, SimpleDNSCache.TRUST_ANSWER,
+                                 (0, SimpleDNSCache.RESP_FINAL_ANSWER_NONE))
                 neg_ttl = get_soa_ttl(auth_rrset.get_rdata()[0])
                 self.dprint(LOGLVL_DEBUG10,
                             'got a negative response, code=%s, negTTL=%s',
@@ -510,11 +517,11 @@ class ResolverContext:
             neg_ttl = self.DEFAULT_NEGATIVE_TTL
         neg_rrset = RRset(self.__qname, self.__qclass, self.__qtype,
                           RRTTL(neg_ttl))
-        self.__cache.add(neg_rrset, SimpleDNSCache.TRUST_ANSWER, msglen, rcode)
+        self.__cache.add(neg_rrset, SimpleDNSCache.TRUST_ANSWER, respinfo)
 
-    def __handle_referral(self, resp_msg, ns_rrset, msglen):
+    def __handle_referral(self, resp_msg, ns_rrset, respinfo):
         self.dprint(LOGLVL_DEBUG10, 'got a referral: %s', [ns_rrset])
-        self.__cache.add(ns_rrset, SimpleDNSCache.TRUST_GLUE, msglen)
+        self.__cache.add(ns_rrset, SimpleDNSCache.TRUST_GLUE, respinfo)
         additionals = resp_msg.get_section(Message.SECTION_ADDITIONAL)
         for ad_rrset in additionals:
             cmp_reln = \
@@ -665,7 +672,8 @@ class ResolverContext:
             ctx.__parent.dprint(LOGLVL_DEBUG1, 'resumed context failed')
             fail_rrset = RRset(ctx.__parent.__qname, ctx.__parent.__qclass,
                                ctx.__parent.__qtype, RRTTL(self.SERVFAIL_TTL))
-            self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER, 0,
+            self.__cache.add(fail_rrset, SimpleDNSCache.TRUST_ANSWER,
+                             (0, SimpleDNSCache.RESP_FINAL_ANSWER_NONE),
                              Rcode.SERVFAIL())
             # Recursively check grand parents
             ctx = ctx.__parent
