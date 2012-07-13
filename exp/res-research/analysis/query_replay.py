@@ -140,10 +140,14 @@ class ResolverContext:
             self.__cur_zone = nameservers.get_name()
             self.dprint(LOGLVL_DEBUG10, 'reach a zone cut')
 
-            have_addr, fetch_v4, fetch_v6 = self.__find_ns_addrs(nameservers)
+            have_addr, fetch_list = self.__find_ns_addrs(nameservers)
             if not have_addr:
-                # emulate NS addr fetch
-                raise QueryReplaceError('unsupported case')
+                # If fetching NS addresses fail, we should be at the end of
+                # chain
+                if not self.__fetch_ns_addrs(fetch_list):
+                    chain = chain[:-1]
+                    if len(chain) != 1:
+                        raise QueryReplaceError('assumption failure')
 
             # "send query, then get response".  Now we can consider the
             # delegation records (NS and glue AAAA/A) one level deepr active
@@ -166,6 +170,22 @@ class ResolverContext:
         self.dprint(LOGLVL_DEBUG5, 'resolution completed')
         self.__cache.update(chain[0][0], self.__now)
         return chain[0][1], True
+
+    def __fetch_ns_addrs(self, fetch_list):
+        self.dprint(LOGLVL_DEBUG10, 'no NS addresses are known, fetch them.')
+        for fetch in fetch_list:
+            res_ctx = ResolverContext(fetch[1], self.__qclass, fetch[0],
+                                      self.__cache, self.__now,
+                                      self.__dbg_level)
+            rrset, updated = res_ctx.resolve()
+            if not updated:
+                raise QueryReplaceError('assumption failure')
+            if rrset.get_rdata_count() > 0: # positive result
+                self.dprint(LOGLVL_DEBUG10, 'fetching an NS address succeeded')
+                return True
+        # All attempts fail
+        self.dprint(LOGLVL_DEBUG10, 'fetching an NS address failed')
+        return False
 
     def __update_glue(self, ns_rrset):
         '''Update cached glue records for in-zone glue of given NS RRset.'''
@@ -215,8 +235,7 @@ class ResolverContext:
         have_address = False
 
         # Record any missing address to be fetched.
-        fetch_ipv4 = []
-        fetch_ipv6 = []
+        fetch_list = []
         for ns_name in [Name(ns.to_text()) for ns in nameservers.get_rdata()]:
             rcode, rrset4, id = self.__find_delegate_info(ns_name, RRType.A(),
                                                           True)
@@ -225,7 +244,7 @@ class ResolverContext:
                             [ns_name])
                 have_address = True
             elif rcode is None:
-                fetch_ipv4.append(ns_name)
+                fetch_list.append((RRType.A(), ns_name))
 
             rcode, rrset6, id = \
                 self.__find_delegate_info(ns_name, RRType.AAAA(), True)
@@ -234,9 +253,9 @@ class ResolverContext:
                             [ns_name])
                 have_address = True
             elif rcode is None:
-                fetch_ipv6.append(ns_name)
+                fetch_list.append((RRType.AAAA(), ns_name))
 
-        return have_address, fetch_ipv4, fetch_ipv6
+        return have_address, fetch_list
 
     def __find_delegate_info(self, name, rrtype, active_only=False):
         '''Find an RRset from the cache that can be used for delegation.
