@@ -115,12 +115,28 @@ class SimpleDNSCache:
     TRUST_GLUE = 3              # referral or glue
     TRUST_AUTHADDITIONAL = 4    # additional section records in auth answer
 
-
     # Search options, can be logically OR'ed.
     FIND_DEFAULT = 0
     FIND_ALLOW_NEGATIVE = 1
     FIND_ALLOW_NOANSWER = 2
     FIND_ALLOW_CNAME = 4
+
+    # Response types (when applicable)
+    RESP_FINAL_ANSWER_COMPRESSED = 0
+    RESP_FINAL_ANSWER_UNCOMPRESSED = 1
+    RESP_CNAME_ANSWER_COMPRESSED = 2
+    RESP_CNAME_ANSWER_UNCOMPRESSED = 3
+    RESP_ANSWER_UNEXPECTED = 4
+    RESP_NXDOMAIN_SOA = 5
+    RESP_NXDOMAIN_NOAUTH = 6
+    RESP_NXDOMAIN_UNEXPECTED = 7
+    RESP_NXRRSET_SOA = 8
+    RESP_NXRRSET_NOAUTH = 9
+    RESP_NXRRSET_UNEXPECTED = 10
+    RESP_REFERRAL_WITHGLUE = 11
+    RESP_REFERRAL_WITHOUTGLUE = 12
+    RESP_REFERRAL_UNEXPECTED = 13
+    RESP_UNEXPECTED = 14
 
     def __init__(self):
         # top level cache table

@@ -16,6 +16,7 @@
 # WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 from isc.dns import *
+import dns_cache
 from dns_cache import SimpleDNSCache, install_root_hint
 import datetime
 import errno
@@ -64,6 +65,51 @@ class ResQuery:
         self.expire = time.time() + self.QUERY_TIMEOUT
         self.timer = None       # will be set when timer is associated
 
+class ResolverStatistics:
+    STAT_DESCRIPTION = {
+        SimpleDNSCache.RESP_FINAL_ANSWER_COMPRESSED: 'answer compressed',
+        SimpleDNSCache.RESP_FINAL_ANSWER_UNCOMPRESSED: 'answer uncompressed',
+        SimpleDNSCache.RESP_CNAME_ANSWER_COMPRESSED: 'CNAME compressed',
+        SimpleDNSCache.RESP_CNAME_ANSWER_UNCOMPRESSED: 'CNAME uncompressed',
+        SimpleDNSCache.RESP_ANSWER_UNEXPECTED: 'answer, uncommon type',
+        SimpleDNSCache.RESP_NXDOMAIN_SOA: 'NXDOMAIN with SOA',
+        SimpleDNSCache.RESP_NXDOMAIN_NOAUTH:
+            'NXDOMAIN with empty auth section',
+        SimpleDNSCache.RESP_NXDOMAIN_UNEXPECTED: 'NXDOMAIN, uncommon type',
+        SimpleDNSCache.RESP_NXRRSET_SOA: 'NXRRSET with SOA',
+        SimpleDNSCache.RESP_NXRRSET_NOAUTH: 'NXRRSET with empty auth section',
+        SimpleDNSCache.RESP_NXRRSET_UNEXPECTED: 'NXRRSET, uncommon type',
+        SimpleDNSCache.RESP_REFERRAL_WITHGLUE:
+            'referral with "in-bailiwick" glue',
+        SimpleDNSCache.RESP_REFERRAL_WITHOUTGLUE:
+            'referral without "in-bailiwick" glue',
+        SimpleDNSCache.RESP_REFERRAL_UNEXPECTED: 'referral, uncommon type',
+        SimpleDNSCache.RESP_UNEXPECTED: 'uncommon response'
+        }
+
+    def __init__(self):
+        self.query_timeout = 0
+        self.response_broken = 0
+        self.response_truncated = 0
+        self.__response_stat = {} # SimpleDNSCache.RESP_xxx => counter
+        for type in self.STAT_DESCRIPTION.keys():
+            self.__response_stat[type] = 0
+
+    def update_response_stat(self, type):
+        self.__response_stat[type] += 1
+
+    def dump(self, f):
+        f.write('Response statistics:\n')
+        f.write('  query timeout: %d\n' % self.query_timeout)
+        f.write('  broken responses: %d\n' % self.response_broken)
+        f.write('  truncated responses: %d\n' % self.response_truncated)
+
+        descriptions = list(self.STAT_DESCRIPTION.keys())
+        descriptions.sort()
+        for type in descriptions:
+            f.write('  %s: %d\n' % (self.STAT_DESCRIPTION[type],
+                                    self.__response_stat[type]))
+
 class ResolverContext:
     CNAME_LOOP_MAX = 15
     FETCH_DEPTH_MAX = 8
@@ -71,7 +117,7 @@ class ResolverContext:
     SERVFAIL_TTL = 1800 # cache TTL for 'SERVFAIL' results.  BIND9's lame-ttl.
 
     def __init__(self, sock4, sock6, renderer, qname, qclass, qtype, cache,
-                 query_table, nest=0):
+                 query_table, stat, nest=0):
         self.__sock4 = sock4
         self.__sock6 = sock6
         self.__msg = Message(Message.RENDER)
@@ -88,6 +134,7 @@ class ResolverContext:
         self.__cur_zone = None
         self.__cur_ns_addr = None
         self.__qtable = query_table
+        self.__stat = stat
 
     def set_debug_level(self, level):
         self.__debug_level = level
@@ -151,32 +198,42 @@ class ResolverContext:
                          Rcode.SERVFAIL())
         return self.__resume_parents()
 
-    def handle_response(self, resp_msg, msglen):
+    def handle_response(self, resp_msg, resp_data):
         next_qry = None
+        msglen = len(resp_data)
         try:
             if not resp_msg.get_header_flag(Message.HEADERFLAG_QR):
                 self.dprint(LOGLVL_INFO,
                             'received query when expecting a response')
+                self.__stat.response_broken += 1
                 raise InternalLame('lame server')
             if resp_msg.get_rr_count(Message.SECTION_QUESTION) != 1:
                 self.dprint(LOGLVL_INFO,
                             'unexpected # of question in response: %s',
                             [resp_msg.get_rr_count(Message.SECTION_QUESTION)])
+                self.__stat.response_broken += 1
                 raise InternalLame('lame server')
             question = resp_msg.get_question()[0]
-            if question.get_name() != self.__qname or \
-                    question.get_class() != self.__qclass or \
-                    question.get_type() != self.__qtype:
+            if (question.get_name() != self.__qname or
+                question.get_class() != self.__qclass or
+                question.get_type() != self.__qtype):
                 self.dprint(LOGLVL_INFO, 'unexpected response: ' +
                             'query mismatch actual=%s/%s/%s',
                             [question.get_name(), question.get_class(),
                              question.get_type()])
+                self.__stat.response_broken += 1
                 raise InternalLame('lame server')
             if resp_msg.get_qid() != self.__qid:
                 self.dprint(LOGLVL_INFO, 'unexpected response: '
                             'QID mismatch; expected=%s, actual=%s',
                             [self.__qid, resp_msg.get_qid()])
+                self.__stat.response_broken += 1
                 raise InternalLame('lame server')
+
+            resp_type = self.__get_response_type(resp_msg, resp_data)
+            self.__stat.update_response_stat(resp_type)
+            if resp_msg.get_header_flag(Message.HEADERFLAG_TC):
+                self.__stat.response_truncated += 1
 
             # Look into the response
             if (resp_msg.get_header_flag(Message.HEADERFLAG_AA) or
@@ -228,6 +285,90 @@ class ResolverContext:
         if next_qry is None:
              next_qry = self.__resume_parents()
         return next_qry
+
+    def __get_response_type(self, resp_msg, resp_data):
+        if (resp_msg.get_header_flag(Message.HEADERFLAG_AA) and
+            resp_msg.get_rcode() == Rcode.NOERROR() and
+            resp_msg.get_rr_count(Message.SECTION_ANSWER) > 0):
+            answer = resp_msg.get_section(Message.SECTION_ANSWER)[0]
+            # typical positive answer
+            is_cname = (self.__qtype != RRType.CNAME() and
+                        self.__qtype != RRType.ANY() and
+                        answer.get_type() == RRType.CNAME())
+            is_final = (answer.get_name() == self.__qname)
+            offset_to_answer = 12 + self.__qname.get_length() + 4
+            is_final_compressed = (is_final and
+                                   resp_data[offset_to_answer] == 0xc0 and
+                                   resp_data[offset_to_answer + 1] == 12)
+            if is_final_compressed and not is_cname:
+                return SimpleDNSCache.RESP_FINAL_ANSWER_COMPRESSED
+            elif is_final_compressed and is_cname:
+                return SimpleDNSCache.RESP_CNAME_ANSWER_COMPRESSED
+            elif is_final and not is_cname:
+                return SimpleDNSCache.RESP_FINAL_ANSWER_UNCOMPRESSED
+            elif is_final and is_cname:
+                return SimpleDNSCache.RESP_CNAME_ANSWER_UNCOMPRESSED
+            else:
+                return SimpleDNSCache.RESP_ANSWER_UNEXPECTED
+        elif (resp_msg.get_header_flag(Message.HEADERFLAG_AA) and
+              resp_msg.get_rcode() == Rcode.NXDOMAIN() and
+              resp_msg.get_rr_count(Message.SECTION_ANSWER) == 0):
+            # typical NXDOMAIN answer
+            if resp_msg.get_rr_count(Message.SECTION_AUTHORITY) > 0:
+                auth = resp_msg.get_section(Message.SECTION_AUTHORITY)[0]
+                if auth.get_type() == RRType.SOA():
+                    return SimpleDNSCache.RESP_NXDOMAIN_SOA
+            elif resp_msg.get_rr_count(Message.SECTION_AUTHORITY) == 0:
+                return SimpleDNSCache.RESP_NXDOMAIN_NOAUTH
+            else:
+                return SimpleDNSCache.RESP_NXDOMAIN_UNEXPECTED
+        elif (resp_msg.get_header_flag(Message.HEADERFLAG_AA) and
+              resp_msg.get_rcode() == Rcode.NOERROR() and
+              resp_msg.get_rr_count(Message.SECTION_ANSWER) == 0):
+            # typical NXRRSET answer
+            if resp_msg.get_rr_count(Message.SECTION_AUTHORITY) > 0:
+                auth = resp_msg.get_section(Message.SECTION_AUTHORITY)[0]
+                if auth.get_type() == RRType.SOA():
+                    return SimpleDNSCache.RESP_NXRRSET_SOA
+            elif resp_msg.get_rr_count(Message.SECTION_AUTHORITY) == 0:
+                return SimpleDNSCache.RESP_NXRRSET_NOAUTH
+            else:
+                return SimpleDNSCache.RESP_NXRRSET_UNEXPECTED
+        elif (not resp_msg.get_header_flag(Message.HEADERFLAG_AA) and
+              resp_msg.get_rcode() == Rcode.NOERROR() and
+              resp_msg.get_rr_count(Message.SECTION_ANSWER) == 0 and
+              resp_msg.get_rr_count(Message.SECTION_AUTHORITY) > 0):
+            # typical delegation
+            auth = resp_msg.get_section(Message.SECTION_AUTHORITY)[0]
+            if auth.get_type() == RRType.NS():
+                ns_name =  auth.get_name()
+                cmp_reln = ns_name.compare(self.__cur_zone).get_relation()
+                if cmp_reln == NameComparisonResult.SUBDOMAIN:
+                    # valid delegation
+                    if self.__check_bailiwick_glue(resp_msg, auth):
+                        return SimpleDNSCache.RESP_REFERRAL_WITHGLUE
+                    else:
+                        return SimpleDNSCache.RESP_REFERRAL_WITHOUTGLUE
+            return SimpleDNSCache.RESP_REFERRAL_UNEXPECTED
+        else:
+            # last resort: unexpected or uncommon
+            return SimpleDNSCache.RESP_UNEXPECTED
+
+    def __check_bailiwick_glue(self, resp_msg, ns_rrset):
+        '''Check if the message contains "in-bailiwick" glue in additional.'''
+        ns_names = [Name(ns.to_text()) for ns in ns_rrset.get_rdata()]
+        for ad_rrset in resp_msg.get_section(Message.SECTION_ADDITIONAL):
+            if (ad_rrset.get_type() != RRType.A() and
+                ad_rrset.get_type() != RRType.AAAA()):
+                continue
+            ad_name = ad_rrset.get_name()
+            for ns_name in ns_names:
+                if ns_name == ad_name:
+                    cmp_reln = self.__cur_zone.compare(ad_name).get_relation()
+                    if (cmp_reln == NameComparisonResult.EQUAL or
+                        cmp_reln == NameComparisonResult.SUPERDOMAIN):
+                        return True
+        return False
 
     def __is_cname_response(self, resp_msg):
         # From BIND 9: A BIND8 server could return a non-authoritative
@@ -307,7 +448,7 @@ class ResolverContext:
         cname_ctx = ResolverContext(self.__sock4, self.__sock6,
                                     self.__renderer, cname, self.__qclass,
                                     self.__qtype, self.__cache, self.__qtable,
-                                    self.__nest + 1)
+                                    self.__stat, self.__nest + 1)
         cname_ctx.set_debug_level(self.__debug_level)
         (qid, ns_addr) = cname_ctx.start()
         if ns_addr is not None:
@@ -501,7 +642,7 @@ class ResolverContext:
             res_ctx = ResolverContext(self.__sock4, self.__sock6,
                                       self.__renderer, ns_name, self.__qclass,
                                       type, self.__cache, self.__qtable,
-                                      self.__nest + 1)
+                                      self.__stat, self.__nest + 1)
             res_ctx.set_debug_level(self.__debug_level)
             res_ctx.__parent = self
             (qid, ns_addr) = res_ctx.start()
@@ -652,6 +793,8 @@ class FileResolver:
         self.__max_ctxts = int(options.max_query)
         self.__dump_file = options.dump_file
         self.__serialize_file = options.serialize_file
+        self.__stat = ResolverStatistics()
+        self.__stat_file = options.stat_file
 
         ResQuery.QUERY_TIMEOUT = int(options.query_timeo)
 
@@ -698,7 +841,7 @@ class FileResolver:
         qname = Name(m.group(3))
         return ResolverContext(self.__sock4, self.__sock6, self.__renderer,
                                qname, qclass, qtype, self.__cache,
-                               self.__query_table)
+                               self.__query_table, self.__stat)
 
     def run(self):
         while self.__check_status():
@@ -733,6 +876,8 @@ class FileResolver:
             self.__cache.dump(self.__dump_file)
         if self.__serialize_file is not None:
             self.__cache.dump(self.__serialize_file, True)
+        if self.__stat_file is not None:
+            self.__stat_dump()
 
     def __handle(self, s):
         pkt, remote = s.recvfrom(4096)
@@ -742,6 +887,7 @@ class FileResolver:
         except Exception as ex:
             self.dprint(LOGLVL_INFO, 'broken packet from %s: %s',
                         [remote[0], ex])
+            self.__stat.response_broken += 1
             return
         self.dprint(LOGLVL_DEBUG10, 'received packet from %s, QID=%s',
                     [remote[0], self.__msg.get_qid()])
@@ -755,7 +901,7 @@ class FileResolver:
             except KeyError as ex:
                 ctx.dprint(LOGLVL_INFO, 'bug: missing context')
                 raise ex
-            res_qry = ctx.handle_response(self.__msg, len(pkt))
+            res_qry = ctx.handle_response(self.__msg, pkt)
             next_queries = [] if res_qry is None else [res_qry]
             next_queries.extend(ctx.get_aux_queries())
             for res_qry in next_queries:
@@ -771,6 +917,7 @@ class FileResolver:
                         [remote[0], self.__msg.get_qid()])
 
     def _qry_timeout(self, res_qry):
+        self.__stat.query_timeout += 1
         del self.__query_table[(res_qry.qid, res_qry.ns_addr)]
         next_res_qry = res_qry.res_ctx.query_timeout(res_qry.ns_addr)
         if next_res_qry is None or next_res_qry.res_ctx != res_qry.res_ctx:
@@ -787,6 +934,10 @@ class FileResolver:
                 next_res_qry
             timer = QueryTimer(self, next_res_qry)
             self.__timerq.add(next_res_qry.expire, timer)
+
+    def __stat_dump(self):
+        with open(self.__stat_file, 'w') as f:
+            self.__stat.dump(f)
 
 def get_option_parser():
     parser = OptionParser(usage='usage: %prog [options] query_file')
@@ -807,6 +958,9 @@ def get_option_parser():
                       action="store", default=None,
                       help="if specified, file name to dump the resulting " + \
                           "cache in the serialized binary format")
+    parser.add_option("-S", "--dump-stat", dest="stat_file",
+                      action="store", default=None,
+                      help="if specified, file to dump statistics")
     parser.add_option("-n", "--max-query", dest="max_query", action="store",
                       default="10",
                       help="specify the max # of queries in parallel")
