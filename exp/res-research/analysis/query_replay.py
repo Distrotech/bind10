@@ -133,7 +133,7 @@ class ResolverContext:
         if len(chain) == 1:
             return chain[0][1], False
 
-        self.dprint(LOGLVL_DEBUG3, 'cache miss, emulate resolving')
+        self.dprint(LOGLVL_DEBUG5, 'cache miss, emulate resolving')
 
         while True:
             nameservers = chain[-1][1] # deepest active NS RRset
@@ -163,7 +163,7 @@ class ResolverContext:
 
         # We've reached the deepest zone (which should normally contain the
         # query name)
-        self.dprint(LOGLVL_DEBUG10, 'resolution completed')
+        self.dprint(LOGLVL_DEBUG5, 'resolution completed')
         self.__cache.update(chain[0][0], self.__now)
         return chain[0][1], True
 
@@ -357,9 +357,9 @@ class QueryReplay:
         if not qinfo.rcode.get_code() in self.__rcode_stat:
             self.__rcode_stat[qinfo.rcode.get_code()] = 0
         self.__rcode_stat[qinfo.rcode.get_code()] += 1
-        #if qinfo.cache_expired(self.__cache, qry_time):
         if self.__check_expired(qinfo, qry_name, qry_class, qry_type,
                                 qry_time):
+            self.dprint(LOGLVL_DEBUG3, 'cache miss, updated')
             cache_log = CacheLog(qry_time)
             qinfo.add_cache_log(cache_log)
         else:
