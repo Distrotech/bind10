@@ -84,7 +84,6 @@ class QueryTrace:
             entry = cache.get(cache_entry_id)
             if entry.is_expired(now):
                 expired += 1
-                #cache.update(cache_entry_id, now)
         return len(self.__cache_entries) == expired
 
 class CacheLog:
@@ -129,9 +128,9 @@ class ResolverContext:
         # The cache actually has the resolution result with full delegation
         # chain; it's just some part of it has expired.  We first need to
         # identify the part to be resolved.
-        chain = self.__get_resolve_chain()
+        chain, resp_list = self.__get_resolve_chain()
         if len(chain) == 1:
-            return chain[0][1], False
+            return chain[0][1], False, resp_list
 
         self.dprint(LOGLVL_DEBUG5, 'cache miss, emulate resolving')
 
@@ -144,7 +143,9 @@ class ResolverContext:
             if not have_addr:
                 # If fetching NS addresses fail, we should be at the end of
                 # chain
-                if not self.__fetch_ns_addrs(fetch_list):
+                found, fetch_resps = self.__fetch_ns_addrs(fetch_list)
+                resp_list.extend(fetch_resps)
+                if not found:
                     chain = chain[:-1]
                     if len(chain) != 1:
                         raise QueryReplaceError('assumption failure')
@@ -169,23 +170,25 @@ class ResolverContext:
         # query name)
         self.dprint(LOGLVL_DEBUG5, 'resolution completed')
         self.__cache.update(chain[0][0], self.__now)
-        return chain[0][1], True
+        return chain[0][1], True, resp_list
 
     def __fetch_ns_addrs(self, fetch_list):
         self.dprint(LOGLVL_DEBUG10, 'no NS addresses are known, fetch them.')
+        ret_resp_list = []
         for fetch in fetch_list:
             res_ctx = ResolverContext(fetch[1], self.__qclass, fetch[0],
                                       self.__cache, self.__now,
                                       self.__dbg_level)
-            rrset, updated = res_ctx.resolve()
+            rrset, updated, resp_list = res_ctx.resolve()
+            ret_resp_list.extend(resp_list)
             if not updated:
                 raise QueryReplaceError('assumption failure')
             if rrset.get_rdata_count() > 0: # positive result
                 self.dprint(LOGLVL_DEBUG10, 'fetching an NS address succeeded')
-                return True
+                return True, ret_resp_list
         # All attempts fail
         self.dprint(LOGLVL_DEBUG10, 'fetching an NS address failed')
-        return False
+        return False, ret_resp_list
 
     def __update_glue(self, ns_rrset):
         '''Update cached glue records for in-zone glue of given NS RRset.'''
@@ -208,24 +211,29 @@ class ResolverContext:
 
     def __get_resolve_chain(self):
         chain = []
+        resp_list = []
         rcode, answer_rrset, id = \
             self.__cache.find(self.__qname, self.__qclass, self.__qtype,
                               dns_cache.SimpleDNSCache.FIND_ALLOW_CNAME |
                               dns_cache.SimpleDNSCache.FIND_ALLOW_NEGATIVE)
+        entry = self.__cache.get(id)
         chain.append((id, answer_rrset))
-        if not self.__cache.get(id).is_expired(self.__now):
-            return chain
+        resp_list.append(entry.msglen)
+        if not entry.is_expired(self.__now):
+            return chain, []
 
         for l in range(0, self.__qname.get_labelcount()):
             zname = self.__qname.split(l)
             _, ns_rrset, id = self.__find_delegate_info(zname, RRType.NS())
             if ns_rrset is None:
                 continue
+            entry = self.__cache.get(id)
             self.dprint(LOGLVL_DEBUG10, 'build resolve chain at %s, trust %s',
-                        [zname, self.__cache.get(id).trust])
+                        [zname, entry.trust])
             chain.append((id, ns_rrset))
-            if not self.__cache.get(id).is_expired(self.__now):
-                return chain
+            if not entry.is_expired(self.__now):
+                return chain, resp_list
+            resp_list.append(entry.msglen)
 
         # In our setup root server should be always available.
         raise QueryReplaceError('no name server found for ' + str(qname))
@@ -376,9 +384,12 @@ class QueryReplay:
         if not qinfo.rcode.get_code() in self.__rcode_stat:
             self.__rcode_stat[qinfo.rcode.get_code()] = 0
         self.__rcode_stat[qinfo.rcode.get_code()] += 1
-        if self.__check_expired(qinfo, qry_name, qry_class, qry_type,
-                                qry_time):
-            self.dprint(LOGLVL_DEBUG3, 'cache miss, updated')
+        expired, resp_list = \
+            self.__check_expired(qinfo, qry_name, qry_class, qry_type,
+                                 qry_time)
+        if expired:
+            self.dprint(LOGLVL_DEBUG3, 'cache miss, updated with %s messages',
+                        [len(resp_list), resp_list])
             cache_log = CacheLog(qry_time)
             qinfo.add_cache_log(cache_log)
         else:
@@ -394,16 +405,18 @@ class QueryReplay:
             raise QueryReplaceError('ANY query is not supported yet')
         is_cname_qry = qtype == RRType.CNAME()
         expired = False
+        ret_resp_list = []
         for trace in [qinfo] + qinfo.cname_trace:
             res_ctx = ResolverContext(qname, qclass, qtype, self.__cache, now,
                                       self.__dbg_level)
-            rrset, res_updated = res_ctx.resolve()
+            rrset, res_updated, resp_list = res_ctx.resolve()
+            ret_resp_list.extend(resp_list)
             if res_updated:
                 expired = True
             if (rrset is not None and not is_cname_qry and
                 rrset.get_type() == RRType.CNAME()):
                 qname = Name(rrset.get_rdata()[0].to_text())
-        return expired
+        return expired, ret_resp_list
 
     def __calc_resp_size(self, qry_name, rrsets):
         self.__renderer.clear()
