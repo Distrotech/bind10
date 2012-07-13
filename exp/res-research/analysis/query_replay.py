@@ -107,7 +107,9 @@ class CacheLog:
 
 class ResolverContext:
     '''Emulated resolver context.'''
-    def __init__(self, qname, qclass, qtype, cache, now, dbg_level):
+    FETCH_DEPTH_MAX = 8         # prevent infinite NS fetch
+
+    def __init__(self, qname, qclass, qtype, cache, now, dbg_level, nest=0):
         self.__qname = qname
         self.__qclass = qclass
         self.__qtype = qtype
@@ -115,6 +117,7 @@ class ResolverContext:
         self.__now = now
         self.__dbg_level = dbg_level
         self.__cur_zone = qname # sentinel
+        self.__nest = nest
 
     def dprint(self, level, msg, params=[]):
         '''Dump a debug/log message.'''
@@ -153,6 +156,7 @@ class ResolverContext:
                     chain = chain[:-1]
                     if len(chain) != 1:
                         raise QueryReplaceError('assumption failure')
+                    break
 
             # "send query, then get response".  Now we can consider the
             # delegation records (NS and glue AAAA/A) one level deepr active
@@ -177,19 +181,51 @@ class ResolverContext:
         return chain[0][1], True, resp_list
 
     def __fetch_ns_addrs(self, fetch_list):
+        if self.__nest > self.FETCH_DEPTH_MAX:
+            self.dprint(LOGLVL_INFO, 'reached fetch depth limit, aborted')
+            return False, []
+
         self.dprint(LOGLVL_DEBUG10, 'no NS addresses are known, fetch them.')
         ret_resp_list = []
+        skipped = 0
         for fetch in fetch_list:
-            res_ctx = ResolverContext(fetch[1], self.__qclass, fetch[0],
+            ns_name, addr_type = fetch[1], fetch[0]
+
+            # First, check if we know this RR at all in the first place.
+            # It could happen that in the original resolution the resolver
+            # already knew some of the missing addresses as an answer (as a
+            # result or side effect of prior resolution) and didn't bother to
+            # try to fetch others.  In that case, our cache doesn't have any
+            # information for this record (which would crash resolution
+            # emulation below).
+            if self.__cache.find(ns_name, self.__qclass, addr_type)[0] is None:
+                skipped += 1
+                self.dprint(LOGLVL_DEBUG10, 'skip fetching NS addrs %s/%s/%s',
+                            [ns_name, self.__qclass, addr_type])
+                continue
+
+            res_ctx = ResolverContext(ns_name, self.__qclass, addr_type,
                                       self.__cache, self.__now,
-                                      self.__dbg_level)
+                                      self.__dbg_level, self.__nest + 1)
             rrset, updated, resp_list = res_ctx.resolve()
             ret_resp_list.extend(resp_list)
             if not updated:
                 raise QueryReplaceError('assumption failure')
             if rrset.get_rdata_count() > 0: # positive result
-                self.dprint(LOGLVL_DEBUG10, 'fetching an NS address succeeded')
+                self.dprint(LOGLVL_DEBUG10,
+                            'fetching an NS address succeeded for %s/%s/%s',
+                            [ns_name, self.__qclass, addr_type])
                 return True, ret_resp_list
+            self.dprint(LOGLVL_DEBUG10,
+                        'fetching an NS address failed for %s/%s/%s',
+                        [ns_name, self.__qclass, addr_type])
+
+        # We should be able to try fetching at least one of the requested
+        # addrs.  If not, it means internnal inconsistency.
+        if skipped == len(fetch_list):
+            raise QueryReplaceError('assumption failure in NS fetch for ' +
+                                    '%s/%s' % (ns_name, addr_type))
+
         # All attempts fail
         self.dprint(LOGLVL_DEBUG10, 'fetching an NS address failed')
         return False, ret_resp_list
@@ -251,18 +287,18 @@ class ResolverContext:
         for ns_name in [Name(ns.to_text()) for ns in nameservers.get_rdata()]:
             rcode, rrset4, id = self.__find_delegate_info(ns_name, RRType.A(),
                                                           True)
-            if rrset4 is not None:
-                self.dprint(LOGLVL_DEBUG10, 'found IPv4 address for NS %s',
-                            [ns_name])
+            if rrset4 is not None and rrset4.get_rdata_count() > 0:
+                self.dprint(LOGLVL_DEBUG10, 'found %s IPv4 address for NS %s',
+                            [rrset4.get_rdata_count(), ns_name])
                 have_address = True
             elif rcode is None:
                 fetch_list.append((RRType.A(), ns_name))
 
             rcode, rrset6, id = \
                 self.__find_delegate_info(ns_name, RRType.AAAA(), True)
-            if rrset6 is not None:
-                self.dprint(LOGLVL_DEBUG10, 'found IPv6 address for NS %s',
-                            [ns_name])
+            if rrset6 is not None and rrset6.get_rdata_count() > 0:
+                self.dprint(LOGLVL_DEBUG10, 'found %s IPv6 address for NS %s',
+                            [rrset6.get_rdata_count(), ns_name])
                 have_address = True
             elif rcode is None:
                 fetch_list.append((RRType.AAAA(), ns_name))
