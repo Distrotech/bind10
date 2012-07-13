@@ -296,14 +296,6 @@ class SysInfoBSD(SysInfoPOSIX):
             self._hostname = 'Unknown'
 
         try:
-            s = subprocess.check_output(['sysctl', '-n', 'vm.loadavg'])
-            l = s.decode('utf-8').strip().split(' ')
-            if len(l) >= 3:
-                self._loadavg = [float(l[0]), float(l[1]), float(l[2])]
-        except (subprocess.CalledProcessError, OSError):
-            pass
-
-        try:
             s = subprocess.check_output(['sysctl', '-n', 'hw.physmem'])
             self._mem_total = int(s.decode('utf-8').strip())
         except (subprocess.CalledProcessError, OSError):
@@ -365,6 +357,14 @@ class SysInfoOpenBSD(SysInfoBSD):
             pass
 
         try:
+            s = subprocess.check_output(['sysctl', '-n', 'vm.loadavg'])
+            l = s.decode('utf-8').strip().split(' ')
+            if len(l) >= 3:
+                self._loadavg = [float(l[0]), float(l[1]), float(l[2])]
+        except (subprocess.CalledProcessError, OSError):
+            pass
+
+        try:
             s = subprocess.check_output(['vmstat'])
             lines = s.decode('utf-8').split('\n')
             v = re.split('\s+', lines[2])
@@ -413,6 +413,19 @@ class SysInfoFreeBSD(SysInfoBSD):
             if r:
                 sec = time.time() - int(r.group(1))
                 self._uptime = int(round(sec))
+        except (subprocess.CalledProcessError, OSError):
+            pass
+
+        try:
+            s = subprocess.check_output(['sysctl', '-n', 'vm.loadavg'])
+            l = s.decode('utf-8').strip()
+            r = re.match('^\{(.*)\}$', l)
+            if r:
+                la = r.group(1).strip().split(' ')
+            else:
+                la = l.split(' ')
+            if len(la) >= 3:
+                self._loadavg = [float(la[0]), float(la[1]), float(la[2])]
         except (subprocess.CalledProcessError, OSError):
             pass
 

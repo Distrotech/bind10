@@ -102,9 +102,9 @@ def _my_openbsd_subprocess_check_output(command):
     elif command == ['sysctl', '-n', 'kern.boottime']:
         return bytes(str(int(time.time() - 76632)), 'utf-8')
     elif command == ['sysctl', '-n', 'vm.loadavg']:
-        return b'0.7 0.9 0.8'
+        return b'0.7 0.9 0.8\n'
     elif command == ['sysctl', '-n', 'hw.physmem']:
-        return b'543214321'
+        return b'543214321\n'
     elif command == ['vmstat']:
         return b' procs    memory       page                    disks    traps          cpu\n r b w    avm     fre  flt  re  pi  po  fr  sr wd0 cd0  int   sys   cs us sy id\n 0 0 0   121212  123456   47   0   0   0   0   0   2   0    2    80   14  0  1 99\n'
     elif command == ['swapctl', '-s', '-k']:
@@ -135,9 +135,9 @@ def _my_freebsd_subprocess_check_output(command):
     elif command == ['sysctl', '-n', 'kern.boottime']:
         return bytes('{ sec = ' + str(int(time.time() - 76632)) + ', usec = 0 }\n', 'utf-8')
     elif command == ['sysctl', '-n', 'vm.loadavg']:
-        return b'0.2 0.4 0.6'
+        return b'{ 0.2 0.4 0.6 }\n'
     elif command == ['sysctl', '-n', 'hw.physmem']:
-        return b'987654321'
+        return b'987654321\n'
     elif command == ['vmstat', '-H']:
         return b' procs    memory       page                    disks    traps          cpu\n r b w    avm     fre  flt  re  pi  po  fr  sr wd0 cd0  int   sys   cs us sy id\n 0 0 0   343434  123456   47   0   0   0   0   0   2   0    2    80   14  0  1 99\n'
     elif command == ['swapctl', '-s', '-k']:
