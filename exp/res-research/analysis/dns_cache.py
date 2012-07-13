@@ -86,6 +86,11 @@ class CacheEntry:
         self.id = other.id
 
     def is_expired(self, now):
+        # This is cheating, but for now we assume all "local" entries have
+        # permanent TTL
+        if self.trust == SimpleDNSCache.TRUST_LOCAL:
+            return False
+
         if self.time_updated is None or self.time_updated + self.ttl < now:
             return True
         return False
@@ -126,18 +131,25 @@ class SimpleDNSCache:
     def get(self, entry_id):
         return self.__entries[entry_id]
 
-    def find(self, name, rrclass, rrtype, options=FIND_DEFAULT):
+    def find(self, name, rrclass, rrtype, options=FIND_DEFAULT, trust=None):
+        '''Find a specified (name, class, type) from the cache.
+
+        options are a combination of various search options.
+        if trust is specified, only the specified trust level is considered.
+        If this is specified , FIND_ALLOW_NOANSWER option shouldn't be set.
+
+        '''
         key = (name, rrclass)
         rdata_map = self.__table.get((name, rrclass))
         rcode, rrset, trust, id = self.__find_type(name, rrclass, rrtype,
-                                                   rdata_map, options)
+                                                   rdata_map, options, trust)
         if ((options & self.FIND_ALLOW_CNAME) != 0 and
             rrtype != RRType.CNAME()):
             # If CNAME is allowed, see if there is one.  If there is and it
             # has a higher trust level, we use it.
             rcode_cname, rrset_cname, trust_cname, id_cname = \
                 self.__find_type(name, rrclass, RRType.CNAME(), rdata_map,
-                                 options)
+                                 options, trust)
             if (rrset_cname is not None and
                 (trust is None or trust_cname < trust)):
                 return rcode_cname, rrset_cname, id_cname
@@ -155,18 +167,20 @@ class SimpleDNSCache:
             else:
                 return rcode, None
 
-    def __find_type(self, name, rrclass, type, rdata_map, options):
+    def __find_type(self, name, rrclass, rrtype, rdata_map, options, trust):
         '''A subroutine of find, finding an RRset of a given type.'''
-        if rdata_map is not None and type in rdata_map:
-            entries = rdata_map[type]
+        if rdata_map is not None and rrtype in rdata_map:
+            entries = rdata_map[rrtype]
             entry = entries[0]
             if (options & self.FIND_ALLOW_NOANSWER) == 0:
                 entry = self.__find_cache_entry(entries, self.TRUST_ANSWER)
+            elif trust is not None:
+                entry = self.__find_cache_entry(entries, trust, True)
             if entry is None:
                 return None, None, None, None
             rcode = Rcode(entry.rcode)
             (ttl, rdata_list) = (entry.ttl, entry.rdata_list)
-            rrset = RRset(name, rrclass, type, RRTTL(ttl))
+            rrset = RRset(name, rrclass, rrtype, RRTTL(ttl))
             for rdata in rdata_list:
                 rrset.add_rdata(rdata)
             if rrset.get_rdata_count() == 0 and \
