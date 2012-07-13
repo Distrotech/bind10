@@ -356,8 +356,7 @@ class ResolverContext:
                     self.dprint(LOGLVL_INFO, 'bogus SOA name for negative: %s',
                                 [auth_rrset.get_name()])
                     continue
-                self.__cache.add(auth_rrset, SimpleDNSCache.TRUST_ANSWER,
-                                 msglen)
+                self.__cache.add(auth_rrset, SimpleDNSCache.TRUST_ANSWER, 0)
                 neg_ttl = get_soa_ttl(auth_rrset.get_rdata()[0])
                 self.dprint(LOGLVL_DEBUG10,
                             'got a negative response, code=%s, negTTL=%s',
@@ -370,7 +369,7 @@ class ResolverContext:
             neg_ttl = self.DEFAULT_NEGATIVE_TTL
         neg_rrset = RRset(self.__qname, self.__qclass, self.__qtype,
                           RRTTL(neg_ttl))
-        self.__cache.add(neg_rrset, SimpleDNSCache.TRUST_ANSWER, 0, rcode)
+        self.__cache.add(neg_rrset, SimpleDNSCache.TRUST_ANSWER, msglen, rcode)
 
     def __handle_referral(self, resp_msg, ns_rrset, msglen):
         self.dprint(LOGLVL_DEBUG10, 'got a referral: %s', [ns_rrset])
@@ -389,8 +388,10 @@ class ResolverContext:
                 self.dprint(LOGLVL_DEBUG10, 'got glue for referral: %s',
                             [ad_rrset])
                 self.__cache.add(ad_rrset, SimpleDNSCache.TRUST_GLUE)
+        prev_zone = self.__cur_zone
         self.__cur_zone = ns_rrset.get_name()
-        (self.__ns_addr4, self.__ns_addr6) = self.__find_ns_addrs(ns_rrset)
+        (self.__ns_addr4, self.__ns_addr6) = \
+            self.__find_ns_addrs(ns_rrset, True, prev_zone)
         return self.__try_next_server()
 
     def __try_next_server(self):
@@ -445,7 +446,8 @@ class ResolverContext:
                 return zname, ns_rrset
         raise MiniResolverException('no name server found for ' + str(qname))
 
-    def __find_ns_addrs(self, nameservers, fetch_if_notfound=True):
+    def __find_ns_addrs(self, nameservers, fetch_if_notfound,
+                        delegating_zone=None):
         v4_addrs = []
         v6_addrs = []
         rcode4 = None
@@ -455,17 +457,24 @@ class ResolverContext:
         for ns in nameservers.get_rdata():
             ns_name = Name(ns.to_text())
             ns_names.append(ns_name)
+            find_option = SimpleDNSCache.FIND_ALLOW_NOANSWER
+            if delegating_zone is not None and fetch_if_notfound:
+                cmp_reln = delegating_zone.compare(ns_name).get_relation()
+                if (cmp_reln != NameComparisonResult.EQUAL and
+                    cmp_reln != NameComparisonResult.SUPERDOMAIN):
+                    # out-of-zone glue.  fetch real answer if it doesn't exist.
+                    find_option = SimpleDNSCache.FIND_DEFAULT
             if self.__sock4:
                 rcode4, rrset4, _ = \
                     self.__cache.find(ns_name, ns_class, RRType.A(),
-                                      SimpleDNSCache.FIND_ALLOW_NOANSWER)
+                                      find_option)
                 if rrset4 is not None:
                     for rdata in rrset4.get_rdata():
                         v4_addrs.append((rdata.to_text(), DNS_PORT))
             if self.__sock6:
                 rcode6, rrset6, _ = \
                     self.__cache.find(ns_name, ns_class, RRType.AAAA(),
-                                      SimpleDNSCache.FIND_ALLOW_NOANSWER)
+                                      find_option)
                 if rrset6 is not None:
                     for rdata in rrset6.get_rdata():
                         # specify 0 for flowinfo and scopeid unconditionally
