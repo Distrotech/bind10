@@ -86,6 +86,10 @@ class QueryTrace:
                 expired += 1
         return len(self.__cache_entries) == expired
 
+    def update(self, cache, now):
+        for cache_entry_id in self.__cache_entries:
+            cache.update(cache_entry_id, now)
+
 class CacheLog:
     '''consists of...
 
@@ -198,7 +202,7 @@ class ResolverContext:
             if (cmp_reln != NameComparisonResult.SUPERDOMAIN and
                 cmp_reln != NameComparisonResult.EQUAL):
                 self.dprint(LOGLVL_DEBUG10,
-                            'Exclude out-ofzone glue: %s', [ns_name])
+                            'Exclude out-of-zone glue: %s', [ns_name])
                 continue
             _, rrset, id = self.__find_delegate_info(ns_name, RRType.A())
             if id is not None:
@@ -388,7 +392,8 @@ class QueryReplay:
             self.__check_expired(qinfo, qry_name, qry_class, qry_type,
                                  qry_time)
         if expired:
-            self.dprint(LOGLVL_DEBUG3, 'cache miss, updated with %s messages',
+            self.dprint(LOGLVL_DEBUG3,
+                        'cache miss, updated with %s messages (%s)',
                         [len(resp_list), resp_list])
             cache_log = CacheLog(qry_time)
             qinfo.add_cache_log(cache_log)
@@ -402,7 +407,7 @@ class QueryReplay:
 
     def __check_expired(self, qinfo, qname, qclass, qtype, now):
         if qtype == RRType.ANY():
-            raise QueryReplaceError('ANY query is not supported yet')
+            return self.__check_expired_any(qinfo, qname, qclass, now)
         is_cname_qry = qtype == RRType.CNAME()
         expired = False
         ret_resp_list = []
@@ -417,6 +422,28 @@ class QueryReplay:
                 rrset.get_type() == RRType.CNAME()):
                 qname = Name(rrset.get_rdata()[0].to_text())
         return expired, ret_resp_list
+
+    def __check_expired_any(self, qinfo, qname, qclass, now):
+        rcode, val = self.__cache.find_all(qname, qclass, self.CACHE_OPTIONS)
+        rrsets = self.__get_type_any_info(rcode, val)[2]
+        if rcode != Rcode.NOERROR():
+            res_ctx = ResolverContext(qname, qclass, RRType.ANY(),
+                                      self.__cache, now, self.__dbg_level)
+            _, res_updated, resp_list = res_ctx.resolve()
+            return res_updated, resp_list
+        for rrset in rrsets:
+            res_ctx = ResolverContext(rrset.get_name(), qclass,
+                                      rrset.get_type(), self.__cache, now,
+                                      self.__dbg_level)
+            _, res_updated, resp_list = res_ctx.resolve()
+            if res_updated:
+                # If one of the RRsets has expired and been updated, we would
+                # have updated all of the "ANY" result.  So don't bother to
+                # to replay for the rest; just update the entire cache and
+                # we are done.
+                qinfo.update(self.__cache, now)
+                return True, resp_list
+        return False, []
 
     def __calc_resp_size(self, qry_name, rrsets):
         self.__renderer.clear()
