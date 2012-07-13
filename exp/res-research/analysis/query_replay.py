@@ -79,13 +79,6 @@ class QueryTrace:
         In that case we consider it valid as long as one of them is valid.
 
         '''
-        expired = False
-        for trace in [self] + self.cname_trace:
-            if trace.__cache_expired(cache, now):
-               expired = True
-        return expired
-
-    def __cache_expired(self, cache, now):
         expired = 0
         for cache_entry_id in self.__cache_entries:
             entry = cache.get(cache_entry_id)
@@ -137,6 +130,10 @@ class ResolverContext:
         # chain; it's just some part of it has expired.  We first need to
         # identify the part to be resolved.
         chain = self.__get_resolve_chain()
+        if len(chain) == 1:
+            return chain[0][1], False
+
+        self.dprint(LOGLVL_DEBUG3, 'cache miss, emulate resolving')
 
         while True:
             nameservers = chain[-1][1] # deepest active NS RRset
@@ -166,7 +163,9 @@ class ResolverContext:
 
         # We've reached the deepest zone (which should normally contain the
         # query name)
-        self.__cache.update(chain[-1][0], self.__now)
+        self.dprint(LOGLVL_DEBUG10, 'resolution completed')
+        self.__cache.update(chain[0][0], self.__now)
+        return chain[0][1], True
 
     def __update_glue(self, ns_rrset):
         '''Update cached glue records for in-zone glue of given NS RRset.'''
@@ -191,11 +190,11 @@ class ResolverContext:
         chain = []
         rcode, answer_rrset, id = \
             self.__cache.find(self.__qname, self.__qclass, self.__qtype,
-                              dns_cache.SimpleDNSCache.FIND_ALLOW_CNAME)
-        # Assumption check: this cache entry should have expired
-        if not self.__cache.get(id).is_expired(self.__now):
-            raise QueryReplaceError('unexpectedly enconter active cache')
+                              dns_cache.SimpleDNSCache.FIND_ALLOW_CNAME |
+                              dns_cache.SimpleDNSCache.FIND_ALLOW_NEGATIVE)
         chain.append((id, answer_rrset))
+        if not self.__cache.get(id).is_expired(self.__now):
+            return chain
 
         for l in range(0, self.__qname.get_labelcount()):
             zname = self.__qname.split(l)
@@ -358,8 +357,9 @@ class QueryReplay:
         if not qinfo.rcode.get_code() in self.__rcode_stat:
             self.__rcode_stat[qinfo.rcode.get_code()] = 0
         self.__rcode_stat[qinfo.rcode.get_code()] += 1
-        if qinfo.cache_expired(self.__cache, qry_time):
-            self.__replay_resolve(qry_name, qry_class, qry_type, qry_time)
+        #if qinfo.cache_expired(self.__cache, qry_time):
+        if self.__check_expired(qinfo, qry_name, qry_class, qry_type,
+                                qry_time):
             cache_log = CacheLog(qry_time)
             qinfo.add_cache_log(cache_log)
         else:
@@ -370,12 +370,21 @@ class QueryReplay:
                 qinfo.add_cache_log(cache_log)
             cache_log.hits += 1
 
-    def __replay_resolve(self, qname, qclass, qtype, now):
-        self.dprint(LOGLVL_DEBUG3, 'cache miss, emulate resolving')
-        res_ctx = ResolverContext(qname, qclass, qtype, self.__cache, now,
-                                  self.__dbg_level)
-        res_ctx.resolve()
-        self.dprint(LOGLVL_DEBUG10, 'resolution completed')
+    def __check_expired(self, qinfo, qname, qclass, qtype, now):
+        if qtype == RRType.ANY():
+            raise QueryReplaceError('ANY query is not supported yet')
+        is_cname_qry = qtype == RRType.CNAME()
+        expired = False
+        for trace in [qinfo] + qinfo.cname_trace:
+            res_ctx = ResolverContext(qname, qclass, qtype, self.__cache, now,
+                                      self.__dbg_level)
+            rrset, res_updated = res_ctx.resolve()
+            if res_updated:
+                expired = True
+            if (rrset is not None and not is_cname_qry and
+                rrset.get_type() == RRType.CNAME()):
+                qname = Name(rrset.get_rdata()[0].to_text())
+        return expired
 
     def __calc_resp_size(self, qry_name, rrsets):
         self.__renderer.clear()
