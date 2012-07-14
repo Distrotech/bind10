@@ -66,33 +66,12 @@ class ResQuery:
         self.timer = None       # will be set when timer is associated
 
 class ResolverStatistics:
-    STAT_DESCRIPTION = {
-        SimpleDNSCache.RESP_FINAL_ANSWER_COMPRESSED: 'answer compressed',
-        SimpleDNSCache.RESP_FINAL_ANSWER_UNCOMPRESSED: 'answer uncompressed',
-        SimpleDNSCache.RESP_CNAME_ANSWER_COMPRESSED: 'CNAME compressed',
-        SimpleDNSCache.RESP_CNAME_ANSWER_UNCOMPRESSED: 'CNAME uncompressed',
-        SimpleDNSCache.RESP_ANSWER_UNEXPECTED: 'answer, uncommon type',
-        SimpleDNSCache.RESP_NXDOMAIN_SOA: 'NXDOMAIN with SOA',
-        SimpleDNSCache.RESP_NXDOMAIN_NOAUTH:
-            'NXDOMAIN with empty auth section',
-        SimpleDNSCache.RESP_NXDOMAIN_UNEXPECTED: 'NXDOMAIN, uncommon type',
-        SimpleDNSCache.RESP_NXRRSET_SOA: 'NXRRSET with SOA',
-        SimpleDNSCache.RESP_NXRRSET_NOAUTH: 'NXRRSET with empty auth section',
-        SimpleDNSCache.RESP_NXRRSET_UNEXPECTED: 'NXRRSET, uncommon type',
-        SimpleDNSCache.RESP_REFERRAL_WITHGLUE:
-            'referral with "in-bailiwick" glue',
-        SimpleDNSCache.RESP_REFERRAL_WITHOUTGLUE:
-            'referral without "in-bailiwick" glue',
-        SimpleDNSCache.RESP_REFERRAL_UNEXPECTED: 'referral, uncommon type',
-        SimpleDNSCache.RESP_UNEXPECTED: 'uncommon response'
-        }
-
     def __init__(self):
         self.query_timeout = 0
         self.response_broken = 0
         self.response_truncated = 0
         self.__response_stat = {} # SimpleDNSCache.RESP_xxx => counter
-        for type in self.STAT_DESCRIPTION.keys():
+        for type in SimpleDNSCache.RESP_DESCRIPTION.keys():
             self.__response_stat[type] = 0
 
     def update_response_stat(self, type):
@@ -104,10 +83,10 @@ class ResolverStatistics:
         f.write('  broken responses: %d\n' % self.response_broken)
         f.write('  truncated responses: %d\n' % self.response_truncated)
 
-        descriptions = list(self.STAT_DESCRIPTION.keys())
+        descriptions = list(SimpleDNSCache.RESP_DESCRIPTION.keys())
         descriptions.sort()
         for type in descriptions:
-            f.write('  %s: %d\n' % (self.STAT_DESCRIPTION[type],
+            f.write('  %s: %d\n' % (SimpleDNSCache.RESP_DESCRIPTION[type],
                                     self.__response_stat[type]))
 
 class ResolverContext:
@@ -130,6 +109,7 @@ class ResolverContext:
         self.__nest = nest      # CNAME loop prevention
         self.__debug_level = LOGLVL_INFO
         self.__fetch_queries = set()
+        self.__aux_fetch_queries = set()
         self.__parent = None    # set for internal fetch contexts
         self.__cur_zone = None
         self.__cur_ns_addr = None
@@ -158,7 +138,7 @@ class ResolverContext:
                                [postfix]))
 
     def get_aux_queries(self):
-        return list(self.__fetch_queries)
+        return list(self.__fetch_queries) + list(self.__aux_fetch_queries)
 
     def __create_query(self):
         '''Create a template query.  QID will be filled on send.'''
@@ -396,6 +376,8 @@ class ResolverContext:
                     answer_rrset.get_class() == self.__qclass):
                     if any_query or answer_rrset.get_type() == self.__qtype:
                         found = True
+                        if answer_rrset.get_type() == RRType.NS():
+                            self.__check_ns_consistency(answer_rrset)
                         self.__cache.add(answer_rrset,
                                          SimpleDNSCache.TRUST_ANSWER,
                                          respinfo)
@@ -469,6 +451,8 @@ class ResolverContext:
                 cmp_reln = ns_owner.compare(self.__cur_zone).get_relation()
                 if (cmp_reln == NameComparisonResult.SUBDOMAIN or
                     cmp_reln == NameComparisonResult.EQUAL):
+                    if auth_rrset.get_type() == RRType.NS():
+                        self.__check_ns_consistency(auth_rrset)
                     self.__cache.add(auth_rrset,
                                      SimpleDNSCache.TRUST_AUTHAUTHORITY,
                                      (0, SimpleDNSCache.RESP_FINAL_ANSWER_NONE))
@@ -488,6 +472,42 @@ class ResolverContext:
                                          SimpleDNSCache.TRUST_AUTHADDITIONAL,
                                          (0, SimpleDNSCache.RESP_FINAL_ANSWER_NONE))
                         break
+
+    def __check_ns_consistency(self, ns_rrset):
+        # This check could be unnecessarily performed multiple times,
+        # especially if the NS name consists a CNAME loop.  This check will
+        # help prevent redundant fetch.
+        if (self.__cache.find(ns_rrset.get_name(), self.__qclass,
+                              RRType.NS())[1] is not None or
+            self.__cache.find(ns_rrset.get_name(), self.__qclass, RRType.NS(),
+                              SimpleDNSCache.FIND_ALLOW_NOANSWER,
+                              SimpleDNSCache.TRUST_AUTHAUTHORITY)[1] is not None):
+            return
+
+        _, glue_ns_rrset, _ = \
+            self.__cache.find(ns_rrset.get_name(), self.__qclass, RRType.NS(),
+                              SimpleDNSCache.FIND_ALLOW_NOANSWER,
+                              SimpleDNSCache.TRUST_GLUE)
+        if glue_ns_rrset is not None:
+            glue_ns_names = \
+                [Name(ns.to_text()) for ns in glue_ns_rrset.get_rdata()]
+        else:
+            glue_ns_names = []
+        for ns_name in [Name(ns.to_text()) for ns in ns_rrset.get_rdata()]:
+            consistent = False
+            for glue_ns_name in glue_ns_names:
+                if ns_name == glue_ns_name:
+                    consistent = True
+                    break
+            if consistent:
+                continue
+            rcode, rrset, _ = \
+                self.__cache.find(ns_name, self.__qclass, RRType.A())
+            if rrset is None and rcode is None:
+                self.dprint(LOGLVL_INFO,
+                            'no information for inconsistent NS name: %s',
+                            [ns_name])
+                self.__fetch_ns_addrs(ns_name, self.__aux_fetch_queries, False)
 
     def __handle_negative_answer(self, resp_msg, respinfo):
         rcode = resp_msg.get_rcode()
@@ -643,20 +663,21 @@ class ResolverContext:
             else:
                 self.__cur_nameservers = nameservers
                 for ns in ns_names:
-                    self.__fetch_ns_addrs(ns)
+                    self.__fetch_ns_addrs(ns, self.__fetch_queries)
         return (v4_addrs, v6_addrs)
 
-    def __fetch_ns_addrs(self, ns_name):
+    def __fetch_ns_addrs(self, ns_name, fetch_queries, set_parent=True):
         for type in [RRType.A(), RRType.AAAA()]:
             res_ctx = ResolverContext(self.__sock4, self.__sock6,
                                       self.__renderer, ns_name, self.__qclass,
                                       type, self.__cache, self.__qtable,
                                       self.__stat, self.__nest + 1)
             res_ctx.set_debug_level(self.__debug_level)
-            res_ctx.__parent = self
+            if set_parent:
+                res_ctx.__parent = self
             (qid, ns_addr) = res_ctx.start()
             query = ResQuery(res_ctx, qid, ns_addr)
-            self.__fetch_queries.add(query)
+            fetch_queries.add(query)
 
     def __resume_parents(self):
         ctx = self
