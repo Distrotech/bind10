@@ -323,8 +323,7 @@ class ResolverContext:
                     return SimpleDNSCache.RESP_NXDOMAIN_SOA
             elif resp_msg.get_rr_count(Message.SECTION_AUTHORITY) == 0:
                 return SimpleDNSCache.RESP_NXDOMAIN_NOAUTH
-            else:
-                return SimpleDNSCache.RESP_NXDOMAIN_UNEXPECTED
+            return SimpleDNSCache.RESP_NXDOMAIN_UNEXPECTED
         elif (resp_msg.get_header_flag(Message.HEADERFLAG_AA) and
               resp_msg.get_rcode() == Rcode.NOERROR() and
               resp_msg.get_rr_count(Message.SECTION_ANSWER) == 0):
@@ -335,8 +334,7 @@ class ResolverContext:
                     return SimpleDNSCache.RESP_NXRRSET_SOA
             elif resp_msg.get_rr_count(Message.SECTION_AUTHORITY) == 0:
                 return SimpleDNSCache.RESP_NXRRSET_NOAUTH
-            else:
-                return SimpleDNSCache.RESP_NXRRSET_UNEXPECTED
+            return SimpleDNSCache.RESP_NXRRSET_UNEXPECTED
         elif (not resp_msg.get_header_flag(Message.HEADERFLAG_AA) and
               resp_msg.get_rcode() == Rcode.NOERROR() and
               resp_msg.get_rr_count(Message.SECTION_ANSWER) == 0 and
@@ -428,10 +426,7 @@ class ResolverContext:
         if self.__nest > self.CNAME_LOOP_MAX:
             self.dprint(LOGLVL_INFO, 'possible CNAME loop')
             return None
-        if self.__parent is not None:
-            # Don't chase CNAME in an internal fetch context
-            self.dprint(LOGLVL_INFO, 'CNAME in internal fetch')
-            return None
+
         cname = Name(cname_rrset.get_rdata()[0].to_text())
 
         # Examine the current cache: Sometimes it's possisble CNAME has
@@ -449,6 +444,12 @@ class ResolverContext:
         else:
             self.__cache.add(cname_rrset, SimpleDNSCache.TRUST_ANSWER,
                              respinfo)
+
+        if self.__parent is not None:
+            # Don't chase CNAME in an internal fetch context.  Note that we
+            # should still cache the CNAME; otherwise replay would be confused.
+            self.dprint(LOGLVL_INFO, 'CNAME in internal fetch')
+            return None
 
         cname_ctx = ResolverContext(self.__sock4, self.__sock6,
                                     self.__renderer, cname, self.__qclass,
@@ -517,7 +518,8 @@ class ResolverContext:
             neg_ttl = self.DEFAULT_NEGATIVE_TTL
         neg_rrset = RRset(self.__qname, self.__qclass, self.__qtype,
                           RRTTL(neg_ttl))
-        self.__cache.add(neg_rrset, SimpleDNSCache.TRUST_ANSWER, respinfo)
+        self.__cache.add(neg_rrset, SimpleDNSCache.TRUST_ANSWER, respinfo,
+                         rcode)
 
     def __handle_referral(self, resp_msg, ns_rrset, respinfo):
         self.dprint(LOGLVL_DEBUG10, 'got a referral: %s', [ns_rrset])
