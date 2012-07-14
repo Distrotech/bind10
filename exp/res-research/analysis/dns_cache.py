@@ -16,8 +16,15 @@
 # WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 from isc.dns import *
+import cmd
 from optparse import OptionParser
 import struct
+import sys
+try:
+    # optional module
+    import readline
+except ImportError:
+    pass
 
 # "root hint"
 ROOT_SERVERS = [pfx + '.root-servers.net' for pfx in 'abcdefghijklm']
@@ -325,21 +332,29 @@ class SimpleDNSCache:
         for key, entry in self.__table.items():
             name = key[0]
             rrclass = key[1]
-            rdata_map = entry
-            for rrtype, entries in rdata_map.items():
-                for entry in entries:
-                    if len(entry.rdata_list) == 0:
-                        f.write((';; [%s, TTL=%d, msglen=%d, resptype=%d] ' +
-                                 '%s/%s/%s\n') %
-                                (Rcode(entry.rcode), entry.ttl,
-                                 entry.msglen, entry.resp_type, name, rrclass,
-                                 rrtype))
-                    else:
-                        f.write(';; [msglen=%d, resptype=%d, trust=%d]\n' %
-                                (entry.msglen, entry.resp_type, entry.trust))
-                        rrset = RRset(name, rrclass, rrtype, RRTTL(entry.ttl))
-                        for rdata in entry.rdata_list:
-                            rrset.add_rdata(rdata)
+            self.__dump_table_entry(f, name, rrclass, entry)
+
+    def dump_name_entry(self, f, name, rrclass):
+        entry = self.__table.get((name, rrclass))
+        if entry is not None:
+            self.__dump_table_entry(f, name, rrclass, entry)
+
+    def __dump_table_entry(self, f, name, rrclass, entry):
+        rdata_map = entry
+        for rrtype, entries in rdata_map.items():
+            for entry in entries:
+                if len(entry.rdata_list) == 0:
+                    f.write((';; [%s, TTL=%d, msglen=%d, resptype=%d] ' +
+                             '%s/%s/%s\n') %
+                            (Rcode(entry.rcode), entry.ttl,
+                             entry.msglen, entry.resp_type, name, rrclass,
+                             rrtype))
+                else:
+                    f.write(';; [msglen=%d, resptype=%d, trust=%d]\n' %
+                            (entry.msglen, entry.resp_type, entry.trust))
+                    rrset = RRset(name, rrclass, rrtype, RRTTL(entry.ttl))
+                    for rdata in entry.rdata_list:
+                        rrset.add_rdata(rdata)
                         f.write(rrset.to_text())
 
     def __serialize(self, f):
@@ -436,17 +451,63 @@ class SimpleDNSCache:
                 entries.sort(key=lambda x: x.trust)
                 self.__table[key][rrtype] = entries
 
+SimpleDNSCache.RESP_DESCRIPTION = {
+    SimpleDNSCache.RESP_FINAL_ANSWER_COMPRESSED: 'answer compressed',
+    SimpleDNSCache.RESP_FINAL_ANSWER_UNCOMPRESSED: 'answer uncompressed',
+    SimpleDNSCache.RESP_CNAME_ANSWER_COMPRESSED: 'CNAME compressed',
+    SimpleDNSCache.RESP_CNAME_ANSWER_UNCOMPRESSED: 'CNAME uncompressed',
+    SimpleDNSCache.RESP_ANSWER_UNEXPECTED: 'answer, uncommon type',
+    SimpleDNSCache.RESP_NXDOMAIN_SOA: 'NXDOMAIN with SOA',
+    SimpleDNSCache.RESP_NXDOMAIN_NOAUTH:
+        'NXDOMAIN with empty auth section',
+    SimpleDNSCache.RESP_NXDOMAIN_UNEXPECTED: 'NXDOMAIN, uncommon type',
+    SimpleDNSCache.RESP_NXRRSET_SOA: 'NXRRSET with SOA',
+    SimpleDNSCache.RESP_NXRRSET_NOAUTH: 'NXRRSET with empty auth section',
+    SimpleDNSCache.RESP_NXRRSET_UNEXPECTED: 'NXRRSET, uncommon type',
+    SimpleDNSCache.RESP_REFERRAL_WITHGLUE:
+        'referral with "in-bailiwick" glue',
+    SimpleDNSCache.RESP_REFERRAL_WITHOUTGLUE:
+        'referral without "in-bailiwick" glue',
+    SimpleDNSCache.RESP_REFERRAL_UNEXPECTED: 'referral, uncommon type',
+    SimpleDNSCache.RESP_UNEXPECTED: 'uncommon response'
+    }
+
 def get_option_parser():
     parser = OptionParser(usage='usage: %prog [options] cache_db_file')
     parser.add_option("-f", "--dump-file", dest="dump_file", action="store",
-                      default=None,
                       help="if specified, file name to dump the cache " + \
                           "content in text format")
+    parser.add_option("-i", "--interactive", dest="interactive",
+                      action="store_true", default=False,
+                      help="interactive mode to peek into the cache content")
     return parser
+
+class CacheShell(cmd.Cmd):
+    prompt = '> '
+
+    def __init__(self, cache):
+        cmd.Cmd.__init__(self)
+        self.__cache = cache
+        self.__rrclass = RRClass.IN()
+
+    def do_find(self, arg):
+        name = Name(arg)
+        self.__cache.dump_name_entry(sys.stdout, name, self.__rrclass)
+
+    def do_setclass(self, arg):
+        self.__rrclass = RRClass(arg)
+
+    def do_exit(self, arg):
+        return True
 
 def run(db_file, options):
     cache = SimpleDNSCache()
+    sys.stdout.write('Loading cache...')
+    sys.stdout.flush()
     cache.load(db_file)
+    sys.stdout.write('done\n')
+    if options.interactive:
+        CacheShell(cache).cmdloop()
     if options.dump_file is not None:
         cache.dump(options.dump_file)
 
