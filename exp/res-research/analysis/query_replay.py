@@ -17,7 +17,7 @@
 
 from isc.dns import *
 import parse_qrylog
-import dns_cache
+from dns_cache import SimpleDNSCache, CacheShell
 
 import datetime
 from optparse import OptionParser
@@ -64,6 +64,24 @@ class QueryTrace:
             hits += log.hits
         return hits
 
+    def get_cache_misses(self):
+        '''Return the total count of cache misses for the query'''
+        misses = 0
+        for log in self.__cache_log:
+            misses += log.misses
+        return misses
+
+    def get_external_query_count(self):
+        '''Return a list of external queries needed for cache update.
+
+        Each list entry is an int that means the number of queries.
+
+        '''
+        counts = []
+        for log in self.__cache_log:
+            counts.append(len(log.resp_list))
+        return counts
+
     def add_cache_log(self, cache_log):
         self.__cache_log.append(cache_log)
 
@@ -72,21 +90,12 @@ class QueryTrace:
             return None
         return self.__cache_log[-1]
 
-    def cache_expired(self, cache, now):
-        '''Check if the cache for this query has expired or is still valid.
+    def update(self, cache, now):
+        '''Update all cached records associated with the query at once.
 
-        For type ANY query, __cache_entries may contain multiple entry IDs.
-        In that case we consider it valid as long as one of them is valid.
+        This is effectively only useful for type ANY query results.
 
         '''
-        expired = 0
-        for cache_entry_id in self.__cache_entries:
-            entry = cache.get(cache_entry_id)
-            if entry.is_expired(now):
-                expired += 1
-        return len(self.__cache_entries) == expired
-
-    def update(self, cache, now):
         for cache_entry_id in self.__cache_entries:
             cache.update(cache_entry_id, now)
 
@@ -96,14 +105,17 @@ class CacheLog:
     __time_created (float): Timestamp when an answer for the query is cached.
     hits (int): number of cache hits
     misses (int): 1 if this is created on cache miss (normal); otherwise 0
-    TBD:
-      number of external queries involved along with the response sizes
+    resp_list [(int, int)]: additional info on external queries needed to
+      create this entry, from deepest (leaf zone) to top (known deepest
+      zone cut toward the query name at the time of resolution).  Each list
+      entry consists of (response_size, response type (RESP_xxx))
 
     '''
-    def __init__(self, now, on_miss=True):
+    def __init__(self, now, resp_list, on_miss=True):
         self.__time_created = now
         self.hits = 0
         self.misses = 1 if on_miss else 0
+        self.resp_list = resp_list
 
 class ResolverContext:
     '''Emulated resolver context.'''
@@ -146,11 +158,12 @@ class ResolverContext:
             self.__cur_zone = nameservers.get_name()
             self.dprint(LOGLVL_DEBUG10, 'reach a zone cut')
 
-            have_addr, fetch_list = self.__find_ns_addrs(nameservers)
-            if not have_addr:
-                # If fetching NS addresses fail, we should be at the end of
-                # chain
-                found, fetch_resps = self.__fetch_ns_addrs(fetch_list)
+            found_addr, n_addr, fetch_list = self.__find_ns_addrs(nameservers)
+            if n_addr == 0:
+                # If fetching NS addresses fails, we should be at the end of
+                # chain.
+                found, fetch_resps = self.__fetch_ns_addrs(fetch_list,
+                                                           found_addr)
                 resp_list.extend(fetch_resps)
                 if not found:
                     chain = chain[:-1]
@@ -180,9 +193,9 @@ class ResolverContext:
         self.__cache.update(chain[0][0], self.__now)
         return chain[0][1], True, resp_list
 
-    def __fetch_ns_addrs(self, fetch_list):
+    def __fetch_ns_addrs(self, fetch_list, allskip_ok):
         if self.__nest > self.FETCH_DEPTH_MAX:
-            self.dprint(LOGLVL_INFO, 'reached fetch depth limit, aborted')
+            self.dprint(LOGLVL_DEBUG1, 'reached fetch depth limit, aborted')
             return False, []
 
         self.dprint(LOGLVL_DEBUG10, 'no NS addresses are known, fetch them.')
@@ -192,6 +205,14 @@ class ResolverContext:
             ns_name, addr_type = fetch[1], fetch[0]
 
             # First, check if we know this RR at all in the first place.
+            # If it were subject to CNAME substituation, this name should be
+            # excluded from fetch.
+            if self.__cache.find(ns_name, self.__qclass,
+                                 RRType.CNAME())[0] is not None:
+                self.dprint(LOGLVL_DEBUG1, 'NS name is an alias %s/%s/%s',
+                            [ns_name, self.__qclass, addr_type])
+                continue
+
             # It could happen that in the original resolution the resolver
             # already knew some of the missing addresses as an answer (as a
             # result or side effect of prior resolution) and didn't bother to
@@ -210,7 +231,12 @@ class ResolverContext:
             rrset, updated, resp_list = res_ctx.resolve()
             ret_resp_list.extend(resp_list)
             if not updated:
-                raise QueryReplaceError('assumption failure')
+                # rare case, but this one could have been updated in the
+                # middle of this fetch attempts
+                self.dprint(LOGLVL_DEBUG10,
+                            'NS fetch target has been self updated: %s/%s',
+                            [ns_name, addr_type])
+                                        
             if rrset.get_rdata_count() > 0: # positive result
                 self.dprint(LOGLVL_DEBUG10,
                             'fetching an NS address succeeded for %s/%s/%s',
@@ -220,11 +246,12 @@ class ResolverContext:
                         'fetching an NS address failed for %s/%s/%s',
                         [ns_name, self.__qclass, addr_type])
 
-        # We should be able to try fetching at least one of the requested
-        # addrs.  If not, it means internnal inconsistency.
-        if skipped == len(fetch_list):
-            raise QueryReplaceError('assumption failure in NS fetch for ' +
-                                    '%s/%s' % (ns_name, addr_type))
+        # Normally, We should be able to try fetching at least one of the
+        # requested addrs; if not, it means internnal inconsistency.  The
+        # exception is when the caller knows something *negative* about other
+        # addresses and just checking if there's a hope in missing glue.
+        if not allskip_ok and skipped > 0 and skipped == len(fetch_list):
+            raise QueryReplaceError('assumption failure in NS fetch')
 
         # All attempts fail
         self.dprint(LOGLVL_DEBUG10, 'fetching an NS address failed')
@@ -254,33 +281,66 @@ class ResolverContext:
         resp_list = []
         rcode, answer_rrset, id = \
             self.__cache.find(self.__qname, self.__qclass, self.__qtype,
-                              dns_cache.SimpleDNSCache.FIND_ALLOW_CNAME |
-                              dns_cache.SimpleDNSCache.FIND_ALLOW_NEGATIVE)
+                              SimpleDNSCache.FIND_ALLOW_CNAME |
+                              SimpleDNSCache.FIND_ALLOW_NEGATIVE)
         entry = self.__cache.get(id)
         chain.append((id, answer_rrset))
-        resp_list.append(entry.msglen)
+        resp_list.append((entry.msglen, entry.resp_type))
         if not entry.is_expired(self.__now):
             return chain, []
 
         for l in range(0, self.__qname.get_labelcount()):
             zname = self.__qname.split(l)
-            _, ns_rrset, id = self.__find_delegate_info(zname, RRType.NS())
-            if ns_rrset is None:
+            rcode, ns_rrset, id = self.__find_delegate_info(zname, RRType.NS())
+            if ns_rrset is None or ns_rrset.get_rdata_count() == 0:
+                # this could return a negative result.  we should simply
+                # ignore this case.
                 continue
             entry = self.__cache.get(id)
             self.dprint(LOGLVL_DEBUG10, 'build resolve chain at %s, trust %s',
                         [zname, entry.trust])
             chain.append((id, ns_rrset))
-            if not entry.is_expired(self.__now):
+            if (not entry.is_expired(self.__now) and
+                self.__is_glue_active(zname, entry)):
                 return chain, resp_list
-            resp_list.append(entry.msglen)
+            resp_list.append((entry.msglen, entry.resp_type))
 
         # In our setup root server should be always available.
-        raise QueryReplaceError('no name server found for ' + str(qname))
+        raise QueryReplaceError('no name server found for ' +
+                                str(self.__qname))
+
+    def __is_glue_active(self, zname, cache_entry):
+        has_inzone_glue = False
+        parent_zname = zname if zname.get_length() == 1 else zname.split(1)
+        for ns_name in [Name(ns.to_text()) for ns in cache_entry.rdata_list]:
+            cmp_reln = parent_zname.compare(ns_name).get_relation()
+            if (cmp_reln == NameComparisonResult.SUPERDOMAIN or
+                cmp_reln == NameComparisonResult.EQUAL):
+                has_inzone_glue = True
+
+            # If an address record is active and cached, we can start
+            # the delegation from this point.
+            for rrtype in [RRType.A(), RRType.AAAA()]:
+                _, addr_rrset, id = \
+                    self.__cache.find(ns_name, self.__qclass, rrtype,
+                                      SimpleDNSCache.FIND_ALLOW_NOANSWER)
+                if (addr_rrset is not None and
+                    not self.__cache.get(id).is_expired(self.__now)):
+                    return True
+
+        # We don't have any usable address record at this point.  If there's
+        # at least one in-zone glue, the replay logic would assume it should
+        # be usable by the replay time.  So we cannot start from this level.
+        if has_inzone_glue:
+            self.dprint(LOGLVL_DEBUG10,
+                        'active NS is found but no usable address at %s',
+                        [zname])
+            return False
+        return True
 
     def __find_ns_addrs(self, nameservers):
-        # We only need to know whether we have at least one usable address:
-        have_address = False
+        found = False      # whether we know any active info about an address
+        n_addrs = 0        # num of actually usable address
 
         # Record any missing address to be fetched.
         fetch_list = []
@@ -290,8 +350,14 @@ class ResolverContext:
             if rrset4 is not None and rrset4.get_rdata_count() > 0:
                 self.dprint(LOGLVL_DEBUG10, 'found %s IPv4 address for NS %s',
                             [rrset4.get_rdata_count(), ns_name])
-                have_address = True
-            elif rcode is None:
+                found = True
+                n_addrs += 1
+            elif rcode is not None:
+                self.dprint(LOGLVL_DEBUG10,
+                            'IPv4 address for NS %s is known to be unusable',
+                            [ns_name])
+                found = True
+            else:
                 fetch_list.append((RRType.A(), ns_name))
 
             rcode, rrset6, id = \
@@ -299,11 +365,17 @@ class ResolverContext:
             if rrset6 is not None and rrset6.get_rdata_count() > 0:
                 self.dprint(LOGLVL_DEBUG10, 'found %s IPv6 address for NS %s',
                             [rrset6.get_rdata_count(), ns_name])
-                have_address = True
-            elif rcode is None:
+                found = True
+                n_addrs += 1
+            elif rcode is not None:
+                self.dprint(LOGLVL_DEBUG10,
+                            'IPv6 address for NS %s is known to be unusable',
+                            [ns_name])
+                found = True
+            else:
                 fetch_list.append((RRType.AAAA(), ns_name))
 
-        return have_address, fetch_list
+        return found, n_addrs, fetch_list
 
     def __find_delegate_info(self, name, rrtype, active_only=False):
         '''Find an RRset from the cache that can be used for delegation.
@@ -319,7 +391,7 @@ class ResolverContext:
         options = 0
         ans_rcode, ans_rrset, ans_id = \
             self.__cache.find(name, self.__qclass, rrtype,
-                              dns_cache.SimpleDNSCache.FIND_ALLOW_NEGATIVE)
+                              SimpleDNSCache.FIND_ALLOW_NEGATIVE)
         if (ans_rcode is not None and
             not self.__cache.get(ans_id).is_expired(self.__now)):
             return ans_rcode, ans_rrset, ans_id
@@ -331,8 +403,8 @@ class ResolverContext:
         if rrtype == RRType.NS():
             rcode, rrset, id = \
                 self.__cache.find(name, self.__qclass, rrtype,
-                                  dns_cache.SimpleDNSCache.FIND_ALLOW_NOANSWER,
-                                  dns_cache.SimpleDNSCache.TRUST_AUTHAUTHORITY)
+                                  SimpleDNSCache.FIND_ALLOW_NOANSWER,
+                                  SimpleDNSCache.TRUST_AUTHAUTHORITY)
             if (rrset is not None and
                 not self.__cache.get(id).is_expired(self.__now)):
                 return rcode, rrset, id
@@ -343,8 +415,8 @@ class ResolverContext:
         # explicitly requested to exclude expired ones.
         rcode, rrset, id = \
             self.__cache.find(name, self.__qclass, rrtype,
-                              dns_cache.SimpleDNSCache.FIND_ALLOW_NOANSWER,
-                              dns_cache.SimpleDNSCache.TRUST_GLUE)
+                              SimpleDNSCache.FIND_ALLOW_NOANSWER,
+                              SimpleDNSCache.TRUST_GLUE)
         if (rrset is not None and
             (not active_only or
              not self.__cache.get(id).is_expired(self.__now))):
@@ -353,8 +425,8 @@ class ResolverContext:
         return None, None, None
 
 class QueryReplay:
-    CACHE_OPTIONS = dns_cache.SimpleDNSCache.FIND_ALLOW_CNAME | \
-        dns_cache.SimpleDNSCache.FIND_ALLOW_NEGATIVE
+    CACHE_OPTIONS = SimpleDNSCache.FIND_ALLOW_CNAME | \
+        SimpleDNSCache.FIND_ALLOW_NEGATIVE
 
     def __init__(self, log_file, cache, dbg_level):
         self.__log_file = log_file
@@ -366,10 +438,18 @@ class QueryReplay:
         self.__query_params = None
         self.__cur_query = None # use for debug out
         self.__dbg_level = int(dbg_level)
+        self.__interactive = options.interactive
         self.__resp_msg = Message(Message.RENDER) # for resp size estimation
         self.__renderer = MessageRenderer()
         self.__rcode_stat = {}  # RCODE value (int) => query counter
         self.__qtype_stat = {} # RR type => query counter
+        self.__extqry1_stat = {} # #-of-extqry for creation => counter
+        self.__extqry_update_stat = {} # #-of-extqry for update => counter
+        self.__extqry_total_stat = {} # total count of the above two (shortcut)
+        self.__extresp_stat = {} # RESP_xxx => counter
+        self.__extresp_stat[0] = 0
+        for resptype in SimpleDNSCache.RESP_DESCRIPTION.keys():
+            self.__extresp_stat[resptype] = 0
 
     def dprint(self, level, msg, params=[]):
         '''Dump a debug/log message.'''
@@ -393,6 +473,8 @@ class QueryReplay:
                 except Exception as ex:
                     self.dprint(LOGLVL_INFO,
                                 'error (%s) at line: %s', [ex, log_line])
+                    if self.__interactive:
+                        CacheShell(self.__cache).cmdloop()
                     raise ex
         return self.__total_queries, len(self.__queries)
 
@@ -408,6 +490,9 @@ class QueryReplay:
         qry_class = RRClass(m.group(4))
         qry_type = RRType(convert_rrtype(m.group(5)))
         qry_key = (qry_name, qry_type, qry_class)
+
+#         if qry_name == Name('159.176.42.164.in-addr.arpa') and qry_time == 1118205979.350:
+#             self.__dbg_level = 10
 
         self.__cur_query = (qry_name, qry_class, qry_type)
 
@@ -431,13 +516,15 @@ class QueryReplay:
             self.dprint(LOGLVL_DEBUG3,
                         'cache miss, updated with %s messages (%s)',
                         [len(resp_list), resp_list])
-            cache_log = CacheLog(qry_time)
+            cache_log = CacheLog(qry_time, resp_list)
             qinfo.add_cache_log(cache_log)
+            self.__update_extqry_stat(qinfo, resp_list)
+            self.__update_extresp_stat(resp_list)
         else:
             self.dprint(LOGLVL_DEBUG3, 'cache hit')
             cache_log = qinfo.get_last_cache()
             if cache_log is None:
-                cache_log = CacheLog(qry_time, False)
+                cache_log = CacheLog(qry_time, [], False)
                 qinfo.add_cache_log(cache_log)
             cache_log.hits += 1
 
@@ -562,12 +649,31 @@ class QueryReplay:
                 key=lambda x: -self.__queries[x].get_query_count())
         return self.__query_params
 
+    def __update_extqry_stat(self, qinfo, resp_list):
+        n_extqry = len(resp_list)
+        stats = [self.__extqry_total_stat]
+        if qinfo.get_cache_misses() == 1:
+            # This is the first creation of this cache entry
+            stats.append(self.__extqry1_stat)
+        else:
+            stats.append(self.__extqry_update_stat)
+
+        for stat in stats:
+            if n_extqry not in stat:
+                stat[n_extqry] = 0
+            stat[n_extqry] += 1
+
+    def __update_extresp_stat(self, resp_list):
+        for resp in resp_list:
+            self.__extresp_stat[resp[1]] += 1
+
     def dump_popularity_stat(self, dump_file):
         cumulative_n_qry = 0
         cumulative_cache_hits = 0
         position = 1
         with open(dump_file, 'w') as f:
-            f.write('position,% in total,hit rate,#CNAME,resp-size\n')
+            f.write(('position,% in total,hit rate,#CNAME,av ext qry,' +
+                     'resp-size\n'))
             for qry_param in self.__get_query_params():
                 qinfo = self.__queries[qry_param]
                 n_queries = qinfo.get_query_count()
@@ -579,9 +685,16 @@ class QueryReplay:
                 cumulative_hit_rate = \
                     (float(cumulative_cache_hits) / cumulative_n_qry) * 100
 
-                f.write('%d,%.2f,%.2f,%d,%d\n' %
+                n_ext_queries_list = qinfo.get_external_query_count()
+                n_ext_queries = 0
+                for n in n_ext_queries_list:
+                    n_ext_queries += n
+
+                f.write('%d,%.2f,%.2f,%d,%.2f,%d\n' %
                         (position, cumulative_percentage, cumulative_hit_rate,
-                         len(qinfo.cname_trace), qinfo.resp_size))
+                         len(qinfo.cname_trace),
+                         float(n_ext_queries) / len(n_ext_queries_list),
+                         qinfo.resp_size))
                 position += 1
 
     def dump_queries(self, dump_file):
@@ -606,8 +719,39 @@ class QueryReplay:
         for qtype in qtypes:
             print('%s: %d' % (qtype, self.__qtype_stat[qtype]))
 
+    def dump_extqry_stat(self, dump_file):
+        stats = [('All', self.__extqry_total_stat),
+                 ('Initial Creation', self.__extqry1_stat),
+                 ('Update', self.__extqry_update_stat)]
+        with open(dump_file, 'w') as f:
+            for stat in stats:
+                total_qry_count = 0
+                total_res_count = 0
+                for res_count, qry_count in stat[1].items():
+                    total_res_count += res_count * qry_count
+                    total_qry_count += qry_count
+                av_count = -1
+                if total_qry_count > 0: # workaround to avoid div by 0
+                    av_count = float(total_res_count) / total_qry_count
+                f.write('%s,average=%.2f,count=%d\n' %
+                        (stat[0], av_count, total_res_count))
+                # dump histogram
+                count_list = list(stat[1].keys())
+                count_list.sort()
+                for count in count_list:
+                    f.write('%d,%d\n' % (count, stat[1][count]))
+
+    def dump_extresp_stat(self):
+        print('Response statistics:\n')
+        descriptions = list(SimpleDNSCache.RESP_DESCRIPTION.keys())
+        descriptions.sort()
+        print('  %s: %d' % ('Unknown', self.__extresp_stat[0]))
+        for type in descriptions:
+            print('  %s: %d' % (SimpleDNSCache.RESP_DESCRIPTION[type],
+                                self.__extresp_stat[type]))
+
 def main(log_file, options):
-    cache = dns_cache.SimpleDNSCache()
+    cache = SimpleDNSCache()
     cache.load(options.cache_dbfile)
     replay = QueryReplay(log_file, cache, options.dbg_level)
     total_queries, uniq_queries = replay.replay()
@@ -620,6 +764,10 @@ def main(log_file, options):
         replay.dump_rcode_stat()
     if options.dump_qtype_stat:
         replay.dump_qtype_stat()
+    if options.dump_extqry_file is not None:
+        replay.dump_extqry_stat(options.dump_extqry_file)
+    if options.dump_resp_stat:
+        replay.dump_extresp_stat()
 
 def get_option_parser():
     parser = OptionParser(usage='usage: %prog [options] log_file')
@@ -629,15 +777,25 @@ def get_option_parser():
     parser.add_option("-d", "--dbg-level", dest="dbg_level", action="store",
                       default=0,
                       help="specify the verbosity level of debug output")
+    parser.add_option("-i", "--interactive", dest="interactive",
+                      action="store_true", default=False,
+                      help="enter interactive cache session on finding a bug")
     parser.add_option("-p", "--dump-popularity",
                       dest="popularity_file", action="store",
-                      help="dump statistics per query popularity")
+                      help="file to dump statistics per query popularity")
     parser.add_option("-q", "--dump-queries",
                       dest="query_dump_file", action="store",
                       help="dump unique queries")
+    parser.add_option("-Q", "--extqry-stat-file",
+                      dest="dump_extqry_file", action="store",
+                      help="file to dump statistics on external queries")
     parser.add_option("-r", "--dump-rcode-stat",
                       dest="dump_rcode_stat", action="store_true",
                       default=False, help="dump per RCODE statistics")
+    parser.add_option("-R", "--dump-response-stat",
+                      dest="dump_resp_stat", action="store_true",
+                      default=False,
+                      help="dump statistics about external responses")
     parser.add_option("-t", "--dump-qtype-stat",
                       dest="dump_qtype_stat", action="store_true",
                       default=False, help="dump per type statistics")
