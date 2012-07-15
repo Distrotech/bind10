@@ -402,9 +402,14 @@ class SysInfoFreeBSD(SysInfoBSD):
         super().__init__()
 
         # Don't know how to gather these
-        self._platform_is_smp = False
         self._mem_cached = -1
         self._mem_buffers = -1
+
+        try:
+            s = subprocess.check_output(['sysctl', '-n', 'kern.smp.active'])
+            self._platform_is_smp = int(s.decode('utf-8').strip()) > 0
+        except (subprocess.CalledProcessError, OSError):
+            pass
 
         try:
             s = subprocess.check_output(['sysctl', '-n', 'kern.boottime'])

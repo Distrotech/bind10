@@ -132,6 +132,8 @@ def _my_freebsd_subprocess_check_output(command):
     assert type(command) == list, 'command argument is not a list'
     if command == ['hostname']:
         return b'daemon.example.com\n'
+    elif command == ['sysctl', '-n', 'kern.smp.active']:
+        return b'1\n'
     elif command == ['sysctl', '-n', 'kern.boottime']:
         return bytes('{ sec = ' + str(int(time.time() - 76632)) + ', usec = 0 }\n', 'utf-8')
     elif command == ['sysctl', '-n', 'vm.loadavg']:
@@ -331,7 +333,7 @@ class SysInfoTest(unittest.TestCase):
         s = SysInfoFromFactory()
         self.assertEqual(91, s.get_num_processors())
         self.assertEqual('daemon.example.com', s.get_platform_hostname())
-        self.assertFalse(s.get_platform_is_smp())
+        self.assertTrue(s.get_platform_is_smp())
 
         self.assertLess(abs(76632 - s.get_uptime()), 4)
         self.assertEqual([0.2, 0.4, 0.6], s.get_loadavg())
