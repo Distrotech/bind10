@@ -355,7 +355,7 @@ class SimpleDNSCache:
                     rrset = RRset(name, rrclass, rrtype, RRTTL(entry.ttl))
                     for rdata in entry.rdata_list:
                         rrset.add_rdata(rdata)
-                        f.write(rrset.to_text())
+                    f.write(rrset.to_text())
 
     def __serialize(self, f):
         '''Dump cache database content to a file in serialized binary format.
