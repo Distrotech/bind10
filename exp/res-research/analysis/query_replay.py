@@ -180,7 +180,7 @@ class ResolverContext:
                 break
 
             # Otherwise, go down to the zone one level lower.
-            new_id, nameservers = chain[-1]
+            new_id, nameservers, _ = chain[-1]
             self.dprint(LOGLVL_DEBUG10, 'update NS at zone %s, trust %s',
                         [nameservers.get_name(),
                          self.__cache.get(new_id).trust])
@@ -284,11 +284,14 @@ class ResolverContext:
                               SimpleDNSCache.FIND_ALLOW_CNAME |
                               SimpleDNSCache.FIND_ALLOW_NEGATIVE)
         entry = self.__cache.get(id)
-        chain.append((id, answer_rrset))
+        chain.append((id, answer_rrset, entry))
         resp_list.append((entry.msglen, entry.resp_type))
         if not entry.is_expired(self.__now):
             return chain, []
 
+        # Build full chain to the root.  parent_zones[i] will be set to the
+        # parent zone for chain[i-1].
+        parent_zones = []
         for l in range(0, self.__qname.get_labelcount()):
             zname = self.__qname.split(l)
             rcode, ns_rrset, id = self.__find_delegate_info(zname, RRType.NS())
@@ -296,22 +299,35 @@ class ResolverContext:
                 # this could return a negative result.  we should simply
                 # ignore this case.
                 continue
+            parent_zones.append(zname)
             entry = self.__cache.get(id)
             self.dprint(LOGLVL_DEBUG10, 'build resolve chain at %s, trust %s',
                         [zname, entry.trust])
-            chain.append((id, ns_rrset))
-            if (not entry.is_expired(self.__now) and
-                self.__is_glue_active(zname, entry)):
-                return chain, resp_list
+            chain.append((id, ns_rrset, entry))
             resp_list.append((entry.msglen, entry.resp_type))
+
+        # The last entry of parent_zones should be root.  Its parent should
+        # be itself.
+        parent_zones.append(parent_zones[-1])
+
+        # Then find the deepest level where complete delegation information
+        # is available (NS and at least one NS address are active).
+        for i in range(1, len(chain)):
+            entry = chain[i][2]
+            zname = chain[i][1].get_name()
+            if (not entry.is_expired(self.__now) and
+                self.__is_glue_active(zname, parent_zones[i], entry)):
+                self.dprint(LOGLVL_DEBUG10,
+                            'located the deepest active delegtion to %s at %s',
+                            [zname, parent_zones[i]])
+                return chain[:i + 1], resp_list[:i]
 
         # In our setup root server should be always available.
         raise QueryReplaceError('no name server found for ' +
                                 str(self.__qname))
 
-    def __is_glue_active(self, zname, cache_entry):
+    def __is_glue_active(self, zname, parent_zname, cache_entry):
         has_inzone_glue = False
-        parent_zname = zname if zname.get_length() == 1 else zname.split(1)
         for ns_name in [Name(ns.to_text()) for ns in cache_entry.rdata_list]:
             cmp_reln = parent_zname.compare(ns_name).get_relation()
             if (cmp_reln == NameComparisonResult.SUPERDOMAIN or
@@ -321,11 +337,8 @@ class ResolverContext:
             # If an address record is active and cached, we can start
             # the delegation from this point.
             for rrtype in [RRType.A(), RRType.AAAA()]:
-                _, addr_rrset, id = \
-                    self.__cache.find(ns_name, self.__qclass, rrtype,
-                                      SimpleDNSCache.FIND_ALLOW_NOANSWER)
-                if (addr_rrset is not None and
-                    not self.__cache.get(id).is_expired(self.__now)):
+                if self.__find_delegate_info(ns_name, rrtype,
+                                             True)[1] is not None:
                     return True
 
         # We don't have any usable address record at this point.  If there's
@@ -490,9 +503,6 @@ class QueryReplay:
         qry_class = RRClass(m.group(4))
         qry_type = RRType(convert_rrtype(m.group(5)))
         qry_key = (qry_name, qry_type, qry_class)
-
-#         if qry_name == Name('159.176.42.164.in-addr.arpa') and qry_time == 1118205979.350:
-#             self.__dbg_level = 10
 
         self.__cur_query = (qry_name, qry_class, qry_type)
 
