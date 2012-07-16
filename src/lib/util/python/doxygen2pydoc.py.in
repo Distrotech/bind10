@@ -141,21 +141,46 @@ class Paragraph:
                 self.items.append(get_text(item))
         else:
             self.type = self.TEXT
-            self.text = get_text(xml_node)
+
+            # A single textual paragraph could have multiple simple sections
+            # if it contains notes.
+
+            self.texts = []
+            subnodes = []
+            for child in xml_node.childNodes:
+                if child.nodeType == child.ELEMENT_NODE and \
+                        child.nodeName == 'simplesect' and \
+                        child.getAttribute('kind') == 'note':
+                    if len(subnodes) > 0:
+                        self.texts.append(get_text_fromnodelist(subnodes))
+                        subnodes = []
+                    subtext = 'Note: '
+                    for t in child.childNodes:
+                        subtext += get_text(t)
+                    self.texts.append(subtext)
+                else:
+                    subnodes.append(child)
+            if len(subnodes) > 0:
+                self.texts.append(get_text_fromnodelist(subnodes))
 
     def dump(self, f, wrapper):
-        if (self.type == self.CPPLISTING):
+        if self.type == self.CPPLISTING:
             return
-        elif (self.type == self.ITEMIZEDLIST):
+        elif self.type == self.ITEMIZEDLIST:
             for item in self.items:
                 item_wrapper = TextWrapper(\
                     initial_indent=wrapper.initial_indent + "- ",
                     subsequent_indent=wrapper.subsequent_indent + "  ")
                 dump_filled_text(f, item_wrapper, item)
                 f.write("\\n\\\n")
+        elif self.type == self.TEXT:
+            for text in self.texts:
+                if text != self.texts[0]:
+                    f.write("\\n\\\n")
+                dump_filled_text(f, wrapper, text)
+                f.write("\\n\\\n")
         else:
-            dump_filled_text(f, wrapper if self.type == self.TEXT else None,
-                             self.text)
+            dump_filled_text(f, None, self.text)
             f.write("\\n\\\n")
         f.write("\\n\\\n")
 
@@ -316,6 +341,23 @@ def get_text(root, do_convert=True):
     concatenate all extracted text and return the result.
     """
     nodelist = root.childNodes
+    rc = []
+    for node in nodelist:
+        if node.nodeType == node.TEXT_NODE:
+            if do_convert:
+                rc.append(cpp_to_python(node.data))
+            else:
+                rc.append(node.data)
+        elif node.nodeType == node.ELEMENT_NODE:
+            rc.append(get_text(node))
+    # return the result, removing any leading newlines (that often happens for
+    # brief descriptions, which will cause lines not well aligned)
+    return re.sub("^(\n*)", "", ''.join(rc))
+
+def get_text_fromnodelist(nodelist, do_convert=True):
+    """Recursively extract bare text inside the specified node (root),
+    concatenate all extracted text and return the result.
+    """
     rc = []
     for node in nodelist:
         if node.nodeType == node.TEXT_NODE:
