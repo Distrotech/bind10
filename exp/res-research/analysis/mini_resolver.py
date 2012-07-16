@@ -479,34 +479,50 @@ class ResolverContext:
         # help prevent redundant fetch.
         if (self.__cache.find(ns_rrset.get_name(), self.__qclass,
                               RRType.NS())[1] is not None or
-            self.__cache.find(ns_rrset.get_name(), self.__qclass, RRType.NS(),
-                              SimpleDNSCache.FIND_ALLOW_NOANSWER,
-                              SimpleDNSCache.TRUST_AUTHAUTHORITY)[1] is not None):
+            self.__cache.find(
+                ns_rrset.get_name(), self.__qclass, RRType.NS(),
+                SimpleDNSCache.FIND_ALLOW_NOANSWER,
+                SimpleDNSCache.TRUST_AUTHAUTHORITY)[1] is not None):
             return
 
         _, glue_ns_rrset, _ = \
             self.__cache.find(ns_rrset.get_name(), self.__qclass, RRType.NS(),
                               SimpleDNSCache.FIND_ALLOW_NOANSWER,
                               SimpleDNSCache.TRUST_GLUE)
+        glue_ns_names = []
         if glue_ns_rrset is not None:
             glue_ns_names = \
                 [Name(ns.to_text()) for ns in glue_ns_rrset.get_rdata()]
-        else:
-            glue_ns_names = []
-        for ns_name in [Name(ns.to_text()) for ns in ns_rrset.get_rdata()]:
-            consistent = False
-            for glue_ns_name in glue_ns_names:
-                if ns_name == glue_ns_name:
-                    consistent = True
-                    break
-            if consistent:
+
+        # Now check the new NS RRset at the higher trust level.  We need to
+        # worry about two cases for the post replay process: the new set
+        # contains a new NS name on which this server doesn't know anything;
+        # all new RRsets are out-of-zone name and this server doesn't know
+        # anything on any of them.  In these cases we invoke additional fetch.
+        # We only check the availability of type A RR for simplicity.
+        # In theory, it could be possible that the server happens to know
+        # something about AAAA, but it's less likely in practice.  Besides,
+        # the additional fetch does not do harm except its overhead.
+        n_unknown_glue = 0
+        new_ns_names = [Name(ns.to_text()) for ns in ns_rrset.get_rdata()]
+        for ns_name in new_ns_names:
+            if self.__cache.find(ns_name,
+                                 self.__qclass, RRType.A())[0] is not None:
                 continue
-            rcode, rrset, _ = \
-                self.__cache.find(ns_name, self.__qclass, RRType.A())
-            if rrset is None and rcode is None:
-                self.dprint(LOGLVL_INFO,
-                            'no information for inconsistent NS name: %s',
+            if not ns_name in glue_ns_names:
+                self.dprint(LOGLVL_INFO, 'no addr info in auth NS name: %s',
                             [ns_name])
+                self.__fetch_ns_addrs(ns_name, self.__aux_fetch_queries, False)
+            else:
+                cmp_reln = self.__cur_zone.compare(ns_name).get_relation()
+                if (cmp_reln != NameComparisonResult.EQUAL and
+                    cmp_reln != NameComparisonResult.SUPERDOMAIN):
+                    n_unknown_glue += 1
+        if n_unknown_glue == len(new_ns_names): # 2nd case above
+            self.dprint(LOGLVL_INFO,
+                        "none of new NS names has addr info at %s",
+                        [ns_rrset.get_name()])
+            for ns_name in new_ns_names:
                 self.__fetch_ns_addrs(ns_name, self.__aux_fetch_queries, False)
 
     def __handle_negative_answer(self, resp_msg, respinfo):
@@ -519,8 +535,8 @@ class ResolverContext:
                     auth_rrset.get_type() == RRType.SOA():
                 cmp_result = auth_rrset.get_name().compare(self.__qname)
                 cmp_reln = cmp_result.get_relation()
-                if cmp_reln != NameComparisonResult.EQUAL and \
-                        cmp_reln != NameComparisonResult.SUPERDOMAIN:
+                if (cmp_reln != NameComparisonResult.EQUAL and
+                    cmp_reln != NameComparisonResult.SUPERDOMAIN):
                     self.dprint(LOGLVL_INFO, 'bogus SOA name for negative: %s',
                                 [auth_rrset.get_name()])
                     continue
