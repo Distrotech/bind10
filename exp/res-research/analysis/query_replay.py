@@ -112,7 +112,7 @@ class CacheLog:
 
     '''
     def __init__(self, now, resp_list, on_miss=True):
-        self.__time_created = now
+        self.time_last_used = now
         self.hits = 0
         self.misses = 1 if on_miss else 0
         self.resp_list = resp_list
@@ -120,6 +120,7 @@ class CacheLog:
 class ResolverContext:
     '''Emulated resolver context.'''
     FETCH_DEPTH_MAX = 8         # prevent infinite NS fetch
+    override_mode = False       # set by QueryReplay
 
     def __init__(self, qname, qclass, qtype, cache, now, dbg_level, nest=0):
         self.__qname = qname
@@ -191,6 +192,8 @@ class ResolverContext:
         # query name)
         self.dprint(LOGLVL_DEBUG5, 'resolution completed')
         self.__cache.update(chain[0][0], self.__now)
+        self.__update_authns(chain[0][1], nameservers)
+        self.__purge_glue(chain[0][1])
         return chain[0][1], True, resp_list
 
     def __fetch_ns_addrs(self, fetch_list, allskip_ok):
@@ -275,6 +278,52 @@ class ResolverContext:
             if id is not None:
                 self.dprint(LOGLVL_DEBUG10, 'Update IPv6 glue: %s', [ns_name])
                 self.__cache.update(id, self.__now)
+
+    def __update_authns(self, answer_rrset, ns_rrset):
+        '''Update cached auth NS record that comes with an answer.
+
+        We don't do this if the query is for the NS, in which case the
+        authority NS is normally omitted.  Likewise, we don't do this for
+        negative answers.  It's still not guaranteed the authority section
+        always has the NS with the answer, but the fact that the cache has
+        the information makes it quite likely (at least one server gave it
+        with an answer in the original actual resolution).
+
+        '''
+        if self.__qtype == RRType.NS():
+            return
+        if answer_rrset.get_rdata_count() == 0:
+            return
+
+        id = self.__cache.find(ns_rrset.get_name(), self.__qclass, RRType.NS(),
+                               SimpleDNSCache.FIND_ALLOW_NOANSWER,
+                               SimpleDNSCache.TRUST_AUTHAUTHORITY)[2]
+        if id is not None:
+            self.dprint(LOGLVL_DEBUG10, 'update auth NS')
+            self.__cache.update(id, self.__now)
+
+        if self.override_mode:
+            id = self.__cache.find(ns_rrset.get_name(), self.__qclass,
+                                   RRType.NS(),
+                                   SimpleDNSCache.FIND_ALLOW_NOANSWER,
+                                   SimpleDNSCache.TRUST_GLUE)[2]
+            if id is not None:
+                self.dprint(LOGLVL_DEBUG10, 'purge glue NS')
+                self.__cache.update(id, None)
+
+    def __purge_glue(self, answer_rrset):
+        if (not self.override_mode or
+            (answer_rrset.get_type() != RRType.A() and
+             answer_rrset.get_type() != RRType.AAAA())):
+            return
+
+        id = self.__cache.find(answer_rrset.get_name(), self.__qclass,
+                               answer_rrset.get_type(),
+                               SimpleDNSCache.FIND_ALLOW_NOANSWER,
+                               SimpleDNSCache.TRUST_GLUE)[2]
+        if id is not None:
+            self.dprint(LOGLVL_DEBUG10, 'purge glue record due to answer')
+            self.__cache.update(id, None)
 
     def __get_resolve_chain(self):
         chain = []
@@ -449,9 +498,9 @@ class QueryReplay:
         self.__queries = {}
         self.__total_queries = 0
         self.__query_params = None
+        self.__override = options.override
         self.__cur_query = None # use for debug out
         self.__dbg_level = int(dbg_level)
-        self.__interactive = options.interactive
         self.__resp_msg = Message(Message.RENDER) # for resp size estimation
         self.__renderer = MessageRenderer()
         self.__rcode_stat = {}  # RCODE value (int) => query counter
@@ -463,6 +512,11 @@ class QueryReplay:
         self.__extresp_stat[0] = 0
         for resptype in SimpleDNSCache.RESP_DESCRIPTION.keys():
             self.__extresp_stat[resptype] = 0
+        self.__interactive = options.interactive
+        # Session wide constant for all resolver context instances
+        ResolverContext.override_mode = options.override
+        self.cache_samettl_hits = 0 # #-of cache hits that happen within 1s
+        self.cache_total_hits = 0   # #-of total cache hits (shortcut)
 
     def dprint(self, level, msg, params=[]):
         '''Dump a debug/log message.'''
@@ -536,7 +590,12 @@ class QueryReplay:
             if cache_log is None:
                 cache_log = CacheLog(qry_time, [], False)
                 qinfo.add_cache_log(cache_log)
+            else:
+                if int(cache_log.time_last_used) == int(qry_time):
+                    self.cache_samettl_hits += 1
+                cache_log.time_last_used = qry_time
             cache_log.hits += 1
+            self.cache_total_hits += 1
 
     def __check_expired(self, qinfo, qname, qclass, qtype, now):
         if qtype == RRType.ANY():
@@ -760,12 +819,21 @@ class QueryReplay:
             print('  %s: %d' % (SimpleDNSCache.RESP_DESCRIPTION[type],
                                 self.__extresp_stat[type]))
 
+    def dump_ttl_stat(self, dump_file):
+        print('TTL statistics:\n')
+        with open(dump_file, 'w') as f:
+            self.__cache.dump_ttl_stat(f)
+
 def main(log_file, options):
     cache = SimpleDNSCache()
     cache.load(options.cache_dbfile)
     replay = QueryReplay(log_file, cache, options.dbg_level)
     total_queries, uniq_queries = replay.replay()
     print('Replayed %d queries (%d unique)' % (total_queries, uniq_queries))
+    print('%d cache hits (%.2f%%), %d at same TTL' %
+          (replay.cache_total_hits,
+           (float(replay.cache_total_hits) / total_queries) * 100,
+           replay.cache_samettl_hits))
     if options.popularity_file is not None:
         replay.dump_popularity_stat(options.popularity_file)
     if options.query_dump_file is not None:
@@ -778,6 +846,8 @@ def main(log_file, options):
         replay.dump_extqry_stat(options.dump_extqry_file)
     if options.dump_resp_stat:
         replay.dump_extresp_stat()
+    if options.ttl_stat_file is not None:
+        replay.dump_ttl_stat(options.ttl_stat_file)
 
 def get_option_parser():
     parser = OptionParser(usage='usage: %prog [options] log_file')
@@ -790,6 +860,10 @@ def get_option_parser():
     parser.add_option("-i", "--interactive", dest="interactive",
                       action="store_true", default=False,
                       help="enter interactive cache session on finding a bug")
+    parser.add_option("-o", "--overrride",
+                      dest="override", action="store_true",
+                      default=False,
+                      help="run 'override' mode, purging lower rank caches")
     parser.add_option("-p", "--dump-popularity",
                       dest="popularity_file", action="store",
                       help="file to dump statistics per query popularity")
@@ -809,6 +883,9 @@ def get_option_parser():
     parser.add_option("-t", "--dump-qtype-stat",
                       dest="dump_qtype_stat", action="store_true",
                       default=False, help="dump per type statistics")
+    parser.add_option("-T", "--ttl-stat-file",
+                      dest="ttl_stat_file", action="store",
+                      help="dump cache TTL statistics to the file")
     return parser
 
 if __name__ == "__main__":
