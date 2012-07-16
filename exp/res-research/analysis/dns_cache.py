@@ -257,9 +257,16 @@ class SimpleDNSCache:
 
         If not, update its update/creation time to "now".
         Return True if the timestamp is updated; False otherwise.
+        If now is None, the entry will become expired, regardless of the
+        current status.
 
         '''
         entry = self.__entries[entry_id]
+
+        if now is None:
+            entry.time_updated = None
+            return True         # return value doesn't matter
+
         if entry.is_expired(now):
             entry.time_updated = now
             return True
@@ -328,15 +335,16 @@ class SimpleDNSCache:
         with open(db_file, 'br') as f:
             self.__deserialize(f)
 
+    def dump_name_entry(self, f, name, rrclass):
+        '''Dump cache entry for the specific name, RRType in text.'''
+        entry = self.__table.get((name, rrclass))
+        if entry is not None:
+            self.__dump_table_entry(f, name, rrclass, entry)
+
     def __dump_text(self, f):
         for key, entry in self.__table.items():
             name = key[0]
             rrclass = key[1]
-            self.__dump_table_entry(f, name, rrclass, entry)
-
-    def dump_name_entry(self, f, name, rrclass):
-        entry = self.__table.get((name, rrclass))
-        if entry is not None:
             self.__dump_table_entry(f, name, rrclass, entry)
 
     def __dump_table_entry(self, f, name, rrclass, entry):
@@ -356,6 +364,22 @@ class SimpleDNSCache:
                     for rdata in entry.rdata_list:
                         rrset.add_rdata(rdata)
                     f.write(rrset.to_text())
+
+    def dump_ttl_stat(self, f, used_only=True):
+        total_stat = {}         # TTL => counter
+        for rdata_map in self.__table.values():
+            for entries in rdata_map.values():
+                for entry in entries:
+                    if used_only and entry.time_updated is None:
+                        continue
+
+                    if not entry.ttl in total_stat:
+                        total_stat[entry.ttl] = 0
+                    total_stat[entry.ttl] += 1
+        ttl_list = list(total_stat.keys())
+        ttl_list.sort()
+        for ttl in ttl_list:
+            f.write('%d,%d\n' % (ttl, total_stat[ttl]))
 
     def __serialize(self, f):
         '''Dump cache database content to a file in serialized binary format.
