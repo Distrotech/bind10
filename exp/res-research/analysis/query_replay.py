@@ -372,12 +372,26 @@ class ResolverContext:
         for i in range(1, len(chain)):
             entry = chain[i][2]
             zname = chain[i][1].get_name()
-            if (not entry.is_expired(self.__now) and
-                self.__is_glue_active(zname, parent_zones[i], entry)):
+            if entry.is_expired(self.__now):
+                continue
+            if self.__is_glue_active(zname, parent_zones[i], entry):
                 self.dprint(LOGLVL_DEBUG10,
                             'located the deepest active delegtion to %s at %s',
                             [zname, parent_zones[i]])
                 return chain[:i + 1], resp_list[:i]
+            if entry.trust != SimpleDNSCache.TRUST_GLUE:
+                # If it fails, we need to make sure this delegation comes from
+                # glue because it won't be the top level.
+                self.dprint(LOGLVL_DEBUG10,
+                            'replace delegation info to %s at %s',
+                            [zname, parent_zones[i]])
+                rcode, rrset, id = \
+                    self.__cache.find(zname, self.__qclass,
+                                      RRType.NS(),
+                                      SimpleDNSCache.FIND_ALLOW_NOANSWER,
+                                      SimpleDNSCache.TRUST_GLUE)
+                new_entry = self.__cache.get(id) # id shouldn't be None
+                chain[i] = (id, rrset, new_entry)
 
         # In our setup root server should be always available.
         raise QueryReplaceError('no name server found for ' +
