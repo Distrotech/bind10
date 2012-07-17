@@ -367,19 +367,72 @@ class SimpleDNSCache:
 
     def dump_ttl_stat(self, f, used_only=True):
         total_stat = {}         # TTL => counter
+        answer_stat = {}        # TTL => counter
+        authority_stat = {}     # TTL => counter
+        glue_stat = {}          # TTL => counter
+        nonglue_stat = {}       # TTL => counter
         for rdata_map in self.__table.values():
             for entries in rdata_map.values():
                 for entry in entries:
                     if used_only and entry.time_updated is None:
                         continue
+                    self.__update_ttl_stat(entry, total_stat)
+                    self.__update_ttl_stat(entry, answer_stat,
+                                           self.TRUST_ANSWER)
+                    self.__update_ttl_stat(entry, authority_stat,
+                                           self.TRUST_AUTHAUTHORITY)
+                    self.__update_ttl_stat(entry, glue_stat, self.TRUST_GLUE)
+                    if entry.trust == self.TRUST_GLUE:
+                        for other_entry in entries:
+                            if used_only and other_entry.time_updated is None:
+                                continue
+                            if (other_entry.trust == self.TRUST_ANSWER or
+                                other_entry.trust == self.TRUST_AUTHAUTHORITY):
+                                self.__update_ttl_stat(other_entry,
+                                                       nonglue_stat)
+        for stat, desc in [(total_stat, "All"), (answer_stat, "Answer"),
+                           (authority_stat, "Auth Authority"),
+                           (glue_stat, "Glue"), (nonglue_stat, "Non Glue")]:
+            ttl_list = list(stat.keys())
+            ttl_list.sort()
+            f.write('%s TTL histogram\n' % (desc))
+            for ttl in ttl_list:
+                f.write('%d,%d\n' % (ttl, stat[ttl]))
 
-                    if not entry.ttl in total_stat:
-                        total_stat[entry.ttl] = 0
-                    total_stat[entry.ttl] += 1
-        ttl_list = list(total_stat.keys())
-        ttl_list.sort()
-        for ttl in ttl_list:
-            f.write('%d,%d\n' % (ttl, total_stat[ttl]))
+    def __update_ttl_stat(self, entry, stat, trust=None):
+        if trust is not None and entry.trust != trust:
+            return
+        if not entry.ttl in stat:
+            stat[entry.ttl] = 0
+        stat[entry.ttl] += 1
+
+    def dump_stat(self, f, used_only=True):
+        f.write('Cache content statistics\n')
+        TRUST_GLUE_PURGED = -1  # none of defined TRUST_xxx, local value here
+        stat = {}               # TRUST_xxx => #-of-entries
+        stat[TRUST_GLUE_PURGED] = 0
+        for rdata_map in self.__table.values():
+            for entries in rdata_map.values():
+                for entry in entries:
+                    if used_only and entry.time_updated is None:
+                        continue
+                    if not entry.trust in stat:
+                        stat[entry.trust] = 0
+                    stat[entry.trust] += 1
+                    if entry.trust == self.TRUST_GLUE:
+                        for other_entry in entries:
+                            if used_only and other_entry.time_updated is None:
+                                continue
+                            if (other_entry.trust == self.TRUST_ANSWER or
+                                other_entry.trust == self.TRUST_AUTHAUTHORITY):
+                               stat[TRUST_GLUE_PURGED] += 1
+        for trust, desc in [(self.TRUST_LOCAL, "Local"),
+                            (self.TRUST_ANSWER, "Answer"),
+                            (self.TRUST_AUTHAUTHORITY, "Authority Records"),
+                            (self.TRUST_GLUE, "Glue or Delegation"),
+                            (TRUST_GLUE_PURGED, "Glues overridden")]:
+            if trust in stat:
+                f.write('  %s: %d\n' % (desc, stat[trust]))
 
     def __serialize(self, f):
         '''Dump cache database content to a file in serialized binary format.

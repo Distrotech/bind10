@@ -299,10 +299,10 @@ class ResolverContext:
             # typical NXDOMAIN answer
             if resp_msg.get_rr_count(Message.SECTION_AUTHORITY) > 0:
                 auth = resp_msg.get_section(Message.SECTION_AUTHORITY)[0]
-                if auth.get_type() == RRType.SOA():
+                if self.__valid_soa(auth):
                     return SimpleDNSCache.RESP_NXDOMAIN_SOA
             elif resp_msg.get_rr_count(Message.SECTION_AUTHORITY) == 0:
-                return SimpleDNSCache.RESP_NXDOMAIN_NOAUTH
+                 return SimpleDNSCache.RESP_NXDOMAIN_NOAUTH
             return SimpleDNSCache.RESP_NXDOMAIN_UNEXPECTED
         elif (resp_msg.get_header_flag(Message.HEADERFLAG_AA) and
               resp_msg.get_rcode() == Rcode.NOERROR() and
@@ -310,7 +310,7 @@ class ResolverContext:
             # typical NXRRSET answer
             if resp_msg.get_rr_count(Message.SECTION_AUTHORITY) > 0:
                 auth = resp_msg.get_section(Message.SECTION_AUTHORITY)[0]
-                if auth.get_type() == RRType.SOA():
+                if self.__valid_soa(auth):
                     return SimpleDNSCache.RESP_NXRRSET_SOA
             elif resp_msg.get_rr_count(Message.SECTION_AUTHORITY) == 0:
                 return SimpleDNSCache.RESP_NXRRSET_NOAUTH
@@ -350,6 +350,13 @@ class ResolverContext:
                         cmp_reln == NameComparisonResult.SUPERDOMAIN):
                         return True
         return False
+
+    def __valid_soa(self, auth_rrset):
+        if auth_rrset.get_type() != RRType.SOA():
+            return False
+        cmp_reln = self.__qname.compare(auth_rrset.get_name()).get_relation()
+        return (cmp_reln == NameComparisonResult.EQUAL or
+                cmp_reln == NameComparisonResult.SUBDOMAIN)
 
     def __is_cname_response(self, resp_msg):
         # From BIND 9: A BIND8 server could return a non-authoritative

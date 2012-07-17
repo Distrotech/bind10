@@ -64,6 +64,13 @@ class QueryTrace:
             hits += log.hits
         return hits
 
+    def get_cache_samettl_hits(self):
+        '''Return the total count of cache hits for the query'''
+        hits = 0
+        for log in self.__cache_log:
+            hits += log.samettl_hits
+        return hits
+
     def get_cache_misses(self):
         '''Return the total count of cache misses for the query'''
         misses = 0
@@ -114,6 +121,7 @@ class CacheLog:
     def __init__(self, now, resp_list, on_miss=True):
         self.time_last_used = now
         self.hits = 0
+        self.samettl_hits = 0
         self.misses = 1 if on_miss else 0
         self.resp_list = resp_list
 
@@ -593,6 +601,7 @@ class QueryReplay:
             else:
                 if int(cache_log.time_last_used) == int(qry_time):
                     self.cache_samettl_hits += 1
+                    cache_log.samettl_hits += 1
                 cache_log.time_last_used = qry_time
             cache_log.hits += 1
             self.cache_total_hits += 1
@@ -739,10 +748,11 @@ class QueryReplay:
     def dump_popularity_stat(self, dump_file):
         cumulative_n_qry = 0
         cumulative_cache_hits = 0
+        cumulative_cache_samettl_hits = 0
         position = 1
         with open(dump_file, 'w') as f:
-            f.write(('position,% in total,hit rate,#CNAME,av ext qry,' +
-                     'resp-size\n'))
+            f.write('position,% in total,hit rate,same TTL rate,' +
+                    '#CNAME,av ext qry,' + 'resp-size\n')
             for qry_param in self.__get_query_params():
                 qinfo = self.__queries[qry_param]
                 n_queries = qinfo.get_query_count()
@@ -754,14 +764,19 @@ class QueryReplay:
                 cumulative_hit_rate = \
                     (float(cumulative_cache_hits) / cumulative_n_qry) * 100
 
+                cumulative_cache_samettl_hits += qinfo.get_cache_samettl_hits()
+                cumulative_samettl_hit_rate = \
+                    (float(cumulative_cache_samettl_hits) /
+                     cumulative_cache_hits) * 100
+
                 n_ext_queries_list = qinfo.get_external_query_count()
                 n_ext_queries = 0
                 for n in n_ext_queries_list:
                     n_ext_queries += n
 
-                f.write('%d,%.2f,%.2f,%d,%.2f,%d\n' %
+                f.write('%d,%.2f,%.2f,%.2f,%d,%.2f,%d\n' %
                         (position, cumulative_percentage, cumulative_hit_rate,
-                         len(qinfo.cname_trace),
+                         cumulative_samettl_hit_rate, len(qinfo.cname_trace),
                          float(n_ext_queries) / len(n_ext_queries_list),
                          qinfo.resp_size))
                 position += 1
@@ -820,9 +835,11 @@ class QueryReplay:
                                 self.__extresp_stat[type]))
 
     def dump_ttl_stat(self, dump_file):
-        print('TTL statistics:\n')
         with open(dump_file, 'w') as f:
             self.__cache.dump_ttl_stat(f)
+
+    def dump_cache_stat(self):
+        self.__cache.dump_stat(sys.stdout)
 
 def main(log_file, options):
     cache = SimpleDNSCache()
@@ -848,12 +865,18 @@ def main(log_file, options):
         replay.dump_extresp_stat()
     if options.ttl_stat_file is not None:
         replay.dump_ttl_stat(options.ttl_stat_file)
+    if options.dump_cache_stat:
+        replay.dump_cache_stat()
 
 def get_option_parser():
     parser = OptionParser(usage='usage: %prog [options] log_file')
     parser.add_option("-c", "--cache-dbfile",
                       dest="cache_dbfile", action="store", default=None,
                       help="Serialized DNS cache DB")
+    parser.add_option("-C", "--dump-cache-stat",
+                      dest="dump_cache_stat", action="store_true",
+                      default=False,
+                      help="dump cached entry counts per trust level")
     parser.add_option("-d", "--dbg-level", dest="dbg_level", action="store",
                       default=0,
                       help="specify the verbosity level of debug output")
