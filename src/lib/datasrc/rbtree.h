@@ -416,11 +416,16 @@ RBNode<T>::abstractSuccessor(RBNode<T>* RBNode<T>::*left, RBNode<T>*
     // root.  If found, the parent of the branch is the successor.
     // Otherwise, we return the null node
     const RBNode<T>* parent = current->parent_;
-    while (parent != RBNode<T>::NULL_NODE() && current == parent->*right) {
+    while ((!current->isSubTreeRoot()) && (current == parent->*right)) {
         current = parent;
         parent = parent->parent_;
     }
-    return (parent);
+
+    if (!current->isSubTreeRoot()) {
+        return (parent);
+    } else {
+        return (RBNode<T>::NULL_NODE());
+    }
 }
 
 template <typename T>
@@ -1528,7 +1533,7 @@ RBTree<T>::leftRotate(RBNode<T>** root, RBNode<T>* node) {
 
     right->parent_ = node->parent_;
 
-    if (node->parent_ != NULLNODE) {
+    if (!node->isSubTreeRoot()) {
         right->setSubTreeRoot(false);
         if (node == node->parent_->left_) {
             node->parent_->left_ = right;
@@ -1557,7 +1562,7 @@ RBTree<T>::rightRotate(RBNode<T>** root, RBNode<T>* node) {
 
     left->parent_ = node->parent_;
 
-    if (node->parent_ != NULLNODE) {
+    if (!node->isSubTreeRoot()) {
         left->setSubTreeRoot(false);
         if (node == node->parent_->right_) {
             node->parent_->right_ = left;
