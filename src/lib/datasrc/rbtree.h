@@ -1524,9 +1524,6 @@ RBTree<T>::leftRotate(RBNode<T>** root, RBNode<T>* node) {
     node->right_ = right->left_;
     if (right->left_ != NULLNODE) {
         right->left_->parent_ = node;
-        right->left_->setSubTreeRoot(false);
-    } else {
-        right->left_->setSubTreeRoot(true);
     }
 
     right->parent_ = node->parent_;
@@ -1556,9 +1553,6 @@ RBTree<T>::rightRotate(RBNode<T>** root, RBNode<T>* node) {
     node->left_ = left->right_;
     if (left->right_ != NULLNODE) {
         left->right_->parent_ = node;
-        left->right_->setSubTreeRoot(false);
-    } else {
-        left->right_->setSubTreeRoot(true);
     }
 
     left->parent_ = node->parent_;
