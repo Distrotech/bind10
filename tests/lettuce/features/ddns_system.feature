@@ -7,6 +7,7 @@ Feature: DDNS System
         Given I have bind10 running with configuration ddns/noddns.config
         And wait for bind10 stderr message BIND10_STARTED_CC
         And wait for bind10 stderr message AUTH_SERVER_STARTED
+        And wait for bind10 stderr message CMDCTL_STARTED
 
         # Sanity check
         bind10 module DDNS should not be running

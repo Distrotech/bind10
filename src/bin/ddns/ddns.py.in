@@ -541,17 +541,34 @@ class DDNSServer:
 
         return True
 
+    def __notify_start_forwarder_send(self):
+        '''Helper method for __notify_start_forwarder. Sends 1 start_forwarder
+           command, waits for an answer, and checks the result code.'''
+        seq = self._cc._session.group_sendmsg(create_command(
+                "start_ddns_forwarder"), AUTH_MODULE_NAME)
+        answer, _ = self._cc._session.group_recvmsg(False, seq)
+        rcode, error_msg = parse_answer(answer)
+        if rcode != 0:
+            logger.error(DDNS_START_FORWARDER_ERROR, error_msg)
+
     def __notify_start_forwarder(self):
         '''Notify auth that DDNS Update messages can now be forwarded'''
+        # Since this is run at startup, b10-auth may not be ready yet,
+        # and it may miss the command. This module would then be in a
+        # blocking read for the full timeout length.
+        # Lacking real asynchronous IO here, we work around this problem
+        # by setting the timeout lower, and trying a two times.
+        original_timeout = self._cc._session.get_timeout()
+        self._cc._session.set_timeout(1500)
         try:
-            seq = self._cc._session.group_sendmsg(create_command(
-                    "start_ddns_forwarder"), AUTH_MODULE_NAME)
-            answer, _ = self._cc._session.group_recvmsg(False, seq)
-            rcode, error_msg = parse_answer(answer)
-            if rcode != 0:
-                logger.error(DDNS_START_FORWARDER_ERROR, error_msg)
+            try:
+                self.__notify_start_forwarder_send()
+            except SessionTimeout:
+                self.__notify_start_forwarder_send()
         except (SessionTimeout, SessionError, ProtocolError) as ex:
             logger.error(DDNS_START_FORWARDER_FAIL, ex)
+        finally:
+            original_timeout = self._cc._session.set_timeout(original_timeout)
 
     def __notify_stop_forwarder(self):
         '''Notify auth that DDNS Update messages should no longer be forwarded.
@@ -673,7 +690,7 @@ class DDNSServer:
                     raise
             for fileno in reads:
                 if fileno == cc_fileno:
-                    self._cc.check_command(True)
+                    self._cc.check_command(True, True)
                 elif fileno == listen_fileno:
                     self.accept()
                 else:

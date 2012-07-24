@@ -144,7 +144,7 @@ class ModuleCCSession(ConfigData):
        module, and one to update the configuration run-time. These
        callbacks are called when 'check_command' is called on the
        ModuleCCSession"""
-       
+
     def __init__(self, spec_file_name, config_handler, command_handler,
                  cc_session=None, handle_logging_config=True,
                  socket_file = None):
@@ -178,9 +178,9 @@ class ModuleCCSession(ConfigData):
         """
         module_spec = isc.config.module_spec_from_file(spec_file_name)
         ConfigData.__init__(self, module_spec)
-        
+
         self._module_name = module_spec.get_module_name()
-        
+
         self.set_config_handler(config_handler)
         self.set_command_handler(command_handler)
 
@@ -242,30 +242,35 @@ class ModuleCCSession(ConfigData):
         """Close the session to the command channel"""
         self._session.close()
 
-    def check_command(self, nonblock=True):
-        """Check whether there is a command or configuration update on
+    def check_command(self, nonblock=True, repeating=True):
+        """Check whether there are commands or configuration updates on
            the channel. This function does a read on the cc session, and
            returns nothing.
            It calls check_command_without_recvmsg()
            to parse the received message.
-           
-           If nonblock is True, it just checks if there's a command
-           and does nothing if there isn't. If nonblock is False, it
-           waits until it arrives. It temporarily sets timeout to infinity,
-           because commands may not come in arbitrary long time."""
+
+           If nonblock is True, it just checks if there are commands, and
+           handles each of them until there are no more.
+           If nonblock is False, it waits until a command arrives, but will
+           only handle 1. It temporarily sets timeout to infinity, because
+           commands may not come in arbitrary long time."""
         timeout_orig = self._session.get_timeout()
         self._session.set_timeout(0)
-        try:
-            msg, env = self._session.group_recvmsg(nonblock)
-        finally:
-            self._session.set_timeout(timeout_orig)
-        self.check_command_without_recvmsg(msg, env)
+        # Actual value does not matter as long as it is not None,
+        # it is immediately overwritten.
+        msg = 0
+        while repeating and msg is not None:
+            try:
+                msg, env = self._session.group_recvmsg(nonblock)
+            finally:
+                self._session.set_timeout(timeout_orig)
+            self.check_command_without_recvmsg(msg, env)
 
     def check_command_without_recvmsg(self, msg, env):
         """Parse the given message to see if there is a command or a
            configuration update. Calls the corresponding handler
            functions if present. Responds on the channel if the
-           handler returns a message.""" 
+           handler returns a message."""
         # should we default to an answer? success-by-default? unhandled error?
         if msg is not None and not 'result' in msg:
             answer = None
@@ -314,7 +319,7 @@ class ModuleCCSession(ConfigData):
                 answer = create_answer(1, str(exc))
             if answer:
                 self._session.group_reply(env, answer)
-    
+
     def set_config_handler(self, config_handler):
         """Set the config handler for this module. The handler is a
            function that takes the full configuration and handles it.
