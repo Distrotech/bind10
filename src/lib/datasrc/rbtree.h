@@ -1512,6 +1512,8 @@ RBTree<T>::insertRebalance(RBNode<T>** root, RBNode<T>* node) {
 
     RBNode<T>* uncle;
     while (node != *root && node->parent_->getColor() == RBNode<T>::RED) {
+        // Here, node->parent_ is not NULL and it is also red, so
+        // node->parent_->parent_ is also not NULL.
         if (node->parent_ == node->parent_->parent_->left_) {
             uncle = node->parent_->parent_->right_;
 
