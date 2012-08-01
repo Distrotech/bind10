@@ -22,6 +22,10 @@
 #include <stdint.h>
 #include <boost/scoped_ptr.hpp>
 
+namespace isc {
+namespace auth {
+namespace statistics {
+
 class AuthCountersImpl;
 
 /// \brief Set of query counters.
@@ -207,10 +211,6 @@ public:
     ///
     void registerStatisticsValidator(AuthCounters::validator_type validator) const;
 };
-
-namespace isc {
-namespace auth {
-namespace statistics {
 
 class QRAttributes {
 /// \brief Query/Response attributes for statistics.

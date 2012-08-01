@@ -85,6 +85,7 @@ using namespace isc::xfr;
 using namespace isc::asiolink;
 using namespace isc::asiodns;
 using namespace isc::server_common::portconfig;
+using isc::auth::statistics::AuthCounters;
 
 namespace {
 // A helper class for cleaning up message renderer.

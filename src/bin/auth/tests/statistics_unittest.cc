@@ -36,6 +36,7 @@ using namespace std;
 using namespace isc::cc;
 using namespace isc::dns;
 using namespace isc::data;
+using isc::auth::statistics::AuthCounters;
 
 namespace {
 

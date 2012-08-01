@@ -71,6 +71,7 @@ using namespace isc::asiodns;
 using namespace isc::asiolink;
 using namespace isc::testutils;
 using namespace isc::server_common::portconfig;
+using isc::auth::statistics::AuthCounters;
 using isc::UnitTestUtil;
 using boost::scoped_ptr;
 

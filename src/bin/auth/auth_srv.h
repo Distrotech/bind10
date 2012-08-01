@@ -268,7 +268,9 @@ public:
     ///
     /// \return the value of the counter.
 
-    uint64_t getCounter(const AuthCounters::ServerCounterType type) const;
+    uint64_t getCounter(
+        const isc::auth::statistics::AuthCounters::ServerCounterType type)
+        const;
 
     /// \brief Get the value of per Opcode counter in the Auth Counters.
     ///
