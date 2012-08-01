@@ -184,9 +184,9 @@ SocketSessionForwarder_push(PyObject* po_self, PyObject* args) {
 
     try {
 #ifdef _WIN32
-        SOCKET fd,
+        SOCKET fd;
 #else
-        int fd,
+        int fd;
 #endif
         int family, type, protocol;
         PyObject* po_local_end;

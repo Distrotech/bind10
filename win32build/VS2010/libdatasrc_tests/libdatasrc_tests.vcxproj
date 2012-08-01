@@ -52,7 +52,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;GTEST_LINKED_AS_SHARED_LIBRARY=1;TEST_DATA_DIR="%BIND10HOME%/src/lib/datasrc/tests/testdata";TEST_DATA_BUILDDIR="%BIND10HOME%/src/lib/datasrc/tests/testdata";TEST_DATA_COMMONDIR="%BIND10HOME%/src/lib/testutils/testdata";_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WIN32;WIN32;GTEST_LINKED_AS_SHARED_LIBRARY=1;TEST_DATA_DIR="%BIND10HOME%/src/lib/datasrc/tests/testdata";TEST_DATA_BUILDDIR="%BIND10HOME%/src/lib/datasrc/tests/testdata";TEST_DATA_COMMONDIR="%BIND10HOME%/src/lib/testutils/testdata";_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\..\gtest\include;%BOOST%;C:\sqlite3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
@@ -60,7 +60,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libexceptionsd.lib;libutild.lib;libutil_unittestsd.lib;liblogd.lib;libcryptolinkd.lib;libdns++d.lib;libccd.lib;libtestutilsd.lib;libdatasrcd.lib;sqlite3_dsD.lib;memory_dsD.lib;static_dsD.lib;botand.lib;log4cplusD.lib;gtestd.lib;sqlite3.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libexceptionsd.lib;libutild.lib;libutil_unittestsd.lib;liblogd.lib;libcryptolinkd.lib;libdns++d.lib;libccd.lib;libtestutilsd.lib;libdatasrcd.lib;botand.lib;log4cplusD.lib;gtestd.lib;sqlite3.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
@@ -85,7 +85,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;liblog.lib;libcryptolink.lib;libdns++.lib;libcc.lib;libtestutils.lib;libdatasrc.lib;sqlite3_ds.lib;memory_ds.lib;static_ds.lib;botan.lib;log4cplus.lib;gtest.lib;sqlite3.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;liblog.lib;libcryptolink.lib;libdns++.lib;libcc.lib;libtestutils.lib;libdatasrc.lib;botan.lib;log4cplus.lib;gtest.lib;sqlite3.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
@@ -94,18 +94,25 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\lib\datasrc\datasrc_messages.h" />
+    <ClInclude Include="..\..\..\src\lib\datasrc\logger.h" />
+    <ClInclude Include="..\..\..\src\lib\datasrc\memory_datasrc.h" />
+    <ClInclude Include="..\..\..\src\lib\datasrc\sqlite3_accessor.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\tests\faked_nsec3.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\tests\test_client.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\tests\test_datasrc.h" />
     <ClInclude Include="..\..\..\src\lib\dns\tests\unittest_util.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\lib\datasrc\datasrc_messages.cc" />
+    <ClCompile Include="..\..\..\src\lib\datasrc\logger.cc" />
+    <ClCompile Include="..\..\..\src\lib\datasrc\memory_datasrc.cc" />
+    <ClCompile Include="..\..\..\src\lib\datasrc\sqlite3_accessor.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\cache_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\client_list_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\client_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\database_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\datasrc_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\datasrc\tests\factory_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\faked_nsec3.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\logger_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\memory_datasrc_unittest.cc" />

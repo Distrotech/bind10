@@ -68,9 +68,9 @@ public:
     /// or fill it into an asio socket). The other part is the token
     /// representing the socket, which allows it to be given up again.
 #ifdef _WIN32
-    typedef std::pair<int, std::string> SocketID;
-#else
     typedef std::pair<SOCKET, std::string> SocketID;
+#else
+    typedef std::pair<int, std::string> SocketID;
 #endif
 
     /// \brief The protocol of requested socket

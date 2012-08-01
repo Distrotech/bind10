@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define ISC_LIBDATASRC_EXPORT
+
 #include <config.h>
 
 #include <boost/scoped_ptr.hpp>
@@ -50,11 +52,15 @@ pathtestHelper(const std::string& file, const std::string& expected_error) {
     EXPECT_EQ(expected_error, error.substr(0, expected_error.size()));
 }
 
-#ifndef _WIN32
+#if !defined(_WIN32) || !defined(USE_STATIC_LINK)
 TEST(FactoryTest, paths) {
     // Test whether the paths are made absolute if they are not,
     // by inspecting the error that is raised when they are wrong
+#ifndef _WIN32
     const std::string error("dlopen failed for ");
+#else
+    const std::string error("LoadLibrary failed for ");
+#endif
     // With the current implementation, we can safely assume this has
     // been set for this test (as the loader would otherwise also fail
     // unless the loadable backend library happens to be installed)
@@ -64,34 +70,87 @@ TEST(FactoryTest, paths) {
     pathtestHelper("/no_such_file.so", error + "/no_such_file.so");
 
     // If no ending in .so, it should get _ds.so
+#if !defined(_WIN32) || !defined(_DEBUG)
     pathtestHelper("/no_such_file", error + "/no_such_file_ds.so");
+#else
+    pathtestHelper("/no_such_file", error + "/no_such_file_dsD.so");
+#endif
 
     // If not starting with /, path should be added. For this test that
     // means the build directory as set in B10_FROM_BUILD
+#if !defined(_WIN32)
     pathtestHelper("no_such_file.so", error + builddir +
                    "/src/lib/datasrc/.libs/no_such_file.so");
     pathtestHelper("no_such_file", error + builddir +
                    "/src/lib/datasrc/.libs/no_such_file_ds.so");
+#else
+#ifndef _DEBUG
+    pathtestHelper("no_such_file.so", error + builddir +
+                   "/win32build/VS2010/Release/no_such_file.so");
+    pathtestHelper("no_such_file", error + builddir +
+                   "/win32build/VS2010/Release/no_such_file_ds.so");
+#else
+    pathtestHelper("no_such_file.so", error + builddir +
+                   "/win32build/VS2010/Debug/no_such_file.so");
+    pathtestHelper("no_such_file", error + builddir +
+                   "/win32build/VS2010/Debug/no_such_file_dsD.so");
+#endif
+#endif
 
     // Some tests with '.so' in the name itself
+#ifndef _WIN32
     pathtestHelper("no_such_file.so.something", error + builddir +
                    "/src/lib/datasrc/.libs/no_such_file.so.something_ds.so");
+#else
+#ifndef _DEBUG
+    pathtestHelper("no_such_file.so.something", error + builddir +
+                   "/win32build/VS2010/Release/no_such_file.so.something_ds.so");
+#else
+    pathtestHelper("no_such_file.so.something", error + builddir +
+                   "/win32build/VS2010/Debug/no_such_file.so.something_dsD.so");
+#endif
+#endif
+#if !defined(_WIN32) || !defined(_DEBUG)
     pathtestHelper("/no_such_file.so.something", error +
                    "/no_such_file.so.something_ds.so");
+#else
+    pathtestHelper("/no_such_file.so.something", error +
+                   "/no_such_file.so.something_dsD.so");
+#endif
     pathtestHelper("/no_such_file.so.something.so", error +
                    "/no_such_file.so.something.so");
     pathtestHelper("/no_such_file.so.so", error +
                    "/no_such_file.so.so");
+#ifndef _WIN32
     pathtestHelper("no_such_file.so.something", error + builddir +
                    "/src/lib/datasrc/.libs/no_such_file.so.something_ds.so");
+#else
+#ifndef _DEBUG
+    pathtestHelper("no_such_file.so.something", error + builddir +
+                   "/win32build/VS2010/Release/no_such_file.so.something_ds.so");
+#else
+    pathtestHelper("no_such_file.so.something", error + builddir +
+                   "/win32build/VS2010/Debug/no_such_file.so.something_dsD.so");
+#endif
+#endif
 
     // Temporarily unset B10_FROM_BUILD to see that BACKEND_LIBRARY_PATH
     // is used
+#ifndef _WIN32
     unsetenv("B10_FROM_BUILD");
+#else
+    std::string uv = "B10_FROM_BUILD=";
+    _putenv(uv.c_str());
+#endif
     pathtestHelper("no_such_file.so", error + BACKEND_LIBRARY_PATH +
                    "no_such_file.so");
     // Put it back just in case
+#ifndef _WIN32
     setenv("B10_FROM_BUILD", builddir.c_str(), 1);
+#else
+    std::string vv = "B10_FROM_BUILD=" + builddir;
+    _putenv(vv.c_str());
+#endif
 
     // Test some bad input values
     ASSERT_THROW(DataSourceClientContainer("", ElementPtr()),

@@ -27,6 +27,18 @@
     <ClInclude Include="..\..\..\src\lib\datasrc\tests\test_client.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\datasrc\memory_datasrc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\datasrc\sqlite3_accessor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\datasrc\logger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\lib\datasrc\datasrc_messages.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\cache_unittest.cc">
@@ -74,9 +86,6 @@
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\sqlite3_accessor_unittest.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\lib\datasrc\tests\factory_unittest.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\client_list_unittest.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -90,6 +99,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\lib\datasrc\tests\test_client.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\datasrc\logger.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\datasrc\datasrc_messages.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\datasrc\sqlite3_accessor.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\datasrc\memory_datasrc.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

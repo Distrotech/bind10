@@ -64,6 +64,36 @@ convertSockAddr(SSAType* sa) {
     return (static_cast<DSAType*>(p));
 }
 
+#ifndef _WIN32
+template <typename SAType>
+const struct sockaddr*
+convertSockAddr(const SAType* sa) {
+    const void* p = sa;
+    return (static_cast<const struct sockaddr*>(p));
+}
+
+template <typename SAType>
+const SAType*
+convertSockAddr(const struct sockaddr* sa) {
+    const void* p = sa;
+    return (static_cast<const SAType*>(p));
+}
+
+template <typename SAType>
+struct sockaddr*
+convertSockAddr(SAType* sa) {
+    void* p = sa;
+    return (static_cast<struct sockaddr*>(p));
+}
+
+template <typename SAType>
+SAType*
+convertSockAddr(struct sockaddr* sa) {
+    void* p = sa;
+    return (static_cast<SAType*>(p));
+}
+#endif
+
 }
 }
 }

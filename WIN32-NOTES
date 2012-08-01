@@ -8,8 +8,9 @@ What is needed:
  - Visual Studio C++ (versions 2008 and 2010 were tested,
   (note older versions could fail to correctly compile,
   cf. C4373 warning), 2010 express and 64 bit support
-  from the 7.1 SDK work too. 2012 RC can't compile gtest
-  with its standard environment...)
+  from the 7.1 SDK work too. VS 2012 RC can't compile gtest
+  with its standard environment... but the issue is known:
+  http://code.google.com/p/googletest/issues/detail?id=412
 
  - python >= 3.1 (I got Cpython 3.2 MSI from python.org,
   note the pre-built python can give C++ runtime issue with

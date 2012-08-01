@@ -31,7 +31,11 @@ fdshare_recv_fd(PyObject*, PyObject* args) {
     if (!PyArg_ParseTuple(args, "i", &sock)) {
         return (NULL);
     }
+#ifdef _WIN32
     fd = (int) isc::util::io::recv_fd((SOCKET) sock);
+#else
+    fd = isc::util::io::recv_fd(sock);
+#endif
     return (Py_BuildValue("i", fd));
 }
 
@@ -41,7 +45,11 @@ fdshare_send_fd(PyObject*, PyObject* args) {
     if (!PyArg_ParseTuple(args, "ii", &sock, &fd)) {
         return (NULL);
     }
+#ifdef _WIN32
     result = isc::util::io::send_fd((SOCKET) sock, (SOCKET) fd);
+#else
+    result = isc::util::io::send_fd(sock, fd);
+#endif
     return (Py_BuildValue("i", result));
 }
 

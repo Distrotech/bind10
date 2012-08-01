@@ -235,20 +235,22 @@ TEST_F(IfaceMgrTest, sockets6) {
     // bind multicast socket to port 10547
 #ifdef _WIN32
     SOCKET socket1 = ifacemgr->openSocket(LOOPBACK, loAddr, 10547);
+    EXPECT_NE(socket1, INVALID_SOCKET); // socket > 0
 #else
     int socket1 = ifacemgr->openSocket(LOOPBACK, loAddr, 10547);
+    EXPECT_GT(socket1, 0); // socket > 0
 #endif
-    EXPECT_NE(socket1, INVALID_SOCKET); // socket > 0
 
     EXPECT_EQ(socket1, ifacemgr->getSocket(pkt6));
 
     // bind unicast socket to port 10548
 #ifdef _WIN32
     SOCKET socket2 = ifacemgr->openSocket(LOOPBACK, loAddr, 10548);
+    EXPECT_NE(socket2, INVALID_SOCKET);
 #else
     int socket2 = ifacemgr->openSocket(LOOPBACK, loAddr, 10548);
+    EXPECT_GT(socket2, 0);
 #endif
-    EXPECT_NE(socket2, INVALID_SOCKET);
 
     // removed code for binding socket twice to the same address/port
     // as it caused problems on some platforms (e.g. Mac OS X)
@@ -278,19 +280,21 @@ TEST_F(IfaceMgrTest, DISABLED_sockets6Mcast) {
     // bind multicast socket to port 10547
 #ifdef _WIN32
     SOCKET socket1 = ifacemgr->openSocket(LOOPBACK, mcastAddr, 10547);
+    EXPECT_NE(socket1, INVALID_SOCKET); // socket > 0
 #else
     int socket1 = ifacemgr->openSocket(LOOPBACK, mcastAddr, 10547);
+    EXPECT_GT(socket1, 0); // socket > 0
 #endif
-    EXPECT_NE(socket1, INVALID_SOCKET); // socket > 0
 
     // expect success. This address/port is already bound, but
     // we are using SO_REUSEADDR, so we can bind it twice
 #ifdef _WIN32
     SOCKET socket2 = ifacemgr->openSocket(LOOPBACK, mcastAddr, 10547);
+    EXPECT_NE(socket2, INVALID_SOCKET);
 #else
     int socket2 = ifacemgr->openSocket(LOOPBACK, mcastAddr, 10547);
+    EXPECT_GT(socket2, 0);
 #endif
-    EXPECT_NE(socket2, INVALID_SOCKET);
 
     // there's no good way to test negative case here.
     // we would need non-multicast interface. We will be able
@@ -320,15 +324,20 @@ TEST_F(IfaceMgrTest, sendReceive6) {
 #ifdef _WIN32
     SOCKET socket1 = INVALID_SOCKET, socket2 = INVALID_SOCKET;
 #else
-    int socket1 = INVALID_SOCKET, socket2 = INVALID_SOCKET;
+    int socket1 = 0, socket2 = 0;
 #endif
     EXPECT_NO_THROW(
         socket1 = ifacemgr->openSocket(LOOPBACK, loAddr, 10547);
         socket2 = ifacemgr->openSocket(LOOPBACK, loAddr, 10546);
     );
 
+#ifdef _WIN32
     EXPECT_NE(socket1, INVALID_SOCKET);
     EXPECT_NE(socket2, INVALID_SOCKET);
+#else
+    EXPECT_GT(socket1, 0);
+    EXPECT_GT(socket2, 0);
+#endif
 
 
     // prepare dummy payload
@@ -381,15 +390,20 @@ TEST_F(IfaceMgrTest, sendReceive4) {
 #ifdef _WIN32
     SOCKET socket1 = INVALID_SOCKET, socket2 = INVALID_SOCKET;
 #else
-    int socket1 = INVALID_SOCKET, socket2 = INVALID_SOCKET;
+    int socket1 = 0, socket2 = 0;
 #endif
     EXPECT_NO_THROW(
         socket1 = ifacemgr->openSocket(LOOPBACK, loAddr, DHCP4_SERVER_PORT + 10000);
         socket2 = ifacemgr->openSocket(LOOPBACK, loAddr, DHCP4_SERVER_PORT + 10000 + 1);
     );
 
+#ifdef _WIN32
     EXPECT_NE(socket1, INVALID_SOCKET);
     EXPECT_NE(socket2, INVALID_SOCKET);
+#else
+    EXPECT_GE(socket1, 0);
+    EXPECT_GE(socket2, 0);
+#endif
 
     boost::shared_ptr<Pkt4> sendPkt(new Pkt4(DHCPDISCOVER, 1234) );
 
@@ -475,14 +489,18 @@ TEST_F(IfaceMgrTest, socket4) {
 #ifdef _WIN32
     SOCKET socket1 = INVALID_SOCKET;
 #else
-    int socket1 = INVALID_SOCKET;
+    int socket1 = 0;
 #endif
 
     EXPECT_NO_THROW(
         socket1 = ifacemgr->openSocket(LOOPBACK, loAddr, DHCP4_SERVER_PORT + 10000);
     );
 
+#ifdef _WIN32
     EXPECT_NE(socket1, INVALID_SOCKET);
+#else
+    EXPECT_GT(socket1, 0);
+#endif
 
     Pkt4 pkt(DHCPDISCOVER, 1234);
     pkt.setIface(LOOPBACK);

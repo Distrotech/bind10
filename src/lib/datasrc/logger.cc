@@ -19,7 +19,8 @@
 namespace isc {
 namespace datasrc {
 
-ISC_LIBDATASRC_API isc::log::Logger logger("datasrc");
+// shared on name by log4cplus
+isc::log::Logger logger("datasrc");
 
 }
 }

@@ -86,14 +86,13 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\src\lib\datasrc\datasrc_messages.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\dll.h" />
+    <ClInclude Include="..\..\..\src\lib\datasrc\logger.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\memory_datasrc.h" />
-    <ClInclude Include="..\..\..\src\lib\datasrc\static_datasrc.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\datasrc\datasrc_messages.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\logger.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\memory_datasrc.cc" />
-    <ClCompile Include="..\..\..\src\lib\datasrc\static_datasrc.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\static_datasrc_link.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

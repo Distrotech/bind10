@@ -86,7 +86,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\src\lib\datasrc\datasrc_messages.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\dll.h" />
-    <ClInclude Include="..\..\..\src\lib\datasrc\memory_datasrc.h" />
+    <ClInclude Include="..\..\..\src\lib\datasrc\logger.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\datasrc\datasrc_messages.cc" />

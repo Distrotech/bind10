@@ -86,15 +86,14 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\src\lib\datasrc\datasrc_messages.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\dll.h" />
+    <ClInclude Include="..\..\..\src\lib\datasrc\logger.h" />
     <ClInclude Include="..\..\..\src\lib\datasrc\sqlite3_accessor.h" />
-    <ClInclude Include="..\..\..\src\lib\datasrc\sqlite3_datasrc.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\datasrc\datasrc_messages.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\logger.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\sqlite3_accessor.cc" />
     <ClCompile Include="..\..\..\src\lib\datasrc\sqlite3_accessor_link.cc" />
-    <ClCompile Include="..\..\..\src\lib\datasrc\sqlite3_datasrc.cc" />
     <ClCompile Include="..\..\dllmain.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

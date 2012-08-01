@@ -18,7 +18,7 @@
     <ClInclude Include="..\..\..\src\lib\datasrc\dll.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\lib\datasrc\memory_datasrc.h">
+    <ClInclude Include="..\..\..\src\lib\datasrc\logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\lib\datasrc\datasrc_messages.h">
@@ -26,19 +26,19 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\lib\datasrc\datasrc_messages.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\lib\datasrc\memory_datasrc.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\lib\datasrc\memory_datasrc_link.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\dllmain.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\datasrc\memory_datasrc.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\lib\datasrc\logger.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\datasrc\datasrc_messages.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

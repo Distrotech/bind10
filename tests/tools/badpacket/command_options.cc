@@ -18,7 +18,11 @@
 #include <vector>
 
 #include <boost/lexical_cast.hpp>
+#ifdef _WIN32
 #include <getopt_long.h>
+#else
+#include <getopt.h>
+#endif
 
 #include "exceptions/exceptions.h"
 #include "util/strutil.h"
