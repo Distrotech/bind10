@@ -27,6 +27,7 @@
 #include <cc/session.h>
 
 #include <auth/statistics.h>
+#include <auth/statistics_items.h>
 
 #include <dns/tests/unittest_util.h>
 
@@ -420,5 +421,23 @@ TEST_F(AuthCountersTest, submitStatisticsWithValidator) {
 
     // checks the value returned by submitStatistics
     EXPECT_FALSE(counters.submitStatistics());
+}
+
+TEST(StatisticsItemsTest, QRItemNamesCheck) {
+    // check the number of elements in the array
+    EXPECT_EQ(sizeof(QRCounterItemName) / sizeof(QRCounterItemName[0]), QR_COUNTER_TYPES);
+    // check the name of the first enum element
+    EXPECT_EQ(QRCounterItemName[QR_REQUEST_IPV4], "request.v4");
+    // check the name of the last enum element
+    EXPECT_EQ(QRCounterItemName[QR_RCODE_OTHER], "rcode.other");
+}
+
+TEST(StatisticsItemsTest, SocketItemNamesCheck) {
+    // check the number of elements in the array
+    EXPECT_EQ(sizeof(SocketCounterItemName) / sizeof(SocketCounterItemName[0]), SOCKET_COUNTER_TYPES);
+    // check the name of the first enum element
+    EXPECT_EQ(SocketCounterItemName[SOCKET_IPV4_UDP_BINDFAIL], "ipv4.udp.bindfail");
+    // check the name of the last enum element
+    EXPECT_EQ(SocketCounterItemName[SOCKET_UNIXDOMAIN_SENDERR], "unixdomain.senderr");
 }
 }
