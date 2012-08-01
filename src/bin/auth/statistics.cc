@@ -40,25 +40,23 @@ namespace isc {
 namespace auth {
 namespace statistics {
 
-class AuthCountersImpl : boost::noncopyable {
+class CountersImpl : boost::noncopyable {
 public:
-    AuthCountersImpl();
-    ~AuthCountersImpl();
-    void inc(const AuthCounters::ServerCounterType type);
+    CountersImpl();
+    ~CountersImpl();
+    void inc(const Counters::ServerCounterType type);
     void inc(const Opcode opcode) {
         opcode_counter_.inc(opcode.getCode());
     }
     void inc(const Rcode rcode) {
         rcode_counter_.inc(rcode.getCode());
     }
-    void inc(const std::string& zone,
-             const AuthCounters::PerZoneCounterType type);
+    void inc(const std::string& zone, const Counters::PerZoneCounterType type);
     bool submitStatistics() const;
     void setStatisticsSession(isc::cc::AbstractSession* statistics_session);
-    void registerStatisticsValidator
-    (AuthCounters::validator_type validator);
+    void registerStatisticsValidator (Counters::validator_type validator);
     // Currently for testing purpose only
-    uint64_t getCounter(const AuthCounters::ServerCounterType type) const;
+    uint64_t getCounter(const Counters::ServerCounterType type) const;
     uint64_t getCounter(const Opcode opcode) const {
         return (opcode_counter_.get(opcode.getCode()));
     }
@@ -73,38 +71,38 @@ private:
     static const size_t NUM_RCODES = 17;
     CounterDictionary per_zone_counter_;
     isc::cc::AbstractSession* statistics_session_;
-    AuthCounters::validator_type validator_;
+    Counters::validator_type validator_;
 };
 
-AuthCountersImpl::AuthCountersImpl() :
+CountersImpl::CountersImpl() :
     // initialize counter
-    // size of server_counter_: AuthCounters::SERVER_COUNTER_TYPES
-    // size of per_zone_counter_: AuthCounters::PER_ZONE_COUNTER_TYPES
-    server_counter_(AuthCounters::SERVER_COUNTER_TYPES),
+    // size of server_counter_: Counters::SERVER_COUNTER_TYPES
+    // size of per_zone_counter_: Counters::PER_ZONE_COUNTER_TYPES
+    server_counter_(Counters::SERVER_COUNTER_TYPES),
     opcode_counter_(NUM_OPCODES), rcode_counter_(NUM_RCODES),
-    per_zone_counter_(AuthCounters::PER_ZONE_COUNTER_TYPES),
+    per_zone_counter_(Counters::PER_ZONE_COUNTER_TYPES),
     statistics_session_(NULL)
 {
     per_zone_counter_.addElement("_SERVER_");
 }
 
-AuthCountersImpl::~AuthCountersImpl()
+CountersImpl::~CountersImpl()
 {}
 
 void
-AuthCountersImpl::inc(const AuthCounters::ServerCounterType type) {
+CountersImpl::inc(const Counters::ServerCounterType type) {
     server_counter_.inc(type);
 }
 
 void
-AuthCountersImpl::inc(const std::string& zone,
-                      const AuthCounters::PerZoneCounterType type)
+CountersImpl::inc(const std::string& zone,
+                      const Counters::PerZoneCounterType type)
 {
     per_zone_counter_[zone].inc(type);
 }
 
 bool
-AuthCountersImpl::submitStatistics() const {
+CountersImpl::submitStatistics() const {
     if (statistics_session_ == NULL) {
         LOG_ERROR(auth_logger, AUTH_NO_STATS_SESSION);
         return (false);
@@ -118,10 +116,9 @@ AuthCountersImpl::submitStatistics() const {
                       <<   "  \"pid\":" << getpid()
                       <<   ", \"data\":"
                       <<     "{ \"queries.udp\": "
-                      <<     server_counter_.get(AuthCounters::SERVER_UDP_QUERY)
+                      <<     server_counter_.get(Counters::SERVER_UDP_QUERY)
                       <<     ", \"queries.tcp\": "
-                      <<     server_counter_.get(
-                          AuthCounters::SERVER_TCP_QUERY);
+                      <<     server_counter_.get(Counters::SERVER_TCP_QUERY);
     // Insert non 0 Opcode counters.
     for (int i = 0; i < NUM_OPCODES; ++i) {
         const Counter::Type counter = opcode_counter_.get(i);
@@ -183,75 +180,73 @@ AuthCountersImpl::submitStatistics() const {
 }
 
 void
-AuthCountersImpl::setStatisticsSession
+CountersImpl::setStatisticsSession
     (isc::cc::AbstractSession* statistics_session)
 {
     statistics_session_ = statistics_session;
 }
 
 void
-AuthCountersImpl::registerStatisticsValidator
-    (AuthCounters::validator_type validator)
+CountersImpl::registerStatisticsValidator
+    (Counters::validator_type validator)
 {
     validator_ = validator;
 }
 
 // Currently for testing purpose only
 uint64_t
-AuthCountersImpl::getCounter(const AuthCounters::ServerCounterType type) const {
+CountersImpl::getCounter(const Counters::ServerCounterType type) const {
     return (server_counter_.get(type));
 }
 
-AuthCounters::AuthCounters() : impl_(new AuthCountersImpl())
+Counters::Counters() : impl_(new CountersImpl())
 {}
 
-AuthCounters::~AuthCounters() {}
+Counters::~Counters() {}
 
 void
-AuthCounters::inc(const AuthCounters::ServerCounterType type) {
+Counters::inc(const Counters::ServerCounterType type) {
     impl_->inc(type);
 }
 
 void
-AuthCounters::inc(const Opcode opcode) {
+Counters::inc(const Opcode opcode) {
     impl_->inc(opcode);
 }
 
 void
-AuthCounters::inc(const Rcode rcode) {
+Counters::inc(const Rcode rcode) {
     impl_->inc(rcode);
 }
 
 bool
-AuthCounters::submitStatistics() const {
+Counters::submitStatistics() const {
     return (impl_->submitStatistics());
 }
 
 void
-AuthCounters::setStatisticsSession
-    (isc::cc::AbstractSession* statistics_session)
-{
+Counters::setStatisticsSession (isc::cc::AbstractSession* statistics_session) {
     impl_->setStatisticsSession(statistics_session);
 }
 
 uint64_t
-AuthCounters::getCounter(const AuthCounters::ServerCounterType type) const {
+Counters::getCounter(const Counters::ServerCounterType type) const {
     return (impl_->getCounter(type));
 }
 
 uint64_t
-AuthCounters::getCounter(const Opcode opcode) const {
+Counters::getCounter(const Opcode opcode) const {
     return (impl_->getCounter(opcode));
 }
 
 uint64_t
-AuthCounters::getCounter(const Rcode rcode) const {
+Counters::getCounter(const Rcode rcode) const {
     return (impl_->getCounter(rcode));
 }
 
 void
-AuthCounters::registerStatisticsValidator
-    (AuthCounters::validator_type validator) const
+Counters::registerStatisticsValidator
+    (Counters::validator_type validator) const
 {
     return (impl_->registerStatisticsValidator(validator));
 }

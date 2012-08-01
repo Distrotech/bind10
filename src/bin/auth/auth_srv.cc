@@ -85,7 +85,7 @@ using namespace isc::xfr;
 using namespace isc::asiolink;
 using namespace isc::asiodns;
 using namespace isc::server_common::portconfig;
-using isc::auth::statistics::AuthCounters;
+using isc::auth::statistics::Counters;
 
 namespace {
 // A helper class for cleaning up message renderer.
@@ -252,7 +252,7 @@ public:
     IntervalTimer statistics_timer_;
 
     /// Query counters for statistics
-    AuthCounters counters_;
+    Counters counters_;
 
     /// Addresses we listen on
     AddressList listen_addresses_;
@@ -835,9 +835,9 @@ void
 AuthSrvImpl::incCounter(const int protocol) {
     // Increment query counter.
     if (protocol == IPPROTO_UDP) {
-        counters_.inc(AuthCounters::SERVER_UDP_QUERY);
+        counters_.inc(Counters::SERVER_UDP_QUERY);
     } else if (protocol == IPPROTO_TCP) {
-        counters_.inc(AuthCounters::SERVER_TCP_QUERY);
+        counters_.inc(Counters::SERVER_TCP_QUERY);
     } else {
         // unknown protocol
         isc_throw(Unexpected, "Unknown protocol: " << protocol);
@@ -888,7 +888,7 @@ bool AuthSrv::submitStatistics() const {
 }
 
 uint64_t
-AuthSrv::getCounter(const AuthCounters::ServerCounterType type) const {
+AuthSrv::getCounter(const Counters::ServerCounterType type) const {
     return (impl_->counters_.getCounter(type));
 }
 

@@ -71,7 +71,7 @@ using namespace isc::asiodns;
 using namespace isc::asiolink;
 using namespace isc::testutils;
 using namespace isc::server_common::portconfig;
-using isc::auth::statistics::AuthCounters;
+using isc::auth::statistics::Counters;
 using isc::UnitTestUtil;
 using boost::scoped_ptr;
 
@@ -1032,7 +1032,7 @@ TEST_F(AuthSrvTest,
 // Submit UDP normal query and check query counter
 TEST_F(AuthSrvTest, queryCounterUDPNormal) {
     // The counter should be initialized to 0.
-    EXPECT_EQ(0, server.getCounter(AuthCounters::SERVER_UDP_QUERY));
+    EXPECT_EQ(0, server.getCounter(Counters::SERVER_UDP_QUERY));
     // Create UDP message and process.
     UnitTestUtil::createRequestMessage(request_message, Opcode::QUERY(),
                                        default_qid, Name("example.com"),
@@ -1041,7 +1041,7 @@ TEST_F(AuthSrvTest, queryCounterUDPNormal) {
     server.processMessage(*io_message, *parse_message, *response_obuffer,
                           &dnsserv);
     // After processing UDP query, the counter should be 1.
-    EXPECT_EQ(1, server.getCounter(AuthCounters::SERVER_UDP_QUERY));
+    EXPECT_EQ(1, server.getCounter(Counters::SERVER_UDP_QUERY));
     // The counter for opcode Query should also be one
     EXPECT_EQ(1, server.getCounter(Opcode::QUERY()));
     // The counter for REFUSED responses should also be one, the rest zero
@@ -1051,7 +1051,7 @@ TEST_F(AuthSrvTest, queryCounterUDPNormal) {
 // Submit TCP normal query and check query counter
 TEST_F(AuthSrvTest, queryCounterTCPNormal) {
     // The counter should be initialized to 0.
-    EXPECT_EQ(0, server.getCounter(AuthCounters::SERVER_TCP_QUERY));
+    EXPECT_EQ(0, server.getCounter(Counters::SERVER_TCP_QUERY));
     // Create TCP message and process.
     UnitTestUtil::createRequestMessage(request_message, Opcode::QUERY(),
                                        default_qid, Name("example.com"),
@@ -1060,7 +1060,7 @@ TEST_F(AuthSrvTest, queryCounterTCPNormal) {
     server.processMessage(*io_message, *parse_message, *response_obuffer,
                           &dnsserv);
     // After processing TCP query, the counter should be 1.
-    EXPECT_EQ(1, server.getCounter(AuthCounters::SERVER_TCP_QUERY));
+    EXPECT_EQ(1, server.getCounter(Counters::SERVER_TCP_QUERY));
     // The counter for SUCCESS responses should also be one
     EXPECT_EQ(1, server.getCounter(Opcode::QUERY()));
     // The counter for REFUSED responses should also be one, the rest zero
@@ -1070,7 +1070,7 @@ TEST_F(AuthSrvTest, queryCounterTCPNormal) {
 // Submit TCP AXFR query and check query counter
 TEST_F(AuthSrvTest, queryCounterTCPAXFR) {
     // The counter should be initialized to 0.
-    EXPECT_EQ(0, server.getCounter(AuthCounters::SERVER_TCP_QUERY));
+    EXPECT_EQ(0, server.getCounter(Counters::SERVER_TCP_QUERY));
     UnitTestUtil::createRequestMessage(request_message, opcode, default_qid,
                          Name("example.com"), RRClass::IN(), RRType::AXFR());
     createRequestPacket(request_message, IPPROTO_TCP);
@@ -1080,7 +1080,7 @@ TEST_F(AuthSrvTest, queryCounterTCPAXFR) {
                           &dnsserv);
     EXPECT_FALSE(dnsserv.hasAnswer());
     // After processing TCP AXFR query, the counter should be 1.
-    EXPECT_EQ(1, server.getCounter(AuthCounters::SERVER_TCP_QUERY));
+    EXPECT_EQ(1, server.getCounter(Counters::SERVER_TCP_QUERY));
     // No rcodes should be incremented
     checkAllRcodeCountersZero();
 }
@@ -1088,7 +1088,7 @@ TEST_F(AuthSrvTest, queryCounterTCPAXFR) {
 // Submit TCP IXFR query and check query counter
 TEST_F(AuthSrvTest, queryCounterTCPIXFR) {
     // The counter should be initialized to 0.
-    EXPECT_EQ(0, server.getCounter(AuthCounters::SERVER_TCP_QUERY));
+    EXPECT_EQ(0, server.getCounter(Counters::SERVER_TCP_QUERY));
     UnitTestUtil::createRequestMessage(request_message, opcode, default_qid,
                          Name("example.com"), RRClass::IN(), RRType::IXFR());
     createRequestPacket(request_message, IPPROTO_TCP);
@@ -1098,7 +1098,7 @@ TEST_F(AuthSrvTest, queryCounterTCPIXFR) {
                           &dnsserv);
     EXPECT_FALSE(dnsserv.hasAnswer());
     // After processing TCP IXFR query, the counter should be 1.
-    EXPECT_EQ(1, server.getCounter(AuthCounters::SERVER_TCP_QUERY));
+    EXPECT_EQ(1, server.getCounter(Counters::SERVER_TCP_QUERY));
 }
 
 TEST_F(AuthSrvTest, queryCounterOpcodes) {

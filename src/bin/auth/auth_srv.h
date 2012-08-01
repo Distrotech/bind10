@@ -206,7 +206,7 @@ public:
     /// \brief Set the communication session with Statistics.
     ///
     /// This function never throws an exception as far as
-    /// AuthCounters::setStatisticsSession() doesn't throw.
+    /// Counters::setStatisticsSession() doesn't throw.
     ///
     /// Note: this interface is tentative.  We'll revisit the ASIO and
     /// session frameworks, at which point the session will probably
@@ -248,19 +248,19 @@ public:
     /// \brief Submit statistics counters to statistics module.
     ///
     /// This function can throw an exception from
-    /// AuthCounters::submitStatistics().
+    /// Counters::submitStatistics().
     ///
     /// \return true on success, false on failure (e.g. session timeout,
     /// session error).
     bool submitStatistics() const;
 
-    /// \brief Get the value of counter in the AuthCounters.
+    /// \brief Get the value of counter in the Counters.
     ///
-    /// This function calls AuthCounters::getCounter() and
+    /// This function calls Counters::getCounter() and
     /// returns its return value.
     ///
     /// This function never throws an exception as far as
-    /// AuthCounters::getCounter() doesn't throw.
+    /// Counters::getCounter() doesn't throw.
     ///
     /// Note: Currently this function is for testing purpose only.
     ///
@@ -269,12 +269,12 @@ public:
     /// \return the value of the counter.
 
     uint64_t getCounter(
-        const isc::auth::statistics::AuthCounters::ServerCounterType type)
+        const isc::auth::statistics::Counters::ServerCounterType type)
         const;
 
     /// \brief Get the value of per Opcode counter in the Auth Counters.
     ///
-    /// This function calls AuthCounters::getCounter(isc::dns::Opcode) and
+    /// This function calls Counters::getCounter(isc::dns::Opcode) and
     /// returns its return value.
     ///
     /// \note This is a tentative interface as an attempt of experimentally
@@ -288,7 +288,7 @@ public:
 
     /// \brief Get the value of per Rcode counter in the Auth Counters.
     ///
-    /// This function calls AuthCounters::getCounter(isc::dns::Rcode) and
+    /// This function calls Counters::getCounter(isc::dns::Rcode) and
     /// returns its return value.
     ///
     /// \note This is a tentative interface as an attempt of experimentally
