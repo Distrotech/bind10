@@ -42,6 +42,25 @@ using namespace isc::statistics;
 // TODO: Make use of wrappers like isc::dns::Opcode
 // for counter item type.
 
+namespace isc {
+namespace auth {
+namespace statistics {
+
+QRAttributes::QRAttributes() :
+    req_ip_version_(-1), req_transport_protocol_(-1),
+    req_opcode_(-1),
+    req_is_edns_0_(false), req_is_edns_badver_(false),
+    req_is_dnssec_ok_(false),
+    req_is_tsig_(false), req_is_sig0_(false), req_is_badsig_(false),
+    zone_origin_(),
+    answer_sent_(false),
+    res_is_truncated_(false)
+{}
+
+} // namespace statistics
+} // namespace auth
+} // namespace isc
+
 class AuthCountersImpl : boost::noncopyable {
 public:
     AuthCountersImpl();
