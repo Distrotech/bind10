@@ -1102,7 +1102,8 @@ TEST_F(AuthSrvTest, queryCounterTCPIXFR) {
 }
 
 TEST_F(AuthSrvTest, queryCounterOpcodes) {
-    for (int i = 0; i < 16; ++i) {
+    // Check for 0..2, 3 (other), 4..5
+    for (int i = 0; i < 6; ++i) {
         // The counter should be initialized to 0.
         EXPECT_EQ(0, server.getCounter(Opcode(i)));
 
@@ -1123,6 +1124,30 @@ TEST_F(AuthSrvTest, queryCounterOpcodes) {
 
         // Confirm the counter.
         EXPECT_EQ(i + 1, server.getCounter(Opcode(i)));
+    }
+
+    // Check for 6..15
+    // they are treated as the 'other' opcodes
+    for (int i = 6; i < 16; ++i) {
+        uint64_t before = server.getCounter(Opcode(i));
+
+        // For each possible opcode, create a request message and send it
+        UnitTestUtil::createRequestMessage(request_message, Opcode(i),
+                                           default_qid, Name("example.com"),
+                                           RRClass::IN(), RRType::NS());
+        createRequestPacket(request_message, IPPROTO_UDP);
+
+        // "send" the request N-th times where N is i + 1 for i-th code.
+        // we intentionally use different values for each code
+        for (int j = 0; j <= i; ++j) {
+            parse_message->clear(Message::PARSE);
+            server.processMessage(*io_message, *parse_message,
+                                  *response_obuffer,
+                                  &dnsserv);
+        }
+
+        // Confirm the counter.
+        EXPECT_EQ(before + i + 1, server.getCounter(Opcode(i)));
     }
 }
 

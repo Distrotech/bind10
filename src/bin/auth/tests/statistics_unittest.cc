@@ -155,6 +155,12 @@ CountersTest::MockSession::setThrowSessionTimeout(bool flag) {
     throw_session_timeout_ = flag;
 }
 
+#if 0
+// DISABLED: these interfaces, namely,
+// Counters.inc(const Counters::ServerCounterType&) and
+// Counters.inc(const isc::dns::Opcode&) and
+// Counters.inc(const isc::dns::Rcode&) has been removed.
+
 TEST_F(CountersTest, incrementUDPCounter) {
     // The counter should be initialized to 0.
     EXPECT_EQ(0, counters.getCounter(Counters::SERVER_UDP_QUERY));
@@ -196,6 +202,7 @@ TEST_F(CountersTest, incrementRcodeCounter) {
         EXPECT_EQ(1, counters.getCounter(Rcode(i)));
     }
 }
+#endif
 
 TEST_F(CountersTest, submitStatisticsWithoutSession) {
     // Set statistics_session to NULL and call submitStatistics().
@@ -261,6 +268,12 @@ rcodeDataCheck(ConstElementPtr data, const int expected[17]) {
 }
 
 
+#if 0
+// DISABLED: these interfaces, namely,
+// Counters.inc(const Counters::ServerCounterType&) and
+// Counters.inc(const isc::dns::Opcode&) and
+// Counters.inc(const isc::dns::Rcode&) has been removed.
+
 TEST_F(CountersTest, submitStatisticsWithoutValidator) {
     // Submit statistics data.
     // Validate if it submits correct data.
@@ -301,6 +314,13 @@ TEST_F(CountersTest, submitStatisticsWithoutValidator) {
                                     0, 0, 0, 0, 0, 0, 0, 0 };
     rcodeDataCheck(statistics_data, rcode_results);
 }
+#endif
+
+#if 0
+// DISABLED: these interfaces, namely,
+// Counters.inc(const Counters::ServerCounterType&) and
+// Counters.inc(const isc::dns::Opcode&) and
+// Counters.inc(const isc::dns::Rcode&) has been removed.
 
 void
 updateOpcodeCounters(Counters &counters, const int expected[16]) {
@@ -367,6 +387,13 @@ TEST_F(CountersTest, submitStatisticsWithAllRcodeCounters) {
         ->get("command")->get(1)->get("data");
     opcodeDataCheck(statistics_data, rcode_results);
 }
+#endif
+
+#if 0
+// DISABLED: these interfaces, namely,
+// Counters.inc(const Counters::ServerCounterType&) and
+// Counters.inc(const isc::dns::Opcode&) and
+// Counters.inc(const isc::dns::Rcode&) has been removed.
 
 TEST_F(CountersTest, submitStatisticsWithValidator) {
 
@@ -423,22 +450,5 @@ TEST_F(CountersTest, submitStatisticsWithValidator) {
     // checks the value returned by submitStatistics
     EXPECT_FALSE(counters.submitStatistics());
 }
-
-TEST(StatisticsItemsTest, QRItemNamesCheck) {
-    // check the number of elements in the array
-    EXPECT_EQ(sizeof(QRCounterItemName) / sizeof(QRCounterItemName[0]), QR_COUNTER_TYPES);
-    // check the name of the first enum element
-    EXPECT_EQ(QRCounterItemName[QR_REQUEST_IPV4], "request.v4");
-    // check the name of the last enum element
-    EXPECT_EQ(QRCounterItemName[QR_RCODE_OTHER], "rcode.other");
-}
-
-TEST(StatisticsItemsTest, SocketItemNamesCheck) {
-    // check the number of elements in the array
-    EXPECT_EQ(sizeof(SocketCounterItemName) / sizeof(SocketCounterItemName[0]), SOCKET_COUNTER_TYPES);
-    // check the name of the first enum element
-    EXPECT_EQ(SocketCounterItemName[SOCKET_IPV4_UDP_BINDFAIL], "ipv4.udp.bindfail");
-    // check the name of the last enum element
-    EXPECT_EQ(SocketCounterItemName[SOCKET_UNIXDOMAIN_SENDERR], "unixdomain.senderr");
-}
+#endif
 }

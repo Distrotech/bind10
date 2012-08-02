@@ -15,10 +15,12 @@
 #ifndef __STATISTICS_H
 #define __STATISTICS_H 1
 
-#include <dns/opcode.h>
-#include <dns/rcode.h>
-
 #include <cc/session.h>
+
+#include <dns/message.h>
+
+#include <string>
+
 #include <stdint.h>
 #include <boost/scoped_ptr.hpp>
 
@@ -27,6 +29,73 @@ namespace auth {
 namespace statistics {
 
 class CountersImpl;
+
+class QRAttributes {
+/// \brief Query/Response attributes for statistics.
+///
+/// This class holds some attributes related to a query/response
+/// for statistics data collection.
+///
+/// This class does not have getter methods since it exposes private members
+/// to \c CountersImpl directly.
+friend class CountersImpl;
+private:
+    // request attributes
+    int req_ip_version_;            // IP version
+    int req_transport_protocol_;    // Transport layer protocol
+    int req_opcode_;                // OpCode
+    bool req_is_edns_0_;            // EDNS ver.0
+    bool req_is_edns_badver_;       // other EDNS version
+    bool req_is_dnssec_ok_;         // DO bit
+    bool req_is_tsig_;              // signed with valid TSIG
+    bool req_is_sig0_;              // signed with valid SIG(0)
+    bool req_is_badsig_;            // signed but bad signature
+    // zone origin
+    std::string zone_origin_;       // zone origin
+    // response attributes
+    bool answer_sent_;              // DNS message has sent
+    bool res_is_truncated_;         // DNS message is truncated
+public:
+    /// The constructor.
+    ///
+    /// This constructor is mostly exception free. But it may still throw
+    /// a standard exception if memory allocation fails inside the method.
+    ///
+    QRAttributes();
+    /// The destructor.
+    ///
+    /// This method never throws an exception.
+    ///
+    ~QRAttributes();
+    /// \brief Set query opcode.
+    /// \throw None
+    void setQueryOpCode(const int opcode);
+    /// \brief Set IP version carrying a query.
+    /// \throw None
+    void setQueryIPVersion(const int ip_version);
+    /// \brief Set transport protocol carrying a query.
+    /// \throw None
+    void setQueryTransportProtocol(const int transport_protocol);
+    /// \brief Set query EDNS attributes.
+    /// \throw None
+    void setQueryEDNS(const bool is_edns_0, const bool is_edns_badver);
+    /// \brief Set query DO bit.
+    /// \throw None
+    void setQueryDO(const bool is_dnssec_ok);
+    /// \brief Set query TSIG attributes.
+    /// \throw None
+    void setQuerySig(const bool is_tsig, const bool is_sig0,
+                     const bool is_badsig);
+    /// \brief Set zone origin.
+    /// \throw None
+    void setOrigin(const std::string& origin);
+    /// \brief Set if the answer has sent.
+    /// \throw None
+    void answerHasSent();
+    /// \brief Set if the response is truncated.
+    /// \throw None
+    void setResponseTruncated(const bool is_truncated);
+};
 
 /// \brief Set of query counters.
 ///
@@ -40,9 +109,7 @@ class CountersImpl;
 /// This class is designed to be a part of \c AuthSrv.
 /// Call \c setStatisticsSession() to set a session to communicate with
 /// statistics module like Xfrin session.
-/// Call \c inc() to increment a counter for specific type of query in
-/// the query processing function. use \c enum \c CounterType to specify
-/// the type of query.
+/// Call \c inc() to increment a counter for the query.
 /// Call \c submitStatistics() to submit statistics information to statistics
 /// module with statistics_session, periodically or at a time the command
 /// \c sendstats is received.
@@ -67,11 +134,6 @@ public:
         SERVER_TCP_QUERY,       ///< SERVER_TCP_QUERY: counter for TCP queries
         SERVER_COUNTER_TYPES    ///< The number of defined counters
     };
-    enum PerZoneCounterType {
-        ZONE_UDP_QUERY,         ///< ZONE_UDP_QUERY: counter for UDP queries
-        ZONE_TCP_QUERY,         ///< ZONE_TCP_QUERY: counter for TCP queries
-        PER_ZONE_COUNTER_TYPES  ///< The number of defined counters
-    };
     /// The constructor.
     ///
     /// This constructor is mostly exception free. But it may still throw
@@ -84,33 +146,14 @@ public:
     ///
     ~Counters();
 
-    /// \brief Increment the counter specified by the parameter.
+    /// \brief Increment counters according to the parameters.
     ///
-    /// \param type Type of a counter to increment.
-    ///
-    /// \throw std::out_of_range \a type is unknown.
-    ///
-    /// usage: counter.inc(Counters::SERVER_UDP_QUERY);
-    /// 
-    void inc(const ServerCounterType type);
-
-    /// \brief Increment the counter of a per opcode counter.
-    ///
-    /// \note This is a tentative interface.  See \c getCounter().
-    ///
-    /// \param opcode The opcode of the counter to increment.
+    /// \param qrattrs Query/Response attributes.
+    /// \param response DNS response message.
     ///
     /// \throw None
-    void inc(const isc::dns::Opcode opcode);
-
-    /// \brief Increment the counter of a per rcode counter.
     ///
-    /// \note This is a tentative interface.  See \c getCounter().
-    ///
-    /// \param rcode The rcode of the counter to increment.
-    ///
-    /// \throw None
-    void inc(const isc::dns::Rcode rcode);
+    void inc(const QRAttributes& qrattrs, const isc::dns::Message& response);
 
     /// \brief Submit statistics counters to statistics module.
     ///
@@ -196,7 +239,7 @@ public:
     ///
     /// This type might be useful for not only statistics
     /// specificatoin but also for config_data specification and for
-    /// commnad.
+    /// command.
     ///
     typedef boost::function<bool(const isc::data::ConstElementPtr&)>
     validator_type;
@@ -210,73 +253,6 @@ public:
     /// statistics specification.
     ///
     void registerStatisticsValidator(Counters::validator_type validator) const;
-};
-
-class QRAttributes {
-/// \brief Query/Response attributes for statistics.
-///
-/// This class holds some attributes related to a query/response
-/// for statistics data collection.
-///
-/// This class does not have getter methods since it exposes private members
-/// to \c CountersImpl directly.
-    friend class CountersImpl;
-private:
-    // request attributes
-    int req_ip_version_;            // IP version
-    int req_transport_protocol_;    // Transport layer protocol
-    int req_opcode_;                // OpCode
-    bool req_is_edns_0_;            // EDNS ver.0
-    bool req_is_edns_badver_;       // other EDNS version
-    bool req_is_dnssec_ok_;         // DO bit
-    bool req_is_tsig_;              // signed with valid TSIG
-    bool req_is_sig0_;              // signed with valid SIG(0)
-    bool req_is_badsig_;            // signed but bad signature
-    // zone origin
-    std::string zone_origin_;       // zone origin
-    // response attributes
-    bool answer_sent_;              // DNS message has sent
-    bool res_is_truncated_;         // DNS message is truncated
-public:
-    /// The constructor.
-    ///
-    /// This constructor is mostly exception free. But it may still throw
-    /// a standard exception if memory allocation fails inside the method.
-    ///
-    QRAttributes();
-    /// The destructor.
-    ///
-    /// This method never throws an exception.
-    ///
-    ~QRAttributes();
-    /// \brief Set query opcode.
-    /// \throw None
-    void setQueryOpCode(const int opcode);
-    /// \brief Set IP version carrying a query.
-    /// \throw None
-    void setQueryIPVersion(const int ip_version);
-    /// \brief Set transport protocol carrying a query.
-    /// \throw None
-    void setQueryTransportProtocol(const int transport_protocol);
-    /// \brief Set query EDNS attributes.
-    /// \throw None
-    void setQueryEDNS(const bool is_edns_0, const bool is_edns_badver);
-    /// \brief Set query DO bit.
-    /// \throw None
-    void setQueryDO(const bool is_dnssec_ok);
-    /// \brief Set query TSIG attributes.
-    /// \throw None
-    void setQuerySig(const bool is_tsig, const bool is_sig0,
-                     const bool is_badsig);
-    /// \brief Set zone origin.
-    /// \throw None
-    void setOrigin(const std::string& origin);
-    /// \brief Set if the answer has sent.
-    /// \throw None
-    void answerHasSent();
-    /// \brief Set if the response is truncated.
-    /// \throw None
-    void setResponseTruncated(const bool is_truncated);
 };
 
 } // namespace statistics
