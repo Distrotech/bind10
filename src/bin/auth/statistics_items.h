@@ -343,7 +343,7 @@ const char *QRCounterItemName[QR_COUNTER_TYPES] = {
     "qryauthans",
     "qrynoauthans",
     "qryreferral",
-    "qrynxrrrset",
+    "qrynxrrset",
     "rcode.noerror",
     "rcode.formerr",
     "rcode.servfail",

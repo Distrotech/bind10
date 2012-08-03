@@ -31,12 +31,19 @@
 
 #include <dns/tests/unittest_util.h>
 
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+
 using isc::UnitTestUtil;
 using namespace std;
 using namespace isc::cc;
 using namespace isc::dns;
 using namespace isc::data;
 using isc::auth::statistics::Counters;
+using isc::auth::statistics::QRAttributes;
 
 namespace {
 
@@ -177,9 +184,9 @@ TEST_F(CountersTest, submitStatisticsWithException) {
 void
 opcodeDataCheck(ConstElementPtr data, const int expected[16]) {
     const char* item_names[] = {
-        "query", "iquery", "status", "reserved3", "notify", "update",
-        "reserved6", "reserved7", "reserved8", "reserved9", "reserved10",
-        "reserved11", "reserved12", "reserved13", "reserved14", "reserved15",
+        "query", "iquery", "other", "reserved3", "notify", "update",
+        "other", "other", "other", "other", "other",
+        "other", "other", "other", "other", "other",
         NULL
     };
     int i;
@@ -200,8 +207,8 @@ void
 rcodeDataCheck(ConstElementPtr data, const int expected[17]) {
     const char* item_names[] = {
         "noerror", "formerr", "servfail", "nxdomain", "notimp", "refused",
-        "yxdomain", "yxrrset", "nxrrset", "notauth", "notzone", "reserved11",
-        "reserved12", "reserved13", "reserved14", "reserved15", "badvers",
+        "yxdomain", "yxrrset", "nxrrset", "notauth", "notzone", "other",
+        "other", "other", "other", "other", "badsigvers",
         NULL
     };
     int i;
@@ -216,6 +223,199 @@ rcodeDataCheck(ConstElementPtr data, const int expected[17]) {
     }
     // We should have examined all names
     ASSERT_EQ(static_cast<const char*>(NULL), item_names[i]);
+}
+
+TEST_F(CountersTest, submitStatisticsWithoutValidator) {
+    // Submit statistics data.
+    // Validate if it submits correct data.
+
+    counters.submitStatistics();
+
+    // Destination is "Stats".
+    EXPECT_EQ("Stats", statistics_session_.msg_destination);
+    // Command is "set".
+    EXPECT_EQ("set", statistics_session_.sent_msg->get("command")
+                         ->get(0)->stringValue());
+    EXPECT_EQ("Auth", statistics_session_.sent_msg->get("command")
+                         ->get(1)->get("owner")->stringValue());
+    EXPECT_EQ(statistics_session_.sent_msg->get("command")
+              ->get(1)->get("pid")->intValue(), getpid());
+    ConstElementPtr statistics_data = statistics_session_.sent_msg
+                                          ->get("command")->get(1)
+                                          ->get("data");
+
+    // By default these counters are all 0
+    EXPECT_EQ(0, statistics_data->get("queries.udp")->intValue());
+    EXPECT_EQ(0, statistics_data->get("queries.tcp")->intValue());
+
+    // By default opcode counters are all 0 and omitted
+    const int opcode_results[16] = { 0, 0, 0, 0, 0, 0, 0, 0,
+                                     0, 0, 0, 0, 0, 0, 0, 0 };
+    opcodeDataCheck(statistics_data, opcode_results);
+    // By default rcode counters are all 0 and omitted
+    const int rcode_results[17] = { 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 0 };
+    rcodeDataCheck(statistics_data, rcode_results);
+}
+
+TEST_F(CountersTest, submitStatisticsWithValidator) {
+
+    //a validator for the unittest
+    Counters::validator_type validator;
+    ConstElementPtr el;
+
+    // Submit statistics data with correct statistics validator.
+    validator = boost::bind(
+        &CountersTest::MockModuleSpec::validateStatistics,
+        &module_spec_, _1, true);
+
+    EXPECT_TRUE(validator(el));
+
+    // register validator to AuthCounters
+    counters.registerStatisticsValidator(validator);
+
+    // checks the value returned by submitStatistics
+    EXPECT_TRUE(counters.submitStatistics());
+
+    // Destination is "Stats".
+    EXPECT_EQ("Stats", statistics_session_.msg_destination);
+    // Command is "set".
+    EXPECT_EQ("set", statistics_session_.sent_msg->get("command")
+                         ->get(0)->stringValue());
+    EXPECT_EQ("Auth", statistics_session_.sent_msg->get("command")
+                         ->get(1)->get("owner")->stringValue());
+    ConstElementPtr statistics_data = statistics_session_.sent_msg
+                                          ->get("command")->get(1)
+                                          ->get("data");
+
+    // By default these counters are all 0
+    EXPECT_EQ(0, statistics_data->get("queries.udp")->intValue());
+    EXPECT_EQ(0, statistics_data->get("queries.tcp")->intValue());
+
+    // Submit statistics data with incorrect statistics validator.
+    validator = boost::bind(
+        &CountersTest::MockModuleSpec::validateStatistics,
+        &module_spec_, _1, false);
+
+    EXPECT_FALSE(validator(el));
+
+    counters.registerStatisticsValidator(validator);
+
+    // checks the value returned by submitStatistics
+    EXPECT_FALSE(counters.submitStatistics());
+}
+
+bool checkCountersAllZeroExcept(const Counters::item_tree_type counters,
+                                const std::set<std::string>& except_for) {
+    std::map<std::string, ConstElementPtr> stats_map;
+    counters->getValue(stats_map);
+
+    for (std::map<std::string, ConstElementPtr>::const_iterator
+            i = stats_map.begin(), e = stats_map.end();
+            i != e;
+            ++i)
+    {
+        int expect = 0;
+        if (except_for.count(i->first) != 0) {
+            expect = 1;
+        }
+        EXPECT_EQ(expect, i->second->intValue()) << "Expected counter "
+            << i->first << " = " << expect << ", actual: "
+            << i->second->intValue();
+    }
+
+    return false;
+}
+
+TEST_F(CountersTest, incrementNormalQuery) {
+    Message response(Message::RENDER);
+    QRAttributes qrattrs;
+    std::set<std::string> expect_nonzero;
+
+    expect_nonzero.clear();
+    checkCountersAllZeroExcept(counters.dump(), expect_nonzero);
+
+    qrattrs.setQueryIPVersion(AF_INET6);
+    qrattrs.setQueryTransportProtocol(IPPROTO_UDP);
+    qrattrs.setQueryOpCode(Opcode::QUERY_CODE);
+    qrattrs.setQueryEDNS(true, false);
+    qrattrs.setQueryDO(true);
+    qrattrs.answerHasSent();
+
+    response.setRcode(Rcode::REFUSED());
+    response.addQuestion(Question(Name("example.com"), RRClass::IN(), RRType::AAAA()));
+
+    counters.inc(qrattrs, response);
+
+    expect_nonzero.clear();
+    expect_nonzero.insert("auth.server.qr.opcode.query");
+    expect_nonzero.insert("auth.server.qr.qtype.aaaa");
+    expect_nonzero.insert("auth.server.qr.request.v6");
+    expect_nonzero.insert("auth.server.qr.request.edns0");
+    expect_nonzero.insert("auth.server.qr.request.dnssec_ok");
+    expect_nonzero.insert("auth.server.qr.response");
+    expect_nonzero.insert("auth.server.qr.qrynoauthans");
+    expect_nonzero.insert("auth.server.qr.rcode.refused");
+    checkCountersAllZeroExcept(counters.dump(), expect_nonzero);
+}
+
+TEST_F(CountersTest, checkDumpItems) {
+    std::map<std::string, ConstElementPtr> stats_map;
+    counters.dump()->getValue(stats_map);
+    for (std::map<std::string, ConstElementPtr>::const_iterator
+            i = stats_map.begin(), e = stats_map.end();
+            i != e;
+            ++i)
+    {
+        // item name check
+        const std::string stats_prefix("auth.server.");
+        EXPECT_EQ(0, i->first.compare(0, stats_prefix.size(), stats_prefix))
+            << "Item name " << i->first << " does not begin with "
+            << stats_prefix;
+
+        // item type check
+        EXPECT_NO_THROW(i->second->intValue())
+            << "Item " << i->first << " is not IntElement";
+    }
+}
+
+TEST_F(CountersTest, checkGetItems) {
+    std::map<std::string, ConstElementPtr> stats_map;
+
+    Counters::item_node_name_set_type names;
+
+    // get "auth.server.qr"
+    names.insert("auth.server.qr");
+    counters.get(names)->getValue(stats_map);
+    EXPECT_EQ(QR_COUNTER_TYPES, stats_map.size());
+    for (std::map<std::string, ConstElementPtr>::const_iterator
+            i = stats_map.begin(), e = stats_map.end();
+            i != e;
+            ++i)
+    {
+        // item name check
+        const std::string stats_prefix("auth.server.qr.");
+        EXPECT_EQ(0, i->first.compare(0, stats_prefix.size(), stats_prefix))
+            << "Item name " << i->first << " does not begin with "
+            << stats_prefix;
+
+        // item type check
+        EXPECT_NO_THROW(i->second->intValue())
+            << "Item " << i->first << " is not IntElement";
+    }
+
+    // get undefined tree
+    names.clear();
+    stats_map.clear();
+    names.insert("auth.server.UNDEFINED_TREE");
+    counters.get(names)->getValue(stats_map);
+    EXPECT_EQ(0, stats_map.size());
+
+    // get empty list
+    names.clear();
+    stats_map.clear();
+    counters.get(names)->getValue(stats_map);
+    EXPECT_EQ(0, stats_map.size());
 }
 
 TEST(StatisticsItemsTest, QRItemNamesCheck) {

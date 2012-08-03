@@ -261,7 +261,7 @@ public:
     ///
     /// \return a tree of statistics items.
     const isc::auth::statistics::Counters::item_tree_type get(
-        const isc::auth::statistics::Counters::item_node_name_list_type &items)
+        const isc::auth::statistics::Counters::item_node_name_set_type &items)
         const;
 
     /// \brief Dump the values of counters.

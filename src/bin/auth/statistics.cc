@@ -71,7 +71,7 @@ public:
     ~CountersImpl();
     void inc(const QRAttributes& qrattrs, const Message& response);
     const Counters::item_tree_type
-        get(const Counters::item_node_name_list_type& trees) const;
+        get(const Counters::item_node_name_set_type& trees) const;
     // Currently for testing purpose only
     const Counters::item_tree_type dump() const;
     bool submitStatistics() const;
@@ -369,7 +369,7 @@ CountersImpl::registerStatisticsValidator
 }
 
 const Counters::item_tree_type
-CountersImpl::get(const Counters::item_node_name_list_type &trees) const {
+CountersImpl::get(const Counters::item_node_name_set_type &trees) const {
     using namespace isc::data;
 
     Counters::item_tree_type item_tree = Element::createMap();
@@ -416,7 +416,7 @@ Counters::inc(const QRAttributes& qrattrs, const Message& response) {
 }
 
 const Counters::item_tree_type
-Counters::get(const Counters::item_node_name_list_type &trees) const {
+Counters::get(const Counters::item_node_name_set_type &trees) const {
     return (impl_->get(trees));
 }
 
@@ -443,8 +443,8 @@ Counters::registerStatisticsValidator
 }
 
 QRAttributes::QRAttributes() :
-    req_ip_version_(-1), req_transport_protocol_(-1),
-    req_opcode_(-1),
+    req_ip_version_(0), req_transport_protocol_(0),
+    req_opcode_(0),
     req_is_edns_0_(false), req_is_edns_badver_(false),
     req_is_dnssec_ok_(false),
     req_is_tsig_(false), req_is_sig0_(false), req_is_badsig_(false),

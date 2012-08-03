@@ -20,7 +20,7 @@
 #include <dns/message.h>
 
 #include <string>
-#include <list>
+#include <set>
 
 #include <stdint.h>
 #include <boost/scoped_ptr.hpp>
@@ -129,12 +129,6 @@ class Counters {
 private:
     boost::scoped_ptr<CountersImpl> impl_;
 public:
-    // Enum for the type of counter
-    enum ServerCounterType {
-        SERVER_UDP_QUERY,       ///< SERVER_UDP_QUERY: counter for UDP queries
-        SERVER_TCP_QUERY,       ///< SERVER_TCP_QUERY: counter for TCP queries
-        SERVER_COUNTER_TYPES    ///< The number of defined counters
-    };
     /// The constructor.
     ///
     /// This constructor is mostly exception free. But it may still throw
@@ -198,9 +192,9 @@ public:
     ///
     typedef std::string item_node_name_type;
 
-    /// \brief item node list
+    /// \brief item node set
     ///
-    typedef std::list<item_node_name_type> item_node_name_list_type;
+    typedef std::set<item_node_name_type> item_node_name_set_type;
 
     /// \brief A type of statistics item tree in isc::data::MapElement.
     ///        { item_name => item_value, item_name => item_value, ... }
@@ -215,7 +209,7 @@ public:
     /// \throw bad_alloc
     ///
     /// \return a tree of statistics items.
-    const item_tree_type get(const item_node_name_list_type &items) const;
+    const item_tree_type get(const item_node_name_set_type &items) const;
 
     /// \brief Dump all of the counters.
     ///
