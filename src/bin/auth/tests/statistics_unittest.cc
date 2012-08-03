@@ -155,55 +155,6 @@ CountersTest::MockSession::setThrowSessionTimeout(bool flag) {
     throw_session_timeout_ = flag;
 }
 
-#if 0
-// DISABLED: these interfaces, namely,
-// Counters.inc(const Counters::ServerCounterType&) and
-// Counters.inc(const isc::dns::Opcode&) and
-// Counters.inc(const isc::dns::Rcode&) has been removed.
-
-TEST_F(CountersTest, incrementUDPCounter) {
-    // The counter should be initialized to 0.
-    EXPECT_EQ(0, counters.getCounter(Counters::SERVER_UDP_QUERY));
-    EXPECT_NO_THROW(counters.inc(Counters::SERVER_UDP_QUERY));
-    // After increment, the counter should be 1.
-    EXPECT_EQ(1, counters.getCounter(Counters::SERVER_UDP_QUERY));
-}
-
-TEST_F(CountersTest, incrementTCPCounter) {
-    // The counter should be initialized to 0.
-    EXPECT_EQ(0, counters.getCounter(Counters::SERVER_TCP_QUERY));
-    EXPECT_NO_THROW(counters.inc(Counters::SERVER_TCP_QUERY));
-    // After increment, the counter should be 1.
-    EXPECT_EQ(1, counters.getCounter(Counters::SERVER_TCP_QUERY));
-}
-
-TEST_F(CountersTest, incrementInvalidCounter) {
-    // Expect to throw an isc::OutOfRange
-    EXPECT_THROW(counters.inc(Counters::SERVER_COUNTER_TYPES),
-                 isc::OutOfRange);
-}
-
-TEST_F(CountersTest, incrementOpcodeCounter) {
-    // The counter should be initialized to 0.  If we increment it by 1
-    // the counter should be 1.
-    for (int i = 0; i < 16; ++i) {
-        EXPECT_EQ(0, counters.getCounter(Opcode(i)));
-        counters.inc(Opcode(i));
-        EXPECT_EQ(1, counters.getCounter(Opcode(i)));
-    }
-}
-
-TEST_F(CountersTest, incrementRcodeCounter) {
-    // The counter should be initialized to 0.  If we increment it by 1
-    // the counter should be 1.
-    for (int i = 0; i < 17; ++i) {
-        EXPECT_EQ(0, counters.getCounter(Rcode(i)));
-        counters.inc(Rcode(i));
-        EXPECT_EQ(1, counters.getCounter(Rcode(i)));
-    }
-}
-#endif
-
 TEST_F(CountersTest, submitStatisticsWithoutSession) {
     // Set statistics_session to NULL and call submitStatistics().
     // Expect to return false.
@@ -267,188 +218,22 @@ rcodeDataCheck(ConstElementPtr data, const int expected[17]) {
     ASSERT_EQ(static_cast<const char*>(NULL), item_names[i]);
 }
 
-
-#if 0
-// DISABLED: these interfaces, namely,
-// Counters.inc(const Counters::ServerCounterType&) and
-// Counters.inc(const isc::dns::Opcode&) and
-// Counters.inc(const isc::dns::Rcode&) has been removed.
-
-TEST_F(CountersTest, submitStatisticsWithoutValidator) {
-    // Submit statistics data.
-    // Validate if it submits correct data.
-
-    // Counters should be initialized to 0.
-    EXPECT_EQ(0, counters.getCounter(Counters::SERVER_UDP_QUERY));
-    EXPECT_EQ(0, counters.getCounter(Counters::SERVER_TCP_QUERY));
-
-    // UDP query counter is set to 2.
-    counters.inc(Counters::SERVER_UDP_QUERY);
-    counters.inc(Counters::SERVER_UDP_QUERY);
-    // TCP query counter is set to 1.
-    counters.inc(Counters::SERVER_TCP_QUERY);
-    counters.submitStatistics();
-
-    // Destination is "Stats".
-    EXPECT_EQ("Stats", statistics_session_.msg_destination);
-    // Command is "set".
-    EXPECT_EQ("set", statistics_session_.sent_msg->get("command")
-                         ->get(0)->stringValue());
-    EXPECT_EQ("Auth", statistics_session_.sent_msg->get("command")
-                         ->get(1)->get("owner")->stringValue());
-    EXPECT_EQ(statistics_session_.sent_msg->get("command")
-              ->get(1)->get("pid")->intValue(), getpid());
-    ConstElementPtr statistics_data = statistics_session_.sent_msg
-                                          ->get("command")->get(1)
-                                          ->get("data");
-    // UDP query counter is 2 and TCP query counter is 1.
-    EXPECT_EQ(2, statistics_data->get("queries.udp")->intValue());
-    EXPECT_EQ(1, statistics_data->get("queries.tcp")->intValue());
-
-    // By default opcode counters are all 0 and omitted
-    const int opcode_results[16] = { 0, 0, 0, 0, 0, 0, 0, 0,
-                                     0, 0, 0, 0, 0, 0, 0, 0 };
-    opcodeDataCheck(statistics_data, opcode_results);
-    // By default rcode counters are all 0 and omitted
-    const int rcode_results[17] = { 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                    0, 0, 0, 0, 0, 0, 0, 0 };
-    rcodeDataCheck(statistics_data, rcode_results);
-}
-#endif
-
-#if 0
-// DISABLED: these interfaces, namely,
-// Counters.inc(const Counters::ServerCounterType&) and
-// Counters.inc(const isc::dns::Opcode&) and
-// Counters.inc(const isc::dns::Rcode&) has been removed.
-
-void
-updateOpcodeCounters(Counters &counters, const int expected[16]) {
-    for (int i = 0; i < 16; ++i) {
-        for (int j = 0; j < expected[i]; ++j) {
-            counters.inc(Opcode(i));
-        }
-    }
+TEST(StatisticsItemsTest, QRItemNamesCheck) {
+    // check the number of elements in the array
+    EXPECT_EQ(sizeof(QRCounterItemName) / sizeof(QRCounterItemName[0]), QR_COUNTER_TYPES);
+    // check the name of the first enum element
+    EXPECT_EQ(QRCounterItemName[QR_REQUEST_IPV4], "request.v4");
+    // check the name of the last enum element
+    EXPECT_EQ(QRCounterItemName[QR_RCODE_OTHER], "rcode.other");
 }
 
-void
-updateRcodeCounters(Counters &counters, const int expected[17]) {
-    for (int i = 0; i < 17; ++i) {
-        for (int j = 0; j < expected[i]; ++j) {
-            counters.inc(Rcode(i));
-        }
-    }
+TEST(StatisticsItemsTest, SocketItemNamesCheck) {
+    // check the number of elements in the array
+    EXPECT_EQ(sizeof(SocketCounterItemName) / sizeof(SocketCounterItemName[0]), SOCKET_COUNTER_TYPES);
+    // check the name of the first enum element
+    EXPECT_EQ(SocketCounterItemName[SOCKET_IPV4_UDP_BINDFAIL], "ipv4.udp.bindfail");
+    // check the name of the last enum element
+    EXPECT_EQ(SocketCounterItemName[SOCKET_UNIXDOMAIN_SENDERR], "unixdomain.senderr");
 }
 
-TEST_F(CountersTest, submitStatisticsWithOpcodeCounters) {
-    // Increment some of the opcode counters.  Then they should appear in the
-    // submitted data; others shouldn't
-    const int opcode_results[16] = { 1, 2, 3, 0, 4, 5, 0, 0,
-                                     0, 0, 0, 0, 0, 0, 0, 0 };
-    updateOpcodeCounters(counters, opcode_results);
-    counters.submitStatistics();
-    ConstElementPtr statistics_data = statistics_session_.sent_msg
-        ->get("command")->get(1)->get("data");
-    opcodeDataCheck(statistics_data, opcode_results);
-}
-
-TEST_F(CountersTest, submitStatisticsWithAllOpcodeCounters) {
-    // Increment all opcode counters.  Then they should appear in the
-    // submitted data.
-    const int opcode_results[16] = { 1, 1, 1, 1, 1, 1, 1, 1,
-                                     1, 1, 1, 1, 1, 1, 1, 1 };
-    updateOpcodeCounters(counters, opcode_results);
-    counters.submitStatistics();
-    ConstElementPtr statistics_data = statistics_session_.sent_msg
-        ->get("command")->get(1)->get("data");
-    opcodeDataCheck(statistics_data, opcode_results);
-}
-
-TEST_F(CountersTest, submitStatisticsWithRcodeCounters) {
-    // Increment some of the rcode counters.  Then they should appear in the
-    // submitted data; others shouldn't
-    const int rcode_results[17] = { 1, 2, 3, 4, 5, 6, 7, 8, 9,
-                                    10, 0, 0, 0, 0, 0, 0, 11 };
-    updateRcodeCounters(counters, rcode_results);
-    counters.submitStatistics();
-    ConstElementPtr statistics_data = statistics_session_.sent_msg
-        ->get("command")->get(1)->get("data");
-    rcodeDataCheck(statistics_data, rcode_results);
-}
-
-TEST_F(CountersTest, submitStatisticsWithAllRcodeCounters) {
-    // Increment all rcode counters.  Then they should appear in the
-    // submitted data.
-    const int rcode_results[17] = { 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                                     1, 1, 1, 1, 1, 1, 1, 1 };
-    updateOpcodeCounters(counters, rcode_results);
-    counters.submitStatistics();
-    ConstElementPtr statistics_data = statistics_session_.sent_msg
-        ->get("command")->get(1)->get("data");
-    opcodeDataCheck(statistics_data, rcode_results);
-}
-#endif
-
-#if 0
-// DISABLED: these interfaces, namely,
-// Counters.inc(const Counters::ServerCounterType&) and
-// Counters.inc(const isc::dns::Opcode&) and
-// Counters.inc(const isc::dns::Rcode&) has been removed.
-
-TEST_F(CountersTest, submitStatisticsWithValidator) {
-
-    //a validator for the unittest
-    Counters::validator_type validator;
-    ConstElementPtr el;
-
-    // Submit statistics data with correct statistics validator.
-    validator = boost::bind(
-        &CountersTest::MockModuleSpec::validateStatistics,
-        &module_spec_, _1, true);
-
-    EXPECT_TRUE(validator(el));
-
-    // register validator to Counters
-    counters.registerStatisticsValidator(validator);
-
-    // Counters should be initialized to 0.
-    EXPECT_EQ(0, counters.getCounter(Counters::SERVER_UDP_QUERY));
-    EXPECT_EQ(0, counters.getCounter(Counters::SERVER_TCP_QUERY));
-
-    // UDP query counter is set to 2.
-    counters.inc(Counters::SERVER_UDP_QUERY);
-    counters.inc(Counters::SERVER_UDP_QUERY);
-    // TCP query counter is set to 1.
-    counters.inc(Counters::SERVER_TCP_QUERY);
-
-    // checks the value returned by submitStatistics
-    EXPECT_TRUE(counters.submitStatistics());
-
-    // Destination is "Stats".
-    EXPECT_EQ("Stats", statistics_session_.msg_destination);
-    // Command is "set".
-    EXPECT_EQ("set", statistics_session_.sent_msg->get("command")
-                         ->get(0)->stringValue());
-    EXPECT_EQ("Auth", statistics_session_.sent_msg->get("command")
-                         ->get(1)->get("owner")->stringValue());
-    ConstElementPtr statistics_data = statistics_session_.sent_msg
-                                          ->get("command")->get(1)
-                                          ->get("data");
-    // UDP query counter is 2 and TCP query counter is 1.
-    EXPECT_EQ(2, statistics_data->get("queries.udp")->intValue());
-    EXPECT_EQ(1, statistics_data->get("queries.tcp")->intValue());
-
-    // Submit statistics data with incorrect statistics validator.
-    validator = boost::bind(
-        &CountersTest::MockModuleSpec::validateStatistics,
-        &module_spec_, _1, false);
-
-    EXPECT_FALSE(validator(el));
-
-    counters.registerStatisticsValidator(validator);
-
-    // checks the value returned by submitStatistics
-    EXPECT_FALSE(counters.submitStatistics());
-}
-#endif
 }

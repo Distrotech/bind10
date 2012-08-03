@@ -21,7 +21,6 @@
 #include <config/ccsession.h>
 #include <datasrc/factory.h>
 #include <dns/message.h>
-#include <dns/opcode.h>
 #include <util/buffer.h>
 
 #include <asiodns/dns_server.h>
@@ -254,51 +253,25 @@ public:
     /// session error).
     bool submitStatistics() const;
 
-    /// \brief Get the value of counter in the Counters.
+    /// \brief Get the values of specified counters.
     ///
-    /// This function calls Counters::getCounter() and
-    /// returns its return value.
+    /// This function returns names and values of counter.
     ///
-    /// This function never throws an exception as far as
-    /// Counters::getCounter() doesn't throw.
+    /// \throw bad_alloc
     ///
-    /// Note: Currently this function is for testing purpose only.
-    ///
-    /// \param type Type of a counter to get the value of
-    ///
-    /// \return the value of the counter.
-
-    uint64_t getCounter(
-        const isc::auth::statistics::Counters::ServerCounterType type)
+    /// \return a tree of statistics items.
+    const isc::auth::statistics::Counters::item_tree_type get(
+        const isc::auth::statistics::Counters::item_node_name_list_type &items)
         const;
 
-    /// \brief Get the value of per Opcode counter in the Auth Counters.
+    /// \brief Dump the values of counters.
     ///
-    /// This function calls Counters::getCounter(isc::dns::Opcode) and
-    /// returns its return value.
+    /// This function returns names and values of counter.
     ///
-    /// \note This is a tentative interface as an attempt of experimentally
-    /// supporting more statistics counters.  This should eventually be more
-    /// generalized.  In any case, this method is mainly for testing.
+    /// \throw bad_alloc
     ///
-    /// \throw None
-    /// \param opcode The opcode of the counter to get the value of
-    /// \return the value of the counter.
-    uint64_t getCounter(const isc::dns::Opcode opcode) const;
-
-    /// \brief Get the value of per Rcode counter in the Auth Counters.
-    ///
-    /// This function calls Counters::getCounter(isc::dns::Rcode) and
-    /// returns its return value.
-    ///
-    /// \note This is a tentative interface as an attempt of experimentally
-    /// supporting more statistics counters.  This should eventually be more
-    /// generalized.  In any case, this method is mainly for testing.
-    ///
-    /// \throw None
-    /// \param rcode The rcode of the counter to get the value of
-    /// \return the value of the counter.
-    uint64_t getCounter(const isc::dns::Rcode rcode) const;
+    /// \return a tree of statistics items.
+    const isc::auth::statistics::Counters::item_tree_type dump() const;
 
     /**
      * \brief Set and get the addresses we listen on.

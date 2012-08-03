@@ -894,19 +894,14 @@ bool AuthSrv::submitStatistics() const {
     return (impl_->counters_.submitStatistics());
 }
 
-uint64_t
-AuthSrv::getCounter(const Counters::ServerCounterType type) const {
-    return (impl_->counters_.getCounter(type));
+const Counters::item_tree_type
+AuthSrv::get(const Counters::item_node_name_list_type &trees) const {
+    return (impl_->counters_.get(trees));
 }
 
-uint64_t
-AuthSrv::getCounter(const Opcode opcode) const {
-    return (impl_->counters_.getCounter(opcode));
-}
-
-uint64_t
-AuthSrv::getCounter(const Rcode rcode) const {
-    return (impl_->counters_.getCounter(rcode));
+const Counters::item_tree_type
+AuthSrv::dump() const {
+    return (impl_->counters_.dump());
 }
 
 const AddressList&

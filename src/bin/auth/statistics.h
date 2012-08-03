@@ -20,6 +20,7 @@
 #include <dns/message.h>
 
 #include <string>
+#include <list>
 
 #include <stdint.h>
 #include <boost/scoped_ptr.hpp>
@@ -193,46 +194,37 @@ public:
     ///
     void setStatisticsSession(isc::cc::AbstractSession* statistics_session);
 
-    /// \brief Get the value of a counter in the Counters.
+    /// \brief item node name
     ///
-    /// This function returns a value of the counter specified by \a type.
-    /// This method never throws an exception.
-    ///
-    /// Note: Currently this function is for testing purpose only.
-    ///
-    /// \param type Type of a counter to get the value of
-    ///
-    /// \return the value of the counter specified by \a type.
-    uint64_t getCounter(const Counters::ServerCounterType type) const;
+    typedef std::string item_node_name_type;
 
-    /// \brief Get the value of a per opcode counter.
+    /// \brief item node list
     ///
-    /// This method returns the value of the per opcode counter for the
-    /// specified \c opcode.
-    ///
-    /// \note This is a tentative interface as an attempt of experimentally
-    /// supporting more statistics counters.  This should eventually be more
-    /// generalized.  In any case, this method is mainly for testing.
-    ///
-    /// \throw None
-    /// \param opcode The opcode of the counter to get the value of
-    /// \return the value of the counter.
-    uint64_t getCounter(const isc::dns::Opcode opcode) const;
+    typedef std::list<item_node_name_type> item_node_name_list_type;
 
-    /// \brief Get the value of a per rcode counter.
+    /// \brief A type of statistics item tree in isc::data::MapElement.
+    ///        { item_name => item_value, item_name => item_value, ... }
+    ///        item_name is a string seperated by '.'.
+    ///        item_value is an integer.
+    typedef isc::data::ElementPtr item_tree_type;
+
+    /// \brief Get the values of specified counters.
     ///
-    /// This method returns the value of the per rcode counter for the
-    /// specified \c rcode.
+    /// This function returns names and values of counter.
     ///
-    /// \note As mentioned in getCounter(const isc::dns::Opcode opcode),
-    /// This is a tentative interface as an attempt of experimentally
-    /// supporting more statistics counters.  This should eventually be more
-    /// generalized.  In any case, this method is mainly for testing.
+    /// \throw bad_alloc
     ///
-    /// \throw None
-    /// \param rcode The rcode of the counter to get the value of
-    /// \return the value of the counter.
-    uint64_t getCounter(const isc::dns::Rcode rcode) const;
+    /// \return a tree of statistics items.
+    const item_tree_type get(const item_node_name_list_type &items) const;
+
+    /// \brief Dump all of the counters.
+    ///
+    /// This function returns names and values of counter.
+    ///
+    /// \throw bad_alloc
+    ///
+    /// \return a tree of statistics items.
+    const item_tree_type dump() const;
 
     /// \brief A type of validation function for the specification in
     /// isc::config::ModuleSpec.

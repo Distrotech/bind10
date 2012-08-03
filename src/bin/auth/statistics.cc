@@ -33,6 +33,7 @@
 #include <iostream>
 
 #include <boost/noncopyable.hpp>
+#include <boost/foreach.hpp>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -44,6 +45,22 @@ using namespace isc::dns;
 using namespace isc::auth;
 using namespace isc::statistics;
 
+namespace {
+using namespace isc::data;
+using isc::statistics::Counter;
+using isc::auth::statistics::Counters;
+void
+fillNodes(const Counter &counter, const char *nodename[], const size_t size,
+          const std::string &prefix, Counters::item_tree_type &trees)
+{
+    for (size_t i = 0; i < size; ++i) {
+        trees->set (prefix + nodename[i],
+                    Element::create( static_cast<long int>( counter.get(i) ) )
+                    );
+    }
+}
+} // anonymous namespace
+
 namespace isc {
 namespace auth {
 namespace statistics {
@@ -53,41 +70,14 @@ public:
     CountersImpl();
     ~CountersImpl();
     void inc(const QRAttributes& qrattrs, const Message& response);
+    const Counters::item_tree_type
+        get(const Counters::item_node_name_list_type& trees) const;
+    // Currently for testing purpose only
+    const Counters::item_tree_type dump() const;
     bool submitStatistics() const;
     void setStatisticsSession(isc::cc::AbstractSession* statistics_session);
     void registerStatisticsValidator (Counters::validator_type validator);
     // Currently for testing purpose only
-    uint64_t getCounter(const Counters::ServerCounterType type) const;
-    uint64_t getCounter(const Opcode opcode) const {
-        const unsigned int opcode_code = opcode.getCode();
-        unsigned int opcode_type = QR_OPCODE_OTHER;
-        if (opcode_code < 3) {
-            opcode_type = QR_OPCODE_QUERY + opcode_code;
-        } else if (opcode_code == 3) {
-            opcode_type = QR_OPCODE_OTHER;
-        } else if (opcode_code < 6) {
-            opcode_type = QR_OPCODE_NOTIFY + (opcode_code - 4);
-        } else {
-            opcode_type = QR_OPCODE_OTHER;
-        }
-        return (server_qr_counter_.get(opcode_type));
-    }
-    uint64_t getCounter(const Rcode rcode) const {
-        const unsigned int rcode_code = rcode.getCode();
-        unsigned int rcode_type = QR_RCODE_OTHER;
-        if (rcode_code < 11) {
-            rcode_type = QR_RCODE_NOERROR + rcode_code;
-        } else if (rcode_code < 16) {
-            rcode_type = QR_RCODE_OTHER;
-        } else if (rcode_code == 16) {
-            rcode_type = QR_RCODE_BADSIGVERS;
-        } else if (rcode_code < 23) {
-            rcode_type = QR_RCODE_BADKEY + (rcode_code - 17);
-        } else {
-            rcode_type = QR_RCODE_OTHER;
-        }
-        return (server_qr_counter_.get(rcode_type));
-    }
 private:
     // counter for server
     Counter server_qr_counter_;
@@ -314,34 +304,22 @@ CountersImpl::submitStatistics() const {
                              server_qr_counter_.get(QR_REQUEST_TCP)
                       <<     ", \"queries.tcp\": "
                       <<     server_qr_counter_.get(QR_REQUEST_TCP);
-#if 0
     // Insert non 0 Opcode counters.
-    for (int i = 0; i < NUM_OPCODES; ++i) {
-        const Counter::Type counter = opcode_counter_.get(i);
+    for (int i = QR_OPCODE_QUERY; i <= QR_OPCODE_OTHER; ++i) {
+        const Counter::Type counter = server_qr_counter_.get(i);
         if (counter != 0) {
-            // The counter item name should be derived lower-cased textual
-            // representation of the code.
-            std::string opcode_txt = Opcode(i).toText();
-            std::transform(opcode_txt.begin(), opcode_txt.end(),
-                           opcode_txt.begin(), ::tolower);
-            statistics_string << ", \"opcode." << opcode_txt << "\": "
+            statistics_string << ", \"" << QRCounterItemName[i] << "\": "
                               << counter;
         }
     }
     // Insert non 0 Rcode counters.
-    for (int i = 0; i < NUM_RCODES; ++i) {
-        const Counter::Type counter = rcode_counter_.get(i);
+    for (int i = QR_RCODE_NOERROR; i <= QR_RCODE_OTHER; ++i) {
+        const Counter::Type counter = server_qr_counter_.get(i);
         if (counter != 0) {
-            // The counter item name should be derived lower-cased textual
-            // representation of the code.
-            std::string rcode_txt = Rcode(i).toText();
-            std::transform(rcode_txt.begin(), rcode_txt.end(),
-                           rcode_txt.begin(), ::tolower);
-            statistics_string << ", \"rcode." << rcode_txt << "\": "
+            statistics_string << ", \"" << QRCounterItemName[i] << "\": "
                               << counter;
         }
     }
-#endif
     statistics_string <<   " }"
                       <<   "}"
                       << "]}";
@@ -390,18 +368,41 @@ CountersImpl::registerStatisticsValidator
     validator_ = validator;
 }
 
-// Currently for testing purpose only
-uint64_t
-CountersImpl::getCounter(const Counters::ServerCounterType type) const {
-    uint64_t value = 0;
-    if (type == Counters::SERVER_UDP_QUERY) {
-        value = server_qr_counter_.get(QR_REQUEST_IPV4) +
-                server_qr_counter_.get(QR_REQUEST_IPV6) -
-                server_qr_counter_.get(QR_REQUEST_TCP);
-    } else if (type == Counters::SERVER_TCP_QUERY) {
-        value = server_qr_counter_.get(QR_REQUEST_TCP);
+const Counters::item_tree_type
+CountersImpl::get(const Counters::item_node_name_list_type &trees) const {
+    using namespace isc::data;
+
+    Counters::item_tree_type item_tree = Element::createMap();
+
+    BOOST_FOREACH(const Counters::item_node_name_type& node, trees) {
+        if (node == "auth.server.qr") {
+            fillNodes(server_qr_counter_, QRCounterItemName, QR_COUNTER_TYPES,
+                      "auth.server.qr.", item_tree);
+        } else if (node == "auth.server.socket") {
+            // currently not implemented
+            fillNodes(server_socket_counter_, SocketCounterItemName,
+                      SOCKET_COUNTER_TYPES, "auth.server.socket.", item_tree);
+        } else if (node == "auth.zones") {
+            // currently not implemented
+        } else {
+            // unknown tree
+        }
     }
-    return (value);
+
+    return (item_tree);
+}
+
+// Currently for testing purpose only
+const Counters::item_tree_type
+CountersImpl::dump() const {
+    using namespace isc::data;
+
+    Counters::item_tree_type item_tree = Element::createMap();
+
+    fillNodes(server_qr_counter_, QRCounterItemName, QR_COUNTER_TYPES,
+              "auth.server.qr.", item_tree);
+
+    return (item_tree);
 }
 
 Counters::Counters() : impl_(new CountersImpl())
@@ -414,6 +415,16 @@ Counters::inc(const QRAttributes& qrattrs, const Message& response) {
     impl_->inc(qrattrs, response);
 }
 
+const Counters::item_tree_type
+Counters::get(const Counters::item_node_name_list_type &trees) const {
+    return (impl_->get(trees));
+}
+
+const Counters::item_tree_type
+Counters::dump() const {
+    return (impl_->dump());
+}
+
 bool
 Counters::submitStatistics() const {
     return (impl_->submitStatistics());
@@ -422,21 +433,6 @@ Counters::submitStatistics() const {
 void
 Counters::setStatisticsSession (isc::cc::AbstractSession* statistics_session) {
     impl_->setStatisticsSession(statistics_session);
-}
-
-uint64_t
-Counters::getCounter(const Counters::ServerCounterType type) const {
-    return (impl_->getCounter(type));
-}
-
-uint64_t
-Counters::getCounter(const Opcode opcode) const {
-    return (impl_->getCounter(opcode));
-}
-
-uint64_t
-Counters::getCounter(const Rcode rcode) const {
-    return (impl_->getCounter(rcode));
 }
 
 void
