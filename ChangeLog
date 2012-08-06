@@ -1,3 +1,9 @@
+TBD.	[func]		y-aharen
+	b10-auth collects query/response statistics items. Currently
+	limited number of items are sent to b10-stats.
+	Per-zone query/response statistics and socket statistics are
+	planned to be implemented.
+
 455.	[func]*		vorner
 	The server now uses newer API for data sources. This would be an
 	internal change, however, the data sources are now configured
