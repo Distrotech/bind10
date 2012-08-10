@@ -131,6 +131,7 @@ enum QRCounterType {
     QR_REQUEST_TSIG,        ///< Number of requests with TSIG received
     QR_REQUEST_SIG0,        ///< Number of requests with SIG(0) received; not implemented in BIND 10
     QR_REQUEST_BADSIG,      ///< Number of requests with invalid TSIG or SIG(0) signature received
+    QR_REQUEST_UDP,         ///< Number of UDP requests received
     QR_REQUEST_TCP,         ///< Number of TCP requests received
     QR_REQUEST_DNSSEC_OK,   ///< Number of requests with DO bit
     // Request Opcodes
@@ -255,6 +256,7 @@ const char *QRCounterItemName[QR_COUNTER_TYPES] = {
     "request.tsig",
     "request.sig0",
     "request.badsig",
+    "request.udp",
     "request.tcp",
     "request.dnssec_ok",
     "opcode.query",

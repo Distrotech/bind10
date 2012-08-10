@@ -351,6 +351,7 @@ TEST_F(CountersTest, incrementNormalQuery) {
     expect_nonzero.insert("auth.server.qr.opcode.query");
     expect_nonzero.insert("auth.server.qr.qtype.aaaa");
     expect_nonzero.insert("auth.server.qr.request.v6");
+    expect_nonzero.insert("auth.server.qr.request.udp");
     expect_nonzero.insert("auth.server.qr.request.edns0");
     expect_nonzero.insert("auth.server.qr.request.dnssec_ok");
     expect_nonzero.insert("auth.server.qr.response");

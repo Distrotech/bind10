@@ -112,7 +112,9 @@ CountersImpl::inc(const QRAttributes& qrattrs, const Message& response) {
     } else if (qrattrs.req_ip_version_ == AF_INET6) {
         server_qr_counter_.inc(QR_REQUEST_IPV6);
     }
-    if (qrattrs.req_transport_protocol_ == IPPROTO_TCP) {
+    if (qrattrs.req_transport_protocol_ == IPPROTO_UDP) {
+        server_qr_counter_.inc(QR_REQUEST_UDP);
+    } else if (qrattrs.req_transport_protocol_ == IPPROTO_TCP) {
         server_qr_counter_.inc(QR_REQUEST_TCP);
     }
 
@@ -299,9 +301,7 @@ CountersImpl::submitStatistics() const {
                       <<   "  \"pid\":" << getpid()
                       <<   ", \"data\":"
                       <<     "{ \"queries.udp\": "
-                      <<     server_qr_counter_.get(QR_REQUEST_IPV4) +
-                             server_qr_counter_.get(QR_REQUEST_IPV6) -
-                             server_qr_counter_.get(QR_REQUEST_TCP)
+                      <<     server_qr_counter_.get(QR_REQUEST_UDP)
                       <<     ", \"queries.tcp\": "
                       <<     server_qr_counter_.get(QR_REQUEST_TCP);
     // Insert non 0 Opcode counters.
