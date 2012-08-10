@@ -137,7 +137,9 @@ class GetStatsCommand : public AuthCommand {
 public:
     virtual ConstElementPtr exec(AuthSrv& server, isc::data::ConstElementPtr) {
         LOG_DEBUG(auth_logger, DBG_AUTH_OPS, AUTH_RECEIVED_GETSTATS);
-        return (createAnswer(0, server.getStatistics()));
+        statistics::Counters::item_node_name_set_type trees;
+        trees.insert("auth.server.qr");
+        return (createAnswer(0, server.get(trees)));
     }
 };
 

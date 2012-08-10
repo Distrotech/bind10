@@ -71,6 +71,7 @@ using namespace isc::asiodns;
 using namespace isc::asiolink;
 using namespace isc::testutils;
 using namespace isc::server_common::portconfig;
+using isc::auth::statistics::Counters;
 using isc::UnitTestUtil;
 using boost::scoped_ptr;
 
@@ -121,31 +122,88 @@ protected:
 
     // Helper for checking Rcode statistic counters;
     // Checks for one specific Rcode statistics counter value
-    void checkRcodeCounter(const Rcode& rcode, int expected_value) const {
-        EXPECT_EQ(expected_value, server.getCounter(rcode)) <<
-                  "Expected Rcode count for " << rcode.toText() <<
-                  " " << expected_value << ", was: " <<
-                  server.getCounter(rcode);
+    void checkRcodeCounter(const std::string& rcode_name, const int rcode_value,
+                           const int expected_value) const
+    {
+            EXPECT_EQ(expected_value, rcode_value) <<
+                      "Expected Rcode count for " << rcode_name <<
+                      " " << expected_value << ", was: " <<
+                      rcode_value;
     }
 
     // Checks whether all Rcode counters are set to zero
     void checkAllRcodeCountersZero() const {
-        for (int i = 0; i < 17; i++) {
-            checkRcodeCounter(Rcode(i), 0);
+        std::map<std::string, ConstElementPtr> stats_map;
+        server.dump()->getValue(stats_map);
+
+        const std::string rcode_prefix("auth.server.qr.rcode.");
+        for (std::map<std::string, ConstElementPtr>::const_iterator
+                 i = stats_map.begin(), e = stats_map.end();
+             i != e;
+             ++i)
+        {
+            if (i->first.compare(0, rcode_prefix.size(), rcode_prefix) == 0) {
+                checkRcodeCounter(i->first, i->second->intValue(), 0);
+            }
         }
     }
 
     // Checks whether all Rcode counters are set to zero except the given
     // rcode (it is checked to be set to 'value')
     void checkAllRcodeCountersZeroExcept(const Rcode& rcode, int value) const {
-        for (int i = 0; i < 17; i++) {
-            const Rcode rc(i);
-            if (rc == rcode) {
-                checkRcodeCounter(Rcode(i), value);
-            } else {
-                checkRcodeCounter(Rcode(i), 0);
+        std::string target_rcode_name = rcode.toText();
+        std::transform(target_rcode_name.begin(), target_rcode_name.end(),
+                       target_rcode_name.begin(), ::tolower);
+        // rcode 16 is registered as both BADVERS and BADSIG
+        if (target_rcode_name == "badvers") {
+            target_rcode_name = "badsigvers";
+        }
+
+        std::map<std::string, ConstElementPtr> stats_map;
+        server.dump()->getValue(stats_map);
+
+        const std::string rcode_prefix("auth.server.qr.rcode.");
+        for (std::map<std::string, ConstElementPtr>::const_iterator
+                 i = stats_map.begin(), e = stats_map.end();
+             i != e;
+             ++i)
+        {
+            if (i->first.compare(0, rcode_prefix.size(), rcode_prefix) == 0) {
+                if (i->first.compare(rcode_prefix + target_rcode_name) == 0) {
+                    checkRcodeCounter(i->first, i->second->intValue(), value);
+                } else {
+                    checkRcodeCounter(i->first, i->second->intValue(), 0);
+                }
             }
         }
+    }
+
+    uint64_t getOpcodeCounter(const Opcode& opcode) {
+        std::string target_opcode_name = opcode.toText();
+        std::transform(target_opcode_name.begin(), target_opcode_name.end(),
+                       target_opcode_name.begin(), ::tolower);
+        const unsigned int opcode_code = opcode.getCode();
+        if (opcode_code == 3 || (opcode_code > 5 && opcode_code < 16)) {
+            target_opcode_name = "other";
+        }
+
+        std::map<std::string, ConstElementPtr> stats_map;
+        server.dump()->getValue(stats_map);
+
+        const std::string opcode_prefix("auth.server.qr.opcode.");
+        for (std::map<std::string, ConstElementPtr>::const_iterator
+                 i = stats_map.begin(), e = stats_map.end();
+             i != e;
+             ++i)
+        {
+            if (i->first.compare(0, opcode_prefix.size(), opcode_prefix) == 0) {
+                if (i->first.compare(opcode_prefix + target_opcode_name) == 0) {
+                    return (i->second->intValue());
+                }
+            }
+        }
+
+        return (0);
     }
 
     // Convenience method for tests that expect to return SERVFAIL
@@ -403,7 +461,8 @@ TEST_F(AuthSrvTest, TSIGCheckFirst) {
         "It should be unsigned with this error";
     // TSIG should have failed, and so the per opcode counter shouldn't be
     // incremented.
-    EXPECT_EQ(0, server.getCounter(Opcode::RESERVED14()));
+    ConstElementPtr stats = server.dump();
+    EXPECT_EQ(0, stats->get("auth.server.qr.opcode.other")->intValue());
 
     checkAllRcodeCountersZeroExcept(Rcode::NOTAUTH(), 1);
 }
@@ -1029,7 +1088,13 @@ TEST_F(AuthSrvTest,
 // Submit UDP normal query and check query counter
 TEST_F(AuthSrvTest, queryCounterUDPNormal) {
     // The counter should be initialized to 0.
-    EXPECT_EQ(0, server.getCounter(AuthCounters::SERVER_UDP_QUERY));
+    ConstElementPtr stats_init = server.dump();
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.request.udp")->intValue());
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.request.tcp")->intValue());
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.opcode.query")->intValue());
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.qtype.ns")->intValue());
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.rcode.refused")->intValue());
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.response")->intValue());
     // Create UDP message and process.
     UnitTestUtil::createRequestMessage(request_message, Opcode::QUERY(),
                                        default_qid, Name("example.com"),
@@ -1037,18 +1102,29 @@ TEST_F(AuthSrvTest, queryCounterUDPNormal) {
     createRequestPacket(request_message, IPPROTO_UDP);
     server.processMessage(*io_message, *parse_message, *response_obuffer,
                           &dnsserv);
-    // After processing UDP query, the counter should be 1.
-    EXPECT_EQ(1, server.getCounter(AuthCounters::SERVER_UDP_QUERY));
-    // The counter for opcode Query should also be one
-    EXPECT_EQ(1, server.getCounter(Opcode::QUERY()));
-    // The counter for REFUSED responses should also be one, the rest zero
-    checkAllRcodeCountersZeroExcept(Rcode::REFUSED(), 1);
+    // After processing the UDP query, these counters should be incremented:
+    //   request.tcp, opcode.query, qtype.ns, rcode.refused, response
+    // and these counters should not be incremented:
+    //   request.tcp
+    ConstElementPtr stats_after = server.dump();
+    EXPECT_EQ(1, stats_after->get("auth.server.qr.request.udp")->intValue());
+    EXPECT_EQ(0, stats_after->get("auth.server.qr.request.tcp")->intValue());
+    EXPECT_EQ(1, stats_after->get("auth.server.qr.opcode.query")->intValue());
+    EXPECT_EQ(1, stats_after->get("auth.server.qr.qtype.ns")->intValue());
+    EXPECT_EQ(1, stats_after->get("auth.server.qr.rcode.refused")->intValue());
+    EXPECT_EQ(1, stats_after->get("auth.server.qr.response")->intValue());
 }
 
 // Submit TCP normal query and check query counter
 TEST_F(AuthSrvTest, queryCounterTCPNormal) {
     // The counter should be initialized to 0.
-    EXPECT_EQ(0, server.getCounter(AuthCounters::SERVER_TCP_QUERY));
+    ConstElementPtr stats_init = server.dump();
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.request.udp")->intValue());
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.request.tcp")->intValue());
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.opcode.query")->intValue());
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.qtype.ns")->intValue());
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.rcode.refused")->intValue());
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.response")->intValue());
     // Create TCP message and process.
     UnitTestUtil::createRequestMessage(request_message, Opcode::QUERY(),
                                        default_qid, Name("example.com"),
@@ -1056,18 +1132,28 @@ TEST_F(AuthSrvTest, queryCounterTCPNormal) {
     createRequestPacket(request_message, IPPROTO_TCP);
     server.processMessage(*io_message, *parse_message, *response_obuffer,
                           &dnsserv);
-    // After processing TCP query, the counter should be 1.
-    EXPECT_EQ(1, server.getCounter(AuthCounters::SERVER_TCP_QUERY));
-    // The counter for SUCCESS responses should also be one
-    EXPECT_EQ(1, server.getCounter(Opcode::QUERY()));
-    // The counter for REFUSED responses should also be one, the rest zero
-    checkAllRcodeCountersZeroExcept(Rcode::REFUSED(), 1);
+    // After processing the TCP query, these counters should be incremented:
+    //   request.tcp, opcode.query, qtype.ns, rcode.refused, response
+    // and these counters should not be incremented:
+    //   request.udp
+    ConstElementPtr stats_after = server.dump();
+    EXPECT_EQ(0, stats_after->get("auth.server.qr.request.udp")->intValue());
+    EXPECT_EQ(1, stats_after->get("auth.server.qr.request.tcp")->intValue());
+    EXPECT_EQ(1, stats_after->get("auth.server.qr.opcode.query")->intValue());
+    EXPECT_EQ(1, stats_after->get("auth.server.qr.qtype.ns")->intValue());
+    EXPECT_EQ(1, stats_after->get("auth.server.qr.rcode.refused")->intValue());
+    EXPECT_EQ(1, stats_after->get("auth.server.qr.response")->intValue());
 }
 
 // Submit TCP AXFR query and check query counter
 TEST_F(AuthSrvTest, queryCounterTCPAXFR) {
     // The counter should be initialized to 0.
-    EXPECT_EQ(0, server.getCounter(AuthCounters::SERVER_TCP_QUERY));
+    ConstElementPtr stats_init = server.dump();
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.request.udp")->intValue());
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.request.tcp")->intValue());
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.opcode.query")->intValue());
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.qtype.axfr")->intValue());
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.response")->intValue());
     UnitTestUtil::createRequestMessage(request_message, opcode, default_qid,
                          Name("example.com"), RRClass::IN(), RRType::AXFR());
     createRequestPacket(request_message, IPPROTO_TCP);
@@ -1076,16 +1162,28 @@ TEST_F(AuthSrvTest, queryCounterTCPAXFR) {
     server.processMessage(*io_message, *parse_message, *response_obuffer,
                           &dnsserv);
     EXPECT_FALSE(dnsserv.hasAnswer());
-    // After processing TCP AXFR query, the counter should be 1.
-    EXPECT_EQ(1, server.getCounter(AuthCounters::SERVER_TCP_QUERY));
-    // No rcodes should be incremented
-    checkAllRcodeCountersZero();
+    // After processing the TCP AXFR query, these counters should be
+    // incremented:
+    //   request.tcp, opcode.query, qtype.axfr
+    // and these counters should not be incremented:
+    //   request.udp, response
+    ConstElementPtr stats_after = server.dump();
+    EXPECT_EQ(0, stats_after->get("auth.server.qr.request.udp")->intValue());
+    EXPECT_EQ(1, stats_after->get("auth.server.qr.request.tcp")->intValue());
+    EXPECT_EQ(1, stats_after->get("auth.server.qr.opcode.query")->intValue());
+    EXPECT_EQ(1, stats_after->get("auth.server.qr.qtype.axfr")->intValue());
+    EXPECT_EQ(0, stats_after->get("auth.server.qr.response")->intValue());
 }
 
 // Submit TCP IXFR query and check query counter
 TEST_F(AuthSrvTest, queryCounterTCPIXFR) {
     // The counter should be initialized to 0.
-    EXPECT_EQ(0, server.getCounter(AuthCounters::SERVER_TCP_QUERY));
+    ConstElementPtr stats_init = server.dump();
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.request.udp")->intValue());
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.request.tcp")->intValue());
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.opcode.query")->intValue());
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.qtype.ixfr")->intValue());
+    EXPECT_EQ(0, stats_init->get("auth.server.qr.response")->intValue());
     UnitTestUtil::createRequestMessage(request_message, opcode, default_qid,
                          Name("example.com"), RRClass::IN(), RRType::IXFR());
     createRequestPacket(request_message, IPPROTO_TCP);
@@ -1094,14 +1192,25 @@ TEST_F(AuthSrvTest, queryCounterTCPIXFR) {
     server.processMessage(*io_message, *parse_message, *response_obuffer,
                           &dnsserv);
     EXPECT_FALSE(dnsserv.hasAnswer());
-    // After processing TCP IXFR query, the counter should be 1.
-    EXPECT_EQ(1, server.getCounter(AuthCounters::SERVER_TCP_QUERY));
+    // After processing the TCP IXFR query, these counters should be
+    // incremented:
+    //   request.tcp, opcode.query, qtype.ixfr
+    // and these counters should not be incremented:
+    //   request.udp, response
+    ConstElementPtr stats_after = server.dump();
+    EXPECT_EQ(0, stats_after->get("auth.server.qr.request.udp")->intValue());
+    EXPECT_EQ(1, stats_after->get("auth.server.qr.request.tcp")->intValue());
+    EXPECT_EQ(1, stats_after->get("auth.server.qr.opcode.query")->intValue());
+    EXPECT_EQ(1, stats_after->get("auth.server.qr.qtype.ixfr")->intValue());
+    EXPECT_EQ(0, stats_after->get("auth.server.qr.response")->intValue());
 }
 
 TEST_F(AuthSrvTest, queryCounterOpcodes) {
-    for (int i = 0; i < 16; ++i) {
+    // Check for 0..2, 3 (other), 4..5
+    // The counter should be initialized to 0.
+    for (int i = 0; i < 6; ++i) {
         // The counter should be initialized to 0.
-        EXPECT_EQ(0, server.getCounter(Opcode(i)));
+        EXPECT_EQ(0, getOpcodeCounter(Opcode(i)));
 
         // For each possible opcode, create a request message and send it
         UnitTestUtil::createRequestMessage(request_message, Opcode(i),
@@ -1119,7 +1228,31 @@ TEST_F(AuthSrvTest, queryCounterOpcodes) {
         }
 
         // Confirm the counter.
-        EXPECT_EQ(i + 1, server.getCounter(Opcode(i)));
+        EXPECT_EQ(i + 1, getOpcodeCounter(Opcode(i)));
+    }
+
+    // Check for 6..15
+    // they are treated as the 'other' opcodes
+    for (int i = 6; i < 16; ++i) {
+        uint64_t before = getOpcodeCounter(Opcode(i));
+
+        // For each possible opcode, create a request message and send it
+        UnitTestUtil::createRequestMessage(request_message, Opcode(i),
+                                           default_qid, Name("example.com"),
+                                           RRClass::IN(), RRType::NS());
+        createRequestPacket(request_message, IPPROTO_UDP);
+
+        // "send" the request N-th times where N is i + 1 for i-th code.
+        // we intentionally use different values for each code
+        for (int j = 0; j <= i; ++j) {
+            parse_message->clear(Message::PARSE);
+            server.processMessage(*io_message, *parse_message,
+                                  *response_obuffer,
+                                  &dnsserv);
+        }
+
+        // Confirm the counter.
+        EXPECT_EQ(before + i + 1, getOpcodeCounter(Opcode(i)));
     }
 }
 

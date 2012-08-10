@@ -143,15 +143,6 @@
       on the IPv6 (::) and IPv4 (0.0.0.0) wildcard addresses.
     </para>
 
-    <para>
-      <varname>statistics-interval</varname> is the timer interval
-      in seconds for <command>b10-auth</command> to share its
-      statistics information to
-      <citerefentry><refentrytitle>b10-stats</refentrytitle><manvolnum>8</manvolnum></citerefentry>.
-      Statistics updates can be disabled by setting this to 0.
-      The default is 60.
-    </para>
-
 <!-- TODO: formating -->
     <para>
       The configuration commands are:
@@ -174,10 +165,8 @@
     </para>
 
     <para>
-      <command>sendstats</command> tells <command>b10-auth</command>
-      to send its statistics data to
-      <citerefentry><refentrytitle>b10-stats</refentrytitle><manvolnum>8</manvolnum></citerefentry>
-      immediately.
+      <command>getstats</command> tells <command>b10-auth</command>
+      to return its statistics data.
     </para>
 
     <para>
@@ -201,14 +190,14 @@
     <variablelist>
 
       <varlistentry>
-        <term>queries.tcp</term>
+        <term>auth.server.qr.queries.tcp</term>
         <listitem><simpara>Total count of queries received by the
           <command>b10-auth</command> server over TCP since startup.
         </simpara></listitem>
       </varlistentry>
 
       <varlistentry>
-        <term>queries.udp</term>
+        <term>auth.server.qr.queries.udp</term>
         <listitem><simpara>Total count of queries received by the
           <command>b10-auth</command> server over UDP since startup.
         </simpara></listitem>
@@ -216,7 +205,7 @@
 
     </variablelist>
 
-<!-- TODO: missing stats docs. See ticket #1721 -->
+<!-- TODO: missing stats docs. See wiki:StatisticsItems -->
 
   </refsect1>
 

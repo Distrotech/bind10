@@ -1,3 +1,9 @@
+TBD.	[func]		fujiwara, y-aharen
+	b10-auth collects and sends query/response statistics items
+	defined in wiki:StatisticsItems.
+	Per-zone query/response statistics and socket statistics are
+	planned to be implemented.
+
 458.	[build]*	jinmei
 	BIND 10 now relies on Boost offset_ptr, which caused some new
 	portability issues.  Such issues are detected at ./configure time.

@@ -15,19 +15,92 @@
 #ifndef __STATISTICS_H
 #define __STATISTICS_H 1
 
-#include <dns/opcode.h>
-#include <dns/rcode.h>
 #include <cc/session.h>
-#include <cc/data.h>
+
+#include <dns/message.h>
+
+#include <string>
+#include <set>
 
 #include <stdint.h>
 #include <boost/scoped_ptr.hpp>
 
-class AuthCountersImpl;
+namespace isc {
+namespace auth {
+namespace statistics {
+
+class CountersImpl;
+
+class QRAttributes {
+/// \brief Query/Response attributes for statistics.
+///
+/// This class holds some attributes related to a query/response
+/// for statistics data collection.
+///
+/// This class does not have getter methods since it exposes private members
+/// to \c CountersImpl directly.
+friend class CountersImpl;
+private:
+    // request attributes
+    int req_ip_version_;            // IP version
+    int req_transport_protocol_;    // Transport layer protocol
+    int req_opcode_;                // OpCode
+    bool req_is_edns_0_;            // EDNS ver.0
+    bool req_is_edns_badver_;       // other EDNS version
+    bool req_is_dnssec_ok_;         // DO bit
+    bool req_is_tsig_;              // signed with valid TSIG
+    bool req_is_sig0_;              // signed with valid SIG(0)
+    bool req_is_badsig_;            // signed but bad signature
+    // zone origin
+    std::string zone_origin_;       // zone origin
+    // response attributes
+    bool answer_sent_;              // DNS message has sent
+    bool res_is_truncated_;         // DNS message is truncated
+public:
+    /// The constructor.
+    ///
+    /// This constructor is mostly exception free. But it may still throw
+    /// a standard exception if memory allocation fails inside the method.
+    ///
+    QRAttributes();
+    /// The destructor.
+    ///
+    /// This method never throws an exception.
+    ///
+    ~QRAttributes();
+    /// \brief Set query opcode.
+    /// \throw None
+    void setQueryOpCode(const int opcode);
+    /// \brief Set IP version carrying a query.
+    /// \throw None
+    void setQueryIPVersion(const int ip_version);
+    /// \brief Set transport protocol carrying a query.
+    /// \throw None
+    void setQueryTransportProtocol(const int transport_protocol);
+    /// \brief Set query EDNS attributes.
+    /// \throw None
+    void setQueryEDNS(const bool is_edns_0, const bool is_edns_badver);
+    /// \brief Set query DO bit.
+    /// \throw None
+    void setQueryDO(const bool is_dnssec_ok);
+    /// \brief Set query TSIG attributes.
+    /// \throw None
+    void setQuerySig(const bool is_tsig, const bool is_sig0,
+                     const bool is_badsig);
+    /// \brief Set zone origin.
+    /// \throw None
+    void setOrigin(const std::string& origin);
+    /// \brief Set if the answer has sent.
+    /// \throw None
+    void answerHasSent();
+    /// \brief Set if the response is truncated.
+    /// \throw None
+    void setResponseTruncated(const bool is_truncated);
+};
 
 /// \brief Set of query counters.
 ///
-/// \c AuthCounters is set of query counters class. It holds query counters
+/// \c Counters is set of query counters class. It holds query counters
 /// and provides an interface to increment the counter of specified type
 /// (e.g. UDP query, TCP query).
 ///
@@ -35,11 +108,9 @@ class AuthCountersImpl;
 /// statistics module.
 ///
 /// This class is designed to be a part of \c AuthSrv.
-/// Call \c inc() to increment a counter for specific type of query in
-/// the query processing function. use \c enum \c CounterType to specify
-/// the type of query.
-/// Call \c getStatistics() to answer statistics information to statistics
-/// module with statistics_session, when the command \c getstats is received.
+/// Call \c inc() to increment a counter for the query.
+/// Call \c get() to get statistics information to send to statistics module
+/// when the command \c getstats is received.
 ///
 /// We may eventually want to change the structure to hold values that are
 /// not counters (such as concurrent TCP connections), or seperate generic
@@ -50,133 +121,89 @@ class AuthCountersImpl;
 /// construction overhead of this approach should be acceptable.
 ///
 /// \todo Hold counters for each query types (Notify, Axfr, Ixfr, Normal)
-/// \todo Consider overhead of \c AuthCounters::inc()
-class AuthCounters {
+/// \todo Consider overhead of \c Counters::inc()
+class Counters {
 private:
-    boost::scoped_ptr<AuthCountersImpl> impl_;
+    boost::scoped_ptr<CountersImpl> impl_;
 public:
-    // Enum for the type of counter
-    enum ServerCounterType {
-        SERVER_UDP_QUERY,       ///< SERVER_UDP_QUERY: counter for UDP queries
-        SERVER_TCP_QUERY,       ///< SERVER_TCP_QUERY: counter for TCP queries
-        SERVER_COUNTER_TYPES    ///< The number of defined counters
-    };
-    enum PerZoneCounterType {
-        ZONE_UDP_QUERY,         ///< ZONE_UDP_QUERY: counter for UDP queries
-        ZONE_TCP_QUERY,         ///< ZONE_TCP_QUERY: counter for TCP queries
-        PER_ZONE_COUNTER_TYPES  ///< The number of defined counters
-    };
     /// The constructor.
     ///
     /// This constructor is mostly exception free. But it may still throw
     /// a standard exception if memory allocation fails inside the method.
     ///
-    AuthCounters();
+    Counters();
     /// The destructor.
     ///
     /// This method never throws an exception.
     ///
-    ~AuthCounters();
+    ~Counters();
 
-    /// \brief Increment the counter specified by the parameter.
+    /// \brief Increment counters according to the parameters.
     ///
-    /// \param type Type of a counter to increment.
-    ///
-    /// \throw std::out_of_range \a type is unknown.
-    ///
-    /// usage: counter.inc(AuthCounters::SERVER_UDP_QUERY);
-    /// 
-    void inc(const ServerCounterType type);
-
-    /// \brief Increment the counter of a per opcode counter.
-    ///
-    /// \note This is a tentative interface.  See \c getCounter().
-    ///
-    /// \param opcode The opcode of the counter to increment.
+    /// \param qrattrs Query/Response attributes.
+    /// \param response DNS response message.
     ///
     /// \throw None
-    void inc(const isc::dns::Opcode opcode);
+    ///
+    void inc(const QRAttributes& qrattrs, const isc::dns::Message& response);
 
-    /// \brief Increment the counter of a per rcode counter.
+    /// \brief item node name
     ///
-    /// \note This is a tentative interface.  See \c getCounter().
-    ///
-    /// \param rcode The rcode of the counter to increment.
-    ///
-    /// \throw None
-    void inc(const isc::dns::Rcode rcode);
+    typedef std::string item_node_name_type;
 
-    /// \brief Answers statistics counters to statistics module.
+    /// \brief item node set
     ///
-    /// This method is mostly exception free (error conditions are
-    /// represented via the return value). But it may still throw
-    /// a standard exception if memory allocation fails inside the method.
-    ///
-    /// \return statistics data
-    ///
-    isc::data::ElementPtr getStatistics() const;
+    typedef std::set<item_node_name_type> item_node_name_set_type;
 
-    /// \brief Get the value of a counter in the AuthCounters.
-    ///
-    /// This function returns a value of the counter specified by \a type.
-    /// This method never throws an exception.
-    ///
-    /// Note: Currently this function is for testing purpose only.
-    ///
-    /// \param type Type of a counter to get the value of
-    ///
-    /// \return the value of the counter specified by \a type.
-    uint64_t getCounter(const AuthCounters::ServerCounterType type) const;
+    /// \brief A type of statistics item tree in isc::data::MapElement.
+    ///        { item_name => item_value, item_name => item_value, ... }
+    ///        item_name is a string seperated by '.'.
+    ///        item_value is an integer.
+    typedef isc::data::ElementPtr item_tree_type;
 
-    /// \brief Get the value of a per opcode counter.
+    /// \brief Get the values of specified counters.
     ///
-    /// This method returns the value of the per opcode counter for the
-    /// specified \c opcode.
+    /// This function returns names and values of counter.
     ///
-    /// \note This is a tentative interface as an attempt of experimentally
-    /// supporting more statistics counters.  This should eventually be more
-    /// generalized.  In any case, this method is mainly for testing.
+    /// \throw bad_alloc
     ///
-    /// \throw None
-    /// \param opcode The opcode of the counter to get the value of
-    /// \return the value of the counter.
-    uint64_t getCounter(const isc::dns::Opcode opcode) const;
+    /// \return a tree of statistics items.
+    const item_tree_type get(const item_node_name_set_type &items) const;
 
-    /// \brief Get the value of a per rcode counter.
+    /// \brief Dump all of the counters.
     ///
-    /// This method returns the value of the per rcode counter for the
-    /// specified \c rcode.
+    /// This function returns names and values of counter.
     ///
-    /// \note As mentioned in getCounter(const isc::dns::Opcode opcode),
-    /// This is a tentative interface as an attempt of experimentally
-    /// supporting more statistics counters.  This should eventually be more
-    /// generalized.  In any case, this method is mainly for testing.
+    /// \throw bad_alloc
     ///
-    /// \throw None
-    /// \param rcode The rcode of the counter to get the value of
-    /// \return the value of the counter.
-    uint64_t getCounter(const isc::dns::Rcode rcode) const;
+    /// \return a tree of statistics items.
+    const item_tree_type dump() const;
 
     /// \brief A type of validation function for the specification in
     /// isc::config::ModuleSpec.
     ///
     /// This type might be useful for not only statistics
     /// specificatoin but also for config_data specification and for
-    /// commnad.
+    /// command.
     ///
     typedef boost::function<bool(const isc::data::ConstElementPtr&)>
     validator_type;
 
     /// \brief Register a function type of the statistics validation
-    /// function for AuthCounters.
+    /// function for Counters.
     ///
     /// This method never throws an exception.
     ///
     /// \param validator A function type of the validation of
     /// statistics specification.
     ///
-    void registerStatisticsValidator(AuthCounters::validator_type validator) const;
+    void registerStatisticsValidator(Counters::validator_type validator) const;
 };
+
+} // namespace statistics
+} // namespace auth
+} // namespace isc
+
 
 #endif // __STATISTICS_H
 
