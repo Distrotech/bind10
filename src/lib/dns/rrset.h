@@ -819,6 +819,17 @@ public:
     /// \return The number of \c RRSIG records associated.
     unsigned int getSIGRdataCount() const;
 
+    /// \brief Render the RRset in the wire format with name compression and
+    /// truncation handling.
+    ///
+    /// See \c AbstractRRset::toWire(MessageRenderer&)const.
+    virtual unsigned int toWire(AbstractMessageRenderer& renderer) const;
+
+    /// \brief Render the RRset in the wire format without any compression.
+    ///
+    /// See \c AbstractRRset::toWire(OutputBuffer&)const.
+    virtual unsigned int toWire(isc::util::OutputBuffer& buffer) const;
+
     /// \brief Updates the owner name of the \c RRset, including RRSIGs if any
     virtual void setName(const Name& n) {
         BasicRRset::setName(n);
