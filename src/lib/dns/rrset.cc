@@ -251,11 +251,19 @@ RRset::~RRset() {}
 
 unsigned int
 RRset::getSIGRdataCount() const {
+    std::cout << "---------------------------------------------------------" << std::endl;
     if (rrsig_) {
+        std::cout << "RRSET:" << std::endl << toText() << std::endl;
+        std::cout << "SIGCOUNT=" << rrsig_->getRdataCount() << std::endl;
+        std::cout << "SIGRRSET=" << rrsig_->toText() << std::endl;
         return (rrsig_->getRdataCount());
     } else {
+        std::cout << "RRSET:" << std::endl << toText() << std::endl;
+        std::cout << "SIGCOUNT=0" << std::endl;
         return (0);
     }
+
+    std::cout << std::endl << std::endl;
 }
 
 unsigned int
