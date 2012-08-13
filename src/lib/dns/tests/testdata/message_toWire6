@@ -6,7 +6,7 @@
 # Question: test.example.com. IN A
 # Answer:
 #  test.example.com. 3600 IN A 192.0.2.1
-#  test.example.com. 7200 IN A 192.0.2.2
+#  test.example.com. 3600 IN A 192.0.2.2
 #
 75c1 8500
 0001 0004 0000 0000
