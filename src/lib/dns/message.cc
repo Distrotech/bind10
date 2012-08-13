@@ -493,7 +493,7 @@ Message::getRRCount(const Section section) const {
 }
 
 void
-Message::addRRset(const Section section, RRsetPtr rrset, const bool sign) {
+Message::addRRset(const Section section, RRsetPtr rrset) {
     if (!rrset) {
         isc_throw(InvalidParameter,
                   "NULL RRset is given to Message::addRRset");
@@ -509,10 +509,9 @@ Message::addRRset(const Section section, RRsetPtr rrset, const bool sign) {
     impl_->rrsets_[section].push_back(rrset);
     impl_->counts_[section] += rrset->getRdataCount();
 
-    RRsetPtr sp = rrset->getRRsig();
-    if (sign && sp != NULL) {
-        impl_->rrsets_[section].push_back(sp);
-        impl_->counts_[section] += sp->getRdataCount();
+    const RRset* r = dynamic_cast<const RRset*>(rrset.get());
+    if (r != NULL) {
+        impl_->counts_[section] += r->getSIGRdataCount();
     }
 }
 
@@ -555,6 +554,11 @@ Message::removeRRset(const Section section, RRsetIterator& iterator) {
 
             // Found the matching RRset so remove it & ignore rest
             impl_->counts_[section] -= (*iterator)->getRdataCount();
+            const RRset* r = dynamic_cast<const RRset*>((*iterator).get());
+            if (r != NULL) {
+                impl_->counts_[section] -= r->getSIGRdataCount();
+            }
+
             impl_->rrsets_[section].erase(i);
             removed = true;
             break;
