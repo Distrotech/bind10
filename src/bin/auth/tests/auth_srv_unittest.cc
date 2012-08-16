@@ -135,7 +135,7 @@ protected:
     // Checks whether all Rcode counters are set to zero
     void checkAllRcodeCountersZero() const {
         std::map<std::string, ConstElementPtr> stats_map;
-        server.dump()->getValue(stats_map);
+        server.dumpStatistics()->getValue(stats_map);
 
         const std::string rcode_prefix("auth.server.qr.rcode.");
         for (std::map<std::string, ConstElementPtr>::const_iterator
@@ -161,7 +161,7 @@ protected:
         }
 
         std::map<std::string, ConstElementPtr> stats_map;
-        server.dump()->getValue(stats_map);
+        server.dumpStatistics()->getValue(stats_map);
 
         const std::string rcode_prefix("auth.server.qr.rcode.");
         for (std::map<std::string, ConstElementPtr>::const_iterator
@@ -189,7 +189,7 @@ protected:
         }
 
         std::map<std::string, ConstElementPtr> stats_map;
-        server.dump()->getValue(stats_map);
+        server.dumpStatistics()->getValue(stats_map);
 
         const std::string opcode_prefix("auth.server.qr.opcode.");
         for (std::map<std::string, ConstElementPtr>::const_iterator
@@ -463,7 +463,7 @@ TEST_F(AuthSrvTest, TSIGCheckFirst) {
         "It should be unsigned with this error";
     // TSIG should have failed, and so the per opcode counter shouldn't be
     // incremented.
-    ConstElementPtr stats = server.dump();
+    ConstElementPtr stats = server.dumpStatistics();
     EXPECT_EQ(0, stats->get("auth.server.qr.opcode.other")->intValue());
 
     checkAllRcodeCountersZeroExcept(Rcode::NOTAUTH(), 1);
@@ -1090,7 +1090,7 @@ TEST_F(AuthSrvTest,
 // Submit UDP normal query and check query counter
 TEST_F(AuthSrvTest, queryCounterUDPNormal) {
     // The counter should be initialized to 0.
-    ConstElementPtr stats_init = server.dump();
+    ConstElementPtr stats_init = server.dumpStatistics();
     EXPECT_EQ(0, stats_init->get("auth.server.qr.request.udp")->intValue());
     EXPECT_EQ(0, stats_init->get("auth.server.qr.request.tcp")->intValue());
     EXPECT_EQ(0, stats_init->get("auth.server.qr.opcode.query")->intValue());
@@ -1108,7 +1108,7 @@ TEST_F(AuthSrvTest, queryCounterUDPNormal) {
     //   request.tcp, opcode.query, qtype.ns, rcode.refused, response
     // and these counters should not be incremented:
     //   request.tcp
-    ConstElementPtr stats_after = server.dump();
+    ConstElementPtr stats_after = server.dumpStatistics();
     EXPECT_EQ(1, stats_after->get("auth.server.qr.request.udp")->intValue());
     EXPECT_EQ(0, stats_after->get("auth.server.qr.request.tcp")->intValue());
     EXPECT_EQ(1, stats_after->get("auth.server.qr.opcode.query")->intValue());
@@ -1120,7 +1120,7 @@ TEST_F(AuthSrvTest, queryCounterUDPNormal) {
 // Submit TCP normal query and check query counter
 TEST_F(AuthSrvTest, queryCounterTCPNormal) {
     // The counter should be initialized to 0.
-    ConstElementPtr stats_init = server.dump();
+    ConstElementPtr stats_init = server.dumpStatistics();
     EXPECT_EQ(0, stats_init->get("auth.server.qr.request.udp")->intValue());
     EXPECT_EQ(0, stats_init->get("auth.server.qr.request.tcp")->intValue());
     EXPECT_EQ(0, stats_init->get("auth.server.qr.opcode.query")->intValue());
@@ -1138,7 +1138,7 @@ TEST_F(AuthSrvTest, queryCounterTCPNormal) {
     //   request.tcp, opcode.query, qtype.ns, rcode.refused, response
     // and these counters should not be incremented:
     //   request.udp
-    ConstElementPtr stats_after = server.dump();
+    ConstElementPtr stats_after = server.dumpStatistics();
     EXPECT_EQ(0, stats_after->get("auth.server.qr.request.udp")->intValue());
     EXPECT_EQ(1, stats_after->get("auth.server.qr.request.tcp")->intValue());
     EXPECT_EQ(1, stats_after->get("auth.server.qr.opcode.query")->intValue());
@@ -1150,7 +1150,7 @@ TEST_F(AuthSrvTest, queryCounterTCPNormal) {
 // Submit TCP AXFR query and check query counter
 TEST_F(AuthSrvTest, queryCounterTCPAXFR) {
     // The counter should be initialized to 0.
-    ConstElementPtr stats_init = server.dump();
+    ConstElementPtr stats_init = server.dumpStatistics();
     EXPECT_EQ(0, stats_init->get("auth.server.qr.request.udp")->intValue());
     EXPECT_EQ(0, stats_init->get("auth.server.qr.request.tcp")->intValue());
     EXPECT_EQ(0, stats_init->get("auth.server.qr.opcode.query")->intValue());
@@ -1169,7 +1169,7 @@ TEST_F(AuthSrvTest, queryCounterTCPAXFR) {
     //   request.tcp, opcode.query, qtype.axfr
     // and these counters should not be incremented:
     //   request.udp, response
-    ConstElementPtr stats_after = server.dump();
+    ConstElementPtr stats_after = server.dumpStatistics();
     EXPECT_EQ(0, stats_after->get("auth.server.qr.request.udp")->intValue());
     EXPECT_EQ(1, stats_after->get("auth.server.qr.request.tcp")->intValue());
     EXPECT_EQ(1, stats_after->get("auth.server.qr.opcode.query")->intValue());
@@ -1180,7 +1180,7 @@ TEST_F(AuthSrvTest, queryCounterTCPAXFR) {
 // Submit TCP IXFR query and check query counter
 TEST_F(AuthSrvTest, queryCounterTCPIXFR) {
     // The counter should be initialized to 0.
-    ConstElementPtr stats_init = server.dump();
+    ConstElementPtr stats_init = server.dumpStatistics();
     EXPECT_EQ(0, stats_init->get("auth.server.qr.request.udp")->intValue());
     EXPECT_EQ(0, stats_init->get("auth.server.qr.request.tcp")->intValue());
     EXPECT_EQ(0, stats_init->get("auth.server.qr.opcode.query")->intValue());
@@ -1199,7 +1199,7 @@ TEST_F(AuthSrvTest, queryCounterTCPIXFR) {
     //   request.tcp, opcode.query, qtype.ixfr
     // and these counters should not be incremented:
     //   request.udp, response
-    ConstElementPtr stats_after = server.dump();
+    ConstElementPtr stats_after = server.dumpStatistics();
     EXPECT_EQ(0, stats_after->get("auth.server.qr.request.udp")->intValue());
     EXPECT_EQ(1, stats_after->get("auth.server.qr.request.tcp")->intValue());
     EXPECT_EQ(1, stats_after->get("auth.server.qr.opcode.query")->intValue());

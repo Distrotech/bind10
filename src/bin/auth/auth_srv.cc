@@ -895,12 +895,12 @@ bool AuthSrv::submitStatistics() const {
 }
 
 const Counters::item_tree_type
-AuthSrv::get(const Counters::item_node_name_set_type& trees) const {
+AuthSrv::getStatistics(const Counters::item_node_name_set_type& trees) const {
     return (impl_->counters_.get(trees));
 }
 
 const Counters::item_tree_type
-AuthSrv::dump() const {
+AuthSrv::dumpStatistics() const {
     return (impl_->counters_.dump());
 }
 
