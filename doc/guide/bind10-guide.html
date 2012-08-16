@@ -1,18 +1,18 @@
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>BIND 10 Guide</title><link rel="stylesheet" href="./bind10-guide.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"><meta name="description" content="BIND 10 is a framework that features Domain Name System (DNS) suite and Dynamic Host Configuration Protocol (DHCP) servers with development managed by Internet Systems Consortium (ISC). It includes DNS libraries, modular components for controlling authoritative and recursive DNS servers, and experimental DHCPv4 and DHCPv6 servers. This is the reference guide for BIND 10 version 20120712. The most up-to-date version of this document (in PDF, HTML, and plain text formats), along with other documents for BIND 10, can be found at ."></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="book" title="BIND 10 Guide"><div class="titlepage"><div><div><h1 class="title"><a name="idp25872"></a>BIND 10 Guide</h1></div><div><h2 class="subtitle">Administrator Reference for BIND 10</h2></div><div><p class="releaseinfo">This is the reference guide for BIND 10 version
-        20120712.</p></div><div><p class="copyright">Copyright © 2010-2012 Internet Systems Consortium, Inc.</p></div><div><div class="abstract" title="Abstract"><p class="title"><b>Abstract</b></p><p>BIND 10 is a framework that features Domain Name System
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>BIND 10 Guide</title><link rel="stylesheet" href="./bind10-guide.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"><meta name="description" content="BIND 10 is a framework that features Domain Name System (DNS) suite and Dynamic Host Configuration Protocol (DHCP) servers with development managed by Internet Systems Consortium (ISC). It includes DNS libraries, modular components for controlling authoritative and recursive DNS servers, and experimental DHCPv4 and DHCPv6 servers. This is the reference guide for BIND 10 version 20120816. The most up-to-date version of this document (in PDF, HTML, and plain text formats), along with other documents for BIND 10, can be found at ."></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="book" title="BIND 10 Guide"><div class="titlepage"><div><div><h1 class="title"><a name="id1168229451102"></a>BIND 10 Guide</h1></div><div><h2 class="subtitle">Administrator Reference for BIND 10</h2></div><div><p class="releaseinfo">This is the reference guide for BIND 10 version
+        20120816.</p></div><div><p class="copyright">Copyright © 2010-2012 Internet Systems Consortium, Inc.</p></div><div><div class="abstract" title="Abstract"><p class="title"><b>Abstract</b></p><p>BIND 10 is a framework that features Domain Name System
       (DNS) suite and Dynamic Host Configuration Protocol (DHCP)
       servers with development managed by Internet Systems Consortium (ISC).
       It includes DNS libraries, modular components for controlling
       authoritative and recursive DNS servers, and experimental DHCPv4
       and DHCPv6 servers.
       </p><p>
-        This is the reference guide for BIND 10 version 20120712.
+        This is the reference guide for BIND 10 version 20120816.
         The most up-to-date version of this document (in PDF, HTML,
         and plain text formats), along with other documents for
         BIND 10, can be found at <a class="ulink" href="http://bind10.isc.org/docs" target="_top">http://bind10.isc.org/docs</a>.
-        </p></div></div></div><hr></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="preface"><a href="#idp32704">Preface</a></span></dt><dd><dl><dt><span class="section"><a href="#acknowledgements">1. Acknowledgements</a></span></dt></dl></dd><dt><span class="chapter"><a href="#intro">1. Introduction</a></span></dt><dd><dl><dt><span class="section"><a href="#idp38720">1.1. Supported Platforms</a></span></dt><dt><span class="section"><a href="#required-software">1.2. Required Software at Run-time</a></span></dt><dt><span class="section"><a href="#starting_stopping">1.3. Starting and Stopping the Server</a></span></dt><dt><span class="section"><a href="#managing_once_running">1.4. Managing BIND 10</a></span></dt></dl></dd><dt><span class="chapter"><a href="#installation">2. Installation</a></span></dt><dd><dl><dt><span class="section"><a href="#packages">2.1. Packages</a></span></dt><dt><span class="section"><a href="#install-hierarchy">2.2. Install Hierarchy</a></span></dt><dt><span class="section"><a href="#build-requirements">2.3. Building Requirements</a></span></dt><dt><span class="section"><a href="#quickstart">2.4. Quick start</a></span></dt><dt><span class="section"><a href="#install">2.5. Installation from source</a></span></dt><dd><dl><dt><span class="section"><a href="#idp146688">2.5.1. Download Tar File</a></span></dt><dt><span class="section"><a href="#idp149472">2.5.2. Retrieve from Git</a></span></dt><dt><span class="section"><a href="#idp158496">2.5.3. Configure before the build</a></span></dt><dt><span class="section"><a href="#idp171840">2.5.4. Build</a></span></dt><dt><span class="section"><a href="#idp173824">2.5.5. Install</a></span></dt></dl></dd></dl></dd><dt><span class="chapter"><a href="#bind10">3. Starting BIND10 with <span class="command"><strong>bind10</strong></span></a></span></dt><dd><dl><dt><span class="section"><a href="#start">3.1. Starting BIND 10</a></span></dt><dt><span class="section"><a href="#bind10.config">3.2. Configuration to start processes</a></span></dt></dl></dd><dt><span class="chapter"><a href="#msgq">4. Command channel</a></span></dt><dt><span class="chapter"><a href="#cfgmgr">5. Configuration manager</a></span></dt><dt><span class="chapter"><a href="#cmdctl">6. Remote control daemon</a></span></dt><dd><dl><dt><span class="section"><a href="#cmdctl.spec">6.1. Configuration specification for b10-cmdctl</a></span></dt></dl></dd><dt><span class="chapter"><a href="#bindctl">7. Control and configure user interface</a></span></dt><dt><span class="chapter"><a href="#authserver">8. Authoritative Server</a></span></dt><dd><dl><dt><span class="section"><a href="#idp288016">8.1. Server Configurations</a></span></dt><dt><span class="section"><a href="#datasrc">8.2. Data Source Backends</a></span></dt><dd><dl><dt><span class="section"><a href="#datasource-types">8.2.1. Data source types</a></span></dt><dt><span class="section"><a href="#datasrc-examples">8.2.2. Examples</a></span></dt></dl></dd><dt><span class="section"><a href="#idp357664">8.3. Loading Master Zones Files</a></span></dt></dl></dd><dt><span class="chapter"><a href="#xfrin">9. Incoming Zone Transfers</a></span></dt><dd><dl><dt><span class="section"><a href="#idp375872">9.1. Configuration for Incoming Zone Transfers</a></span></dt><dt><span class="section"><a href="#idp381216">9.2. Enabling IXFR</a></span></dt><dt><span class="section"><a href="#zonemgr">9.3. Secondary Manager</a></span></dt><dt><span class="section"><a href="#idp396992">9.4. Trigger an Incoming Zone Transfer Manually</a></span></dt><dt><span class="section"><a href="#idp400688">9.5. Incoming Transfers with In-memory Datasource</a></span></dt></dl></dd><dt><span class="chapter"><a href="#xfrout">10. Outbound Zone Transfers</a></span></dt><dt><span class="chapter"><a href="#ddns">11. Dynamic DNS Update</a></span></dt><dd><dl><dt><span class="section"><a href="#idp434672">11.1. Enabling Dynamic Update</a></span></dt><dt><span class="section"><a href="#idp450256">11.2. Access Control</a></span></dt><dt><span class="section"><a href="#idp475168">11.3. Miscellaneous Operational Issues</a></span></dt></dl></dd><dt><span class="chapter"><a href="#resolverserver">12. Recursive Name Server</a></span></dt><dd><dl><dt><span class="section"><a href="#idp496224">12.1. Access Control</a></span></dt><dt><span class="section"><a href="#idp512960">12.2. Forwarding</a></span></dt></dl></dd><dt><span class="chapter"><a href="#dhcp4">13. DHCPv4 Server</a></span></dt><dd><dl><dt><span class="section"><a href="#dhcp4-usage">13.1. DHCPv4 Server Usage</a></span></dt><dt><span class="section"><a href="#dhcp4-config">13.2. DHCPv4 Server Configuration</a></span></dt><dt><span class="section"><a href="#dhcp4-std">13.3. Supported standards</a></span></dt><dt><span class="section"><a href="#dhcp4-limit">13.4. DHCPv4 Server Limitations</a></span></dt></dl></dd><dt><span class="chapter"><a href="#dhcp6">14. DHCPv6 Server</a></span></dt><dd><dl><dt><span class="section"><a href="#dhcp6-usage">14.1. DHCPv6 Server Usage</a></span></dt><dt><span class="section"><a href="#dhcp6-config">14.2. DHCPv6 Server Configuration</a></span></dt><dt><span class="section"><a href="#dhcp6-std">14.3. Supported DHCPv6 Standards</a></span></dt><dt><span class="section"><a href="#dhcp6-limit">14.4. DHCPv6 Server Limitations</a></span></dt></dl></dd><dt><span class="chapter"><a href="#libdhcp">15. libdhcp++ library</a></span></dt><dd><dl><dt><span class="section"><a href="#iface-detect">15.1. Interface detection</a></span></dt><dt><span class="section"><a href="#packet-handling">15.2. DHCPv4/DHCPv6 packet handling</a></span></dt></dl></dd><dt><span class="chapter"><a href="#statistics">16. Statistics</a></span></dt><dt><span class="chapter"><a href="#logging">17. Logging</a></span></dt><dd><dl><dt><span class="section"><a href="#idp611696">17.1. Logging configuration</a></span></dt><dd><dl><dt><span class="section"><a href="#idp613392">17.1.1. Loggers</a></span></dt><dt><span class="section"><a href="#idp649760">17.1.2. Output Options</a></span></dt><dt><span class="section"><a href="#idp674816">17.1.3. Example session</a></span></dt></dl></dd><dt><span class="section"><a href="#idp705584">17.2. Logging Message Format</a></span></dt></dl></dd></dl></div><div class="list-of-tables"><p><b>List of Tables</b></p><dl><dt>3.1. <a href="#idp200656">Special startup components</a></dt></dl></div><div class="preface" title="Preface"><div class="titlepage"><div><div><h2 class="title"><a name="idp32704"></a>Preface</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#acknowledgements">1. Acknowledgements</a></span></dt></dl></div><div class="section" title="1. Acknowledgements"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="acknowledgements"></a>1. Acknowledgements</h2></div></div></div><p>ISC would like to acknowledge generous support for
+        </p></div></div></div><hr></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="preface"><a href="#id1168229451188">Preface</a></span></dt><dd><dl><dt><span class="section"><a href="#acknowledgements">1. Acknowledgements</a></span></dt></dl></dd><dt><span class="chapter"><a href="#intro">1. Introduction</a></span></dt><dd><dl><dt><span class="section"><a href="#id1168229451275">1.1. Supported Platforms</a></span></dt><dt><span class="section"><a href="#required-software">1.2. Required Software at Run-time</a></span></dt><dt><span class="section"><a href="#starting_stopping">1.3. Starting and Stopping the Server</a></span></dt><dt><span class="section"><a href="#managing_once_running">1.4. Managing BIND 10</a></span></dt></dl></dd><dt><span class="chapter"><a href="#installation">2. Installation</a></span></dt><dd><dl><dt><span class="section"><a href="#packages">2.1. Packages</a></span></dt><dt><span class="section"><a href="#install-hierarchy">2.2. Install Hierarchy</a></span></dt><dt><span class="section"><a href="#build-requirements">2.3. Building Requirements</a></span></dt><dt><span class="section"><a href="#quickstart">2.4. Quick start</a></span></dt><dt><span class="section"><a href="#install">2.5. Installation from source</a></span></dt><dd><dl><dt><span class="section"><a href="#id1168229436957">2.5.1. Download Tar File</a></span></dt><dt><span class="section"><a href="#id1168229436977">2.5.2. Retrieve from Git</a></span></dt><dt><span class="section"><a href="#id1168229437037">2.5.3. Configure before the build</a></span></dt><dt><span class="section"><a href="#id1168229437136">2.5.4. Build</a></span></dt><dt><span class="section"><a href="#id1168229437150">2.5.5. Install</a></span></dt></dl></dd></dl></dd><dt><span class="chapter"><a href="#bind10">3. Starting BIND10 with <span class="command"><strong>bind10</strong></span></a></span></dt><dd><dl><dt><span class="section"><a href="#start">3.1. Starting BIND 10</a></span></dt><dt><span class="section"><a href="#bind10.config">3.2. Configuration to start processes</a></span></dt></dl></dd><dt><span class="chapter"><a href="#msgq">4. Command channel</a></span></dt><dt><span class="chapter"><a href="#cfgmgr">5. Configuration manager</a></span></dt><dt><span class="chapter"><a href="#cmdctl">6. Remote control daemon</a></span></dt><dd><dl><dt><span class="section"><a href="#cmdctl.spec">6.1. Configuration specification for b10-cmdctl</a></span></dt></dl></dd><dt><span class="chapter"><a href="#bindctl">7. Control and configure user interface</a></span></dt><dt><span class="chapter"><a href="#common">8. Common configuration elements</a></span></dt><dd><dl><dt><span class="section"><a href="#common-acl">8.1. ACLs</a></span></dt><dd><dl><dt><span class="section"><a href="#id1168229438333">8.1.1. Matching properties</a></span></dt><dt><span class="section"><a href="#id1168229438355">8.1.2. More complicated matches</a></span></dt><dt><span class="section"><a href="#id1168229438387">8.1.3. Examples</a></span></dt><dt><span class="section"><a href="#id1168229438416">8.1.4. Interaction with <span class="command"><strong>bindctl</strong></span></a></span></dt></dl></dd></dl></dd><dt><span class="chapter"><a href="#authserver">9. Authoritative Server</a></span></dt><dd><dl><dt><span class="section"><a href="#id1168229438475">9.1. Server Configurations</a></span></dt><dt><span class="section"><a href="#datasrc">9.2. Data Source Backends</a></span></dt><dd><dl><dt><span class="section"><a href="#datasource-types">9.2.1. Data source types</a></span></dt><dt><span class="section"><a href="#datasrc-examples">9.2.2. Examples</a></span></dt></dl></dd><dt><span class="section"><a href="#id1168229439191">9.3. Loading Master Zones Files</a></span></dt></dl></dd><dt><span class="chapter"><a href="#xfrin">10. Incoming Zone Transfers</a></span></dt><dd><dl><dt><span class="section"><a href="#id1168229439321">10.1. Configuration for Incoming Zone Transfers</a></span></dt><dt><span class="section"><a href="#id1168229439428">10.2. Enabling IXFR</a></span></dt><dt><span class="section"><a href="#zonemgr">10.3. Secondary Manager</a></span></dt><dt><span class="section"><a href="#id1168229439532">10.4. Trigger an Incoming Zone Transfer Manually</a></span></dt><dt><span class="section"><a href="#id1168229439560">10.5. Incoming Transfers with In-memory Datasource</a></span></dt></dl></dd><dt><span class="chapter"><a href="#xfrout">11. Outbound Zone Transfers</a></span></dt><dt><span class="chapter"><a href="#ddns">12. Dynamic DNS Update</a></span></dt><dd><dl><dt><span class="section"><a href="#id1168229439822">12.1. Enabling Dynamic Update</a></span></dt><dt><span class="section"><a href="#id1168229439992">12.2. Access Control</a></span></dt><dt><span class="section"><a href="#id1168229440114">12.3. Miscellaneous Operational Issues</a></span></dt></dl></dd><dt><span class="chapter"><a href="#resolverserver">13. Recursive Name Server</a></span></dt><dd><dl><dt><span class="section"><a href="#id1168229440251">13.1. Access Control</a></span></dt><dt><span class="section"><a href="#id1168229440295">13.2. Forwarding</a></span></dt></dl></dd><dt><span class="chapter"><a href="#dhcp4">14. DHCPv4 Server</a></span></dt><dd><dl><dt><span class="section"><a href="#dhcp4-usage">14.1. DHCPv4 Server Usage</a></span></dt><dt><span class="section"><a href="#dhcp4-config">14.2. DHCPv4 Server Configuration</a></span></dt><dt><span class="section"><a href="#dhcp4-std">14.3. Supported standards</a></span></dt><dt><span class="section"><a href="#dhcp4-limit">14.4. DHCPv4 Server Limitations</a></span></dt></dl></dd><dt><span class="chapter"><a href="#dhcp6">15. DHCPv6 Server</a></span></dt><dd><dl><dt><span class="section"><a href="#dhcp6-usage">15.1. DHCPv6 Server Usage</a></span></dt><dt><span class="section"><a href="#dhcp6-config">15.2. DHCPv6 Server Configuration</a></span></dt><dt><span class="section"><a href="#dhcp6-std">15.3. Supported DHCPv6 Standards</a></span></dt><dt><span class="section"><a href="#dhcp6-limit">15.4. DHCPv6 Server Limitations</a></span></dt></dl></dd><dt><span class="chapter"><a href="#libdhcp">16. libdhcp++ library</a></span></dt><dd><dl><dt><span class="section"><a href="#iface-detect">16.1. Interface detection</a></span></dt><dt><span class="section"><a href="#packet-handling">16.2. DHCPv4/DHCPv6 packet handling</a></span></dt></dl></dd><dt><span class="chapter"><a href="#statistics">17. Statistics</a></span></dt><dt><span class="chapter"><a href="#logging">18. Logging</a></span></dt><dd><dl><dt><span class="section"><a href="#id1168229441072">18.1. Logging configuration</a></span></dt><dd><dl><dt><span class="section"><a href="#id1168229441082">18.1.1. Loggers</a></span></dt><dt><span class="section"><a href="#id1168229441324">18.1.2. Output Options</a></span></dt><dt><span class="section"><a href="#id1168229441508">18.1.3. Example session</a></span></dt></dl></dd><dt><span class="section"><a href="#id1168229441717">18.2. Logging Message Format</a></span></dt></dl></dd></dl></div><div class="list-of-tables"><p><b>List of Tables</b></p><dl><dt>3.1. <a href="#id1168229437333">Special startup components</a></dt></dl></div><div class="preface" title="Preface"><div class="titlepage"><div><div><h2 class="title"><a name="id1168229451188"></a>Preface</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#acknowledgements">1. Acknowledgements</a></span></dt></dl></div><div class="section" title="1. Acknowledgements"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="acknowledgements"></a>1. Acknowledgements</h2></div></div></div><p>ISC would like to acknowledge generous support for
       BIND 10 development of DHCPv4 and DHCPv6 components provided
-      by <a class="ulink" href="http://www.comcast.com/" target="_top">Comcast</a>.</p></div></div><div class="chapter" title="Chapter 1. Introduction"><div class="titlepage"><div><div><h2 class="title"><a name="intro"></a>Chapter 1. Introduction</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#idp38720">1.1. Supported Platforms</a></span></dt><dt><span class="section"><a href="#required-software">1.2. Required Software at Run-time</a></span></dt><dt><span class="section"><a href="#starting_stopping">1.3. Starting and Stopping the Server</a></span></dt><dt><span class="section"><a href="#managing_once_running">1.4. Managing BIND 10</a></span></dt></dl></div><p>
+      by <a class="ulink" href="http://www.comcast.com/" target="_top">Comcast</a>.</p></div></div><div class="chapter" title="Chapter 1. Introduction"><div class="titlepage"><div><div><h2 class="title"><a name="intro"></a>Chapter 1. Introduction</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#id1168229451275">1.1. Supported Platforms</a></span></dt><dt><span class="section"><a href="#required-software">1.2. Required Software at Run-time</a></span></dt><dt><span class="section"><a href="#starting_stopping">1.3. Starting and Stopping the Server</a></span></dt><dt><span class="section"><a href="#managing_once_running">1.4. Managing BIND 10</a></span></dt></dl></div><p>
       BIND is the popular implementation of a DNS server, developer
       interfaces, and DNS tools.
       BIND 10 is a rewrite of BIND 9 and ISC DHCP.
@@ -24,8 +24,8 @@
       It also provides experimental DHCPv4 and DHCPv6 servers.
     </p><p>
       This guide covers the experimental prototype of
-      BIND 10 version 20120712.
-    </p><div class="section" title="1.1. Supported Platforms"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp38720"></a>1.1. Supported Platforms</h2></div></div></div><p>
+      BIND 10 version 20120816.
+    </p><div class="section" title="1.1. Supported Platforms"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id1168229451275"></a>1.1. Supported Platforms</h2></div></div></div><p>
   BIND 10 builds have been tested on (in no particular order)
   Debian GNU/Linux 6 and unstable, Ubuntu 9.10, NetBSD 5,
   Solaris 10 and 11, FreeBSD 7 and 8, CentOS Linux 5.3,
@@ -174,7 +174,7 @@
       documentation and code examples.
 
 
-    </p></div><div class="chapter" title="Chapter 2. Installation"><div class="titlepage"><div><div><h2 class="title"><a name="installation"></a>Chapter 2. Installation</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#packages">2.1. Packages</a></span></dt><dt><span class="section"><a href="#install-hierarchy">2.2. Install Hierarchy</a></span></dt><dt><span class="section"><a href="#build-requirements">2.3. Building Requirements</a></span></dt><dt><span class="section"><a href="#quickstart">2.4. Quick start</a></span></dt><dt><span class="section"><a href="#install">2.5. Installation from source</a></span></dt><dd><dl><dt><span class="section"><a href="#idp146688">2.5.1. Download Tar File</a></span></dt><dt><span class="section"><a href="#idp149472">2.5.2. Retrieve from Git</a></span></dt><dt><span class="section"><a href="#idp158496">2.5.3. Configure before the build</a></span></dt><dt><span class="section"><a href="#idp171840">2.5.4. Build</a></span></dt><dt><span class="section"><a href="#idp173824">2.5.5. Install</a></span></dt></dl></dd></dl></div><div class="section" title="2.1. Packages"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="packages"></a>2.1. Packages</h2></div></div></div><p>
+    </p></div><div class="chapter" title="Chapter 2. Installation"><div class="titlepage"><div><div><h2 class="title"><a name="installation"></a>Chapter 2. Installation</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#packages">2.1. Packages</a></span></dt><dt><span class="section"><a href="#install-hierarchy">2.2. Install Hierarchy</a></span></dt><dt><span class="section"><a href="#build-requirements">2.3. Building Requirements</a></span></dt><dt><span class="section"><a href="#quickstart">2.4. Quick start</a></span></dt><dt><span class="section"><a href="#install">2.5. Installation from source</a></span></dt><dd><dl><dt><span class="section"><a href="#id1168229436957">2.5.1. Download Tar File</a></span></dt><dt><span class="section"><a href="#id1168229436977">2.5.2. Retrieve from Git</a></span></dt><dt><span class="section"><a href="#id1168229437037">2.5.3. Configure before the build</a></span></dt><dt><span class="section"><a href="#id1168229437136">2.5.4. Build</a></span></dt><dt><span class="section"><a href="#id1168229437150">2.5.5. Install</a></span></dt></dl></dd></dl></div><div class="section" title="2.1. Packages"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="packages"></a>2.1. Packages</h2></div></div></div><p>
         Some operating systems or softare package vendors may
         provide ready-to-use, pre-built software packages for
         the BIND 10 suite.
@@ -283,14 +283,14 @@
         downloadable tar file or via BIND 10's Git code revision control
         service. (It may also be available in pre-compiled ready-to-use
         packages from operating system vendors.)
-      </p><div class="section" title="2.5.1. Download Tar File"><div class="titlepage"><div><div><h3 class="title"><a name="idp146688"></a>2.5.1. Download Tar File</h3></div></div></div><p>
+      </p><div class="section" title="2.5.1. Download Tar File"><div class="titlepage"><div><div><h3 class="title"><a name="id1168229436957"></a>2.5.1. Download Tar File</h3></div></div></div><p>
           Downloading a release tar file is the recommended method to
           obtain the source code.
         </p><p>
           The BIND 10 releases are available as tar file downloads from
           <a class="ulink" href="ftp://ftp.isc.org/isc/bind10/" target="_top">ftp://ftp.isc.org/isc/bind10/</a>.
           Periodic development snapshots may also be available.
-        </p></div><div class="section" title="2.5.2. Retrieve from Git"><div class="titlepage"><div><div><h3 class="title"><a name="idp149472"></a>2.5.2. Retrieve from Git</h3></div></div></div><p>
+        </p></div><div class="section" title="2.5.2. Retrieve from Git"><div class="titlepage"><div><div><h3 class="title"><a name="id1168229436977"></a>2.5.2. Retrieve from Git</h3></div></div></div><p>
           Downloading this "bleeding edge" code is recommended only for
           developers or advanced users.  Using development code in a production
           environment is not recommended.
@@ -325,7 +325,7 @@
           <span class="command"><strong>autoheader</strong></span>,
           <span class="command"><strong>automake</strong></span>,
           and related commands.
-        </p></div><div class="section" title="2.5.3. Configure before the build"><div class="titlepage"><div><div><h3 class="title"><a name="idp158496"></a>2.5.3. Configure before the build</h3></div></div></div><p>
+        </p></div><div class="section" title="2.5.3. Configure before the build"><div class="titlepage"><div><div><h3 class="title"><a name="id1168229437037"></a>2.5.3. Configure before the build</h3></div></div></div><p>
           BIND 10 uses the GNU Build System to discover build environment
           details.
           To generate the makefiles using the defaults, simply run:
@@ -356,12 +356,12 @@
         </p><p>
           If the configure fails, it may be due to missing or old
           dependencies.
-        </p></div><div class="section" title="2.5.4. Build"><div class="titlepage"><div><div><h3 class="title"><a name="idp171840"></a>2.5.4. Build</h3></div></div></div><p>
+        </p></div><div class="section" title="2.5.4. Build"><div class="titlepage"><div><div><h3 class="title"><a name="id1168229437136"></a>2.5.4. Build</h3></div></div></div><p>
     After the configure step is complete, to build the executables
     from the C++ code and prepare the Python scripts, run:
 
           </p><pre class="screen">$ <strong class="userinput"><code>make</code></strong></pre><p>
-        </p></div><div class="section" title="2.5.5. Install"><div class="titlepage"><div><div><h3 class="title"><a name="idp173824"></a>2.5.5. Install</h3></div></div></div><p>
+        </p></div><div class="section" title="2.5.5. Install"><div class="titlepage"><div><div><h3 class="title"><a name="id1168229437150"></a>2.5.5. Install</h3></div></div></div><p>
           To install the BIND 10 executables, support files,
           and documentation, run:
           </p><pre class="screen">$ <strong class="userinput"><code>make install</code></strong></pre><p>
@@ -432,7 +432,7 @@
 	started in a special way, with the value of special used
 	for them:
 
-        </p><div class="table"><a name="idp200656"></a><p class="title"><b>Table 3.1. Special startup components</b></p><div class="table-contents"><table summary="Special startup components" border="1"><colgroup><col align="left"><col align="left"><col align="left"></colgroup><thead><tr><th align="left">Component</th><th align="left">Special</th><th align="left">Description</th></tr></thead><tbody><tr><td align="left">b10-auth</td><td align="left">auth</td><td align="left">Authoritative DNS server</td></tr><tr><td align="left">b10-resolver</td><td align="left">resolver</td><td align="left">DNS resolver</td></tr><tr><td align="left">b10-cmdctl</td><td align="left">cmdctl</td><td align="left">Command control (remote control interface)</td></tr></tbody></table></div></div><p><br class="table-break">
+        </p><div class="table"><a name="id1168229437333"></a><p class="title"><b>Table 3.1. Special startup components</b></p><div class="table-contents"><table summary="Special startup components" border="1"><colgroup><col align="left"><col align="left"><col align="left"></colgroup><thead><tr><th align="left">Component</th><th align="left">Special</th><th align="left">Description</th></tr></thead><tbody><tr><td align="left">b10-auth</td><td align="left">auth</td><td align="left">Authoritative DNS server</td></tr><tr><td align="left">b10-resolver</td><td align="left">resolver</td><td align="left">DNS resolver</td></tr><tr><td align="left">b10-cmdctl</td><td align="left">cmdctl</td><td align="left">Command control (remote control interface)</td></tr></tbody></table></div></div><p><br class="table-break">
       </p><p>
 	The <code class="varname">kind</code> specifies how a failure of the
 	component should be handled.  If it is set to
@@ -661,13 +661,175 @@
       the details and relays (over a <span class="command"><strong>b10-msgq</strong></span> command
       channel) the configuration on to the specified module.
     </p><p>
-    </p></div><div class="chapter" title="Chapter 8. Authoritative Server"><div class="titlepage"><div><div><h2 class="title"><a name="authserver"></a>Chapter 8. Authoritative Server</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#idp288016">8.1. Server Configurations</a></span></dt><dt><span class="section"><a href="#datasrc">8.2. Data Source Backends</a></span></dt><dd><dl><dt><span class="section"><a href="#datasource-types">8.2.1. Data source types</a></span></dt><dt><span class="section"><a href="#datasrc-examples">8.2.2. Examples</a></span></dt></dl></dd><dt><span class="section"><a href="#idp357664">8.3. Loading Master Zones Files</a></span></dt></dl></div><p>
+    </p></div><div class="chapter" title="Chapter 8. Common configuration elements"><div class="titlepage"><div><div><h2 class="title"><a name="common"></a>Chapter 8. Common configuration elements</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#common-acl">8.1. ACLs</a></span></dt><dd><dl><dt><span class="section"><a href="#id1168229438333">8.1.1. Matching properties</a></span></dt><dt><span class="section"><a href="#id1168229438355">8.1.2. More complicated matches</a></span></dt><dt><span class="section"><a href="#id1168229438387">8.1.3. Examples</a></span></dt><dt><span class="section"><a href="#id1168229438416">8.1.4. Interaction with <span class="command"><strong>bindctl</strong></span></a></span></dt></dl></dd></dl></div><p>
+      Some things are configured in the same or similar manner across
+      many modules. So we show them here in one place.
+    </p><div class="section" title="8.1. ACLs"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="common-acl"></a>8.1. ACLs</h2></div></div></div><p>
+        An ACL, or Access Control List, is a way to describe if a request
+        is allowed or disallowed. The principle is, there's a list of rules.
+        Each rule is a name-value mapping (a dictionary, in the JSON
+        terminology). Each rule must contain exactly one mapping called
+        "action", which describes what should happen if the rule applies.
+        There may be more mappings, calld matches, which describe the
+        conditions under which the rule applies.
+      </p><p>
+        When there's a query, the first rule is examined. If it matches, the
+        action in it is taken. If not, next rule is examined. If there are no
+        more rules to examine, a default action is taken.
+      </p><p>
+        There are three possible "action" values. The "ACCEPT" value means
+        the query is handled. If it is "REJECT", the query is not answered,
+        but a polite error message is sent back (if that makes sense in the
+        context). The "DROP" action acts like a black hole. The query is
+        not answered and no error message is sent.
+      </p><p>
+        If there are multiple matching conditions inside the rule, all of
+        them must be satisfied for the rule to apply. This can be used,
+        for example, to require the query to be signed by a TSIG key and
+        originate from given address.
+      </p><p>
+        This is encoded in form of JSON. Semi-formal description could look
+        something like this. It is described in more details below.
+
+        </p><pre class="screen">ACL := [ RULE, RULE, ... ]
+RULE := { "action": "ACCEPT"|"REJECT"|"DROP", MATCH, MATCH, ... }
+RULE_RAW := { MATCH, MATCH, ... }
+MATCH := FROM_MATCH|KEY_MATCH|NOT_MATCH|OR_MATCH|AND_MATCH|...
+FROM_MATCH := "from": [RANGE, RANGE, RANGE, ...] | RANGE
+RANGE := "&lt;ip range&gt;"
+KEY_MATCH := "key": [KEY, KEY, KEY, ...] | KEY
+KEY := "&lt;key name&gt;"
+NOT_MATCH := "NOT": RULE_RAW
+OR_MATCH := "ANY": [ RULE_RAW, RULE_RAW, ... ]
+AND_MATCH := "ALL": [ RULE_RAW, RULE_RAW, ... ]
+</pre><p>
+      </p><div class="section" title="8.1.1. Matching properties"><div class="titlepage"><div><div><h3 class="title"><a name="id1168229438333"></a>8.1.1. Matching properties</h3></div></div></div><p>
+          The first thing you can check against is the source address
+          of request. The name is <code class="varname">from</code> and the value
+          is a string containing either a single IPv4 or IPv6 address,
+          or a range in the usual slash notation (eg. "192.0.2.0/24").
+        </p><p>
+          The other is TSIG key by which the message was signed. The ACL
+          contains only the name (under the name "key"), the key itself
+          must be stored in the global keyring. This property is applicable only
+          to the DNS context.
+
+        </p><p>
+          More properties to match are planned &#8212; the destination
+          address, ports, matches against the packet content.
+        </p></div><div class="section" title="8.1.2. More complicated matches"><div class="titlepage"><div><div><h3 class="title"><a name="id1168229438355"></a>8.1.2. More complicated matches</h3></div></div></div><p>
+          From time to time, you need to express something more complex
+          than just a single address or key.
+        </p><p>
+          You can specify a list of values instead of single value. Then
+          the property needs to match at least one of the values listed
+          &#8212; so you can say <span class="quote">&#8220;<span class="quote">"from": ["192.0.2.0/24",
+          "2001:db8::/32"]</span>&#8221;</span> to match any address in the ranges
+          set aside for documentation. The keys or any future properties
+          will work in a similar way.
+        </p><div class="note" title="Note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
+	    The list form is currently rejected due to an
+	    implementation bug.  There is a plan to fix it relatively
+	    soon, so the syntax is kept here, but note that it won't
+	    work until the bug is fixed.  To keep track of the status
+	    of the issue, see
+	    <a class="ulink" href="http://bind10.isc.org/ticket/2191" target="_top">Trac #2191</a>.
+	    Until then, the value must be a single string.
+          </p></div><p>
+          If that is not enough, you can compose the matching conditions
+          to logical expressions. They are called "ANY", "ALL" and "NOT".
+          The "ANY" and "ALL" ones contain lists of subexpressions &#8212;
+          each subexpression is a similar dictionary, just not containing
+          the "action" element. The "NOT" contains single subexpression.
+          Their function should be obvious &#8212; "NOT" matches if and
+          only if the subexpression does not match. The "ALL" matches exactly
+          when each of the subexpressions matches and "ANY" when at least
+          one matches.
+        </p></div><div class="section" title="8.1.3. Examples"><div class="titlepage"><div><div><h3 class="title"><a name="id1168229438387"></a>8.1.3. Examples</h3></div></div></div><p>
+          All the examples here is just the JSON representing the ACL,
+          nicely formatted and split across lines. They are out of any
+          surrounding context. This is similar to what you'd get from
+          <span class="command"><strong>config show_json</strong></span> called on the entry containing
+          the ACL.
+        </p><p>
+          In the first example, the ACL accepts queries from two known hosts.
+          Each host has an IP addresses (both IPv4 and IPv6) and a TSIG
+          key. Other queries are politely rejected. The last entry in the list
+          has no conditions &#8212; making it match any query.
+
+          </p><pre class="screen">[
+  {
+    "from": ["192.0.2.1", "2001:db8::1"],
+    "key": "first.key",
+    "action": "ACCEPT"
+  },
+  {
+    "from": ["192.0.2.2", "2001:db8::2"],
+    "key": "second.key",
+    "action": "ACCEPT"
+  },
+  {
+    "action": "REJECT"
+  }
+]</pre><p>
+        </p><p>
+          Now we show two ways to accept only the queries from private ranges.
+          This is the same as rejecting anything that is outside.
+
+          </p><pre class="screen">[
+  {
+    "from": [
+      "10.0.0.0/8",
+      "172.16.0.0/12",
+      "192.168.0.0/16",
+      "fc00::/7"
+    ],
+    "action": "ACCEPT"
+  },
+  {
+    "action": "REJECT"
+  }
+]</pre><p>
+
+          </p><pre class="screen">[
+  {
+    "NOT": {
+       "ANY": [
+         {"from": "10.0.0.0/8"},
+         {"from": "172.16.0.0/12"},
+         {"from": "192.168.0.0/16"},
+         {"from": "fc00::/7"}
+       ]
+    },
+    "action": "REJECT"
+  },
+  {
+    "action": "ACCEPT"
+  }
+]</pre><p>
+        </p></div><div class="section" title="8.1.4. Interaction with bindctl"><div class="titlepage"><div><div><h3 class="title"><a name="id1168229438416"></a>8.1.4. Interaction with <span class="command"><strong>bindctl</strong></span></h3></div></div></div><p>
+          Currently, <span class="command"><strong>bindctl</strong></span> has hard time coping with
+          the variable nature of the ACL syntax. This technical limitation
+          makes it impossible to edit parts of the entries. You need to
+          set the whole entry at once, providing the whole JSON value.
+        </p><p>
+          This limitation is planned to be solved soon at least partially.
+        </p><p>
+          You'd do something like this to create the second example.
+          Note that the whole JSON must be on a single line.
+
+          </p><pre class="screen">&gt; <strong class="userinput"><code>config add somewhere/acl</code></strong>
+&gt; <strong class="userinput"><code>config set somewhere/acl[0] { "from": [ "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7" ], "action": "ACCEPT" }</code></strong>
+&gt; <strong class="userinput"><code>config add somewhere/acl</code></strong>
+&gt; <strong class="userinput"><code>config set somewhere/acl[1] { "action": "REJECT" }</code></strong>
+&gt; <strong class="userinput"><code>config commit</code></strong></pre><p>
+        </p></div></div></div><div class="chapter" title="Chapter 9. Authoritative Server"><div class="titlepage"><div><div><h2 class="title"><a name="authserver"></a>Chapter 9. Authoritative Server</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#id1168229438475">9.1. Server Configurations</a></span></dt><dt><span class="section"><a href="#datasrc">9.2. Data Source Backends</a></span></dt><dd><dl><dt><span class="section"><a href="#datasource-types">9.2.1. Data source types</a></span></dt><dt><span class="section"><a href="#datasrc-examples">9.2.2. Examples</a></span></dt></dl></dd><dt><span class="section"><a href="#id1168229439191">9.3. Loading Master Zones Files</a></span></dt></dl></div><p>
       The <span class="command"><strong>b10-auth</strong></span> is the authoritative DNS server.
       It supports EDNS0, DNSSEC, IPv6, and SQLite3 and in-memory zone
       data backends.
       Normally it is started by the <span class="command"><strong>bind10</strong></span> master
       process.
-    </p><div class="section" title="8.1. Server Configurations"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp288016"></a>8.1. Server Configurations</h2></div></div></div><p>
+    </p><div class="section" title="9.1. Server Configurations"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id1168229438475"></a>9.1. Server Configurations</h2></div></div></div><p>
         <span class="command"><strong>b10-auth</strong></span> is configured via the
         <span class="command"><strong>b10-cfgmgr</strong></span> configuration manager.
         The module name is <span class="quote">&#8220;<span class="quote">Auth</span>&#8221;</span>.
@@ -766,7 +928,7 @@ can use various data source backends.
       if configured.)
               </dd></dl></div><p>
 
-      </p></div><div class="section" title="8.2. Data Source Backends"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="datasrc"></a>8.2. Data Source Backends</h2></div></div></div><p>
+      </p></div><div class="section" title="9.2. Data Source Backends"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="datasrc"></a>9.2. Data Source Backends</h2></div></div></div><p>
         Bind 10 has the concept of data sources. A data source is a place
         where authoritative zone data reside and where they can be served
         from. This can be a master file, a database or something completely
@@ -810,7 +972,7 @@ can use various data source backends.
         The second one, <code class="varname">cache-zones</code>, is a list of zone
         origins to load into in-memory. Remember that zones in the data source
         not listed here will not be loaded and will not be available at all.
-      </p><div class="section" title="8.2.1. Data source types"><div class="titlepage"><div><div><h3 class="title"><a name="datasource-types"></a>8.2.1. Data source types</h3></div></div></div><p>
+      </p><div class="section" title="9.2.1. Data source types"><div class="titlepage"><div><div><h3 class="title"><a name="datasource-types"></a>9.2.1. Data source types</h3></div></div></div><p>
           As mentioned, the type used by default is <span class="quote">&#8220;<span class="quote">sqlite3</span>&#8221;</span>.
           It has single configuration option inside <code class="varname">params</code>
           &#8212; <code class="varname">database_file</code>, which contains the path
@@ -823,7 +985,7 @@ can use various data source backends.
           zones (<code class="varname">cache-zones</code>) should be omitted. The
           <code class="varname">params</code> is a dictionary mapping from zone
           origins to the files they reside in.
-        </p></div><div class="section" title="8.2.2. Examples"><div class="titlepage"><div><div><h3 class="title"><a name="datasrc-examples"></a>8.2.2. Examples</h3></div></div></div><p>
+        </p></div><div class="section" title="9.2.2. Examples"><div class="titlepage"><div><div><h3 class="title"><a name="datasrc-examples"></a>9.2.2. Examples</h3></div></div></div><p>
           As this is one of the more complex configurations of Bind10,
           we show some examples. They all assume they start with default
           configuration.
@@ -886,7 +1048,7 @@ can use various data source backends.
         and old configuration correspond. The defaults are consistent, so
         unless you tweaked either the new or the old configuration, you're
         good.
-      </p></div></div><div class="section" title="8.3. Loading Master Zones Files"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp357664"></a>8.3. Loading Master Zones Files</h2></div></div></div><p>
+      </p></div></div><div class="section" title="9.3. Loading Master Zones Files"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id1168229439191"></a>9.3. Loading Master Zones Files</h2></div></div></div><p>
         RFC 1035 style DNS master zone files may imported
         into a BIND 10 SQLite3 data source by using the
         <span class="command"><strong>b10-loadzone</strong></span> utility.
@@ -915,7 +1077,7 @@ can use various data source backends.
         If you reload a zone already existing in the database,
         all records from that prior zone disappear and a whole new set
         appears.
-      </p></div></div><div class="chapter" title="Chapter 9. Incoming Zone Transfers"><div class="titlepage"><div><div><h2 class="title"><a name="xfrin"></a>Chapter 9. Incoming Zone Transfers</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#idp375872">9.1. Configuration for Incoming Zone Transfers</a></span></dt><dt><span class="section"><a href="#idp381216">9.2. Enabling IXFR</a></span></dt><dt><span class="section"><a href="#zonemgr">9.3. Secondary Manager</a></span></dt><dt><span class="section"><a href="#idp396992">9.4. Trigger an Incoming Zone Transfer Manually</a></span></dt><dt><span class="section"><a href="#idp400688">9.5. Incoming Transfers with In-memory Datasource</a></span></dt></dl></div><p>
+      </p></div></div><div class="chapter" title="Chapter 10. Incoming Zone Transfers"><div class="titlepage"><div><div><h2 class="title"><a name="xfrin"></a>Chapter 10. Incoming Zone Transfers</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#id1168229439321">10.1. Configuration for Incoming Zone Transfers</a></span></dt><dt><span class="section"><a href="#id1168229439428">10.2. Enabling IXFR</a></span></dt><dt><span class="section"><a href="#zonemgr">10.3. Secondary Manager</a></span></dt><dt><span class="section"><a href="#id1168229439532">10.4. Trigger an Incoming Zone Transfer Manually</a></span></dt><dt><span class="section"><a href="#id1168229439560">10.5. Incoming Transfers with In-memory Datasource</a></span></dt></dl></div><p>
       Incoming zones are transferred using the <span class="command"><strong>b10-xfrin</strong></span>
       process which is started by <span class="command"><strong>bind10</strong></span>.
       When received, the zone is stored in the corresponding BIND 10
@@ -929,7 +1091,7 @@ can use various data source backends.
       IXFR.  Due to some implementation limitations of the current
       development release, however, it only tries AXFR by default,
       and care should be taken to enable IXFR.
-    </p><div class="section" title="9.1. Configuration for Incoming Zone Transfers"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp375872"></a>9.1. Configuration for Incoming Zone Transfers</h2></div></div></div><p>
+    </p><div class="section" title="10.1. Configuration for Incoming Zone Transfers"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id1168229439321"></a>10.1. Configuration for Incoming Zone Transfers</h2></div></div></div><p>
         In practice, you need to specify a list of secondary zones to
         enable incoming zone transfers for these zones (you can still
         trigger a zone transfer manually, without a prior configuration
@@ -945,7 +1107,7 @@ can use various data source backends.
 &gt; <strong class="userinput"><code>config commit</code></strong></pre><p>
 
       (We assume there has been no zone configuration before).
-      </p></div><div class="section" title="9.2. Enabling IXFR"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp381216"></a>9.2. Enabling IXFR</h2></div></div></div><p>
+      </p></div><div class="section" title="10.2. Enabling IXFR"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id1168229439428"></a>10.2. Enabling IXFR</h2></div></div></div><p>
         As noted above, <span class="command"><strong>b10-xfrin</strong></span> uses AXFR for
         zone transfers by default.  To enable IXFR for zone transfers
         for a particular zone, set the <strong class="userinput"><code>use_ixfr</code></strong>
@@ -967,7 +1129,7 @@ can use various data source backends.
       make this selection automatically.
       These features will be implemented in a near future
       version, at which point we will enable IXFR by default.
-      </p></div></div><div class="section" title="9.3. Secondary Manager"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="zonemgr"></a>9.3. Secondary Manager</h2></div></div></div><p>
+      </p></div></div><div class="section" title="10.3. Secondary Manager"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="zonemgr"></a>10.3. Secondary Manager</h2></div></div></div><p>
         The <span class="command"><strong>b10-zonemgr</strong></span> process is started by
         <span class="command"><strong>bind10</strong></span>.
         It keeps track of SOA refresh, retry, and expire timers
@@ -994,13 +1156,13 @@ can use various data source backends.
         (i.e. no SOA record for it), <span class="command"><strong>b10-zonemgr</strong></span>
         will automatically tell <span class="command"><strong>b10-xfrin</strong></span>
         to transfer the zone in.
-      </p></div><div class="section" title="9.4. Trigger an Incoming Zone Transfer Manually"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp396992"></a>9.4. Trigger an Incoming Zone Transfer Manually</h2></div></div></div><p>
+      </p></div><div class="section" title="10.4. Trigger an Incoming Zone Transfer Manually"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id1168229439532"></a>10.4. Trigger an Incoming Zone Transfer Manually</h2></div></div></div><p>
         To manually trigger a zone transfer to retrieve a remote zone,
         you may use the <span class="command"><strong>bindctl</strong></span> utility.
         For example, at the <span class="command"><strong>bindctl</strong></span> prompt run:
 
         </p><pre class="screen">&gt; <strong class="userinput"><code>Xfrin retransfer zone_name="<code class="option">foo.example.org</code>" master=<code class="option">192.0.2.99</code></code></strong></pre><p>
-      </p></div><div class="section" title="9.5. Incoming Transfers with In-memory Datasource"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp400688"></a>9.5. Incoming Transfers with In-memory Datasource</h2></div></div></div><p>
+      </p></div><div class="section" title="10.5. Incoming Transfers with In-memory Datasource"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id1168229439560"></a>10.5. Incoming Transfers with In-memory Datasource</h2></div></div></div><p>
         In the case of an incoming zone transfer, the received zone is
         first stored in the corresponding BIND 10 datasource. In
         case the secondary zone is served by an in-memory datasource
@@ -1011,8 +1173,8 @@ can use various data source backends.
 	The administrator doesn't have to do anything for
 	<span class="command"><strong>b10-auth</strong></span> to serve the new version of the
 	zone, except for the configuration such as the one described in
-	<a class="xref" href="#datasrc" title="8.2. Data Source Backends">Section 8.2, &#8220;Data Source Backends&#8221;</a>.
-      </p></div></div><div class="chapter" title="Chapter 10. Outbound Zone Transfers"><div class="titlepage"><div><div><h2 class="title"><a name="xfrout"></a>Chapter 10. Outbound Zone Transfers</h2></div></div></div><p>
+	<a class="xref" href="#datasrc" title="9.2. Data Source Backends">Section 9.2, &#8220;Data Source Backends&#8221;</a>.
+      </p></div></div><div class="chapter" title="Chapter 11. Outbound Zone Transfers"><div class="titlepage"><div><div><h2 class="title"><a name="xfrout"></a>Chapter 11. Outbound Zone Transfers</h2></div></div></div><p>
       The <span class="command"><strong>b10-xfrout</strong></span> process is started by
       <span class="command"><strong>bind10</strong></span>.
       When the <span class="command"><strong>b10-auth</strong></span> authoritative DNS server
@@ -1028,35 +1190,24 @@ can use various data source backends.
       can be used to control accessibility of the outbound zone
       transfer service.
       By default, <span class="command"><strong>b10-xfrout</strong></span> allows any clients to
-      perform zone transfers for any zones:
+      perform zone transfers for any zones.
     </p><pre class="screen">&gt; <strong class="userinput"><code>config show Xfrout/transfer_acl</code></strong>
 Xfrout/transfer_acl[0]	{"action": "ACCEPT"}	any	(default)</pre><p>
-      You can change this to, for example, rejecting all transfer
-      requests by default while allowing requests for the transfer
-      of zone "example.com" from 192.0.2.1 and 2001:db8::1 as follows:
-    </p><pre class="screen">&gt; <strong class="userinput"><code>config set Xfrout/transfer_acl[0] {"action": "REJECT"}</code></strong>
-&gt; <strong class="userinput"><code>config add Xfrout/zone_config</code></strong>
-&gt; <strong class="userinput"><code>config set Xfrout/zone_config[0]/origin "example.com"</code></strong>
-&gt; <strong class="userinput"><code>config set Xfrout/zone_config[0]/transfer_acl [{"action": "ACCEPT", "from": "192.0.2.1"},</code></strong>
-<strong class="userinput"><code>                                                 {"action": "ACCEPT", "from": "2001:db8::1"}]</code></strong>
-&gt; <strong class="userinput"><code>config commit</code></strong></pre><div class="note" title="Note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
-        In the above example the lines
-        for <code class="option">transfer_acl</code> were divided for
-        readability.  In the actual input it must be in a single line.
-    </p></div><p>
       If you want to require TSIG in access control, a system wide TSIG
       "key ring" must be configured.
-      For example, to change the previous example to allowing requests
-      from 192.0.2.1 signed by a TSIG with a key name of
-      "key.example", you'll need to do this:
+      In this example, we allow client matching both the IP address
+      and key.
     </p><pre class="screen">&gt; <strong class="userinput"><code>config set tsig_keys/keys ["key.example:&lt;base64-key&gt;"]</code></strong>
 &gt; <strong class="userinput"><code>config set Xfrout/zone_config[0]/transfer_acl [{"action": "ACCEPT", "from": "192.0.2.1", "key": "key.example"}]</code></strong>
 &gt; <strong class="userinput"><code>config commit</code></strong></pre><p>Both <span class="command"><strong>b10-xfrout</strong></span> and <span class="command"><strong>b10-auth</strong></span>
       will use the system wide keyring to check
-      TSIGs in the incoming messages and to sign responses.</p><div class="note" title="Note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
+      TSIGs in the incoming messages and to sign responses.</p><p>
+      For further details on ACL configuration, see
+      <a class="xref" href="#common-acl" title="8.1. ACLs">Section 8.1, &#8220;ACLs&#8221;</a>.
+    </p><div class="note" title="Note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
         The way to specify zone specific configuration (ACLs, etc) is
         likely to be changed.
-    </p></div></div><div class="chapter" title="Chapter 11. Dynamic DNS Update"><div class="titlepage"><div><div><h2 class="title"><a name="ddns"></a>Chapter 11. Dynamic DNS Update</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#idp434672">11.1. Enabling Dynamic Update</a></span></dt><dt><span class="section"><a href="#idp450256">11.2. Access Control</a></span></dt><dt><span class="section"><a href="#idp475168">11.3. Miscellaneous Operational Issues</a></span></dt></dl></div><p>
+    </p></div></div><div class="chapter" title="Chapter 12. Dynamic DNS Update"><div class="titlepage"><div><div><h2 class="title"><a name="ddns"></a>Chapter 12. Dynamic DNS Update</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#id1168229439822">12.1. Enabling Dynamic Update</a></span></dt><dt><span class="section"><a href="#id1168229439992">12.2. Access Control</a></span></dt><dt><span class="section"><a href="#id1168229440114">12.3. Miscellaneous Operational Issues</a></span></dt></dl></div><p>
       BIND 10 supports the server side of the Dynamic DNS Update
       (DDNS) protocol as defined in RFC 2136.
       This service is provided by the <span class="command"><strong>b10-ddns</strong></span>
@@ -1076,7 +1227,7 @@ Xfrout/transfer_acl[0]	{"action": "ACCEPT"}	any	(default)</pre><p>
       servers will be notified via the DNS NOTIFY protocol.
       In addition, if <span class="command"><strong>b10-auth</strong></span> serves the updated
       zone (as described in
-      <a class="xref" href="#datasrc" title="8.2. Data Source Backends">Section 8.2, &#8220;Data Source Backends&#8221;</a>),
+      <a class="xref" href="#datasrc" title="9.2. Data Source Backends">Section 9.2, &#8220;Data Source Backends&#8221;</a>),
       <span class="command"><strong>b10-ddns</strong></span> will also
       notify <span class="command"><strong>b10-auth</strong></span> so that <span class="command"><strong>b10-auth</strong></span>
       will re-cache the updated zone content if necessary.
@@ -1103,7 +1254,7 @@ Xfrout/transfer_acl[0]	{"action": "ACCEPT"}	any	(default)</pre><p>
 	  this feature.
 
       </p></div><p>
-    </p><div class="section" title="11.1. Enabling Dynamic Update"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp434672"></a>11.1. Enabling Dynamic Update</h2></div></div></div><p>
+    </p><div class="section" title="12.1. Enabling Dynamic Update"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id1168229439822"></a>12.1. Enabling Dynamic Update</h2></div></div></div><p>
         First off, it must be made sure that a few components on which
         <span class="command"><strong>b10-ddns</strong></span> depends are configured to run,
         which are <span class="command"><strong>b10-auth</strong></span>
@@ -1164,7 +1315,7 @@ Xfrout/transfer_acl[0]	{"action": "ACCEPT"}	any	(default)</pre><p>
 	  to shutdown gracefully this parameter should also be
 	  specified.
       </p></div><p>
-      </p></div><div class="section" title="11.2. Access Control"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp450256"></a>11.2. Access Control</h2></div></div></div><p>
+      </p></div><div class="section" title="12.2. Access Control"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id1168229439992"></a>12.2. Access Control</h2></div></div></div><p>
         By default, <span class="command"><strong>b10-ddns</strong></span> rejects any update
         requests from any clients by returning a REFUSED response.
         To allow updates to take effect, an access control rule
@@ -1195,31 +1346,9 @@ Xfrout/transfer_acl[0]	{"action": "ACCEPT"}	any	(default)</pre><p>
 &gt; <strong class="userinput"><code>config commit</code></strong>
 </pre><p>
       The TSIG key must be configured system wide
-      (see <a class="xref" href="#xfrout" title="Chapter 10. Outbound Zone Transfers">Chapter 10, <i>Outbound Zone Transfers</i></a>.)
+      (see <a class="xref" href="#xfrout" title="Chapter 11. Outbound Zone Transfers">Chapter 11, <i>Outbound Zone Transfers</i></a>.)
       </p><p>
-        Multiple rules can be specified in the ACL, and an ACL rule
-        can consist of multiple constraints, such as a combination of
-        IP address and TSIG.
-        The following configuration sequence will add a new rule to
-        the ACL created in the above example.  This additional rule
-	allows update requests sent from a client
-        using TSIG key name of "key.example" (different from the
-        key used in the previous example) and has an IPv6 address of ::1.
-      </p><pre class="screen">
-&gt; <strong class="userinput"><code>config add DDNS/zones[0]/update_acl {"action": "ACCEPT", "from": "::1", "key": "key.example"}</code></strong>
-&gt; <strong class="userinput"><code>config show DDNS/zones[0]/update_acl</code></strong>
-DDNS/zones[0]/update_acl[0]     {"action": "ACCEPT", "key": "key.example.org"} any (modified)
-DDNS/zones[0]/update_acl[1]     {"action": "ACCEPT", "from": "::1", "key": "key.example"} any (modified)
-&gt; <strong class="userinput"><code>config commit</code></strong>
-</pre><p>
-      (Note the "add" in the first line.  Before this sequence, we
-      have had only entry in <code class="varname">zones[0]/update_acl</code>.
-      The <span class="command"><strong>add</strong></span> command with a value (rule) adds
-      a new entry and sets it to the given rule.
-
-      Due to a limitation of the current implementation, it doesn't
-      work if you first try to just add a new entry and then set it to
-      a given rule.)
+        Full description of ACLs can be found in <a class="xref" href="#common-acl" title="8.1. ACLs">Section 8.1, &#8220;ACLs&#8221;</a>.
       </p><div class="note" title="Note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
           The <span class="command"><strong>b10-ddns</strong></span> component accepts an ACL
           rule that just allows updates from a specific IP address
@@ -1231,16 +1360,6 @@ DDNS/zones[0]/update_acl[1]     {"action": "ACCEPT", "from": "::1", "key": "key.
           its consequence, any update ACL rule that allows updates
           should have a TSIG key in its constraints.
       </p></div><p>
-	The ACL rules will be checked in the listed order, and the
-	first matching one will apply.
-	If none of the rules matches, the default rule will apply,
-	which is rejecting any requests in the case of
-	<span class="command"><strong>b10-ddns</strong></span>.
-      </p><p>
-	Other actions than "ACCEPT", namely "REJECT" and "DROP", can be
-	used, too.
-	See <a class="xref" href="#resolverserver" title="Chapter 12. Recursive Name Server">Chapter 12, <i>Recursive Name Server</i></a> about their effects.
-      </p><p>
         Currently update ACL can only control updates per zone basis;
         it's not possible to specify access control with higher
         granularity such as for particular domain names or specific
@@ -1262,7 +1381,7 @@ DDNS/zones[0]/update_acl[1]     {"action": "ACCEPT", "from": "::1", "key": "key.
         arbitrary clients.
         There have been other troubles that could have been avoided if
         the ACL could be checked before the prerequisite check.
-      </p></div></div><div class="section" title="11.3. Miscellaneous Operational Issues"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp475168"></a>11.3. Miscellaneous Operational Issues</h2></div></div></div><p>
+      </p></div></div><div class="section" title="12.3. Miscellaneous Operational Issues"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id1168229440114"></a>12.3. Miscellaneous Operational Issues</h2></div></div></div><p>
         Unlike BIND 9, BIND 10 currently does not support automatic
         re-signing of DNSSEC-signed zone when it's updated via DDNS.
         It could be possible to re-sign the updated zone afterwards
@@ -1304,7 +1423,7 @@ DDNS/zones[0]/update_acl[1]     {"action": "ACCEPT", "from": "::1", "key": "key.
         IXFR.
         This is done automatically; it does not require specific
         configuration to make this possible.
-      </p></div></div><div class="chapter" title="Chapter 12. Recursive Name Server"><div class="titlepage"><div><div><h2 class="title"><a name="resolverserver"></a>Chapter 12. Recursive Name Server</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#idp496224">12.1. Access Control</a></span></dt><dt><span class="section"><a href="#idp512960">12.2. Forwarding</a></span></dt></dl></div><p>
+      </p></div></div><div class="chapter" title="Chapter 13. Recursive Name Server"><div class="titlepage"><div><div><h2 class="title"><a name="resolverserver"></a>Chapter 13. Recursive Name Server</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#id1168229440251">13.1. Access Control</a></span></dt><dt><span class="section"><a href="#id1168229440295">13.2. Forwarding</a></span></dt></dl></div><p>
       The <span class="command"><strong>b10-resolver</strong></span> process is started by
       <span class="command"><strong>bind10</strong></span>.
 
@@ -1338,40 +1457,34 @@ DDNS/zones[0]/update_acl[1]     {"action": "ACCEPT", "from": "::1", "key": "key.
 </pre><p>
     </p><p>(Replace the <span class="quote">&#8220;<span class="quote"><em class="replaceable"><code>2</code></em></span>&#8221;</span>
        as needed; run <span class="quote">&#8220;<span class="quote"><strong class="userinput"><code>config show
-       Resolver/listen_on</code></strong></span>&#8221;</span> if needed.)</p><div class="section" title="12.1. Access Control"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp496224"></a>12.1. Access Control</h2></div></div></div><p>
+       Resolver/listen_on</code></strong></span>&#8221;</span> if needed.)</p><div class="section" title="13.1. Access Control"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id1168229440251"></a>13.1. Access Control</h2></div></div></div><p>
         By default, the <span class="command"><strong>b10-resolver</strong></span> daemon only accepts
         DNS queries from the localhost (127.0.0.1 and ::1).
         The <code class="option">Resolver/query_acl</code> configuration may
         be used to reject, drop, or allow specific IPs or networks.
-        This configuration list is first match.
+        See <a class="xref" href="#common-acl" title="8.1. ACLs">Section 8.1, &#8220;ACLs&#8221;</a>.
       </p><p>
-        The configuration's <code class="option">action</code> item may be
-        set to <span class="quote">&#8220;<span class="quote">ACCEPT</span>&#8221;</span> to allow the incoming query,
-        <span class="quote">&#8220;<span class="quote">REJECT</span>&#8221;</span> to respond with a DNS REFUSED return
-        code, or <span class="quote">&#8220;<span class="quote">DROP</span>&#8221;</span> to ignore the query without
-        any response (such as a blackhole).  For more information,
-        see the respective debugging messages:  <a class="ulink" href="bind10-messages.html#RESOLVER_QUERY_ACCEPTED" target="_top">RESOLVER_QUERY_ACCEPTED</a>,
-        <a class="ulink" href="bind10-messages.html#RESOLVER_QUERY_REJECTED" target="_top">RESOLVER_QUERY_REJECTED</a>,
-        and <a class="ulink" href="bind10-messages.html#RESOLVER_QUERY_DROPPED" target="_top">RESOLVER_QUERY_DROPPED</a>.
-      </p><p>
-        The required configuration's <code class="option">from</code> item is set
-        to an IPv4 or IPv6 address, addresses with an network mask, or to
-        the special lowercase keywords <span class="quote">&#8220;<span class="quote">any6</span>&#8221;</span> (for
-        any IPv6 address) or <span class="quote">&#8220;<span class="quote">any4</span>&#8221;</span> (for any IPv4
-        address).
-      </p><p>
-        For example to allow the <em class="replaceable"><code>192.168.1.0/24</code></em>
-        network to use your recursive name server, at the
-        <span class="command"><strong>bindctl</strong></span> prompt run:
-      </p><pre class="screen">
+	The following session is an example of extending the ACL to also
+	allow queries from 192.0.2.0/24:
+        </p><pre class="screen">
+&gt; <strong class="userinput"><code>config show Resolver/query_acl</code></strong>
+Resolver/query_acl[0]   {"action": "ACCEPT", "from": "127.0.0.1"}   any (default)
+Resolver/query_acl[1]   {"action": "ACCEPT", "from": "::1"} any (default)
 &gt; <strong class="userinput"><code>config add Resolver/query_acl</code></strong>
-&gt; <strong class="userinput"><code>config set Resolver/query_acl[<em class="replaceable"><code>2</code></em>]/action "ACCEPT"</code></strong>
-&gt; <strong class="userinput"><code>config set Resolver/query_acl[<em class="replaceable"><code>2</code></em>]/from "<em class="replaceable"><code>192.168.1.0/24</code></em>"</code></strong>
-&gt; <strong class="userinput"><code>config commit</code></strong>
-</pre><p>(Replace the <span class="quote">&#8220;<span class="quote"><em class="replaceable"><code>2</code></em></span>&#8221;</span>
-       as needed; run <span class="quote">&#8220;<span class="quote"><strong class="userinput"><code>config show
-       Resolver/query_acl</code></strong></span>&#8221;</span> if needed.)</p><div class="note" title="Note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>This prototype access control configuration
-      syntax may be changed.</p></div></div><div class="section" title="12.2. Forwarding"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp512960"></a>12.2. Forwarding</h2></div></div></div><p>
+&gt; <strong class="userinput"><code>config set Resolver/query_acl[2] {"action": "ACCEPT", "from": "192.0.2.0/24"}</code></strong>
+&gt; <strong class="userinput"><code>config add Resolver/query_acl</code></strong>
+&gt; <strong class="userinput"><code>config show Resolver/query_acl</code></strong>
+Resolver/query_acl[0]   {"action": "ACCEPT", "from": "127.0.0.1"}   any (modified)
+Resolver/query_acl[1]   {"action": "ACCEPT", "from": "::1"} any (modified)
+Resolver/query_acl[2]   {"action": "ACCEPT", "from": "192.0.2.0/24"}  any (modified)
+Resolver/query_acl[3]   {"action": "REJECT"}    any (modified)
+&gt; <strong class="userinput"><code>config commit</code></strong></pre><p>
+	Note that we didn't set the value of the last final rule
+	(query_acl[3]) -- in the case of resolver, rejecting all queries is
+	the default value of a new rule.  In fact, this rule can even be
+	omitted completely, as the default, when a query falls off the list,
+	is rejection.
+      </p></div><div class="section" title="13.2. Forwarding"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id1168229440295"></a>13.2. Forwarding</h2></div></div></div><p>
 
         To enable forwarding, the upstream address and port must be
         configured to forward queries to, such as:
@@ -1391,7 +1504,7 @@ DDNS/zones[0]/update_acl[1]     {"action": "ACCEPT", "from": "::1", "key": "key.
 &gt; <strong class="userinput"><code>config set Resolver/forward_addresses []</code></strong>
 &gt; <strong class="userinput"><code>config commit</code></strong>
 </pre><p>
-      </p></div></div><div class="chapter" title="Chapter 13. DHCPv4 Server"><div class="titlepage"><div><div><h2 class="title"><a name="dhcp4"></a>Chapter 13. DHCPv4 Server</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#dhcp4-usage">13.1. DHCPv4 Server Usage</a></span></dt><dt><span class="section"><a href="#dhcp4-config">13.2. DHCPv4 Server Configuration</a></span></dt><dt><span class="section"><a href="#dhcp4-std">13.3. Supported standards</a></span></dt><dt><span class="section"><a href="#dhcp4-limit">13.4. DHCPv4 Server Limitations</a></span></dt></dl></div><p>Dynamic Host Configuration Protocol for IPv4 (DHCP or
+      </p></div></div><div class="chapter" title="Chapter 14. DHCPv4 Server"><div class="titlepage"><div><div><h2 class="title"><a name="dhcp4"></a>Chapter 14. DHCPv4 Server</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#dhcp4-usage">14.1. DHCPv4 Server Usage</a></span></dt><dt><span class="section"><a href="#dhcp4-config">14.2. DHCPv4 Server Configuration</a></span></dt><dt><span class="section"><a href="#dhcp4-std">14.3. Supported standards</a></span></dt><dt><span class="section"><a href="#dhcp4-limit">14.4. DHCPv4 Server Limitations</a></span></dt></dl></div><p>Dynamic Host Configuration Protocol for IPv4 (DHCP or
     DHCPv4) and Dynamic Host Configuration Protocol for IPv6 (DHCPv6)
     are protocols that allow one node (server) to provision
     configuration parameters to many hosts and devices (clients). To
@@ -1401,7 +1514,7 @@ DDNS/zones[0]/update_acl[1]     {"action": "ACCEPT", "from": "::1", "key": "key.
     somewhat similar, these are two radically different
     protocols. BIND10 offers server implementations for both DHCPv4
     and DHCPv6. This chapter is about DHCP for IPv4. For a description
-    of the DHCPv6 server, see <a class="xref" href="#dhcp6" title="Chapter 14. DHCPv6 Server">Chapter 14, <i>DHCPv6 Server</i></a>.</p><p>The DHCPv4 server component is currently under intense
+    of the DHCPv6 server, see <a class="xref" href="#dhcp6" title="Chapter 15. DHCPv6 Server">Chapter 15, <i>DHCPv6 Server</i></a>.</p><p>The DHCPv4 server component is currently under intense
     development. You may want to check out <a class="ulink" href="http://bind10.isc.org/wiki/Kea" target="_top">BIND10 DHCP (Kea) wiki</a>
     and recent posts on <a class="ulink" href="https://lists.isc.org/mailman/listinfo/bind10-dev" target="_top">BIND10
     developers mailing list</a>.</p><p>The DHCPv4 and DHCPv6 components in BIND10 architecture are
@@ -1411,13 +1524,13 @@ DDNS/zones[0]/update_acl[1]     {"action": "ACCEPT", "from": "::1", "key": "key.
         performing DHCP configuration, they are not fully functional
         yet. In particular, neither has functional lease
         databases. This means that they will assign the same, fixed,
-        hardcoded addresses to any client that will ask. See <a class="xref" href="#dhcp4-limit" title="13.4. DHCPv4 Server Limitations">Section 13.4, &#8220;DHCPv4 Server Limitations&#8221;</a> and <a class="xref" href="#dhcp6-limit" title="14.4. DHCPv6 Server Limitations">Section 14.4, &#8220;DHCPv6 Server Limitations&#8221;</a> for
+        hardcoded addresses to any client that will ask. See <a class="xref" href="#dhcp4-limit" title="14.4. DHCPv4 Server Limitations">Section 14.4, &#8220;DHCPv4 Server Limitations&#8221;</a> and <a class="xref" href="#dhcp6-limit" title="15.4. DHCPv6 Server Limitations">Section 15.4, &#8220;DHCPv6 Server Limitations&#8221;</a> for
         detailed description.
-      </p></div><div class="section" title="13.1. DHCPv4 Server Usage"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="dhcp4-usage"></a>13.1. DHCPv4 Server Usage</h2></div></div></div><p>BIND10 provides the DHCPv4 server component since December
+      </p></div><div class="section" title="14.1. DHCPv4 Server Usage"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="dhcp4-usage"></a>14.1. DHCPv4 Server Usage</h2></div></div></div><p>BIND10 provides the DHCPv4 server component since December
       2011. It is a skeleton server and can be described as an early
       prototype that is not fully functional yet. It is mature enough
       to conduct first tests in lab environment, but it has
-      significant limitations. See <a class="xref" href="#dhcp4-limit" title="13.4. DHCPv4 Server Limitations">Section 13.4, &#8220;DHCPv4 Server Limitations&#8221;</a> for
+      significant limitations. See <a class="xref" href="#dhcp4-limit" title="14.4. DHCPv4 Server Limitations">Section 14.4, &#8220;DHCPv4 Server Limitations&#8221;</a> for
       details.
       </p><p>
         <span class="command"><strong>b10-dhcp4</strong></span> is a BIND10 component and is being
@@ -1443,7 +1556,7 @@ DDNS/zones[0]/update_acl[1]     {"action": "ACCEPT", "from": "::1", "key": "key.
 
         Since the DHCPv4 server opens privileged ports, it requires root
         access. Make sure you run this daemon as root.
-      </p></div><div class="section" title="13.2. DHCPv4 Server Configuration"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="dhcp4-config"></a>13.2. DHCPv4 Server Configuration</h2></div></div></div><p>
+      </p></div><div class="section" title="14.2. DHCPv4 Server Configuration"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="dhcp4-config"></a>14.2. DHCPv4 Server Configuration</h2></div></div></div><p>
         The DHCPv4 server does not have a lease database implemented yet
         nor any support for configuration, so every time the same set
         of configuration options (including the same fixed address)
@@ -1463,12 +1576,12 @@ const std::string HARDCODED_DOMAIN_NAME = "isc.example.com";
 const std::string HARDCODED_SERVER_ID = "192.0.2.1";</pre><p>
 
         Lease database and configuration support is planned for 2012.
-      </p></div><div class="section" title="13.3. Supported standards"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="dhcp4-std"></a>13.3. Supported standards</h2></div></div></div><p>The following standards and draft standards are currently
+      </p></div><div class="section" title="14.3. Supported standards"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="dhcp4-std"></a>14.3. Supported standards</h2></div></div></div><p>The following standards and draft standards are currently
       supported:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">RFC2131: Supported messages are DISCOVER, OFFER,
             REQUEST, and ACK.</li><li class="listitem">RFC2132: Supported options are: PAD (0),
             END(255), Message Type(53), DHCP Server Identifier (54),
             Domain Name (15), DNS Servers (6), IP Address Lease Time
-            (51), Subnet mask (1), and Routers (3).</li></ul></div></div><div class="section" title="13.4. DHCPv4 Server Limitations"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="dhcp4-limit"></a>13.4. DHCPv4 Server Limitations</h2></div></div></div><p>These are the current limitations of the DHCPv4 server
+            (51), Subnet mask (1), and Routers (3).</li></ul></div></div><div class="section" title="14.4. DHCPv4 Server Limitations"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="dhcp4-limit"></a>14.4. DHCPv4 Server Limitations</h2></div></div></div><p>These are the current limitations of the DHCPv4 server
       software. Most of them are reflections of the early stage of
       development and should be treated as <span class="quote">&#8220;<span class="quote">not implemented
       yet</span>&#8221;</span>, rather than actual limitations.</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">During initial IPv4 node configuration, the
@@ -1484,7 +1597,7 @@ const std::string HARDCODED_SERVER_ID = "192.0.2.1";</pre><p>
             address.</li><li class="listitem"><span class="command"><strong>b10-dhcp4</strong></span> does not support any
             configuration mechanisms yet. The whole configuration is
             currently hardcoded. The only way to tweak configuration
-            is to directly modify source code. See see <a class="xref" href="#dhcp4-config" title="13.2. DHCPv4 Server Configuration">Section 13.2, &#8220;DHCPv4 Server Configuration&#8221;</a> for details.</li><li class="listitem">Upon start, the server will open sockets on all
+            is to directly modify source code. See see <a class="xref" href="#dhcp4-config" title="14.2. DHCPv4 Server Configuration">Section 14.2, &#8220;DHCPv4 Server Configuration&#8221;</a> for details.</li><li class="listitem">Upon start, the server will open sockets on all
             interfaces that are not loopback, are up and running and
             have IPv4 address.</li><li class="listitem">PRL (Parameter Request List, a list of options
             requested by a client) is currently ignored and server
@@ -1493,16 +1606,16 @@ const std::string HARDCODED_SERVER_ID = "192.0.2.1";</pre><p>
             permanent. If you have legacy nodes that can't use DHCP and
             require BOOTP support, please use latest version of ISC DHCP
             <a class="ulink" href="http://www.isc.org/software/dhcp" target="_top">http://www.isc.org/software/dhcp</a>.</li><li class="listitem">Interface detection is currently working on Linux
-            only. See <a class="xref" href="#iface-detect" title="15.1. Interface detection">Section 15.1, &#8220;Interface detection&#8221;</a> for details.</li><li class="listitem"><span class="command"><strong>b10-dhcp4</strong></span> does not verify that
+            only. See <a class="xref" href="#iface-detect" title="16.1. Interface detection">Section 16.1, &#8220;Interface detection&#8221;</a> for details.</li><li class="listitem"><span class="command"><strong>b10-dhcp4</strong></span> does not verify that
             assigned address is unused. According to RFC2131, the
             allocating server should verify that address is no used by
             sending ICMP echo request.</li><li class="listitem">Address renewal (RENEW), rebinding (REBIND),
             confirmation (CONFIRM), duplication report (DECLINE) and
             release (RELEASE) are not supported yet.</li><li class="listitem">DNS Update is not supported yet.</li><li class="listitem">-v (verbose) command line option is currently
-            the default, and cannot be disabled.</li></ul></div></div></div><div class="chapter" title="Chapter 14. DHCPv6 Server"><div class="titlepage"><div><div><h2 class="title"><a name="dhcp6"></a>Chapter 14. DHCPv6 Server</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#dhcp6-usage">14.1. DHCPv6 Server Usage</a></span></dt><dt><span class="section"><a href="#dhcp6-config">14.2. DHCPv6 Server Configuration</a></span></dt><dt><span class="section"><a href="#dhcp6-std">14.3. Supported DHCPv6 Standards</a></span></dt><dt><span class="section"><a href="#dhcp6-limit">14.4. DHCPv6 Server Limitations</a></span></dt></dl></div><p>Dynamic Host Configuration Protocol for IPv6 (DHCPv6) is
+            the default, and cannot be disabled.</li></ul></div></div></div><div class="chapter" title="Chapter 15. DHCPv6 Server"><div class="titlepage"><div><div><h2 class="title"><a name="dhcp6"></a>Chapter 15. DHCPv6 Server</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#dhcp6-usage">15.1. DHCPv6 Server Usage</a></span></dt><dt><span class="section"><a href="#dhcp6-config">15.2. DHCPv6 Server Configuration</a></span></dt><dt><span class="section"><a href="#dhcp6-std">15.3. Supported DHCPv6 Standards</a></span></dt><dt><span class="section"><a href="#dhcp6-limit">15.4. DHCPv6 Server Limitations</a></span></dt></dl></div><p>Dynamic Host Configuration Protocol for IPv6 (DHCPv6) is
     specified in RFC3315. BIND10 provides DHCPv6 server implementation
     that is described in this chapter. For a description of the DHCPv4
-    server implementation, see <a class="xref" href="#dhcp4" title="Chapter 13. DHCPv4 Server">Chapter 13, <i>DHCPv4 Server</i></a>.
+    server implementation, see <a class="xref" href="#dhcp4" title="Chapter 14. DHCPv4 Server">Chapter 14, <i>DHCPv4 Server</i></a>.
     </p><p>The DHCPv6 server component is currently under intense
     development. You may want to check out <a class="ulink" href="http://bind10.isc.org/wiki/Kea" target="_top">BIND10 DHCP (Kea) wiki</a>
     and recent posts on <a class="ulink" href="https://lists.isc.org/mailman/listinfo/bind10-dev" target="_top">BIND10
@@ -1513,14 +1626,14 @@ const std::string HARDCODED_SERVER_ID = "192.0.2.1";</pre><p>
         performing DHCP configuration, they are not fully functional
         yet. In particular, neither has functional lease
         databases. This means that they will assign the same, fixed,
-        hardcoded addresses to any client that will ask. See <a class="xref" href="#dhcp4-limit" title="13.4. DHCPv4 Server Limitations">Section 13.4, &#8220;DHCPv4 Server Limitations&#8221;</a> and <a class="xref" href="#dhcp6-limit" title="14.4. DHCPv6 Server Limitations">Section 14.4, &#8220;DHCPv6 Server Limitations&#8221;</a> for
+        hardcoded addresses to any client that will ask. See <a class="xref" href="#dhcp4-limit" title="14.4. DHCPv4 Server Limitations">Section 14.4, &#8220;DHCPv4 Server Limitations&#8221;</a> and <a class="xref" href="#dhcp6-limit" title="15.4. DHCPv6 Server Limitations">Section 15.4, &#8220;DHCPv6 Server Limitations&#8221;</a> for
         detailed description.
-      </p></div><div class="section" title="14.1. DHCPv6 Server Usage"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="dhcp6-usage"></a>14.1. DHCPv6 Server Usage</h2></div></div></div><p>
+      </p></div><div class="section" title="15.1. DHCPv6 Server Usage"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="dhcp6-usage"></a>15.1. DHCPv6 Server Usage</h2></div></div></div><p>
         BIND10 provides the DHCPv6 server component since September
         2011. It is a skeleton server and can be described as an early
         prototype that is not fully functional yet. It is mature
         enough to conduct first tests in lab environment, but it has
-        significant limitations. See <a class="xref" href="#dhcp6-limit" title="14.4. DHCPv6 Server Limitations">Section 14.4, &#8220;DHCPv6 Server Limitations&#8221;</a> for
+        significant limitations. See <a class="xref" href="#dhcp6-limit" title="15.4. DHCPv6 Server Limitations">Section 15.4, &#8220;DHCPv6 Server Limitations&#8221;</a> for
         details.
       </p><p>
         <span class="command"><strong>b10-dhcp6</strong></span> is a BIND10 component and is being
@@ -1548,7 +1661,7 @@ const std::string HARDCODED_SERVER_ID = "192.0.2.1";</pre><p>
 
         Since the DHCPv6 server opens privileged ports, it requires root
         access. Make sure you run this daemon as root.
-      </p></div><div class="section" title="14.2. DHCPv6 Server Configuration"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="dhcp6-config"></a>14.2. DHCPv6 Server Configuration</h2></div></div></div><p>
+      </p></div><div class="section" title="15.2. DHCPv6 Server Configuration"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="dhcp6-config"></a>15.2. DHCPv6 Server Configuration</h2></div></div></div><p>
         The DHCPv6 server does not have lease database implemented yet
         or any support for configuration, so every time the same set
         of configuration options (including the same fixed address)
@@ -1567,10 +1680,10 @@ const uint32_t HARDCODED_VALID_LIFETIME = 7200; // in seconds
 const std::string HARDCODED_DNS_SERVER = "2001:db8:1::1";</pre><p>
 
         Lease database and configuration support is planned for 2012.
-      </p></div><div class="section" title="14.3. Supported DHCPv6 Standards"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="dhcp6-std"></a>14.3. Supported DHCPv6 Standards</h2></div></div></div><p>The following standards and draft standards are currently
+      </p></div><div class="section" title="15.3. Supported DHCPv6 Standards"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="dhcp6-std"></a>15.3. Supported DHCPv6 Standards</h2></div></div></div><p>The following standards and draft standards are currently
       supported:</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem">RFC3315: Supported messages are SOLICIT,
             ADVERTISE, REQUEST, and REPLY. Supported options are
-            SERVER_ID, CLIENT_ID, IA_NA, and IAADDRESS.</li><li class="listitem">RFC3646: Supported option is DNS_SERVERS.</li></ul></div></div><div class="section" title="14.4. DHCPv6 Server Limitations"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="dhcp6-limit"></a>14.4. DHCPv6 Server Limitations</h2></div></div></div><p> These are the current limitations of the DHCPv6 server
+            SERVER_ID, CLIENT_ID, IA_NA, and IAADDRESS.</li><li class="listitem">RFC3646: Supported option is DNS_SERVERS.</li></ul></div></div><div class="section" title="15.4. DHCPv6 Server Limitations"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="dhcp6-limit"></a>15.4. DHCPv6 Server Limitations</h2></div></div></div><p> These are the current limitations of the DHCPv6 server
       software. Most of them are reflections of the early stage of
       development and should be treated as <span class="quote">&#8220;<span class="quote">not implemented
       yet</span>&#8221;</span>, rather than actual limitations.</p><p>
@@ -1580,7 +1693,7 @@ const std::string HARDCODED_DNS_SERVER = "2001:db8:1::1";</pre><p>
           they will both get the same fixed address.</li><li class="listitem"><span class="command"><strong>b10-dhcp6</strong></span> does not support any
             configuration mechanisms yet. The whole configuration is
             currently hardcoded. The only way to tweak configuration
-            is to directly modify source code. See see <a class="xref" href="#dhcp6-config" title="14.2. DHCPv6 Server Configuration">Section 14.2, &#8220;DHCPv6 Server Configuration&#8221;</a> for details.</li><li class="listitem">Upon start, the server will open sockets on all
+            is to directly modify source code. See see <a class="xref" href="#dhcp6-config" title="15.2. DHCPv6 Server Configuration">Section 15.2, &#8220;DHCPv6 Server Configuration&#8221;</a> for details.</li><li class="listitem">Upon start, the server will open sockets on all
           interfaces that are not loopback, are up, running and are
           multicast capable and have IPv6 address.  Support for
           multiple interfaces is not coded in reception routines yet,
@@ -1593,9 +1706,9 @@ const std::string HARDCODED_DNS_SERVER = "2001:db8:1::1";</pre><p>
           assigns DNS SERVER option.</li><li class="listitem">Temporary addresses are not supported yet.</li><li class="listitem">Prefix delegation is not supported yet.</li><li class="listitem">Address renewal (RENEW), rebinding (REBIND),
           confirmation (CONFIRM), duplication report (DECLINE) and
           release (RELEASE) are not supported yet.</li><li class="listitem">DNS Update is not supported yet.</li><li class="listitem">Interface detection is currently working on Linux
-          only. See <a class="xref" href="#iface-detect" title="15.1. Interface detection">Section 15.1, &#8220;Interface detection&#8221;</a> for details.</li><li class="listitem">-v (verbose) command line option is currently the
+          only. See <a class="xref" href="#iface-detect" title="16.1. Interface detection">Section 16.1, &#8220;Interface detection&#8221;</a> for details.</li><li class="listitem">-v (verbose) command line option is currently the
           default, and cannot be disabled.</li></ul></div><p>
-      </p></div></div><div class="chapter" title="Chapter 15. libdhcp++ library"><div class="titlepage"><div><div><h2 class="title"><a name="libdhcp"></a>Chapter 15. libdhcp++ library</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#iface-detect">15.1. Interface detection</a></span></dt><dt><span class="section"><a href="#packet-handling">15.2. DHCPv4/DHCPv6 packet handling</a></span></dt></dl></div><p>libdhcp++ is a common library written in C++ that handles
+      </p></div></div><div class="chapter" title="Chapter 16. libdhcp++ library"><div class="titlepage"><div><div><h2 class="title"><a name="libdhcp"></a>Chapter 16. libdhcp++ library</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#iface-detect">16.1. Interface detection</a></span></dt><dt><span class="section"><a href="#packet-handling">16.2. DHCPv4/DHCPv6 packet handling</a></span></dt></dl></div><p>libdhcp++ is a common library written in C++ that handles
     many DHCP-related tasks, like DHCPv4 and DHCPv6 packets parsing,
     manipulation and assembly, option parsing, manipulation and
     assembly, network interface detection and socket operations, like
@@ -1606,13 +1719,13 @@ const std::string HARDCODED_DNS_SERVER = "2001:db8:1::1";</pre><p>
     <span class="command"><strong>b10-dhcp4</strong></span> and <span class="command"><strong>b10-dhcp6</strong></span>
     only, it is designed to be portable, universal library useful for
     any kind of DHCP-related software.
-    </p><div class="section" title="15.1. Interface detection"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="iface-detect"></a>15.1. Interface detection</h2></div></div></div><p>Both DHCPv4 and DHCPv6 components share network
+    </p><div class="section" title="16.1. Interface detection"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="iface-detect"></a>16.1. Interface detection</h2></div></div></div><p>Both DHCPv4 and DHCPv6 components share network
       interface detection routines. Interface detection is
       currently only supported on Linux systems.</p><p>For non-Linux systems, there is currently stub
       implementation provided. Interface manager detects loopback
       interfaces only as their name (lo or lo0) can be easily predicted.
       Please contact BIND10 development team if you are interested
-      in running DHCP components on systems other than Linux.</p></div><div class="section" title="15.2. DHCPv4/DHCPv6 packet handling"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="packet-handling"></a>15.2. DHCPv4/DHCPv6 packet handling</h2></div></div></div><p>TODO: Describe packet handling here, with pointers to wiki</p></div></div><div class="chapter" title="Chapter 16. Statistics"><div class="titlepage"><div><div><h2 class="title"><a name="statistics"></a>Chapter 16. Statistics</h2></div></div></div><p>
+      in running DHCP components on systems other than Linux.</p></div><div class="section" title="16.2. DHCPv4/DHCPv6 packet handling"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="packet-handling"></a>16.2. DHCPv4/DHCPv6 packet handling</h2></div></div></div><p>TODO: Describe packet handling here, with pointers to wiki</p></div></div><div class="chapter" title="Chapter 17. Statistics"><div class="titlepage"><div><div><h2 class="title"><a name="statistics"></a>Chapter 17. Statistics</h2></div></div></div><p>
       The <span class="command"><strong>b10-stats</strong></span> process is started by
       <span class="command"><strong>bind10</strong></span>.
       It periodically collects statistics data from various modules
@@ -1650,7 +1763,7 @@ const std::string HARDCODED_DNS_SERVER = "2001:db8:1::1";</pre><p>
     }
 }
        </pre><p>
-    </p></div><div class="chapter" title="Chapter 17. Logging"><div class="titlepage"><div><div><h2 class="title"><a name="logging"></a>Chapter 17. Logging</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#idp611696">17.1. Logging configuration</a></span></dt><dd><dl><dt><span class="section"><a href="#idp613392">17.1.1. Loggers</a></span></dt><dt><span class="section"><a href="#idp649760">17.1.2. Output Options</a></span></dt><dt><span class="section"><a href="#idp674816">17.1.3. Example session</a></span></dt></dl></dd><dt><span class="section"><a href="#idp705584">17.2. Logging Message Format</a></span></dt></dl></div><div class="section" title="17.1. Logging configuration"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp611696"></a>17.1. Logging configuration</h2></div></div></div><p>
+    </p></div><div class="chapter" title="Chapter 18. Logging"><div class="titlepage"><div><div><h2 class="title"><a name="logging"></a>Chapter 18. Logging</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#id1168229441072">18.1. Logging configuration</a></span></dt><dd><dl><dt><span class="section"><a href="#id1168229441082">18.1.1. Loggers</a></span></dt><dt><span class="section"><a href="#id1168229441324">18.1.2. Output Options</a></span></dt><dt><span class="section"><a href="#id1168229441508">18.1.3. Example session</a></span></dt></dl></dd><dt><span class="section"><a href="#id1168229441717">18.2. Logging Message Format</a></span></dt></dl></div><div class="section" title="18.1. Logging configuration"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id1168229441072"></a>18.1. Logging configuration</h2></div></div></div><p>
 
         The logging system in BIND 10 is configured through the
         Logging module. All BIND 10 modules will look at the
@@ -1659,7 +1772,7 @@ const std::string HARDCODED_DNS_SERVER = "2001:db8:1::1";</pre><p>
 
 
 
-      </p><div class="section" title="17.1.1. Loggers"><div class="titlepage"><div><div><h3 class="title"><a name="idp613392"></a>17.1.1. Loggers</h3></div></div></div><p>
+      </p><div class="section" title="18.1.1. Loggers"><div class="titlepage"><div><div><h3 class="title"><a name="id1168229441082"></a>18.1.1. Loggers</h3></div></div></div><p>
 
           Within BIND 10, a message is logged through a component
           called a "logger". Different parts of BIND 10 log messages
@@ -1680,7 +1793,7 @@ const std::string HARDCODED_DNS_SERVER = "2001:db8:1::1";</pre><p>
           (what to log), and the <code class="option">output_options</code>
           (where to log).
 
-        </p><div class="section" title="17.1.1.1. name (string)"><div class="titlepage"><div><div><h4 class="title"><a name="idp617152"></a>17.1.1.1. name (string)</h4></div></div></div><p>
+        </p><div class="section" title="18.1.1.1. name (string)"><div class="titlepage"><div><div><h4 class="title"><a name="id1168229441107"></a>18.1.1.1. name (string)</h4></div></div></div><p>
           Each logger in the system has a name, the name being that
           of the component using it to log messages. For instance,
           if you want to configure logging for the resolver module,
@@ -1753,7 +1866,7 @@ const std::string HARDCODED_DNS_SERVER = "2001:db8:1::1";</pre><p>
           <span class="quote">&#8220;<span class="quote">Auth.cache</span>&#8221;</span> logger will appear in the output
           with a logger name of <span class="quote">&#8220;<span class="quote">b10-auth.cache</span>&#8221;</span>).
 
-        </p></div><div class="section" title="17.1.1.2. severity (string)"><div class="titlepage"><div><div><h4 class="title"><a name="idp633200"></a>17.1.1.2. severity (string)</h4></div></div></div><p>
+        </p></div><div class="section" title="18.1.1.2. severity (string)"><div class="titlepage"><div><div><h4 class="title"><a name="id1168229441207"></a>18.1.1.2. severity (string)</h4></div></div></div><p>
 
           This specifies the category of messages logged.
           Each message is logged with an associated severity which
@@ -1769,7 +1882,7 @@ const std::string HARDCODED_DNS_SERVER = "2001:db8:1::1";</pre><p>
 
 
 
-        </p></div><div class="section" title="17.1.1.3. output_options (list)"><div class="titlepage"><div><div><h4 class="title"><a name="idp640176"></a>17.1.1.3. output_options (list)</h4></div></div></div><p>
+        </p></div><div class="section" title="18.1.1.3. output_options (list)"><div class="titlepage"><div><div><h4 class="title"><a name="id1168229441257"></a>18.1.1.3. output_options (list)</h4></div></div></div><p>
 
           Each logger can have zero or more
           <code class="option">output_options</code>. These specify where log
@@ -1779,7 +1892,7 @@ const std::string HARDCODED_DNS_SERVER = "2001:db8:1::1";</pre><p>
 
           The other options for a logger are:
 
-        </p></div><div class="section" title="17.1.1.4. debuglevel (integer)"><div class="titlepage"><div><div><h4 class="title"><a name="idp642448"></a>17.1.1.4. debuglevel (integer)</h4></div></div></div><p>
+        </p></div><div class="section" title="18.1.1.4. debuglevel (integer)"><div class="titlepage"><div><div><h4 class="title"><a name="id1168229441274"></a>18.1.1.4. debuglevel (integer)</h4></div></div></div><p>
 
           When a logger's severity is set to DEBUG, this value
           specifies what debug messages should be printed. It ranges
@@ -1788,7 +1901,7 @@ const std::string HARDCODED_DNS_SERVER = "2001:db8:1::1";</pre><p>
 
           If severity for the logger is not DEBUG, this value is ignored.
 
-        </p></div><div class="section" title="17.1.1.5. additive (true or false)"><div class="titlepage"><div><div><h4 class="title"><a name="idp644832"></a>17.1.1.5. additive (true or false)</h4></div></div></div><p>
+        </p></div><div class="section" title="18.1.1.5. additive (true or false)"><div class="titlepage"><div><div><h4 class="title"><a name="id1168229441289"></a>18.1.1.5. additive (true or false)</h4></div></div></div><p>
 
           If this is true, the <code class="option">output_options</code> from
           the parent will be used. For example, if there are two
@@ -1802,18 +1915,18 @@ const std::string HARDCODED_DNS_SERVER = "2001:db8:1::1";</pre><p>
 
 
 
-      </p></div></div><div class="section" title="17.1.2. Output Options"><div class="titlepage"><div><div><h3 class="title"><a name="idp649760"></a>17.1.2. Output Options</h3></div></div></div><p>
+      </p></div></div><div class="section" title="18.1.2. Output Options"><div class="titlepage"><div><div><h3 class="title"><a name="id1168229441324"></a>18.1.2. Output Options</h3></div></div></div><p>
 
           The main settings for an output option are the
           <code class="option">destination</code> and a value called
           <code class="option">output</code>, the meaning of which depends on
           the destination that is set.
 
-        </p><div class="section" title="17.1.2.1. destination (string)"><div class="titlepage"><div><div><h4 class="title"><a name="idp651840"></a>17.1.2.1. destination (string)</h4></div></div></div><p>
+        </p><div class="section" title="18.1.2.1. destination (string)"><div class="titlepage"><div><div><h4 class="title"><a name="id1168229441340"></a>18.1.2.1. destination (string)</h4></div></div></div><p>
 
             The destination is the type of output. It can be one of:
 
-          </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"> console </li><li class="listitem"> file </li><li class="listitem"> syslog </li></ul></div></div><div class="section" title="17.1.2.2. output (string)"><div class="titlepage"><div><div><h4 class="title"><a name="idp655904"></a>17.1.2.2. output (string)</h4></div></div></div><p>
+          </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"> console </li><li class="listitem"> file </li><li class="listitem"> syslog </li></ul></div></div><div class="section" title="18.1.2.2. output (string)"><div class="titlepage"><div><div><h4 class="title"><a name="id1168229441372"></a>18.1.2.2. output (string)</h4></div></div></div><p>
 
           Depending on what is set as the output destination, this
           value is interpreted as follows:
@@ -1843,12 +1956,12 @@ const std::string HARDCODED_DNS_SERVER = "2001:db8:1::1";</pre><p>
 
           The other options for <code class="option">output_options</code> are:
 
-        </p><div class="section" title="17.1.2.2.1. flush (true of false)"><div class="titlepage"><div><div><h5 class="title"><a name="idp668864"></a>17.1.2.2.1. flush (true of false)</h5></div></div></div><p>
+        </p><div class="section" title="18.1.2.2.1. flush (true of false)"><div class="titlepage"><div><div><h5 class="title"><a name="id1168229441466"></a>18.1.2.2.1. flush (true of false)</h5></div></div></div><p>
             Flush buffers after each log message. Doing this will
             reduce performance but will ensure that if the program
             terminates abnormally, all messages up to the point of
             termination are output.
-          </p></div><div class="section" title="17.1.2.2.2. maxsize (integer)"><div class="titlepage"><div><div><h5 class="title"><a name="idp670304"></a>17.1.2.2.2. maxsize (integer)</h5></div></div></div><p>
+          </p></div><div class="section" title="18.1.2.2.2. maxsize (integer)"><div class="titlepage"><div><div><h5 class="title"><a name="id1168229441477"></a>18.1.2.2.2. maxsize (integer)</h5></div></div></div><p>
             Only relevant when destination is file, this is maximum
             file size of output files in bytes. When the maximum
             size is reached, the file is renamed and a new file opened.
@@ -1857,11 +1970,11 @@ const std::string HARDCODED_DNS_SERVER = "2001:db8:1::1";</pre><p>
             etc.)
           </p><p>
             If this is 0, no maximum file size is used.
-          </p></div><div class="section" title="17.1.2.2.3. maxver (integer)"><div class="titlepage"><div><div><h5 class="title"><a name="idp672368"></a>17.1.2.2.3. maxver (integer)</h5></div></div></div><p>
+          </p></div><div class="section" title="18.1.2.2.3. maxver (integer)"><div class="titlepage"><div><div><h5 class="title"><a name="id1168229441490"></a>18.1.2.2.3. maxver (integer)</h5></div></div></div><p>
             Maximum number of old log files to keep around when
             rolling the output file. Only relevant when
             <code class="option">destination</code> is <span class="quote">&#8220;<span class="quote">file</span>&#8221;</span>.
-          </p></div></div></div><div class="section" title="17.1.3. Example session"><div class="titlepage"><div><div><h3 class="title"><a name="idp674816"></a>17.1.3. Example session</h3></div></div></div><p>
+          </p></div></div></div><div class="section" title="18.1.3. Example session"><div class="titlepage"><div><div><h3 class="title"><a name="id1168229441508"></a>18.1.3. Example session</h3></div></div></div><p>
 
           In this example we want to set the global logging to
           write to the file <code class="filename">/var/log/my_bind10.log</code>,
@@ -2022,7 +2135,7 @@ Logging/loggers[0]/output_options[0]/maxver	8	integer	(modified)
           And every module will now be using the values from the
           logger named <span class="quote">&#8220;<span class="quote">*</span>&#8221;</span>.
 
-        </p></div></div><div class="section" title="17.2. Logging Message Format"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp705584"></a>17.2. Logging Message Format</h2></div></div></div><p>
+        </p></div></div><div class="section" title="18.2. Logging Message Format"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id1168229441717"></a>18.2. Logging Message Format</h2></div></div></div><p>
           Each message written by BIND 10 to the configured logging
           destinations comprises a number of components that identify
           the origin of the message and, if the message indicates
