@@ -208,7 +208,7 @@ public:
     /// \throw bad_alloc
     ///
     /// \return a tree of statistics items.
-    const isc::auth::statistics::Counters::item_tree_type get(
+    const isc::auth::statistics::Counters::item_tree_type getStatistics(
         const isc::auth::statistics::Counters::item_node_name_set_type &items)
         const;
 
@@ -219,7 +219,8 @@ public:
     /// \throw bad_alloc
     ///
     /// \return a tree of statistics items.
-    const isc::auth::statistics::Counters::item_tree_type dump() const;
+    const isc::auth::statistics::Counters::item_tree_type dumpStatistics()
+        const;
 
     /**
      * \brief Set and get the addresses we listen on.

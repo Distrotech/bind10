@@ -139,7 +139,7 @@ public:
         LOG_DEBUG(auth_logger, DBG_AUTH_OPS, AUTH_RECEIVED_GETSTATS);
         statistics::Counters::item_node_name_set_type trees;
         trees.insert("auth.server.qr");
-        return (createAnswer(0, server.get(trees)));
+        return (createAnswer(0, server.getStatistics(trees)));
     }
 };
 
