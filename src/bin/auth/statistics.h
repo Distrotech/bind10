@@ -170,6 +170,15 @@ public:
     /// \return a tree of statistics items.
     const item_tree_type get(const item_node_name_set_type &items) const;
 
+    /// \brief Get the values of specified counters and clear them.
+    ///
+    /// This function returns names and values of counter.
+    ///
+    /// \throw bad_alloc
+    ///
+    /// \return a tree of statistics items whose values are not zero.
+    const item_tree_type get_clear(const item_node_name_set_type &items);
+
     /// \brief Dump all of the counters.
     ///
     /// This function returns names and values of counter.

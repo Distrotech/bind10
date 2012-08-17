@@ -212,6 +212,16 @@ public:
         const isc::auth::statistics::Counters::item_node_name_set_type &items)
         const;
 
+    /// \brief Get the values of specified counters.
+    ///
+    /// This function returns names and values of counter.
+    ///
+    /// \throw bad_alloc
+    ///
+    /// \return a tree of statistics items.
+    const isc::auth::statistics::Counters::item_tree_type getStatistics_delta(
+        const isc::auth::statistics::Counters::item_node_name_set_type &items);
+
     /// \brief Dump the values of counters.
     ///
     /// This function returns names and values of counter.

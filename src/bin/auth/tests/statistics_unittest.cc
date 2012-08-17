@@ -115,6 +115,48 @@ TEST_F(CountersTest, incrementNormalQuery) {
     checkCountersAllZeroExcept(counters.dump(), expect_nonzero);
 }
 
+TEST_F(CountersTest, incrementNormalQuery_delta) {
+    Message response(Message::RENDER);
+    QRAttributes qrattrs;
+    std::set<std::string> expect_nonzero;
+    Counters::item_node_name_set_type names;
+
+    // get "auth.server.qr"
+    names.insert("auth.server.qr");
+
+    expect_nonzero.clear();
+    checkCountersAllZeroExcept(counters.get_clear(names), expect_nonzero);
+
+    qrattrs.setQueryIPVersion(AF_INET6);
+    qrattrs.setQueryTransportProtocol(IPPROTO_UDP);
+    qrattrs.setQueryOpCode(Opcode::QUERY_CODE);
+    qrattrs.setQueryEDNS(true, false);
+    qrattrs.setQueryDO(true);
+    qrattrs.answerHasSent();
+
+    response.setRcode(Rcode::REFUSED());
+    response.addQuestion(Question(Name("example.com"), RRClass::IN(), RRType::AAAA()));
+
+    counters.inc(qrattrs, response);
+
+    expect_nonzero.clear();
+    expect_nonzero.insert("auth.server.qr.opcode.query");
+    expect_nonzero.insert("auth.server.qr.qtype.aaaa");
+    expect_nonzero.insert("auth.server.qr.request.v6");
+    expect_nonzero.insert("auth.server.qr.request.udp");
+    expect_nonzero.insert("auth.server.qr.request.edns0");
+    expect_nonzero.insert("auth.server.qr.request.dnssec_ok");
+    expect_nonzero.insert("auth.server.qr.response");
+    expect_nonzero.insert("auth.server.qr.qrynoauthans");
+    expect_nonzero.insert("auth.server.qr.rcode.refused");
+    checkCountersAllZeroExcept(counters.get_clear(names), expect_nonzero);
+    expect_nonzero.clear();
+    checkCountersAllZeroExcept(counters.get_clear(names), expect_nonzero);
+    qrattrs.setQueryIPVersion(AF_INET6);
+    expect_nonzero.insert("auth.server.qr.qtype.aaaa");
+    checkCountersAllZeroExcept(counters.get_clear(names), expect_nonzero);
+}
+
 TEST_F(CountersTest, checkDumpItems) {
     std::map<std::string, ConstElementPtr> stats_map;
     counters.dump()->getValue(stats_map);
@@ -171,6 +213,27 @@ TEST_F(CountersTest, checkGetItems) {
     names.clear();
     stats_map.clear();
     counters.get(names)->getValue(stats_map);
+    EXPECT_EQ(0, stats_map.size());
+}
+
+TEST_F(CountersTest, checkGetClearItems) {
+    std::map<std::string, ConstElementPtr> stats_map;
+    QRAttributes qrattrs;
+    Counters::item_node_name_set_type names;
+
+    // get "auth.server.qr"
+    names.insert("auth.server.qr");
+    counters.get_clear(names)->getValue(stats_map);
+    EXPECT_EQ(0, stats_map.size());
+
+    qrattrs.setQueryIPVersion(AF_INET6);
+    qrattrs.setQueryTransportProtocol(IPPROTO_UDP);
+    qrattrs.setQueryOpCode(Opcode::QUERY_CODE);
+    qrattrs.setQueryEDNS(true, false);
+    qrattrs.setQueryDO(true);
+    qrattrs.answerHasSent();
+
+    counters.get_clear(names)->getValue(stats_map);
     EXPECT_EQ(0, stats_map.size());
 }
 

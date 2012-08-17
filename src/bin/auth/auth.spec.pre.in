@@ -110,6 +110,11 @@
         "command_args": []
       },
       {
+        "command_name": "getstats_delta",
+        "command_description": "Retrieve statistics data and clear statistics counters",
+        "command_args": []
+      },
+      {
         "command_name": "loadzone",
         "command_description": "(Re)load a specified zone",
         "command_args": [

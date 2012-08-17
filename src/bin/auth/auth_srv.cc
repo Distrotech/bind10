@@ -860,6 +860,11 @@ AuthSrv::getStatistics(const Counters::item_node_name_set_type& trees) const {
 }
 
 const Counters::item_tree_type
+AuthSrv::getStatistics_delta(const Counters::item_node_name_set_type& trees) {
+    return (impl_->counters_.get_clear(trees));
+}
+
+const Counters::item_tree_type
 AuthSrv::dumpStatistics() const {
     return (impl_->counters_.dump());
 }

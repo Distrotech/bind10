@@ -143,6 +143,17 @@ public:
     }
 };
 
+// Handle the "getstats_delta" command.  The argument is a list.
+class GetStatsDeltaCommand : public AuthCommand {
+public:
+    virtual ConstElementPtr exec(AuthSrv& server, isc::data::ConstElementPtr) {
+        LOG_DEBUG(auth_logger, DBG_AUTH_OPS, AUTH_RECEIVED_GETSTATS);
+        statistics::Counters::item_node_name_set_type trees;
+        trees.insert("auth.server.qr");
+        return (createAnswer(0, server.getStatistics_delta(trees)));
+    }
+};
+
 class StartDDNSForwarderCommand : public AuthCommand {
 public:
     virtual ConstElementPtr exec(AuthSrv& server, isc::data::ConstElementPtr) {
@@ -220,6 +231,8 @@ createAuthCommand(const string& command_id) {
         return (new ShutdownCommand());
     } else if (command_id == "getstats") {
         return (new GetStatsCommand());
+    } else if (command_id == "getstats_delta") {
+        return (new GetStatsDeltaCommand());
     } else if (command_id == "loadzone") {
         return (new LoadZoneCommand());
     } else if (command_id == "start_ddns_forwarder") {
