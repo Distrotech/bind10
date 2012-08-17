@@ -61,6 +61,14 @@ public:
     ///
     /// \throw isc::OutOfRange \a type is invalid
     const Value& get(const Type& type) const;
+
+    /// \brief Get the value of a counter item specified with \a type
+    /// and clear the counter.
+    ///
+    /// \param type %Counter item to get the value of
+    ///
+    /// \throw isc::OutOfRange \a type is invalid
+    const Value get_clear(const Type& type);
 };
 
 }   // namespace statistics

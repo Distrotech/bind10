@@ -50,6 +50,13 @@ TEST_F(CounterTest, createCounter) {
     EXPECT_EQ(counter.get(ITEM3), 0);
 }
 
+TEST_F(CounterTest, createCounter_clear) {
+    // Check if the all counters are initialized with 0
+    EXPECT_EQ(counter.get_clear(ITEM1), 0);
+    EXPECT_EQ(counter.get_clear(ITEM2), 0);
+    EXPECT_EQ(counter.get_clear(ITEM3), 0);
+}
+
 TEST_F(CounterTest, incrementCounterItem) {
     // Increment counters
     counter.inc(ITEM1);
@@ -75,6 +82,31 @@ TEST_F(CounterTest, incrementCounterItem) {
     EXPECT_EQ(counter.get(ITEM3), 6);
 }
 
+TEST_F(CounterTest, incrementCounterItem_getclear) {
+    // Increment counters
+    counter.inc(ITEM1);
+    counter.inc(ITEM2);
+    counter.inc(ITEM2);
+    counter.inc(ITEM3);
+    counter.inc(ITEM3);
+    counter.inc(ITEM3);
+    // Check if the counters have expected values
+    EXPECT_EQ(counter.get_clear(ITEM1), 1);
+    EXPECT_EQ(counter.get_clear(ITEM2), 2);
+    EXPECT_EQ(counter.get_clear(ITEM3), 3);
+    // Increment counters once more
+    counter.inc(ITEM1);
+    counter.inc(ITEM2);
+    counter.inc(ITEM2);
+    counter.inc(ITEM3);
+    counter.inc(ITEM3);
+    counter.inc(ITEM3);
+    // Check if the counters have expected values
+    EXPECT_EQ(counter.get_clear(ITEM1), 1);
+    EXPECT_EQ(counter.get_clear(ITEM2), 2);
+    EXPECT_EQ(counter.get_clear(ITEM3), 3);
+}
+
 TEST_F(CounterTest, invalidCounterItem) {
     // Incrementing out-of-bound counter will cause an isc::OutOfRange
     // exception
@@ -82,4 +114,7 @@ TEST_F(CounterTest, invalidCounterItem) {
     // Trying to get out-of-bound counter will cause an isc::OutOfRange
     // exception
     EXPECT_THROW(counter.get(NUMBER_OF_ITEMS), isc::OutOfRange);
+    // Trying to get_clear out-of-bound counter will cause an isc::OutOfRange
+    // exception
+    EXPECT_THROW(counter.get_clear(NUMBER_OF_ITEMS), isc::OutOfRange);
 }
