@@ -16,8 +16,8 @@
 #define COUNTER_H 1
 
 #include <exceptions/exceptions.h>
+#include <util/noncopyable.h>
 
-#include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include <vector>
@@ -25,7 +25,7 @@
 namespace isc {
 namespace statistics {
 
-class Counter : boost::noncopyable {
+class Counter : isc::util::noncopyable {
 public:
     typedef unsigned int Type;
     typedef unsigned int Value;

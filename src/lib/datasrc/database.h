@@ -31,6 +31,7 @@
 
 #include <dns/name.h>
 #include <exceptions/exceptions.h>
+#include <util/nonassignable.h>
 
 #include <map>
 #include <set>
@@ -59,7 +60,7 @@ namespace datasrc {
 ///     database, having multiple instances of this class. If the database
 ///     allows having multiple open queries at one connection, the connection
 ///     class may share it.
-class DatabaseAccessor : boost::noncopyable {
+class DatabaseAccessor : isc::util::noncopyable {
 public:
     /// \brief Data columns for by IteratorContext::getNext()
     ///
@@ -224,7 +225,7 @@ public:
     /// create a new connection (or, if it is more convenient, the connection
     /// itself can inherit both from DatabaseConnection and IteratorContext
     /// and just clone itself).
-    class IteratorContext : public boost::noncopyable {
+    class IteratorContext : public isc::util::noncopyable {
     public:
         /// \brief Destructor
         ///
@@ -874,7 +875,7 @@ public:
     /// different handling, so it can be subclassed.
     ///
     /// Methods directly corresponds to the ones in ZoneFinder.
-    class Finder : public ZoneFinder {
+    class Finder : isc::util::nonassignable, public ZoneFinder {
     public:
         /// \brief Constructor
         ///
@@ -1046,7 +1047,7 @@ public:
         /// and make the code more complicated.  By encapsulating and unifying
         /// the logic in a single separate class, we can keep the main
         /// search logic readable.
-        class FindDNSSECContext {
+        class FindDNSSECContext : isc::util::nonassignable {
         public:
             /// \brief Constructor for FindDNSSECContext class.
             ///
@@ -1162,7 +1163,7 @@ public:
         /// derived from that one, but as it is used just once in the code and
         /// will never be treated as a \c FindResult, the obscurity involved in
         /// deriving it from a parent class was deemed not worthwhile.
-        struct DelegationSearchResult {
+        struct DelegationSearchResult : isc::util::nonassignable {
             DelegationSearchResult(const ZoneFinder::Result param_code,
                                    const isc::dns::ConstRRsetPtr param_rrset,
                                    const isc::dns::ConstRRsetPtr param_ns,

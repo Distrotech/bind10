@@ -26,9 +26,8 @@
 #include <dns/message.h>
 #include <asiolink/simple_callback.h>
 #include <util/buffer.h>
+#include <util/noncopyable.h>
 #include <exceptions/exceptions.h>
-
-#include <boost/noncopyable.hpp>
 
 #include <stdint.h>
 
@@ -40,7 +39,7 @@ namespace asiodns {
 /// That means, the lookup handler must provide the answer right away.
 /// This allows for implementation with less overhead, compared with
 /// the UDPClass.
-class SyncUDPServer : public DNSServer, public boost::noncopyable {
+class SyncUDPServer : public DNSServer, public isc::util::noncopyable {
 public:
     /// \brief Constructor
     /// \param io_service the asio::io_service to work with

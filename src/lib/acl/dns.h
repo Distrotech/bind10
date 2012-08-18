@@ -22,6 +22,8 @@
 
 #include <cc/data.h>
 
+#include <util/nonassignable.h>
+
 #include <acl/ip_check.h>
 #include <acl/dnsname_check.h>
 #include <acl/loader.h>
@@ -63,7 +65,7 @@ namespace dns {
  * are the local (destination) IP address, the remote and local port numbers,
  * various fields of the DNS request (e.g. a particular header flag value).
  */
-struct RequestContext {
+struct RequestContext : isc::util::nonassignable {
     /// The constructor
     ///
     /// This is a trivial constructor that perform straightforward

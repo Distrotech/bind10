@@ -157,7 +157,7 @@ public:
     ///
     /// We use the default copy constructor intentionally.
     //@}
-    /// We use the default copy assignment operator intentionally.
+    /// We use the default assignment operator intentionally.
     ///
 
     ///

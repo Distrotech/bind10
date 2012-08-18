@@ -15,6 +15,7 @@
 #ifndef NSEC3PARAM_COMMON_H
 #define NSEC3PARAM_COMMON_H 1
 
+#include <util/nonassignable.h>
 #include <util/buffer.h>
 
 #include <stdint.h>
@@ -46,7 +47,7 @@ namespace nsec3 {
 /// flags and iterations field values.  This is used as the return value
 /// of the utility functions defined in this module so the caller can
 /// use it for constructing the corresponding RDATA.
-struct ParseNSEC3ParamResult {
+struct ParseNSEC3ParamResult : isc::util::nonassignable {
     ParseNSEC3ParamResult(uint8_t param_algorithm, uint8_t param_flags,
                           uint16_t param_iterations) :
         algorithm(param_algorithm), flags(param_flags),

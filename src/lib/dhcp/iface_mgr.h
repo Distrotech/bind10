@@ -16,12 +16,13 @@
 #define IFACE_MGR_H
 
 #include <asiolink/io_address.h>
+#include <util/noncopyable.h>
+
 #include <dhcp/dhcp4.h>
 #include <dhcp/dhcp6.h>
 #include <dhcp/pkt4.h>
 #include <dhcp/pkt6.h>
 
-#include <boost/noncopyable.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -68,7 +69,7 @@ public:
 /// interfaces, configured addresses, link-local addresses, and provides
 /// API for using sockets.
 ///
-class IfaceMgr : public boost::noncopyable {
+class IfaceMgr : public isc::util::noncopyable {
 public:
     /// type that defines list of addresses
     typedef std::vector<isc::asiolink::IOAddress> AddressCollection;

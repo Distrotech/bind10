@@ -15,6 +15,8 @@
 #ifndef ASIOLINK_IO_SERVICE_H
 #define ASIOLINK_IO_SERVICE_H 1
 
+#include <util/noncopyable.h>
+
 namespace asio {
     class io_service;
 }
@@ -27,16 +29,11 @@ class IOServiceImpl;
 /// \brief The \c IOService class is a wrapper for the ASIO \c io_service
 /// class.
 ///
-class IOService {
+class IOService : isc::util::noncopyable {
     ///
     /// \name Constructors and Destructor
     ///
-    /// Note: The copy constructor and the assignment operator are
-    /// intentionally defined as private, making this class non-copyable.
     //@{
-private:
-    IOService(const IOService& source);
-    IOService& operator=(const IOService& source);
 public:
     /// \brief The constructor
     IOService();

@@ -31,7 +31,6 @@
 #include <utility>
 #include <vector>
 
-#include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include <gtest/gtest.h>
@@ -39,6 +38,7 @@
 #include <exceptions/exceptions.h>
 
 #include <util/buffer.h>
+#include <util/noncopyable.h>
 #include <util/io/fd_share.h>
 #include <util/io/socketsession.h>
 #include <util/io/sockaddr_util.h>
@@ -58,7 +58,7 @@ const char TEST_DATA[] = "BIND10 test";
 
 // A simple helper structure to automatically close test sockets on return
 // or exception in a RAII manner.  non copyable to prevent duplicate close.
-struct ScopedSocket : boost::noncopyable {
+struct ScopedSocket : isc::util::noncopyable {
     ScopedSocket() : fd(-1) {}
     ScopedSocket(int sock) : fd(sock) {}
     ~ScopedSocket() {

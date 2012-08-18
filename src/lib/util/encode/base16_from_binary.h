@@ -29,6 +29,8 @@ namespace std{
 // See base32hex_from_binary.h for why we need base64_from...hpp here.
 #include <boost/archive/iterators/base64_from_binary.hpp>
 
+#include <util/nonassignable.h>
+
 namespace boost { 
 namespace archive {
 namespace iterators {
@@ -70,11 +72,8 @@ template<
     class Base, 
     class CharType = BOOST_DEDUCED_TYPENAME boost::iterator_value<Base>::type
 >
-class base16_from_binary : 
-    public transform_iterator<
-        detail::from_4_bit<CharType>,
-        Base
-    >
+class base16_from_binary : isc::util::nonassignable,
+    public transform_iterator<detail::from_4_bit<CharType>, Base>
 {
     friend class boost::iterator_core_access;
     typedef transform_iterator<

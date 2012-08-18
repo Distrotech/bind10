@@ -19,6 +19,7 @@
 #include <asiodns/dns_server.h>
 #include <dns/message.h>
 #include <util/buffer.h>
+#include <util/noncopyable.h>
 
 namespace isc {
 namespace asiodns {
@@ -36,16 +37,11 @@ namespace asiodns {
 /// a DNS query (e.g., from authoritative data source, cache, or upstream
 /// query).  After it has run, the OutputBuffer object passed to it
 /// should contain the answer to the query, in an internal representation.
-class DNSLookup {
+class DNSLookup : isc::util::noncopyable {
     ///
     /// \name Constructors and Destructor
     ///
-    /// Note: The copy constructor and the assignment operator are
-    /// intentionally defined as private, making this class non-copyable.
     //@{
-private:
-    DNSLookup(const DNSLookup& source);
-    DNSLookup& operator=(const DNSLookup& source);
 protected:
     /// \brief The default constructor.
     ///

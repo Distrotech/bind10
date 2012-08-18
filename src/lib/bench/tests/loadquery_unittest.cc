@@ -18,6 +18,7 @@
 #include <sstream>
 
 #include <util/buffer.h>
+#include <util/nonassignable.h>
 #include <dns/message.h>
 #include <dns/name.h>
 #include <dns/opcode.h>
@@ -53,7 +54,7 @@ protected:
 
 const char* const LoadQueryTest::DATA_DIR = TEST_DATA_DIR;
 
-class QueryInserter {
+class QueryInserter : isc::util::nonassignable {
 public:
     QueryInserter(stringstream& stream) : stream_(stream) {}
     void operator()(const QueryParam& query) const {
@@ -63,7 +64,7 @@ private:
     stringstream& stream_;
 };
 
-class QueryChecker {
+class QueryChecker : isc::util::nonassignable {
 public:
     QueryChecker(const vector<QueryParam>* expected, const RRClass& rrclass) :
         expected_(expected), rrclass_(rrclass)

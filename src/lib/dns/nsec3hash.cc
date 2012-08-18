@@ -20,11 +20,10 @@
 #include <string>
 #include <vector>
 
-#include <boost/noncopyable.hpp>
-
 #include <exceptions/exceptions.h>
 
 #include <util/buffer.h>
+#include <util/noncopyable.h>
 #include <util/encode/base32hex.h>
 #include <util/hash/sha1.h>
 
@@ -51,7 +50,7 @@ namespace {
 /// The implementation details are only open within this file, but to avoid
 /// an accidental error in this implementation we explicitly make it non
 /// copyable.
-class NSEC3HashRFC5155 : boost::noncopyable, public NSEC3Hash {
+class NSEC3HashRFC5155 : isc::util::noncopyable, public NSEC3Hash {
 private:
     // This is the algorithm number for SHA1/NSEC3 as defined in RFC5155.
     static const uint8_t NSEC3_HASH_SHA1 = 1;

@@ -17,6 +17,7 @@
 
 #include <asio.hpp>
 #include <asiolink/asiolink.h>
+#include <util/nonassignable.h>
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
@@ -63,7 +64,8 @@ protected:
     private:
         IntervalTimerTest* test_obj_;
     };
-    class TimerCallBackCancelDeleter : public std::unary_function<void, void> {
+    class TimerCallBackCancelDeleter : isc::util::nonassignable,
+        public std::unary_function<void, void> {
     public:
         TimerCallBackCancelDeleter(IntervalTimerTest* test_obj,
                                    IntervalTimer* timer,
@@ -98,7 +100,7 @@ protected:
         int count_;
         int prev_counter_;
     };
-    class TimerCallBackCanceller {
+    class TimerCallBackCanceller : isc::util::nonassignable {
     public:
         TimerCallBackCanceller(unsigned int& counter, IntervalTimer& itimer) :
             counter_(counter), itimer_(itimer)
@@ -111,7 +113,8 @@ protected:
         unsigned int& counter_;
         IntervalTimer& itimer_;
     };
-    class TimerCallBackOverwriter : public std::unary_function<void, void> {
+    class TimerCallBackOverwriter : isc::util::nonassignable,
+        public std::unary_function<void, void> {
     public:
         TimerCallBackOverwriter(IntervalTimerTest* test_obj,
                                 IntervalTimer& timer)

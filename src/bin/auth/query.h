@@ -17,8 +17,7 @@
 #include <exceptions/exceptions.h>
 #include <dns/rrset.h>
 #include <datasrc/zone.h>
-
-#include <boost/noncopyable.hpp>
+#include <util/noncopyable.h>
 
 #include <functional>
 #include <vector>
@@ -65,7 +64,7 @@ namespace auth {
 /// likely to misuse one of the classes instead of the other
 /// accidentally, and since it's considered a temporary development state,
 /// we keep this name at the moment.
-class Query : boost::noncopyable {
+class Query : isc::util::noncopyable {
 private:
     /// \brief Initial reserved size for the vectors in Query
     ///

@@ -16,6 +16,7 @@
 #define MESSAGE_ENTRY_H
 
 #include <vector>
+#include <util/noncopyable.h>
 #include <dns/message.h>
 #include <dns/rrset.h>
 #include <nsas/nsas_entry.h>
@@ -33,12 +34,7 @@ class RRsetEntry;
 ///
 /// The object of MessageEntry represents one response message
 /// answered to the resolver client.
-class MessageEntry : public NsasEntry<MessageEntry> {
-// Noncopyable
-private:
-    MessageEntry(const MessageEntry& source);
-    MessageEntry& operator=(const MessageEntry& source);
-
+class MessageEntry : isc::util::noncopyable, public NsasEntry<MessageEntry> {
     /// \brief Information to refer an RRset.
     ///
     /// There is no class information here, since the rrsets are cached in

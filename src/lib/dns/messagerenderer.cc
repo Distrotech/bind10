@@ -14,6 +14,7 @@
 
 #include <exceptions/exceptions.h>
 #include <util/buffer.h>
+#include <util/nonassignable.h>
 #include <dns/name.h>
 #include <dns/name_internal.h>
 #include <dns/labelsequence.h>
@@ -68,7 +69,7 @@ struct OffsetItem {
 /// this object, so we separate these using template to avoid unnecessary
 /// condition check.
 template <bool CASE_SENSITIVE>
-struct NameCompare {
+struct NameCompare : isc::util::nonassignable {
     /// \brief Constructor
     ///
     /// \param buffer The buffer for rendering used in the caller renderer

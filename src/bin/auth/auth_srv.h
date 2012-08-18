@@ -15,6 +15,7 @@
 #ifndef AUTH_SRV_H
 #define AUTH_SRV_H 1
 
+#include <cc/data.h>
 #include <config/ccsession.h>
 
 #include <datasrc/factory.h>
@@ -23,6 +24,8 @@
 
 #include <dns/message.h>
 #include <dns/opcode.h>
+
+#include <util/noncopyable.h>
 #include <util/buffer.h>
 
 #include <asiodns/dns_server.h>
@@ -87,16 +90,10 @@ class AuthSrvImpl;
 /// The design of this class is still in flux.  It's quite likely to change
 /// in future versions.
 ///
-class AuthSrv {
+class AuthSrv : isc::util::noncopyable {
     ///
-    /// \name Constructors, Assignment Operator and Destructor.
-    ///
-    /// Note: The copy constructor and the assignment operator are
-    /// intentionally defined as private.
+    /// \name Constructor and Destructor.
     //@{
-private:
-    AuthSrv(const AuthSrv& source);
-    AuthSrv& operator=(const AuthSrv& source);
 public:
     /// The constructor.
     ///

@@ -27,6 +27,7 @@
 #include <exceptions/exceptions.h>
 
 #include <util/buffer.h>
+#include <util/nonassignable.h>
 
 #include <dns/edns.h>
 #include <dns/exceptions.h>
@@ -203,7 +204,7 @@ namespace {
 // RenderSection object can get the number of rendered RRs via the
 // getTotalCount() method.
 template <typename T>
-struct RenderSection {
+struct RenderSection : isc::util::nonassignable {
     RenderSection(AbstractMessageRenderer& renderer, const bool partial_ok) :
         counter_(0), renderer_(renderer), partial_ok_(partial_ok),
         truncated_(false)
@@ -686,7 +687,9 @@ MessageImpl::parseQuestion(InputBuffer& buffer) {
 }
 
 namespace {
-struct MatchRR : public unary_function<RRsetPtr, bool> {
+struct MatchRR : isc::util::nonassignable,
+    public unary_function<RRsetPtr, bool>
+{
     MatchRR(const Name& name, const RRType& rrtype, const RRClass& rrclass) :
         name_(name), rrtype_(rrtype), rrclass_(rrclass) {}
     bool operator()(const RRsetPtr& rrset) const {
@@ -863,7 +866,7 @@ MessageImpl::addTSIG(Message::Section section, unsigned int count,
 
 namespace {
 template <typename T>
-struct SectionFormatter {
+struct SectionFormatter : isc::util::nonassignable {
     SectionFormatter(const Message::Section section, string& output) :
         section_(section), output_(output) {}
     void operator()(const T& entry) {

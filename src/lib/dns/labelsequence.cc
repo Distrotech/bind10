@@ -72,6 +72,19 @@ LabelSequence::LabelSequence(const LabelSequence& src,
     offsets_ = &buf[Name::MAX_WIRE];
 }
 
+const LabelSequence&
+LabelSequence::operator=(const LabelSequence& ls)
+{
+    if (this == &ls) {
+        return (*this);
+    }
+    if ((this->data_ != ls.data_) || (this->offsets_ != ls.offsets_)) {
+        isc_throw(BadValue, "Illegal LabelSequence assignment");
+    }
+    this->first_label_ = ls.first_label_;
+    this->last_label_ = ls.last_label_;
+    return (*this);
+}
 
 const uint8_t*
 LabelSequence::getData(size_t *len) const {

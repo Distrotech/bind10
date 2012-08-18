@@ -18,10 +18,10 @@
 #include <list>
 #include <string>
 
-#include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include <util/locks.h>
+#include <util/noncopyable.h>
 
 namespace isc {
 namespace util {
@@ -35,9 +35,9 @@ namespace util {
 /// should be done when the element is referenced.
 ///
 /// It is not intended that the class be copied, and the derivation from
-/// boost::noncopyable enforces this.
+/// isc::util::noncopyable enforces this.
 template <typename T>
-class LruList : boost::noncopyable {
+class LruList : isc::util::noncopyable {
 public:
     typedef typename std::list<boost::shared_ptr<T> > lru_list;
     typedef typename lru_list::iterator               iterator;

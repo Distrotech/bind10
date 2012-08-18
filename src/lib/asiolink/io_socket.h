@@ -23,6 +23,8 @@
 #include <functional>
 #include <string>
 
+#include <util/noncopyable.h>
+
 #include <exceptions/exceptions.h>
 
 namespace isc {
@@ -42,16 +44,11 @@ namespace asiolink {
 /// modules use it.  Also, at that point we may define a separate (visible)
 /// derived class for testing purposes rather than providing factory methods
 /// (i.e., getDummy variants below).
-class IOSocket {
+class IOSocket : isc::util::noncopyable {
     ///
     /// \name Constructors and Destructor
     ///
-    /// Note: The copy constructor and the assignment operator are
-    /// intentionally defined as private, making this class non-copyable.
     //@{
-private:
-    IOSocket(const IOSocket& source);
-    IOSocket& operator=(const IOSocket& source);
 protected:
     /// \brief The default constructor.
     ///

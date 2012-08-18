@@ -23,6 +23,8 @@
 // simply include the base64 header here.
 #include <boost/archive/iterators/binary_from_base64.hpp>
 
+#include <util/nonassignable.h>
+
 #include <exceptions/exceptions.h>
 
 namespace boost { 
@@ -82,11 +84,8 @@ template<
     class Base, 
     class CharType = BOOST_DEDUCED_TYPENAME boost::iterator_value<Base>::type
 >
-class binary_from_base32hex : public
-    transform_iterator<
-        detail::to_5_bit<CharType>,
-        Base
-    >
+class binary_from_base32hex : isc::util::nonassignable,
+    public transform_iterator<detail::to_5_bit<CharType>, Base>
 {
     friend class boost::iterator_core_access;
     typedef transform_iterator<

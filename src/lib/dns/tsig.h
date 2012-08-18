@@ -15,8 +15,7 @@
 #ifndef TSIG_H
 #define TSIG_H 1
 
-#include <boost/noncopyable.hpp>
-
+#include <util/noncopyable.h>
 #include <exceptions/exceptions.h>
 
 #include <dns/tsigerror.h>
@@ -172,7 +171,7 @@ public:
 /// direct or indirect dependencies.  The interface of \c sign() that takes
 /// opaque data (instead of, e.g., a \c Message or \c MessageRenderer object)
 /// is therefore a deliberate design decision.
-class TSIGContext : boost::noncopyable {
+class TSIGContext : isc::util::noncopyable {
 public:
     /// Internal state of context
     ///

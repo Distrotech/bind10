@@ -15,6 +15,7 @@
 #ifndef TSIGKEY_H
 #define TSIGKEY_H 1
 
+#include <util/nonassignable.h>
 #include <cryptolink/cryptolink.h>
 
 namespace isc {
@@ -258,7 +259,7 @@ public:
     ///
     /// See the description of \c find() for the semantics of the member
     /// variables.
-    struct FindResult {
+    struct FindResult : isc::util::nonassignable {
         FindResult(Result param_code, const TSIGKey* param_key) :
             code(param_code), key(param_key)
         {}

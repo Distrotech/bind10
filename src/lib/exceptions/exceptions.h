@@ -19,6 +19,8 @@
 #include <string>
 #include <sstream>
 
+#include <util/nonassignable.h>
+
 namespace isc {
 
 ///
@@ -28,7 +30,7 @@ namespace isc {
 /// exception such as the file name and line number where the exception is
 /// triggered.
 ///
-class Exception : public std::exception {
+class Exception : isc::util::nonassignable, public std::exception {
 public:
     ///
     /// \name Constructors and Destructor
@@ -55,11 +57,6 @@ public:
     /// The destructor
     virtual ~Exception() throw() {}
     //@}
-private:
-    ///
-    /// The assignment operator is intentionally disabled.
-    ///
-    void operator=(const Exception& src);
 
 public:
     ///

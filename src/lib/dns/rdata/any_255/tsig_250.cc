@@ -18,6 +18,7 @@
 
 #include <boost/lexical_cast.hpp>
 
+#include <util/nonassignable.h>
 #include <util/buffer.h>
 #include <util/strutil.h>
 #include <util/encode/base64.h>
@@ -38,7 +39,7 @@ using namespace isc::util::str;
 // BEGIN_RDATA_NAMESPACE
 
 /// This is a straightforward representation of TSIG RDATA fields.
-struct TSIG::TSIGImpl {
+struct TSIG::TSIGImpl : isc::util::nonassignable {
     TSIGImpl(const Name& algorithm, uint64_t time_signed, uint16_t fudge,
              vector<uint8_t>& mac, uint16_t original_id, uint16_t error,
              vector<uint8_t>& other_data) :

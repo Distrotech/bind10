@@ -57,7 +57,7 @@ getTSIGTime() {
 }
 }
 
-struct TSIGContext::TSIGContextImpl {
+struct TSIGContext::TSIGContextImpl : isc::util::nonassignable {
     TSIGContextImpl(const TSIGKey& key,
                     TSIGError error = TSIGError::NOERROR()) :
         state_(INIT), key_(key), error_(error),

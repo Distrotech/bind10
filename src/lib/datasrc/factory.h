@@ -20,7 +20,8 @@
 
 #include <cc/data.h>
 
-#include <boost/noncopyable.hpp>
+#include <util/noncopyable.h>
+
 #include <boost/shared_ptr.hpp>
 
 namespace isc {
@@ -60,7 +61,7 @@ typedef void ds_destructor(DataSourceClient* instance);
 ///       in other places than for dynamically loading datasources, then, apart
 ///       from moving it to another location, we also need to make the
 ///       exceptions raised more general.
-class LibraryContainer : boost::noncopyable {
+class LibraryContainer : isc::util::noncopyable {
 public:
     /// \brief Constructor
     ///
@@ -141,7 +142,7 @@ private:
 /// derived classes as well. Currently, the class is actually derived in some
 /// of the tests, which is rather unclean (as this class as written is really
 /// intended to be used directly).
-class DataSourceClientContainer : boost::noncopyable {
+class DataSourceClientContainer : isc::util::noncopyable {
 public:
     /// \brief Constructor
     ///

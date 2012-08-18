@@ -21,7 +21,7 @@
 #include <dhcpsrv/subnet.h>
 #include <dhcpsrv/alloc_engine.h>
 
-#include <boost/noncopyable.hpp>
+#include <util/noncopyable.h>
 
 #include <iostream>
 
@@ -43,7 +43,7 @@ namespace dhcp {
 ///
 /// For detailed explanation or relations between main(), ControlledDhcpv4Srv,
 /// Dhcpv4Srv and other classes, see \ref dhcpv4Session.
-class Dhcpv4Srv : public boost::noncopyable {
+class Dhcpv4Srv : public isc::util::noncopyable {
 
     public:
 

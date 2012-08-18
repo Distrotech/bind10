@@ -21,6 +21,7 @@
 #include <dns/rrclass.h>
 #include <dns/message.h>
 #include <exceptions/exceptions.h>
+#include <util/nonassignable.h>
 #include "message_cache.h"
 #include "rrset_cache.h"
 #include "local_zone_data.h"
@@ -79,7 +80,7 @@ public:
 ///
 /// \todo The resolver cache class should provide the interfaces for
 ///       loading, dumping and resizing.
-class ResolverClassCache {
+class ResolverClassCache : isc::util::nonassignable {
 public:
     /// \brief Default Constructor.
     ///

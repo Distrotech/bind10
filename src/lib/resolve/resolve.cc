@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <util/nonassignable.h>
+
 #include <resolve/resolve.h>
 
 #include <dns/message.h>
@@ -20,7 +22,7 @@
 using namespace isc::dns;
 
 namespace {
-    class SectionInserter {
+    class SectionInserter : isc::util::nonassignable {
     public:
         SectionInserter(MessagePtr message, const Message::Section sect) :
             message_(message), section_(sect)

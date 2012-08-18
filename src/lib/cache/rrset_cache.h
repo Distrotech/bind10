@@ -19,6 +19,7 @@
 #include <nsas/hash_table.h>
 
 #include <util/lru_list.h>
+#include <util/noncopyable.h>
 
 using namespace isc::nsas;
 
@@ -33,16 +34,11 @@ class RRsetEntry;
 ///
 /// \todo The rrset cache class should provide the interfaces for
 ///       loading, dumping and resizing.
-class RRsetCache{
+class RRsetCache : isc::util::noncopyable {
     ///
-    /// \name Constructors and Destructor
+    /// \name Constructor and Destructor
     ///
-    /// Note: The copy constructor and the assignment operator are intentionally
-    /// defined as private to make it uncopyable
     //@{
-private:
-    RRsetCache(const RRsetCache&);
-    RRsetCache& operator=(const RRsetCache&);
 public:
     /// \brief Constructor and Destructor
     ///

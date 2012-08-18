@@ -23,6 +23,7 @@
 
 #include <gtest/gtest.h>
 
+#include <util/nonassignable.h>
 #include <dns/masterload.h>
 #include <dns/name.h>
 #include <dns/rdata.h>
@@ -34,7 +35,8 @@ using namespace isc::dns;
 
 namespace {
 // A callback functor for masterLoad() commonly used for the following tests.
-class TestCallback : public unary_function<ConstRRsetPtr, void> {
+class TestCallback : isc::util::nonassignable,
+    public unary_function<ConstRRsetPtr, void> {
 public:
     TestCallback(vector<ConstRRsetPtr>& rrsets) : rrsets_(rrsets) {}
     void operator()(ConstRRsetPtr rrset) {
@@ -349,7 +351,8 @@ TEST_F(MasterLoadTest, loadBadRRText) {
 
 // This is a helper callback to test the case the input stream becomes bad
 // in the middle of processing.
-class StreamInvalidator : public unary_function<ConstRRsetPtr, void> {
+class StreamInvalidator : isc::util::nonassignable,
+    public unary_function<ConstRRsetPtr, void> {
 public:
     StreamInvalidator(stringstream& ss) : ss_(ss) {}
     void operator()(ConstRRsetPtr) {

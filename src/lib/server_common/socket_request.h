@@ -16,8 +16,8 @@
 #define SOCKET_REQUEST_H 1
 
 #include <exceptions/exceptions.h>
+#include <util/noncopyable.h>
 
-#include <boost/noncopyable.hpp>
 #include <utility>
 #include <string>
 #include <stdint.h>
@@ -43,7 +43,7 @@ namespace server_common {
 /// subclass when needed.
 ///
 /// \see socketRequestor function to access the object of this class.
-class SocketRequestor : boost::noncopyable {
+class SocketRequestor : isc::util::noncopyable {
 protected:
     /// \brief Protected constructor
     ///

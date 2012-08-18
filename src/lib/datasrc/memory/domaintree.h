@@ -26,6 +26,8 @@
 
 #include <exceptions/exceptions.h>
 #include <util/memory_segment.h>
+#include <util/noncopyable.h>
+#include <util/nonassignable.h>
 #include <dns/name.h>
 #include <dns/labelsequence.h>
 
@@ -80,7 +82,7 @@ class DomainTree;
 /// allocated space for the labels data is encoded by borrowing some
 /// bits of the "flags" field.
 template <typename T>
-class DomainTreeNode : public boost::noncopyable {
+class DomainTreeNode : public isc::util::noncopyable {
 private:
     /// The DomainTreeNode is meant for use from within DomainTree, so
     /// it has access to it.
@@ -685,16 +687,13 @@ DomainTreeNode<T>::predecessor() const {
 /// This is the reason why manipulation methods such as \c push() and \c pop()
 /// are private (and not shown in the doxygen document).
 template <typename T>
-class DomainTreeNodeChain {
+class DomainTreeNodeChain : isc::util::nonassignable {
     /// DomainTreeNodeChain is initialized by DomainTree, only DomainTree has
     /// knowledge to manipulate it.
     friend class DomainTree<T>;
 public:
-    /// \name Constructors and Assignment Operator.
+    /// \name Constructor.
     ///
-    /// \note The copy constructor and the assignment operator are
-    /// intentionally defined as private, making this class non copyable.
-    /// This may have to be changed in a future version with newer need.
     /// For now we explicitly disable copy to avoid accidental copy happens
     /// unintentionally.
     //{@
@@ -936,7 +935,7 @@ private:
  *  - add remove interface
  */
 template <typename T>
-class DomainTree : public boost::noncopyable {
+class DomainTree : public isc::util::noncopyable {
     friend class DomainTreeNode<T>;
 public:
     /// \brief The return value for the \c find() and insert() methods

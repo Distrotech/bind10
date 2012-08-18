@@ -12,12 +12,15 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+
 #include <util/encode/base32hex_from_binary.h>
 #include <util/encode/binary_from_base32hex.h>
 #include <util/encode/base16_from_binary.h>
 #include <util/encode/binary_from_base16.h>
 #include <util/encode/base32hex.h>
 #include <util/encode/base64.h>
+
+#include <util/nonassignable.h>
 
 #include <exceptions/exceptions.h>
 
@@ -114,7 +117,8 @@ const uint8_t BINARY_ZERO_CODE = 0;
 // Note: this class is intended to be used within this implementation file,
 // and assumes "base < base_end" on construction without validating the
 // arguments.  The behavior is undefined if this assumption doesn't hold.
-class EncodeNormalizer : public iterator<input_iterator_tag, uint8_t> {
+class EncodeNormalizer : isc::util::nonassignable,
+    public iterator<input_iterator_tag, uint8_t> {
 public:
     EncodeNormalizer(const vector<uint8_t>::const_iterator& base,
                      const vector<uint8_t>::const_iterator& base_end) :
@@ -169,7 +173,8 @@ private:
 // and for simplicity assumes "base < base_beginpad <= base_end" on
 // construction without validating the arguments.  The behavior is undefined
 // if this assumption doesn't hold.
-class DecodeNormalizer : public iterator<input_iterator_tag, char> {
+class DecodeNormalizer : isc::util::nonassignable,
+    public iterator<input_iterator_tag, char> {
 public:
     DecodeNormalizer(const char base_zero_code,
                      const string::const_iterator& base,

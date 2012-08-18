@@ -15,6 +15,8 @@
 #ifndef ASIOLINK_SIMPLE_CALLBACK_H
 #define ASIOLINK_SIMPLE_CALLBACK_H 1
 
+#include <util/noncopyable.h>
+
 #include <asiolink/io_message.h>
 
 namespace isc {
@@ -34,16 +36,11 @@ namespace asiolink {
 /// The \c SimpleCallback is expected to be used for basic, generic
 /// tasks such as checking for configuration changes.  It may also be
 /// used for testing purposes.
-class SimpleCallback {
+class SimpleCallback : isc::util::noncopyable {
     ///
     /// \name Constructors and Destructor
     ///
-    /// Note: The copy constructor and the assignment operator are
-    /// intentionally defined as private, making this class non-copyable.
     //@{
-private:
-    SimpleCallback(const SimpleCallback& source);
-    SimpleCallback& operator=(const SimpleCallback& source);
 protected:
     /// \brief The default constructor.
     ///

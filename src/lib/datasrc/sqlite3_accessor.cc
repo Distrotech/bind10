@@ -29,6 +29,7 @@
 #include <datasrc/factory.h>
 #include <datasrc/database.h>
 #include <util/filename.h>
+#include <util/nonassignable.h>
 
 using namespace std;
 using namespace isc::data;
@@ -237,7 +238,7 @@ private:
 // The bindXXX methods are straightforward wrappers for the corresponding
 // sqlite3_bind_xxx functions that make bindings with the given parameters
 // on the statement maintained in this class.
-class StatementProcessor {
+class StatementProcessor : isc::util::nonassignable {
 public:
     // desc will be used on failure in the what() message of the resulting
     // DataSourceError exception.

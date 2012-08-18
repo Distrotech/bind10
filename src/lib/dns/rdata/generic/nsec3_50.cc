@@ -21,6 +21,7 @@
 
 #include <boost/lexical_cast.hpp>
 
+#include <util/nonassignable.h>
 #include <util/encode/base32hex.h>
 #include <util/encode/hex.h>
 #include <util/buffer.h>
@@ -47,7 +48,7 @@ using namespace isc::util;
 // BEGIN_ISC_NAMESPACE
 // BEGIN_RDATA_NAMESPACE
 
-struct NSEC3Impl {
+struct NSEC3Impl : isc::util::nonassignable {
     // straightforward representation of NSEC3 RDATA fields
     NSEC3Impl(uint8_t hashalg, uint8_t flags, uint16_t iterations,
               vector<uint8_t>salt, vector<uint8_t>next,

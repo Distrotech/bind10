@@ -17,8 +17,8 @@
 
 #include <statistics/counter.h>
 #include <exceptions/exceptions.h>
+#include <util/noncopyable.h>
 
-#include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/iterator/iterator_facade.hpp>
@@ -30,11 +30,10 @@
 #include <iterator>
 #include <utility>
 
-
 namespace isc {
 namespace statistics {
 
-class CounterDictionary : boost::noncopyable {
+class CounterDictionary : isc::util::noncopyable {
 private:
     typedef boost::shared_ptr<isc::statistics::Counter> CounterPtr;
     typedef std::map<std::string, CounterPtr> DictionaryMap;

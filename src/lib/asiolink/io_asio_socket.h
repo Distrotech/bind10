@@ -89,12 +89,7 @@ class IOAsioSocket : public IOSocket {
     ///
     /// \name Constructors and Destructor
     ///
-    /// Note: The copy constructor and the assignment operator are
-    /// intentionally defined as private, making this class non-copyable.
     //@{
-private:
-    IOAsioSocket(const IOAsioSocket<C>& source);
-    IOAsioSocket& operator=(const IOAsioSocket<C>& source);
 protected:
     /// \brief The default constructor.
     ///

@@ -24,7 +24,7 @@
 #include <dhcpsrv/alloc_engine.h>
 #include <dhcpsrv/subnet.h>
 
-#include <boost/noncopyable.hpp>
+#include <util/noncopyable.h>
 
 #include <iostream>
 
@@ -43,7 +43,7 @@ namespace dhcp {
 /// @note Only one instance of this class is instantated as it encompasses
 ///       the whole operation of the server.  Nothing, however, enforces the
 ///       singleton status of the object.
-class Dhcpv6Srv : public boost::noncopyable {
+class Dhcpv6Srv : public isc::util::noncopyable {
 
 public:
     /// @brief defines if certain option may, must or must not appear

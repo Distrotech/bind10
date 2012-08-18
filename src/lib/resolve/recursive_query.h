@@ -16,6 +16,7 @@
 #define RECURSIVE_QUERY_H 1
 
 #include <util/buffer.h>
+#include <util/nonassignable.h>
 #include <asiodns/dns_service.h>
 #include <asiodns/dns_server.h>
 #include <nsas/nameserver_address_store.h>
@@ -78,7 +79,7 @@ public:
 /// The \c RecursiveQuery class provides a layer of abstraction around
 /// the ASIO code that carries out an upstream query.
 
-class RecursiveQuery {
+class RecursiveQuery : isc::util::nonassignable {
     ///
     /// \name Constructors
     ///

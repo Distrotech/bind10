@@ -17,9 +17,9 @@
 
 #include <string>
 #include <util/buffer.h>
+#include <util/noncopyable.h>
 #include <exceptions/exceptions.h>
 
-#include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #include <memory>
@@ -130,7 +130,7 @@ class CryptoLinkImpl;
 ///
 // Internal note: we can use this class later to initialize and manage
 // dynamic (PKCS#11) libs
-class CryptoLink : private boost::noncopyable {
+class CryptoLink : private isc::util::noncopyable {
 public:
     /// \brief Returns a reference to the singleton instance
     ///

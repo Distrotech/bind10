@@ -22,6 +22,7 @@
 #include <bench/benchmark.h>
 
 #include <util/buffer.h>
+#include <util/nonassignable.h>
 #include <dns/messagerenderer.h>
 #include <dns/rdata.h>
 #include <dns/rdatafields.h>
@@ -39,7 +40,7 @@ namespace {
 // (pointer) objects which should have a "toWire()" method.  In its run(),
 // it calls toWire() for each element of the vector.
 template <typename T>
-class RdataRenderBenchMark {
+class RdataRenderBenchMark : isc::util::nonassignable {
 public:
     RdataRenderBenchMark(const vector<T>& dataset) :
         dataset_(dataset),

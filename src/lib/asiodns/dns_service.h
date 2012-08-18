@@ -17,6 +17,8 @@
 
 #include <resolve/resolver_interface.h>
 
+#include <util/noncopyable.h>
+
 #include <asiolink/io_service.h>
 #include <asiolink/simple_callback.h>
 
@@ -109,17 +111,11 @@ public:
 /// logic that is shared between the authoritative and the recursive
 /// server implementations. As such, it handles asio, including config
 /// updates (through the 'Checkinprovider'), and listening sockets.
-class DNSService : public DNSServiceBase {
+class DNSService : isc::util::noncopyable, public DNSServiceBase {
     ///
     /// \name Constructors and Destructor
     ///
-    /// Note: The copy constructor and the assignment operator are
-    /// intentionally defined as private, making this class non-copyable.
     //@{
-private:
-    DNSService(const DNSService& source);
-    DNSService& operator=(const DNSService& source);
-
 private:
     // Bit or'ed all defined \c ServerFlag values.  Used internally for
     // compatibility check.  Note that this doesn't have to be used by

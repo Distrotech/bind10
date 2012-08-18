@@ -767,7 +767,7 @@ ModuleCCSession::sendStopping() {
     session_.group_sendmsg(cmd, "ConfigManager");
 }
 
-class ModuleCCSession::AsyncRecvRequest {
+class ModuleCCSession::AsyncRecvRequest : isc::util::nonassignable {
 public: // Everything is public here, as the definition is hidden anyway
     AsyncRecvRequest(const AsyncRecvCallback& cb, const string& rcp, int sq,
                      bool reply) :
@@ -805,7 +805,7 @@ ModuleCCSession::checkAsyncRecv(const ConstElementPtr& envelope,
             // We want the request to be still alive at the time we
             // call the callback. But we need to remove it on an exception
             // too, so we use the class. If just C++ had the finally keyword.
-            class RequestDeleter {
+            class RequestDeleter : isc::util::nonassignable {
             public:
                 RequestDeleter(AsyncRecvRequests& requests,
                                AsyncRecvRequestID& request) :

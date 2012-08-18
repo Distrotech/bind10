@@ -28,6 +28,8 @@
 #include <dns/rrclass.h>
 #include <dns/rrset.h>
 
+#include <util/nonassignable.h>
+
 #include <gtest/gtest.h>
 
 namespace isc {
@@ -123,7 +125,9 @@ namespace detail {
 // 'type covered' are different.  For simplicity, we only compare the types
 // of the first RRSIG RDATAs (and only check when they exist); if there's
 // further difference in the RDATA, the main comparison checks will detect it.
-struct RRsetMatch : public std::unary_function<isc::dns::ConstRRsetPtr, bool> {
+struct RRsetMatch : isc::util::nonassignable,
+    public std::unary_function<isc::dns::ConstRRsetPtr, bool>
+{
     RRsetMatch(isc::dns::ConstRRsetPtr target) : target_(target) {}
     bool operator()(isc::dns::ConstRRsetPtr rrset) const {
         if (rrset->getType() != target_->getType() ||
@@ -149,7 +153,7 @@ struct RRsetMatch : public std::unary_function<isc::dns::ConstRRsetPtr, bool> {
 
 // Helper callback functor for masterLoad() used in rrsetsCheck (stream
 // version)
-class RRsetInserter {
+class RRsetInserter : isc::util::nonassignable {
 public:
     RRsetInserter(std::vector<isc::dns::ConstRRsetPtr>& rrsets) :
         rrsets_(rrsets)

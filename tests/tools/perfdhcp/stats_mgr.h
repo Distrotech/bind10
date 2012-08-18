@@ -18,7 +18,6 @@
 #include <iostream>
 #include <map>
 
-#include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
@@ -27,6 +26,7 @@
 #include <boost/multi_index/mem_fun.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+#include <util/noncopyable.h>
 #include <exceptions/exceptions.h>
 
 namespace isc {
@@ -49,7 +49,7 @@ namespace perfdhcp {
 ///
 /// \param T class representing DHCPv4 or DHCPv6 packet.
 template <class T = dhcp::Pkt4>
-class StatsMgr : public boost::noncopyable {
+class StatsMgr : public isc::util::noncopyable {
 public:
 
     /// \brief Custom Counter

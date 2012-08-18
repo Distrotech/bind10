@@ -22,6 +22,7 @@
 #include <functional>
 #include <string>
 
+#include <util/noncopyable.h>
 #include <exceptions/exceptions.h>
 #include <asiolink/io_address.h>
 
@@ -43,16 +44,11 @@ namespace asiolink {
 /// Derived class implementations are completely hidden within the
 /// implementation.  User applications only get access to concrete
 /// \c IOEndpoint objects via the abstract interfaces.
-class IOEndpoint {
+class IOEndpoint : isc::util::noncopyable {
     ///
     /// \name Constructors and Destructor
     ///
-    /// Note: The copy constructor and the assignment operator are
-    /// intentionally defined as private, making this class non-copyable.
     //@{
-private:
-    IOEndpoint(const IOEndpoint& source);
-    IOEndpoint& operator=(const IOEndpoint& source);
 protected:
     /// \brief The default constructor.
     ///

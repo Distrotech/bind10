@@ -15,6 +15,7 @@
 #include <config.h>
 
 #include <util/io/socketsession.h>
+#include <util/noncopyable.h>
 
 #include <asiolink/asiolink.h>
 #include <asiolink/io_endpoint.h>
@@ -234,11 +235,7 @@ private:
 };
 }
 
-class AuthSrvImpl {
-private:
-    // prohibit copy
-    AuthSrvImpl(const AuthSrvImpl& source);
-    AuthSrvImpl& operator=(const AuthSrvImpl& source);
+class AuthSrvImpl : isc::util::noncopyable {
 public:
     AuthSrvImpl(AbstractXfroutClient& xfrout_client,
                 BaseSocketSessionForwarder& ddns_forwarder);

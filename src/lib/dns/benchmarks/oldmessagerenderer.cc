@@ -14,6 +14,7 @@
 
 #include <exceptions/exceptions.h>
 #include <util/buffer.h>
+#include <util/nonassignable.h>
 #include <dns/name.h>
 #include <dns/labelsequence.h>
 #include <oldmessagerenderer.h>
@@ -35,7 +36,7 @@ namespace {     // hide internal-only names from the public namespaces
 /// A \c MessageRendererImpl object maintains a set of the \c NameCompressNode
 /// objects, and searches the set for the position of the longest match
 /// (ancestor) name against each new name to be rendered into the buffer.
-struct NameCompressNode {
+struct NameCompressNode : isc::util::nonassignable {
     NameCompressNode(const OldMessageRenderer& renderer,
                      const OutputBuffer& buffer, const size_t pos,
                      const size_t len) :

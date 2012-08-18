@@ -35,11 +35,11 @@
 #include <string>
 #include <vector>
 
-#include <boost/noncopyable.hpp>
-
 #include <exceptions/exceptions.h>
 
 #include <util/buffer.h>
+#include <util/noncopyable.h>
+#include <util/nonassignable.h>
 
 #include "fd_share.h"
 #include "socketsession.h"
@@ -280,7 +280,7 @@ SocketSession::SocketSession(int sock, int family, int type, int protocol,
     }
 }
 
-struct SocketSessionReceiver::ReceiverImpl {
+struct SocketSessionReceiver::ReceiverImpl : isc::util::nonassignable {
     ReceiverImpl(int fd) : fd_(fd),
                            sa_local_(convertSockAddr(&ss_local_)),
                            sa_remote_(convertSockAddr(&ss_remote_)),
@@ -331,7 +331,7 @@ readFail(int actual_len, int expected_len) {
 // A helper container for a (socket) file descriptor used in
 // SocketSessionReceiver::pop that ensures the socket is closed unless it
 // can be safely passed to the caller via release().
-struct ScopedSocket : boost::noncopyable {
+struct ScopedSocket : isc::util::noncopyable {
     ScopedSocket(int fd) : fd_(fd) {}
     ~ScopedSocket() {
         if (fd_ >= 0) {

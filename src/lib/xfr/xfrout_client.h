@@ -19,6 +19,8 @@
 
 #include <string>
 
+#include <util/noncopyable.h>
+
 #include <exceptions/exceptions.h>
 
 namespace isc {
@@ -37,17 +39,11 @@ public:
 ///
 /// The intended primary usage of abstraction is to allow tests for the
 /// user class of XfroutClient without requiring actual communication.
-class AbstractXfroutClient {
+class AbstractXfroutClient : isc::util::noncopyable {
     ///
-    /// \name Constructors, Assignment Operator and Destructor.
+    /// \name Constructor and Destructor.
     ///
-    /// Note: The copy constructor and the assignment operator are
-    /// intentionally defined as private to make it explicit that this is a
-    /// pure base class.
     //@{
-private:
-    AbstractXfroutClient(const AbstractXfroutClient& source);
-    AbstractXfroutClient& operator=(const AbstractXfroutClient& source);
 protected:
     /// \brief The default constructor.
     ///

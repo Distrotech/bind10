@@ -17,6 +17,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <util/lru_list.h>
+#include <util/nonassignable.h>
 
 #include "hash_table.h"
 
@@ -32,7 +33,8 @@ namespace nsas {
 /// hash table without the need to be declared as "friend" or the need
 /// to define accessor methods.
 template <typename T>
-class HashDeleter : public isc::util::LruList<T>::Dropped {
+class HashDeleter : isc::util::nonassignable,
+    public isc::util::LruList<T>::Dropped {
 public:
 
     /// \brief Constructor
@@ -49,8 +51,7 @@ public:
     ///
     virtual ~HashDeleter(){}
 
-    // The default copy constructor and assignment operator are correct for
-    // this object.
+    // The default copy constructor is correct for this object.
 
     /// \brief Deletion Function
     ///

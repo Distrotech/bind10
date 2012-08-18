@@ -17,6 +17,7 @@
 
 #include <asiolink/io_message.h>
 #include <util/buffer.h>
+#include <util/noncopyable.h>
 #include <dns/message.h>
 
 namespace isc {
@@ -35,16 +36,11 @@ namespace asiodns {
 /// from a DNS Lookup provider function and readies it to be sent to the
 /// client.  After it has run, the OutputBuffer object passed to it should
 /// contain the answer to the query rendered into wire format.
-class DNSAnswer {
+class DNSAnswer : isc::util::noncopyable {
     ///
     /// \name Constructors and Destructor
     ///
-    /// Note: The copy constructor and the assignment operator are
-    /// intentionally defined as private, making this class non-copyable.
     //@{
-private:
-    DNSAnswer(const DNSAnswer& source);
-    DNSAnswer& operator=(const DNSAnswer& source);
 protected:
     /// \brief The default constructor.
     ///

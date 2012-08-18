@@ -20,6 +20,8 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <util/noncopyable.h>
+
 #include <exceptions/exceptions.h>
 
 #include <dns/rdata.h>
@@ -159,16 +161,11 @@ typedef boost::shared_ptr<RdataIterator> RdataIteratorPtr;
 ///     monolithic.)
 ///   - Do we need to allow the user to remove specific Rdata?
 ///     Probably not, according to the current usage of the BIND9 code.
-class AbstractRRset {
+class AbstractRRset : isc::util::noncopyable {
     ///
     /// \name Constructors and Destructor
     ///
-    /// Note: The copy constructor and the assignment operator are intentionally
-    /// defined as private to make it explicit that this is a pure base class.
     //@{
-private:
-    AbstractRRset(const AbstractRRset& source);
-    AbstractRRset& operator=(const AbstractRRset& source);
 protected:
     /// \brief The default constructor.
     ///
@@ -537,12 +534,10 @@ public:
 /// Most applications will simply go through the RDATA objects contained in
 /// an RRset, examining (and possibly using) each object, as one path
 /// operation.
-class RdataIterator {
+class RdataIterator : isc::util::noncopyable {
     ///
     /// \name Constructors and Destructor
     ///
-    /// Note: The copy constructor and the assignment operator are intentionally
-    /// defined as private to make it explicit that this is a pure base class.
     //@{
 protected:
     /// \brief The default constructor.
@@ -553,9 +548,6 @@ protected:
 public:
     /// \brief Destructor
     virtual ~RdataIterator() {}
-private:
-    RdataIterator(const RdataIterator& source);
-    RdataIterator& operator=(const RdataIterator& source);
     //@}
 
 public:
@@ -612,14 +604,7 @@ class BasicRRset : public AbstractRRset {
     ///
     /// \name Constructors and Destructor
     ///
-    /// Note: The copy constructor and the assignment operator are intentionally
-    /// defined as private.  The intended use case wouldn't require copies of
-    /// a \c BasicRRset object; once created, it would normally be used
-    /// as a \c const object (via references).
     //@{
-private:
-    BasicRRset(const BasicRRset& source);
-    BasicRRset& operator=(const BasicRRset& source);
 public:
     /// \brief Constructor from (mostly) fixed parameters of the RRset.
     ///

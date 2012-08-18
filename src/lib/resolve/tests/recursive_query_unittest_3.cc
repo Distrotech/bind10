@@ -26,6 +26,7 @@
 
 #include <util/buffer.h>
 #include <util/io_utilities.h>
+#include <util/nonassignable.h>
 
 #include <dns/question.h>
 #include <dns/message.h>
@@ -92,7 +93,8 @@ public:
 
 
 /// \brief Test fixture for the RecursiveQuery Test
-class RecursiveQueryTest3 : public virtual ::testing::Test
+class RecursiveQueryTest3 : isc::util::nonassignable,
+    public virtual ::testing::Test
 {
 public:
 

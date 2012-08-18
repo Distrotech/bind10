@@ -59,11 +59,6 @@ public:
 /// \param C Callback type
 template <typename C>
 class TCPSocket : public IOAsioSocket<C> {
-private:
-    /// \brief Class is non-copyable
-    TCPSocket(const TCPSocket&);
-    TCPSocket& operator=(const TCPSocket&);
-
 public:
 
     /// \brief Constructor from an ASIO TCP socket.

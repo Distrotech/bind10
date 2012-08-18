@@ -19,6 +19,8 @@
 #include <dns/rrset.h>
 #include <dns/rrtype.h>
 
+#include <util/nonassignable.h>
+
 #include <datasrc/exceptions.h>
 #include <datasrc/result.h>
 
@@ -123,7 +125,7 @@ protected:
     /// This helper structure is specifically expected to be used as an input
     /// for the construct of the \c Context class object used by derived
     /// ZoneFinder implementations.  This is therefore defined as protected.
-    struct ResultContext {
+    struct ResultContext : isc::util::nonassignable {
         ResultContext(Result code_param,
                       isc::dns::ConstRRsetPtr rrset_param,
                       FindResultFlags flags_param = RESULT_DEFAULT) :
@@ -179,7 +181,7 @@ public:
     /// ZoneFinder that originally performed the \c find() call, and expects
     /// the finder is valid throughout the lifetime of this object.  It's
     /// caller's responsibility to ensure that assumption.
-    class Context {
+    class Context : isc::util::nonassignable {
     public:
         /// \brief The constructor.
         ///
@@ -662,7 +664,7 @@ public:
     /// The idea is similar to that of \c FindContext, but \c findNSEC3() has
     /// special interface and semantics, we use a different structure to
     /// represent the result.
-    struct FindNSEC3Result {
+    struct FindNSEC3Result : isc::util::nonassignable {
         FindNSEC3Result(bool param_matched, uint8_t param_closest_labels,
                         isc::dns::ConstRRsetPtr param_closest_proof,
                         isc::dns::ConstRRsetPtr param_next_proof) :

@@ -15,6 +15,7 @@
 #ifndef RRSET_ENTRY_H
 #define RRSET_ENTRY_H
 
+#include <util/noncopyable.h>
 #include <dns/rrset.h>
 #include <dns/message.h>
 #include <dns/rrttl.h>
@@ -60,17 +61,12 @@ enum RRsetTrustLevel {
 /// The object of RRsetEntry represents one cached RRset.
 /// Each RRset entry may be refered using shared_ptr by several message
 /// entries.
-class RRsetEntry : public NsasEntry<RRsetEntry>
+class RRsetEntry : isc::util::noncopyable, public NsasEntry<RRsetEntry>
 {
     ///
-    /// \name Constructors and Destructor
+    /// \name Constructor and Destructor
     ///
-    /// Note: The copy constructor and the assignment operator are intentionally
-    /// defined as private to make it uncopyable
     //@{
-private:
-    RRsetEntry(const RRsetEntry&);
-    RRsetEntry& operator=(const RRsetEntry&);
 public:
     /// \brief Constructor
     /// \param rrset The RRset used to initialize the RRset entry.

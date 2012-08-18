@@ -15,8 +15,8 @@
 #ifndef SOCKETSESSION_H
 #define SOCKETSESSION_H 1
 
-#include <boost/noncopyable.hpp>
-
+#include <util/noncopyable.h>
+#include <util/nonassignable.h>
 #include <exceptions/exceptions.h>
 
 #include <string>
@@ -195,7 +195,7 @@ public:
 ///
 /// See the description of \ref SocketSessionUtility for other details of how
 /// the session forwarding works.
-class SocketSessionForwarder : boost::noncopyable,
+class SocketSessionForwarder : isc::util::noncopyable,
                                public BaseSocketSessionForwarder
 {
 public:
@@ -334,7 +334,7 @@ private:
 /// (e.g. a class or a function that constructs it) is responsible for validity
 /// of the data passed to the object.  See the description of
 /// \c SocketSessionReceiver::pop() for the specific case of that usage.
-class SocketSession {
+class SocketSession : isc::util::nonassignable {
 public:
     /// The constructor.
     ///
@@ -423,7 +423,7 @@ private:
 ///
 /// See the description of \ref SocketSessionUtility for other details of how
 /// the session forwarding works.
-class SocketSessionReceiver : boost::noncopyable {
+class SocketSessionReceiver : isc::util::noncopyable {
 public:
     /// The constructor.
     ///

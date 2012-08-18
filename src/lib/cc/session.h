@@ -19,6 +19,8 @@
 #include <cc/session_config.h>
 #include <cc/proto_defs.h>
 
+#include <util/noncopyable.h>
+
 #include <exceptions/exceptions.h>
 
 #include <string>
@@ -56,17 +58,11 @@ namespace isc {
         /// For simplicity we only define the methods that are necessary for
         /// existing test cases that use this base class.  Eventually we'll
         /// probably have to extend them.
-        class AbstractSession {
+        class AbstractSession : isc::util::noncopyable {
             ///
-            /// \name Constructors, Assignment Operator and Destructor.
+            /// \name Constructor and Destructor.
             ///
-            /// Note: The copy constructor and the assignment operator are
-            /// intentionally defined as private to make it explicit that
-            /// this is a pure base class.
             //@{
-        private:
-            AbstractSession(const AbstractSession& source);
-            AbstractSession& operator=(const AbstractSession& source);
         protected:
             /// \brief The default constructor.
             ///
@@ -114,10 +110,6 @@ namespace isc {
     class Session : public AbstractSession {
         private:
             SessionImpl* impl_;
-
-        private:
-            Session(const Session& source);
-            Session& operator=(const Session& source);
 
         public:
             Session(asio::io_service& ioservice);

@@ -15,13 +15,17 @@
 #ifndef DATA_SOURCE_CLIENT_H
 #define DATA_SOURCE_CLIENT_H 1
 
-#include <utility>
-
-#include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
-
 #include <datasrc/zone.h>
 #include <datasrc/zone_finder.h>
+
+#include <util/noncopyable.h>
+#include <util/nonassignable.h>
+
+#include <exceptions/exceptions.h>
+
+#include <boost/shared_ptr.hpp>
+
+#include <utility>
 
 /// \file
 /// Datasource clients
@@ -127,7 +131,7 @@ typedef boost::shared_ptr<ZoneIterator> ZoneIteratorPtr;
 ///
 /// \todo This class is still not complete. It will need more factory methods,
 /// e.g. for (re)loading a zone.
-class DataSourceClient : boost::noncopyable {
+class DataSourceClient : isc::util::noncopyable {
 public:
     /// \brief A helper structure to represent the search result of
     /// \c find().
@@ -144,7 +148,7 @@ public:
     ///
     /// See the description of \c find() for the semantics of the member
     /// variables.
-    struct FindResult {
+    struct FindResult : isc::util::nonassignable {
         FindResult(result::Result param_code,
                    const ZoneFinderPtr param_zone_finder) :
             code(param_code), zone_finder(param_zone_finder)

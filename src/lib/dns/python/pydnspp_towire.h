@@ -22,6 +22,7 @@
 
 #include <dns/messagerenderer.h>
 
+#include <util/nonassignable.h>
 #include <util/buffer.h>
 #include <util/python/pycppwrapper_util.h>
 
@@ -35,7 +36,7 @@ namespace python {
 // toWire() template implementation for two types of toWire() methods:
 // return an integer or have no return value.
 template <typename CPPCLASS>
-struct ToWireCallVoid {
+struct ToWireCallVoid : isc::util::nonassignable {
     ToWireCallVoid(CPPCLASS& cppobj) : cppobj_(cppobj) {}
     int operator()(AbstractMessageRenderer& renderer) const {
         cppobj_.toWire(renderer);
@@ -45,7 +46,7 @@ struct ToWireCallVoid {
 };
 
 template <typename CPPCLASS>
-struct ToWireCallInt {
+struct ToWireCallInt : isc::util::nonassignable {
     ToWireCallInt(CPPCLASS& cppobj) : cppobj_(cppobj) {}
     int operator()(AbstractMessageRenderer& renderer) const {
         return (cppobj_.toWire(renderer));

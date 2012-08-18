@@ -20,7 +20,6 @@
 
 #include <cstring>
 
-#include <boost/noncopyable.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -34,6 +33,7 @@
 #include <dns/rcode.h>
 
 #include <util/buffer.h>
+#include <util/noncopyable.h>
 #include <util/unittests/resolver.h>
 #include <dns/message.h>
 #include <dns/rdataclass.h>
@@ -132,7 +132,7 @@ struct ScopedAddrInfo {
 // operation so it can release the ownership of the FD.
 // This is made non copyable to avoid making an accidental copy, which could
 // result in duplicate close.
-struct ScopedSocket : private boost::noncopyable {
+struct ScopedSocket : private isc::util::noncopyable {
     ScopedSocket() : s_(-1) {}
     ScopedSocket(int s) : s_(s) {}
     ~ScopedSocket() {
@@ -372,7 +372,7 @@ protected:
     // This is a nonfunctional mockup of a DNSServer object.  Its purpose
     // is to resume after a recursive query or other asynchronous call
     // has completed.
-    class MockServer : public DNSServer {
+    class MockServer : isc::util::nonassignable, public DNSServer {
     public:
         explicit MockServer(IOService& io_service,
                             SimpleCallback* checkin = NULL,
