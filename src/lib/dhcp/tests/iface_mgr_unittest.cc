@@ -28,6 +28,7 @@
 #include <dhcp/dhcp4.h>
 
 using namespace std;
+using namespace asio::detail;
 using namespace isc;
 using namespace isc::asiolink;
 using namespace isc::dhcp;
@@ -229,14 +230,14 @@ TEST_F(IfaceMgrTest, sockets6) {
     pkt6.setIface(LOOPBACK);
 
     // bind multicast socket to port 10547
-    int socket1 = ifacemgr->openSocket(LOOPBACK, loAddr, 10547);
-    EXPECT_GT(socket1, 0); // socket > 0
+    socket_type socket1 = ifacemgr->openSocket(LOOPBACK, loAddr, 10547);
+    EXPECT_NE(socket1, invalid_socket); // socket > 0
 
     EXPECT_EQ(socket1, ifacemgr->getSocket(pkt6));
 
     // bind unicast socket to port 10548
-    int socket2 = ifacemgr->openSocket(LOOPBACK, loAddr, 10548);
-    EXPECT_GT(socket2, 0);
+    socket_type socket2 = ifacemgr->openSocket(LOOPBACK, loAddr, 10548);
+    EXPECT_NE(socket2, invalid_socket);
 
     // removed code for binding socket twice to the same address/port
     // as it caused problems on some platforms (e.g. Mac OS X)
@@ -251,21 +252,21 @@ TEST_F(IfaceMgrTest, socketsFromIface) {
     boost::scoped_ptr<NakedIfaceMgr> ifacemgr(new NakedIfaceMgr());
 
     // Open v6 socket on loopback interface and bind to port
-    int socket1 = 0;
+    socket_type socket1 = invalid_socket;
     EXPECT_NO_THROW(
         socket1 = ifacemgr->openSocketFromIface(LOOPBACK, PORT1, AF_INET6);
     );
     // Socket descriptor must be positive integer
-    EXPECT_GT(socket1, 0);
+    EXPECT_NE(socket1, invalid_socket);
     close(socket1);
 
     // Open v4 socket on loopback interface and bind to different port
-    int socket2 = 0;
+    socket_type socket2 = invalid_socket;
     EXPECT_NO_THROW(
         socket2 = ifacemgr->openSocketFromIface(LOOPBACK, PORT2, AF_INET);
     );
     // socket descriptor must be positive integer
-    EXPECT_GT(socket2, 0);
+    EXPECT_NE(socket2, invalid_socket);
     close(socket2);
 
 }
@@ -275,23 +276,23 @@ TEST_F(IfaceMgrTest, socketsFromAddress) {
     boost::scoped_ptr<NakedIfaceMgr> ifacemgr(new NakedIfaceMgr());
 
     // Open v6 socket on loopback interface and bind to port
-    int socket1 = 0;
+    socket_type socket1 = invalid_socket;
     IOAddress loAddr6("::1");
     EXPECT_NO_THROW(
         socket1 = ifacemgr->openSocketFromAddress(loAddr6, PORT1);
     );
     // socket descriptor must be positive integer
-    EXPECT_GT(socket1, 0);
+    EXPECT_NE(socket1, invalid_socket);
     close(socket1);
 
     // Open v4 socket on loopback interface and bind to different port
-    int socket2 = 0;
+    socket_type socket2 = invalid_socket;
     IOAddress loAddr("127.0.0.1");
     EXPECT_NO_THROW(
         socket2 = ifacemgr->openSocketFromAddress(loAddr, PORT2);
     );
     // socket descriptor must be positive integer
-    EXPECT_GT(socket2, 0);
+    EXPECT_NE(socket2, invalid_socket);
     close(socket2);
 }
 
@@ -301,21 +302,21 @@ TEST_F(IfaceMgrTest, socketsFromRemoteAddress) {
     // Open v6 socket to connect to remote address.
     // Loopback address is the only one that we know
     // so let's treat it as remote address.
-    int socket1 = 0;
+    socket_type socket1 = invalid_socket;
     IOAddress loAddr6("::1");
     EXPECT_NO_THROW(
         socket1 = ifacemgr->openSocketFromRemoteAddress(loAddr6, PORT1);
     );
-    EXPECT_GT(socket1, 0);
+    EXPECT_NE(socket1, invalid_socket);
     close(socket1);
 
     // Open v4 socket to connect to remote address.
-    int socket2 = 0;
+    socket_type socket2 = invalid_socket;
     IOAddress loAddr("127.0.0.1");
     EXPECT_NO_THROW(
         socket2 = ifacemgr->openSocketFromRemoteAddress(loAddr, PORT2);
     );
-    EXPECT_GT(socket2, 0);
+    EXPECT_NE(socket2, invalid_socket);
     close(socket2);
 }
 
@@ -331,13 +332,13 @@ TEST_F(IfaceMgrTest, DISABLED_sockets6Mcast) {
     IOAddress mcastAddr("ff02::1:2");
 
     // bind multicast socket to port 10547
-    int socket1 = ifacemgr->openSocket(LOOPBACK, mcastAddr, 10547);
-    EXPECT_GT(socket1, 0); // socket > 0
+    socket_type socket1 = ifacemgr->openSocket(LOOPBACK, mcastAddr, 10547);
+    EXPECT_NE(socket1, invalid_socket); // socket > 0
 
     // expect success. This address/port is already bound, but
     // we are using SO_REUSEADDR, so we can bind it twice
-    int socket2 = ifacemgr->openSocket(LOOPBACK, mcastAddr, 10547);
-    EXPECT_GT(socket2, 0);
+    socket_type socket2 = ifacemgr->openSocket(LOOPBACK, mcastAddr, 10547);
+    EXPECT_NE(socket2, invalid_socket);
 
     // there's no good way to test negative case here.
     // we would need non-multicast interface. We will be able
@@ -359,14 +360,14 @@ TEST_F(IfaceMgrTest, sendReceive6) {
 
     // let's assume that every supported OS have lo interface
     IOAddress loAddr("::1");
-    int socket1 = 0, socket2 = 0;
+    socket_type socket1 = invalid_socket, socket2 = invalid_socket;
     EXPECT_NO_THROW(
         socket1 = ifacemgr->openSocket(LOOPBACK, loAddr, 10547);
         socket2 = ifacemgr->openSocket(LOOPBACK, loAddr, 10546);
     );
 
-    EXPECT_GT(socket1, 0);
-    EXPECT_GT(socket2, 0);
+    EXPECT_NE(socket1, invalid_socket);
+    EXPECT_NE(socket2, invalid_socket);
 
 
     // prepare dummy payload
@@ -416,14 +417,14 @@ TEST_F(IfaceMgrTest, sendReceive4) {
 
     // let's assume that every supported OS have lo interface
     IOAddress loAddr("127.0.0.1");
-    int socket1 = 0, socket2 = 0;
+    socket_type socket1 = invalid_socket, socket2 = invalid_socket;
     EXPECT_NO_THROW(
         socket1 = ifacemgr->openSocket(LOOPBACK, loAddr, DHCP4_SERVER_PORT + 10000);
         socket2 = ifacemgr->openSocket(LOOPBACK, loAddr, DHCP4_SERVER_PORT + 10000 + 1);
     );
 
-    EXPECT_GE(socket1, 0);
-    EXPECT_GE(socket2, 0);
+    EXPECT_NE(socket1, invalid_socket);
+    EXPECT_NE(socket2, invalid_socket);
 
     boost::shared_ptr<Pkt4> sendPkt(new Pkt4(DHCPDISCOVER, 1234) );
 
@@ -506,13 +507,13 @@ TEST_F(IfaceMgrTest, socket4) {
     // Let's assume that every supported OS have lo interface.
     IOAddress loAddr("127.0.0.1");
     // Use unprivileged port (it's convenient for running tests as non-root).
-    int socket1 = 0;
+    socket_type socket1 = invalid_socket;
 
     EXPECT_NO_THROW(
         socket1 = ifacemgr->openSocket(LOOPBACK, loAddr, DHCP4_SERVER_PORT + 10000);
     );
 
-    EXPECT_GT(socket1, 0);
+    EXPECT_GE(socket1, invalid_socket);
 
     Pkt4 pkt(DHCPDISCOVER, 1234);
     pkt.setIface(LOOPBACK);

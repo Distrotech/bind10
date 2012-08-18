@@ -22,7 +22,7 @@ import struct
 import socket
 from isc.net.addr import IPAddr
 import isc.log
-from libutil_io_python import send_fd
+from libutil_io_python import send_socket
 from isc.bind10.sockcreator import Parser, CreatorError, WrappedSocket
 
 class FakeCreator:
@@ -302,7 +302,7 @@ class WrapTests(unittest.TestCase):
         t2 = WrappedSocket(t2)
 
         # Transfer the descriptor
-        send_fd(t1.fileno(), p1.fileno())
+        send_socket(t1.fileno(), p1.fileno())
         p1.close()
         p1 = socket.fromfd(t2.read_fd(), socket.AF_UNIX, socket.SOCK_STREAM)
 

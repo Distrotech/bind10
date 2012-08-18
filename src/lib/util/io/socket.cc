@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#include "fd.h"
+#include "socket.h"
 
 #include <unistd.h>
 #include <cerrno>
@@ -22,13 +22,13 @@ namespace util {
 namespace io {
 
 bool
-write_data(const int fd, const void *buffer_v, const size_t length) {
+write_data(const socket_type s, const void *buffer_v, const size_t length) {
     const unsigned char* buffer(static_cast<const unsigned char*>(buffer_v));
     size_t remaining = length;  // Amount remaining to be written
 
     // Just keep writing until all is written
     while (remaining > 0) {
-        const int written = write(fd, buffer, remaining);
+        const int written = write(s, buffer, remaining);
         if (written == -1) {
             if (errno == EINTR) { // Just keep going
                 continue;
@@ -53,12 +53,12 @@ write_data(const int fd, const void *buffer_v, const size_t length) {
 }
 
 ssize_t
-read_data(const int fd, void *buffer_v, const size_t length) {
+read_data(const socket_type s, void *buffer_v, const size_t length) {
     unsigned char* buffer(static_cast<unsigned char*>(buffer_v));
     size_t remaining = length;   // Amount remaining to be read
 
     while (remaining > 0) {
-        const int amount = read(fd, buffer, remaining);
+        const int amount = read(s, buffer, remaining);
         if (amount == -1) {
             if (errno == EINTR) { // Continue on interrupted call
                 continue;

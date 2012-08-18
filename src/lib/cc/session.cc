@@ -48,6 +48,7 @@
 #include <cc/session.h>
 
 using namespace std;
+using asio::detail::socket_type;
 using namespace isc::cc;
 using namespace isc::data;
 
@@ -88,7 +89,7 @@ public:
     void startRead(boost::function<void()> user_handler);
     void setTimeout(size_t seconds) { timeout_ = seconds; };
     size_t getTimeout() const { return timeout_; };
-    int getSocketDesc();
+    socket_type getSocketDesc();
 
     long int sequence_; // the next sequence number to use
     std::string lname_;
@@ -255,7 +256,7 @@ SessionImpl::internalRead(const asio::error_code& error,
     }
 }
 
-int
+socket_type
 SessionImpl::getSocketDesc() {
     /// @todo boost 1.42 uses native() method, but it is deprecated
     /// in 1.49 and native_handle() is recommended instead
@@ -284,7 +285,7 @@ Session::startRead(boost::function<void()> read_callback) {
     impl_->startRead(read_callback);
 }
 
-int
+socket_type
 Session::getSocketDesc() const {
     return impl_->getSocketDesc();
 }

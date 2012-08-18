@@ -125,10 +125,12 @@ TEST_F(AuthConfigTest, listenAddressConfig) {
     // listenAddressConfig should have attempted to create 4 DNS server
     // objects: two IP addresses, TCP and UDP for each.  For UDP, the "SYNC_OK"
     // option should have been specified.
-    EXPECT_EQ(2, dnss_.getTCPFdParams().size());
-    EXPECT_EQ(2, dnss_.getUDPFdParams().size());
-    EXPECT_EQ(DNSService::SERVER_SYNC_OK, dnss_.getUDPFdParams().at(0).options);
-    EXPECT_EQ(DNSService::SERVER_SYNC_OK, dnss_.getUDPFdParams().at(1).options);
+    EXPECT_EQ(2, dnss_.getTCPSocketParams().size());
+    EXPECT_EQ(2, dnss_.getUDPSocketParams().size());
+    EXPECT_EQ(DNSService::SERVER_SYNC_OK,
+              dnss_.getUDPSocketParams().at(0).options);
+    EXPECT_EQ(DNSService::SERVER_SYNC_OK,
+              dnss_.getUDPSocketParams().at(1).options);
 }
 
 class StatisticsIntervalConfigTest : public AuthConfigTest {

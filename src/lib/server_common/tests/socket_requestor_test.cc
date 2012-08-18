@@ -33,8 +33,8 @@
 #include <boost/foreach.hpp>
 #include <boost/scoped_ptr.hpp>
 
-#include <util/io/fd.h>
-#include <util/io/fd_share.h>
+#include <util/io/socket.h>
+#include <util/io/socket_share.h>
 
 using namespace isc::data;
 using namespace isc::config;
@@ -60,7 +60,7 @@ TEST(SocketRequestorAccess, initialized) {
         virtual SocketID requestSocket(Protocol, const std::string&, uint16_t,
                                        ShareMode, const std::string&)
         {
-            return (SocketID(0, "")); // Just to silence warnings
+            return (SocketID(invalid_socket, "")); // Just to silence warnings
         }
     };
     DummyRequestor requestor;
@@ -325,7 +325,7 @@ TEST_F(SocketRequestorTest, testBadSocketReleaseAnswers) {
 // send expected data.
 // It returns true when the timeout is set successfully; otherwise false.
 bool
-setRecvTimo(int s) {
+setRecvTimo(socket_type s) {
     const struct timeval timeo = { 10, 0 }; // 10sec, arbitrary choice
     if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &timeo, sizeof(timeo)) == 0) {
         return (true);
@@ -344,7 +344,7 @@ setRecvTimo(int s) {
 // connection, and then close the socket
 class TestSocket {
 public:
-    TestSocket() : fd_(-1) {
+    TestSocket() : sd_(invalid_socket) {
         path_ = strdup("test_socket.XXXXXX");
         // Misuse mkstemp to generate a file name.
         const int f = mkstemp(path_);
@@ -366,9 +366,9 @@ public:
             free(path_);
             path_ = NULL;
         }
-        if (fd_ != -1) {
-            close(fd_);
-            fd_ = -1;
+        if (sd_ != invalid_socket) {
+            close(sd_);
+            sd_ = invalid_socket;
         }
     }
 
@@ -383,15 +383,15 @@ public:
     // performing tests that could result in a dead lock.
     bool run(const std::vector<std::pair<std::string, int> >& data) {
         create();
-        const bool timo_ok = setRecvTimo(fd_);
+        const bool timo_ok = setRecvTimo(sd_);
         const int child_pid = fork();
         if (child_pid == 0) {
             serve(data);
             exit(0);
         } else {
-            // parent does not need fd anymore
-            close(fd_);
-            fd_ = -1;
+            // parent does not need sd_ anymore
+            close(sd_);
+            sd_ = invalid_socket;
         }
         return (timo_ok);
     }
@@ -399,8 +399,8 @@ private:
     // Actually create the socket and listen on it
     void
     create() {
-        fd_ = socket(AF_UNIX, SOCK_STREAM, 0);
-        if (fd_ == -1) {
+        sd_ = socket(AF_UNIX, SOCK_STREAM, 0);
+        if (sd_ == invalid_socket) {
             isc_throw(Unexpected, "Unable to create socket");
         }
         struct sockaddr_un socket_address;
@@ -420,13 +420,13 @@ private:
         // a domain socket connection. This contains a minor race condition
         // but for the purposes of this test it should be small enough
         unlink(path_);
-        if (bind(fd_, (const struct sockaddr*)&socket_address, len) == -1) {
+        if (bind(sd_, (const struct sockaddr*)&socket_address, len) == -1) {
             isc_throw(Unexpected,
                       "unable to bind to test domain socket " << path_ <<
                       ": " << strerror(errno));
         }
 
-        if (listen(fd_, 1) == -1) {
+        if (listen(sd_, 1) == -1) {
             isc_throw(Unexpected,
                       "unable to listen on test domain socket " << path_ <<
                       ": " << strerror(errno));
@@ -436,7 +436,7 @@ private:
     // Accept one connection, then for each value of the vector,
     // read the socket token from the connection and match the string
     // part of the vector element, and send the integer part of the element
-    // using send_fd() (prepended by a status code 'ok').  For simplicity
+    // using send_socket() (prepended by a status code 'ok').  For simplicity
     // we assume the tokens are 4 bytes long; if the test case uses a
     // different size of token the test will fail.
     //
@@ -445,17 +445,17 @@ private:
     // CREATOR_SOCKET_UNAVAILABLE)
     // when the value is -2, it will send a byte signaling CREATOR_SOCKET_OK
     // first, and then one byte from some string (i.e. bad data, not using
-    // send_fd())
+    // send_socket())
     //
-    // NOTE: client_fd could leak on exception.  This should be cleaned up.
+    // NOTE: client_sd could leak on exception.  This should be cleaned up.
     // See the note about SocketSessionReceiver in socket_request.cc.
     void
     serve(const std::vector<std::pair<std::string, int> >& data) {
-        const int client_fd = accept(fd_, NULL, NULL);
-        if (client_fd == -1) {
+        const socket_type client_sd = accept(sd_, NULL, NULL);
+        if (client_sd == invalid_socket) {
             isc_throw(Unexpected, "Error in accept(): " << strerror(errno));
         }
-        if (!setRecvTimo(client_fd)) {
+        if (!setRecvTimo(client_sd)) {
             // In the loop below we do blocking read.  To avoid deadlock
             // when the parent is buggy we'll skip it unless we can
             // set a read timeout on the socket.
@@ -465,7 +465,7 @@ private:
         BOOST_FOREACH(DataPair cur_data, data) {
             char buf[5];
             memset(buf, 0, 5);
-            if (isc::util::io::read_data(client_fd, buf, 4) != 4) {
+            if (isc::util::io::read_data(client_sd, buf, 4) != 4) {
                 isc_throw(Unexpected, "unable to receive socket token");
             }
             if (cur_data.first != buf) {
@@ -476,34 +476,34 @@ private:
             bool result;
             if (cur_data.second == -1) {
                 // send 'CREATOR_SOCKET_UNAVAILABLE'
-                result = isc::util::io::write_data(client_fd, "0\n", 2);
+                result = isc::util::io::write_data(client_sd, "0\n", 2);
             } else if (cur_data.second == -2) {
                 // send 'CREATOR_SOCKET_OK' first
-                result = isc::util::io::write_data(client_fd, "1\n", 2);
+                result = isc::util::io::write_data(client_sd, "1\n", 2);
                 if (result) {
-                    if (send(client_fd, "a", 1, 0) != 1) {
+                    if (send(client_sd, "a", 1, 0) != 1) {
                         result = false;
                     }
                 }
             } else {
                 // send 'CREATOR_SOCKET_OK' first
-                result = isc::util::io::write_data(client_fd, "1\n", 2);
+                result = isc::util::io::write_data(client_sd, "1\n", 2);
                 if (result) {
-                    if (isc::util::io::send_fd(client_fd,
-                                               cur_data.second) != 0) {
+                    if (isc::util::io::send_socket(client_sd,
+                                                   cur_data.second) != 0) {
                         result = false;
                     }
                 }
             }
             if (!result) {
-                isc_throw(Exception, "Error in send_fd(): " <<
+                isc_throw(Exception, "Error in send_socket(): " <<
                           strerror(errno));
             }
         }
-        close(client_fd);
+        close(client_sd);
     }
 
-    int fd_;
+    socket_type sd_;
     char* path_;
 };
 

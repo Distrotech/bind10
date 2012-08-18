@@ -18,6 +18,7 @@
 #include <exceptions/exceptions.h>
 
 #include <boost/noncopyable.hpp>
+#include <asio.hpp>
 #include <utility>
 #include <string>
 #include <stdint.h>
@@ -62,11 +63,11 @@ public:
 
     /// \brief A representation of received socket
     ///
-    /// The pair holds two parts. The OS-level file descriptor acting as the
+    /// The pair holds two parts. The OS-level descriptor acting as the
     /// socket (you might want to use it directly with functions like recv,
     /// or fill it into an asio socket). The other part is the token
     /// representing the socket, which allows it to be given up again.
-    typedef std::pair<int, std::string> SocketID;
+    typedef std::pair<asio::detail::socket_type, std::string> SocketID;
 
     /// \brief The protocol of requested socket
     ///

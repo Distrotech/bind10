@@ -24,8 +24,11 @@
 #include <cstring>
 #include <vector>
 
-#include <sys/socket.h>
 #include <stdint.h>
+
+#include <asio.hpp>
+
+using namespace asio::detail;
 
 namespace isc {
 namespace util {
@@ -66,7 +69,7 @@ public:
     // so that the test code can check the values later via the getter
     // methods.  Complete deep copy will be created, so the caller doesn't
     // have to keep the parameters valid after the call to this method.
-    virtual void push(int sock, int family, int type, int protocol,
+    virtual void push(socket_type sock, int family, int type, int protocol,
                       const struct sockaddr& local_end,
                       const struct sockaddr& remote_end,
                       const void* data, size_t data_len)
@@ -116,7 +119,7 @@ public:
     // sense; it was originally filled with the binary image of another
     // sockaddr structure, and we are going to return the image opaquely
     // as a sockaddr structure without touching the data.
-    int getPushedSock() const { return (pushed_sock_); }
+    socket_type getPushedSock() const { return (pushed_sock_); }
     int getPushedFamily() const { return (pushed_family_); }
     int getPushedType() const { return (pushed_type_); }
     int getPushedProtocol() const { return (pushed_protocol_); }
@@ -135,7 +138,7 @@ private:
     bool connect_ok_;
     bool push_ok_;
     bool close_ok_;
-    int pushed_sock_;
+    socket_type pushed_sock_;
     int pushed_family_;
     int pushed_type_;
     int pushed_protocol_;

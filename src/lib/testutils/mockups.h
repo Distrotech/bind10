@@ -29,6 +29,8 @@
 #include <utility>
 #include <vector>
 
+using asio::detail::socket_type;
+
 namespace isc {
 namespace testutils {
 
@@ -108,19 +110,20 @@ private:
 // to addServerXXX methods so the test code subsequently checks the parameters.
 class MockDNSService : public isc::asiodns::DNSServiceBase {
 public:
-    // A helper tuple of parameters passed to addServerUDPFromFD().
-    struct UDPFdParams {
-        int fd;
+    // A helper tuple of parameters passed to addServerUDPFromSD().
+    struct UDPSocketParams {
+        socket_type sd;
         int af;
         ServerFlag options;
     };
 
-    virtual void addServerTCPFromFD(int fd, int af) {
-        tcp_fd_params_.push_back(std::pair<int, int>(fd, af));
+    virtual void addServerTCPFromSD(socket_type sd, int af) {
+        tcp_params_.push_back(std::pair<socket_type, int>(sd, af));
     }
-    virtual void addServerUDPFromFD(int fd, int af, ServerFlag options) {
-        UDPFdParams params = { fd, af, options };
-        udp_fd_params_.push_back(params);
+    virtual void addServerUDPFromSD(socket_type sd, int af,
+                                    ServerFlag options) {
+        UDPSocketParams params = { sd, af, options };
+        udp_params_.push_back(params);
     }
     virtual void clearServers() {}
 
@@ -131,16 +134,17 @@ public:
 
     // These two allow the tests to check how the servers have been created
     // through this object.
-    const std::vector<std::pair<int, int> >& getTCPFdParams() const {
-        return (tcp_fd_params_);
+    const std::vector<std::pair<socket_type, int> >&
+    getTCPSocketParams() const {
+        return (tcp_params_);
     }
-    const std::vector<UDPFdParams>& getUDPFdParams() const {
-        return (udp_fd_params_);
+    const std::vector<UDPSocketParams>& getUDPSocketParams() const {
+        return (udp_params_);
     }
 
 private:
-    std::vector<std::pair<int, int> > tcp_fd_params_;
-    std::vector<UDPFdParams> udp_fd_params_;
+    std::vector<std::pair<socket_type, int> > tcp_params_;
+    std::vector<UDPSocketParams> udp_params_;
 };
 
 // A nonoperative DNSServer object to be used in calls to processMessage().
@@ -179,7 +183,7 @@ public:
         is_connected_ = false;
     }
 
-    virtual int sendXfroutRequestInfo(int, const void*, uint16_t) {
+    virtual int sendXfroutRequestInfo(socket_type, const void*, uint16_t) {
         if (!send_ok_) {
             isc_throw(isc::xfr::XfroutError,
                        "xfrout connection send is disabled for test");

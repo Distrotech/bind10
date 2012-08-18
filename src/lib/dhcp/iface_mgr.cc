@@ -30,6 +30,7 @@
 #include <util/io/pktinfo_utilities.h>
 
 using namespace std;
+using namespace asio::detail;
 using namespace isc::asiolink;
 using namespace isc::util::io::internal;
 
@@ -110,7 +111,7 @@ bool IfaceMgr::Iface::delAddress(const isc::asiolink::IOAddress& addr) {
     return (false);
 }
 
-bool IfaceMgr::Iface::delSocket(uint16_t sockfd) {
+bool IfaceMgr::Iface::delSocket(socket_type sockfd) {
     list<SocketInfo>::iterator sock = sockets_.begin();
     while (sock!=sockets_.end()) {
         if (sock->sockfd_ == sockfd) {
@@ -126,7 +127,7 @@ bool IfaceMgr::Iface::delSocket(uint16_t sockfd) {
 IfaceMgr::IfaceMgr()
     :control_buf_len_(CMSG_SPACE(sizeof(struct in6_pktinfo))),
      control_buf_(new char[control_buf_len_]),
-     session_socket_(INVALID_SOCKET), session_callback_(NULL)
+     session_socket_(invalid_socket), session_callback_(NULL)
 {
 
     cout << "IfaceMgr initialization." << endl;
@@ -228,7 +229,7 @@ void IfaceMgr::stubDetectIfaces() {
 }
 
 bool IfaceMgr::openSockets4(const uint16_t port) {
-    int sock;
+    socket_type sock;
     int count = 0;
 
     for (IfaceCollection::iterator iface = ifaces_.begin();
@@ -256,7 +257,7 @@ bool IfaceMgr::openSockets4(const uint16_t port) {
             }
 
             sock = openSocket(iface->getName(), *addr, port);
-            if (sock < 0) {
+            if (sock == invalid_socket) {
                 cout << "Failed to open unicast socket." << endl;
                 return (false);
             }
@@ -269,7 +270,7 @@ bool IfaceMgr::openSockets4(const uint16_t port) {
 }
 
 bool IfaceMgr::openSockets6(const uint16_t port) {
-    int sock;
+    socket_type sock;
     int count = 0;
 
     for (IfaceCollection::iterator iface = ifaces_.begin();
@@ -293,7 +294,7 @@ bool IfaceMgr::openSockets6(const uint16_t port) {
             }
 
             sock = openSocket(iface->getName(), *addr, port);
-            if (sock < 0) {
+            if (sock == invalid_socket) {
                 cout << "Failed to open unicast socket." << endl;
                 return (false);
             }
@@ -315,10 +316,10 @@ bool IfaceMgr::openSockets6(const uint16_t port) {
             // To receive multicast traffic, Linux requires binding socket to
             // a multicast group. That in turn doesn't work on NetBSD.
 
-            int sock2 = openSocket(iface->getName(),
-                                   IOAddress(ALL_DHCP_RELAY_AGENTS_AND_SERVERS),
-                                   port);
-            if (sock2 < 0) {
+            socket_type sock2 = openSocket(iface->getName(),
+                                           IOAddress(ALL_DHCP_RELAY_AGENTS_AND_SERVERS),
+                                           port);
+            if (sock2 == invalid_socket) {
                 isc_throw(Unexpected, "Failed to open multicast socket on "
                           << " interface " << iface->getFullName());
                 iface->delSocket(sock); // delete previously opened socket
@@ -381,8 +382,9 @@ IfaceMgr::getIface(const std::string& ifname) {
     return (NULL); // not found
 }
 
-int IfaceMgr::openSocket(const std::string& ifname, const IOAddress& addr,
-                         const uint16_t port) {
+socket_type IfaceMgr::openSocket(const std::string& ifname,
+                                 const IOAddress& addr,
+                                 const uint16_t port) {
     Iface* iface = getIface(ifname);
     if (!iface) {
         isc_throw(BadValue, "There is no " << ifname << " interface present.");
@@ -398,9 +400,9 @@ int IfaceMgr::openSocket(const std::string& ifname, const IOAddress& addr,
     }
 }
 
-int IfaceMgr::openSocketFromIface(const std::string& ifname,
-                                  const uint16_t port,
-                                  const uint8_t family) {
+socket_type IfaceMgr::openSocketFromIface(const std::string& ifname,
+                                          const uint16_t port,
+                                          const uint8_t family) {
     // Search for specified interface among detected interfaces.
     for (IfaceCollection::iterator iface = ifaces_.begin();
          iface != ifaces_.end();
@@ -442,8 +444,8 @@ int IfaceMgr::openSocketFromIface(const std::string& ifname,
     isc_throw(BadValue, "There is no " << ifname << " interface present.");
 }
 
-int IfaceMgr::openSocketFromAddress(const IOAddress& addr,
-                                    const uint16_t port) {
+socket_type IfaceMgr::openSocketFromAddress(const IOAddress& addr,
+                                            const uint16_t port) {
     // Search through detected interfaces and addresses to match
     // local address we got.
     for (IfaceCollection::iterator iface = ifaces_.begin();
@@ -472,8 +474,8 @@ int IfaceMgr::openSocketFromAddress(const IOAddress& addr,
     isc_throw(BadValue, "There is no such address " << addr.toText());
 }
 
-int IfaceMgr::openSocketFromRemoteAddress(const IOAddress& remote_addr,
-                                          const uint16_t port) {
+socket_type IfaceMgr::openSocketFromRemoteAddress(const IOAddress& remote_addr,
+                                                  const uint16_t port) {
     // Get local address to be used to connect to remote location.
     IOAddress local_address(getLocalAddress(remote_addr, port).getAddress());
     return openSocketFromAddress(local_address, port);
@@ -509,7 +511,9 @@ IfaceMgr::getLocalAddress(const IOAddress& remote_addr, const uint16_t port) {
     return IOAddress(local_address);
 }
 
-int IfaceMgr::openSocket4(Iface& iface, const IOAddress& addr, uint16_t port) {
+socket_type IfaceMgr::openSocket4(Iface& iface,
+                                  const IOAddress& addr,
+                                  uint16_t port) {
 
     cout << "Creating UDP4 socket on " << iface.getFullName()
          << " " << addr.toText() << "/port=" << port << endl;
@@ -523,8 +527,8 @@ int IfaceMgr::openSocket4(Iface& iface, const IOAddress& addr, uint16_t port) {
     //addr4.sin_addr.s_addr = 0; // anyaddr: this will receive 0.0.0.0 => 255.255.255.255 traffic
     // addr4.sin_addr.s_addr = 0xffffffffu; // broadcast address. This will receive 0.0.0.0 => 255.255.255.255 as well
 
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sock < 0) {
+    socket_type sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock == invalid_socket) {
         isc_throw(Unexpected, "Failed to create UDP6 socket.");
     }
 
@@ -553,7 +557,9 @@ int IfaceMgr::openSocket4(Iface& iface, const IOAddress& addr, uint16_t port) {
     return (sock);
 }
 
-int IfaceMgr::openSocket6(Iface& iface, const IOAddress& addr, uint16_t port) {
+socket_type IfaceMgr::openSocket6(Iface& iface,
+                                  const IOAddress& addr,
+                                  uint16_t port) {
 
     cout << "Creating UDP6 socket on " << iface.getFullName()
          << " " << addr.toText() << "/port=" << port << endl;
@@ -575,8 +581,8 @@ int IfaceMgr::openSocket6(Iface& iface, const IOAddress& addr, uint16_t port) {
     // TODO: use sockcreator once it becomes available
 
     // make a socket
-    int sock = socket(AF_INET6, SOCK_DGRAM, 0);
-    if (sock < 0) {
+    socket_type sock = socket(AF_INET6, SOCK_DGRAM, 0);
+    if (sock == invalid_socket) {
         isc_throw(Unexpected, "Failed to create UDP6 socket.");
     }
 
@@ -634,9 +640,9 @@ int IfaceMgr::openSocket6(Iface& iface, const IOAddress& addr, uint16_t port) {
 }
 
 bool
-IfaceMgr::joinMulticast(int sock, const std::string& ifname,
-const std::string & mcast) {
-
+IfaceMgr::joinMulticast(socket_type sock,
+                        const std::string& ifname,
+                        const std::string& mcast) {
     struct ipv6_mreq mreq;
 
     if (inet_pton(AF_INET6, mcast.c_str(),
@@ -833,7 +839,7 @@ IfaceMgr::receive4(uint32_t timeout) {
     }
 
     // if there is session socket registered...
-    if (session_socket_ != INVALID_SOCKET) {
+    if (session_socket_ != invalid_socket) {
         // at it to the set as well
         FD_SET(session_socket_, &sockets);
         if (maxfd < session_socket_)
@@ -862,7 +868,7 @@ IfaceMgr::receive4(uint32_t timeout) {
     }
 
     // Let's find out which socket has the data
-    if ((session_socket_ != INVALID_SOCKET) && (FD_ISSET(session_socket_, &sockets))) {
+    if ((session_socket_ != invalid_socket) && (FD_ISSET(session_socket_, &sockets))) {
         // something received over session socket
         cout << "BIND10 command or config available over session socket." << endl;
 
@@ -1001,7 +1007,7 @@ Pkt6Ptr IfaceMgr::receive6(uint32_t timeout) {
     }
 
     // if there is session socket registered...
-    if (session_socket_ != INVALID_SOCKET) {
+    if (session_socket_ != invalid_socket) {
         // at it to the set as well
         FD_SET(session_socket_, &sockets);
         if (maxfd < session_socket_)
@@ -1030,7 +1036,7 @@ Pkt6Ptr IfaceMgr::receive6(uint32_t timeout) {
     }
 
     // Let's find out which socket has the data
-    if ((session_socket_ != INVALID_SOCKET) && (FD_ISSET(session_socket_, &sockets))) {
+    if ((session_socket_ != invalid_socket) && (FD_ISSET(session_socket_, &sockets))) {
         // something received over session socket
         cout << "BIND10 command or config available over session socket." << endl;
 
@@ -1177,7 +1183,7 @@ Pkt6Ptr IfaceMgr::receive6(uint32_t timeout) {
     return (pkt);
 }
 
-uint16_t IfaceMgr::getSocket(const isc::dhcp::Pkt6& pkt) {
+socket_type IfaceMgr::getSocket(const isc::dhcp::Pkt6& pkt) {
     Iface* iface = getIface(pkt.getIface());
     if (iface == NULL) {
         isc_throw(BadValue, "Tried to find socket for non-existent interface "
@@ -1199,7 +1205,7 @@ uint16_t IfaceMgr::getSocket(const isc::dhcp::Pkt6& pkt) {
               << " does not have any suitable IPv6 sockets open.");
 }
 
-uint16_t IfaceMgr::getSocket(isc::dhcp::Pkt4 const& pkt) {
+socket_type IfaceMgr::getSocket(isc::dhcp::Pkt4 const& pkt) {
     Iface* iface = getIface(pkt.getIface());
     if (iface == NULL) {
         isc_throw(BadValue, "Tried to find socket for non-existent interface "

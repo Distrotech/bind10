@@ -14,7 +14,7 @@
 
 #include "fork.h"
 
-#include <util/io/fd.h>
+#include <util/io/socket.h>
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+using namespace asio::detail;
 using namespace isc::util::io;
 
 namespace {
@@ -70,9 +71,9 @@ process_ok(pid_t process) {
  * Used to provide the input in non-blocking/asynchronous way.
  */
 pid_t
-provide_input(int *read_pipe, const void *input, const size_t length)
+provide_input(socket_type *read_pipe, const void *input, const size_t length)
 {
-    int pipes[2];
+    socket_type pipes[2];
     if (pipe(pipes)) {
         return -1;
     }
@@ -96,9 +97,9 @@ provide_input(int *read_pipe, const void *input, const size_t length)
  * with given data. Used to check output of run in asynchronous way.
  */
 pid_t
-check_output(int *write_pipe, const void *output, const size_t length)
+check_output(socket_type *write_pipe, const void *output, const size_t length)
 {
-    int pipes[2];
+    socket_type pipes[2];
     if (pipe(pipes)) {
         return -1;
     }

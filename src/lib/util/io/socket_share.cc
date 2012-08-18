@@ -21,7 +21,7 @@
 #include <errno.h>
 #include <stdlib.h>             // for malloc and free
 #include <unistd.h>
-#include "fd_share.h"
+#include "socket_share.h"
 
 namespace isc {
 namespace util {
@@ -74,11 +74,12 @@ cmsg_space(const socklen_t len) {
 }
 
 int
-recv_fd(const int sock) {
+recv_socket(const socket_type sock, socket_type *val) {
     struct msghdr msghdr;
     struct iovec iov_dummy;
     unsigned char dummy_data;
 
+    *val = invalid_socket;
     iov_dummy.iov_base = &dummy_data;
     iov_dummy.iov_len = sizeof(dummy_data);
     msghdr.msg_name = NULL;
@@ -86,10 +87,10 @@ recv_fd(const int sock) {
     msghdr.msg_iov = &iov_dummy;
     msghdr.msg_iovlen = 1;
     msghdr.msg_flags = 0;
-    msghdr.msg_controllen = cmsg_space(sizeof(int));
+    msghdr.msg_controllen = cmsg_space(sizeof(socket_type));
     msghdr.msg_control = malloc(msghdr.msg_controllen);
     if (msghdr.msg_control == NULL) {
-        return (FD_SYSTEM_ERROR);
+        return (SOCKET_SYSTEM_ERROR);
     }
 
     const int cc = recvmsg(sock, &msghdr, 0);
@@ -98,34 +99,35 @@ recv_fd(const int sock) {
         if (cc == 0) {
             errno = ECONNRESET;
         }
-        return (FD_SYSTEM_ERROR);
+        return (SOCKET_SYSTEM_ERROR);
     }
     const struct cmsghdr* cmsg = CMSG_FIRSTHDR(&msghdr);
-    int fd = FD_OTHER_ERROR;
-    if (cmsg != NULL && cmsg->cmsg_len == cmsg_len(sizeof(int)) &&
+    socket_type s = invalid_socket;
+    if (cmsg != NULL && cmsg->cmsg_len == cmsg_len(sizeof(socket_type)) &&
         cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
-        std::memcpy(&fd, CMSG_DATA(cmsg), sizeof(int));
+        std::memcpy(&s, CMSG_DATA(cmsg), sizeof(socket_type));
     }
     free(msghdr.msg_control);
     // It is strange, but the call can return the same file descriptor as
     // one returned previously, even if that one is not closed yet. So,
     // we just re-number every one we get, so they are unique.
-    int new_fd(dup(fd));
-    int close_error(close(fd));
-    if (close_error == -1 || new_fd == -1) {
+    socket_type new_sd(dup(s));
+    int close_error(close(s));
+    if (close_error == socket_error_retval || new_sd == invalid_socket) {
         // We need to return an error, because something failed. But in case
-        // it was the previous close, we at least try to close the duped FD.
-        if (new_fd != -1) {
-            close(new_fd); // If this fails, nothing but returning error can't
+        // it was the previous close, we at least try to close the duped SD.
+        if (new_sd != invalid_socket) {
+            close(new_sd); // If this fails, nothing but returning error can't
                            // be done and we are doing that anyway.
         }
-        return (FD_SYSTEM_ERROR);
+        return (SOCKET_SYSTEM_ERROR);
     }
-    return (new_fd);
+    *val = new_sd;
+    return (0);
 }
 
 int
-send_fd(const int sock, const int fd) {
+send_socket(const socket_type sock, const socket_type val) {
     struct msghdr msghdr;
     struct iovec iov_dummy;
     unsigned char dummy_data = 0;
@@ -137,21 +139,21 @@ send_fd(const int sock, const int fd) {
     msghdr.msg_iov = &iov_dummy;
     msghdr.msg_iovlen = 1;
     msghdr.msg_flags = 0;
-    msghdr.msg_controllen = cmsg_space(sizeof(int));
+    msghdr.msg_controllen = cmsg_space(sizeof(socket_type));
     msghdr.msg_control = malloc(msghdr.msg_controllen);
     if (msghdr.msg_control == NULL) {
-        return (FD_OTHER_ERROR);
+        return (SOCKET_OTHER_ERROR);
     }
 
     struct cmsghdr* cmsg = CMSG_FIRSTHDR(&msghdr);
-    cmsg->cmsg_len = cmsg_len(sizeof(int));
+    cmsg->cmsg_len = cmsg_len(sizeof(socket_type));
     cmsg->cmsg_level = SOL_SOCKET;
     cmsg->cmsg_type = SCM_RIGHTS;
-    std::memcpy(CMSG_DATA(cmsg), &fd, sizeof(int));
+    std::memcpy(CMSG_DATA(cmsg), &val, sizeof(socket_type));
 
     const int ret = sendmsg(sock, &msghdr, 0);
     free(msghdr.msg_control);
-    return (ret >= 0 ? 0 : FD_SYSTEM_ERROR);
+    return (ret >= 0 ? 0 : SOCKET_SYSTEM_ERROR);
 }
 
 } // End for namespace io

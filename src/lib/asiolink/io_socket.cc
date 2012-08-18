@@ -12,9 +12,11 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <asio.hpp>
+
 #include "io_socket.h"
 
-#include <asio.hpp>
+using namespace asio::detail;
 
 namespace isc {
 namespace asiolink {
@@ -42,7 +44,7 @@ public:
     ///
     /// This version of method always returns -1 as the object is not
     /// associated with a real (native) socket.
-    virtual int getNative() const { return (-1); }
+    virtual socket_type getNative() const { return (invalid_socket); }
 
     virtual int getProtocol() const { return (protocol_); }
 private:

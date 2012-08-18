@@ -73,6 +73,7 @@
 using namespace isc::asiolink;
 using namespace isc::asiodns;
 using namespace asio;
+using namespace asio::detail;
 
 namespace {
 const char* const server_ip = "::1";
@@ -414,15 +415,15 @@ class DNSServerTestBase : public::testing::Test {
         static bool io_service_is_time_out;
 };
 
-// Initialization (by the file descriptor)
+// Initialization (by the socket descriptor)
 template<class UDPServerClass>
-class FdInit : public DNSServerTestBase<UDPServerClass> {
+class SocketInit : public DNSServerTestBase<UDPServerClass> {
 private:
-    // Opens the file descriptor for us
-    // It uses the low-level C api, as it seems to be the easiest way to get
-    // a raw file descriptor. It also is what the socket creator does and this
-    // API is aimed to it.
-    int getFd(int type) {
+    // Opens the socket descriptor for us
+    // It uses the low-level C api, as it seems to be the easiest way
+    // to get a raw socket descriptor. It also is what the socket
+    // creator does and this API is aimed to it.
+    socket_type getSocket(int type) {
         struct addrinfo hints;
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_UNSPEC;
@@ -437,24 +438,24 @@ private:
             isc_throw(IOError, "getaddrinfo failed: " << gai_strerror(error));
         }
 
-        int sock;
+        socket_type sock;
         const int on(1);
         // Go as far as you can and stop on failure
         // Create the socket
         // set the options
         // and bind it
-        const bool failed((sock = socket(res->ai_family, res->ai_socktype,
-                                         res->ai_protocol)) == -1 ||
+        sock = socket(res->ai_family, res->ai_socktype,	res->ai_protocol);
+        const bool failed(sock == invalid_socket ||
                           setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on,
                                      sizeof(on)) == -1 ||
                           bind(sock, res->ai_addr, res->ai_addrlen) == -1);
         // No matter if it succeeded or not, free the address info
         freeaddrinfo(res);
         if (failed) {
-            if (sock != -1) {
+            if (sock != invalid_socket) {
                 close(sock);
             }
-            return (-1);
+            return (invalid_socket);
         } else {
             return (sock);
         }
@@ -462,14 +463,16 @@ private:
 protected:
     // Using SetUp here so we can ASSERT_*
     void SetUp() {
-        const int fdUDP(getFd(SOCK_DGRAM));
-        ASSERT_NE(-1, fdUDP) << strerror(errno);
-        this->udp_server_ = new UDPServerClass(this->service, fdUDP, AF_INET6,
+        const socket_type socketUDP(getSocket(SOCK_DGRAM));
+        ASSERT_NE(invalid_socket, socketUDP) << strerror(errno);
+        this->udp_server_ = new UDPServerClass(this->service,
+                                               socketUDP, AF_INET6,
                                                this->checker_, this->lookup_,
                                                this->answer_);
-        const int fdTCP(getFd(SOCK_STREAM));
-        ASSERT_NE(-1, fdTCP) << strerror(errno);
-        this->tcp_server_ = new TCPServer(this->service, fdTCP, AF_INET6,
+        const socket_type socketTCP(getSocket(SOCK_STREAM));
+        ASSERT_NE(invalid_socket, socketTCP) << strerror(errno);
+        this->tcp_server_ = new TCPServer(this->service,
+                                          socketTCP, AF_INET6,
                                           this->checker_, this->lookup_,
                                           this->answer_);
     }
@@ -479,7 +482,7 @@ protected:
 template<class Parent>
 class DNSServerTest : public Parent { };
 
-typedef ::testing::Types<FdInit<UDPServer>, FdInit<SyncUDPServer> >
+typedef ::testing::Types<SocketInit<UDPServer>, SocketInit<SyncUDPServer> >
     ServerTypes;
 TYPED_TEST_CASE(DNSServerTest, ServerTypes);
 
@@ -629,38 +632,40 @@ TYPED_TEST(DNSServerTestBase, invalidFamily) {
 }
 
 // It raises an exception when invalid address family is passed
-TYPED_TEST(DNSServerTestBase, invalidTCPFD) {
+TYPED_TEST(DNSServerTestBase, invalidTCPSocket) {
     // We abuse DNSServerTestBase for this test, as we don't need the
     // initialization.
     /*
-     FIXME: The UDP server doesn't fail reliably with an invalid FD.
+     FIXME: The UDP server doesn't fail reliably with an invalid socket.
      We need to find a way to trigger it reliably (it seems epoll
      asio backend does fail as it tries to insert it right away, but
      not the others, maybe we could make it run this at last on epoll-based
      systems).
-    EXPECT_THROW(UDPServer(service, -1, AF_INET, checker_, lookup_,
+    EXPECT_THROW(UDPServer(service, invalid_socket, AF_INET, checker_, lookup_,
                            answer_), isc::asiolink::IOError);
     */
-    EXPECT_THROW(TCPServer(this->service, -1, AF_INET, this->checker_,
+    EXPECT_THROW(TCPServer(this->service, invalid_socket,
+                           AF_INET, this->checker_,
                            this->lookup_, this->answer_),
                  isc::asiolink::IOError);
 }
 
-TYPED_TEST(DNSServerTestBase, DISABLED_invalidUDPFD) {
+TYPED_TEST(DNSServerTestBase, DISABLED_invalidUDPSocket) {
     /*
-     FIXME: The UDP server doesn't fail reliably with an invalid FD.
+     FIXME: The UDP server doesn't fail reliably with an invalid socket.
      We need to find a way to trigger it reliably (it seems epoll
      asio backend does fail as it tries to insert it right away, but
      not the others, maybe we could make it run this at least on epoll-based
      systems).
     */
-    EXPECT_THROW(TypeParam(this->service, -1, AF_INET, this->checker_,
+    EXPECT_THROW(TypeParam(this->service, invalid_socket,
+                           AF_INET, this->checker_,
                            this->lookup_, this->answer_),
                  isc::asiolink::IOError);
 }
 
 // A specialized test type for SyncUDPServer.
-typedef FdInit<SyncUDPServer> SyncServerTest;
+typedef SocketInit<SyncUDPServer> SyncServerTest;
 
 // Check it rejects some of the unsupported operations
 TEST_F(SyncServerTest, unsupportedOps) {

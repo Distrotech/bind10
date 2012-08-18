@@ -17,11 +17,13 @@
 
 #include <boost/noncopyable.hpp>
 
+#include <asio.hpp>
+
 #include <exceptions/exceptions.h>
 
 #include <string>
 
-#include <sys/socket.h>
+using asio::detail::socket_type;
 
 namespace isc {
 namespace util {
@@ -50,13 +52,13 @@ namespace io {
 /// provided separately from the socket.
 ///
 /// In the actual implementation we represent a socket as a tuple of
-/// socket's file descriptor, address family (e.g. \c AF_INET6),
+/// socket's descriptor, address family (e.g. \c AF_INET6),
 /// socket type (e.g. \c SOCK_STREAM), and protocol (e.g. \c IPPROTO_TCP).
 /// The latter three are included in the representation of a socket in order
 /// to provide complete information of how the socket would be created
 /// by the \c socket(2) system call.  More specifically in practice, these
 /// parameters could be used to construct a Python socket object from the
-/// file descriptor.
+/// socket descriptor.
 ///
 /// We use the standard \c sockaddr structure to represent endpoints.
 ///
@@ -64,7 +66,7 @@ namespace io {
 /// (possibly with some reasonable upper limit).
 ///
 /// To forward a socket session between processes, we use connected UNIX
-/// domain sockets established between the processes.  The file descriptor
+/// domain sockets established between the processes.  The socket descriptor
 /// will be forwarded through the sockets as an ancillary data item of
 /// type \c SCM_RIGHTS.  Other elements of the session will be transferred
 /// as normal data over the connection.
@@ -78,9 +80,9 @@ namespace io {
 /// \c SocketSessionForwarder and \c SocketSessionReceiver objects use a
 /// straightforward protocol to pass elements of socket sessions.
 /// Once the connection is established, the forwarder object first forwards
-/// the file descriptor with 1-byte dummy data.  It then forwards a
+/// the socket descriptor with 1-byte dummy data.  It then forwards a
 /// "(socket) session header", which contains all other elements of the session
-/// except the file descriptor (already forwarded) and session data.
+/// except the socket descriptor (already forwarded) and session data.
 /// The wire format of the header is as follows:
 /// - The length of the header (16-bit unsigned integer)
 /// - Address family
@@ -181,7 +183,7 @@ public:
     virtual ~BaseSocketSessionForwarder() {}
     virtual void connectToReceiver() = 0;
     virtual void close() = 0;
-    virtual void push(int sock, int family, int type, int protocol,
+    virtual void push(socket_type sock, int family, int type, int protocol,
                       const struct sockaddr& local_end,
                       const struct sockaddr& remote_end,
                       const void* data, size_t data_len) = 0;
@@ -297,7 +299,7 @@ public:
     /// \exception SocketSessionError A system error in socket operation,
     /// including the case where the write operation would block.
     ///
-    /// \param sock The socket file descriptor
+    /// \param sock The socket socket descriptor
     /// \param family The address family (such as AF_INET6) of the socket
     /// \param type The socket type (such as SOCK_DGRAM) of the socket
     /// \param protocol The transport protocol (such as IPPROTO_UDP) of the
@@ -309,7 +311,7 @@ public:
     /// \param data A pointer to the beginning of the memory region for the
     ///             session data
     /// \param data_len The size of the session data in bytes.
-    virtual void push(int sock, int family, int type, int protocol,
+    virtual void push(socket_type sock, int family, int type, int protocol,
                       const struct sockaddr& local_end,
                       const struct sockaddr& remote_end,
                       const void* data, size_t data_len);
@@ -346,7 +348,7 @@ public:
     /// \exception BadValue Given parameters don't meet the requirement
     /// (see the parameter descriptions).
     ///
-    /// \param sock The socket file descriptor
+    /// \param sock The socket descriptor
     /// \param family The address family (such as AF_INET6) of the socket
     /// \param type The socket type (such as SOCK_DGRAM) of the socket
     /// \param protocol The transport protocol (such as IPPROTO_UDP) of the
@@ -359,12 +361,12 @@ public:
     /// session data.  Must not be NULL, and the subsequent \c data_len bytes
     /// must be valid.
     /// \param data_len The size of the session data in bytes.  Must not be 0.
-    SocketSession(int sock, int family, int type, int protocol,
+    SocketSession(socket_type sock, int family, int type, int protocol,
                   const sockaddr* local_end, const sockaddr* remote_end,
                   const void* data, size_t data_len);
 
-    /// Return the socket file descriptor.
-    int getSocket() const { return (sock_); }
+    /// Return the socket descriptor.
+    socket_type getSocket() const { return (sock_); }
 
     /// Return the address family (such as AF_INET6) of the socket.
     int getFamily() const { return (family_); }
@@ -394,7 +396,7 @@ public:
     size_t getDataLength() const { return (data_len_); }
 
 private:
-    const int sock_;
+    const socket_type sock_;
     const int family_;
     const int type_;
     const int protocol_;
@@ -433,7 +435,7 @@ public:
     ///
     /// \param fd A UNIX domain socket for an established connection with
     /// a forwarder.
-    explicit SocketSessionReceiver(int fd);
+    explicit SocketSessionReceiver(socket_type sd);
 
     /// The destructor.
     ///
@@ -455,7 +457,7 @@ public:
     /// destructed.
     ///
     /// The caller is responsible for closing the received socket (whose
-    /// file descriptor is accessible via \c SocketSession::getSocket()).
+    /// socket descriptor is accessible via \c SocketSession::getSocket()).
     /// If the caller copies the returned \c SocketSession object, it's also
     /// responsible for making sure the descriptor is closed at most once.
     /// On the other hand, the caller is not responsible for freeing the

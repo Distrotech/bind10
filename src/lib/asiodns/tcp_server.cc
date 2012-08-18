@@ -33,6 +33,7 @@
 #include <asiodns/logger.h>
 
 using namespace asio;
+using asio::detail::socket_type;
 using asio::ip::udp;
 using asio::ip::tcp;
 
@@ -47,7 +48,7 @@ namespace asiodns {
 /// The following functions implement the \c TCPServer class.
 ///
 /// The constructor
-TCPServer::TCPServer(io_service& io_service, int fd, int af,
+TCPServer::TCPServer(io_service& io_service, socket_type sd, int af,
                      const SimpleCallback* checkin,
                      const DNSLookup* lookup,
                      const DNSAnswer* answer) :
@@ -59,11 +60,11 @@ TCPServer::TCPServer(io_service& io_service, int fd, int af,
         isc_throw(InvalidParameter, "Address family must be either AF_INET "
                   "or AF_INET6, not " << af);
     }
-    LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, ASIODNS_FD_ADD_TCP).arg(fd);
+    LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, ASIODNS_SOCKET_ADD_TCP).arg(sd);
 
     try {
         acceptor_.reset(new tcp::acceptor(io_service));
-        acceptor_->assign(af == AF_INET6 ? tcp::v6() : tcp::v4(), fd);
+        acceptor_->assign(af == AF_INET6 ? tcp::v6() : tcp::v4(), sd);
         acceptor_->listen();
     } catch (const std::exception& exception) {
         // Whatever the thing throws, it is something from ASIO and we convert

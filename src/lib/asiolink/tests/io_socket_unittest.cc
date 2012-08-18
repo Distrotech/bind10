@@ -20,13 +20,14 @@
 #include <asio.hpp>
 #include <asiolink/io_socket.h>
 
+using asio::detail::invalid_socket;
 using namespace isc::asiolink;
 
 TEST(IOSocketTest, dummySockets) {
     EXPECT_EQ(IPPROTO_UDP, IOSocket::getDummyUDPSocket().getProtocol());
     EXPECT_EQ(IPPROTO_TCP, IOSocket::getDummyTCPSocket().getProtocol());
-    EXPECT_EQ(-1, IOSocket::getDummyUDPSocket().getNative());
-    EXPECT_EQ(-1, IOSocket::getDummyTCPSocket().getNative());
+    EXPECT_EQ(invalid_socket, IOSocket::getDummyUDPSocket().getNative());
+    EXPECT_EQ(invalid_socket, IOSocket::getDummyTCPSocket().getNative());
 }
 
 

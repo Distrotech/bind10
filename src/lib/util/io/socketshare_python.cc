@@ -18,42 +18,48 @@
 
 #include <config.h>
 
-#include "fd_share.h"
+#include "socket_share.h"
 
 
 static PyObject*
-fdshare_recv_fd(PyObject*, PyObject* args) {
-    int sock, fd;
+socketshare_recv_socket(PyObject*, PyObject* args) {
+    int result;
+    socket_type sock, sd;
     if (!PyArg_ParseTuple(args, "i", &sock)) {
         return (NULL);
     }
-    fd = isc::util::io::recv_fd(sock);
-    return (Py_BuildValue("i", fd));
+    result = isc::util::io::recv_socket(sock, &sd);
+    if (result != 0) {
+        return (Py_BuildValue("i", result));
+    } else {
+        return (Py_BuildValue("i", sd));
+    }
 }
 
 static PyObject*
-fdshare_send_fd(PyObject*, PyObject* args) {
-    int sock, fd, result;
-    if (!PyArg_ParseTuple(args, "ii", &sock, &fd)) {
+socketshare_send_socket(PyObject*, PyObject* args) {
+    int result;
+    socket_type sock, sd;
+    if (!PyArg_ParseTuple(args, "ii", &sock, &sd)) {
         return (NULL);
     }
-    result = isc::util::io::send_fd(sock, fd);
+    result = isc::util::io::send_socket(sock, sd);
     return (Py_BuildValue("i", result));
 }
 
-static PyMethodDef fdshare_Methods[] = {
-    {"send_fd",  fdshare_send_fd, METH_VARARGS, ""},
-    {"recv_fd",  fdshare_recv_fd, METH_VARARGS, ""},
+static PyMethodDef socketshare_Methods[] = {
+    {"send_socket",  socketshare_send_socket, METH_VARARGS, ""},
+    {"recv_socket",  socketshare_recv_socket, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
 
-static PyModuleDef bind10_fdshare_python = {
+static PyModuleDef bind10_socketshare_python = {
     { PyObject_HEAD_INIT(NULL) NULL, 0, NULL},
-    "bind10_fdshare",
-    "Python bindings for fdshare",
+    "bind10_socketshare",
+    "Python bindings for socketshare",
     -1,
-    fdshare_Methods,
+    socketshare_Methods,
     NULL,
     NULL,
     NULL,
@@ -62,33 +68,34 @@ static PyModuleDef bind10_fdshare_python = {
 
 PyMODINIT_FUNC
 PyInit_libutil_io_python(void) {
-    PyObject *mod = PyModule_Create(&bind10_fdshare_python);
+    PyObject *mod = PyModule_Create(&bind10_socketshare_python);
     if (mod == NULL) {
         return (NULL);
     }
 
-    PyObject* FD_SYSTEM_ERROR = Py_BuildValue("i",
-                                              isc::util::io::FD_SYSTEM_ERROR);
-    if (FD_SYSTEM_ERROR == NULL) {
+    PyObject* SOCKET_SYSTEM_ERROR =
+        Py_BuildValue("i", isc::util::io::SOCKET_SYSTEM_ERROR);
+    if (SOCKET_SYSTEM_ERROR == NULL) {
         Py_XDECREF(mod);
         return (NULL);
     }
-    int ret = PyModule_AddObject(mod, "FD_SYSTEM_ERROR", FD_SYSTEM_ERROR);
+    int ret;
+    ret = PyModule_AddObject(mod, "SOCKET_SYSTEM_ERROR", SOCKET_SYSTEM_ERROR);
     if (ret == -1) {
-        Py_XDECREF(FD_SYSTEM_ERROR);
+        Py_XDECREF(SOCKET_SYSTEM_ERROR);
         Py_XDECREF(mod);
         return (NULL);
     }
 
-    PyObject* FD_OTHER_ERROR = Py_BuildValue("i",
-                                             isc::util::io::FD_OTHER_ERROR);
-    if (FD_OTHER_ERROR == NULL) {
+    PyObject* SOCKET_OTHER_ERROR =
+        Py_BuildValue("i", isc::util::io::SOCKET_OTHER_ERROR);
+    if (SOCKET_OTHER_ERROR == NULL) {
         Py_XDECREF(mod);
         return (NULL);
     }
-    ret = PyModule_AddObject(mod, "FD_OTHER_ERROR", FD_OTHER_ERROR);
-    if (-1 == ret) {
-        Py_XDECREF(FD_OTHER_ERROR);
+    ret = PyModule_AddObject(mod, "SOCKET_OTHER_ERROR", SOCKET_OTHER_ERROR);
+    if (ret == -1) {
+        Py_XDECREF(SOCKET_OTHER_ERROR);
         Py_XDECREF(mod);
         return (NULL);
     }

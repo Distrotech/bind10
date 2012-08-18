@@ -15,7 +15,7 @@
 #include "../sockcreator.h"
 
 #include <util/unittests/fork.h>
-#include <util/io/fd.h>
+#include <util/io/socket.h>
 
 #include <boost/lexical_cast.hpp>
 #include <gtest/gtest.h>
@@ -66,14 +66,14 @@ setAddressFamilyFields(sockaddr_in6* address) {
 // is parameterised on the type of structure required to hold the address.
 
 void
-tcpCheck(const int socknum) {
+tcpCheck(const socket_type socknum) {
     // Sufficient to be able to listen on the socket.
     EXPECT_EQ(0, listen(socknum, 1));
 }
 
 template <typename ADDRTYPE>
 void
-udpCheck(const int socknum) {
+udpCheck(const socket_type socknum) {
     // UDP testing is more complicated than TCP: send a packet to ourselves and
     // see if it arrives.
 
@@ -98,27 +98,28 @@ udpCheck(const int socknum) {
 
 // The check function (tcpCheck/udpCheck) is passed as a parameter to the test
 // code, so provide a conveniet typedef.
-typedef void (*socket_check_t)(const int);
+typedef void (*socket_check_t)(const socket_type);
 
-// Address-family-specific scoket checks.
+// Address-family-specific socket checks.
 //
 // The first argument is used to select the overloaded check function.
 // The other argument is the socket descriptor number.
 
 // IPv4 check
-void addressFamilySpecificCheck(const sockaddr_in*, const int, const int) {
+void addressFamilySpecificCheck(const sockaddr_in*, const socket_type,
+                                const int) {
 }
 
 // IPv6 check
-void addressFamilySpecificCheck(const sockaddr_in6*, const int socknum,
-                                const int socket_type)
+void addressFamilySpecificCheck(const sockaddr_in6*, const socket_type socknum,
+                                const int s_type)
 {
     int options;
     socklen_t len = sizeof(options);
     EXPECT_EQ(0, getsockopt(socknum, IPPROTO_IPV6, IPV6_V6ONLY, &options,
                             &len));
     EXPECT_NE(0, options);
-    if (socket_type == SOCK_DGRAM) {
+    if (s_type == SOCK_DGRAM) {
     // Some more checks for UDP - MTU
 #ifdef IPV6_USE_MIN_MTU        /* RFC 3542, not too common yet*/
         // use minimum MTU
@@ -144,9 +145,11 @@ void addressFamilySpecificCheck(const sockaddr_in6*, const int socknum,
 
 // Just ignore the fd and pretend success. We close invalid fds in the tests.
 int
-closeIgnore(int) {
+closeIgnore(socket_type) {
     return (0);
 }
+
+bool bind_failed(false);
 
 // Generic version of the socket test.  It creates the socket and checks that
 // it is a valid descriptor.  The family-specific check functions are called
@@ -157,16 +160,17 @@ closeIgnore(int) {
 // socket_type Type of socket to create (SOCK_DGRAM or SOCK_STREAM)
 // socket_check Associated check function - udpCheck() or tcpCheck()
 template <typename ADDRTYPE>
-void testAnyCreate(int socket_type, socket_check_t socket_check) {
+void testAnyCreate(int s_type, socket_check_t socket_check) {
 
     // Create the socket.
     ADDRTYPE addr;
     memset(&addr, 0, sizeof(addr));
     setAddressFamilyFields(&addr);
     sockaddr* addr_ptr = reinterpret_cast<sockaddr*>(&addr);
-    const int socket = getSock(socket_type, addr_ptr, sizeof(addr),
-                               closeIgnore);
-    ASSERT_GE(socket, 0) << "Couldn't create socket: failed with " <<
+    const socket_type socket = getSock(s_type, addr_ptr, &bind_failed,
+                                       sizeof(addr), closeIgnore);
+    ASSERT_NE(socket, invalid_socket) <<
+        "Couldn't create socket: failed with " <<
         "return code " << socket << " and error " << strerror(errno);
 
     // Perform socket-type-specific testing.
@@ -179,7 +183,7 @@ void testAnyCreate(int socket_type, socket_check_t socket_check) {
     EXPECT_NE(0, options);
 
     // ...and the address-family specific tests.
-    addressFamilySpecificCheck(&addr, socket, socket_type);
+    addressFamilySpecificCheck(&addr, socket, s_type);
 
     // Tidy up and exit.
     EXPECT_EQ(0, close(socket));
@@ -208,7 +212,7 @@ bool close_called(false);
 // You can use it as a close mockup. If you care about checking if it was really
 // called, you can use the close_called variable. But set it to false before the
 // test.
-int closeCall(int socket) {
+int closeCall(socket_type socket) {
     close(socket);
     close_called = true;
     return (0);
@@ -220,8 +224,11 @@ TEST(get_sock, fail_with_nonsense) {
     sockaddr addr;
     memset(&addr, 0, sizeof(addr));
     close_called = false;
-    ASSERT_EQ(-1, getSock(0, &addr, sizeof addr, closeCall));
+    
+    ASSERT_EQ(invalid_socket,
+              getSock(0, &addr, &bind_failed, sizeof addr, closeCall));
     ASSERT_FALSE(close_called); // The "socket" call should have failed already
+    ASSERT_FALSE(bind_failed);
 }
 
 // Bind should have failed here
@@ -234,9 +241,12 @@ TEST(get_sock, fail_with_bind) {
     // possible to bind it.
     addr.sin_addr.s_addr = inet_addr("192.0.2.1");
     close_called = false;
-    ASSERT_EQ(-2, getSock(SOCK_STREAM, reinterpret_cast<sockaddr*>(&addr),
-                          sizeof addr, closeCall));
+    ASSERT_EQ(invalid_socket, getSock(SOCK_STREAM,
+                                      reinterpret_cast<sockaddr*>(&addr),
+                                      &bind_failed,
+                                      sizeof addr, closeCall));
     ASSERT_TRUE(close_called); // The "socket" call should have failed already
+    ASSERT_TRUE(bind_failed);
 }
 
 // The main run() function in the socket creator takes three functions to
@@ -255,12 +265,11 @@ TEST(get_sock, fail_with_bind) {
 //
 // Other possible return values are:
 //
-// -1: The simulated bind() call has failed
-// -2: The simulated socket() call has failed
-int
-getSockDummy(const int type, struct sockaddr* addr, const socklen_t,
-             const close_t) {
-    int result = 0;
+// invalid_socket: The simulated socket() or bind() call has failed
+socket_type
+getSockDummy(const int type, struct sockaddr* addr, bool* bf,
+             const socklen_t, const close_t) {
+    socket_type result = 0;
     int port = 0;
 
     // Validate type field
@@ -293,9 +302,11 @@ getSockDummy(const int type, struct sockaddr* addr, const socklen_t,
     if (port != 0xffff) {
         errno = 0;
         if (port == 0xbbbb) {
-            return (-2);
+            *bf = true;
+            return (invalid_socket);
         } else if (port == 0xcccc) {
-            return (-1);
+            *bf = false;
+            return (invalid_socket);
         } else {
             result |= 0x10;
         }
@@ -305,12 +316,12 @@ getSockDummy(const int type, struct sockaddr* addr, const socklen_t,
 
 // Dummy send function - return data (the result of getSock()) to the destination.
 int
-send_FdDummy(const int destination, const int what) {
+send_SdDummy(const socket_type destination, const socket_type what) {
     // Make sure it is 1 byte so we know the length. We do not use more during
     // the test anyway.  And even with the LS bute, we can distinguish between
     // the different results.
-    const char fd_data = what & 0xff;
-    const bool status = write_data(destination, &fd_data, sizeof(fd_data));
+    const char sd_data = what & 0xff;
+    const bool status = write_data(destination, &sd_data, sizeof(sd_data));
     return (status ? 0 : -1);
 }
 
@@ -322,31 +333,31 @@ void runTest(const char* input_data, const size_t input_size,
              const char* output_data, const size_t output_size,
              bool should_succeed = true,
              const close_t test_close = closeIgnore,
-             const send_fd_t send_fd = send_FdDummy)
+             const send_sd_t send_sd = send_SdDummy)
 {
     // Prepare the input feeder and output checker processes.  The feeder
     // process sends data from the client to run() and the checker process
     // reads the response and checks it against the expected response.
-    int input_fd = 0;
-    const pid_t input = provide_input(&input_fd, input_data, input_size);
+    socket_type input_sd = 0;
+    const pid_t input = provide_input(&input_sd, input_data, input_size);
     ASSERT_NE(-1, input) << "Couldn't start input feeder";
 
-    int output_fd = 0;
-    const pid_t output = check_output(&output_fd, output_data, output_size);
+    socket_type output_sd = 0;
+    const pid_t output = check_output(&output_sd, output_data, output_size);
     ASSERT_NE(-1, output) << "Couldn't start output checker";
 
     // Run the body
     if (should_succeed) {
-        EXPECT_NO_THROW(run(input_fd, output_fd, getSockDummy, send_fd,
+        EXPECT_NO_THROW(run(input_sd, output_sd, getSockDummy, send_sd,
                             test_close));
     } else {
-        EXPECT_THROW(run(input_fd, output_fd, getSockDummy, send_fd,
+        EXPECT_THROW(run(input_sd, output_sd, getSockDummy, send_sd,
                          test_close), isc::socket_creator::SocketCreatorError);
     }
 
     // Close the pipes
-    close(input_fd);
-    close(output_fd);
+    close(input_sd);
+    close(output_sd);
 
     // Check the subprocesses say everything is OK too
     EXPECT_TRUE(process_ok(input));
@@ -405,7 +416,7 @@ TEST(run, bad_sockets) {
 
 // A close that fails.  (This causes an abort.)
 int
-closeFail(int) {
+closeFail(socket_type) {
     return (-1);
 }
 
@@ -415,18 +426,18 @@ TEST(run, cant_close) {
             false, closeFail);
 }
 
-// A send of the file descriptor that fails.  In this case we expect the client
-// to receive the "S" indicating that the descriptor is being sent and nothing
-// else.  This causes an abort.
+// A send of the socket descriptor that fails.  In this case we expect
+// the client to receive the "S" indicating that the descriptor is
+// being sent and nothing else.  This causes an abort.
 int
-sendFDFail(const int, const int) {
-    return (FD_SYSTEM_ERROR);
+sendSDFail(const socket_type, const socket_type) {
+    return (SOCKET_SYSTEM_ERROR);
 }
 
-TEST(run, cant_send_fd) {
+TEST(run, cant_send_sd) {
     runTest("SU4\xff\xff\0\0\0\0", 9,
             "S", 1,
-            false, closeIgnore, sendFDFail);
+            false, closeIgnore, sendSDFail);
 }
 
 }   // Anonymous namespace

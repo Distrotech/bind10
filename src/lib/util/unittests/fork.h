@@ -17,6 +17,8 @@
 
 #include <unistd.h>
 
+#include <asio.hpp>
+
 /**
  * \file fork.h
  * \brief Help functions to fork the test case process.
@@ -40,10 +42,12 @@ bool
 process_ok(pid_t process);
 
 pid_t
-provide_input(int *read_pipe, const void *input, const size_t length);
+provide_input(asio::detail::socket_type *read_pipe,
+              const void *input, const size_t length);
 
 pid_t
-check_output(int *write_pipe, const void *output, const size_t length);
+check_output(asio::detail::socket_type *write_pipe,
+             const void *output, const size_t length);
 
 } // End of the namespace
 }

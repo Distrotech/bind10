@@ -19,6 +19,8 @@
 
 #include <string>
 
+#include <asio.hpp>
+
 #include <exceptions/exceptions.h>
 
 namespace isc {
@@ -60,7 +62,8 @@ public:
     //@}
     virtual void connect() = 0;
     virtual void disconnect() = 0;
-    virtual int sendXfroutRequestInfo(int tcp_sock, const void* msg_data,
+    virtual int sendXfroutRequestInfo(asio::detail::socket_type tcp_sock,
+                                      const void* msg_data,
                                       uint16_t msg_len) = 0;
 };
 
@@ -75,7 +78,8 @@ private:
 public:
     virtual void connect();
     virtual void disconnect();
-    virtual int sendXfroutRequestInfo(int tcp_sock, const void* msg_data,
+    virtual int sendXfroutRequestInfo(asio::detail::socket_type tcp_sock,
+                                      const void* msg_data,
                                       uint16_t msg_len);
 private:
     XfroutClientImpl* impl_;

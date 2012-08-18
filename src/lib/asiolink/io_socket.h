@@ -82,8 +82,8 @@ public:
     /// This method never throws an exception.
     ///
     /// \return The native representation of the socket.  This is the socket
-    /// file descriptor for UNIX-like systems.
-    virtual int getNative() const = 0;
+    /// descriptor for UNIX-like systems.
+    virtual asio::detail::socket_type getNative() const = 0;
 
     /// \brief Return the transport protocol of the socket.
     ///

@@ -12,51 +12,55 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#ifndef FD_SHARE_H_
-#define FD_SHARE_H_
+#ifndef SOCKET_SHARE_H_
+#define SOCKET_SHARE_H_
 
 /**
- * \file fd_share.h
- * \short Support to transfer file descriptors between processes.
+ * \file socket_share.h
+ * \short Support to transfer socket descriptors between processes.
  * \todo This interface is very C-ish. Should we have some kind of exceptions?
  */
+
+#include <asio.hpp>
+
+using namespace asio::detail;
 
 namespace isc {
 namespace util {
 namespace io {
 
-const int FD_SYSTEM_ERROR = -2;
-const int FD_OTHER_ERROR = -1;
+const int SOCKET_SYSTEM_ERROR = -2;
+const int SOCKET_OTHER_ERROR = -1;
 
 /**
- * \short Receives a file descriptor.
- * This receives a file descriptor sent over an unix domain socket. This
- * is the counterpart of send_fd().
+ * \short Receives a socket descriptor.
+ * This receives a socket descriptor sent over an unix domain socket. This
+ * is the counterpart of send_socket().
  *
- * \return FD_SYSTEM_ERROR when there's an error at the operating system
+ * \return SOCKET_SYSTEM_ERROR when there's an error at the operating system
  * level (such as a system call failure).  The global 'errno' variable
- * indicates the specific error.  FD_OTHER_ERROR when there's a different
+ * indicates the specific error.  SOCKET_OTHER_ERROR when there's a different
  * error.
  *
  * \param sock The unix domain socket to read from. Tested and it does
  *     not work with a pipe.
  */
-int recv_fd(const int sock);
+int recv_socket(const socket_type sock, socket_type *val);
 
 /**
- * \short Sends a file descriptor.
- * This sends a file descriptor over an unix domain socket. This is the
- * counterpart of recv_fd().
+ * \short Sends a socket descriptor.
+ * This sends a socket descriptor over an unix domain socket. This is the
+ * counterpart of recv_socket().
  *
- * \return FD_SYSTEM_ERROR when there's an error at the operating system
+ * \return SOCKET_SYSTEM_ERROR when there's an error at the operating system
  * level (such as a system call failure).  The global 'errno' variable
  * indicates the specific error.
  * \param sock The unix domain socket to send to. Tested and it does not
  *     work with a pipe.
- * \param fd The file descriptor to send. It should work with any valid
- *     file descriptor.
+ * \param val The socket descriptor to send. It should work with any valid
+ *     socket descriptor.
  */
-int send_fd(const int sock, const int fd);
+int send_socket(const socket_type sock, const socket_type val);
 
 } // End for namespace io
 } // End for namespace util

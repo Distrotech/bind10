@@ -20,7 +20,7 @@
 #include <unistd.h>
 #include <asio.hpp>
 
-#include <util/io/fd_share.h>
+#include <util/io/socket_share.h>
 #include <xfr/xfrout_client.h>
 
 using namespace std;
@@ -70,11 +70,11 @@ XfroutClient::disconnect() {
 }
 
 int
-XfroutClient::sendXfroutRequestInfo(const int tcp_sock,
+XfroutClient::sendXfroutRequestInfo(const socket_type tcp_sock,
                                     const void* const msg_data,
                                     const uint16_t msg_len)
 {
-    if (send_fd(impl_->socket_.native(), tcp_sock) < 0) {
+    if (send_socket(impl_->socket_.native(), tcp_sock) < 0) {
         isc_throw(XfroutError,
                   "Failed to send the socket file descriptor "
                   "to xfrout module");

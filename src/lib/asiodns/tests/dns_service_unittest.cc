@@ -36,6 +36,7 @@ using namespace isc::asiolink;
 using namespace isc::asiodns;
 using boost::scoped_ptr;
 using boost::lexical_cast;
+using namespace asio::detail;
 
 namespace {
 const char* const TEST_SERVER_PORT = "53535";
@@ -71,7 +72,7 @@ public:
     IOService& io_service_;
 };
 
-// A test fixture to check creation of UDP servers from a socket FD, changing
+// A test fixture to check creation of UDP servers from a socket, changing
 // options.
 class UDPDNSServiceTest : public::testing::Test {
 private:
@@ -154,18 +155,18 @@ private:
 IOService* UDPDNSServiceTest::current_service;
 bool UDPDNSServiceTest::io_service_is_time_out;
 
-// A helper socket FD creator for given address and port.  It's generally
+// A helper socket creator for given address and port.  It's generally
 // expected to succeed; on failure it simply throws an exception to make
 // the test fail.
-int
-getSocketFD(int family, const char* const address, const char* const port) {
+socket_type
+getSocketSD(int family, const char* const address, const char* const port) {
     struct addrinfo hints, *res = NULL;
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = family;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_protocol = IPPROTO_UDP;
     hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
-    int s = -1;
+    socket_type s = invalid_socket;
     int error = getaddrinfo(address, port, &hints, &res);
     if (error == 0) {
         // If getaddrinfo returns 0, res should be set to a non NULL valid
@@ -173,14 +174,14 @@ getSocketFD(int family, const char* const address, const char* const port) {
         // it, so we satisfy them here.
         if (res != NULL) {
             s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-            if (s >= 0) {
+            if (s != invalid_socket) {
                 error = bind(s, res->ai_addr, res->ai_addrlen);
             }
             freeaddrinfo(res);
         }
     }
     if (error != 0) {
-        if (s >= 0) {
+        if (s != invalid_socket) {
             close(s);
         }
         isc_throw(isc::Unexpected, "failed to open test socket");
@@ -188,20 +189,20 @@ getSocketFD(int family, const char* const address, const char* const port) {
     return (s);
 }
 
-TEST_F(UDPDNSServiceTest, defaultUDPServerFromFD) {
+TEST_F(UDPDNSServiceTest, defaultUDPServerFromSD) {
     // If no option is explicitly specified, an asynchronous server should be
     // created.  So the two output buffers should be different.
-    dns_service.addServerUDPFromFD(getSocketFD(AF_INET6, TEST_IPV6_ADDR,
+    dns_service.addServerUDPFromSD(getSocketSD(AF_INET6, TEST_IPV6_ADDR,
                                                TEST_SERVER_PORT), AF_INET6);
     runService();
     EXPECT_TRUE(serverStopSucceed());
     EXPECT_NE(first_buffer_, second_buffer_);
 }
 
-TEST_F(UDPDNSServiceTest, explicitDefaultUDPServerFromFD) {
+TEST_F(UDPDNSServiceTest, explicitDefaultUDPServerFromSD) {
     // If "default" option is explicitly specified, the effect should be the
     // same as the previous case.
-    dns_service.addServerUDPFromFD(getSocketFD(AF_INET6, TEST_IPV6_ADDR,
+    dns_service.addServerUDPFromSD(getSocketSD(AF_INET6, TEST_IPV6_ADDR,
                                                TEST_SERVER_PORT),
                                    AF_INET6, DNSService::SERVER_DEFAULT);
     runService();
@@ -209,11 +210,11 @@ TEST_F(UDPDNSServiceTest, explicitDefaultUDPServerFromFD) {
     EXPECT_NE(first_buffer_, second_buffer_);
 }
 
-TEST_F(UDPDNSServiceTest, syncUDPServerFromFD) {
+TEST_F(UDPDNSServiceTest, syncUDPServerFromSD) {
     // If "SYNC_OK" option is specified, a synchronous server should be
     // created.  It will reuse the output buffer, so the recorded two pointer
     // should be identical.
-    dns_service.addServerUDPFromFD(getSocketFD(AF_INET6, TEST_IPV6_ADDR,
+    dns_service.addServerUDPFromSD(getSocketSD(AF_INET6, TEST_IPV6_ADDR,
                                                TEST_SERVER_PORT),
                                    AF_INET6, DNSService::SERVER_SYNC_OK);
     runService();
@@ -221,10 +222,10 @@ TEST_F(UDPDNSServiceTest, syncUDPServerFromFD) {
     EXPECT_EQ(first_buffer_, second_buffer_);
 }
 
-TEST_F(UDPDNSServiceTest, addUDPServerFromFDWithUnknownOption) {
+TEST_F(UDPDNSServiceTest, addUDPServerFromSDWithUnknownOption) {
     // Use of undefined/incompatible options should result in an exception.
-    EXPECT_THROW(dns_service.addServerUDPFromFD(
-                     getSocketFD(AF_INET6, TEST_IPV6_ADDR, TEST_SERVER_PORT),
+    EXPECT_THROW(dns_service.addServerUDPFromSD(
+                     getSocketSD(AF_INET6, TEST_IPV6_ADDR, TEST_SERVER_PORT),
                      AF_INET6, static_cast<DNSService::ServerFlag>(2)),
                  isc::InvalidParameter);
 }

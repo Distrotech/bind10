@@ -96,13 +96,13 @@ setAddresses(DNSServiceBase& service, const AddressList& addresses,
                                                 address.first, address.second,
                                                 SocketRequestor::SHARE_SAME));
         current_sockets.push_back(tcp.second);
-        service.addServerTCPFromFD(tcp.first, af);
+        service.addServerTCPFromSD(tcp.first, af);
         const SocketRequestor::SocketID
             udp(socketRequestor().requestSocket(SocketRequestor::UDP,
                                                 address.first, address.second,
                                                 SocketRequestor::SHARE_SAME));
         current_sockets.push_back(udp.second);
-        service.addServerUDPFromFD(udp.first, af, server_options);
+        service.addServerUDPFromSD(udp.first, af, server_options);
     }
 }
 

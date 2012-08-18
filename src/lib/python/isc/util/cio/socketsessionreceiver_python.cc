@@ -28,6 +28,8 @@
 #include <string>
 #include <stdexcept>
 
+#include <asio.hpp>
+
 #include <boost/lexical_cast.hpp>
 
 #include <util/python/pycppwrapper_util.h>
@@ -41,6 +43,7 @@ using namespace std;
 using namespace isc::util::python;
 using namespace isc::util::io;
 using namespace isc::util::io::python;
+using asio::detail::socket_type;
 using boost::lexical_cast;
 
 // Trivial constructor.
@@ -72,15 +75,15 @@ SocketSessionReceiver_init(PyObject* po_self, PyObject* args, PyObject*) {
         // TypeError below.
         PyObject* po_sock;
         if (PyArg_ParseTuple(args, "O", &po_sock)) {
-            PyObjectContainer fd_container(PyObject_CallMethod(
+            PyObjectContainer sd_container(PyObject_CallMethod(
                                                po_sock,
                                                const_cast<char*>("fileno"),
                                                NULL));
-            PyObjectContainer fdarg_container(
-                Py_BuildValue("(O)", fd_container.get()));
-            int fd;
-            if (PyArg_ParseTuple(fdarg_container.get(), "i", &fd)) {
-                self->cppobj = new SocketSessionReceiver(fd);
+            PyObjectContainer sdarg_container(
+                Py_BuildValue("(O)", sd_container.get()));
+            socket_type sd;
+            if (PyArg_ParseTuple(sdarg_container.get(), "i", &sd)) {
+                self->cppobj = new SocketSessionReceiver(sd);
                 return (0);
             }
             PyErr_SetString(PyExc_TypeError, "Given object's fileno() doesn't "
@@ -157,11 +160,11 @@ SocketSessionReceiver_destroy(PyObject* po_self) {
 
 // A helper struct to automatically close a socket in an RAII manner.
 struct ScopedSocket : boost::noncopyable {
-    ScopedSocket(int fd) : fd_(fd) {}
+    ScopedSocket(socket_type sd) : sd_(sd) {}
     ~ScopedSocket() {
-        close(fd_);
+        close(sd_);
     }
-    const int fd_;
+    const socket_type sd_;
 };
 
 PyObject*
@@ -180,7 +183,7 @@ SocketSessionReceiver_pop(PyObject* po_self, PyObject*) {
         ScopedSocket sock(session.getSocket());
 
         // Build Python socket object
-        PyObjectContainer c_args(Py_BuildValue("(iiii)", sock.fd_,
+        PyObjectContainer c_args(Py_BuildValue("(iiii)", sock.sd_,
                                                session.getFamily(),
                                                session.getType(),
                                                session.getProtocol()));

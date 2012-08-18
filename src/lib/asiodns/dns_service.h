@@ -79,8 +79,8 @@ public:
     /// \brief The destructor.
     virtual ~DNSServiceBase() {}
 
-    virtual void addServerTCPFromFD(int fd, int af) = 0;
-    virtual void addServerUDPFromFD(int fd, int af,
+    virtual void addServerTCPFromSD(asio::detail::socket_type sd, int af) = 0;
+    virtual void addServerUDPFromSD(asio::detail::socket_type sd, int af,
                                     ServerFlag options = SERVER_DEFAULT) = 0;
     virtual void clearServers() = 0;
 
@@ -148,7 +148,7 @@ public:
     /// \throw isc::InvalidParameter if af is neither AF_INET nor AF_INET6.
     /// \throw isc::asiolink::IOError when a low-level error happens, like the
     ///     fd is not a valid descriptor or it can't be listened on.
-    virtual void addServerTCPFromFD(int fd, int af);
+    virtual void addServerTCPFromSD(asio::detail::socket_type sd, int af);
 
     /// \brief Add another UDP server to the service from already opened
     ///    file descriptor
@@ -168,7 +168,7 @@ public:
     ///     or the given \c options include an unsupported or invalid value.
     /// \throw isc::asiolink::IOError when a low-level error happens, like the
     ///     fd is not a valid descriptor or it can't be listened on.
-    virtual void addServerUDPFromFD(int fd, int af,
+    virtual void addServerUDPFromSD(asio::detail::socket_type sd, int af,
                                     ServerFlag options = SERVER_DEFAULT);
 
     /// \brief Remove all servers from the service

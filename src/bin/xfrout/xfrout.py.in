@@ -729,7 +729,7 @@ class UnixSockServer(socketserver_mixin.NoPollMixIn,
         the calling thread will terminate.
 
         """
-        sock_fd = recv_fd(request.fileno())
+        sock_fd = recv_socket(request.fileno())
         if sock_fd < 0:
             logger.warn(XFROUT_RECEIVE_FILE_DESCRIPTOR_ERROR)
             return False

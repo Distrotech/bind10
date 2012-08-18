@@ -34,6 +34,7 @@
 #include <dns/opcode.h>
 
 using namespace asio;
+using asio::detail::socket_type;
 using asio::ip::udp;
 using isc::log::dlog;
 
@@ -62,7 +63,7 @@ struct UDPServer::Data {
     Data(io_service& io_service, const ip::address& addr, const uint16_t port,
         SimpleCallback* checkin, DNSLookup* lookup, DNSAnswer* answer) :
         io_(io_service), done_(false),
-        checkin_callback_(checkin),lookup_callback_(lookup),
+        checkin_callback_(checkin), lookup_callback_(lookup),
         answer_callback_(answer)
     {
         // We must use different instantiations for v4 and v6;
@@ -75,20 +76,21 @@ struct UDPServer::Data {
         }
         socket_->bind(udp::endpoint(addr, port));
     }
-    Data(io_service& io_service, int fd, int af, SimpleCallback* checkin,
-         DNSLookup* lookup, DNSAnswer* answer) :
+    Data(io_service& io_service, socket_type sd, int af,
+         SimpleCallback* checkin, DNSLookup* lookup, DNSAnswer* answer) :
          io_(io_service), done_(false),
          checkin_callback_(checkin),lookup_callback_(lookup),
          answer_callback_(answer)
     {
         if (af != AF_INET && af != AF_INET6) {
-            isc_throw(InvalidParameter, "Address family must be either AF_INET "
+            isc_throw(InvalidParameter,
+                      "Address family must be either AF_INET "
                       "or AF_INET6, not " << af);
         }
-        LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, ASIODNS_FD_ADD_UDP).arg(fd);
+        LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, ASIODNS_SOCKET_ADD_UDP).arg(sd);
         try {
             socket_.reset(new udp::socket(io_service));
-            socket_->assign(af == AF_INET6 ? udp::v6() : udp::v4(), fd);
+            socket_->assign(af == AF_INET6 ? udp::v6() : udp::v4(), sd);
         } catch (const std::exception& exception) {
             // Whatever the thing throws, it is something from ASIO and we
             // convert it
@@ -182,10 +184,10 @@ struct UDPServer::Data {
 ///
 /// The constructor. It just creates new internal state object
 /// and lets it handle the initialization.
-UDPServer::UDPServer(io_service& io_service, int fd, int af,
+UDPServer::UDPServer(io_service& io_service, socket_type sd, int af,
                      SimpleCallback* checkin, DNSLookup* lookup,
                      DNSAnswer* answer) :
-    data_(new Data(io_service, fd, af, checkin, lookup, answer))
+    data_(new Data(io_service, sd, af, checkin, lookup, answer))
 { }
 
 /// The function operator is implemented with the "stackless coroutine"

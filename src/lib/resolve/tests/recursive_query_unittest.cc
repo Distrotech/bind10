@@ -64,6 +64,7 @@ using namespace isc::asiodns;
 using namespace isc::asiolink;
 using namespace isc::dns;
 using namespace isc::util;
+using namespace asio::detail;
 using boost::scoped_ptr;
 
 namespace isc {
@@ -128,30 +129,30 @@ struct ScopedAddrInfo {
     struct addrinfo* res_;
 };
 
-// Similar to ScopedAddrInfo but for socket FD.  It also supports the "release"
-// operation so it can release the ownership of the FD.
+// Similar to ScopedAddrInfo but for socket.  It also supports the "release"
+// operation so it can release the ownership of the handle.
 // This is made non copyable to avoid making an accidental copy, which could
 // result in duplicate close.
 struct ScopedSocket : private boost::noncopyable {
-    ScopedSocket() : s_(-1) {}
-    ScopedSocket(int s) : s_(s) {}
+    ScopedSocket() : s_(invalid_socket) {}
+    ScopedSocket(socket_type s) : s_(s) {}
     ~ScopedSocket() {
-        if (s_ >= 0) {
+        if (s_ != invalid_socket) {
             close(s_);
         }
     }
-    void reset(int new_s) {
-        if (s_ >= 0) {
+    void reset(socket_type new_s) {
+        if (s_ != invalid_socket) {
             close(s_);
         }
         s_ = new_s;
     }
-    int release() {
-        int s = s_;
-        s_ = -1;
+    socket_type release() {
+        socket_type s = s_;
+        s_ = invalid_socket;
         return (s);
     }
-    int s_;
+    socket_type s_;
 };
 
 // This fixture is a framework for various types of network operations
@@ -186,7 +187,7 @@ protected:
 
         sock_.reset(socket(res->ai_family, res->ai_socktype,
                            res->ai_protocol));
-        if (sock_.s_ < 0) {
+        if (sock_.s_ == invalid_socket) {
             isc_throw(IOError, "failed to open test socket");
         }
         const int cc = sendto(sock_.s_, test_data, sizeof(test_data), 0,
@@ -204,7 +205,7 @@ protected:
 
         sock_.reset(socket(res->ai_family, res->ai_socktype,
                            res->ai_protocol));
-        if (sock_.s_ < 0) {
+        if (sock_.s_ == invalid_socket) {
             isc_throw(IOError, "failed to open test socket");
         }
         if (connect(sock_.s_, res->ai_addr, res->ai_addrlen) < 0) {
@@ -226,7 +227,7 @@ protected:
 
         sock_.reset(socket(res->ai_family, res->ai_socktype,
                            res->ai_protocol));
-        if (sock_.s_ < 0) {
+        if (sock_.s_ == invalid_socket) {
             isc_throw(IOError, "failed to open test socket");
         }
 
@@ -280,8 +281,8 @@ protected:
 
         ScopedSocket sock(socket(res->ai_family, res->ai_socktype,
                                  res->ai_protocol));
-        const int s = sock.s_;
-        if (s < 0) {
+        const socket_type s = sock.s_;
+        if (s == invalid_socket) {
             isc_throw(isc::Unexpected, "failed to open a test socket");
         }
         const int on = 1;
@@ -300,9 +301,9 @@ protected:
             isc_throw(isc::Unexpected, "failed to bind a test socket");
         }
         if (protocol == IPPROTO_TCP) {
-            dns_service_->addServerTCPFromFD(sock.release(), family);
+            dns_service_->addServerTCPFromSD(sock.release(), family);
         } else {
-            dns_service_->addServerUDPFromFD(sock.release(), family);
+            dns_service_->addServerUDPFromSD(sock.release(), family);
         }
     }
 
@@ -502,7 +503,7 @@ protected:
     isc::cache::ResolverCache cache_;
     scoped_ptr<ASIOCallBack> callback_;
     int callback_protocol_;
-    int callback_native_;
+    socket_type callback_native_;
     string callback_address_;
     vector<uint8_t> callback_data_;
     ScopedSocket sock_;
@@ -511,7 +512,8 @@ protected:
 
 RecursiveQueryTest::RecursiveQueryTest() :
     dns_service_(NULL), callback_(NULL), callback_protocol_(0),
-    callback_native_(-1), resolver_(new isc::util::unittests::TestResolver())
+    callback_native_(invalid_socket),
+    resolver_(new isc::util::unittests::TestResolver())
 {
     nsas_.reset(new isc::nsas::NameserverAddressStore(resolver_));
 }
@@ -677,14 +679,14 @@ TEST_F(RecursiveQueryTest, forwarderSend) {
     EXPECT_EQ(q.getClass(), q2->getClass());
 }
 
-int
+socket_type
 createTestSocket() {
     ScopedAddrInfo sai(resolveAddress(AF_INET, IPPROTO_UDP, true));
     struct addrinfo* res = sai.res_;
 
     ScopedSocket sock(socket(res->ai_family, res->ai_socktype,
                              res->ai_protocol));
-    if (sock.s_ < 0) {
+    if (sock.s_ == invalid_socket) {
         isc_throw(IOError, "failed to open test socket");
     }
     if (bind(sock.s_, res->ai_addr, res->ai_addrlen) < 0) {
@@ -710,7 +712,7 @@ setSocketTimeout(int sock, size_t tv_sec, size_t tv_usec) {
 // try to read from the socket max time
 // *num is incremented for every succesfull read
 // returns true if it can read max times, false otherwise
-bool tryRead(int sock, int recv_options, size_t max, int* num) {
+bool tryRead(socket_type sock, int recv_options, size_t max, int* num) {
     size_t i = 0;
     do {
         char inbuff[512];

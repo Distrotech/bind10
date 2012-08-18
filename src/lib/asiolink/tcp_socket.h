@@ -84,8 +84,8 @@ public:
     /// \brief Destructor
     virtual ~TCPSocket();
 
-    /// \brief Return file descriptor of underlying socket
-    virtual int getNative() const {
+    /// \brief Return descriptor of underlying socket
+    virtual asio::detail::socket_type getNative() const {
         return (socket_.native());
     }
 

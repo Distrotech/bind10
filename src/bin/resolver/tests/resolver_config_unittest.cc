@@ -53,6 +53,7 @@
 #include <testutils/socket_request.h>
 
 using namespace std;
+using asio::detail::socket_type;
 using boost::scoped_ptr;
 using namespace isc::acl;
 using isc::acl::dns::RequestContext;
@@ -195,10 +196,10 @@ private:
 
 struct ScopedSocket : public boost::noncopyable {
 public:
-    ScopedSocket(int fd) : fd_(fd) {}
-    ~ScopedSocket() { close(fd_); }
+    ScopedSocket(socket_type sd) : sd_(sd) {}
+    ~ScopedSocket() { close(sd_); }
 private:
-    const int fd_;
+    const socket_type sd_;
 };
 
 int
@@ -323,10 +324,12 @@ TEST_F(ResolverConfig, listenAddresses) {
     // listenAddressConfig should have attempted to create 4 DNS server
     // objects: two IP addresses, TCP and UDP for each.  For UDP, the "SYNC_OK"
     // option (or anything else) should have NOT been specified.
-    EXPECT_EQ(2, dnss.getTCPFdParams().size());
-    EXPECT_EQ(2, dnss.getUDPFdParams().size());
-    EXPECT_EQ(DNSService::SERVER_DEFAULT, dnss.getUDPFdParams().at(0).options);
-    EXPECT_EQ(DNSService::SERVER_DEFAULT, dnss.getUDPFdParams().at(1).options);
+    EXPECT_EQ(2, dnss.getTCPSocketParams().size());
+    EXPECT_EQ(2, dnss.getUDPSocketParams().size());
+    EXPECT_EQ(DNSService::SERVER_DEFAULT,
+              dnss.getUDPSocketParams().at(0).options);
+    EXPECT_EQ(DNSService::SERVER_DEFAULT,
+              dnss.getUDPSocketParams().at(1).options);
 
     // Check it requests the correct addresses
     const char* tokens[] = {

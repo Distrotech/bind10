@@ -28,6 +28,7 @@
 #include <cc/data.h>
 #include <session_unittests_config.h>
 
+using namespace asio::detail;
 using namespace isc::cc;
 
 TEST(AsioSession, establish) {
@@ -242,10 +243,10 @@ TEST_F(SessionTest, get_socket_descr) {
     tds->setSendLname();
     sess.establish(BIND10_TEST_SOCKET_FILE);
 
-    int socket = 0;
+    socket_type socket = invalid_socket;
     // session is established, so getSocketDesc() should work
     EXPECT_NO_THROW(socket = sess.getSocketDesc());
 
-    // expect actual socket handle to be returned, not 0
-    EXPECT_LT(0, socket);
+    // expect actual socket handle to be returned, not invalid_socket
+    EXPECT_NE(socket, invalid_socket);
 }

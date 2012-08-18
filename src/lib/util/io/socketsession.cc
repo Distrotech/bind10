@@ -39,7 +39,7 @@
 
 #include <util/buffer.h>
 
-#include "fd_share.h"
+#include "socket_share.h"
 #include "socketsession.h"
 #include "sockaddr_util.h"
 
@@ -58,7 +58,7 @@ using namespace internal;
 const size_t DEFAULT_HEADER_BUFLEN = sizeof(uint16_t) + sizeof(uint32_t) * 6 +
     sizeof(struct sockaddr_storage) * 2;
 
-// The allowable maximum size of data passed with the socket FD.  For now
+// The allowable maximum size of data passed with the socket handle.  For now
 // we use a fixed value of 65535, the largest possible size of valid DNS
 // messages.  We may enlarge it or make it configurable as we see the need
 // for more flexibility.
@@ -85,7 +85,7 @@ struct SocketSessionForwarder::ForwarderImpl {
     ForwarderImpl() : buf_(DEFAULT_HEADER_BUFLEN) {}
     struct sockaddr_un sock_un_;
     socklen_t sock_un_len_;
-    int fd_;
+    socket_type sd_;
     OutputBuffer buf_;
 };
 
@@ -116,14 +116,14 @@ SocketSessionForwarder::SocketSessionForwarder(const std::string& unix_file) :
 #ifdef HAVE_SA_LEN
     impl.sock_un_.sun_len = impl.sock_un_len_;
 #endif
-    impl.fd_ = -1;
+    impl.sd_ = invalid_socket;
 
     impl_ = new ForwarderImpl;
     *impl_ = impl;
 }
 
 SocketSessionForwarder::~SocketSessionForwarder() {
-    if (impl_->fd_ != -1) {
+    if (impl_->sd_ != invalid_socket) {
         close();
     }
     delete impl_;
@@ -131,21 +131,21 @@ SocketSessionForwarder::~SocketSessionForwarder() {
 
 void
 SocketSessionForwarder::connectToReceiver() {
-    if (impl_->fd_ != -1) {
+    if (impl_->sd_ != invalid_socket) {
         isc_throw(BadValue, "Duplicate connect to UNIX domain "
                   "endpoint " << impl_->sock_un_.sun_path);
     }
 
-    impl_->fd_ = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (impl_->fd_ == -1) {
+    impl_->sd_ = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (impl_->sd_ == invalid_socket) {
         isc_throw(SocketSessionError, "Failed to create a UNIX domain socket: "
                   << strerror(errno));
     }
     // Make the socket non blocking
-    int fcntl_flags = fcntl(impl_->fd_, F_GETFL, 0);
+    int fcntl_flags = fcntl(impl_->sd_, F_GETFL, 0);
     if (fcntl_flags != -1) {
         fcntl_flags |= O_NONBLOCK;
-        fcntl_flags = fcntl(impl_->fd_, F_SETFL, fcntl_flags);
+        fcntl_flags = fcntl(impl_->sd_, F_SETFL, fcntl_flags);
     }
     if (fcntl_flags == -1) {
         close();   // note: this is the internal method, not ::close()
@@ -157,16 +157,16 @@ SocketSessionForwarder::connectToReceiver() {
     // current size, simply set the sufficient size.
     int sndbuf_size;
     socklen_t sndbuf_size_len = sizeof(sndbuf_size);
-    if (getsockopt(impl_->fd_, SOL_SOCKET, SO_SNDBUF, &sndbuf_size,
+    if (getsockopt(impl_->sd_, SOL_SOCKET, SO_SNDBUF, &sndbuf_size,
                    &sndbuf_size_len) == -1 ||
         sndbuf_size < SOCKSESSION_BUFSIZE) {
-        if (setsockopt(impl_->fd_, SOL_SOCKET, SO_SNDBUF, &SOCKSESSION_BUFSIZE,
+        if (setsockopt(impl_->sd_, SOL_SOCKET, SO_SNDBUF, &SOCKSESSION_BUFSIZE,
                        sizeof(SOCKSESSION_BUFSIZE)) == -1) {
             close();
             isc_throw(SocketSessionError, "Failed to set send buffer size");
         }
     }
-    if (connect(impl_->fd_, convertSockAddr(&impl_->sock_un_),
+    if (connect(impl_->sd_, convertSockAddr(&impl_->sock_un_),
                 impl_->sock_un_len_) == -1) {
         close();
         isc_throw(SocketSessionError, "Failed to connect to UNIX domain "
@@ -177,20 +177,21 @@ SocketSessionForwarder::connectToReceiver() {
 
 void
 SocketSessionForwarder::close() {
-    if (impl_->fd_ == -1) {
+    if (impl_->sd_ == invalid_socket) {
         isc_throw(BadValue, "Attempt of close before connect");
     }
-    ::close(impl_->fd_);
-    impl_->fd_ = -1;
+    ::close(impl_->sd_);
+    impl_->sd_ = invalid_socket;
 }
 
 void
-SocketSessionForwarder::push(int sock, int family, int type, int protocol,
+SocketSessionForwarder::push(socket_type sock,
+                             int family, int type, int protocol,
                              const struct sockaddr& local_end,
                              const struct sockaddr& remote_end,
                              const void* data, size_t data_len)
 {
-    if (impl_->fd_ == -1) {
+    if (impl_->sd_ == invalid_socket) {
         isc_throw(BadValue, "Attempt of push before connect");
     }
     if ((local_end.sa_family != AF_INET && local_end.sa_family != AF_INET6) ||
@@ -215,8 +216,8 @@ SocketSessionForwarder::push(int sock, int family, int type, int protocol,
                   data_len << ", must not exceed " << MAX_DATASIZE);
     }
 
-    if (send_fd(impl_->fd_, sock) != 0) {
-        isc_throw(SocketSessionError, "FD passing failed: " <<
+    if (send_socket(impl_->sd_, sock) != 0) {
+        isc_throw(SocketSessionError, "socket passing failed: " <<
                   strerror(errno));
     }
 
@@ -244,7 +245,7 @@ SocketSessionForwarder::push(int sock, int family, int type, int protocol,
         { const_cast<void*>(impl_->buf_.getData()), impl_->buf_.getLength() },
         { const_cast<void*>(data), data_len }
     };
-    const int cc = writev(impl_->fd_, iov, 2);
+    const int cc = writev(impl_->sd_, iov, 2);
     if (cc != impl_->buf_.getLength() + data_len) {
         if (cc < 0) {
             isc_throw(SocketSessionError,
@@ -257,7 +258,8 @@ SocketSessionForwarder::push(int sock, int family, int type, int protocol,
     }
 }
 
-SocketSession::SocketSession(int sock, int family, int type, int protocol,
+SocketSession::SocketSession(socket_type sock,
+                             int family, int type, int protocol,
                              const sockaddr* local_end,
                              const sockaddr* remote_end,
                              const void* data, size_t data_len) :
@@ -277,20 +279,20 @@ SocketSession::SocketSession(int sock, int family, int type, int protocol,
 }
 
 struct SocketSessionReceiver::ReceiverImpl {
-    ReceiverImpl(int fd) : fd_(fd),
-                           sa_local_(convertSockAddr(&ss_local_)),
-                           sa_remote_(convertSockAddr(&ss_remote_)),
-                           header_buf_(DEFAULT_HEADER_BUFLEN),
-                           data_buf_(INITIAL_BUFSIZE)
+    ReceiverImpl(socket_type sd) : sd_(sd),
+                                   sa_local_(convertSockAddr(&ss_local_)),
+                                   sa_remote_(convertSockAddr(&ss_remote_)),
+                                   header_buf_(DEFAULT_HEADER_BUFLEN),
+                                   data_buf_(INITIAL_BUFSIZE)
     {
-        if (setsockopt(fd_, SOL_SOCKET, SO_RCVBUF, &SOCKSESSION_BUFSIZE,
+        if (setsockopt(sd_, SOL_SOCKET, SO_RCVBUF, &SOCKSESSION_BUFSIZE,
                        sizeof(SOCKSESSION_BUFSIZE)) == -1) {
             isc_throw(SocketSessionError,
                       "Failed to set receive buffer size");
         }
     }
 
-    const int fd_;
+    const socket_type sd_;
     struct sockaddr_storage ss_local_; // placeholder for local endpoint
     struct sockaddr* const sa_local_;
     struct sockaddr_storage ss_remote_; // placeholder for remote endpoint
@@ -301,8 +303,8 @@ struct SocketSessionReceiver::ReceiverImpl {
     vector<uint8_t> data_buf_;
 };
 
-SocketSessionReceiver::SocketSessionReceiver(int fd) :
-    impl_(new ReceiverImpl(fd))
+SocketSessionReceiver::SocketSessionReceiver(socket_type sd) :
+    impl_(new ReceiverImpl(sd))
 {
 }
 
@@ -327,33 +329,33 @@ readFail(int actual_len, int expected_len) {
 // SocketSessionReceiver::pop that ensures the socket is closed unless it
 // can be safely passed to the caller via release().
 struct ScopedSocket : boost::noncopyable {
-    ScopedSocket(int fd) : fd_(fd) {}
+    ScopedSocket(socket_type sd) : sd_(sd) {}
     ~ScopedSocket() {
-        if (fd_ >= 0) {
-            close(fd_);
+        if (sd_ != invalid_socket) {
+            close(sd_);
         }
     }
     int release() {
-        const int fd = fd_;
-        fd_ = -1;
-        return (fd);
+        const socket_type sd = sd_;
+        sd_ = invalid_socket;
+        return (sd);
     }
-    int fd_;
+    socket_type sd_;
 };
 }
 
 SocketSession
 SocketSessionReceiver::pop() {
-    ScopedSocket passed_sock(recv_fd(impl_->fd_));
-    if (passed_sock.fd_ == FD_SYSTEM_ERROR) {
-        isc_throw(SocketSessionError, "Receiving a forwarded FD failed: " <<
-                  strerror(errno));
-    } else if (passed_sock.fd_ < 0) {
-        isc_throw(SocketSessionError, "No FD forwarded");
+    ScopedSocket passed_sock(invalid_socket);
+    if (recv_socket(impl_->sd_, &passed_sock.sd_) == SOCKET_SYSTEM_ERROR) {
+        isc_throw(SocketSessionError,
+                  "Receiving a forwarded socket failed: " << strerror(errno));
+    } else if (passed_sock.sd_ == invalid_socket) {
+        isc_throw(SocketSessionError, "No socket forwarded");
     }
 
     uint16_t header_len;
-    const int cc_hlen = recv(impl_->fd_, &header_len, sizeof(header_len),
+    const int cc_hlen = recv(impl_->sd_, &header_len, sizeof(header_len),
                         MSG_WAITALL);
     if (cc_hlen < sizeof(header_len)) {
         readFail(cc_hlen, sizeof(header_len));
@@ -365,7 +367,7 @@ SocketSessionReceiver::pop() {
     }
     impl_->header_buf_.clear();
     impl_->header_buf_.resize(header_len);
-    const int cc_hdr = recv(impl_->fd_, &impl_->header_buf_[0], header_len,
+    const int cc_hdr = recv(impl_->sd_, &impl_->header_buf_[0], header_len,
                             MSG_WAITALL);
     if (cc_hdr < header_len) {
         readFail(cc_hdr, header_len);
@@ -412,7 +414,7 @@ SocketSessionReceiver::pop() {
 
         impl_->data_buf_.clear();
         impl_->data_buf_.resize(data_len);
-        const int cc_data = recv(impl_->fd_, &impl_->data_buf_[0], data_len,
+        const int cc_data = recv(impl_->sd_, &impl_->data_buf_[0], data_len,
                                  MSG_WAITALL);
         if (cc_data < data_len) {
             readFail(cc_data, data_len);

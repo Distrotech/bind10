@@ -27,6 +27,7 @@
 
 #include <boost/foreach.hpp>
 
+using asio::detail::socket_type;
 using namespace isc::asiolink;
 
 namespace isc {
@@ -54,8 +55,9 @@ public:
     DNSLookup* lookup_;
     DNSAnswer* answer_;
 
-    template<class Ptr, class Server> void addServerFromFD(int fd, int af) {
-        Ptr server(new Server(io_service_.get_io_service(), fd, af, checkin_,
+    template<class Ptr, class Server>
+    void addServerFromSD(socket_type sd, int af) {
+        Ptr server(new Server(io_service_.get_io_service(), sd, af, checkin_,
                               lookup_, answer_));
         (*server)();
         servers_.push_back(server);
@@ -73,21 +75,23 @@ DNSService::~DNSService() {
     delete impl_;
 }
 
-void DNSService::addServerTCPFromFD(int fd, int af) {
-    impl_->addServerFromFD<DNSServiceImpl::TCPServerPtr, TCPServer>(fd, af);
+void DNSService::addServerTCPFromSD(socket_type sd, int af) {
+    impl_->addServerFromSD<DNSServiceImpl::TCPServerPtr, TCPServer>(sd, af);
 }
 
-void DNSService::addServerUDPFromFD(int fd, int af, ServerFlag options) {
+void
+DNSService::addServerUDPFromSD(socket_type sd, int af, ServerFlag options)
+{
     if ((~SERVER_DEFINED_FLAGS & static_cast<unsigned int>(options)) != 0) {
         isc_throw(isc::InvalidParameter, "Invalid DNS/UDP server option: "
                   << options);
     }
     if ((options & SERVER_SYNC_OK) != 0) {
-        impl_->addServerFromFD<DNSServiceImpl::SyncUDPServerPtr,
-            SyncUDPServer>(fd, af);
+        impl_->addServerFromSD<DNSServiceImpl::SyncUDPServerPtr,
+            SyncUDPServer>(sd, af);
     } else {
-        impl_->addServerFromFD<DNSServiceImpl::UDPServerPtr, UDPServer>(
-            fd, af);
+        impl_->addServerFromSD<DNSServiceImpl::UDPServerPtr, UDPServer>(
+            sd, af);
     }
 }
 

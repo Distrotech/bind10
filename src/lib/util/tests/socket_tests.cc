@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#include <util/io/fd.h>
+#include <util/io/socket.h>
 
 #include <util/unittests/fork.h>
 
@@ -27,23 +27,23 @@ namespace {
 // read or write request
 const size_t TEST_DATA_SIZE = 8 * 1024 * 1024;
 
-class FDTest : public ::testing::Test {
+class SDTest : public ::testing::Test {
     public:
         unsigned char *data, *buffer;
-        FDTest() :
+        SDTest() :
             // We do not care what is inside, we just need it to be the same
             data(new unsigned char[TEST_DATA_SIZE]),
             buffer(NULL)
         { }
-        ~ FDTest() {
+        ~ SDTest() {
             delete[] data;
             delete[] buffer;
         }
 };
 
-// Test we read what was sent
-TEST_F(FDTest, read) {
-    int read_pipe(0);
+// Test we receive what was sent
+TEST_F(SDTest, receive) {
+    socket_type read_pipe(invalid_socket);
     buffer = new unsigned char[TEST_DATA_SIZE];
     pid_t feeder(provide_input(&read_pipe, data, TEST_DATA_SIZE));
     ASSERT_GE(feeder, 0);
@@ -53,9 +53,9 @@ TEST_F(FDTest, read) {
     EXPECT_EQ(0, memcmp(data, buffer, received));
 }
 
-// Test we write the correct thing
-TEST_F(FDTest, write) {
-    int write_pipe(0);
+// Test we send the correct thing
+TEST_F(SDTest, send) {
+    socket_type write_pipe(invalid_socket);
     pid_t checker(check_output(&write_pipe, data, TEST_DATA_SIZE));
     ASSERT_GE(checker, 0);
     EXPECT_TRUE(write_data(write_pipe, data, TEST_DATA_SIZE));

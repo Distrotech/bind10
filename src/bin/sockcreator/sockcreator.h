@@ -21,12 +21,8 @@
 #ifndef __SOCKCREATOR_H
 #define __SOCKCREATOR_H 1
 
-#include <util/io/fd_share.h>
+#include <util/io/socket_share.h>
 #include <exceptions/exceptions.h>
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <unistd.h>
 
 namespace isc {
 namespace socket_creator {
@@ -75,7 +71,7 @@ public:
 
 // Type of the close() function, so it can be passed as a parameter.
 // Argument is the same as that for close(2).
-typedef int (*close_t)(int);
+typedef int (*close_t)(socket_type);
 
 /// \short Create a socket and bind it.
 ///
@@ -89,12 +85,10 @@ typedef int (*close_t)(int);
 ///     after the creation.
 ///
 /// \return The file descriptor of the newly created socket, if everything
-///         goes well. A negative number is returned if an error occurs -
-///         -1 if the socket() call fails or -2 if bind() fails. In case of
-///         error, errno is set (or left intact from socket() or bind()).
-int
-getSock(const int type, struct sockaddr* bind_addr, const socklen_t addr_len,
-        const close_t close_fun);
+///         goes well.
+socket_type
+getSock(const int type, struct sockaddr* bind_addr, bool* bind_failed,
+        const socklen_t addr_len, const close_t close_fun);
 
 // Define some types for functions used to perform socket-related operations.
 // These are typedefed so that alternatives can be passed through to the
@@ -102,44 +96,45 @@ getSock(const int type, struct sockaddr* bind_addr, const socklen_t addr_len,
 
 // Type of the function to get a socket and to pass it as parameter.
 // Arguments are those described above for getSock().
-typedef int (*get_sock_t)(const int, struct sockaddr *, const socklen_t,
-                          const close_t close_fun);
+typedef socket_type (*get_sock_t)
+    (const int, struct sockaddr *, bool* bind_failed,
+     const socklen_t, const close_t close_fun);
 
-// Type of the send_fd() function, so it can be passed as a parameter.
-// Arguments are the same as those of the send_fd() function.
-typedef int (*send_fd_t)(const int, const int);
+// Type of the send_sd() function, so it can be passed as a parameter.
+// Arguments are the same as those of the send_sd() function.
+typedef int (*send_sd_t)(const socket_type, const socket_type);
 
 
 /// \brief Infinite loop parsing commands and returning the sockets.
 ///
-/// This reads commands and socket descriptions from the input_fd file
+/// This reads commands and socket descriptions from the input_sd socket
 /// descriptor, creates sockets and writes the results (socket or error) to
-/// output_fd.
+/// output_sd.
 ///
 /// It terminates either if a command asks it to or when unrecoverable error
 /// happens.
 ///
-/// \param input_fd File number of the stream from which the input commands
-///        are read.
-/// \param output_fd File number of the stream to which the response is
-///        written.  The socket is sent as part of a control message associated
+/// \param input_sd Socket number of the stream from which the input commands
+///        are received.
+/// \param output_sd Socket number of the stream to which the response is
+///        sent.  The socket is sent as part of a control message associated
 ///        with that stream.
 /// \param get_sock_fun The function that is used to create the sockets.
 ///        This should be left on the default value, the parameter is here
 ///        for testing purposes.
-/// \param send_fd_fun The function that is used to send the socket over
-///        a file descriptor. This should be left on the default value, it is
+/// \param send_sd_fun The function that is used to send the socket over
+///        a socket descriptor. This should be left on the default value, it is
 ///        here for testing purposes.
-/// \param close_fun The close function used to close sockets, coming from
-///        unistd.h. It can be overriden in tests.
+/// \param close_fun The close function used to close sockets.
+///        It can be overriden in tests.
 ///
 /// \exception isc::socket_creator::ReadError Error reading from input
 /// \exception isc::socket_creator::WriteError Error writing to output
 /// \exception isc::socket_creator::ProtocolError Unrecognised command received
 /// \exception isc::socket_creator::InternalError Other error
 void
-run(const int input_fd, const int output_fd, get_sock_t get_sock_fun,
-    send_fd_t send_fd_fun, close_t close_fun);
+run(const socket_type input_sd, const socket_type output_sd,
+    get_sock_t get_sock_fun, send_sd_t send_sd_fun, close_t close_fun);
 
 }   // namespace socket_creator
 }   // NAMESPACE ISC

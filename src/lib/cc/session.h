@@ -17,6 +17,7 @@
 
 #include <string>
 
+#include <asio.hpp>
 #include <boost/function.hpp>
 
 #include <exceptions/exceptions.h>
@@ -145,7 +146,7 @@ namespace isc {
             /// @brief returns socket descriptor from underlying socket connection
             ///
             /// @param returns socket descriptor used for session connection
-            virtual int getSocketDesc() const;
+            virtual asio::detail::socket_type getSocketDesc() const;
     private:
             void sendmsg(isc::data::ConstElementPtr msg);
             void sendmsg(isc::data::ConstElementPtr env,

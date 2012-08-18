@@ -12,8 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#include <util/io/fd.h>
-#include <util/io/fd_share.h>
+#include <util/io/socket.h>
+#include <util/io/socket_share.h>
 
 #include <util/unittests/fork.h>
 
@@ -29,7 +29,7 @@ using namespace isc::util::unittests;
 namespace {
 
 // We test that we can transfer a pipe over other pipe
-TEST(FDShare, transfer) {
+TEST(SDShare, transfer) {
     // Get a pipe and fork
     int pipes[2];
     ASSERT_NE(-1, socketpair(AF_UNIX, SOCK_STREAM, 0, pipes));
@@ -39,13 +39,13 @@ TEST(FDShare, transfer) {
         // Close the other side of pipe, we want only writible one
         EXPECT_NE(-1, close(pipes[0]));
         // Get a process to check data
-        int fd(0);
-        pid_t checker(check_output(&fd, "data", 4));
+        socket_type sd(invalid_socket);
+        pid_t checker(check_output(&sd, "data", 4));
         ASSERT_NE(-1, checker);
-        // Now, send the file descriptor, close it and close the pipe
-        EXPECT_NE(-1, send_fd(pipes[1], fd));
+        // Now, send the socket descriptor, close it and close the pipe
+        EXPECT_NE(-1, send_socket(pipes[1], sd));
         EXPECT_NE(-1, close(pipes[1]));
-        EXPECT_NE(-1, close(fd));
+        EXPECT_NE(-1, close(sd));
         // Check both subprocesses ended well
         EXPECT_TRUE(process_ok(sender));
         EXPECT_TRUE(process_ok(checker));
@@ -54,17 +54,17 @@ TEST(FDShare, transfer) {
         if(close(pipes[1])) {
             exit(1);
         }
-        // Get the file descriptor
-        int fd(recv_fd(pipes[0]));
-        if(fd == -1) {
+        // Get the socket descriptor
+        socket_type sd(invalid_socket);
+        if (recv_socket(pipes[0], &sd) == -1) {
             exit(1);
         }
         // This pipe is not needed
         if(close(pipes[0])) {
             exit(1);
         }
-        // Send "data" trough the received fd, close it and be done
-        if(!write_data(fd, "data", 4) || close(fd) == -1) {
+        // Send "data" trough the received socket, close it and be done
+        if(!write_data(sd, "data", 4) || close(sd) == -1) {
             exit(1);
         }
         exit(0);

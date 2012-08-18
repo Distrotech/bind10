@@ -28,6 +28,7 @@
 #include <asiolink/asiolink.h>
 
 using namespace std;
+using namespace asio::detail;
 using namespace isc::util;
 using namespace isc::dhcp;
 using namespace isc::util;
@@ -105,7 +106,7 @@ void ControlledDhcpv4Srv::establishSession() {
     /// Integrate the asynchronous I/O model of BIND 10 configuration
     /// control with the "select" model of the DHCP server.  This is
     /// fully explained in \ref dhcpv4Session.
-    int ctrl_socket = cc_session_->getSocketDesc();
+    socket_type ctrl_socket = cc_session_->getSocketDesc();
     cout << "b10-dhcp4: Control session started, socket="
          << ctrl_socket << endl;
     IfaceMgr::instance().set_session_socket(ctrl_socket, sessionReader);
@@ -123,7 +124,7 @@ void ControlledDhcpv4Srv::disconnectSession() {
     }
 
     // deregister session socket
-    IfaceMgr::instance().set_session_socket(IfaceMgr::INVALID_SOCKET, NULL);
+    IfaceMgr::instance().set_session_socket(invalid_socket, NULL);
 }
 
 ControlledDhcpv4Srv::ControlledDhcpv4Srv(uint16_t port /*= DHCP4_SERVER_PORT*/)

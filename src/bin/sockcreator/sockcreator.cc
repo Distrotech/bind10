@@ -14,7 +14,7 @@
 
 #include "sockcreator.h"
 
-#include <util/io/fd.h>
+#include <util/io/socket.h>
 #include <util/io/sockaddr_util.h>
 
 #include <cerrno>
@@ -33,69 +33,62 @@ namespace {
 
 // Simple wrappers for read_data/write_data that throw an exception on error.
 void
-readMessage(const int fd, void* where, const size_t length) {
-    if (read_data(fd, where, length) < length) {
+readMessage(const socket_type s, void* where, const size_t length) {
+    if (read_data(s, where, length) < length) {
         isc_throw(ReadError, "Error reading from socket creator client");
     }
 }
 
 void
-writeMessage(const int fd, const void* what, const size_t length) {
-    if (!write_data(fd, what, length)) {
+writeMessage(const socket_type s, const void* what, const size_t length) {
+    if (!write_data(s, what, length)) {
         isc_throw(WriteError, "Error writing to socket creator client");
     }
 }
 
 // Exit on a protocol error after informing the client of the problem.
 void
-protocolError(const int fd, const char reason = 'I') {
+protocolError(const socket_type s, const char reason = 'I') {
 
     // Tell client we have a problem
     char message[2];
     message[0] = 'F';
     message[1] = reason;
-    writeMessage(fd, message, sizeof(message));
+    writeMessage(s, message, sizeof(message));
 
     // ... and exit
     isc_throw(ProtocolError, "Fatal error, reason: " << reason);
 }
 
 // Return appropriate socket type constant for the socket type requested.
-// The output_fd argument is required to report a protocol error.
+// The output_sd argument is required to report a protocol error.
 int
-getSocketType(const char type_code, const int output_fd) {
-    int socket_type = 0;
+getSocketType(const char type_code, const socket_type output_sd) {
+    int s_type = 0;
     switch (type_code) {
         case 'T':
-            socket_type = SOCK_STREAM;
+            s_type = SOCK_STREAM;
             break;
 
         case 'U':
-            socket_type = SOCK_DGRAM;
+            s_type = SOCK_DGRAM;
             break;
 
         default:
-            protocolError(output_fd);   // Does not return
+            protocolError(output_sd);   // Does not return
     }
-    return (socket_type);
+    return (s_type);
 }
 
 // Convert return status from getSock() to a character to be sent back to
 // the caller.
 char
-getErrorCode(const int status) {
+getErrorCode(const bool bind_failed) {
     char error_code = ' ';
-    switch (status) {
-        case -1:
-            error_code = 'S';
-            break;
-
-        case -2:
+    if (bind_failed) {
             error_code = 'B';
-            break;
-
-        default:
-            isc_throw(InternalError, "Error creating socket");
+    } else {
+            error_code = 'S';
     }
     return (error_code);
 }
@@ -109,16 +102,16 @@ getErrorCode(const int status) {
 // The arguments passed (and the exceptions thrown) are the same as those for
 // run().
 void
-handleRequest(const int input_fd, const int output_fd,
-              const get_sock_t get_sock, const send_fd_t send_fd_fun,
+handleRequest(const socket_type input_sd, const socket_type output_sd,
+              const get_sock_t get_sock, const send_sd_t send_sd_fun,
               const close_t close_fun)
 {
     // Read the message from the client
     char type[2];
-    readMessage(input_fd, type, sizeof(type));
+    readMessage(input_sd, type, sizeof(type));
 
     // Decide what type of socket is being asked for
-    const int sock_type = getSocketType(type[0], output_fd);
+    const int s_type = getSocketType(type[0], output_sd);
 
     // Read the address they ask for depending on what address family was
     // specified.
@@ -136,8 +129,8 @@ handleRequest(const int input_fd, const int output_fd,
             addr_len = sizeof(addr_in);
             memset(&addr_in, 0, sizeof(addr_in));
             addr_in.sin_family = AF_INET;
-            readMessage(input_fd, &addr_in.sin_port, sizeof(addr_in.sin_port));
-            readMessage(input_fd, &addr_in.sin_addr.s_addr,
+            readMessage(input_sd, &addr_in.sin_port, sizeof(addr_in.sin_port));
+            readMessage(input_sd, &addr_in.sin_addr.s_addr,
                         sizeof(addr_in.sin_addr.s_addr));
             break;
 
@@ -146,22 +139,24 @@ handleRequest(const int input_fd, const int output_fd,
             addr_len = sizeof(addr_in6);
             memset(&addr_in6, 0, sizeof(addr_in6));
             addr_in6.sin6_family = AF_INET6;
-            readMessage(input_fd, &addr_in6.sin6_port,
+            readMessage(input_sd, &addr_in6.sin6_port,
                         sizeof(addr_in6.sin6_port));
-            readMessage(input_fd, &addr_in6.sin6_addr.s6_addr,
+            readMessage(input_sd, &addr_in6.sin6_addr.s6_addr,
                         sizeof(addr_in6.sin6_addr.s6_addr));
             break;
 
         default:
-            protocolError(output_fd);
+            protocolError(output_sd);
     }
 
     // Obtain the socket
-    const int result = get_sock(sock_type, addr, addr_len, close_fun);
-    if (result >= 0) {
+    bool bind_failed;
+    const socket_type result = get_sock(s_type, addr, &bind_failed,
+                                        addr_len, close_fun);
+    if (result != invalid_socket) {
         // Got the socket, send it to the client.
-        writeMessage(output_fd, "S", 1);
-        if (send_fd_fun(output_fd, result) != 0) {
+        writeMessage(output_sd, "S", 1);
+        if (send_sd_fun(output_sd, result) != 0) {
             // Error.  Close the socket (ignore any error from that operation)
             // and abort.
             close_fun(result);
@@ -170,19 +165,19 @@ handleRequest(const int input_fd, const int output_fd,
 
         // Successfully sent the socket, so free up resources we still hold
         // for it.
-        if (close_fun(result) == -1) {
+        if (close_fun(result) == socket_error_retval) {
             isc_throw(InternalError, "Error closing socket");
         }
     } else {
         // Error.  Tell the client.
         char error_message[2];
         error_message[0] = 'E';
-        error_message[1] = getErrorCode(result);
-        writeMessage(output_fd, error_message, sizeof(error_message));
+        error_message[1] = getErrorCode(bind_failed);
+        writeMessage(output_sd, error_message, sizeof(error_message));
 
         // ...and append the reason code to the error message
         const int error_number = errno;
-        writeMessage(output_fd, &error_number, sizeof(error_number));
+        writeMessage(output_sd, &error_number, sizeof(error_number));
     }
 }
 
@@ -190,46 +185,50 @@ handleRequest(const int input_fd, const int output_fd,
 // It is borrowed from bind-9 lib/isc/unix/socket.c and modified
 // to compile here.
 //
-// The function returns -2 if it fails or the socket file descriptor
-// on success (for convenience, so the result can be just returned).
-int
-mtu(int fd) {
+// The function returns false if it fails or true on success
+bool
+mtu(socket_type s) {
 #ifdef IPV6_USE_MIN_MTU        /* RFC 3542, not too common yet*/
     const int on(1);
     // use minimum MTU
-    if (setsockopt(fd, IPPROTO_IPV6, IPV6_USE_MIN_MTU, &on, sizeof(on)) < 0) {
-        return (-2);
+    if (setsockopt(s, IPPROTO_IPV6, IPV6_USE_MIN_MTU, &on, sizeof(on)) < 0) {
+        return (false);
     }
 #else // Try the following as fallback
 #ifdef IPV6_MTU
     // Use minimum MTU on systems that don't have the IPV6_USE_MIN_MTU
     const int mtu = 1280;
-    if (setsockopt(fd, IPPROTO_IPV6, IPV6_MTU, &mtu, sizeof(mtu)) < 0) {
-        return (-2);
+    if (setsockopt(s, IPPROTO_IPV6, IPV6_MTU, &mtu, sizeof(mtu)) < 0) {
+        return (false);
     }
 #endif
 #if defined(IPV6_MTU_DISCOVER) && defined(IPV6_PMTUDISC_DONT)
     // Turn off Path MTU discovery on IPv6/UDP sockets.
     const int action = IPV6_PMTUDISC_DONT;
-    if (setsockopt(fd, IPPROTO_IPV6, IPV6_MTU_DISCOVER, &action,
+    if (setsockopt(s, IPPROTO_IPV6, IPV6_MTU_DISCOVER, &action,
                    sizeof(action)) < 0) {
 
-        return (-2);
+        return (false);
     }
 #endif
 #endif
-    return (fd);
+    return (true);
 }
 
-// This one closes the socket if result is negative. Used not to leak socket
+// This one closes the socket if result is false. Used not to leak socket
 // on error.
-int maybeClose(const int result, const int socket, const close_t close_fun) {
-    if (result < 0) {
-        if (close_fun(socket) == -1) {
+socket_type
+maybeClose(const bool result,
+           const socket_type socket,
+           const close_t close_fun)
+{
+    if (!result) {
+        if (close_fun(socket) == socket_error_retval) {
             isc_throw(InternalError, "Error closing socket");
         }
+        return (invalid_socket);
     }
-    return (result);
+    return (socket);
 }
 
 } // Anonymous namespace
@@ -238,28 +237,34 @@ namespace isc {
 namespace socket_creator {
 
 // Get the socket and bind to it.
-int
-getSock(const int type, struct sockaddr* bind_addr, const socklen_t addr_len,
-        const close_t close_fun) {
-    const int sock = socket(bind_addr->sa_family, type, 0);
-    if (sock == -1) {
-        return (-1);
+socket_type
+getSock(const int type, struct sockaddr* bind_addr, bool* bind_failed,
+        const socklen_t addr_len, const close_t close_fun)
+{
+    *bind_failed = false;
+    const socket_type sock = socket(bind_addr->sa_family, type, 0);
+    if (sock == invalid_socket) {
+        return (invalid_socket);
     }
     const int on = 1;
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1) {
         // This is part of the binding process, so it's a bind error
-        return (maybeClose(-2, sock, close_fun));
+	*bind_failed = true;
+        return (maybeClose(false, sock, close_fun));
     }
     if (bind_addr->sa_family == AF_INET6 &&
         setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)) == -1) {
         // This is part of the binding process, so it's a bind error
-        return (maybeClose(-2, sock, close_fun));
+	*bind_failed = true;
+        return (maybeClose(false, sock, close_fun));
     }
     if (bind(sock, bind_addr, addr_len) == -1) {
-        return (maybeClose(-2, sock, close_fun));
+        *bind_failed = true;
+        return (maybeClose(false, sock, close_fun));
     }
     if (type == SOCK_DGRAM && bind_addr->sa_family == AF_INET6) {
         // Set some MTU flags on IPv6 UDP sockets.
+        *bind_failed = true;
         return (maybeClose(mtu(sock), sock, close_fun));
     }
     return (sock);
@@ -267,23 +272,23 @@ getSock(const int type, struct sockaddr* bind_addr, const socklen_t addr_len,
 
 // Main run loop.
 void
-run(const int input_fd, const int output_fd, get_sock_t get_sock,
-    send_fd_t send_fd_fun, close_t close_fun)
+run(const socket_type input_sd, const socket_type output_sd,
+    get_sock_t get_sock, send_sd_t send_sd_fun, close_t close_fun)
 {
     for (;;) {
         char command;
-        readMessage(input_fd, &command, sizeof(command));
+        readMessage(input_sd, &command, sizeof(command));
         switch (command) {
             case 'S':   // The "get socket" command
-                handleRequest(input_fd, output_fd, get_sock,
-                              send_fd_fun, close_fun);
+                handleRequest(input_sd, output_sd, get_sock,
+                              send_sd_fun, close_fun);
                 break;
 
             case 'T':   // The "terminate" command
                 return;
 
             default:    // Don't recognise anything else
-                protocolError(output_fd);
+                protocolError(output_sd);
         }
     }
 }

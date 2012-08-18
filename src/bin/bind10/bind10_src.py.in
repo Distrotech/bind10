@@ -250,7 +250,7 @@ class BoB:
         self._socket_cache = None
         self._tmpdir = None
         self._srv_socket = None
-        self._unix_sockets = {}
+        self._ctrl_sockets = {}
 
     def __propagate_component_config(self, config):
         comps = dict(config)
@@ -854,7 +854,7 @@ class BoB:
             # a problem. If there appear such problems, we should do something
             # about it.
             unix_socket.sendall(CREATOR_SOCKET_OK)
-            libutil_io_python.send_fd(unix_socket.fileno(), fd)
+            libutil_io_python.send_socket(unix_socket.fileno(), fd)
         except Exception as e:
             logger.info(BIND10_NO_SOCKET, token, e)
             unix_socket.sendall(CREATOR_SOCKET_UNAVAILABLE)
@@ -926,7 +926,7 @@ class BoB:
         others we care about.
         """
         (socket, conn) = self._srv_socket.accept()
-        self._unix_sockets[socket.fileno()] = (socket, b'')
+        self._ctrl_sockets[socket.fileno()] = (socket, b'')
 
     def _socket_data(self, socket_fileno):
         """
@@ -934,7 +934,7 @@ class BoB:
         attention. We try to read data from there. If it is closed, we remove
         it.
         """
-        (sock, previous) = self._unix_sockets[socket_fileno]
+        (sock, previous) = self._ctrl_sockets[socket_fileno]
         while True:
             try:
                 data = sock.recv(1, socket.MSG_DONTWAIT)
@@ -942,12 +942,12 @@ class BoB:
                 # These two might be different on some systems
                 if se.errno == errno.EAGAIN or se.errno == errno.EWOULDBLOCK:
                     # No more data now. Oh, well, just store what we have.
-                    self._unix_sockets[socket_fileno] = (sock, previous)
+                    self._ctrl_sockets[socket_fileno] = (sock, previous)
                     return
                 else:
                     data = b'' # Pretend it got closed
             if len(data) == 0: # The socket got to it's end
-                del self._unix_sockets[socket_fileno]
+                del self._ctrl_sockets[socket_fileno]
                 self.socket_consumer_dead(sock)
                 sock.close()
                 return
@@ -984,7 +984,7 @@ class BoB:
                 (rlist, wlist, xlist) = \
                     select.select([wakeup_fd, ccs_fd,
                                    self._srv_socket.fileno()] +
-                                   list(self._unix_sockets.keys()), [], [],
+                                   list(self._ctrl_sockets.keys()), [], [],
                                   wait_time)
             except select.error as err:
                 if err.args[0] == errno.EINTR:
@@ -1005,7 +1005,7 @@ class BoB:
                     os.read(wakeup_fd, 32)
                 elif fd == self._srv_socket.fileno():
                     self._srv_accept()
-                elif fd in self._unix_sockets:
+                elif fd in self._ctrl_sockets:
                     self._socket_data(fd)
 
 # global variables, needed for signal handlers

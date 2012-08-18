@@ -20,7 +20,7 @@ import copy
 import subprocess
 import copy
 from isc.log_messages.bind10_messages import *
-from libutil_io_python import recv_fd
+from libutil_io_python import recv_socket
 
 logger = isc.log.Logger("boss")
 
@@ -195,7 +195,7 @@ class WrappedSocket:
         """
         Read the file descriptor from the socket.
         """
-        return recv_fd(self.fileno())
+        return recv_socket(self.fileno())
 
 # FIXME: Any idea how to test this? Starting an external process doesn't sound
 # OK

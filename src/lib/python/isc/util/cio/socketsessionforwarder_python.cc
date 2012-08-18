@@ -27,6 +27,8 @@
 #include <string>
 #include <stdexcept>
 
+#include <asio.hpp>
+
 #include <boost/lexical_cast.hpp>
 
 #include <exceptions/exceptions.h>
@@ -43,6 +45,7 @@ using namespace isc::util::python;
 using namespace isc::util::io;
 using namespace isc::util::io::internal;
 using namespace isc::util::io::python;
+using asio::detail::socket_type;
 using boost::lexical_cast;
 
 // Trivial constructor.
@@ -181,19 +184,20 @@ SocketSessionForwarder_push(PyObject* po_self, PyObject* args) {
         static_cast<s_SocketSessionForwarder*>(po_self);
 
     try {
-        int fd, family, type, protocol;
+        socket_type sd;
+        int family, type, protocol;
         PyObject* po_local_end;
         PyObject* po_remote_end;
         Py_buffer py_buf;
 
-        if (!PyArg_ParseTuple(args, "iiiiOOy*", &fd, &family, &type, &protocol,
+        if (!PyArg_ParseTuple(args, "iiiiOOy*", &sd, &family, &type, &protocol,
                               &po_local_end, &po_remote_end, &py_buf)) {
             return (NULL);
         }
         struct sockaddr_storage ss_local, ss_remote;
         parsePySocketAddress(po_local_end, type, protocol, &ss_local);
         parsePySocketAddress(po_remote_end, type, protocol, &ss_remote);
-        self->cppobj->push(fd, family, type, protocol,
+        self->cppobj->push(sd, family, type, protocol,
                            *convertSockAddr(&ss_local),
                            *convertSockAddr(&ss_remote),
                            py_buf.buf, py_buf.len);

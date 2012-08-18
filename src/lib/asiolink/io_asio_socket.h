@@ -124,8 +124,8 @@ public:
     /// This method never throws an exception.
     ///
     /// \return The native representation of the socket.  This is the socket
-    ///         file descriptor for UNIX-like systems.
-    virtual int getNative() const = 0;
+    ///         descriptor for UNIX-like systems.
+    virtual asio::detail::socket_type getNative() const = 0;
 
     /// \brief Return the transport protocol of the socket.
     ///
@@ -305,9 +305,11 @@ public:
 
     /// \brief A dummy derived method of \c IOAsioSocket::getNative().
     ///
-    /// \return Always returns -1 as the object is not associated with a real
-    /// (native) socket.
-    virtual int getNative() const { return (-1); }
+    /// \return Always returns invalid_socket as the object is not
+    /// associated with a real (native) socket.
+    virtual asio::detail::socket_type getNative() const {
+        return (asio::detail::invalid_socket);
+    }
 
     /// \brief A dummy derived method of \c IOAsioSocket::getProtocol().
     ///

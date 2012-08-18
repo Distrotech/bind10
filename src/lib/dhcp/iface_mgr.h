@@ -56,7 +56,7 @@ public:
 
     /// Holds information about socket.
     struct SocketInfo {
-        uint16_t sockfd_; /// socket descriptor
+        asio::detail::socket_type sockfd_; /// socket descriptor
         isc::asiolink::IOAddress addr_; /// bound address
         uint16_t port_;   /// socket port
         uint16_t family_; /// IPv4 or IPv6
@@ -66,8 +66,8 @@ public:
         /// @param sockfd socket descriptor
         /// @param addr an address the socket is bound to
         /// @param port a port the socket is bound to
-        SocketInfo(uint16_t sockfd, const isc::asiolink::IOAddress& addr,
-                   uint16_t port)
+        SocketInfo(asio::detail::socket_type sockfd,
+                   const isc::asiolink::IOAddress& addr, uint16_t port)
         :sockfd_(sockfd), addr_(addr), port_(port), family_(addr.getFamily()) { }
     };
 
@@ -190,7 +190,7 @@ public:
         ///
         /// @param sockfd socket descriptor to be closed/removed.
         /// @return true if there was such socket, false otherwise
-        bool delSocket(uint16_t sockfd);
+        bool delSocket(asio::detail::socket_type sockfd);
 
         /// socket used to sending data
         /// TODO: this should be protected
@@ -292,7 +292,7 @@ public:
     /// @param pkt a packet to be transmitted
     ///
     /// @return a socket descriptor
-    uint16_t getSocket(const isc::dhcp::Pkt6& pkt);
+    asio::detail::socket_type getSocket(const isc::dhcp::Pkt6& pkt);
 
     /// @brief Return most suitable socket for transmitting specified IPv6 packet.
     ///
@@ -305,7 +305,7 @@ public:
     /// @param pkt a packet to be transmitted
     ///
     /// @return a socket descriptor
-    uint16_t getSocket(const isc::dhcp::Pkt4& pkt);
+    asio::detail::socket_type getSocket(const isc::dhcp::Pkt4& pkt);
 
     /// debugging method that prints out all available interfaces
     ///
@@ -375,9 +375,9 @@ public:
     ///
     /// @return socket descriptor, if socket creation, binding and multicast
     /// group join were all successful.
-    int openSocket(const std::string& ifname,
-                   const isc::asiolink::IOAddress& addr,
-                   const uint16_t port);
+    asio::detail::socket_type openSocket(const std::string& ifname,
+                                         const isc::asiolink::IOAddress& addr,
+                                         const uint16_t port);
 
     /// @brief Opens UDP/IP socket and binds it to interface specified.
     ///
@@ -394,9 +394,9 @@ public:
     /// @throw isc::Unexpected if failed to create and bind socket.
     /// @throw isc::BadValue if there is no address on specified interface
     /// that belongs to given family.
-    int openSocketFromIface(const std::string& ifname,
-                            const uint16_t port,
-                            const uint8_t family);
+    asio::detail::socket_type openSocketFromIface(const std::string& ifname,
+                                                  const uint16_t port,
+                                                  const uint8_t family);
 
     /// @brief Opens UDP/IP socket and binds to address specified
     ///
@@ -410,8 +410,9 @@ public:
     /// @throw isc::Unexpected if failed to create and bind socket
     /// @throw isc::BadValue if specified address is not available on
     /// any interface
-    int openSocketFromAddress(const isc::asiolink::IOAddress& addr,
-                              const uint16_t port);
+    asio::detail::socket_type
+    openSocketFromAddress(const isc::asiolink::IOAddress& addr,
+                          const uint16_t port);
 
     /// @brief Opens UDP/IP socket to be used to connect to remote address
     ///
@@ -425,8 +426,9 @@ public:
     /// @return socket descriptor, if socket creation, binding and multicast
     /// group join were all successful.
     /// @throw isc::Unexpected if failed to create and bind socket
-    int openSocketFromRemoteAddress(const isc::asiolink::IOAddress& remote_addr,
-                                    const uint16_t port);
+    asio::detail::socket_type
+    openSocketFromRemoteAddress(const isc::asiolink::IOAddress& remote_addr,
+                                const uint16_t port);
 
 
     /// Opens IPv6 sockets on detected interfaces.
@@ -462,13 +464,12 @@ public:
     ///
     /// @param socketfd socket descriptor
     /// @param callback callback function
-    void set_session_socket(int socketfd, SessionCallback callback) {
+    void set_session_socket(asio::detail::socket_type socketfd,
+                            SessionCallback callback)
+    {
         session_socket_ = socketfd;
         session_callback_ = callback;
     }
-
-    /// A value of socket descriptor representing "not specified" state.
-    static const int INVALID_SOCKET = -1;
 
     // don't use private, we need derived classes in tests
 protected:
@@ -492,7 +493,10 @@ protected:
     /// @param port a port that created socket should be bound to
     ///
     /// @return socket descriptor
-    int openSocket4(Iface& iface, const isc::asiolink::IOAddress& addr, uint16_t port);
+    asio::detail::socket_type
+    openSocket4(Iface& iface,
+                const isc::asiolink::IOAddress& addr,
+                uint16_t port);
 
     /// @brief Opens IPv6 socket.
     ///
@@ -505,7 +509,10 @@ protected:
     /// @param port a port that created socket should be bound to
     ///
     /// @return socket descriptor
-    int openSocket6(Iface& iface, const isc::asiolink::IOAddress& addr, uint16_t port);
+    asio::detail::socket_type
+    openSocket6(Iface& iface,
+                const isc::asiolink::IOAddress& addr,
+                uint16_t port);
 
     /// @brief Adds an interface to list of known interfaces.
     ///
@@ -574,7 +581,7 @@ protected:
     bool os_receive4(struct msghdr& m, Pkt4Ptr& pkt);
 
     /// socket descriptor of the session socket
-    int session_socket_;
+    asio::detail::socket_type session_socket_;
 
     /// a callback that will be called when data arrives over session_socket_
     SessionCallback session_callback_;
@@ -598,7 +605,8 @@ private:
     /// @return true if multicast join was successful
     ///
     bool
-    joinMulticast(int sock, const std::string& ifname,
+    joinMulticast(asio::detail::socket_type sock,
+                  const std::string& ifname,
                   const std::string& mcast);
 
     /// @brief Identifies local network address to be used to

@@ -33,13 +33,15 @@
 #include <errno.h>
 
 using namespace std;
+using asio::detail::socket_type;
 using namespace isc::asiolink;
 
 namespace isc {
 namespace asiodns {
 
-SyncUDPServer::SyncUDPServer(asio::io_service& io_service, const int fd,
-                             const int af, asiolink::SimpleCallback* checkin,
+SyncUDPServer::SyncUDPServer(asio::io_service& io_service,
+                             const socket_type sd, const int af,
+                             asiolink::SimpleCallback* checkin,
                              DNSLookup* lookup, DNSAnswer* answer) :
     output_buffer_(new isc::util::OutputBuffer(0)),
     query_(new isc::dns::Message(isc::dns::Message::PARSE)),
@@ -51,11 +53,11 @@ SyncUDPServer::SyncUDPServer(asio::io_service& io_service, const int fd,
         isc_throw(InvalidParameter, "Address family must be either AF_INET "
                   "or AF_INET6, not " << af);
     }
-    LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, ASIODNS_FD_ADD_UDP).arg(fd);
+    LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, ASIODNS_SOCKET_ADD_UDP).arg(sd);
     try {
         socket_.reset(new asio::ip::udp::socket(io_service));
         socket_->assign(af == AF_INET6 ? asio::ip::udp::v6() :
-                        asio::ip::udp::v4(), fd);
+                        asio::ip::udp::v4(), sd);
     } catch (const std::exception& exception) {
         // Whatever the thing throws, it is something from ASIO and we
         // convert it

@@ -52,7 +52,8 @@ public:
     /// \throw isc::InvalidParameter if af is neither AF_INET nor AF_INET6
     /// \throw isc::asiolink::IOError when a low-level error happens, like the
     ///     fd is not a valid descriptor.
-    SyncUDPServer(asio::io_service& io_service, const int fd, const int af,
+    SyncUDPServer(asio::io_service& io_service,
+                  const asio::detail::socket_type sd, const int af,
                   isc::asiolink::SimpleCallback* checkin = NULL,
                   DNSLookup* lookup = NULL, DNSAnswer* answer = NULL);
 

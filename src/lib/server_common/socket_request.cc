@@ -19,8 +19,8 @@
 #include <config/ccsession.h>
 #include <cc/session.h>
 #include <cc/data.h>
-#include <util/io/fd.h>
-#include <util/io/fd_share.h>
+#include <util/io/socket.h>
+#include <util/io/socket_share.h>
 
 #include <sys/un.h>
 #include <sys/socket.h>
@@ -34,14 +34,14 @@ namespace server_common {
 namespace {
 SocketRequestor* requestor(NULL);
 
-// Before the boss process calls send_fd, it first sends this
+// Before the boss process calls send_socket, it first sends this
 // string to indicate success, followed by the file descriptor
 const std::string& CREATOR_SOCKET_OK() {
     static const std::string str("1\n");
     return (str);
 }
 
-// Before the boss process calls send_fd, it sends this
+// Before the boss process calls send_socket, it sends this
 // string to indicate failure. It will not send a file descriptor.
 const std::string& CREATOR_SOCKET_UNAVAILABLE() {
     static const std::string str("0\n");
@@ -163,20 +163,20 @@ readRequestSocketAnswer(isc::data::ConstElementPtr recv_msg,
 //
 // This should only be called if the socket had not been connected to
 // already. To get the socket and reuse existing ones, use
-// getFdShareSocket()
+// getSdShareSocket()
 //
 // \param path The domain socket to connect to
 // \exception SocketError if the socket cannot be connected to
 // \return the socket file descriptor
-int
-createFdShareSocket(const std::string& path) {
+socket_type
+createSdShareSocket(const std::string& path) {
     // TODO: Current master has socketsession code and better way
     // of handling errors without potential leaks for this. It is
     // not public there at this moment, but when this is merged
     // we should make a ticket to move this functionality to the
     // SocketSessionReceiver and use that.
-    const int sock_pass_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (sock_pass_fd == -1) {
+    const socket_type sock_pass_sd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (sock_pass_sd == invalid_socket) {
         isc_throw(SocketRequestor::SocketError,
                   "Unable to open domain socket " << path <<
                   ": " << strerror(errno));
@@ -184,7 +184,7 @@ createFdShareSocket(const std::string& path) {
     struct sockaddr_un sock_pass_addr;
     sock_pass_addr.sun_family = AF_UNIX;
     if (path.size() >= sizeof(sock_pass_addr.sun_path)) {
-        close(sock_pass_fd);
+        close(sock_pass_sd);
         isc_throw(SocketRequestor::SocketError,
                   "Unable to open domain socket " << path <<
                   ": path too long");
@@ -195,25 +195,25 @@ createFdShareSocket(const std::string& path) {
     strcpy(sock_pass_addr.sun_path, path.c_str());
     const socklen_t len = path.size() + offsetof(struct sockaddr_un, sun_path);
     // Yes, C-style cast bad. See previous comment about SocketSessionReceiver.
-    if (connect(sock_pass_fd, (const struct sockaddr*)&sock_pass_addr,
+    if (connect(sock_pass_sd, (const struct sockaddr*)&sock_pass_addr,
                 len) == -1) {
-        close(sock_pass_fd);
+        close(sock_pass_sd);
         isc_throw(SocketRequestor::SocketError,
                   "Unable to open domain socket " << path <<
                   ": " << strerror(errno));
     }
-    return (sock_pass_fd);
+    return (sock_pass_sd);
 }
 
-// Reads a socket fd over the given socket (using recv_fd()).
+// Reads a socket handle over the given socket (using recv_socket()).
 //
 // \exception SocketError if the socket cannot be read
-// \return the socket fd that has been read
-int
-getSocketFd(const std::string& token, int sock_pass_fd) {
+// \return the socket handle that has been read
+socket_type
+getSocketSd(const std::string& token, socket_type sock_pass_sd) {
     // Tell the boss the socket token.
     const std::string token_data = token + "\n";
-    if (!isc::util::io::write_data(sock_pass_fd, token_data.c_str(),
+    if (!isc::util::io::write_data(sock_pass_sd, token_data.c_str(),
                                    token_data.size())) {
         isc_throw(SocketRequestor::SocketError, "Error writing socket token");
     }
@@ -222,7 +222,7 @@ getSocketFd(const std::string& token, int sock_pass_fd) {
     // from its cache succeeded
     char status[3];        // We need a space for trailing \0, hence 3
     memset(status, 0, 3);
-    if (isc::util::io::read_data(sock_pass_fd, status, 2) < 2) {
+    if (isc::util::io::read_data(sock_pass_sd, status, 2) < 2) {
         isc_throw(SocketRequestor::SocketError,
                   "Error reading status code while requesting socket");
     }
@@ -232,34 +232,36 @@ getSocketFd(const std::string& token, int sock_pass_fd) {
                   "CREATOR_SOCKET_UNAVAILABLE returned");
     } else if (CREATOR_SOCKET_OK() != status) {
         isc_throw(SocketRequestor::SocketError,
-                  "Unknown status code returned before recv_fd '" << status <<
-                  "'");
+                  "Unknown status code returned before recv_socket '" <<
+                  status << "'");
     }
 
-    const int passed_sock_fd = isc::util::io::recv_fd(sock_pass_fd);
+    socket_type passed_sock_sd = invalid_socket;
+    const int result = isc::util::io::recv_socket(sock_pass_sd,
+                                                  &passed_sock_sd);
 
-    // check for error values of passed_sock_fd (see fd_share.h)
-    if (passed_sock_fd < 0) {
-        switch (passed_sock_fd) {
-        case isc::util::io::FD_SYSTEM_ERROR:
+    // check for error values of result (see socket_share.h)
+    if (passed_sock_sd == invalid_socket) {
+        switch (result) {
+        case isc::util::io::SOCKET_SYSTEM_ERROR:
             isc_throw(SocketRequestor::SocketError,
-                      "FD_SYSTEM_ERROR while requesting socket");
+                      "SOCKET_SYSTEM_ERROR while requesting socket");
             break;
-        case isc::util::io::FD_OTHER_ERROR:
+        case isc::util::io::SOCKET_OTHER_ERROR:
             isc_throw(SocketRequestor::SocketError,
-                      "FD_OTHER_ERROR while requesting socket");
+                      "SOCKET_OTHER_ERROR while requesting socket");
             break;
         default:
             isc_throw(SocketRequestor::SocketError,
                       "Unknown error while requesting socket");
         }
     }
-    return (passed_sock_fd);
+    return (passed_sock_sd);
 }
 
 // This implementation class for SocketRequestor uses
 // a CC session for communication with the boss process,
-// and fd_share to read out the socket(s).
+// and socket_share to read out the socket(s).
 // Since we only use a reference to the session, it must never
 // be closed during the lifetime of this class
 class SocketRequestorCCSession : public SocketRequestor {
@@ -270,7 +272,7 @@ public:
         app_name_(app_name)
     {
         // We need to filter SIGPIPE to prevent it from happening in
-        // getSocketFd() while writing to the UNIX domain socket after the
+        // getSocketSd() while writing to the UNIX domain socket after the
         // remote end closed it.  See lib/util/io/socketsession for more
         // background details.
         // Note: we should eventually unify this level of details into a single
@@ -285,7 +287,7 @@ public:
     }
 
     ~SocketRequestorCCSession() {
-        closeFdShareSockets();
+        closeSdShareSockets();
         LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, SOCKETREQUESTOR_DESTROYED);
     }
 
@@ -316,14 +318,14 @@ public:
         readRequestSocketAnswer(recv_msg, token, path);
         // get the domain socket over which we will receive the
         // real socket
-        const int sock_pass_fd = getFdShareSocket(path);
+        const socket_type sock_pass_sd = getSdShareSocket(path);
 
         // and finally get the socket itself
-        const int passed_sock_fd = getSocketFd(token, sock_pass_fd);
+        const socket_type passed_sock_sd = getSocketSd(token, sock_pass_sd);
         LOG_DEBUG(logger, DBGLVL_TRACE_DETAIL, SOCKETREQUESTOR_GETSOCKET).
             arg(protocolString(protocol)).arg(address).arg(port).
-            arg(passed_sock_fd).arg(token).arg(path);
-        return (SocketID(passed_sock_fd, token));
+            arg(passed_sock_sd).arg(token).arg(path);
+        return (SocketID(passed_sock_sd, token));
     }
 
     virtual void releaseSocket(const std::string& token) {
@@ -356,26 +358,27 @@ public:
 private:
     // Returns the domain socket file descriptor
     // If we had not opened it yet, opens it now
-    int
-    getFdShareSocket(const std::string& path) {
-        if (fd_share_sockets_.find(path) == fd_share_sockets_.end()) {
-            const int new_fd = createFdShareSocket(path);
-            // Technically, the (creation and) assignment of the new map entry
-            // could thrown an exception and lead to FD leak.  This should be
-            // cleaned up later (see comment about SocketSessionReceiver above)
-            fd_share_sockets_[path] = new_fd;
-            return (new_fd);
+    socket_type
+    getSdShareSocket(const std::string& path) {
+        if (share_sockets_.find(path) == share_sockets_.end()) {
+            const socket_type new_sd = createSdShareSocket(path);
+            // Technically, the (creation and) assignment of the new
+            // map entry could thrown an exception and lead to socket
+            // leak. This should be cleaned up later (see comment
+            // about SocketSessionReceiver above)
+            share_sockets_[path] = new_sd;
+            return (new_sd);
         } else {
-            return (fd_share_sockets_[path]);
+            return (share_sockets_[path]);
         }
     }
 
-    // Closes the sockets that has been used for fd_share
+    // Closes the sockets that has been used for socket_share
     void
-    closeFdShareSockets() {
+    closeSdShareSockets() {
         for (std::map<std::string, int>::const_iterator it =
-                fd_share_sockets_.begin();
-             it != fd_share_sockets_.end();
+                share_sockets_.begin();
+             it != share_sockets_.end();
              ++it) {
             close((*it).second);
         }
@@ -383,7 +386,7 @@ private:
 
     cc::AbstractSession& session_;
     const std::string app_name_;
-    std::map<std::string, int> fd_share_sockets_;
+    std::map<std::string, socket_type> share_sockets_;
 };
 
 }
