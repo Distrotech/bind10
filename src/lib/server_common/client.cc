@@ -15,6 +15,8 @@
 #include <string>
 #include <sstream>
 
+#include <util/nonassignable.h>
+
 #include <acl/ip_check.h>
 
 #include <asiolink/io_endpoint.h>
@@ -26,7 +28,7 @@ using namespace isc::acl;
 using namespace isc::server_common;
 using namespace isc::asiolink;
 
-struct Client::ClientImpl {
+struct Client::ClientImpl : isc::util::nonassignable {
     ClientImpl(const IOMessage& request_message) :
         request_(request_message),
         request_src_(request_.getRemoteEndpoint().getSockAddr())

@@ -15,6 +15,8 @@
 #ifndef __ZONETABLE_H
 #define __ZONETABLE_H 1
 
+#include <util/noncopyable.h>
+#include <util/nonassignable.h>
 #include <util/memory_segment.h>
 
 #include <dns/rrset.h>
@@ -40,9 +42,9 @@ namespace datasrc {
 ///
 /// For more descriptions about its struct and interfaces, please refer to the
 /// corresponding struct and interfaces of \c MemoryDataSrc.
-class ZoneTable {
+class ZoneTable : isc::util::noncopyable {
 public:
-    struct FindResult {
+    struct FindResult : isc::util::nonassignable {
         FindResult(result::Result param_code, const ZoneFinderPtr param_zone) :
             code(param_code), zone(param_zone)
         {}
@@ -53,13 +55,7 @@ public:
     /// \name Constructors and Destructor.
     ///
     /// \b Note:
-    /// The copy constructor and the assignment operator are intentionally
-    /// defined as private, making this class non copyable.
     //@{
-private:
-    ZoneTable(const ZoneTable& source);
-    ZoneTable& operator=(const ZoneTable& source);
-
     /// Constructor.
     ///
     /// An object of this class is always expected to be created by the

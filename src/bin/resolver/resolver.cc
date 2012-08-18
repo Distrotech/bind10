@@ -38,6 +38,7 @@
 #include <exceptions/exceptions.h>
 
 #include <util/buffer.h>
+#include <util/noncopyable.h>
 
 #include <dns/opcode.h>
 #include <dns/rcode.h>
@@ -70,11 +71,7 @@ using namespace isc::asiolink;
 using namespace isc::server_common;
 using namespace isc::server_common::portconfig;
 
-class ResolverImpl {
-private:
-    // prohibit copy
-    ResolverImpl(const ResolverImpl& source);
-    ResolverImpl& operator=(const ResolverImpl& source);
+class ResolverImpl : isc::util::noncopyable {
 public:
     ResolverImpl() :
         config_session_(NULL),

@@ -15,7 +15,7 @@
 #ifndef DHCPV4_SRV_H
 #define DHCPV4_SRV_H
 
-#include <boost/noncopyable.hpp>
+#include <util/noncopyable.h>
 #include <dhcp/dhcp4.h>
 #include <dhcp/pkt4.h>
 #include <dhcp/option.h>
@@ -39,7 +39,7 @@ namespace dhcp {
 ///
 /// For detailed explanation or relations between main(), ControlledDhcpv4Srv,
 /// Dhcpv4Srv and other classes, see \ref dhcpv4Session.
-class Dhcpv4Srv : public boost::noncopyable {
+class Dhcpv4Srv : public isc::util::noncopyable {
 
     public:
     /// @brief Default constructor.

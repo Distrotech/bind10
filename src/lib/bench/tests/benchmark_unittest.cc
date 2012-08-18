@@ -14,6 +14,8 @@
 
 #include <time.h>               // for nanosleep
 
+#include <util/nonassignable.h>
+
 #include <bench/benchmark.h>
 
 #include <gtest/gtest.h>
@@ -24,7 +26,7 @@ using namespace isc::bench;
 namespace {
 // Our "benchmark" simply sleeps for a short period, and reports a faked
 // number of iterations.
-class TestBenchMark {
+class TestBenchMark : isc::util::nonassignable {
 public:
     TestBenchMark(const int sub_iterations,
                   const struct timespec& sleep_time) :

@@ -18,10 +18,10 @@
 #include <string>
 #include <vector>
 #include <utility>
-#include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 
+#include <util/noncopyable.h>
 #include <exceptions/exceptions.h>
 #include <statistics/counter.h>
 
@@ -31,7 +31,7 @@ namespace statistics {
 class CounterDictionaryImpl;
 class CounterDictionaryConstIteratorImpl;
 
-class CounterDictionary : boost::noncopyable {
+class CounterDictionary : isc::util::noncopyable {
 private:
     boost::scoped_ptr<CounterDictionaryImpl> impl_;
     // Default constructor is forbidden; number of counter items must be

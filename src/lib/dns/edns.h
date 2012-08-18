@@ -23,6 +23,8 @@
 
 #include <dns/rdata.h>
 
+#include <util/nonassignable.h>
+
 namespace isc {
 namespace util {
 class OutputBuffer;
@@ -128,7 +130,7 @@ typedef boost::shared_ptr<const EDNS> ConstEDNSPtr;
 /// If a future version of the %EDNS protocol introduces further relationship
 /// between the message and the %EDNS, we might reconsider the interface,
 /// probably with higher abstraction.
-class EDNS {
+class EDNS : isc::util::nonassignable {
 public:
     ///
     /// \name Constructors and Destructor

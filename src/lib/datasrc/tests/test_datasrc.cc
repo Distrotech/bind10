@@ -24,6 +24,7 @@
 #include <datasrc/data_source.h>
 
 #include <util/buffer.h>
+#include <util/nonassignable.h>
 #include <dns/messagerenderer.h>
 #include <dns/name.h>
 #include <dns/rdata.h>
@@ -444,7 +445,7 @@ copyRRset(RRsetPtr const source) {
     return (rrset);
 }
 
-class TestDataSrc::RRsetMatch {
+class TestDataSrc::RRsetMatch : isc::util::nonassignable {
 public:
     struct MatchResult {
         MatchResult(const bool name_found, const bool has_delegation) :

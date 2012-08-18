@@ -20,6 +20,8 @@
 #include <numeric>
 
 #include <exceptions/exceptions.h>
+#include <util/noncopyable.h>
+#include <util/nonassignable.h>
 
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int.hpp>
@@ -53,7 +55,7 @@ public:
 /// \brief Uniform random integer generator
 ///
 /// Generate uniformly distributed integers in range of [min, max]
-class UniformRandomIntegerGenerator{
+class UniformRandomIntegerGenerator : isc::util::noncopyable {
 public:
     /// \brief Constructor
     ///
@@ -78,9 +80,8 @@ public:
     /// \brief Generate uniformly distributed integer
     int operator()() { return generator_(); }
 private:
-    /// Hide default and copy constructor
+    /// Hide default constructor
     UniformRandomIntegerGenerator();///< Default constructor
-    UniformRandomIntegerGenerator(const UniformRandomIntegerGenerator&); ///< Copy constructor
 
     int min_;                       ///< The minimum integer that can generate
     int max_;                       ///< The maximum integer that can generate
@@ -92,7 +93,7 @@ private:
 /// \brief Weighted random integer generator
 ///
 /// Generate random integers according different probabilities
-class WeightedRandomIntegerGenerator {
+class WeightedRandomIntegerGenerator : isc::util::nonassignable {
 public:
     /// \brief Constructor
     ///

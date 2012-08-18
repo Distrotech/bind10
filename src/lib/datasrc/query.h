@@ -25,6 +25,8 @@
 #include <dns/rrtype.h>
 #include <dns/rrclass.h>
 
+#include <util/noncopyable.h>
+
 #include <queue>
 
 namespace isc {
@@ -34,12 +36,7 @@ class Query;
 typedef boost::shared_ptr<Query> QueryPtr;
 
 // An individual task to be carried out by the query logic
-class QueryTask {
-private:
-    /// Note: The copy constructor and the assignment operator are intentionally
-    /// defined as private.
-    QueryTask(const QueryTask& source);
-    QueryTask& operator=(const QueryTask& source);
+class QueryTask : isc::util::noncopyable {
 public:
     // XXX: Members are currently public, but should probably be
     // moved to private and wrapped in get() functions later.
@@ -158,7 +155,7 @@ typedef boost::shared_ptr<QueryTask> QueryTaskPtr;
 typedef std::queue<QueryTaskPtr> QueryTaskQueue;
 
 // Data Source query
-class Query {
+class Query : isc::util::noncopyable {
 public:
     // The state of a query: pending or answered.
     enum Status {
@@ -169,12 +166,7 @@ public:
     ///
     /// \name Constructors, Assignment Operator and Destructor.
     ///
-    /// Note: The copy constructor and the assignment operator are intentionally
-    /// defined as private.
     //@{
-private:
-    Query(const Query& source);
-    Query& operator=(const Query& source);
 public:
     // Query constructor
     Query(isc::dns::Message& m, HotCache& c, bool dnssec);

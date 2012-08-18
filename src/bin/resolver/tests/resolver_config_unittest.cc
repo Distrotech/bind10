@@ -24,7 +24,6 @@
 #include <string>
 
 #include <boost/scoped_ptr.hpp>
-#include <boost/noncopyable.hpp>
 
 #include <gtest/gtest.h>
 
@@ -47,6 +46,7 @@
 #include <resolver/resolver.h>
 
 #include <dns/tests/unittest_util.h>
+#include <util/noncopyable.h>
 #include <testutils/srv_test.h>
 #include <testutils/mockups.h>
 #include <testutils/portconfig.h>
@@ -185,7 +185,7 @@ TEST_F(ResolverConfig, rootAddressConfig) {
 
 // The following two are helper classes to manage some temporary system
 // resources in an RAII manner.
-class ScopedAddrInfo : public boost::noncopyable {
+class ScopedAddrInfo : public isc::util::noncopyable {
 public:
     ScopedAddrInfo(struct addrinfo* ai) : ai_(ai) {}
     ~ScopedAddrInfo() { freeaddrinfo(ai_);}
@@ -193,7 +193,7 @@ private:
     struct addrinfo* ai_;
 };
 
-struct ScopedSocket : public boost::noncopyable {
+struct ScopedSocket : public isc::util::noncopyable {
 public:
     ScopedSocket(int fd) : fd_(fd) {}
     ~ScopedSocket() { close(fd_); }

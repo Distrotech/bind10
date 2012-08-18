@@ -21,6 +21,8 @@
 
 #include <config.h>
 
+#include <util/nonassignable.h>
+
 #include <log/dummylog.h>
 
 #include <asio.hpp>
@@ -52,7 +54,7 @@ namespace asiodns {
  * use auto_ptr, as it is more lightweight. In the case of shared
  * configuration (eg. the callbacks, socket), we use shared_ptrs.
  */
-struct UDPServer::Data {
+struct UDPServer::Data : isc::util::nonassignable {
     /*
      * Constructors from parameters passed to UDPServer constructor.
      * This instance will not be used to retrieve and answer the actual

@@ -19,7 +19,8 @@
 #include <vector>
 
 #include <boost/shared_ptr.hpp>
-#include <boost/noncopyable.hpp>
+
+#include <util/noncopyable.h>
 
 namespace isc {
 namespace acl {
@@ -61,7 +62,7 @@ enum BasicAction {
  *     is not expected to be subclassed in real applications.
  */
 template<typename Context, typename Action = BasicAction> class ACL :
-    public boost::noncopyable {
+    public isc::util::noncopyable {
 public:
     /**
      * \brief Constructor.

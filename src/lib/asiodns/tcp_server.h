@@ -28,6 +28,8 @@
 #include "dns_lookup.h"
 #include "dns_answer.h"
 
+#include <util/nonassignable.h>
+
 namespace isc {
 namespace asiodns {
 
@@ -35,7 +37,8 @@ namespace asiodns {
 ///
 /// This class inherits from both \c DNSServer and from \c coroutine,
 /// defined in coroutine.h. 
-class TCPServer : public virtual DNSServer, public virtual coroutine {
+class TCPServer : isc::util::nonassignable,
+    public virtual DNSServer, public virtual coroutine {
 public:
     /// \brief Constructor
     /// \param io_service the asio::io_service to work with

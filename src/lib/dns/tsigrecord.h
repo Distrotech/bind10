@@ -21,6 +21,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <util/buffer.h>
+#include <util/nonassignable.h>
 
 #include <dns/name.h>
 #include <dns/rdataclass.h>
@@ -59,7 +60,7 @@ class AbstractMessageRenderer;
 /// handle it through a generic interface in a polymorphic way.
 /// We therefore chose to define it as a separate class.  This is also
 /// similar to why \c EDNS is a separate class.
-class TSIGRecord {
+class TSIGRecord : isc::util::nonassignable {
 public:
     ///
     /// \name Constructors

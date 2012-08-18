@@ -17,7 +17,7 @@
 
 #include <string>
 
-#include <boost/noncopyable.hpp>
+#include <util/noncopyable.h>
 
 #include <datasrc/zonetable.h>
 #include <datasrc/client.h>
@@ -40,7 +40,7 @@ namespace datasrc {
 /// backend).  This is why the class has methods like \c load() or \c add().
 ///
 /// This class is non copyable.
-class InMemoryZoneFinder : boost::noncopyable, public ZoneFinder {
+class InMemoryZoneFinder : isc::util::noncopyable, public ZoneFinder {
     ///
     /// \name Constructors and Destructor.
 public:

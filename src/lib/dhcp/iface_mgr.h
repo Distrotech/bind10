@@ -18,8 +18,8 @@
 #include <list>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_array.hpp>
-#include <boost/noncopyable.hpp>
 #include <asiolink/io_address.h>
+#include <util/noncopyable.h>
 #include <dhcp/dhcp6.h>
 #include <dhcp/dhcp4.h>
 #include <dhcp/pkt4.h>
@@ -34,7 +34,7 @@ namespace dhcp {
 /// interfaces, configured addresses, link-local addresses, and provides
 /// API for using sockets.
 ///
-class IfaceMgr : public boost::noncopyable {
+class IfaceMgr : public isc::util::noncopyable {
 public:
     /// type that defines list of addresses
     typedef std::vector<isc::asiolink::IOAddress> AddressCollection;

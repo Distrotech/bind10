@@ -21,6 +21,7 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <util/noncopyable.h>
 #include <cc/data.h>
 #include <config/ccsession.h>
 #include <acl/dns.h>
@@ -51,19 +52,14 @@ class ResolverImpl;
  * answer. It doesn't really know about chasing referrals and similar, it
  * simply plugs the parts that know into the network handling code.
  */
-class Resolver : public isc::resolve::ResolverInterface {
-    ///
-    /// \name Constructors, Assignment Operator and Destructor.
-    ///
-    /// Note: The copy constructor and the assignment operator are
-    /// intentionally defined as private.
+class Resolver : isc::util::noncopyable,
+    public isc::resolve::ResolverInterface
+{
     //@{
-private:
-    Resolver(const Resolver& source);
-    Resolver& operator=(const Resolver& source);
 public:
     /// The constructor.
     Resolver();
+    /// The destructor.
     ~Resolver();
     //@}
 

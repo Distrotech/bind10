@@ -51,12 +51,7 @@ class Sqlite3DataSrc : public DataSrc {
     ///
     /// \name Constructors, Assignment Operator and Destructor.
     ///
-    /// Note: The copy constructor and the assignment operator are intentionally
-    /// defined as private.
     //@{
-private:
-    Sqlite3DataSrc(const Sqlite3DataSrc& source);
-    Sqlite3DataSrc& operator=(const Sqlite3DataSrc& source);
 public:
     Sqlite3DataSrc();
     ~Sqlite3DataSrc();

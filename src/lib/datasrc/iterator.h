@@ -17,7 +17,7 @@
 
 #include <dns/rrset.h>
 
-#include <boost/noncopyable.hpp>
+#include <util/noncopyable.h>
 
 #include <datasrc/zone.h>
 
@@ -34,7 +34,7 @@ namespace datasrc {
  *
  * There's no way to start iterating from the beginning again or return.
  */
-class ZoneIterator : public boost::noncopyable {
+class ZoneIterator : public isc::util::noncopyable {
 public:
     /**
      * \brief Destructor

@@ -22,6 +22,7 @@
 #include <dns/rrset.h>
 #include <dns/nsec3hash.h>
 #include <exceptions/exceptions.h>
+#include <util/nonassignable.h>
 
 #include <datasrc/database.h>
 #include <datasrc/zone.h>
@@ -782,7 +783,7 @@ public:
 
 private:
     // Helper predicate class used in deleteRecordInZone().
-    struct deleteMatch {
+    struct deleteMatch : isc::util::nonassignable {
         deleteMatch(const string& type, const string& rdata) :
             type_(type), rdata_(rdata)
         {}

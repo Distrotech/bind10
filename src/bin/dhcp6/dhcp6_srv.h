@@ -15,7 +15,7 @@
 #ifndef DHCPV6_SRV_H
 #define DHCPV6_SRV_H
 
-#include <boost/noncopyable.hpp>
+#include <util/noncopyable.h>
 #include <dhcp/dhcp6.h>
 #include <dhcp/pkt6.h>
 #include <dhcp/option.h>
@@ -32,7 +32,7 @@ namespace dhcp {
 /// that is going to be used as server-identifier, receives incoming
 /// packets, processes them, manages leases assignment and generates
 /// appropriate responses.
-class Dhcpv6Srv : public boost::noncopyable {
+class Dhcpv6Srv : public isc::util::noncopyable {
 
 public:
 

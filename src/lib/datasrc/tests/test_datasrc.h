@@ -33,14 +33,9 @@ class Query;
 
 class TestDataSrc : public DataSrc {
     ///
-    /// \name Constructors, Assignment Operator and Destructor.
+    /// \name Constructor and Destructor.
     ///
-    /// Note: The copy constructor and the assignment operator are intentionally
-    /// defined as private.
     //@{
-private:
-    TestDataSrc(const TestDataSrc& source);
-    TestDataSrc operator=(const TestDataSrc& source); 
 public:
     TestDataSrc() : initialized(false) {}
     ~TestDataSrc() {}

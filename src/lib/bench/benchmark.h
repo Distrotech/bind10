@@ -21,6 +21,8 @@
 #include <iostream>
 #include <ios>
 
+#include <util/noncopyable.h>
+
 namespace isc {
 namespace bench {
 
@@ -187,17 +189,11 @@ namespace bench {
 /// If and when we implement it, some existing benchmark cases may need to be
 /// adjusted.
 template <typename T>
-class BenchMark {
+class BenchMark : isc::util::noncopyable {
     ///
     /// \name Constructors
     ///
-    /// Note: The copy constructor and the assignment operator are
-    /// intentionally defined as private, making this class non-copyable.
-    /// We use the default destructor.
     //@{
-private:
-    BenchMark(const BenchMark& source);
-    BenchMark& operator=(const BenchMark& source);
 public:
     /// \brief Constructor for immediate run.
     ///

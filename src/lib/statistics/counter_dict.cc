@@ -16,9 +16,9 @@
 #include <stdexcept>
 #include <iterator>
 #include <map>
-#include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include <util/noncopyable.h>
 #include <statistics/counter_dict.h>
 
 namespace {
@@ -32,7 +32,7 @@ namespace statistics {
 // Implementation detail class for CounterDictionary::ConstIterator
 class CounterDictionaryConstIteratorImpl;
 
-class CounterDictionaryImpl : boost::noncopyable {
+class CounterDictionaryImpl : isc::util::noncopyable {
 private:
     DictionaryMap dictionary_;
     std::vector<std::string> elements_;

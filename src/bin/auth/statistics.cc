@@ -20,6 +20,8 @@
 #include <cc/data.h>
 #include <cc/session.h>
 
+#include <util/noncopyable.h>
+
 #include <statistics/counter.h>
 #include <statistics/counter_dict.h>
 
@@ -30,7 +32,6 @@
 #include <sstream>
 #include <iostream>
 
-#include <boost/noncopyable.hpp>
 
 using namespace isc::dns;
 using namespace isc::auth;
@@ -42,7 +43,7 @@ using namespace isc::statistics;
 // TODO: Make use of wrappers like isc::dns::Opcode
 // for counter item type.
 
-class AuthCountersImpl : boost::noncopyable {
+class AuthCountersImpl : isc::util::noncopyable {
 public:
     AuthCountersImpl();
     ~AuthCountersImpl();

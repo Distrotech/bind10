@@ -19,6 +19,8 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <util/noncopyable.h>
+
 #include <exceptions/exceptions.h>
 
 namespace isc {
@@ -124,13 +126,10 @@ const unsigned int MAX_CHARSTRING_LEN = 255;
 /// specifically concerned about a particular type.
 /// So, this API generally handles \c Rdata in a polymorphic way through
 /// a pointer or reference to this base abstract class.
-class Rdata {
+class Rdata : isc::util::noncopyable {
     ///
     /// \name Constructors and Destructor
     ///
-    /// Note: The copy constructor and the assignment operator are intentionally
-    /// defined as private.  Concrete classes should generally specialize their
-    /// own versions of these methods.
     //@{
 protected:
     /// The default constructor.
@@ -141,9 +140,6 @@ protected:
     /// either, because an \c Rdata object without concrete data isn't
     /// meaningful.
     Rdata() {}
-private:
-    Rdata(const Rdata& source);
-    void operator=(const Rdata& source);
 public:
     /// The destructor.
     virtual ~Rdata() {};

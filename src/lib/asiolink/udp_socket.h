@@ -42,11 +42,6 @@ namespace asiolink {
 /// \param C Callback type
 template <typename C>
 class UDPSocket : public IOAsioSocket<C> {
-private:
-    /// \brief Class is non-copyable
-    UDPSocket(const UDPSocket&);
-    UDPSocket& operator=(const UDPSocket&);
-
 public:
     enum {
         MIN_SIZE = 4096         // Minimum send and receive size

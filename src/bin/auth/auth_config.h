@@ -14,6 +14,8 @@
 
 #include <string>
 
+#include <util/noncopyable.h>
+
 #include <exceptions/exceptions.h>
 
 #include <cc/data.h>
@@ -65,17 +67,11 @@ public:
 /// the destructor doesn't have to do anything special in this regard.
 /// This is a key to ensure the strong exception guarantee (see also
 /// the description of \c configureAuthServer()).
-class AuthConfigParser {
+class AuthConfigParser : isc::util::noncopyable {
     ///
     /// \name Constructors and Destructor
     ///
-    /// Note: The copy constructor and the assignment operator are
-    /// intentionally defined as private to make it explicit that this is a
-    /// pure base class.
     //@{
-private:
-    AuthConfigParser(const AuthConfigParser& source);
-    AuthConfigParser& operator=(const AuthConfigParser& source);
 protected:
     /// \brief The default constructor.
     ///

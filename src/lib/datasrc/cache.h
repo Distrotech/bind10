@@ -19,6 +19,8 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <util/noncopyable.h>
+
 #include <dns/rrset.h>
 
 namespace isc {
@@ -80,7 +82,7 @@ class HotCacheImpl;
 /// does not currently use threads, but if it ever does (or if libdatasrc
 /// is ever used by a threaded application), this will need to be
 /// revisited.
-class HotCache {
+class HotCache : isc::util::noncopyable {
 private:
     /// \name Static definitions
     //@{
@@ -91,14 +93,9 @@ private:
     static const int SLOTS_ = 1000 * LIFESPAN_;
     //@}
 
-    /// \name Constructors, Assignment Operator and Destructor.
+    /// \name Constructor and Destructor.
     ///
-    /// Note: The copy constructor and the assignment operator are intentionally
-    /// defined as private.
     //@{
-    HotCache(const HotCache& source);
-    HotCache& operator=(const HotCache& source);
-
 public:
     /// \brief Constructor for HotCache
     ///

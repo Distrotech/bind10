@@ -56,8 +56,7 @@ namespace {
     }
 }
 
-struct
-TSIGKey::TSIGKeyImpl {
+struct TSIGKey::TSIGKeyImpl : isc::util::nonassignable {
     TSIGKeyImpl(const Name& key_name, const Name& algorithm_name,
                 isc::cryptolink::HashAlgorithm algorithm,
                 const void* secret, size_t secret_len) :

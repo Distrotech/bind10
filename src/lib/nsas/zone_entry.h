@@ -25,6 +25,7 @@
 
 #include <resolve/resolver_interface.h>
 
+#include <util/nonassignable.h>
 #include <util/locks.h>
 #include <util/random/random_number_generator.h>
 
@@ -52,7 +53,8 @@ class AddressRequestCallback;
 ///
 /// It uses shared_from_this in its methods. It must live inside a shared_ptr.
 
-class ZoneEntry : public NsasEntry<ZoneEntry>, public Fetchable {
+class ZoneEntry : isc::util::nonassignable,
+    public NsasEntry<ZoneEntry>, public Fetchable {
 public:
 
     /**

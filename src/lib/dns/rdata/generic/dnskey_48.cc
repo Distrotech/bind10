@@ -20,6 +20,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
 
+#include <util/nonassignable.h>
 #include <util/encode/base64.h>
 #include <util/buffer.h>
 #include <dns/messagerenderer.h>
@@ -37,7 +38,7 @@ using namespace isc::util::encode;
 // BEGIN_ISC_NAMESPACE
 // BEGIN_RDATA_NAMESPACE
 
-struct DNSKEYImpl {
+struct DNSKEYImpl : isc::util::nonassignable {
     // straightforward representation of DNSKEY RDATA fields
     DNSKEYImpl(uint16_t flags, uint8_t protocol, uint8_t algorithm,
                const vector<uint8_t>& keydata) :

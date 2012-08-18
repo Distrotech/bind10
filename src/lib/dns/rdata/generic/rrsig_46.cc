@@ -20,6 +20,7 @@
 
 #include <boost/lexical_cast.hpp>
 
+#include <util/nonassignable.h>
 #include <util/encode/base64.h>
 #include <util/buffer.h>
 #include <util/time_utilities.h>
@@ -49,7 +50,7 @@ const size_t RRSIG_MINIMUM_LEN = 2 * sizeof(uint8_t) + 2 * sizeof(uint16_t) +
     3 * sizeof(uint32_t);
 }
 
-struct RRSIGImpl {
+struct RRSIGImpl : isc::util::nonassignable {
     // straightforward representation of RRSIG RDATA fields
     RRSIGImpl(const RRType& covered, uint8_t algorithm, uint8_t labels,
               uint32_t originalttl, uint32_t timeexpire, uint32_t timeinception,

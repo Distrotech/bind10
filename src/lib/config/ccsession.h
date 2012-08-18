@@ -15,6 +15,8 @@
 #ifndef __CCSESSION_H
 #define __CCSESSION_H 1
 
+#include <util/nonassignable.h>
+
 #include <config/config_data.h>
 #include <config/module_spec.h>
 
@@ -151,7 +153,7 @@ public:
 /// holds configuration information, and handles messages from
 /// the command channel
 ///
-class ModuleCCSession : public ConfigData {
+class ModuleCCSession : isc::util::nonassignable, public ConfigData {
 public:
     /**
      * Initialize a config/command session

@@ -21,6 +21,8 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <util/noncopyable.h>
+
 #include <dns/rrset.h>
 #include <dns/rrclass.h>
 #include <dns/rrtype.h>
@@ -94,10 +96,7 @@ private:
 /// reason and is actually quite specific to a particular need for libdatasrc.
 /// If you are tempted to use it, think twice to assess if this class
 /// is really what you want.  Again, in many cases the answer will be no.
-class RRsetList {
-private:
-    RRsetList(const RRsetList& source);
-    RRsetList& operator=(const RRsetList& source);
+class RRsetList : isc::util::noncopyable {
 public:
     RRsetList() {}
     void addRRset(RRsetPtr new_rrsetptr);

@@ -14,6 +14,7 @@
 
 #include <exceptions/exceptions.h>
 
+#include <util/nonassignable.h>
 #include <util/memory_segment_local.h>
 
 #include <dns/name.h>
@@ -216,7 +217,7 @@ public:
     // constructing the zone.
 private:
     template <typename NodeType>
-    struct FindNodeResultBase {
+    struct FindNodeResultBase : isc::util::nonassignable {
         // Bitwise flags to represent supplemental information of the
         // search result:
         // Search resulted in a wildcard match.
@@ -308,7 +309,7 @@ ZoneData::getClosestNSEC(RBTreeNodeChain<Domain>& node_path,
 ///
 /// It will be passed to \c cutCallback() (see below) and record a possible
 /// zone cut node and related RRset (normally NS or DNAME).
-struct FindState {
+struct FindState : isc::util::nonassignable {
     FindState(bool glue_ok) :
         zonecut_node_(NULL),
         dname_node_(NULL),
@@ -744,7 +745,7 @@ prepareRRset(const Name& name, const ConstRBNodeRRsetPtr& rrset, bool rename,
 
 // Specialized version of ZoneFinder::ResultContext, which specifically
 // holds rrset in the form of RBNodeRRset.
-struct RBNodeResultContext {
+struct RBNodeResultContext : isc::util::nonassignable {
     /// \brief Constructor
     ///
     /// The first three parameters correspond to those of

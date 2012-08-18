@@ -16,6 +16,7 @@
 #include <auth/auth_log.h>
 #include <auth/auth_srv.h>
 
+#include <util/noncopyable.h>
 #include <cc/data.h>
 #include <datasrc/client_list.h>
 #include <config/ccsession.h>
@@ -67,17 +68,11 @@ public:
 /// registering specific derived classes run time outside of this
 /// implementation.  If and when that happens the definition of the abstract
 /// class will be published.
-class AuthCommand {
+class AuthCommand : isc::util::noncopyable {
     ///
     /// \name Constructors and Destructor
     ///
-    /// Note: The copy constructor and the assignment operator are
-    /// intentionally defined as private to make it explicit that this is a
-    /// pure base class.
     //@{
-private:
-    AuthCommand(const AuthCommand& source);
-    AuthCommand& operator=(const AuthCommand& source);
 protected:
     /// \brief The default constructor.
     ///

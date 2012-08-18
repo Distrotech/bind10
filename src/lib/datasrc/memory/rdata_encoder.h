@@ -17,13 +17,14 @@
 
 #include <exceptions/exceptions.h>
 
+#include <util/noncopyable.h>
+
 #include <dns/labelsequence.h>
 #include <dns/rdata.h>
 #include <dns/rrclass.h>
 #include <dns/rrtype.h>
 
 #include <boost/function.hpp>
-#include <boost/noncopyable.hpp>
 
 #include <vector>
 
@@ -149,7 +150,7 @@ enum RdataNameAttributes {
 ///
 /// The caller can reuse the \c RdataEncoder object for another set of RDATA
 /// by repeating the session from \c start().
-class RdataEncoder : boost::noncopyable {
+class RdataEncoder : isc::util::noncopyable {
 public:
     /// \brief Default constructor.
     RdataEncoder();

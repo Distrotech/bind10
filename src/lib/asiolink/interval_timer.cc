@@ -18,6 +18,8 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include <util/noncopyable.h>
+
 #include <exceptions/exceptions.h>
 
 #include <asio.hpp>
@@ -34,13 +36,9 @@ namespace asiolink {
 /// and no asynchronous operation refers to it.
 /// Please follow the link to get an example:
 /// http://think-async.com/asio/asio-1.4.8/doc/asio/tutorial/tutdaytime3.html#asio.tutorial.tutdaytime3.the_tcp_connection_class
-class IntervalTimerImpl :
+class IntervalTimerImpl : isc::util::noncopyable,
     public boost::enable_shared_from_this<IntervalTimerImpl>
 {
-private:
-    // prohibit copy
-    IntervalTimerImpl(const IntervalTimerImpl& source);
-    IntervalTimerImpl& operator=(const IntervalTimerImpl& source);
 public:
     IntervalTimerImpl(IOService& io_service);
     ~IntervalTimerImpl();

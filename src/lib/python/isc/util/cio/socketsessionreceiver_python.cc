@@ -156,7 +156,7 @@ SocketSessionReceiver_destroy(PyObject* po_self) {
 }
 
 // A helper struct to automatically close a socket in an RAII manner.
-struct ScopedSocket : boost::noncopyable {
+struct ScopedSocket : isc::util::noncopyable {
     ScopedSocket(int fd) : fd_(fd) {}
     ~ScopedSocket() {
         close(fd_);

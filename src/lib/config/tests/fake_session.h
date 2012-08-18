@@ -27,10 +27,6 @@
 namespace isc {
 namespace cc {
 class FakeSession : public AbstractSession {
-private:
-    FakeSession(const Session& source);
-    FakeSession& operator=(const Session& source);
-
 public:
     // if initial_messages contains a list of messages,
     // these are sent when recv_msg or group_recvmsg is called

@@ -16,6 +16,8 @@
 
 #include <cassert>
 
+#include <util/nonassignable.h>
+
 #include <dns/name.h>
 #include <dns/rdataclass.h>
 #include <dns/rrclass.h>
@@ -48,7 +50,7 @@ namespace datasrc {
 // not expected to be performance sensitive, so the overhead due to the pimpl
 // should be okay, and it's more beneficial to hide details and minimize
 // inter module dependencies in header files.
-struct StaticDataSrcImpl {
+struct StaticDataSrcImpl : isc::util::nonassignable {
 public:
     StaticDataSrcImpl();
     const Name authors_name;

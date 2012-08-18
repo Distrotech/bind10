@@ -14,8 +14,7 @@
 
 #include <vector>
 
-#include <boost/noncopyable.hpp>
-
+#include <util/noncopyable.h>
 #include <statistics/counter.h>
 
 namespace {
@@ -25,7 +24,7 @@ const unsigned int InitialValue = 0;
 namespace isc {
 namespace statistics {
 
-class CounterImpl : boost::noncopyable {
+class CounterImpl : isc::util::noncopyable {
     private:
         std::vector<Counter::Value> counters_;
     public:

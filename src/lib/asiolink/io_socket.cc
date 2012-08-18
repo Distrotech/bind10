@@ -26,9 +26,6 @@ namespace asiolink {
 /// instantiate an \c IOSocket object without involving system resource
 /// allocation such as real network sockets.
 class DummySocket : public IOSocket {
-private:
-    DummySocket(const DummySocket& source);
-    DummySocket& operator=(const DummySocket& source);
 public:
     /// \brief Constructor from the protocol number.
     ///

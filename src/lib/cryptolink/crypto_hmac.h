@@ -13,8 +13,7 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <util/buffer.h>
-
-#include <boost/noncopyable.hpp>
+#include <util/noncopyable.h>
 
 #include <cryptolink/cryptolink.h>
 
@@ -32,7 +31,7 @@ class HMACImpl;
 /// This class is used to create and verify HMAC signatures. Instances
 /// can be created with CryptoLink::createHMAC()
 ///
-class HMAC : private boost::noncopyable {
+class HMAC : private isc::util::noncopyable {
 private:
     /// \brief Constructor from a secret and a hash algorithm
     ///

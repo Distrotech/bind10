@@ -21,6 +21,7 @@
 #include "message_entry.h"
 #include <nsas/hash_table.h>
 #include <util/lru_list.h>
+#include <util/noncopyable.h>
 #include "rrset_cache.h"
 
 namespace isc {
@@ -32,11 +33,7 @@ namespace cache {
 ///
 /// \todo The message cache class should provide the interfaces for
 ///       loading, dumping and resizing.
-class MessageCache {
-// Noncopyable
-private:
-    MessageCache(const MessageCache& source);
-    MessageCache& operator=(const MessageCache& source);
+class MessageCache : isc::util::noncopyable {
 public:
     /// \param rrset_cache The cache that stores the RRsets that the
     ///        message entry will point to

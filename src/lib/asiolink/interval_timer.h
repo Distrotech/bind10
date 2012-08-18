@@ -18,6 +18,8 @@
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include <util/noncopyable.h>
+
 #include <asiolink/io_service.h>
 
 namespace isc {
@@ -55,7 +57,7 @@ class IntervalTimerImpl;
 ///  intervalTimer.setup(function_to_call_back, interval_in_milliseconds);
 ///  io_service.run();
 /// \endcode
-class IntervalTimer {
+class IntervalTimer : isc::util::noncopyable {
 public:
     /// \name The type of timer callback function
     typedef boost::function<void()> Callback;
@@ -63,12 +65,7 @@ public:
     ///
     /// \name Constructors and Destructor
     ///
-    /// Note: The copy constructor and the assignment operator are
-    /// intentionally defined as private, making this class non-copyable.
     //@{
-private:
-    IntervalTimer(const IntervalTimer& source);
-    IntervalTimer& operator=(const IntervalTimer& source);
 public:
     /// \brief The constructor with \c IOService.
     ///

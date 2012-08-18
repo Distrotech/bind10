@@ -15,9 +15,9 @@
 #ifndef __COUNTER_H
 #define __COUNTER_H 1
 
-#include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
+#include <util/noncopyable.h>
 #include <exceptions/exceptions.h>
 
 namespace isc {
@@ -26,7 +26,7 @@ namespace statistics {
 // forward declaration for pImpl idiom
 class CounterImpl;
 
-class Counter : boost::noncopyable {
+class Counter : isc::util::noncopyable {
 private:
     boost::scoped_ptr<CounterImpl> impl_;
 public:

@@ -16,6 +16,7 @@
 
 #include <dns/name.h>
 #include <dns/messagerenderer.h>
+#include <util/nonassignable.h>
 #include <oldmessagerenderer.h>
 
 #include <cassert>
@@ -32,7 +33,7 @@ namespace {
 // performance when we modify the renderer implementation by comparing the
 // old and new implementation for the same data.
 template <typename T>
-class MessageRendererBenchMark {
+class MessageRendererBenchMark : isc::util::nonassignable {
 public:
     MessageRendererBenchMark(const vector<Name>& names) :
         names_(names)

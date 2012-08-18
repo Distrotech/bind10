@@ -140,7 +140,8 @@ private:
  * it is used to know which operators to create.
  */
 template<typename Mode, typename Context, typename Action = BasicAction>
-class LogicCreator : public Loader<Context, Action>::CheckCreator {
+class LogicCreator : isc::util::nonassignable,
+    public Loader<Context, Action>::CheckCreator {
 public:
     /**
      * \brief Constructor.
@@ -206,7 +207,7 @@ private:
  * This simply returns the negation of whatever returns the subexpression.
  */
 template<typename Context>
-class NotOperator : public CompoundCheck<Context> {
+class NotOperator : isc::util::nonassignable, public CompoundCheck<Context> {
 public:
     /**
      * \brief Constructor
@@ -237,7 +238,8 @@ private:
 };
 
 template<typename Context, typename Action = BasicAction>
-class NotCreator : public Loader<Context, Action>::CheckCreator {
+class NotCreator : isc::util::nonassignable,
+    public Loader<Context, Action>::CheckCreator {
 public:
     /**
      * \brief Constructor

@@ -18,8 +18,7 @@
 #include <string>
 #include <ostream>
 
-#include <boost/noncopyable.hpp>
-
+#include <util/noncopyable.h>
 #include <acl/ip_check.h>
 
 namespace isc {
@@ -67,7 +66,7 @@ namespace server_common {
 /// We might also want to separate DNS clients for authoritative servers
 /// and clients for the resolver, especially because the former could be
 /// simpler with performance optimizations.
-class Client : boost::noncopyable {
+class Client : isc::util::noncopyable {
 public:
     ///
     /// \name Constructors and Destructor

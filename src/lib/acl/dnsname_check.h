@@ -17,6 +17,8 @@
 
 #include <dns/name.h>
 
+#include <util/nonassignable.h>
+
 #include <acl/check.h>
 
 namespace isc {
@@ -38,7 +40,7 @@ namespace dns {
 /// matches() method, and a template specialisation for that method must be
 /// supplied for the class to be used.
 template <typename Context>
-class NameCheck : public Check<Context> {
+class NameCheck : isc::util::nonassignable, public Check<Context> {
 public:
     /// The constructor
     ///

@@ -14,6 +14,8 @@
 
 #include <config.h>
 
+#include <util/nonassignable.h>
+
 #include <exceptions/exceptions.h>
 
 #include <dns_service.h>
@@ -35,7 +37,7 @@ namespace asiodns {
 class DNSLookup;
 class DNSAnswer;
 
-class DNSServiceImpl {
+class DNSServiceImpl : isc::util::nonassignable {
 public:
     DNSServiceImpl(IOService& io_service, SimpleCallback* checkin,
                    DNSLookup* lookup, DNSAnswer* answer) :

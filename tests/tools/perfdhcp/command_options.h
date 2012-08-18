@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-#include <boost/noncopyable.hpp>
+#include <util/noncopyable.h>
 
 namespace isc {
 namespace perfdhcp {
@@ -28,7 +28,7 @@ namespace perfdhcp {
 /// This class is responsible for parsing the command-line and storing the
 /// specified options.
 ///
-class CommandOptions : public boost::noncopyable {
+class CommandOptions : public isc::util::noncopyable {
 public:
     /// 2-way (cmd line param -i) or 4-way exchanges
     enum ExchangeMode {

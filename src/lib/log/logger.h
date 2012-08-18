@@ -20,6 +20,7 @@
 #include <string>
 #include <cstring>
 
+#include <util/noncopyable.h>
 #include <exceptions/exceptions.h>
 #include <log/logger_level.h>
 #include <log/message_types.h>
@@ -122,7 +123,7 @@ public:
 /// These will avoid the potentially-expensive evaluation of arguments if the
 /// severity is such that the message will be suppressed.)
 
-class Logger {
+class Logger : isc::util::noncopyable {
 public:
     /// Maximum size of a logger name
     static const size_t MAX_LOGGER_NAME_SIZE = 31;
@@ -277,18 +278,6 @@ private:
     /// \param severity Severity of the message being output.
     /// \param message Text of the message to be output.
     void output(const Severity& severity, const std::string& message);
-
-    /// \brief Copy Constructor
-    ///
-    /// Disabled (marked private) as it makes no sense to copy the logger -
-    /// just create another one of the same name.
-    Logger(const Logger&);
-
-    /// \brief Assignment Operator
-    ///
-    /// Disabled (marked private) as it makes no sense to copy the logger -
-    /// just create another one of the same name.
-    Logger& operator=(const Logger&);
 
     /// \brief Initialize Implementation
     ///

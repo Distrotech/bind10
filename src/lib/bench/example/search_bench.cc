@@ -23,6 +23,8 @@
 
 #include <exceptions/exceptions.h>
 
+#include <util/nonassignable.h>
+
 #include <bench/benchmark.h>
 
 using namespace std;
@@ -30,7 +32,7 @@ using namespace isc::bench;
 
 namespace {
 template <bool Sorted>
-class VectorSearchBenchMark {
+class VectorSearchBenchMark : isc::util::nonassignable {
 public:
     VectorSearchBenchMark(const vector<int>& data,
                           const vector<int>& keys) :
@@ -55,7 +57,7 @@ private:
     const vector<int>& keys_;
 };
 
-class SetSearchBenchMark {
+class SetSearchBenchMark : isc::util::nonassignable {
 public:
     SetSearchBenchMark(const set<int>& data, const vector<int>& keys) :
         data_(data), keys_(keys)

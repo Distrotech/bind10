@@ -17,6 +17,7 @@
 
 #include <dns/name.h>
 #include <util/buffer.h>
+#include <util/nonassignable.h>
 
 namespace isc {
 namespace dns {
@@ -128,6 +129,9 @@ public:
         first_label_(ls.first_label_),
         last_label_(ls.last_label_)
     {}
+
+    /// \brief Assignment operator.
+    const LabelSequence& operator=(const LabelSequence& ls);
 
     /// \brief Return the wire-format data for this LabelSequence
     ///

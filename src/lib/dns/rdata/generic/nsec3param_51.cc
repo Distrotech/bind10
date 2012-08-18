@@ -12,6 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <util/nonassignable.h>
 #include <util/buffer.h>
 #include <util/encode/hex.h>
 
@@ -33,7 +34,7 @@ using namespace isc::util::encode;
 // BEGIN_ISC_NAMESPACE
 // BEGIN_RDATA_NAMESPACE
 
-struct NSEC3PARAMImpl {
+struct NSEC3PARAMImpl : isc::util::nonassignable {
     // straightforward representation of NSEC3PARAM RDATA fields
     NSEC3PARAMImpl(uint8_t hashalg, uint8_t flags, uint16_t iterations,
                    const vector<uint8_t>& salt) :

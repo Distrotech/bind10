@@ -40,15 +40,10 @@ namespace datasrc {
 struct StaticDataSrcImpl;
 
 class StaticDataSrc : public DataSrc {
-private:
     ///
-    /// \name Constructors, Assignment Operator and Destructor.
+    /// \name Constructor and Destructor.
     ///
-    /// Note: The copy constructor and the assignment operator are intentionally
-    /// defined as private.
     //@{
-    StaticDataSrc(const StaticDataSrc& source);
-    StaticDataSrc& operator=(const StaticDataSrc& source);
 public:
     StaticDataSrc();
     ~StaticDataSrc();

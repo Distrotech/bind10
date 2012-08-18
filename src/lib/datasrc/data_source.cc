@@ -30,6 +30,7 @@
 #include <util/encode/base32hex.h>
 #include <util/hash/sha1.h>
 #include <util/buffer.h>
+#include <util/nonassignable.h>
 
 #include <dns/message.h>
 #include <dns/name.h>
@@ -55,7 +56,7 @@ using namespace isc::dns::rdata;
 
 namespace {
 
-struct MatchRRsetForType {
+struct MatchRRsetForType : isc::util::nonassignable {
     MatchRRsetForType(const RRType rrtype) : rrtype_(rrtype) {}
     bool operator()(RRsetPtr rrset) {
         return (rrset->getType() == rrtype_);

@@ -20,6 +20,7 @@
 #include <exceptions/exceptions.h>
 
 #include <util/buffer.h>
+#include <util/nonassignable.h>
 #include <dns/messagerenderer.h>
 #include <dns/name.h>
 #include <dns/rdata.h>
@@ -42,7 +43,7 @@ namespace rdata {
 /// To minimize construction overhead in the other case, an instance of
 /// this class is instantiated only when necessary - we don't need the vectors
 /// when only rendering.
-struct RdataFields::RdataFieldsDetail {
+struct RdataFields::RdataFieldsDetail : isc::util::nonassignable {
     RdataFieldsDetail(const vector<FieldSpec>& fields,
                       const uint8_t* data, size_t data_length) :
         allocated_fields_(fields),

@@ -15,6 +15,7 @@
 #ifndef ACL_LOADER_H
 #define ACL_LOADER_H
 
+#include <util/nonassignable.h>
 #include <exceptions/exceptions.h>
 #include <acl/acl.h>
 #include <cc/data.h>
@@ -143,7 +144,8 @@ BasicAction defaultActionLoader(data::ConstElementPtr action);
  * be satisfied, but the another one is satisfied by either parameter1 or
  * parameter2.
  */
-template<typename Context, typename Action = BasicAction> class Loader {
+template<typename Context, typename Action = BasicAction>
+class Loader : isc::util::nonassignable {
 public:
     /**
      * \brief Constructor.

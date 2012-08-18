@@ -21,6 +21,9 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <util/noncopyable.h>
+#include <util/nonassignable.h>
+
 #include <exceptions/exceptions.h>
 
 #include <dns/name.h>
@@ -66,15 +69,10 @@ public:
 };
 
 
-class AbstractDataSrc {
+class AbstractDataSrc : isc::util::noncopyable {
     ///
-    /// \name Constructors, Assignment Operator and Destructor.
+    /// \name Constructor and Destructor.
     ///
-    /// Note: The copy constructor and the assignment operator are intentionally
-    /// defined as private to make it explicit that this is a pure base class.
-private:
-    AbstractDataSrc(const AbstractDataSrc& source);
-    AbstractDataSrc& operator=(const AbstractDataSrc& source);
 protected:
     /// \brief The default constructor.
     ///
@@ -174,13 +172,8 @@ public:
 // Base class for a DNS Data Source
 class DataSrc : public AbstractDataSrc {
     ///
-    /// \name Constructors, Assignment Operator and Destructor.
+    /// \name Constructor and Destructor.
     ///
-    /// Note: The copy constructor and the assignment operator are intentionally
-    /// defined as private.
-private:
-    DataSrc(const DataSrc& source);
-    DataSrc& operator=(const DataSrc& source);
 public:
     DataSrc() : rrclass(isc::dns::RRClass::IN()) {}
     DataSrc(const isc::dns::RRClass& c) : rrclass(c) {}
@@ -240,14 +233,9 @@ private:
 
 class MetaDataSrc : public DataSrc {
     ///
-    /// \name Constructors, Assignment Operator and Destructor.
+    /// \name Constructor and Destructor.
     ///
-    /// Note: The copy constructor and the assignment operator are intentionally
-    /// defined as private.
     //@{
-private:
-    MetaDataSrc(const MetaDataSrc& source);
-    MetaDataSrc& operator=(const MetaDataSrc& source);
 public:
     MetaDataSrc() : DataSrc(isc::dns::RRClass::ANY()) {}
     MetaDataSrc(const isc::dns::RRClass& c) : DataSrc(c) {}
@@ -323,16 +311,11 @@ private:
 ///  - There is no matching %data source and name found (which is probably
 ///    wrong, see below), or the given enclosing name gives a longer match
 ///    than the currently stored enclosing name against the specified name.
-class DataSrcMatch {
+class DataSrcMatch : isc::util::noncopyable {
     ///
-    /// \name Constructors, Assignment Operator and Destructor.
+    /// \name Constructor and Destructor.
     ///
-    /// Note: The copy constructor and the assignment operator are
-    /// intentionally defined as private.
     //@{
-private:
-    DataSrcMatch(const DataSrcMatch& source);
-    DataSrcMatch& operator=(const DataSrcMatch& source);
 public:
     /// \brief The constructor.
     ///
@@ -409,7 +392,7 @@ private:
     const isc::dns::RRClass& rrclass_;
 };
 
-class Nsec3Param {
+class Nsec3Param : isc::util::nonassignable {
 public:
     Nsec3Param(uint8_t a, uint8_t f, uint16_t i, const std::vector<uint8_t>& s);
     std::string getHash(const isc::dns::Name& name) const;

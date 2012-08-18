@@ -19,15 +19,13 @@
 #include <sys/socket.h>
 
 #include <asio.hpp>
+#include <util/noncopyable.h>
 #include <asiolink/io_service.h>
 
 namespace isc {
 namespace asiolink {
 
-class IOServiceImpl {
-private:
-    IOServiceImpl(const IOService& source);
-    IOServiceImpl& operator=(const IOService& source);
+class IOServiceImpl : isc::util::noncopyable {
 public:
     /// \brief The constructor
     IOServiceImpl() :

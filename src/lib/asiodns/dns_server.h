@@ -15,6 +15,7 @@
 #ifndef __ASIOLINK_DNS_SERVER_H
 #define __ASIOLINK_DNS_SERVER_H 1
 
+#include <util/nonassignable.h>
 #include <asiolink/io_message.h>
 
 namespace isc {
@@ -116,7 +117,7 @@ protected:
     /// not referenced.  This is because, once the calling object yields
     /// control to the handler, it falls out of scope and may disappear
     template <typename T>
-    class AsyncLookup {
+    class AsyncLookup : isc::util::nonassignable {
     public:
         AsyncLookup(T& caller) : caller_(caller) {}
         void operator()() { caller_.asyncLookup(); }

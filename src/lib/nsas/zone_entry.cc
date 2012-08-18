@@ -350,7 +350,7 @@ updateAddressSelector(std::vector<NameserverAddress>& addresses,
  * the value gets set to false when we leave the function, so we use
  * a Guard object, that sets it when it gets out of scope.
  */
-class ZoneEntry::ProcessGuard {
+class ZoneEntry::ProcessGuard : isc::util::nonassignable {
     public:
         ProcessGuard(bool& guarded) :
             guarded_(guarded)

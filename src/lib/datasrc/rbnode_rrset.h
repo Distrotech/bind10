@@ -85,15 +85,6 @@ struct AdditionalNodeInfo;
 // Note: non-Doxygen-documented methods are documented in the base class.
 
 class RBNodeRRset : public isc::dns::AbstractRRset {
-
-private:
-    // Note: The copy constructor and the assignment operator are intentionally
-    // defined as private as we would normally not duplicate a RBNodeRRset.
-    // (We use the "private" method instead of inheriting from
-    // boost::noncopyable so as to avoid multiple inheritance.)
-    RBNodeRRset(const RBNodeRRset& source);
-    RBNodeRRset& operator=(const RBNodeRRset& source);
-
 public:
     /// \brief Usual Constructor
     ///

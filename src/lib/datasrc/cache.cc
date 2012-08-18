@@ -16,6 +16,8 @@
 
 #include <map>
 
+#include <util/noncopyable.h>
+
 #include <dns/question.h>
 #include <dns/rrclass.h>
 #include <dns/rrset.h>
@@ -37,13 +39,7 @@ namespace datasrc {
 /// the case of a negative cache entry), and a copy of the
 /// query-response flags that were returned when the RRset
 /// was originally looked up in the low-level data source.
-class CacheEntry {
-private:
-    /// The copy constructor and the assignment operator are intentionally
-    /// defined as private.
-    CacheEntry(const CacheEntry& source);
-    CacheEntry& operator=(const CacheEntry& source);
-
+class CacheEntry : isc::util::noncopyable {
 public:
     CacheEntry(RRsetPtr r, uint32_t f) : rrset(r), flags(f) {};
 
@@ -57,15 +53,10 @@ typedef boost::shared_ptr<CacheEntry> CacheEntryPtr;
 /// contains a pointer to a \c CacheEntry, a reference to the \c Question
 /// that we are answering, a lifespan during which this entry remains
 /// valid, and pointers to the next and previous entries in the list.
-class CacheNode {
-private:
-    /// \name Constructors and Assignment Operator
+class CacheNode : isc::util::noncopyable {
+    /// \name Constructor
     ///
-    /// Note: The copy constructor and the assignment operator are intentionally
-    /// defined as private.
     //@{
-    CacheNode(const CacheNode& source);
-    CacheNode& operator=(const CacheNode& source);
 
 public:
     /// \brief Constructor for positive cache entry.

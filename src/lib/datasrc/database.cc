@@ -1434,7 +1434,7 @@ DatabaseUpdater::validateAddOrDelete(const char* const op_str,
 // (this implicitly assumes copying std::string objects is not very expensive;
 // this is often the case in some common implementations that have
 // copy-on-write semantics for the string class).
-class RRParameterConverter {
+class RRParameterConverter : isc::util::nonassignable {
 public:
     RRParameterConverter(const AbstractRRset& rrset) : rrset_(rrset)
     {}
@@ -1638,7 +1638,8 @@ DatabaseClient::getUpdater(const isc::dns::Name& name, bool replace,
 // Zone journal reader using some database system as the underlying data
 //  source.
 //
-class DatabaseJournalReader : public ZoneJournalReader {
+class DatabaseJournalReader : isc::util::nonassignable,
+    public ZoneJournalReader {
 private:
     // A shortcut typedef to keep the code concise.
     typedef DatabaseAccessor Accessor;

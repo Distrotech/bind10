@@ -19,10 +19,11 @@
 #include <dns/rrclass.h>
 #include <cc/data.h>
 #include <exceptions/exceptions.h>
+#include <util/noncopyable.h>
+#include <util/nonassignable.h>
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
-#include <boost/noncopyable.hpp>
 
 namespace isc {
 namespace datasrc {
@@ -49,7 +50,7 @@ class InMemoryClient;
 /// have it to allow easy testing. It is possible to create a mock-up class
 /// instead of creating a full-blown configuration. The real implementation
 /// is the ConfigurableClientList.
-class ClientList : public boost::noncopyable {
+class ClientList : public isc::util::noncopyable {
 protected:
     /// \brief Constructor.
     ///
@@ -64,7 +65,7 @@ public:
     /// As this is read-only structure, we don't bother to create accessors.
     /// Instead, all the member variables are defined as const and can be
     /// accessed directly.
-    struct FindResult {
+    struct FindResult : isc::util::nonassignable {
         /// \brief Internal class for holding a reference.
         ///
         /// This is used to make sure the data source client isn't released

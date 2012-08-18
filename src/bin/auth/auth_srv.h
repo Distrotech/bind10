@@ -17,6 +17,7 @@
 
 #include <string>
 
+#include <util/noncopyable.h>
 #include <cc/data.h>
 #include <config/ccsession.h>
 #include <datasrc/factory.h>
@@ -79,16 +80,10 @@ class AuthSrvImpl;
 /// The design of this class is still in flux.  It's quite likely to change
 /// in future versions.
 ///
-class AuthSrv {
+class AuthSrv : isc::util::noncopyable {
     ///
-    /// \name Constructors, Assignment Operator and Destructor.
-    ///
-    /// Note: The copy constructor and the assignment operator are
-    /// intentionally defined as private.
+    /// \name Constructor and Destructor.
     //@{
-private:
-    AuthSrv(const AuthSrv& source);
-    AuthSrv& operator=(const AuthSrv& source);
 public:
     /// The constructor.
     ///

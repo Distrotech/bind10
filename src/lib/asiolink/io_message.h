@@ -23,6 +23,8 @@
 #include <functional>
 #include <string>
 
+#include <util/noncopyable.h>
+
 #include <exceptions/exceptions.h>
 
 #include <asiolink/io_endpoint.h>
@@ -43,17 +45,11 @@ namespace asiolink {
 /// It only provides a minimal level of support that is necessary for
 /// the current implementation of the authoritative server.
 /// A future version of this class will definitely support more.
-class IOMessage {
+class IOMessage : isc::util::noncopyable {
     ///
     /// \name Constructors and Destructor
     ///
-
-    /// Note: The copy constructor and the assignment operator are
-    /// intentionally defined as private, making this class non-copyable.
     //@{
-private:
-    IOMessage(const IOMessage& source);
-    IOMessage& operator=(const IOMessage& source);
 public:
     /// \brief Constructor from message data
     ///
