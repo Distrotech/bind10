@@ -1440,7 +1440,7 @@ class TestUnixSockServer(unittest.TestCase):
                                                  socket.SOCK_STREAM)]
 
         # Check that loop terminates if recv_socket() fails.
-        for ret_code in [-1, FD_SYSTEM_ERROR]:
+        for ret_code in [-1, SOCKET_SYSTEM_ERROR]:
             # fake recv_socket so it returns the faked failure code.
             xfrout.recv_socket = lambda fileno: ret_code
 
