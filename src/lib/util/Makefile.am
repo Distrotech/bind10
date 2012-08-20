@@ -8,10 +8,12 @@ AM_CPPFLAGS += -DLOCKFILE_DIR=\"${localstatedir}/${PACKAGE_NAME}\"
 AM_CXXFLAGS = $(B10_CXXFLAGS)
 
 lib_LTLIBRARIES = libb10-util.la
-libb10_util_la_SOURCES  = filename.h filename.cc
+libb10_util_la_SOURCES  = dll.h
+libb10_util_la_SOURCES += filename.h filename.cc
 libb10_util_la_SOURCES += locks.h lru_list.h
 libb10_util_la_SOURCES += strutil.h strutil.cc
-libb10_util_la_SOURCES += buffer.h io_utilities.h
+libb10_util_la_SOURCES += buffer.h buffer.cc
+libb10_util_la_SOURCES += io_utilities.h
 libb10_util_la_SOURCES += time_utilities.h time_utilities.cc
 libb10_util_la_SOURCES += interprocess_sync.h
 libb10_util_la_SOURCES += interprocess_sync_file.h interprocess_sync_file.cc
@@ -28,6 +30,7 @@ libb10_util_la_SOURCES += encode/binary_from_base32hex.h
 libb10_util_la_SOURCES += encode/binary_from_base16.h
 libb10_util_la_SOURCES += random/qid_gen.h random/qid_gen.cc
 libb10_util_la_SOURCES += random/random_number_generator.h
+libb10_util_la_SOURCES += random/random_number_generator.cc
 
 EXTRA_DIST = python/pycppwrapper_util.h
 

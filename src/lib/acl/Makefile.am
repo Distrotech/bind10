@@ -6,7 +6,7 @@ AM_CXXFLAGS = $(B10_CXXFLAGS)
 
 # The core library
 lib_LTLIBRARIES = libb10-acl.la
-libb10_acl_la_SOURCES  = acl.h
+libb10_acl_la_SOURCES  = dll.h acl.h
 libb10_acl_la_SOURCES += check.h
 libb10_acl_la_SOURCES += ip_check.h ip_check.cc
 libb10_acl_la_SOURCES += logic_check.h

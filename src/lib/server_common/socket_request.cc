@@ -11,6 +11,9 @@
 // LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
+
+#define B10_LIBSERVER_COMMON_EXPORT
+
 #include <config.h>
 
 #include "socket_request.h"
@@ -388,7 +391,7 @@ private:
 
 }
 
-SocketRequestor&
+B10_LIBSERVER_COMMON_API SocketRequestor&
 socketRequestor() {
     if (requestor != NULL) {
         return (*requestor);
@@ -397,7 +400,7 @@ socketRequestor() {
     }
 }
 
-void
+B10_LIBSERVER_COMMON_API void
 initSocketRequestor(cc::AbstractSession& session,
                     const std::string& app_name)
 {
@@ -409,12 +412,12 @@ initSocketRequestor(cc::AbstractSession& session,
     }
 }
 
-void
+B10_LIBSERVER_COMMON_API void
 initTestSocketRequestor(SocketRequestor* new_requestor) {
     requestor = new_requestor;
 }
 
-void
+B10_LIBSERVER_COMMON_API void
 cleanupSocketRequestor() {
     if (requestor != NULL) {
         delete requestor;

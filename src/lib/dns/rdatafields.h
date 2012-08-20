@@ -19,15 +19,18 @@
 
 #include <cstddef>
 
+#include <util/dll.h>
+#include <dns/dll.h>
+
 namespace isc {
 namespace util {
-class OutputBuffer;
+class B10_LIBUTIL_API OutputBuffer;
 }
 namespace dns {
-class AbstractMessageRenderer;
+class B10_LIBDNS_API AbstractMessageRenderer;
 
 namespace rdata {
-class Rdata;
+class B10_LIBDNS_API Rdata;
 
 /// A low-level, RR type-independent representation of DNS RDATA.
 ///
@@ -156,7 +159,7 @@ getFieldSpecData()-> { compressible name { compressible name { other data
 /// future version.  One possibility is to store offset information as well
 /// as the name data (at the cost of increasing memory footprint), and
 /// to use the pair of data for faster rendering.
-class RdataFields {
+class B10_LIBDNS_API RdataFields {
 public:
     /// Types of \c RdataFields fields.
     ///

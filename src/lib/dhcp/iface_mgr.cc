@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDHCP_EXPORT
+
 #include <config.h>
 #include <sstream>
 #include <fstream>

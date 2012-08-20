@@ -20,6 +20,7 @@
 #endif
 
 #include <asiolink/simple_callback.h>
+#include <asiodns/dll.h>
 #include <asiodns/dns_answer.h>
 #include <asiodns/dns_lookup.h>
 #include <asiodns/dns_server.h>
@@ -37,7 +38,8 @@ namespace asiodns {
 ///        DNS query event. As such, it is both a \c DNSServer and
 ///        a \c coroutine
 ///
-class UDPServer : public virtual DNSServer, public virtual coroutine {
+class B10_LIBASIODNS_API UDPServer :
+    public virtual DNSServer, public virtual coroutine {
 public:
     /// \brief Constructor
     /// \param io_service the asio::io_service to work with

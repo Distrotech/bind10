@@ -17,6 +17,7 @@
 
 #include <util/nonassignable.h>
 
+#include <config/dll.h>
 #include <config/config_data.h>
 #include <config/module_spec.h>
 
@@ -34,7 +35,7 @@ namespace config {
 /// \brief Creates a standard config/command level success answer message
 ///        (i.e. of the form { "result": [ 0 ] }
 /// \return Standard command/config success answer message
-isc::data::ConstElementPtr createAnswer();
+B10_LIBCONFIG_API isc::data::ConstElementPtr createAnswer();
 
 ///
 /// \brief Creates a standard config/command level answer message
@@ -46,8 +47,8 @@ isc::data::ConstElementPtr createAnswer();
 ///            Element type. For rcode == 1, this argument is mandatory,
 ///            and must be a StringElement containing an error description
 /// \return Standard command/config answer message
-isc::data::ConstElementPtr createAnswer(const int rcode,
-                                        isc::data::ConstElementPtr arg);
+B10_LIBCONFIG_API isc::data::ConstElementPtr
+createAnswer(const int rcode, isc::data::ConstElementPtr arg);
 
 ///
 /// \brief Creates a standard config/command level answer message
@@ -56,8 +57,8 @@ isc::data::ConstElementPtr createAnswer(const int rcode,
 /// \param rcode The return code (0 for success)
 /// \param arg A string to put into the StringElement argument
 /// \return Standard command/config answer message
-isc::data::ConstElementPtr createAnswer(const int rcode,
-                                        const std::string& arg);
+B10_LIBCONFIG_API isc::data::ConstElementPtr
+createAnswer(const int rcode, const std::string& arg);
 
 ///
 /// Parses a standard config/command level answer message
@@ -68,8 +69,8 @@ isc::data::ConstElementPtr createAnswer(const int rcode,
 /// \return The optional argument in the message, or an empty ElementPtr
 ///         if there was no argument. If rcode != 0, this contains a
 ///         StringElement with the error description.
-isc::data::ConstElementPtr parseAnswer(int &rcode,
-                                       isc::data::ConstElementPtr msg);
+B10_LIBCONFIG_API isc::data::ConstElementPtr
+parseAnswer(int &rcode, isc::data::ConstElementPtr msg);
 
 ///
 /// \brief Creates a standard config/command command message with no
@@ -77,7 +78,8 @@ isc::data::ConstElementPtr parseAnswer(int &rcode,
 /// 
 /// \param command The command string
 /// \return The created message
-isc::data::ConstElementPtr createCommand(const std::string& command);
+B10_LIBCONFIG_API isc::data::ConstElementPtr
+createCommand(const std::string& command);
 
 ///
 /// \brief Creates a standard config/command command message with the
@@ -87,8 +89,8 @@ isc::data::ConstElementPtr createCommand(const std::string& command);
 /// \param arg The optional argument for the command. This can be of 
 ///        any Element type, but it should conform to the .spec file.
 /// \return The created message
-isc::data::ConstElementPtr createCommand(const std::string& command,
-                                         isc::data::ConstElementPtr arg);
+B10_LIBCONFIG_API isc::data::ConstElementPtr
+createCommand(const std::string& command, isc::data::ConstElementPtr arg);
 
 ///
 /// \brief Parses the given command into a string containing the actual
@@ -124,8 +126,9 @@ isc::data::ConstElementPtr createCommand(const std::string& command,
 /// \param command The command message containing the command (as made
 ///        by createCommand()
 /// \return The command name
-std::string parseCommand(isc::data::ConstElementPtr& arg,
-                         isc::data::ConstElementPtr command);
+B10_LIBCONFIG_API std::string
+parseCommand(isc::data::ConstElementPtr& arg,
+             isc::data::ConstElementPtr command);
 
 
 ///
@@ -133,7 +136,7 @@ std::string parseCommand(isc::data::ConstElementPtr& arg,
 /// is there is a problem with one of the messages
 ///
 // todo: include types and called function in the exception
-class CCSessionError : public isc::Exception {
+class B10_LIBCONFIG_API CCSessionError : public isc::Exception {
 public:
     CCSessionError(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -142,7 +145,7 @@ public:
 ///
 /// \brief This exception is thrown if the constructor fails
 ///
-class CCSessionInitError : public isc::Exception {
+class B10_LIBCONFIG_API CCSessionInitError : public isc::Exception {
 public:
     CCSessionInitError(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -153,7 +156,8 @@ public:
 /// holds configuration information, and handles messages from
 /// the command channel
 ///
-class ModuleCCSession : isc::util::nonassignable, public ConfigData {
+class B10_LIBCONFIG_API ModuleCCSession :
+    isc::util::nonassignable, public ConfigData {
 public:
     /**
      * Initialize a config/command session
@@ -541,7 +545,7 @@ private:
 /// \param new_config The modified configuration values
 /// \param config_data The full config data for the (remote) logging
 ///                    module.
-void
+B10_LIBCONFIG_API void
 default_logconfig_handler(const std::string& module_name,
                           isc::data::ConstElementPtr new_config,
                           const ConfigData& config_data);
@@ -575,7 +579,7 @@ default_logconfig_handler(const std::string& module_name,
 /// \param loggers the original 'loggers' config list
 /// \return ListElement containing only loggers relevant for this
 ///         module, where * is replaced by the root logger name
-isc::data::ConstElementPtr
+B10_LIBCONFIG_API isc::data::ConstElementPtr
 getRelatedLoggers(isc::data::ConstElementPtr loggers);
 
 } // namespace config

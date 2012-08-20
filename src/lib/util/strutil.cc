@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBUTIL_EXPORT
+
 #include <numeric>
 
 #include <string.h>
@@ -25,7 +27,7 @@ namespace str {
 
 // Normalize slashes
 
-void
+B10_LIBUTIL_API void
 normalizeSlash(std::string& name) {
     if (!name.empty()) {
         size_t pos = 0;
@@ -37,7 +39,7 @@ normalizeSlash(std::string& name) {
 
 // Trim String
 
-string
+B10_LIBUTIL_API string
 trim(const string& instring) {
     string retstring = "";
     if (!instring.empty()) {
@@ -61,7 +63,7 @@ trim(const string& instring) {
 // Tokenise string.  As noted in the header, this is locally written to avoid
 // another dependency on a Boost library.
 
-vector<string>
+B10_LIBUTIL_API vector<string>
 tokens(const std::string& text, const std::string& delim) {
     vector<string> result;
 
@@ -102,7 +104,7 @@ lengthSum(string::size_type curlen, const string& cur_string) {
 
 // Provide printf-style formatting.
 
-std::string
+B10_LIBUTIL_API std::string
 format(const std::string& format, const std::vector<std::string>& args) {
 
     static const string flag = "%s";
@@ -131,7 +133,7 @@ format(const std::string& format, const std::vector<std::string>& args) {
     return (result);
 }
 
-std::string
+B10_LIBUTIL_API std::string
 getToken(std::istringstream& iss) {
     string token;
     iss >> token;

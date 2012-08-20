@@ -15,6 +15,7 @@
 #include <log/logger.h>
 #include <log/macros.h>
 #include <log/log_dbglevels.h>
+#include <asiodns/dll.h>
 #include <asiodns/asiodns_messages.h>
 
 namespace isc {

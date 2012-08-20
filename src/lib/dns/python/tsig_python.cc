@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDNS_PYTHON_EXPORT
+
 #define PY_SSIZE_T_CLEAN        // need for "y#" below
 #include <Python.h>
 
@@ -240,12 +242,12 @@ namespace isc {
 namespace dns {
 namespace python {
 // Definition of class specific exception(s)
-PyObject* po_TSIGContextError;
+B10_LIBDNS_PYTHON_API PyObject* po_TSIGContextError;
 
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_TSIGContext
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject tsigcontext_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject tsigcontext_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.TSIGContext",
     sizeof(s_TSIGContext),                 // tp_basicsize
@@ -302,7 +304,7 @@ PyTypeObject tsigcontext_type = {
     0                                   // tp_version_tag
 };
 
-bool
+B10_LIBDNS_PYTHON_API bool
 PyTSIGContext_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -310,7 +312,7 @@ PyTSIGContext_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &tsigcontext_type));
 }
 
-TSIGContext&
+B10_LIBDNS_PYTHON_API TSIGContext&
 PyTSIGContext_ToTSIGContext(PyObject* tsigcontext_obj) {
     if (tsigcontext_obj == NULL) {
         isc_throw(PyCPPWrapperException,

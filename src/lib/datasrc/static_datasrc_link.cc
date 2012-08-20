@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDATASRC_EXPORT
+
 #include "client.h"
 #include "memory_datasrc.h"
 
@@ -29,7 +31,7 @@ using namespace std;
 namespace isc {
 namespace datasrc {
 
-DataSourceClient*
+B10_LIBDATASRC_API DataSourceClient*
 createInstance(ConstElementPtr config, string& error) {
     try {
         // Create the data source
@@ -53,7 +55,7 @@ createInstance(ConstElementPtr config, string& error) {
     return (NULL);
 }
 
-void
+B10_LIBDATASRC_API void
 destroyInstance(DataSourceClient* instance) {
     delete instance;
 }

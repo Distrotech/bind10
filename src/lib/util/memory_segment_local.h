@@ -15,6 +15,7 @@
 #ifndef __MEMORY_SEGMENT_LOCAL_H__
 #define __MEMORY_SEGMENT_LOCAL_H__
 
+#include <util/dll.h>
 #include <util/memory_segment.h>
 
 namespace isc {
@@ -25,7 +26,7 @@ namespace util {
 /// This class specifies a concrete implementation for a malloc/free
 /// based MemorySegment. Please see the MemorySegment class
 /// documentation for usage.
-class MemorySegmentLocal : public MemorySegment {
+class B10_LIBUTIL_API MemorySegmentLocal : public MemorySegment {
 public:
     /// \brief Constructor
     ///

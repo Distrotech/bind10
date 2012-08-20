@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBUTIL_EXPORT
+
 #include "interprocess_sync_file.h"
 
 #include <string>

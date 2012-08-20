@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDNS_PYTHON_EXPORT
+
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <dns/question.h>
@@ -239,7 +241,7 @@ namespace python {
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_Question
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject question_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject question_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.Question",
     sizeof(s_Question),                 // tp_basicsize
@@ -290,7 +292,7 @@ PyTypeObject question_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+B10_LIBDNS_PYTHON_API PyObject*
 createQuestionObject(const Question& source) {
     s_Question* question =
         static_cast<s_Question*>(question_type.tp_alloc(&question_type, 0));
@@ -298,7 +300,7 @@ createQuestionObject(const Question& source) {
     return (question);
 }
 
-bool
+B10_LIBDNS_PYTHON_API bool
 PyQuestion_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -306,7 +308,7 @@ PyQuestion_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &question_type));
 }
 
-const Question&
+B10_LIBDNS_PYTHON_API const Question&
 PyQuestion_ToQuestion(const PyObject* question_obj) {
     if (question_obj == NULL) {
         isc_throw(PyCPPWrapperException,

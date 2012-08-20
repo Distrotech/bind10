@@ -14,6 +14,8 @@
 
 // $Id$
 
+#define B10_LIBCACHE_EXPORT
+
 #include "message_utility.h"
 #include <dns/rcode.h>
 

@@ -21,6 +21,7 @@
 #include <sstream>
 #include <vector>
 #include <exceptions/exceptions.h>
+#include <util/dll.h>
 #include <boost/lexical_cast.hpp>
 
 namespace isc {
@@ -33,7 +34,7 @@ namespace str {
 /// \brief A standard string util exception that is thrown if getToken or
 /// numToToken are called with bad input data
 ///
-class StringTokenError : public Exception {
+class B10_LIBUTIL_API StringTokenError : public Exception {
 public:
     StringTokenError(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -47,7 +48,7 @@ public:
 /// if not the command line).
 ///
 /// \param name Name to be substituted
-void normalizeSlash(std::string& name);
+B10_LIBUTIL_API void normalizeSlash(std::string& name);
 
 
 /// \brief Trim Leading and Trailing Spaces
@@ -58,7 +59,7 @@ void normalizeSlash(std::string& name);
 /// \param instring Input string to modify
 ///
 /// \return String with leading and trailing spaces removed
-std::string trim(const std::string& instring);
+B10_LIBUTIL_API std::string trim(const std::string& instring);
 
 
 /// \brief Split String into Tokens
@@ -85,8 +86,9 @@ std::string trim(const std::string& instring);
 /// \param delim Delimiter characters
 ///
 /// \return Vector of tokens.
-std::vector<std::string> tokens(const std::string& text,
-        const std::string& delim = std::string(" \t\n"));
+B10_LIBUTIL_API std::vector<std::string>
+tokens(const std::string& text,
+       const std::string& delim = std::string(" \t\n"));
 
 
 /// \brief Uppercase Character
@@ -149,8 +151,8 @@ inline void lowercase(std::string& text) {
 /// \param args Vector of argument strings
 ///
 /// \return Resultant string
-std::string format(const std::string& format,
-    const std::vector<std::string>& args);
+B10_LIBUTIL_API std::string
+format(const std::string& format, const std::vector<std::string>& args);
 
 
 /// \brief Returns one token from the given stringstream
@@ -162,7 +164,7 @@ std::string format(const std::string& format,
 /// \param iss stringstream to read one token from
 ///
 /// \return the first token read from the stringstream
-std::string getToken(std::istringstream& iss);
+B10_LIBUTIL_API std::string getToken(std::istringstream& iss);
 
 /// \brief Converts a string token to an *unsigned* integer.
 ///

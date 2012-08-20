@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 
 #include <dns/serial.h>
@@ -193,7 +195,7 @@ namespace python {
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_Serial
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject serial_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject serial_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.Serial",
     sizeof(s_Serial),                   // tp_basicsize
@@ -250,14 +252,14 @@ PyTypeObject serial_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+B10_LIBDNS_PYTHON_API PyObject*
 createSerialObject(const Serial& source) {
     SerialContainer container(PyObject_New(s_Serial, &serial_type));
     container.set(new Serial(source));
     return (container.release());
 }
 
-bool
+B10_LIBDNS_PYTHON_API bool
 PySerial_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException,
@@ -266,7 +268,7 @@ PySerial_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &serial_type));
 }
 
-const Serial&
+B10_LIBDNS_PYTHON_API const Serial&
 PySerial_ToSerial(const PyObject* serial_obj) {
     if (serial_obj == NULL) {
         isc_throw(PyCPPWrapperException,

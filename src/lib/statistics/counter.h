@@ -19,6 +19,7 @@
 
 #include <util/noncopyable.h>
 #include <exceptions/exceptions.h>
+#include <statistics/dll.h>
 
 namespace isc {
 namespace statistics {
@@ -26,7 +27,7 @@ namespace statistics {
 // forward declaration for pImpl idiom
 class CounterImpl;
 
-class Counter : isc::util::noncopyable {
+class B10_LIBSTATISTICS_API Counter : isc::util::noncopyable {
 private:
     boost::scoped_ptr<CounterImpl> impl_;
 public:

@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDHCP_EXPORT
+
 #include <boost/shared_array.hpp>
 #include <boost/shared_ptr.hpp>
 #include <util/buffer.h>

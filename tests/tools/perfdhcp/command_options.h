@@ -20,6 +20,8 @@
 
 #include <util/noncopyable.h>
 
+#include "dll.h"
+
 namespace isc {
 namespace perfdhcp {
 
@@ -28,7 +30,7 @@ namespace perfdhcp {
 /// This class is responsible for parsing the command-line and storing the
 /// specified options.
 ///
-class CommandOptions : public isc::util::noncopyable {
+class B10_PERFDHCP_API CommandOptions : public isc::util::noncopyable {
 public:
     /// 2-way (cmd line param -i) or 4-way exchanges
     enum ExchangeMode {

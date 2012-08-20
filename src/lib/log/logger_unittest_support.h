@@ -16,6 +16,7 @@
 #define __LOGGER_UNITTEST_SUPPORT_H
 
 #include <string>
+#include <log/dll.h>
 #include <log/logger.h>
 
 /// \file
@@ -72,6 +73,7 @@ namespace log {
 ///
 /// TODO: Rename. This function overloads the initLogger() function that can
 ///       be used to initialize production programs.  This may lead to confusion.
+B10_LIBLOG_API
 void initLogger(isc::log::Severity severity = isc::log::DEBUG,
                 int dbglevel = isc::log::MAX_DEBUG_LEVEL);
 
@@ -86,6 +88,7 @@ void initLogger(isc::log::Severity severity = isc::log::DEBUG,
 //         defined.
 ///
 /// \return Severity to use for the logging.
+B10_LIBLOG_API
 isc::log::Severity b10LoggerSeverity(isc::log::Severity defseverity);
 
 
@@ -105,6 +108,7 @@ isc::log::Severity b10LoggerSeverity(isc::log::Severity defseverity);
 ///        is not defined.
 ///
 /// \return Debug level to use.
+B10_LIBLOG_API
 int b10LoggerDbglevel(int defdbglevel);
 
 
@@ -115,7 +119,7 @@ int b10LoggerDbglevel(int defdbglevel);
 /// characteristics of the root logger to use a severity, debug level and
 /// destination set by the environment variables B10_LOGGER_SEVERITY,
 /// B10_LOGGER_DBGLEVEL and B10_LOGGER_DESTINATION.
-void
+B10_LIBLOG_API void
 resetUnitTestRootLogger();
 
 } // namespace log

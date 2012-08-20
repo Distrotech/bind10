@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include <log/dll.h>
 #include <log/message_dictionary.h>
 #include <log/message_types.h>
 
@@ -30,7 +31,7 @@ namespace log {
 /// Reads a message file and creates a map of identifier against the text of the
 /// message.  This map can be retrieved for subsequent processing.
 
-class MessageReader {
+class B10_LIBLOG_API MessageReader {
 public:
 
     /// \brief Read Mode

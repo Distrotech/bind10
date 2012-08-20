@@ -23,6 +23,7 @@
 
 #include <util/noncopyable.h>
 #include <exceptions/exceptions.h>
+#include <statistics/dll.h>
 #include <statistics/counter.h>
 
 namespace isc {
@@ -31,7 +32,7 @@ namespace statistics {
 class CounterDictionaryImpl;
 class CounterDictionaryConstIteratorImpl;
 
-class CounterDictionary : isc::util::noncopyable {
+class B10_LIBSTATISTICS_API CounterDictionary : isc::util::noncopyable {
 private:
     boost::scoped_ptr<CounterDictionaryImpl> impl_;
     // Default constructor is forbidden; number of counter items must be
@@ -98,23 +99,24 @@ public:
             /// This constructor is mostly exception free. But it may still
             /// throw a standard exception if memory allocation fails
             /// inside the method.
-            ConstIterator();
+            B10_LIBSTATISTICS_API ConstIterator();
             /// The destructor.
             ///
             /// This method never throws an exception.
-            ~ConstIterator();
+            B10_LIBSTATISTICS_API ~ConstIterator();
             /// The assignment operator.
             ///
             /// This method is mostly exception free. But it may still
             /// throw a standard exception if memory allocation fails
             /// inside the method.
-            ConstIterator& operator=(const ConstIterator &source);
+            B10_LIBSTATISTICS_API ConstIterator&
+            operator=(const ConstIterator &source);
             /// The copy constructor.
             ///
             /// This constructor is mostly exception free. But it may still
             /// throw a standard exception if memory allocation fails
             /// inside the method.
-            ConstIterator(const ConstIterator& source);
+            B10_LIBSTATISTICS_API ConstIterator(const ConstIterator& source);
             /// The constructor from implementation detail.
             ///
             /// This method is used to create an instance of ConstIterator
@@ -123,15 +125,15 @@ public:
             /// This constructor is mostly exception free. But it may still
             /// throw a standard exception if memory allocation fails
             /// inside the method.
-            ConstIterator(
+            B10_LIBSTATISTICS_API ConstIterator(
                 const CounterDictionaryConstIteratorImpl& source);
         private:
             /// \brief An internal method to increment this iterator.
-            void increment();
+            B10_LIBSTATISTICS_API void increment();
             /// \brief An internal method to check equality.
-            bool equal(const ConstIterator& other) const;
+            B10_LIBSTATISTICS_API bool equal(const ConstIterator& other) const;
             /// \brief An internal method to dereference this iterator.
-            const value_type& dereference() const;
+            B10_LIBSTATISTICS_API const value_type& dereference() const;
         private:
             friend class boost::iterator_core_access;
     };

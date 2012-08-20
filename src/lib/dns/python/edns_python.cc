@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 
 #include <cassert>
@@ -312,7 +314,7 @@ namespace python {
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_EDNS
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject edns_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject edns_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.EDNS",
     sizeof(s_EDNS),                     // tp_basicsize
@@ -363,14 +365,14 @@ PyTypeObject edns_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+B10_LIBDNS_PYTHON_API PyObject*
 createEDNSObject(const EDNS& source) {
     EDNSContainer container(PyObject_New(s_EDNS, &edns_type));
     container.set(new EDNS(source));
     return (container.release());
 }
 
-bool
+B10_LIBDNS_PYTHON_API bool
 PyEDNS_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -378,7 +380,7 @@ PyEDNS_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &edns_type));
 }
 
-const EDNS&
+B10_LIBDNS_PYTHON_API const EDNS&
 PyEDNS_ToEDNS(const PyObject* edns_obj) {
     if (edns_obj == NULL) {
         isc_throw(PyCPPWrapperException,

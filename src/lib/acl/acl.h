@@ -22,6 +22,8 @@
 
 #include <util/noncopyable.h>
 
+#include <acl/dll.h>
+
 namespace isc {
 namespace acl {
 

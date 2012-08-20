@@ -24,32 +24,33 @@
 #include <dns/rrclass.h>
 #include <dns/rrtype.h>
 
+#include <testutils/dll.h>
 #include "mockups.h"
 
 namespace asiolink {
-class IOSocket;
-class IOMessage;
-class IOEndpoint;
+class B10_LIBTESTUTILS_API IOSocket;
+class B10_LIBTESTUTILS_API IOMessage;
+class B10_LIBTESTUTILS_API IOEndpoint;
 }
 
 namespace isc {
 namespace testutils {
-extern const char* const DEFAULT_REMOTE_ADDRESS;
-extern const uint16_t DEFAULT_REMOTE_PORT;
+extern B10_LIBTESTUTILS_API const char* const DEFAULT_REMOTE_ADDRESS;
+extern B10_LIBTESTUTILS_API const uint16_t DEFAULT_REMOTE_PORT;
 
 // These are flags to indicate whether the corresponding flag bit of the
 // DNS header is to be set in the test cases.  (The flag values
 // is irrelevant to their wire-format values)
-extern const unsigned int QR_FLAG;
-extern const unsigned int AA_FLAG;
-extern const unsigned int TC_FLAG;
-extern const unsigned int RD_FLAG;
-extern const unsigned int RA_FLAG;
-extern const unsigned int AD_FLAG;
-extern const unsigned int CD_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int QR_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int AA_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int TC_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int RD_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int RA_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int AD_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int CD_FLAG;
 
 /// \brief The base class for Auth and Recurse test case
-class SrvTestBase : public ::testing::Test {
+class B10_LIBTESTUTILS_API SrvTestBase : public ::testing::Test {
 protected:
     SrvTestBase();
     virtual ~SrvTestBase();

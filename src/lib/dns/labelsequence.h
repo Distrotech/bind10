@@ -15,6 +15,7 @@
 #ifndef __LABELSEQUENCE_H
 #define __LABELSEQUENCE_H 1
 
+#include <dns/dll.h>
 #include <dns/name.h>
 #include <util/buffer.h>
 #include <util/nonassignable.h>
@@ -41,7 +42,7 @@ namespace dns {
 /// LabelSequences can be compared to other LabelSequences, and their
 /// data can be requested (which then points to part of the original
 /// data of the original Name object).
-class LabelSequence {
+class B10_LIBDNS_API LabelSequence {
     // Name calls the private toText(bool) method of LabelSequence.
     friend std::string Name::toText(bool) const;
 
@@ -372,7 +373,7 @@ private:
 /// \param label_sequence The \c LabelSequence object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-std::ostream&
+B10_LIBDNS_API std::ostream&
 operator<<(std::ostream& os, const LabelSequence& label_sequence);
 
 } // end namespace dns

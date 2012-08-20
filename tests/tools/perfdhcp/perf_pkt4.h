@@ -19,6 +19,7 @@
 #include <boost/shared_ptr.hpp>
 #include <dhcp/pkt4.h>
 
+#include "dll.h"
 #include "localized_option.h"
 
 namespace isc {
@@ -44,7 +45,7 @@ namespace perfdhcp {
 /// \note If you don't use template files simply use constructors
 /// inherited from parent class and isc::dhcp::Option type instead
 
-class PerfPkt4 : public dhcp::Pkt4 {
+class B10_PERFDHCP_API PerfPkt4 : public dhcp::Pkt4 {
 public:
 
     /// Localized option pointer type.

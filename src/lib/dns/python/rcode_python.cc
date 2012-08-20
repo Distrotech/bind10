@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 
 #include <exceptions/exceptions.h>
@@ -330,7 +332,7 @@ Rcode_richcmp(const s_Rcode* const self, const s_Rcode* const other,
 namespace isc {
 namespace dns {
 namespace python {
-PyTypeObject rcode_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject rcode_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.Rcode",
     sizeof(s_Rcode),                    // tp_basicsize
@@ -381,14 +383,14 @@ PyTypeObject rcode_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+B10_LIBDNS_PYTHON_API PyObject*
 createRcodeObject(const Rcode& source) {
     RcodeContainer container(PyObject_New(s_Rcode, &rcode_type));
     container.set(new Rcode(source));
     return (container.release());
 }
 
-bool
+B10_LIBDNS_PYTHON_API bool
 PyRcode_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -396,7 +398,7 @@ PyRcode_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &rcode_type));
 }
 
-const Rcode&
+B10_LIBDNS_PYTHON_API const Rcode&
 PyRcode_ToRcode(const PyObject* rcode_obj) {
     if (rcode_obj == NULL) {
         isc_throw(PyCPPWrapperException,

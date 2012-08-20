@@ -17,6 +17,8 @@
 
 #include <dhcp/pkt6.h>
 
+#include "dll.h"
+
 namespace isc {
 namespace perfdhcp {
 
@@ -40,7 +42,7 @@ namespace perfdhcp {
 /// of packet and store them in options' buffers.
 /// (\see perfdhcp::PerfPkt6::rawUnpack).
 ///
-class LocalizedOption : public dhcp::Option {
+class B10_PERFDHCP_API LocalizedOption : public dhcp::Option {
 public:
     /// \brief Constructor, sets default (0) option offset
     ///

@@ -17,6 +17,7 @@
 
 #include <dhcp/option.h>
 
+#include "dll.h"
 #include "localized_option.h"
 
 namespace isc {

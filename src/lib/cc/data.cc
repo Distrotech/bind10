@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBCC_EXPORT
+
 #include <config.h>
 
 #include <cc/data.h>
@@ -182,17 +184,18 @@ throwJSONError(const std::string& error, const std::string& file, int line,
 }
 }
 
-std::ostream&
+B10_LIBCC_API std::ostream&
 operator<<(std::ostream &out, const Element& e) {
     return (out << e.str());
 }
 
-bool
+B10_LIBCC_API bool
 operator==(const Element& a, const Element& b) {
     return (a.equals(b));
 }
 
-bool operator!=(const Element& a, const Element& b) {
+B10_LIBCC_API bool
+operator!=(const Element& a, const Element& b) {
     return (!a.equals(b));
 };
 
@@ -906,12 +909,12 @@ MapElement::equals(const Element& other) const {
     }
 }
 
-bool
+B10_LIBCC_API bool
 isNull(ConstElementPtr p) {
     return (!p);
 }
 
-void
+B10_LIBCC_API void
 removeIdentical(ElementPtr a, ConstElementPtr b) {
     if (!b) {
         return;
@@ -935,7 +938,7 @@ removeIdentical(ElementPtr a, ConstElementPtr b) {
     }
 }
 
-ConstElementPtr
+B10_LIBCC_API ConstElementPtr
 removeIdentical(ConstElementPtr a, ConstElementPtr b) {
     ElementPtr result = Element::createMap();
 
@@ -959,7 +962,7 @@ removeIdentical(ConstElementPtr a, ConstElementPtr b) {
     return (result);
 }
 
-void
+B10_LIBCC_API void
 merge(ElementPtr element, ConstElementPtr other) {
     if (element->getType() != Element::map ||
         other->getType() != Element::map) {

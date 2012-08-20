@@ -22,6 +22,7 @@
 
 #include <resolve/resolver_interface.h>
 
+#include <nsas/dll.h>
 #include "nsas_types.h"
 #include "glue_hints.h"
 
@@ -29,7 +30,7 @@ namespace isc {
 // Some forward declarations, so we do not need to include so many headers
 
 namespace dns {
-class RRClass;
+class B10_LIBNSAS_API RRClass;
 }
 
 namespace util {
@@ -39,9 +40,9 @@ template<class T> class LruList;
 namespace nsas {
 
 template<class T> class HashTable;
-class ZoneEntry;
-class NameserverEntry;
-class AddressRequestCallback;
+class B10_LIBNSAS_API ZoneEntry;
+class B10_LIBNSAS_API NameserverEntry;
+class B10_LIBNSAS_API AddressRequestCallback;
 
 /// \brief Nameserver Address Store
 ///
@@ -50,7 +51,7 @@ class AddressRequestCallback;
 /// the logic for sending queries for the nameserver addresses if they are not
 /// in the store.
 
-class NameserverAddressStore {
+class B10_LIBNSAS_API NameserverAddressStore {
 public:
 
     /// \brief Constructor

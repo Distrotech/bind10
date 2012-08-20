@@ -13,5 +13,5 @@ endif
 CLEANFILES = *.gcno *.gcda
 
 lib_LTLIBRARIES = libb10-xfr.la
-libb10_xfr_la_SOURCES = xfrout_client.h xfrout_client.cc
+libb10_xfr_la_SOURCES = dll.h xfrout_client.h xfrout_client.cc
 libb10_xfr_la_LIBADD = $(top_builddir)/src/lib/util/io/libb10-util-io.la

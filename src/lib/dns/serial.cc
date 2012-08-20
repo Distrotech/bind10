@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDNS_EXPORT
+
 #include <dns/serial.h>
 
 namespace isc {
@@ -66,7 +68,7 @@ Serial::operator+(const Serial& other) const {
     return (operator+(other.getValue()));
 }
 
-std::ostream&
+B10_LIBDNS_API std::ostream&
 operator<<(std::ostream& os, const Serial& serial) {
     return (os << serial.getValue());
 }

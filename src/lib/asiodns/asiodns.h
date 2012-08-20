@@ -15,6 +15,7 @@
 #ifndef __ASIODNS_H
 #define __ASIODNS_H 1
 
+#include <asiodns/dll.h>
 #include <asiodns/dns_service.h>
 #include <asiodns/dns_server.h>
 #include <asiodns/dns_lookup.h>

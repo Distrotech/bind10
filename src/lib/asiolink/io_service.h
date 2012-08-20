@@ -17,6 +17,8 @@
 
 #include <util/noncopyable.h>
 
+#include <asiolink/dll.h>
+
 namespace asio {
     class io_service;
 }
@@ -29,7 +31,7 @@ class IOServiceImpl;
 /// \brief The \c IOService class is a wrapper for the ASIO \c io_service
 /// class.
 ///
-class IOService : isc::util::noncopyable {
+class B10_LIBASIOLINK_API IOService : isc::util::noncopyable {
     ///
     /// \name Constructors and Destructor
     ///

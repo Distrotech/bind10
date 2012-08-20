@@ -8,7 +8,8 @@ CLEANFILES = *.gcno *.gcda
 
 lib_LTLIBRARIES = libb10-cryptolink.la
 
-libb10_cryptolink_la_SOURCES = cryptolink.h cryptolink.cc
+libb10_cryptolink_la_SOURCES = dll.h
+libb10_cryptolink_la_SOURCES += cryptolink.h cryptolink.cc
 libb10_cryptolink_la_SOURCES += crypto_hmac.h crypto_hmac.cc
 
 libb10_cryptolink_la_LDFLAGS = ${BOTAN_LDFLAGS}

@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBSERVER_COMMON_EXPORT
+
 #include <server_common/portconfig.h>
 #include <server_common/logger.h>
 #include <server_common/socket_request.h>
@@ -31,7 +33,7 @@ namespace isc {
 namespace server_common {
 namespace portconfig {
 
-AddressList
+B10_LIBSERVER_COMMON_API AddressList
 parseAddresses(isc::data::ConstElementPtr addresses,
                const std::string& elemName)
 {
@@ -108,7 +110,7 @@ setAddresses(DNSServiceBase& service, const AddressList& addresses,
 
 }
 
-void
+B10_LIBSERVER_COMMON_API void
 installListenAddresses(const AddressList& new_addresses,
                        AddressList& address_store,
                        DNSServiceBase& service,

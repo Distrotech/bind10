@@ -26,17 +26,19 @@
 #ifndef __LOCKS_
 #define __LOCKS_
 
+#include <util/dll.h>
+
 namespace isc {
 namespace util {
 namespace locks {
 
-class mutex {
+class B10_LIBUTIL_API mutex {
 };
 
-class recursive_mutex {
+class B10_LIBUTIL_API recursive_mutex {
 };
 
-class upgradable_mutex {
+class B10_LIBUTIL_API upgradable_mutex {
 };
 
 template <typename T>

@@ -25,6 +25,7 @@
 #include <boost/random/uniform_int.hpp>
 #include <boost/random/variate_generator.hpp>
 
+#include <util/dll.h>
 #include <util/nonassignable.h>
 
 namespace isc {
@@ -38,7 +39,7 @@ namespace random {
 ///
 /// It automatically seeds it with the current time when it is first
 /// used.
-class QidGenerator : isc::util::nonassignable {
+class B10_LIBUTIL_API QidGenerator : isc::util::nonassignable {
 public:
     /// \brief Returns the singleton instance of the QidGenerator
     ///

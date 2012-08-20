@@ -17,6 +17,8 @@
 
 #include <stdlib.h>
 
+#include <util/dll.h>
+
 namespace isc {
 namespace util {
 
@@ -26,7 +28,7 @@ namespace util {
 /// segments. This is an abstract class and a real
 /// implementation such as MemorySegmentLocal should be used
 /// in code.
-class MemorySegment {
+class B10_LIBUTIL_API MemorySegment {
 public:
     /// \brief Destructor
     virtual ~MemorySegment() {}

@@ -20,6 +20,7 @@
 #include <numeric>
 
 #include <exceptions/exceptions.h>
+#include <util/dll.h>
 #include <util/noncopyable.h>
 #include <util/nonassignable.h>
 
@@ -32,19 +33,19 @@ namespace isc {
 namespace util {
 namespace random {
 
-class InvalidLimits : public isc::BadValue {
+class B10_LIBUTIL_API InvalidLimits : public isc::BadValue {
 public:
     InvalidLimits(const char* file, size_t line, const char* what) :
         isc::BadValue(file, line, what) {}
 };
 
-class SumNotOne : public isc::BadValue {
+class B10_LIBUTIL_API SumNotOne : public isc::BadValue {
 public:
     SumNotOne(const char* file, size_t line, const char* what) :
         isc::BadValue(file, line, what) {}
 };
 
-class InvalidProbValue : public isc::BadValue {
+class B10_LIBUTIL_API InvalidProbValue : public isc::BadValue {
 public:
     InvalidProbValue(const char* file, size_t line, const char* what) :
         isc::BadValue(file, line, what) {}
@@ -55,7 +56,7 @@ public:
 /// \brief Uniform random integer generator
 ///
 /// Generate uniformly distributed integers in range of [min, max]
-class UniformRandomIntegerGenerator : isc::util::noncopyable {
+class B10_LIBUTIL_API UniformRandomIntegerGenerator : isc::util::noncopyable {
 public:
     /// \brief Constructor
     ///
@@ -93,7 +94,8 @@ private:
 /// \brief Weighted random integer generator
 ///
 /// Generate random integers according different probabilities
-class WeightedRandomIntegerGenerator : isc::util::nonassignable {
+class B10_LIBUTIL_API WeightedRandomIntegerGenerator :
+    isc::util::nonassignable {
 public:
     /// \brief Constructor
     ///

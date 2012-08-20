@@ -15,6 +15,7 @@
 #ifndef __ADDRESS_REQUEST_CALLBACK_H
 #define __ADDRESS_REQUEST_CALLBACK_H
 
+#include <nsas/dll.h>
 #include "asiolink.h"
 #include "nameserver_address.h"
 
@@ -39,7 +40,7 @@ namespace nsas {
 /// callback object is up to the caller - if the caller wants to retain it
 /// they should keep the shared pointer.
 
-class AddressRequestCallback {
+class B10_LIBNSAS_API AddressRequestCallback {
 public:
 
     /// Default constructor, copy contructor and assignment operator

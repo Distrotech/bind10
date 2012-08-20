@@ -17,6 +17,7 @@
 
 #include <util/noncopyable.h>
 
+#include <asiolink/dll.h>
 #include <asiolink/io_message.h>
 
 namespace isc {
@@ -36,7 +37,7 @@ namespace asiolink {
 /// The \c SimpleCallback is expected to be used for basic, generic
 /// tasks such as checking for configuration changes.  It may also be
 /// used for testing purposes.
-class SimpleCallback : isc::util::noncopyable {
+class B10_LIBASIOLINK_API SimpleCallback : isc::util::noncopyable {
     ///
     /// \name Constructors and Destructor
     ///

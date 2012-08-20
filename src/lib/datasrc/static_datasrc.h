@@ -23,23 +23,24 @@
 #ifndef __STATIC_DATA_SOURCE_H
 #define __STATIC_DATA_SOURCE_H
 
+#include <datasrc/dll.h>
 #include <datasrc/data_source.h>
 
 namespace isc {
 
 namespace dns {
-class Name;
-class RRClass;
-class RRType;
-class RRType;
-class RRsetList;
+class B10_LIBDATASRC_API Name;
+class B10_LIBDATASRC_API RRClass;
+class B10_LIBDATASRC_API RRType;
+class B10_LIBDATASRC_API RRType;
+class B10_LIBDATASRC_API RRsetList;
 }
 
 namespace datasrc {
 
 struct StaticDataSrcImpl;
 
-class StaticDataSrc : public DataSrc {
+class B10_LIBDATASRC_API StaticDataSrc : public DataSrc {
     ///
     /// \name Constructor and Destructor.
     ///

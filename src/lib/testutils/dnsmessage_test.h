@@ -30,6 +30,8 @@
 
 #include <util/nonassignable.h>
 
+#include <testutils/dll.h>
+
 #include <gtest/gtest.h>
 
 namespace isc {
@@ -42,13 +44,13 @@ namespace testutils {
 /// (The flag values is irrelevant to their wire-format values).
 /// The meaning of the flags should be obvious from the variable names.
 //@{
-extern const unsigned int QR_FLAG;
-extern const unsigned int AA_FLAG;
-extern const unsigned int TC_FLAG;
-extern const unsigned int RD_FLAG;
-extern const unsigned int RA_FLAG;
-extern const unsigned int AD_FLAG;
-extern const unsigned int CD_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int QR_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int AA_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int TC_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int RD_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int RA_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int AD_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int CD_FLAG;
 //@}
 
 /// Set of unit tests to examine a DNS message header.
@@ -80,7 +82,7 @@ extern const unsigned int CD_FLAG;
 /// \param ancount The expected value of ANCOUNT
 /// \param nscount The expected value of NSCOUNT
 /// \param arcount The expected value of ARCOUNT
-void
+B10_LIBTESTUTILS_API void
 headerCheck(const isc::dns::Message& message, const isc::dns::qid_t qid,
             const isc::dns::Rcode& rcode,
             const uint16_t opcodeval, const unsigned int flags,
@@ -113,8 +115,9 @@ headerCheck(const isc::dns::Message& message, const isc::dns::qid_t qid,
 ///
 /// \param expected_rrset The expected RRset
 /// \param actual_rrset The RRset to be tested
-void rrsetCheck(isc::dns::ConstRRsetPtr expected_rrset,
-                isc::dns::ConstRRsetPtr actual_rrset);
+B10_LIBTESTUTILS_API void
+rrsetCheck(isc::dns::ConstRRsetPtr expected_rrset,
+           isc::dns::ConstRRsetPtr actual_rrset);
 
 /// The definitions in this name space are not supposed to be used publicly,
 /// but are given here because they are used in templated functions.
@@ -195,11 +198,10 @@ private:
 /// parameter normally doesn't have to be specified, but for an SOA RR it
 /// must be set to its owner name, due to the internal check of
 /// \c dns::masterLoad().
-isc::dns::RRsetPtr textToRRset(const std::string& text_rrset,
-                               const isc::dns::RRClass& rrclass =
-                               isc::dns::RRClass::IN(),
-                               const isc::dns::Name& origin =
-                               isc::dns::Name::ROOT_NAME());
+B10_LIBTESTUTILS_API isc::dns::RRsetPtr
+textToRRset(const std::string& text_rrset,
+            const isc::dns::RRClass& rrclass = isc::dns::RRClass::IN(),
+            const isc::dns::Name& origin = isc::dns::Name::ROOT_NAME());
 
 /// Set of unit tests to check if two sets of RRsets are identical.
 ///

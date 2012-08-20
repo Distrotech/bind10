@@ -15,6 +15,7 @@
 #ifndef __INTERPROCESS_SYNC_NULL_H__
 #define __INTERPROCESS_SYNC_NULL_H__
 
+#include <util/dll.h>
 #include <util/interprocess_sync.h>
 
 namespace isc {
@@ -25,7 +26,7 @@ namespace util {
 /// This class specifies a concrete implementation for a null (no effect)
 /// interprocess synchronization mechanism. Please see the
 /// InterprocessSync class documentation for usage.
-class InterprocessSyncNull : public InterprocessSync {
+class B10_LIBUTIL_API InterprocessSyncNull : public InterprocessSync {
 public:
     /// \brief Constructor
     ///

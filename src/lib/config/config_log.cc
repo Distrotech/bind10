@@ -14,6 +14,8 @@
 
 /// Defines the logger used by the config lib
 
+#define B10_LIBCONFIG_EXPORT
+
 #include "config/config_log.h"
 
 namespace isc {

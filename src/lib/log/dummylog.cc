@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBLOG_EXPORT
+
 #include "dummylog.h"
 
 #include <iostream>
@@ -21,10 +23,10 @@ using namespace std;
 namespace isc {
 namespace log {
 
-bool denabled = false;
-string dprefix;
+B10_LIBLOG_API bool denabled = false;
+B10_LIBLOG_API string dprefix;
 
-void dlog(const string& message,bool error_flag) {
+B10_LIBLOG_API void dlog(const string& message,bool error_flag) {
     if (denabled || error_flag) {
         if (!dprefix.empty()) {
             cerr << "[" << dprefix << "] ";

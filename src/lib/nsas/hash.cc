@@ -52,6 +52,8 @@ or otherwise) arising in any way out of the use of this software, even
 if advised of the possibility of such damage.
 */
 
+#define B10_LIBNSAS_EXPORT
+
 #include <cassert>
 #include <stdlib.h>
 #include <algorithm>

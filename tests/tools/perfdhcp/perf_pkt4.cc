@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_PERFDHCP_EXPORT
+
 #include <dhcp/libdhcp++.h>
 #include <dhcp/dhcp6.h>
 

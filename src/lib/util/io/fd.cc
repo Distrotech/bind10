@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBUTIL_IO_EXPORT
+
 #include "fd.h"
 
 #include <unistd.h>
@@ -21,7 +23,7 @@ namespace isc {
 namespace util {
 namespace io {
 
-bool
+B10_LIBUTIL_IO_API bool
 write_data(const int fd, const void *buffer_v, const size_t length) {
     const unsigned char* buffer(static_cast<const unsigned char*>(buffer_v));
     size_t remaining = length;  // Amount remaining to be written
@@ -52,7 +54,7 @@ write_data(const int fd, const void *buffer_v, const size_t length) {
     return (true);
 }
 
-ssize_t
+B10_LIBUTIL_IO_API ssize_t
 read_data(const int fd, void *buffer_v, const size_t length) {
     unsigned char* buffer(static_cast<unsigned char*>(buffer_v));
     size_t remaining = length;   // Amount remaining to be read

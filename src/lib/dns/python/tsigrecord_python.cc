@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 
 #include <string>
@@ -212,7 +214,7 @@ namespace python {
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_TSIGRecord
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject tsigrecord_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject tsigrecord_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.TSIGRecord",
     sizeof(s_TSIGRecord),                 // tp_basicsize
@@ -262,14 +264,14 @@ PyTypeObject tsigrecord_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+B10_LIBDNS_PYTHON_API PyObject*
 createTSIGRecordObject(const TSIGRecord& source) {
     TSIGRecordContainer container(PyObject_New(s_TSIGRecord, &tsigrecord_type));
     container.set(new TSIGRecord(source));
     return (container.release());
 }
 
-bool
+B10_LIBDNS_PYTHON_API bool
 PyTSIGRecord_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -277,7 +279,7 @@ PyTSIGRecord_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &tsigrecord_type));
 }
 
-const TSIGRecord&
+B10_LIBDNS_PYTHON_API const TSIGRecord&
 PyTSIGRecord_ToTSIGRecord(PyObject* tsigrecord_obj) {
     if (tsigrecord_obj == NULL) {
         isc_throw(PyCPPWrapperException,

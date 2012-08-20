@@ -20,15 +20,16 @@
 
 #include <util/noncopyable.h>
 #include <acl/ip_check.h>
+#include <server_common/dll.h>
 
 namespace isc {
 namespace asiolink {
-class IOMessage;
-class IOEndpoint;
+class B10_LIBSERVER_COMMON_API IOMessage;
+class B10_LIBSERVER_COMMON_API IOEndpoint;
 }
 
 namespace acl {
-struct IPAddress;
+struct B10_LIBSERVER_COMMON_API IPAddress;
 }
 
 namespace server_common {
@@ -66,7 +67,7 @@ namespace server_common {
 /// We might also want to separate DNS clients for authoritative servers
 /// and clients for the resolver, especially because the former could be
 /// simpler with performance optimizations.
-class Client : isc::util::noncopyable {
+class B10_LIBSERVER_COMMON_API Client : isc::util::noncopyable {
 public:
     ///
     /// \name Constructors and Destructor
@@ -142,7 +143,8 @@ private:
 /// \param client A reference to a \c Client object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-std::ostream& operator<<(std::ostream& os, const Client& client);
+B10_LIBSERVER_COMMON_API std::ostream&
+operator<<(std::ostream& os, const Client& client);
 }
 }
 

@@ -15,6 +15,8 @@
 #ifndef __NAME_INTERNAL_H
 #define __NAME_INTERNAL_H 1
 
+#include <dns/dll.h>
+
 // This is effectively a "private" namespace for the Name class implementation,
 // but exposed publicly so the definitions in it can be shared with other
 // modules of the library (as of its introduction, used by LabelSequence and

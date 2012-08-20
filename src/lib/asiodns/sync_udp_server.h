@@ -23,6 +23,7 @@
 #include "dns_lookup.h"
 #include "dns_server.h"
 
+#include <asiodns/dll.h>
 #include <dns/message.h>
 #include <asiolink/simple_callback.h>
 #include <util/buffer.h>
@@ -39,7 +40,8 @@ namespace asiodns {
 /// That means, the lookup handler must provide the answer right away.
 /// This allows for implementation with less overhead, compared with
 /// the UDPClass.
-class SyncUDPServer : public DNSServer, public isc::util::noncopyable {
+class B10_LIBASIODNS_API SyncUDPServer :
+    public DNSServer, public isc::util::noncopyable {
 public:
     /// \brief Constructor
     /// \param io_service the asio::io_service to work with

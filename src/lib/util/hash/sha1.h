@@ -35,6 +35,8 @@
 
 #include <stdint.h>
 
+#include <util/dll.h>
+
 namespace isc {
 namespace util {
 namespace hash {
@@ -64,7 +66,7 @@ enum {
  *  This structure will hold context information for the SHA-1
  *  hashing operation
  */
-typedef struct SHA1Context
+typedef struct B10_LIBUTIL_API SHA1Context
 {
     uint32_t Intermediate_Hash[SHA1_HASHSIZE/4]; /* Message Digest */
     uint32_t Length_Low;                /* Message length in bits */
@@ -78,12 +80,13 @@ typedef struct SHA1Context
 /*
  *  Function Prototypes
  */
-extern int SHA1Reset(SHA1Context *);
-extern int SHA1Input(SHA1Context *, const uint8_t *bytes,
-                     unsigned int bytecount);
-extern int SHA1FinalBits(SHA1Context *, const uint8_t bits,
-                         unsigned int bitcount);
-extern int SHA1Result(SHA1Context *, uint8_t Message_Digest[SHA1_HASHSIZE]);
+extern B10_LIBUTIL_API int SHA1Reset(SHA1Context *);
+extern B10_LIBUTIL_API int SHA1Input(SHA1Context *, const uint8_t *bytes,
+                                     unsigned int bytecount);
+extern B10_LIBUTIL_API int SHA1FinalBits(SHA1Context *, const uint8_t bits,
+                                         unsigned int bitcount);
+extern B10_LIBUTIL_API int SHA1Result(SHA1Context *,
+                                      uint8_t Message_Digest[SHA1_HASHSIZE]);
 
 } // namespace hash
 } // namespace util

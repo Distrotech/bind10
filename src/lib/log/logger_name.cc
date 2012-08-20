@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBLOG_EXPORT
+
 #include <string>
 #include "log/logger_name.h"
 
@@ -31,16 +33,16 @@ getRootLoggerNameInternal() {
 
 } // Anonymous namespace
 
-void
+B10_LIBLOG_API void
 setRootLoggerName(const std::string& name) {
     getRootLoggerNameInternal() = name;
 }
 
-const std::string& getRootLoggerName() {
+B10_LIBLOG_API const std::string& getRootLoggerName() {
     return (getRootLoggerNameInternal());
 }
 
-std::string expandLoggerName(const std::string& name) {
+B10_LIBLOG_API std::string expandLoggerName(const std::string& name) {
 
     // Are we the root logger, or does the logger name start with
     // the string "<root_logger_name>.".  If so, use a logger

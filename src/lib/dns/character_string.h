@@ -18,6 +18,7 @@
 #include <string>
 #include <exceptions/exceptions.h>
 #include <util/buffer.h>
+#include <dns/dll.h>
 
 namespace isc {
 namespace dns {
@@ -40,15 +41,17 @@ namespace characterstr {
     ///        the iterator will be updated to new position after the function
     ///        is returned
     /// \return A std::string that contains the extracted <character-string>
-    std::string getNextCharacterString(const std::string& input_str,
-                                       std::string::const_iterator& input_iterator);
+    B10_LIBDNS_API std::string
+    getNextCharacterString(const std::string& input_str,
+                           std::string::const_iterator& input_iterator);
 
     /// Get a <character-string> from a input buffer
     ///
     /// \param buffer The input buffer
     /// \param len The input buffer total length
     /// \return A std::string that contains the extracted <character-string>
-    std::string getNextCharacterString(util::InputBuffer& buffer, size_t len);
+    B10_LIBDNS_API std::string
+    getNextCharacterString(util::InputBuffer& buffer, size_t len);
 
 } // namespace characterstr
 } // namespace dns

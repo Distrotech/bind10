@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 
 #include <exceptions/exceptions.h>
@@ -46,14 +48,14 @@ namespace isc {
 namespace dns {
 namespace python {
 // For our 'general' isc::Exceptions
-PyObject* po_IscException;
-PyObject* po_InvalidParameter;
+B10_LIBDNS_PYTHON_API PyObject* po_IscException;
+B10_LIBDNS_PYTHON_API PyObject* po_InvalidParameter;
 
 // For our own isc::dns::Exception
-PyObject* po_DNSMessageBADVERS;
+B10_LIBDNS_PYTHON_API PyObject* po_DNSMessageBADVERS;
 
 
-int
+B10_LIBDNS_PYTHON_API int
 readDataFromSequence(uint8_t *data, size_t len, PyObject* sequence) {
     PyObject* el = NULL;
     for (size_t i = 0; i < len; i++) {
@@ -82,7 +84,7 @@ readDataFromSequence(uint8_t *data, size_t len, PyObject* sequence) {
 }
 
 
-int
+B10_LIBDNS_PYTHON_API int
 addClassVariable(PyTypeObject& c, const char* name, PyObject* obj) {
     if (obj == NULL) {
         PyErr_SetString(PyExc_ValueError,

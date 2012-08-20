@@ -17,6 +17,7 @@
 
 #include <vector>
 #include <asiolink/io_address.h>
+#include <dhcp/dll.h>
 #include <dhcp/option.h>
 
 namespace isc {
@@ -26,7 +27,7 @@ namespace dhcp {
 ///
 /// This class handles a list of IPv6 addresses. An example of such option
 /// is dns-servers option. It can also be used to handle single address.
-class Option6AddrLst: public Option {
+class B10_LIBDHCP_API Option6AddrLst : public Option {
 
 public:
     /// a container for (IPv6) addresses

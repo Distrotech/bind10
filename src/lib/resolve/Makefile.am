@@ -22,7 +22,8 @@ BUILT_SOURCES = resolve_messages.h resolve_messages.cc
 CLEANFILES = *.gcno *.gcda resolve_messages.cc resolve_messages.h
 
 lib_LTLIBRARIES = libb10-resolve.la
-libb10_resolve_la_SOURCES = resolve.h resolve.cc
+libb10_resolve_la_SOURCES  = dll.h
+libb10_resolve_la_SOURCES += resolve.h resolve.cc
 libb10_resolve_la_SOURCES += resolve_log.h resolve_log.cc
 libb10_resolve_la_SOURCES += resolver_interface.h
 libb10_resolve_la_SOURCES += resolver_callback.h resolver_callback.cc

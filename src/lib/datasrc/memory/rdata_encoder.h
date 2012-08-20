@@ -24,6 +24,8 @@
 #include <dns/rrclass.h>
 #include <dns/rrtype.h>
 
+#include <datasrc/memory/dll.h>
+
 #include <boost/function.hpp>
 
 #include <vector>
@@ -101,7 +103,7 @@ namespace memory {
 /// This is thrown when \c RdataEncoder encounters a rare, unsupported
 /// situation. a method is called for a name or RRset which
 /// is not in or below the zone.
-class RdataEncodingError : public Exception {
+class B10_LIBDATASRC_MEMORY_API RdataEncodingError : public Exception {
 public:
     RdataEncodingError(const char* file, size_t line, const char* what) :
         Exception(file, line, what) {}
@@ -150,7 +152,7 @@ enum RdataNameAttributes {
 ///
 /// The caller can reuse the \c RdataEncoder object for another set of RDATA
 /// by repeating the session from \c start().
-class RdataEncoder : isc::util::noncopyable {
+class B10_LIBDATASRC_MEMORY_API RdataEncoder : isc::util::noncopyable {
 public:
     /// \brief Default constructor.
     RdataEncoder();
@@ -294,6 +296,7 @@ typedef boost::function<void(const uint8_t*, size_t)> DataCallback;
 // the number of RDATAs.  If the encoded data contain variable-length
 // data fields, varlen_list should store a sequence of their lengths,
 // in the order of the appearance.
+B10_LIBDATASRC_MEMORY_API
 void foreachRdataField(dns::RRClass rrclass, dns::RRType rrtype,
                        size_t rdata_count,
                        const std::vector<uint8_t>& encoded_data,
@@ -304,6 +307,7 @@ void foreachRdataField(dns::RRClass rrclass, dns::RRType rrtype,
 // callback for each.  rrsiglen_list should store a sequence of their lengths,
 // in the order of the appearance.  Its size is the number of RRSIGs.
 // The list can be empty, in which case this function does nothing.
+B10_LIBDATASRC_MEMORY_API
 void foreachRRSig(const std::vector<uint8_t>& encoded_data,
                   const std::vector<uint16_t>& rrsiglen_list,
                   DataCallback data_callback);

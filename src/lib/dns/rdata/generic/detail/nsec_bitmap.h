@@ -20,6 +20,8 @@
 #include <sstream>
 #include <vector>
 
+#include <dns/dll.h>
+
 namespace isc {
 namespace dns {
 namespace rdata {

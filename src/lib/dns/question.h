@@ -20,20 +20,22 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <util/dll.h>
+#include <dns/dll.h>
 #include <dns/name.h>
 #include <dns/rrclass.h>
 #include <dns/rrtype.h>
 
 namespace isc {
 namespace util {
-class InputBuffer;
-class OutputBuffer;
+class B10_LIBUTIL_API InputBuffer;
+class B10_LIBUTIL_API OutputBuffer;
 }
 
 namespace dns {
 
-class AbstractMessageRenderer;
-class Question;
+class B10_LIBDNS_API AbstractMessageRenderer;
+class B10_LIBDNS_API Question;
 
 /// \brief A pointer-like type pointing to an \c Question object.
 typedef boost::shared_ptr<Question> QuestionPtr;
@@ -100,7 +102,7 @@ typedef boost::shared_ptr<const Question> ConstQuestionPtr;
 /// \c AbstractRRset such as \c %getName() or \c %toWire().
 /// So the user class may use a template function that is applicable to both
 /// \c Question and \c RRset to avoid writing duplicate code logic.
-class Question {
+class B10_LIBDNS_API Question {
     ///
     /// \name Constructors and Destructor
     ///
@@ -285,7 +287,8 @@ private:
 /// operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-std::ostream& operator<<(std::ostream& os, const Question& question);
+B10_LIBDNS_API std::ostream&
+operator<<(std::ostream& os, const Question& question);
 } // end of namespace dns
 } // end of namespace isc
 #endif  // __QUESTION_H

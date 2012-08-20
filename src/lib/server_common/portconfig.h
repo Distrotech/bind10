@@ -19,6 +19,8 @@
 
 #include <asiodns/dns_service.h>
 
+#include <server_common/dll.h>
+
 #include <utility>
 #include <string>
 #include <stdint.h>
@@ -77,7 +79,7 @@ typedef std::vector<AddressPair> AddressList;
  *     element in the hash, port number out of range).
  * \throw std::bad_alloc when allocation fails.
  */
-AddressList
+B10_LIBSERVER_COMMON_API AddressList
 parseAddresses(isc::data::ConstElementPtr addresses,
                const std::string& elemName);
 
@@ -111,7 +113,7 @@ parseAddresses(isc::data::ConstElementPtr addresses,
 /// \throw std::bad_alloc when allocation fails.
 /// \throw isc::InvalidOperation when the function is called and the
 ///     SocketRequestor isn't initialized yet.
-void
+B10_LIBSERVER_COMMON_API void
 installListenAddresses(const AddressList& new_addresses,
                        AddressList& address_store,
                        asiodns::DNSServiceBase& dns_service,

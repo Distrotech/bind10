@@ -23,25 +23,28 @@
 
 #include <exceptions/exceptions.h>
 
+#include <util/dll.h>
+
+#include <dns/dll.h>
 #include <dns/edns.h>
 #include <dns/question.h>
 #include <dns/rrset.h>
 
 namespace isc {
 namespace util {
-class InputBuffer;
+class B10_LIBUTIL_API InputBuffer;
 }
 
 namespace dns {
-class TSIGContext;
-class TSIGRecord;
+class B10_LIBDNS_API TSIGContext;
+class B10_LIBDNS_API TSIGRecord;
 
 ///
 /// \brief A standard DNS module exception that is thrown if a wire format
 /// message parser encounters a short length of data that don't even contain
 /// the full header section.
 ///
-class MessageTooShort : public Exception {
+class B10_LIBDNS_API MessageTooShort : public Exception {
 public:
     MessageTooShort(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -52,7 +55,7 @@ public:
 /// is being constructed for an incompatible section.  Specifically, this
 /// happens RRset iterator is being constructed for a Question section.
 ///
-class InvalidMessageSection : public Exception {
+class B10_LIBDNS_API InvalidMessageSection : public Exception {
 public:
     InvalidMessageSection(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -63,7 +66,7 @@ public:
 /// class method is called that is prohibited for the current mode of
 /// the message.
 ///
-class InvalidMessageOperation : public Exception {
+class B10_LIBDNS_API InvalidMessageOperation : public Exception {
 public:
     InvalidMessageOperation(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -74,7 +77,7 @@ public:
 /// smaller than the standard default maximum (DEFAULT_MAX_UDPSIZE) is
 /// being specified for the message.
 ///
-class InvalidMessageUDPSize : public Exception {
+class B10_LIBDNS_API InvalidMessageUDPSize : public Exception {
 public:
     InvalidMessageUDPSize(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -82,11 +85,11 @@ public:
 
 typedef uint16_t qid_t;
 
-class AbstractMessageRenderer;
-class Message;
+class B10_LIBDNS_API AbstractMessageRenderer;
+class B10_LIBDNS_API Message;
 class MessageImpl;
-class Opcode;
-class Rcode;
+class B10_LIBDNS_API Opcode;
+class B10_LIBDNS_API Rcode;
 
 template <typename T>
 struct SectionIteratorImpl;
@@ -115,6 +118,9 @@ private:
 
 typedef SectionIterator<QuestionPtr> QuestionIterator;
 typedef SectionIterator<RRsetPtr> RRsetIterator;
+
+class B10_LIBDNS_API QuestionIteratorChild : public QuestionIterator {};
+class B10_LIBDNS_API RRsetIteratorChild : public RRsetIterator {};
 
 /// \brief The \c Message class encapsulates a standard DNS message.
 ///
@@ -148,7 +154,7 @@ typedef SectionIterator<RRsetPtr> RRsetIterator;
 ///   so the implementation can only be moderately efficient.
 /// - We may want to provide a "find" method for a specified type
 ///   of RR in the message.
-class Message {
+class B10_LIBDNS_API Message {
 public:
     /// Constants to specify the operation mode of the \c Message.
     enum Mode {
@@ -681,7 +687,8 @@ typedef boost::shared_ptr<const Message> ConstMessagePtr;
 /// \param message A \c Message object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-std::ostream& operator<<(std::ostream& os, const Message& message);
+B10_LIBDNS_API std::ostream&
+operator<<(std::ostream& os, const Message& message);
 }
 }
 #endif  // __MESSAGE_H

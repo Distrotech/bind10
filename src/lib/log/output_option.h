@@ -19,6 +19,8 @@
 #include <stdlib.h>
 #include <string>
 
+#include <log/dll.h>
+
 /// \brief Logger Output Option
 ///
 /// The logging configuration options are a list of logger specifications, each
@@ -42,7 +44,7 @@
 namespace isc {
 namespace log {
 
-struct OutputOption {
+struct B10_LIBLOG_API OutputOption {
 
     /// Destinations.  Prefixed "DEST_" to avoid problems with the C stdio.h
     /// FILE type.
@@ -75,7 +77,9 @@ struct OutputOption {
     unsigned int    maxver;             ///< Maximum versions (none if <= 0)
 };
 
+B10_LIBLOG_API
 OutputOption::Destination getDestination(const std::string& dest_str);
+B10_LIBLOG_API
 OutputOption::Stream getStream(const std::string& stream_str);
 
 

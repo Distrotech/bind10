@@ -19,6 +19,8 @@
 #include <typeinfo>
 #include <sstream>
 
+#include <acl/dll.h>
+
 namespace isc {
 namespace acl {
 

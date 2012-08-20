@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBSERVER_COMMON_EXPORT
+
 #include <string>
 #include <sstream>
 
@@ -64,7 +66,7 @@ Client::toText() const {
     return (ss.str());
 }
 
-std::ostream&
+B10_LIBSERVER_COMMON_API std::ostream&
 isc::server_common::operator<<(std::ostream& os, const Client& client) {
     return (os << client.toText());
 }

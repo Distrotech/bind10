@@ -20,6 +20,7 @@
 #include <boost/scoped_array.hpp>
 #include <asiolink/io_address.h>
 #include <util/noncopyable.h>
+#include <dhcp/dll.h>
 #include <dhcp/dhcp6.h>
 #include <dhcp/dhcp4.h>
 #include <dhcp/pkt4.h>
@@ -34,7 +35,7 @@ namespace dhcp {
 /// interfaces, configured addresses, link-local addresses, and provides
 /// API for using sockets.
 ///
-class IfaceMgr : public isc::util::noncopyable {
+class B10_LIBDHCP_API IfaceMgr : public isc::util::noncopyable {
 public:
     /// type that defines list of addresses
     typedef std::vector<isc::asiolink::IOAddress> AddressCollection;
@@ -79,7 +80,7 @@ public:
     /// Iface structure represents network interface with all useful
     /// information, like name, interface index, MAC address and
     /// list of assigned addresses
-    class Iface {
+    class B10_LIBDHCP_API Iface {
     public:
         /// @brief Iface constructor.
         ///

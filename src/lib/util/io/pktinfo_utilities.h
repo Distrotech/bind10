@@ -18,6 +18,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include <util/io/dll.h>
+
 // These definitions in this file are for the convenience of internal
 // implementation and test code, and are not intended to be used publicly.
 // The namespace "internal" indicates the intent.

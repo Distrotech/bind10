@@ -22,13 +22,14 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include "asiolink/io_address.h"
 #include "util/buffer.h"
+#include <dhcp/dll.h>
 #include "dhcp/option.h"
 
 namespace isc {
 
 namespace dhcp {
 
-class Pkt4 {
+class B10_LIBDHCP_API Pkt4 {
 public:
 
     /// length of the CHADDR field in DHCPv4 message

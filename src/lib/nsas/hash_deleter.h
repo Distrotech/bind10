@@ -19,6 +19,7 @@
 #include <util/lru_list.h>
 #include <util/nonassignable.h>
 
+#include <nsas/dll.h>
 #include "hash_table.h"
 
 namespace isc {

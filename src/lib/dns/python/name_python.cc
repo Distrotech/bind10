@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 
 #include <util/buffer.h>
@@ -537,23 +539,23 @@ namespace python {
 // Initialization and addition of these go in the module init at the
 // end
 //
-PyObject* po_EmptyLabel;
-PyObject* po_TooLongName;
-PyObject* po_TooLongLabel;
-PyObject* po_BadLabelType;
-PyObject* po_BadEscape;
-PyObject* po_IncompleteName;
-PyObject* po_InvalidBufferPosition;
-PyObject* po_DNSMessageFORMERR;
+B10_LIBDNS_PYTHON_API PyObject* po_EmptyLabel;
+B10_LIBDNS_PYTHON_API PyObject* po_TooLongName;
+B10_LIBDNS_PYTHON_API PyObject* po_TooLongLabel;
+B10_LIBDNS_PYTHON_API PyObject* po_BadLabelType;
+B10_LIBDNS_PYTHON_API PyObject* po_BadEscape;
+B10_LIBDNS_PYTHON_API PyObject* po_IncompleteName;
+B10_LIBDNS_PYTHON_API PyObject* po_InvalidBufferPosition;
+B10_LIBDNS_PYTHON_API PyObject* po_DNSMessageFORMERR;
 
 //
 // Definition of enums
 // Initialization and addition of these go in the module init at the
 // end
 //
-PyObject* po_NameRelation;
+B10_LIBDNS_PYTHON_API PyObject* po_NameRelation;
 
-PyTypeObject name_comparison_result_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject name_comparison_result_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.NameComparisonResult",
     sizeof(s_NameComparisonResult),           // tp_basicsize
@@ -609,7 +611,7 @@ PyTypeObject name_comparison_result_type = {
     0                                         // tp_version_tag
 };
 
-PyTypeObject name_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject name_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.Name",
     sizeof(s_Name),                     // tp_basicsize
@@ -664,14 +666,14 @@ PyTypeObject name_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+B10_LIBDNS_PYTHON_API PyObject*
 createNameObject(const Name& source) {
     NameContainer container(PyObject_New(s_Name, &name_type));
     container.set(new Name(source));
     return (container.release());
 }
 
-bool
+B10_LIBDNS_PYTHON_API bool
 PyName_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -679,7 +681,7 @@ PyName_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &name_type));
 }
 
-const Name&
+B10_LIBDNS_PYTHON_API const Name&
 PyName_ToName(const PyObject* name_obj) {
     if (name_obj == NULL) {
         isc_throw(PyCPPWrapperException,

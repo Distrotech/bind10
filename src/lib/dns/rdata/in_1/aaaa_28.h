@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include <dns/dll.h>
 #include <dns/rdata.h>
 
 // BEGIN_ISC_NAMESPACE
@@ -27,7 +28,7 @@
 
 // BEGIN_RDATA_NAMESPACE
 
-class AAAA : public Rdata {
+class B10_LIBDNS_API AAAA : public Rdata {
 public:
     // BEGIN_COMMON_MEMBERS
     // END_COMMON_MEMBERS

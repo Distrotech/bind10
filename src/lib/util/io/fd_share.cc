@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBUTIL_IO_EXPORT
+
 #include <cstring>
 #include <cstdlib>
 
@@ -73,7 +75,7 @@ cmsg_space(const socklen_t len) {
 }
 }
 
-int
+B10_LIBUTIL_IO_API int
 recv_fd(const int sock) {
     struct msghdr msghdr;
     struct iovec iov_dummy;
@@ -124,7 +126,7 @@ recv_fd(const int sock) {
     return (new_fd);
 }
 
-int
+B10_LIBUTIL_IO_API int
 send_fd(const int sock, const int fd) {
     struct msghdr msghdr;
     struct iovec iov_dummy;

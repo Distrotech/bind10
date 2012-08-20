@@ -15,6 +15,7 @@
 #ifndef __LOG_MACROS_H
 #define __LOG_MACROS_H
 
+#include <log/dll.h>
 #include <log/logger.h>
 #include <log/log_dbglevels.h>
 

@@ -17,6 +17,7 @@
 
 #include <util/nonassignable.h>
 #include <util/buffer.h>
+#include <dns/dll.h>
 
 #include <stdint.h>
 

@@ -16,6 +16,7 @@
 #define __DATASRC_LOGGER_H
 
 #include <log/macros.h>
+#include <datasrc/dll.h>
 #include <datasrc/datasrc_messages.h>
 
 /// \file datasrc/logger.h

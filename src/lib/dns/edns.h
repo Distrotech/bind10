@@ -21,24 +21,26 @@
 
 #include <ostream>
 
+#include <dns/dll.h>
 #include <dns/rdata.h>
 
+#include <util/dll.h>
 #include <util/nonassignable.h>
 
 namespace isc {
 namespace util {
-class OutputBuffer;
+class B10_LIBUTIL_API OutputBuffer;
 }
 
 namespace dns {
 
-class EDNS;
-class Name;
-class AbstractMessageRenderer;
-class RRClass;
-class RRTTL;
-class RRType;
-class Rcode;
+class B10_LIBDNS_API EDNS;
+class B10_LIBDNS_API Name;
+class B10_LIBDNS_API AbstractMessageRenderer;
+class B10_LIBDNS_API RRClass;
+class B10_LIBDNS_API RRTTL;
+class B10_LIBDNS_API RRType;
+class B10_LIBDNS_API Rcode;
 
 /// \brief A pointer-like type pointing to an \c EDNS object.
 typedef boost::shared_ptr<EDNS> EDNSPtr;
@@ -130,7 +132,7 @@ typedef boost::shared_ptr<const EDNS> ConstEDNSPtr;
 /// If a future version of the %EDNS protocol introduces further relationship
 /// between the message and the %EDNS, we might reconsider the interface,
 /// probably with higher abstraction.
-class EDNS : isc::util::nonassignable {
+class B10_LIBDNS_API EDNS : isc::util::nonassignable {
 public:
     ///
     /// \name Constructors and Destructor
@@ -423,9 +425,10 @@ private:
 /// \param extended_rcode A placeholder to store the topmost 8 bits of the
 /// extended Rcode.
 /// \return A pointer to the created \c EDNS object.
-EDNS* createEDNSFromRR(const Name& name, const RRClass& rrclass,
-                       const RRType& rrtype, const RRTTL& ttl,
-                       const rdata::Rdata& rdata, uint8_t& extended_rcode);
+B10_LIBDNS_API EDNS*
+createEDNSFromRR(const Name& name, const RRClass& rrclass,
+                 const RRType& rrtype, const RRTTL& ttl,
+                 const rdata::Rdata& rdata, uint8_t& extended_rcode);
 
 /// \brief Insert the \c EDNS as a string into stream.
 ///
@@ -437,7 +440,8 @@ EDNS* createEDNSFromRR(const Name& name, const RRClass& rrclass,
 /// \param edns A reference to an \c EDNS object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-std::ostream& operator<<(std::ostream& os, const EDNS& edns);
+B10_LIBDNS_API std::ostream&
+operator<<(std::ostream& os, const EDNS& edns);
 }
 }
 #endif  // __EDNS_H

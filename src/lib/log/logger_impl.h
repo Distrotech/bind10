@@ -29,6 +29,7 @@
 #include <log4cplus/logger.h>
 
 // BIND-10 logger files
+#include <log/dll.h>
 #include <log/logger_level_impl.h>
 #include <log/message_types.h>
 

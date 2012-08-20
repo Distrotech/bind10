@@ -18,6 +18,8 @@
 
 #include <gtest/gtest.h>
 
+#include <util/unittests/dll.h>
+
 #ifndef __UTIL_UNITTESTS_TEXTDATA_H
 #define __UTIL_UNITTESTS_TEXTDATA_H 1
 

@@ -18,6 +18,9 @@
 
 // Python.h needs to be placed at the head of the program file, see:
 // http://docs.python.org/py3k/extending/extending.html#a-simple-example
+
+#define B10_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 
 #include <string>
@@ -194,12 +197,12 @@ namespace python {
 // Declaration of the custom exceptions
 // Initialization and addition of these go in pydnspp.cc
 //
-PyObject* po_UnknownNSEC3HashAlgorithm;
+B10_LIBDNS_PYTHON_API PyObject* po_UnknownNSEC3HashAlgorithm;
 
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_NSEC3Hash
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject nsec3hash_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject nsec3hash_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "dns.NSEC3Hash",
     sizeof(s_NSEC3Hash),                 // tp_basicsize
@@ -250,7 +253,7 @@ PyTypeObject nsec3hash_type = {
 };
 
 // Module Initialization, all statics (nothing right now) are initialized here
-bool
+B10_LIBDNS_PYTHON_API bool
 initModulePart_NSEC3Hash(PyObject* mod) {
     // We initialize the static description object with PyType_Ready(),
     // then add it to the module. This is not just a check! (leaving

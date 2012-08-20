@@ -20,6 +20,7 @@
 
 #include <util/noncopyable.h>
 
+#include <asiolink/dll.h>
 #include <asiolink/io_service.h>
 
 namespace isc {
@@ -57,7 +58,7 @@ class IntervalTimerImpl;
 ///  intervalTimer.setup(function_to_call_back, interval_in_milliseconds);
 ///  io_service.run();
 /// \endcode
-class IntervalTimer : isc::util::noncopyable {
+class B10_LIBASIOLINK_API IntervalTimer : isc::util::noncopyable {
 public:
     /// \name The type of timer callback function
     typedef boost::function<void()> Callback;

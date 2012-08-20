@@ -17,6 +17,7 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <datasrc/dll.h>
 #include <datasrc/cache.h>
 #include <datasrc/data_source.h>
 
@@ -32,11 +33,11 @@
 namespace isc {
 namespace datasrc {
 
-class Query;
+class B10_LIBDATASRC_API Query;
 typedef boost::shared_ptr<Query> QueryPtr;
 
 // An individual task to be carried out by the query logic
-class QueryTask : isc::util::noncopyable {
+class B10_LIBDATASRC_API QueryTask : isc::util::noncopyable {
 public:
     // XXX: Members are currently public, but should probably be
     // moved to private and wrapped in get() functions later.
@@ -155,7 +156,7 @@ typedef boost::shared_ptr<QueryTask> QueryTaskPtr;
 typedef std::queue<QueryTaskPtr> QueryTaskQueue;
 
 // Data Source query
-class Query : isc::util::noncopyable {
+class B10_LIBDATASRC_API Query : isc::util::noncopyable {
 public:
     // The state of a query: pending or answered.
     enum Status {

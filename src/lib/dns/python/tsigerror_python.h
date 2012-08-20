@@ -17,13 +17,16 @@
 
 #include <Python.h>
 
+#include <dns/dll.h>
+#include <dns/python/dll.h>
+
 namespace isc {
 namespace dns {
-class TSIGError;
+class B10_LIBDNS_API TSIGError;
 
 namespace python {
 
-extern PyTypeObject tsigerror_type;
+extern B10_LIBDNS_PYTHON_API PyTypeObject tsigerror_type;
 
 /// This is A simple shortcut to create a python TSIGError object (in the
 /// form of a pointer to PyObject) with minimal exception safety.
@@ -32,7 +35,7 @@ extern PyTypeObject tsigerror_type;
 /// returns a NULL pointer).
 /// This function is expected to be called with in a try block
 /// followed by necessary setup for python exception.
-PyObject* createTSIGErrorObject(const TSIGError& source);
+B10_LIBDNS_PYTHON_API PyObject* createTSIGErrorObject(const TSIGError& source);
 
 } // namespace python
 } // namespace dns

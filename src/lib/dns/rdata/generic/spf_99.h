@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include <dns/dll.h>
 #include <dns/rdata.h>
 
 // BEGIN_ISC_NAMESPACE
@@ -36,7 +37,7 @@ template<class Type, uint16_t typeCode> class TXTLikeImpl;
 /// This class implements the basic interfaces inherited from the abstract
 /// \c rdata::Rdata class. The semantics of the class is provided by
 /// a copy of instantiated TXTLikeImpl class common to both TXT and SPF.
-class SPF : public Rdata {
+class B10_LIBDNS_API SPF : public Rdata {
 public:
     // BEGIN_COMMON_MEMBERS
     // END_COMMON_MEMBERS

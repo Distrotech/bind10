@@ -19,6 +19,7 @@
 #include <util/buffer.h>
 #include <util/noncopyable.h>
 #include <dns/message.h>
+#include <asiodns/dll.h>
 
 namespace isc {
 namespace asiodns {
@@ -36,7 +37,7 @@ namespace asiodns {
 /// from a DNS Lookup provider functon and readies it to be sent to the
 /// client.  After it has run, the OutputBuffer object passed to it should
 /// contain the answer to the query rendered into wire format.
-class DNSAnswer : isc::util::noncopyable {
+class B10_LIBASIODNS_API DNSAnswer : isc::util::noncopyable {
     ///
     /// \name Constructors and Destructor
     ///

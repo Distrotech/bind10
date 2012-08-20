@@ -15,6 +15,7 @@
 #ifndef __DATA_SOURCE_FACTORY_H
 #define __DATA_SOURCE_FACTORY_H 1
 
+#include <datasrc/dll.h>
 #include <datasrc/data_source.h>
 #include <datasrc/client.h>
 
@@ -30,7 +31,7 @@ namespace datasrc {
 
 /// \brief Raised if there is an error loading the datasource implementation
 ///        library
-class DataSourceLibraryError : public DataSourceError {
+class B10_LIBDATASRC_API DataSourceLibraryError : public DataSourceError {
 public:
     DataSourceLibraryError(const char* file, size_t line, const char* what) :
         DataSourceError(file, line, what) {}
@@ -38,7 +39,8 @@ public:
 
 /// \brief Raised if there is an error reading a symbol from the datasource
 ///        implementation library
-class DataSourceLibrarySymbolError : public DataSourceError {
+class B10_LIBDATASRC_API DataSourceLibrarySymbolError :
+    public DataSourceError {
 public:
     DataSourceLibrarySymbolError(const char* file, size_t line,
                                  const char* what) :
@@ -61,7 +63,7 @@ typedef void ds_destructor(DataSourceClient* instance);
 ///       in other places than for dynamically loading datasources, then, apart
 ///       from moving it to another location, we also need to make the
 ///       exceptions raised more general.
-class LibraryContainer : isc::util::noncopyable {
+class B10_LIBDATASRC_API LibraryContainer : isc::util::noncopyable {
 public:
     /// \brief Constructor
     ///
@@ -142,7 +144,7 @@ private:
 /// derived classes as well. Currently, the class is actually derived in some
 /// of the tests, which is rather unclean (as this class as written is really
 /// intended to be used directly).
-class DataSourceClientContainer : isc::util::noncopyable {
+class B10_LIBDATASRC_API DataSourceClientContainer : isc::util::noncopyable {
 public:
     /// \brief Constructor
     ///

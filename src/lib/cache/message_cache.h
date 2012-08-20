@@ -18,6 +18,7 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <dns/message.h>
+#include <cache/dll.h>
 #include "message_entry.h"
 #include <nsas/hash_table.h>
 #include <util/lru_list.h>
@@ -33,7 +34,7 @@ namespace cache {
 ///
 /// \todo The message cache class should provide the interfaces for
 ///       loading, dumping and resizing.
-class MessageCache : isc::util::noncopyable {
+class B10_LIBCACHE_API MessageCache : isc::util::noncopyable {
 public:
     /// \param rrset_cache The cache that stores the RRsets that the
     ///        message entry will point to

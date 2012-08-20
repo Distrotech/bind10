@@ -22,6 +22,7 @@
 #include <ios>
 
 #include <util/noncopyable.h>
+#include <bench/dll.h>
 
 namespace isc {
 namespace bench {

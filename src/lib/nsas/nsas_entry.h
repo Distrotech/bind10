@@ -21,6 +21,7 @@
 #include <exceptions/exceptions.h>
 #include <util/lru_list.h>
 
+#include <nsas/dll.h>
 #include "hash_key.h"
 #include "hash_table.h"
 
@@ -31,7 +32,7 @@ namespace nsas {
 ///
 /// Thrown if an attempt was made to access the iterator - the pointer into
 /// the LRU list where this element is located - when it is marked as invalid.
-class InvalidLruIterator : public isc::Exception {
+class B10_LIBNSAS_API InvalidLruIterator : public isc::Exception {
 public:
     InvalidLruIterator(const char* file, size_t line, const char* what) :
         Exception(file, line, what)

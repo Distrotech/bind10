@@ -36,6 +36,7 @@
 #include <util/buffer.h>
 #include <util/io_utilities.h>
 
+#include <asiolink/dll.h>
 #include <asiolink/io_asio_socket.h>
 #include <asiolink/io_endpoint.h>
 #include <asiolink/io_service.h>
@@ -47,7 +48,7 @@ namespace asiolink {
 /// \brief Buffer Too Large
 ///
 /// Thrown on an attempt to send a buffer > 64k
-class BufferTooLarge : public IOError {
+class B10_LIBASIOLINK_API BufferTooLarge : public IOError {
 public:
     BufferTooLarge(const char* file, size_t line, const char* what) :
         IOError(file, line, what) {}

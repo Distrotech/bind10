@@ -20,6 +20,7 @@
 #include <sstream>
 
 #include <util/nonassignable.h>
+#include <exceptions/dll.h>
 
 namespace isc {
 
@@ -30,7 +31,8 @@ namespace isc {
 /// exception such as the file name and line number where the exception is
 /// triggered.
 ///
-class Exception : isc::util::nonassignable, public std::exception {
+class B10_LIBEXCEPTIONS_API Exception :
+    isc::util::nonassignable, public std::exception {
 public:
     ///
     /// \name Constructors and Destructor
@@ -100,7 +102,7 @@ private:
 
 /// \brief A generic exception that is thrown if a parameter given
 /// to a method would refer to or modify out-of-range data.
-class OutOfRange : public Exception {
+class B10_LIBEXCEPTIONS_API OutOfRange : public Exception {
 public:
     OutOfRange(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -109,7 +111,7 @@ public:
 /// \brief A generic exception that is thrown if a parameter given
 /// to a method or function is considered invalid and no other specific
 /// exceptions are suitable to describe the error.
-class InvalidParameter : public Exception {
+class B10_LIBEXCEPTIONS_API InvalidParameter : public Exception {
 public:
     InvalidParameter(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -117,7 +119,7 @@ public:
 
 /// \brief A generic exception that is thrown if a parameter given
 /// to a method is considered invalid in that context.
-class BadValue : public Exception {
+class B10_LIBEXCEPTIONS_API BadValue : public Exception {
 public:
     BadValue(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -128,7 +130,7 @@ public:
 ///
 /// For example, this can happen if a class method is called when the object's
 /// state does not allow that particular method.
-class InvalidOperation : public Exception {
+class B10_LIBEXCEPTIONS_API InvalidOperation : public Exception {
 public:
     InvalidOperation(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -138,7 +140,7 @@ public:
 /// \brief A generic exception that is thrown when an unexpected
 /// error condition occurs.
 ///
-class Unexpected : public Exception {
+class B10_LIBEXCEPTIONS_API Unexpected : public Exception {
 public:
     Unexpected(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -150,7 +152,7 @@ public:
 ///
 /// This may be due to unfinished implementation or in case the
 /// function isn't even planned to be provided for that situation.
-class NotImplemented : public Exception {
+class B10_LIBEXCEPTIONS_API NotImplemented : public Exception {
 public:
     NotImplemented(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}

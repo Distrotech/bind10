@@ -20,6 +20,8 @@
 
 #include <asiodns/asiodns.h>
 
+#include <testutils/dll.h>
+
 #include <gtest/gtest.h>
 #include <boost/lexical_cast.hpp>
 
@@ -43,7 +45,8 @@ namespace testutils {
 /// Some member variables are intentionally made public so that test cases
 /// can easily check the value of them.  We prefer convenience for tests over
 /// class integrity here.
-class TestSocketRequestor : public isc::server_common::SocketRequestor {
+class B10_LIBTESTUTILS_API TestSocketRequestor :
+    public isc::server_common::SocketRequestor {
 public:
     /// \brief Constructor
     ///

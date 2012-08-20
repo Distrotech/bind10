@@ -21,6 +21,7 @@
 // See binary_from_base32hex.h for why we need _from_base64.hpp here.
 #include <boost/archive/iterators/binary_from_base64.hpp>
 
+#include <util/dll.h>
 #include <util/nonassignable.h>
 
 #include <exceptions/exceptions.h>

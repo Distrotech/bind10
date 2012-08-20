@@ -24,13 +24,14 @@
 
 #include <util/nonassignable.h>
 
+#include <acl/dll.h>
 #include <acl/ip_check.h>
 #include <acl/dnsname_check.h>
 #include <acl/loader.h>
 
 namespace isc {
 namespace dns {
-class TSIGRecord;
+class B10_LIBACL_API TSIGRecord;
 }
 namespace acl {
 namespace dns {
@@ -65,7 +66,7 @@ namespace dns {
  * are the local (destination) IP address, the remote and local port numbers,
  * various fields of the DNS request (e.g. a particular header flag value).
  */
-struct RequestContext : isc::util::nonassignable {
+struct B10_LIBACL_API RequestContext : isc::util::nonassignable {
     /// The constructor
     ///
     /// This is a trivial constructor that perform straightforward
@@ -118,7 +119,7 @@ typedef acl::Loader<RequestContext> RequestLoader;
  * one is enough, this one will have registered default checks and it
  * is known one, so any plugins can registrer additional checks as well.
  */
-RequestLoader& getRequestLoader();
+B10_LIBACL_API RequestLoader& getRequestLoader();
 
 // The following is essentially private to the implementation and could
 // be hidden in the implementation file.  But it's visible via this header
@@ -131,7 +132,8 @@ namespace internal {
 typedef isc::acl::IPCheck<RequestContext> RequestIPCheck;
 typedef isc::acl::dns::NameCheck<RequestContext> RequestKeyCheck;
 
-class RequestCheckCreator : public acl::Loader<RequestContext>::CheckCreator {
+class B10_LIBACL_API RequestCheckCreator :
+    public acl::Loader<RequestContext>::CheckCreator {
 public:
     virtual std::vector<std::string> names() const;
 

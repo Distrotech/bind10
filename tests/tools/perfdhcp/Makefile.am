@@ -19,7 +19,8 @@ AM_LDFLAGS += -static
 endif
 
 lib_LTLIBRARIES = libb10_perfdhcp++.la
-libb10_perfdhcp___la_SOURCES = command_options.cc command_options.h
+libb10_perfdhcp___la_SOURCES  = dll.h
+libb10_perfdhcp___la_SOURCES += command_options.cc command_options.h
 libb10_perfdhcp___la_SOURCES += localized_option.h
 libb10_perfdhcp___la_SOURCES += perf_pkt6.cc perf_pkt6.h
 libb10_perfdhcp___la_SOURCES += perf_pkt4.cc perf_pkt4.h

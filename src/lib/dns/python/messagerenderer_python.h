@@ -18,14 +18,16 @@
 #include <Python.h>
 
 #include <util/buffer.h>
+#include <dns/dll.h>
+#include <dns/python/dll.h>
 
 namespace isc {
 namespace dns {
-class MessageRenderer;
+class B10_LIBDNS_API MessageRenderer;
 
 namespace python {
 
-extern PyTypeObject messagerenderer_type;
+extern B10_LIBDNS_PYTHON_API PyTypeObject messagerenderer_type;
 
 /// \brief Checks if the given python object is a MessageRenderer object
 ///
@@ -33,7 +35,7 @@ extern PyTypeObject messagerenderer_type;
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type MessageRenderer, false otherwise
-bool PyMessageRenderer_Check(PyObject* obj);
+B10_LIBDNS_PYTHON_API bool PyMessageRenderer_Check(PyObject* obj);
 
 /// \brief Returns a reference to the MessageRenderer object contained within the given
 ///        Python object.
@@ -45,7 +47,8 @@ bool PyMessageRenderer_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param messagerenderer_obj The messagerenderer object to convert
-MessageRenderer& PyMessageRenderer_ToMessageRenderer(PyObject* messagerenderer_obj);
+B10_LIBDNS_PYTHON_API MessageRenderer&
+PyMessageRenderer_ToMessageRenderer(PyObject* messagerenderer_obj);
 
 } // namespace python
 } // namespace dns

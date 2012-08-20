@@ -18,6 +18,8 @@
 // (and other parts where we need randomness, perhaps another thing
 // for a general libutil?)
 
+#define B10_LIBUTIL_EXPORT
+
 #include <util/random/qid_gen.h>
 
 #include <sys/time.h>

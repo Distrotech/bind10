@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBSTATISTICS_EXPORT
+
 #include <cassert>
 #include <stdexcept>
 #include <iterator>
@@ -215,20 +217,20 @@ CounterDictionary::end() const {
                CounterDictionaryConstIteratorImpl(impl_->end())));
 }
 
-CounterDictionary::ConstIterator::ConstIterator() :
+B10_LIBSTATISTICS_API CounterDictionary::ConstIterator::ConstIterator() :
     impl_(new CounterDictionaryConstIteratorImpl())
 {}
 
-CounterDictionary::ConstIterator::~ConstIterator() {}
+B10_LIBSTATISTICS_API CounterDictionary::ConstIterator::~ConstIterator() {}
 
 // Copy constructor: deep copy of impl_
-CounterDictionary::ConstIterator::ConstIterator(
+B10_LIBSTATISTICS_API CounterDictionary::ConstIterator::ConstIterator(
     const CounterDictionary::ConstIterator& source) :
     impl_(new CounterDictionaryConstIteratorImpl(*(source.impl_)))
 {}
 
 // Assignment operator: deep copy of impl_
-CounterDictionary::ConstIterator &
+B10_LIBSTATISTICS_API CounterDictionary::ConstIterator &
 CounterDictionary::ConstIterator::operator=(
     const CounterDictionary::ConstIterator &source)
 {
@@ -237,25 +239,25 @@ CounterDictionary::ConstIterator::operator=(
 }
 
 // The constructor from implementation detail
-CounterDictionary::ConstIterator::ConstIterator(
+B10_LIBSTATISTICS_API CounterDictionary::ConstIterator::ConstIterator(
     const CounterDictionaryConstIteratorImpl& source) :
     impl_(new CounterDictionaryConstIteratorImpl(source))
 {}
 
-const CounterDictionary::ConstIterator::value_type&
+B10_LIBSTATISTICS_API const CounterDictionary::ConstIterator::value_type&
 CounterDictionary::ConstIterator::dereference() const
 {
     return (impl_->dereference());
 }
 
-bool
+B10_LIBSTATISTICS_API bool
 CounterDictionary::ConstIterator::equal(
     CounterDictionary::ConstIterator const& other) const
 {
     return (impl_->equal(*(other.impl_)));
 }
 
-void
+B10_LIBSTATISTICS_API void
 CounterDictionary::ConstIterator::increment() {
     impl_->increment();
     return;

@@ -22,6 +22,7 @@
 #include <dns/question.h>
 #include <dns/message.h>
 #include <dns/question.h>
+#include <resolve/dll.h>
 
 #define RESOLVER_MAX_CNAME_CHAIN    16
 
@@ -35,7 +36,7 @@ namespace resolve {
 ///
 /// TODO: The code here does not take into account any EDNS0 fields.
 
-class ResponseClassifier {
+class B10_LIBRESOLVE_API ResponseClassifier {
 public:
 
     /// \brief Category of Answer

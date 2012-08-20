@@ -23,6 +23,7 @@
 // simply include the base64 header here.
 #include <boost/archive/iterators/binary_from_base64.hpp>
 
+#include <util/dll.h>
 #include <util/nonassignable.h>
 
 #include <exceptions/exceptions.h>

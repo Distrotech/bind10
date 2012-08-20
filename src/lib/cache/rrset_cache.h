@@ -15,6 +15,7 @@
 #ifndef __RRSET_CACHE_H
 #define __RRSET_CACHE_H
 
+#include <cache/dll.h>
 #include <cache/rrset_entry.h>
 #include <nsas/hash_table.h>
 
@@ -26,7 +27,7 @@ using namespace isc::nsas;
 namespace isc {
 namespace cache {
 
-class RRsetEntry;
+class B10_LIBCACHE_API RRsetEntry;
 
 /// \brief RRset Cache
 /// The object of RRsetCache represented the cache for class-specific
@@ -34,7 +35,7 @@ class RRsetEntry;
 ///
 /// \todo The rrset cache class should provide the interfaces for
 ///       loading, dumping and resizing.
-class RRsetCache : isc::util::noncopyable {
+class B10_LIBCACHE_API RRsetCache : isc::util::noncopyable {
     ///
     /// \name Constructor and Destructor
     ///

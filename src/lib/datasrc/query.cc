@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDATASRC_EXPORT
+
 #include <util/buffer.h>
 #include <dns/name.h>
 #include <dns/rrset.h>

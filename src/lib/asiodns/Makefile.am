@@ -17,7 +17,7 @@ asiodns_messages.h asiodns_messages.cc: asiodns_messages.mes
 BUILT_SOURCES = asiodns_messages.h asiodns_messages.cc
 
 lib_LTLIBRARIES = libb10-asiodns.la
-libb10_asiodns_la_SOURCES = dns_answer.h
+libb10_asiodns_la_SOURCES = dll.h dns_answer.h
 libb10_asiodns_la_SOURCES += asiodns.h
 libb10_asiodns_la_SOURCES += dns_lookup.h
 libb10_asiodns_la_SOURCES += dns_server.h

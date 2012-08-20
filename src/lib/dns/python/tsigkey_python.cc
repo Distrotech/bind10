@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 
 #include <stdexcept>
@@ -181,7 +183,7 @@ namespace python {
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_EDNS
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject tsigkey_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject tsigkey_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.TSIGKey",
     sizeof(s_TSIGKey),                  // tp_basicsize
@@ -232,7 +234,7 @@ PyTypeObject tsigkey_type = {
     0                                   // tp_version_tag
 };
 
-bool
+B10_LIBDNS_PYTHON_API bool
 PyTSIGKey_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -240,7 +242,7 @@ PyTSIGKey_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &tsigkey_type));
 }
 
-const TSIGKey&
+B10_LIBDNS_PYTHON_API const TSIGKey&
 PyTSIGKey_ToTSIGKey(const PyObject* tsigkey_obj) {
     const s_TSIGKey* tsigkey = static_cast<const s_TSIGKey*>(tsigkey_obj);
     return (*tsigkey->cppobj);
@@ -394,7 +396,7 @@ TSIGKeyRing_find(const s_TSIGKeyRing* self, PyObject* args) {
 namespace isc {
 namespace dns {
 namespace python {
-PyTypeObject tsigkeyring_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject tsigkeyring_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.TSIGKeyRing",
     sizeof(s_TSIGKeyRing),              // tp_basicsize
@@ -444,7 +446,7 @@ PyTypeObject tsigkeyring_type = {
     0                                   // tp_version_tag
 };
 
-bool
+B10_LIBDNS_PYTHON_API bool
 PyTSIGKeyRing_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -452,7 +454,7 @@ PyTSIGKeyRing_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &tsigkeyring_type));
 }
 
-const TSIGKeyRing&
+B10_LIBDNS_PYTHON_API const TSIGKeyRing&
 PyTSIGKeyRing_ToTSIGKeyRing(const PyObject* tsigkeyring_obj) {
     if (tsigkeyring_obj == NULL) {
         isc_throw(PyCPPWrapperException,

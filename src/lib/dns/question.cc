@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDNS_EXPORT
+
 #include <iostream>
 #include <string>
 
@@ -73,7 +75,7 @@ Question::toWire(AbstractMessageRenderer& renderer) const {
     return (1);                 // number of "entries"
 }
 
-ostream&
+B10_LIBDNS_API ostream&
 operator<<(std::ostream& os, const Question& question) {
     os << question.toText();
     return (os);

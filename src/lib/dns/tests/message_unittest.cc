@@ -66,7 +66,7 @@ const uint16_t Message::DEFAULT_MAX_UDPSIZE;
 namespace isc {
 namespace util {
 namespace detail {
-extern int64_t (*gettimeFunction)();
+extern B10_LIBUTIL_API int64_t (*gettimeFunction)();
 }
 }
 }

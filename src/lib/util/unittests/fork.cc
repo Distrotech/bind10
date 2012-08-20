@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBUTIL_UNITTESTS_EXPORT
+
 #include "fork.h"
 
 #include <util/io/fd.h>
@@ -38,7 +40,7 @@ namespace isc {
 namespace util {
 namespace unittests {
 
-bool
+B10_LIBUTIL_UNITTESTS_API bool
 process_ok(pid_t process) {
     // Create a timeout
     struct sigaction ignored, original;
@@ -69,7 +71,7 @@ process_ok(pid_t process) {
  * This creates a pipe, forks and feeds the pipe with given data.
  * Used to provide the input in non-blocking/asynchronous way.
  */
-pid_t
+B10_LIBUTIL_UNITTESTS_API pid_t
 provide_input(int *read_pipe, const void *input, const size_t length)
 {
     int pipes[2];
@@ -95,7 +97,7 @@ provide_input(int *read_pipe, const void *input, const size_t length)
  * This creates a pipe, forks and reads the pipe and compares it
  * with given data. Used to check output of run in asynchronous way.
  */
-pid_t
+B10_LIBUTIL_UNITTESTS_API pid_t
 check_output(int *write_pipe, const void *output, const size_t length)
 {
     int pipes[2];

@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBASIOLINK_EXPORT
+
 #include <config.h>
 
 #include <asio.hpp>
@@ -61,7 +63,7 @@ IOEndpoint::operator!=(const IOEndpoint& other) const {
     return (!operator==(other));
 }
 
-ostream&
+B10_LIBASIOLINK_API ostream&
 operator<<(ostream& os, const IOEndpoint& endpoint) {
     if (endpoint.getFamily() == AF_INET6) {
         os << "[" << endpoint.getAddress().toText() << "]";

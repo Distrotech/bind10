@@ -18,6 +18,7 @@
 #define __MESSAGE_UTILITY_H
 
 #include <dns/message.h>
+#include <cache/dll.h>
 
 namespace isc {
 namespace cache {

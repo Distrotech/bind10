@@ -21,14 +21,15 @@
 
 #include <dns/rrset.h>
 
+#include <datasrc/dll.h>
 #include <datasrc/zone.h>
 
 #include <boost/shared_ptr.hpp>
 
 namespace isc {
 namespace dns {
-class Name;
-class RRClass;
+class B10_LIBDATASRC_API Name;
+class B10_LIBDATASRC_API RRClass;
 }
 
 namespace datasrc {
@@ -42,7 +43,7 @@ namespace datasrc {
 ///
 /// For more descriptions about its struct and interfaces, please refer to the
 /// corresponding struct and interfaces of \c MemoryDataSrc.
-class ZoneTable : isc::util::noncopyable {
+class B10_LIBDATASRC_API ZoneTable : isc::util::noncopyable {
 public:
     struct FindResult : isc::util::nonassignable {
         FindResult(result::Result param_code, const ZoneFinderPtr param_zone) :

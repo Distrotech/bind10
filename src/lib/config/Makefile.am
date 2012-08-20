@@ -12,7 +12,8 @@ config_messages.h config_messages.cc: config_messages.mes
 BUILT_SOURCES = config_messages.h config_messages.cc
 
 lib_LTLIBRARIES = libb10-cfgclient.la
-libb10_cfgclient_la_SOURCES = config_data.h config_data.cc
+libb10_cfgclient_la_SOURCES = dll.h
+libb10_cfgclient_la_SOURCES += config_data.h config_data.cc
 libb10_cfgclient_la_SOURCES += module_spec.h module_spec.cc
 libb10_cfgclient_la_SOURCES += ccsession.cc ccsession.h
 libb10_cfgclient_la_SOURCES += config_log.h config_log.cc

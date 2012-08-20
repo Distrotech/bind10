@@ -15,6 +15,8 @@
 #ifndef FD_SHARE_H_
 #define FD_SHARE_H_
 
+#include <util/io/dll.h>
+
 /**
  * \file fd_share.h
  * \short Support to transfer file descriptors between processes.
@@ -41,7 +43,7 @@ const int FD_OTHER_ERROR = -1;
  * \param sock The unix domain socket to read from. Tested and it does
  *     not work with a pipe.
  */
-int recv_fd(const int sock);
+B10_LIBUTIL_IO_API int recv_fd(const int sock);
 
 /**
  * \short Sends a file descriptor.
@@ -56,7 +58,7 @@ int recv_fd(const int sock);
  * \param fd The file descriptor to send. It should work with any valid
  *     file descriptor.
  */
-int send_fd(const int sock, const int fd);
+B10_LIBUTIL_IO_API int send_fd(const int sock, const int fd);
 
 } // End for namespace io
 } // End for namespace util

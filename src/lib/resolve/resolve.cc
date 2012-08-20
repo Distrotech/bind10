@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBRESOLVE_EXPORT
+
 #include <util/nonassignable.h>
 
 #include <resolve/resolve.h>
@@ -38,7 +40,7 @@ namespace {
 namespace isc {
 namespace resolve {
 
-void
+B10_LIBRESOLVE_API void
 makeErrorMessage(MessagePtr answer_message,
                  const Rcode& error_code)
 {
@@ -49,8 +51,9 @@ makeErrorMessage(MessagePtr answer_message,
     answer_message->setRcode(error_code);
 }
 
-void initResponseMessage(const isc::dns::Message& query_message,
-                         isc::dns::Message& response_message)
+B10_LIBRESOLVE_API void
+initResponseMessage(const isc::dns::Message& query_message,
+                    isc::dns::Message& response_message)
 {
     response_message.setOpcode(query_message.getOpcode());
     response_message.setQid(query_message.getQid());
@@ -59,14 +62,16 @@ void initResponseMessage(const isc::dns::Message& query_message,
         query_message);
 }
 
-void initResponseMessage(const isc::dns::Question& question,
-                         isc::dns::Message& response_message)
+B10_LIBRESOLVE_API void
+initResponseMessage(const isc::dns::Question& question,
+                    isc::dns::Message& response_message)
 {
     response_message.setOpcode(isc::dns::Opcode::QUERY());
     response_message.addQuestion(question);
 }
 
-void copyResponseMessage(const Message& source, MessagePtr target) {
+B10_LIBRESOLVE_API void
+copyResponseMessage(const Message& source, MessagePtr target) {
     target->setRcode(source.getRcode());
 
     target->appendSection(Message::SECTION_ANSWER, source);

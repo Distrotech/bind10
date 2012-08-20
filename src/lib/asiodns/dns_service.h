@@ -22,11 +22,13 @@
 #include <asiolink/io_service.h>
 #include <asiolink/simple_callback.h>
 
+#include <asiodns/dll.h>
+
 namespace isc {
 namespace asiodns {
 
-class DNSLookup;
-class DNSAnswer;
+class B10_LIBASIODNS_API DNSLookup;
+class B10_LIBASIODNS_API DNSAnswer;
 class DNSServiceImpl;
 
 /// \brief A base class for common \c DNSService interfaces.
@@ -40,7 +42,7 @@ class DNSServiceImpl;
 /// For this reason most of the detailed description are given in the
 /// \c DNSService class.  See that for further details of specific methods
 /// and class behaviors.
-class DNSServiceBase {
+class B10_LIBASIODNS_API DNSServiceBase {
 protected:
     /// \brief Default constructor.
     ///
@@ -96,7 +98,9 @@ public:
 /// logic that is shared between the authoritative and the recursive
 /// server implementations. As such, it handles asio, including config
 /// updates (through the 'Checkinprovider'), and listening sockets.
-class DNSService : isc::util::noncopyable, public DNSServiceBase {
+class B10_LIBASIODNS_API DNSService :
+    isc::util::noncopyable, public DNSServiceBase
+{
     ///
     /// \name Constructors and Destructor
     ///

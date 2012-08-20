@@ -29,28 +29,29 @@
 #include <dns/name.h>
 #include <dns/rrclass.h>
 #include <cc/data.h>
+#include <datasrc/dll.h>
 
 namespace isc {
 
 namespace dns {
-class Name;
-class RRType;
-class RRset;
-class RRsetList;
+class B10_LIBDATASRC_API Name;
+class B10_LIBDATASRC_API RRType;
+class B10_LIBDATASRC_API RRset;
+class B10_LIBDATASRC_API RRsetList;
 }
 
 namespace datasrc {
 
-class DataSrcMatch;
-class Query;
+class B10_LIBDATASRC_API DataSrcMatch;
+class B10_LIBDATASRC_API Query;
 
-class DataSrc;
+class B10_LIBDATASRC_API DataSrc;
 typedef boost::shared_ptr<DataSrc> DataSrcPtr;
 typedef boost::shared_ptr<const DataSrc> ConstDataSrcPtr;
 
 /// This exception represents Backend-independent errors relating to
 /// data source operations.
-class DataSourceError : public Exception {
+class B10_LIBDATASRC_API DataSourceError : public Exception {
 public:
     DataSourceError(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -62,14 +63,14 @@ public:
 /// combination does not exist in the differences table.  (Note that this
 /// includes the case where the differences table contains no records related
 /// to that zone.)
-class NoSuchSerial : public DataSourceError {
+class B10_LIBDATASRC_API NoSuchSerial : public DataSourceError {
 public:
     NoSuchSerial(const char* file, size_t line, const char* what) :
         DataSourceError(file, line, what) {}
 };
 
 
-class AbstractDataSrc : isc::util::noncopyable {
+class B10_LIBDATASRC_API AbstractDataSrc : isc::util::noncopyable {
     ///
     /// \name Constructor and Destructor.
     ///
@@ -170,7 +171,7 @@ public:
 };
 
 // Base class for a DNS Data Source
-class DataSrc : public AbstractDataSrc {
+class B10_LIBDATASRC_API DataSrc : public AbstractDataSrc {
     ///
     /// \name Constructor and Destructor.
     ///
@@ -231,7 +232,7 @@ private:
     isc::dns::RRClass rrclass;
 };
 
-class MetaDataSrc : public DataSrc {
+class B10_LIBDATASRC_API MetaDataSrc : public DataSrc {
     ///
     /// \name Constructor and Destructor.
     ///
@@ -311,7 +312,7 @@ private:
 ///  - There is no matching %data source and name found (which is probably
 ///    wrong, see below), or the given enclosing name gives a longer match
 ///    than the currently stored enclosing name against the specified name.
-class DataSrcMatch : isc::util::noncopyable {
+class B10_LIBDATASRC_API DataSrcMatch : isc::util::noncopyable {
     ///
     /// \name Constructor and Destructor.
     ///
@@ -392,7 +393,7 @@ private:
     const isc::dns::RRClass& rrclass_;
 };
 
-class Nsec3Param : isc::util::nonassignable {
+class B10_LIBDATASRC_API Nsec3Param : isc::util::nonassignable {
 public:
     Nsec3Param(uint8_t a, uint8_t f, uint16_t i, const std::vector<uint8_t>& s);
     std::string getHash(const isc::dns::Name& name) const;

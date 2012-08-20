@@ -20,6 +20,7 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <util/dll.h>
 #include <util/locks.h>
 #include <util/noncopyable.h>
 

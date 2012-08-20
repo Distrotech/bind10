@@ -21,6 +21,8 @@
 
 #include <gtest/gtest.h>
 
+#include <util/unittests/dll.h>
+
 namespace isc {
 namespace util {
 namespace unittests {
@@ -41,7 +43,7 @@ namespace unittests {
 ///
 /// \return Return value from RUN_ALL_TESTS().
 
-int run_all();
+B10_LIBUTIL_UNITTESTS_API int run_all();
 
 } // namespace unittests
 } // namespace util

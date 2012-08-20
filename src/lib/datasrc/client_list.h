@@ -21,6 +21,7 @@
 #include <exceptions/exceptions.h>
 #include <util/noncopyable.h>
 #include <util/nonassignable.h>
+#include <datasrc/dll.h>
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
@@ -28,14 +29,14 @@
 namespace isc {
 namespace datasrc {
 
-class ZoneFinder;
+class B10_LIBDATASRC_API ZoneFinder;
 typedef boost::shared_ptr<ZoneFinder> ZoneFinderPtr;
-class DataSourceClient;
+class B10_LIBDATASRC_API DataSourceClient;
 typedef boost::shared_ptr<DataSourceClient> DataSourceClientPtr;
-class DataSourceClientContainer;
+class B10_LIBDATASRC_API DataSourceClientContainer;
 typedef boost::shared_ptr<DataSourceClientContainer>
     DataSourceClientContainerPtr;
-class InMemoryClient;
+class B10_LIBDATASRC_API InMemoryClient;
 
 /// \brief The list of data source clients.
 ///
@@ -50,7 +51,7 @@ class InMemoryClient;
 /// have it to allow easy testing. It is possible to create a mock-up class
 /// instead of creating a full-blown configuration. The real implementation
 /// is the ConfigurableClientList.
-class ClientList : public isc::util::noncopyable {
+class B10_LIBDATASRC_API ClientList : public isc::util::noncopyable {
 protected:
     /// \brief Constructor.
     ///
@@ -205,7 +206,7 @@ typedef boost::shared_ptr<const ClientList> ConstClientListPtr;
 ///
 /// While it is possible to inherit this class, it is not expected to be
 /// inherited except for tests.
-class ConfigurableClientList : public ClientList {
+class B10_LIBDATASRC_API ConfigurableClientList : public ClientList {
 public:
     /// \brief Constructor
     ///

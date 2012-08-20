@@ -37,7 +37,8 @@ lib_LTLIBRARIES = libb10-nsas.la
 BUILT_SOURCES = nsas_messages.h nsas_messages.cc
 
 # Library sources. The generated files will not be in the distribution.
-libb10_nsas_la_SOURCES  = address_entry.h address_entry.cc
+libb10_nsas_la_SOURCES  = dll.h
+libb10_nsas_la_SOURCES += address_entry.h address_entry.cc
 libb10_nsas_la_SOURCES += asiolink.h
 libb10_nsas_la_SOURCES += hash.cc hash.h
 libb10_nsas_la_SOURCES += hash_deleter.h

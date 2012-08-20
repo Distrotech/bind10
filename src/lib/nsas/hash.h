@@ -20,6 +20,7 @@
 
 #include <exceptions/exceptions.h>
 
+#include <nsas/dll.h>
 #include "hash_key.h"
 
 namespace isc {
@@ -29,7 +30,7 @@ namespace nsas {
 ///
 /// Thrown if the expected maximum key length is too long for the data types
 /// declared in the class.
-class KeyLengthTooLong : public isc::Exception {
+class B10_LIBNSAS_API KeyLengthTooLong : public isc::Exception {
 public:
     KeyLengthTooLong(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what)
@@ -40,7 +41,7 @@ public:
 /// \brief Hash Calculation
 ///
 /// Class abstracting the mechanics of the hash calculation.
-class Hash {
+class B10_LIBNSAS_API Hash {
 public:
 
     /// \brief Constructor

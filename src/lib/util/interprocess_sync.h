@@ -17,12 +17,13 @@
 
 #include <string>
 
+#include <util/dll.h>
 #include <util/nonassignable.h>
 
 namespace isc {
 namespace util {
 
-class InterprocessSyncLocker; // forward declaration
+class B10_LIBUTIL_API InterprocessSyncLocker; // forward declaration
 
 /// \brief Interprocess Sync Class
 ///
@@ -44,7 +45,7 @@ class InterprocessSyncLocker; // forward declaration
 /// NOTE: All implementations of InterprocessSync should keep the
 /// is_locked_ member variable updated whenever their
 /// lock()/tryLock()/unlock() implementations are called.
-class InterprocessSync : isc::util::nonassignable {
+class B10_LIBUTIL_API InterprocessSync : isc::util::nonassignable {
   // InterprocessSyncLocker is the only code outside this class that
   // should be allowed to call the lock(), tryLock() and unlock()
   // methods.
@@ -92,7 +93,7 @@ protected:
 /// locks that are released automatically when the block is exited
 /// (RAII). It is meant to be used along with InterprocessSync objects. See
 /// the description of InterprocessSync.
-class InterprocessSyncLocker : isc::util::nonassignable {
+class B10_LIBUTIL_API InterprocessSyncLocker : isc::util::nonassignable {
 public:
     /// \brief Constructor
     ///

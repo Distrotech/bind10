@@ -20,19 +20,19 @@
 #include <boost/shared_ptr.hpp>
 
 #include <util/noncopyable.h>
-
 #include <dns/rrset.h>
+#include <datasrc/dll.h>
 
 namespace isc {
 namespace dns {
-class Name;
-class RRClass;
-class RRType;
+class B10_LIBDATASRC_API Name;
+class B10_LIBDATASRC_API RRClass;
+class B10_LIBDATASRC_API RRType;
 }
 
 namespace datasrc {
 
-class CacheNode;
+class B10_LIBDATASRC_API CacheNode;
 typedef boost::shared_ptr<CacheNode> CacheNodePtr;
 typedef boost::shared_ptr<const CacheNode> ConstCacheNodePtr;
 
@@ -82,7 +82,7 @@ class HotCacheImpl;
 /// does not currently use threads, but if it ever does (or if libdatasrc
 /// is ever used by a threaded application), this will need to be
 /// revisited.
-class HotCache : isc::util::noncopyable {
+class B10_LIBDATASRC_API HotCache : isc::util::noncopyable {
 private:
     /// \name Static definitions
     //@{

@@ -17,6 +17,8 @@
 
 #include <unistd.h>
 
+#include <util/io/dll.h>
+
 /**
  * @file fd.h
  * @short Wrappers around common unix fd manipulation functions.
@@ -38,7 +40,7 @@ namespace io {
  * \param data The buffer to write.
  * \param length How much data is there to write.
  */
-bool
+B10_LIBUTIL_IO_API bool
 write_data(const int fd, const void *data, const size_t length);
 
 /*
@@ -51,7 +53,7 @@ write_data(const int fd, const void *data, const size_t length);
  * \param data Where to put the data.
  * \param length How many of them.
  */
-ssize_t
+B10_LIBUTIL_IO_API ssize_t
 read_data(const int fd, void *buffer, const size_t length);
 
 }

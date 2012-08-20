@@ -18,6 +18,7 @@
 #include <util/noncopyable.h>
 #include <exceptions/exceptions.h>
 
+#include <dns/dll.h>
 #include <dns/tsigerror.h>
 #include <dns/tsigkey.h>
 #include <dns/tsigrecord.h>
@@ -31,7 +32,7 @@ namespace dns {
 /// Note that this exception is not thrown for TSIG protocol errors such as
 /// verification failures.  In general, this exception indicates an internal
 /// program bug.
-class TSIGContextError : public isc::Exception {
+class B10_LIBDNS_API TSIGContextError : public isc::Exception {
 public:
     TSIGContextError(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -171,7 +172,7 @@ public:
 /// direct or indirect dependencies.  The interface of \c sign() that takes
 /// opaque data (instead of, e.g., a \c Message or \c MessageRenderer object)
 /// is therefore a deliberate design decision.
-class TSIGContext : isc::util::noncopyable {
+class B10_LIBDNS_API TSIGContext : isc::util::noncopyable {
 public:
     /// Internal state of context
     ///

@@ -17,6 +17,7 @@
 
 #include <string>
 
+#include <util/dll.h>
 #include <util/strutil.h>
 
 namespace isc {
@@ -55,7 +56,7 @@ namespace util {
 /// substituting components.
 
 
-class Filename {
+class B10_LIBUTIL_API Filename {
 public:
 
     /// \brief Constructor
@@ -70,7 +71,7 @@ public:
     /// \param name New name to replaced currently stored name
     void setName(const std::string& name) {
         full_name_ = isc::util::str::trim(name);
-#ifdef WIN32
+#ifdef _WIN32
         isc::util::str::normalizeSlash(full_name_);
 #endif
         split(full_name_, directory_, name_, extension_);

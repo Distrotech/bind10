@@ -17,6 +17,8 @@
 
 #include <cstddef>
 
+#include <util/dll.h>
+
 namespace isc {
 namespace util {
 

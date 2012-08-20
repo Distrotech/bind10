@@ -17,16 +17,19 @@
 
 #include <Python.h>
 
+#include <dns/dll.h>
+#include <dns/python/dll.h>
+
 namespace isc {
 namespace dns {
-class TSIGContext;
+class B10_LIBDNS_API TSIGContext;
 
 namespace python {
 
-extern PyTypeObject tsigcontext_type;
+extern B10_LIBDNS_PYTHON_API PyTypeObject tsigcontext_type;
 
 // Class specific exceptions
-extern PyObject* po_TSIGContextError;
+extern B10_LIBDNS_PYTHON_API PyObject* po_TSIGContextError;
 
 /// \brief Checks if the given python object is a TSIGContext object
 ///
@@ -34,7 +37,7 @@ extern PyObject* po_TSIGContextError;
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type TSIGContext, false otherwise
-bool PyTSIGContext_Check(PyObject* obj);
+B10_LIBDNS_PYTHON_API bool PyTSIGContext_Check(PyObject* obj);
 
 /// \brief Returns a reference to the TSIGContext object contained within the given
 ///        Python object.
@@ -46,7 +49,8 @@ bool PyTSIGContext_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param tsigcontext_obj The tsigcontext object to convert
-TSIGContext& PyTSIGContext_ToTSIGContext(PyObject* tsigcontext_obj);
+B10_LIBDNS_PYTHON_API TSIGContext&
+PyTSIGContext_ToTSIGContext(PyObject* tsigcontext_obj);
 
 
 } // namespace python

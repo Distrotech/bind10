@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 #include <vector>
 
@@ -380,13 +382,13 @@ namespace isc {
 namespace dns {
 namespace python {
 
-PyObject* po_InvalidRRType;
-PyObject* po_IncompleteRRType;
+B10_LIBDNS_PYTHON_API PyObject* po_InvalidRRType;
+B10_LIBDNS_PYTHON_API PyObject* po_IncompleteRRType;
 
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_RRType
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject rrtype_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject rrtype_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.RRType",
     sizeof(s_RRType),                   // tp_basicsize
@@ -439,14 +441,14 @@ PyTypeObject rrtype_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+B10_LIBDNS_PYTHON_API PyObject*
 createRRTypeObject(const RRType& source) {
     RRTypeContainer container(PyObject_New(s_RRType, &rrtype_type));
     container.set(new RRType(source));
     return (container.release());
 }
 
-bool
+B10_LIBDNS_PYTHON_API bool
 PyRRType_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -454,7 +456,7 @@ PyRRType_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &rrtype_type));
 }
 
-const RRType&
+B10_LIBDNS_PYTHON_API const RRType&
 PyRRType_ToRRType(const PyObject* rrtype_obj) {
     if (rrtype_obj == NULL) {
         isc_throw(PyCPPWrapperException,

@@ -15,6 +15,7 @@
 #ifndef __INTERPROCESS_SYNC_FILE_H__
 #define __INTERPROCESS_SYNC_FILE_H__
 
+#include <util/dll.h>
 #include <util/interprocess_sync.h>
 #include <exceptions/exceptions.h>
 
@@ -25,7 +26,7 @@ namespace util {
 ///
 /// Exception that is thrown if it's not possible to open the
 /// lock file.
-class InterprocessSyncFileError : public Exception {
+class B10_LIBUTIL_API InterprocessSyncFileError : public Exception {
 public:
     InterprocessSyncFileError(const char* file, size_t line,
                               const char* what) :
@@ -46,7 +47,7 @@ public:
 /// This implementation opens lock files lazily (only when
 /// necessary). It also leaves the lock files lying around as multiple
 /// processes may have locks on them.
-class InterprocessSyncFile : public InterprocessSync {
+class B10_LIBUTIL_API InterprocessSyncFile : public InterprocessSync {
 public:
     /// \brief Constructor
     ///

@@ -22,6 +22,7 @@
 
 #include <boost/lexical_cast.hpp>
 
+#include <log/dll.h>
 #include <log/message_types.h>
 
 namespace isc {
@@ -45,7 +46,7 @@ namespace log {
 /// Although the class can be used stand-alone, it does supply a static method
 /// to return a particular instance - the "global" dictionary.
 
-class MessageDictionary {
+class B10_LIBLOG_API MessageDictionary {
 public:
 
     typedef std::map<std::string, std::string> Dictionary;

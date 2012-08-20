@@ -23,15 +23,16 @@
 #include <util/buffer.h>
 #include <util/nonassignable.h>
 
+#include <dns/dll.h>
 #include <dns/name.h>
 #include <dns/rdataclass.h>
 
 namespace isc {
 namespace util {
-class OutputBuffer;
+class B10_LIBUTIL_API OutputBuffer;
 }
 namespace dns {
-class AbstractMessageRenderer;
+class B10_LIBDNS_API AbstractMessageRenderer;
 
 /// TSIG resource record.
 ///
@@ -60,7 +61,7 @@ class AbstractMessageRenderer;
 /// handle it through a generic interface in a polymorphic way.
 /// We therefore chose to define it as a separate class.  This is also
 /// similar to why \c EDNS is a separate class.
-class TSIGRecord : isc::util::nonassignable {
+class B10_LIBDNS_API TSIGRecord : isc::util::nonassignable {
 public:
     ///
     /// \name Constructors
@@ -298,7 +299,8 @@ typedef boost::shared_ptr<const TSIGRecord> ConstTSIGRecordPtr;
 /// \param record A \c TSIGRecord object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-std::ostream& operator<<(std::ostream& os, const TSIGRecord& record);
+B10_LIBDNS_API std::ostream&
+operator<<(std::ostream& os, const TSIGRecord& record);
 }
 }
 

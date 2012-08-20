@@ -16,6 +16,7 @@
 #define __RESOLVE_LOG__H
 
 #include <log/macros.h>
+#include <resolve/dll.h>
 #include "resolve_messages.h"
 
 namespace isc {

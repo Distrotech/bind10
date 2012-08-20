@@ -19,6 +19,8 @@
 // this file.  In particular, asio.hpp should never be included here.
 // See the description of the namespace below.
 
+#include <asiolink/dll.h>
+
 #include <asiolink/io_service.h>
 #include <asiolink/simple_callback.h>
 #include <asiolink/interval_timer.h>

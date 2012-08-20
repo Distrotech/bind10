@@ -16,6 +16,7 @@
 #define __RESOLVER_INTERFACE_H
 
 #include <dns/message.h>
+#include <resolve/dll.h>
 
 ///
 /// \file resolver_interface.h
@@ -44,7 +45,7 @@ namespace resolve {
 ///
 /// It is abstract to allow tests pass dummy resolvers.
 ///
-class ResolverInterface {
+class B10_LIBNSASRESOLVE_API ResolverInterface {
     public:
         /// \short An abstract callback for when the resolver is done.
         ///

@@ -21,6 +21,7 @@
 #include <asiodns/dns_server.h>
 #include <nsas/nameserver_address_store.h>
 #include <cache/resolver_cache.h>
+#include <resolve/dll.h>
 
 namespace isc {
 namespace asiodns {
@@ -33,7 +34,7 @@ namespace asiodns {
 /// A pointer to an object of this class is passed to RecursiveQuery which in
 /// turn passes it to the created RunningQuery class.  When a running query
 /// completes, its RTT is passed to the RTT Recorder object.
-class RttRecorder {
+class B10_LIBRESOLVE_API RttRecorder {
 public:
     /// \brief Record Time
     ///
@@ -59,7 +60,7 @@ private:
 /// The \c RecursiveQuery class provides a layer of abstraction around
 /// the ASIO code that carries out an upstream query.
 
-class RecursiveQuery : isc::util::nonassignable {
+class B10_LIBRESOLVE_API RecursiveQuery : isc::util::nonassignable {
     ///
     /// \name Constructors
     ///

@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDATASRC_MEMORY_EXPORT
+
 #include <exceptions/exceptions.h>
 
 #include <util/buffer.h>
@@ -526,7 +528,7 @@ RdataEncoder::encode(void* buf, size_t buf_len) const {
 }
 
 namespace testing {
-void
+B10_LIBDATASRC_MEMORY_API void
 foreachRdataField(RRClass rrclass, RRType rrtype,
                   size_t rdata_count,
                   const vector<uint8_t>& encoded_data,
@@ -576,7 +578,7 @@ foreachRdataField(RRClass rrclass, RRType rrtype,
     assert(varlen_count == encode_spec.varlen_count * rdata_count);
 }
 
-void
+B10_LIBDATASRC_MEMORY_API void
 foreachRRSig(const vector<uint8_t>& encoded_data,
              const vector<uint16_t>& rrsiglen_list,
              DataCallback data_callback)

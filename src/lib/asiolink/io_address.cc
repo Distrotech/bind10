@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBASIOLINK_EXPORT
+
 #include <config.h>
 
 #include <unistd.h>             // for some IPC/network system calls

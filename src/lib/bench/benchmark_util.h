@@ -31,16 +31,17 @@
 #include <vector>
 
 #include <exceptions/exceptions.h>
+#include <bench/dll.h>
 
 namespace isc {
 namespace dns {
-class RRClass;
+class B10_LIBBENCH_API RRClass;
 }
 
 namespace bench {
 /// \brief An exception that is thrown if an error occurs within the benchmark
 /// module.
-class BenchMarkError : public Exception {
+class B10_LIBBENCH_API BenchMarkError : public Exception {
 public:
     BenchMarkError(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -108,8 +109,9 @@ typedef std::vector<std::vector<unsigned char> > BenchQueries;
 /// is used for all queries.
 /// \param strict If \c true, apply stricter validation on the query name and
 /// query RR types; otherwise invalid inputs will be ignored.
-void loadQueryData(const char* const input_file, BenchQueries& queries,
-                   const isc::dns::RRClass& qclass, const bool strict = false);
+B10_LIBBENCH_API void
+loadQueryData(const char* const input_file, BenchQueries& queries,
+              const isc::dns::RRClass& qclass, const bool strict = false);
 
 /// \brief Load query %data from an input stream into a vector.
 ///
@@ -136,8 +138,9 @@ void loadQueryData(const char* const input_file, BenchQueries& queries,
 /// is used for all queries.
 /// \param strict If \c true, apply stricter validation on the query name and
 /// query RR types; otherwise invalid inputs will be ignored.
-void loadQueryData(std::istream& input, BenchQueries& queries,
-                   const isc::dns::RRClass& qclass, const bool strict = false);
+B10_LIBBENCH_API void
+loadQueryData(std::istream& input, BenchQueries& queries,
+              const isc::dns::RRClass& qclass, const bool strict = false);
 }
 }
 #endif  // __BENCHMARK_UTIL_H

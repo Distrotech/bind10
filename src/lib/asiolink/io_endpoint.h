@@ -24,6 +24,7 @@
 
 #include <util/noncopyable.h>
 #include <exceptions/exceptions.h>
+#include <asiolink/dll.h>
 #include <asiolink/io_address.h>
 
 # include <ostream>
@@ -44,7 +45,7 @@ namespace asiolink {
 /// Derived class implementations are completely hidden within the
 /// implementation.  User applications only get access to concrete
 /// \c IOEndpoint objects via the abstract interfaces.
-class IOEndpoint : isc::util::noncopyable {
+class B10_LIBASIOLINK_API IOEndpoint : isc::util::noncopyable {
     ///
     /// \name Constructors and Destructor
     ///
@@ -177,7 +178,8 @@ public:
 /// operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-std::ostream& operator<<(std::ostream& os, const IOEndpoint& endpoint);
+B10_LIBASIOLINK_API std::ostream&
+operator<<(std::ostream& os, const IOEndpoint& endpoint);
 } // namespace asiolink
 } // namespace isc
 #endif // __IO_ENDPOINT_H

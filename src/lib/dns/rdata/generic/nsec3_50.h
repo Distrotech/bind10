@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include <dns/dll.h>
 #include <dns/name.h>
 #include <dns/rrtype.h>
 #include <dns/rrttl.h>
@@ -33,7 +34,7 @@
 
 struct NSEC3Impl;
 
-class NSEC3 : public Rdata {
+class B10_LIBDNS_API NSEC3 : public Rdata {
 public:
     // BEGIN_COMMON_MEMBERS
     // END_COMMON_MEMBERS

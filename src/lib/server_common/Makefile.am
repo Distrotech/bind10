@@ -17,7 +17,8 @@ AM_CXXFLAGS += -Wno-unused-parameter
 endif
 
 lib_LTLIBRARIES = libb10-server-common.la
-libb10_server_common_la_SOURCES = client.h client.cc
+libb10_server_common_la_SOURCES  = dll.h
+libb10_server_common_la_SOURCES += client.h client.cc
 libb10_server_common_la_SOURCES += keyring.h keyring.cc
 libb10_server_common_la_SOURCES += portconfig.h portconfig.cc
 libb10_server_common_la_SOURCES += logger.h logger.cc

@@ -26,6 +26,8 @@
 
 #include <asiodns/asiodns.h>
 
+#include <testutils/dll.h>
+
 #include <utility>
 #include <vector>
 
@@ -35,7 +37,7 @@ namespace testutils {
 // A minimal mock configuration session.  Most the methods are
 // stubbed out, except for a very basic group_sendmsg() and
 // group_recvmsg().  hasQueuedMessages() always returns false.
-class MockSession : public isc::cc::AbstractSession {
+class B10_LIBTESTUTILS_API MockSession : public isc::cc::AbstractSession {
 public:
     MockSession() :
         // by default we return a simple "success" message.
@@ -106,7 +108,8 @@ private:
 
 // This mock object does nothing except for recording passed parameters
 // to addServerXXX methods so the test code subsequently checks the parameters.
-class MockDNSService : public isc::asiodns::DNSServiceBase {
+class B10_LIBTESTUTILS_API MockDNSService :
+    public isc::asiodns::DNSServiceBase {
 public:
     // A helper tuple of parameters passed to addServerUDPFromFD().
     struct UDPFdParams {
@@ -144,7 +147,7 @@ private:
 };
 
 // A nonoperative DNSServer object to be used in calls to processMessage().
-class MockServer : public isc::asiodns::DNSServer {
+class B10_LIBTESTUTILS_API MockServer : public isc::asiodns::DNSServer {
 public:
     MockServer() : done_(false) {}
     void operator()(asio::error_code, size_t) {}
@@ -156,7 +159,8 @@ private:
 };
 
 // Mock Xfrout client
-class MockXfroutClient : public isc::xfr::AbstractXfroutClient {
+class B10_LIBTESTUTILS_API MockXfroutClient :
+    public isc::xfr::AbstractXfroutClient {
 public:
     MockXfroutClient() :
         is_connected_(false), connect_ok_(true), send_ok_(true),

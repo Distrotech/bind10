@@ -28,6 +28,7 @@
 
 #include <util/buffer.h>
 
+#include <asiolink/dll.h>
 #include <asiolink/io_error.h>
 #include <asiolink/io_socket.h>
 
@@ -37,7 +38,7 @@ namespace asiolink {
 /// \brief Socket not open
 ///
 /// Thrown on an attempt to do read/write to a socket that is not open.
-class SocketNotOpen : public IOError {
+class B10_LIBASIOLINK_API SocketNotOpen : public IOError {
 public:
     SocketNotOpen(const char* file, size_t line, const char* what) :
         IOError(file, line, what) {}
@@ -46,7 +47,7 @@ public:
 /// \brief Error setting socket options
 ///
 /// Thrown if attempt to change socket options fails.
-class SocketSetError : public IOError {
+class B10_LIBASIOLINK_API SocketSetError : public IOError {
 public:
     SocketSetError(const char* file, size_t line, const char* what) :
         IOError(file, line, what) {}
@@ -56,14 +57,14 @@ public:
 ///
 /// Thrown if an attempt is made to receive into an area beyond the end of
 /// the receive data buffer.
-class BufferOverflow : public IOError {
+class B10_LIBASIOLINK_API BufferOverflow : public IOError {
 public:
     BufferOverflow(const char* file, size_t line, const char* what) :
         IOError(file, line, what) {}
 };
 
 /// Forward declaration of an IOEndpoint
-class IOEndpoint;
+class B10_LIBASIOLINK_API IOEndpoint;
 
 
 /// \brief I/O Socket with asynchronous operations

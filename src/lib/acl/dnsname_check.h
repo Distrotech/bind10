@@ -19,6 +19,7 @@
 
 #include <util/nonassignable.h>
 
+#include <acl/dll.h>
 #include <acl/check.h>
 
 namespace isc {

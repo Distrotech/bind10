@@ -15,6 +15,7 @@
 #ifndef ACL_LOGIC_CHECK_H
 #define ACL_LOGIC_CHECK_H
 
+#include <acl/dll.h>
 #include "check.h"
 #include "loader.h"
 
@@ -22,7 +23,7 @@ namespace isc {
 namespace acl {
 
 /// \brief Constants for the AnyOf implementation
-class AnyOfSpec {
+class B10_LIBACL_API AnyOfSpec {
 public:
     static bool start() { return (false); }
     static bool terminate(const bool another) {
@@ -31,7 +32,7 @@ public:
 };
 
 /// \brief Constants for the AllOf implementation
-class AllOfSpec {
+class B10_LIBACL_API AllOfSpec {
 public:
     static bool start() { return (true); }
     static bool terminate(const bool another) {

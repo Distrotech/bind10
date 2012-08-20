@@ -29,6 +29,7 @@
 #include <sys/socket.h> // for AF_INET/AF_INET6
 #include <netinet/in.h>
 
+#include <acl/dll.h>
 #include <acl/check.h>
 #include <exceptions/exceptions.h>
 #include <util/strutil.h>
@@ -57,7 +58,7 @@ namespace internal {
 ///
 /// \exception OutOfRange prefixlen is too large for the data type.
 
-uint8_t createMask(size_t prefixlen);
+B10_LIBACL_API uint8_t createMask(size_t prefixlen);
 
 /// \brief Split IP Address Prefix
 ///
@@ -78,7 +79,7 @@ uint8_t createMask(size_t prefixlen);
 ///
 /// \exception InvalidParameter Address prefix not of the expected syntax
 
-std::pair<std::string, int>
+B10_LIBACL_API std::pair<std::string, int>
 splitIPAddress(const std::string& ipprefix);
 
 } // namespace internal
@@ -108,7 +109,7 @@ splitIPAddress(const std::string& ipprefix);
 ///
 /// In future, we may introduce the default constructor to further improve
 /// reusability.
-struct IPAddress {
+struct B10_LIBACL_API IPAddress {
     /// The constructor from socket address structure.
     ///
     /// This constructor set up the internal data based on the actual type

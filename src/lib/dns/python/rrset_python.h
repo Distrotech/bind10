@@ -17,6 +17,7 @@
 
 #include <Python.h>
 
+#include <dns/python/dll.h>
 #include <dns/rrset.h>
 
 #include <util/python/pycppwrapper_util.h>
@@ -25,9 +26,9 @@ namespace isc {
 namespace dns {
 namespace python {
 
-extern PyObject* po_EmptyRRset;
+extern B10_LIBDNS_PYTHON_API PyObject* po_EmptyRRset;
 
-extern PyTypeObject rrset_type;
+extern B10_LIBDNS_PYTHON_API PyTypeObject rrset_type;
 
 /// This is a simple shortcut to create a python RRset object (in the
 /// form of a pointer to PyObject) with minimal exception safety.
@@ -36,7 +37,7 @@ extern PyTypeObject rrset_type;
 /// returns a NULL pointer).
 /// This function is expected to be called within a try block
 /// followed by necessary setup for python exception.
-PyObject* createRRsetObject(const AbstractRRset& source);
+B10_LIBDNS_PYTHON_API PyObject* createRRsetObject(const AbstractRRset& source);
 
 /// \brief Checks if the given python object is a RRset object
 ///
@@ -44,7 +45,7 @@ PyObject* createRRsetObject(const AbstractRRset& source);
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type RRset, false otherwise
-bool PyRRset_Check(PyObject* obj);
+B10_LIBDNS_PYTHON_API bool PyRRset_Check(PyObject* obj);
 
 /// \brief Returns a reference to the RRset object contained within the given
 ///        Python object.
@@ -56,7 +57,7 @@ bool PyRRset_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param rrset_obj The rrset object to convert
-AbstractRRset& PyRRset_ToRRset(PyObject* rrset_obj);
+B10_LIBDNS_PYTHON_API AbstractRRset& PyRRset_ToRRset(PyObject* rrset_obj);
 
 /// \brief Returns the shared_ptr of the RRset object contained within the
 ///        given Python object.
@@ -65,7 +66,7 @@ AbstractRRset& PyRRset_ToRRset(PyObject* rrset_obj);
 ///       either the right call to ParseTuple("O!"), or with PyRRset_Check()
 ///
 /// \param rrset_obj The rrset object to convert
-RRsetPtr PyRRset_ToRRsetPtr(PyObject* rrset_obj);
+B10_LIBDNS_PYTHON_API RRsetPtr PyRRset_ToRRsetPtr(PyObject* rrset_obj);
 
 
 } // namespace python

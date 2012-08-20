@@ -20,6 +20,7 @@
 #include <dns/message.h>
 #include <dns/rrset.h>
 #include <nsas/nsas_entry.h>
+#include <cache/dll.h>
 #include "rrset_cache.h"
 #include "rrset_entry.h"
 
@@ -28,13 +29,15 @@ using namespace isc::nsas;
 namespace isc {
 namespace cache {
 
-class RRsetEntry;
+class B10_LIBCACHE_API RRsetEntry;
 
 /// \brief Message Entry
 ///
 /// The object of MessageEntry represents one response message
 /// answered to the resolver client.
-class MessageEntry : isc::util::noncopyable, public NsasEntry<MessageEntry> {
+class B10_LIBCACHE_API MessageEntry :
+    isc::util::noncopyable, public NsasEntry<MessageEntry>
+{
     /// \brief Information to refer an RRset.
     ///
     /// There is no class information here, since the rrsets are cached in

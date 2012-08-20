@@ -17,6 +17,8 @@
 
 #include <cstddef>
 
+#include <util/unittests/dll.h>
+
 /// \file wiredata.h
 /// \brief Utilities for tests with wire data.
 ///
@@ -32,8 +34,9 @@ namespace unittests {
 /// This method checks if the expected and actual data have the same length
 /// and all bytes are the same.  If not, it reports the point of mismatch in
 /// the google test format.
-void matchWireData(const void* expected_data, std::size_t expected_len,
-                   const void* actual_data, std::size_t actual_len);
+void B10_LIBUTIL_UNITTESTS_API
+matchWireData(const void* expected_data, std::size_t expected_len,
+              const void* actual_data, std::size_t actual_len);
 }
 }
 }

@@ -21,6 +21,7 @@
 
 #include <util/locks.h>
 
+#include <nsas/dll.h>
 #include "hash.h"
 #include "hash_key.h"
 

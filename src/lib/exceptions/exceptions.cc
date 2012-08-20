@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBEXCEPTIONS_EXPORT
+
 #include <string>
 
 #include <exceptions/exceptions.h>

@@ -17,11 +17,13 @@
 #ifndef __NONASSIGNABLE_
 #define __NONASSIGNABLE_
 
+#include <util/dll.h>
+
 namespace isc {
 namespace util {
 namespace nonassignable_ {
 
-class nonassignable {
+class B10_LIBUTIL_API nonassignable {
 protected:
     nonassignable() {}
     ~nonassignable() {}

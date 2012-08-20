@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDNS_EXPORT
+
 #include <dns/labelsequence.h>
 #include <dns/name_internal.h>
 #include <exceptions/exceptions.h>
@@ -395,7 +397,7 @@ LabelSequence::extend(const LabelSequence& labels,
     last_label_ = label_count + append_label_count - 1;
 }
 
-std::ostream&
+B10_LIBDNS_API std::ostream&
 operator<<(std::ostream& os, const LabelSequence& label_sequence) {
     os << label_sequence.toText();
     return (os);

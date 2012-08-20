@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include <config/dll.h>
 #include <config/module_spec.h>
 #include <exceptions/exceptions.h>
 
@@ -27,13 +28,13 @@ namespace config {
 /// This exception is thrown when the caller is trying to access
 /// data that doesn't exist (i.e. with an identifier that does not
 /// point to anything defined in the .spec file)
-class DataNotFoundError : public isc::Exception {
+class B10_LIBCONFIG_API DataNotFoundError : public isc::Exception {
 public:
     DataNotFoundError(const char* file, size_t line, const std::string& what) :
         isc::Exception(file, line, what) {}
 };
 
-class ConfigData {
+class B10_LIBCONFIG_API ConfigData {
 public:
     /// Constructs a ConfigData option with no specification and an
     /// empty configuration.

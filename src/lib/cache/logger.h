@@ -16,6 +16,7 @@
 #define __DATASRC_LOGGER_H
 
 #include <log/macros.h>
+#include <cache/dll.h>
 #include <cache/cache_messages.h>
 
 /// \file cache/logger.h

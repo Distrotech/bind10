@@ -23,12 +23,14 @@
 
 #include <exceptions/exceptions.h>
 
+#include <xfr/dll.h>
+
 namespace isc {
 namespace xfr {
 
 struct XfroutClientImpl;
 
-class XfroutError: public Exception {
+class B10_LIBXFR_API XfroutError: public Exception {
 public:
     XfroutError(const char *file, size_t line, const char *what):
         isc::Exception(file, line, what) {}
@@ -39,7 +41,7 @@ public:
 ///
 /// The intended primary usage of abstraction is to allow tests for the
 /// user class of XfroutClient without requiring actual communication.
-class AbstractXfroutClient : isc::util::noncopyable {
+class B10_LIBXFR_API AbstractXfroutClient : isc::util::noncopyable {
     ///
     /// \name Constructor and Destructor.
     ///
@@ -60,7 +62,7 @@ public:
                                       uint16_t msg_len) = 0;
 };
 
-class XfroutClient : public AbstractXfroutClient {
+class B10_LIBXFR_API XfroutClient : public AbstractXfroutClient {
 public:
     XfroutClient(const std::string& file);
     ~XfroutClient();

@@ -17,6 +17,8 @@
 
 #include <string>
 
+#include <log/dll.h>
+
 /// \brief Define Name of Root Logger
 ///
 /// In BIND-10, the name root logger of a program is the name of the program
@@ -33,12 +35,12 @@ namespace log {
 /// any logging functions are called.
 ///
 /// \param name Name of the root logger.  This should be the program name.
-void setRootLoggerName(const std::string& name);
+B10_LIBLOG_API void setRootLoggerName(const std::string& name);
 
 /// \brief Get root logger name
 ///
 /// \return Name of the root logger.
-const std::string& getRootLoggerName();
+B10_LIBLOG_API const std::string& getRootLoggerName();
 
 /// \brief Expand logger name
 ///
@@ -49,7 +51,7 @@ const std::string& getRootLoggerName();
 /// \param name Name to expand.
 ///
 /// \return Fully-expanded logger name.
-std::string expandLoggerName(const std::string& name);
+B10_LIBLOG_API std::string expandLoggerName(const std::string& name);
 
 }
 }

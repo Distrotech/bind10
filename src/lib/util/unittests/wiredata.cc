@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBUTIL_UNITTESTS_EXPORT
+
 #include "wiredata.h"
 
 #include <gtest/gtest.h>
@@ -25,7 +27,7 @@ namespace isc {
 namespace util {
 namespace unittests {
 
-void
+B10_LIBUTIL_UNITTESTS_API void
 matchWireData(const void* expected_data, size_t expected_len,
               const void* actual_data, size_t actual_len)
 {

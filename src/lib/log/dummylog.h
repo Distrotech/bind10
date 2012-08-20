@@ -17,18 +17,20 @@
 
 #include <string>
 
+#include <log/dll.h>
+
 namespace isc {
 namespace log {
 
 /// Are we doing logging?
-extern bool denabled;
+extern B10_LIBLOG_API bool denabled;
 /**
  * \short Prefix into logs.
  *
  * The prefix is printed in front of every log message in square brackets.
  * The usual convention is to put the name of program here.
  */
-extern std::string dprefix;
+extern B10_LIBLOG_API std::string dprefix;
 
 /**
  * \short Temporary interface to logging.
@@ -53,7 +55,7 @@ extern std::string dprefix;
  *     more parameters.
  * \param error_flag TODO
  */
-void dlog(const std::string& message, bool error_flag=false);
+B10_LIBLOG_API void dlog(const std::string& message, bool error_flag=false);
 
 }
 }

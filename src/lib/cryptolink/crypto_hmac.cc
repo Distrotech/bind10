@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBCRYPTOLINK_EXPORT
+
 #include <cryptolink.h>
 #include <cryptolink/crypto_hmac.h>
 
@@ -247,7 +249,7 @@ HMAC::verify(const void* sig, const size_t len) {
     return (impl_->verify(sig, len));
 }
 
-void
+B10_LIBCRYPTOLINK_API void
 signHMAC(const void* data, const size_t data_len, const void* secret,
          size_t secret_len, const HashAlgorithm hash_algorithm,
          isc::util::OutputBuffer& result, size_t len)
@@ -261,7 +263,7 @@ signHMAC(const void* data, const size_t data_len, const void* secret,
 }
 
 
-bool
+B10_LIBCRYPTOLINK_API bool
 verifyHMAC(const void* data, const size_t data_len, const void* secret,
            size_t secret_len, const HashAlgorithm hash_algorithm,
            const void* sig, const size_t sig_len)
@@ -274,7 +276,7 @@ verifyHMAC(const void* data, const size_t data_len, const void* secret,
     return (hmac->verify(sig, sig_len));
 }
 
-void
+B10_LIBCRYPTOLINK_API void
 deleteHMAC(HMAC* hmac) {
     delete hmac;
 }

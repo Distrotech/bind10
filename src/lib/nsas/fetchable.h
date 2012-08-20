@@ -15,6 +15,8 @@
 #ifndef __FETCHABLE_H
 #define __FETCHABLE_H
 
+#include <nsas/dll.h>
+
 /**
  * \file fetchable.h
  * \short Interface of information that can be fetched.
@@ -29,7 +31,7 @@ namespace nsas {
  * This just holds a state of information that can be fetched from somewhere.
  * No locking is performed, if it is desirable, it should be locked manually.
  */
-class Fetchable {
+class B10_LIBNSAS_API Fetchable {
     public:
         /// \short States the Fetchable object can be in.
         enum State {

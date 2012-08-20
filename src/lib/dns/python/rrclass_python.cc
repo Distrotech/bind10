@@ -11,6 +11,9 @@
 // LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
+
+#define B10_LIBDNS_PYTHON_EXPORT
+
 #include <Python.h>
 
 #include <dns/rrclass.h>
@@ -282,14 +285,14 @@ namespace python {
 // Initialization and addition of these go in the initModulePart
 // function in pydnspp.cc
 //
-PyObject* po_InvalidRRClass;
-PyObject* po_IncompleteRRClass;
+B10_LIBDNS_PYTHON_API PyObject* po_InvalidRRClass;
+B10_LIBDNS_PYTHON_API PyObject* po_IncompleteRRClass;
 
 
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_RRClass
 // Most of the functions are not actually implemented and NULL here.
-PyTypeObject rrclass_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject rrclass_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.RRClass",
     sizeof(s_RRClass),                  // tp_basicsize
@@ -342,7 +345,7 @@ PyTypeObject rrclass_type = {
     0                                   // tp_version_tag
 };
 
-PyObject*
+B10_LIBDNS_PYTHON_API PyObject*
 createRRClassObject(const RRClass& source) {
     RRClassContainer container(PyObject_New(s_RRClass, &rrclass_type));
     container.set(new RRClass(source));
@@ -350,7 +353,7 @@ createRRClassObject(const RRClass& source) {
 }
 
 
-bool
+B10_LIBDNS_PYTHON_API bool
 PyRRClass_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -358,7 +361,7 @@ PyRRClass_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &rrclass_type));
 }
 
-const RRClass&
+B10_LIBDNS_PYTHON_API const RRClass&
 PyRRClass_ToRRClass(const PyObject* rrclass_obj) {
     if (rrclass_obj == NULL) {
         isc_throw(PyCPPWrapperException,

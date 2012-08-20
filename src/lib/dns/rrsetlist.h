@@ -23,6 +23,7 @@
 
 #include <util/noncopyable.h>
 
+#include <dns/dll.h>
 #include <dns/rrset.h>
 #include <dns/rrclass.h>
 #include <dns/rrtype.h>
@@ -30,7 +31,7 @@
 namespace isc {
 namespace dns {
 
-class DuplicateRRset : public Exception {
+class B10_LIBDNS_API DuplicateRRset : public Exception {
 public:
     DuplicateRRset(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -96,7 +97,7 @@ private:
 /// reason and is actually quite specific to a particular need for libdatasrc.
 /// If you are tempted to use it, think twice to assess if this class
 /// is really what you want.  Again, in many cases the answer will be no.
-class RRsetList : isc::util::noncopyable {
+class B10_LIBDNS_API RRsetList : isc::util::noncopyable {
 public:
     RRsetList() {}
     void addRRset(RRsetPtr new_rrsetptr);

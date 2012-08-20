@@ -18,6 +18,7 @@
 #include <boost/shared_ptr.hpp>
 #include <dns/tsigkey.h>
 #include <config/ccsession.h>
+#include <server_common/dll.h>
 
 /**
  * \file keyring.h
@@ -55,7 +56,7 @@ namespace server_common {
  * but you need to call initKeyring first, otherwise you'll find a NULL pointer
  * here only.
  */
-extern boost::shared_ptr<dns::TSIGKeyRing> keyring;
+extern B10_LIBSERVER_COMMON_API boost::shared_ptr<dns::TSIGKeyRing> keyring;
 
 /**
  * \brief Load the key ring for the first time
@@ -71,7 +72,7 @@ extern boost::shared_ptr<dns::TSIGKeyRing> keyring;
  *
  * \param session The configuration session used to talk to the config manager.
  */
-void
+B10_LIBSERVER_COMMON_API void
 initKeyring(config::ModuleCCSession& session);
 
 /**
@@ -93,7 +94,7 @@ initKeyring(config::ModuleCCSession& session);
  *     as walidity should have been checked already in the config manager, or
  *     throw? What about when we get an update and it's invalid?
  */
-void
+B10_LIBSERVER_COMMON_API void
 deinitKeyring(config::ModuleCCSession& session);
 
 }

@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBCRYPTOLINK_EXPORT
+
 #include <cryptolink/cryptolink.h>
 #include <cryptolink/crypto_hmac.h>
 

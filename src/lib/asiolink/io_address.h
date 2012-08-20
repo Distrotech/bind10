@@ -26,6 +26,7 @@
 #include <string>
 
 #include <exceptions/exceptions.h>
+#include <asiolink/dll.h>
 
 namespace isc {
 namespace asiolink {
@@ -40,7 +41,7 @@ namespace asiolink {
 /// agnostic)
 ///
 /// This class is a wrapper for the ASIO \c ip::address class.
-class IOAddress {
+class B10_LIBASIOLINK_API IOAddress {
 public:
     ///
     /// \name Constructors and Destructor

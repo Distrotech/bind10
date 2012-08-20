@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDNS_EXPORT
+
 #include <config.h>
 
 #include <stdint.h>
@@ -176,7 +178,7 @@ createEDNSFromRR(const Name& name, const RRClass& rrclass,
     return (edns);
 }
 
-ostream&
+B10_LIBDNS_API ostream&
 operator<<(std::ostream& os, const EDNS& edns) {
     os << edns.toText();
     return (os);

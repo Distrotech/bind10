@@ -15,6 +15,8 @@
 #ifndef __DATASRC_RESULT_H
 #define __DATASRC_RESULT_H 1
 
+#include <datasrc/dll.h>
+
 namespace isc {
 namespace datasrc {
 namespace result {

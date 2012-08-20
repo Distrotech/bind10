@@ -17,6 +17,7 @@
 
 #include <util/nonassignable.h>
 #include <asiolink/io_message.h>
+#include <asiodns/dll.h>
 
 namespace isc {
 namespace asiodns {
@@ -46,7 +47,7 @@ namespace asiodns {
 ///
 /// Because these objects are frequently copied, it is recommended
 /// that derived classes be kept small to reduce copy overhead.
-class DNSServer {
+class B10_LIBASIODNS_API DNSServer {
 protected:
     ///
     /// \name Constructors and destructors

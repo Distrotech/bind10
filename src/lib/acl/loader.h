@@ -17,6 +17,7 @@
 
 #include <util/nonassignable.h>
 #include <exceptions/exceptions.h>
+#include <acl/dll.h>
 #include <acl/acl.h>
 #include <cc/data.h>
 #include <boost/function.hpp>
@@ -26,8 +27,8 @@
 namespace isc {
 namespace acl {
 
-class AnyOfSpec;
-class AllOfSpec;
+class B10_LIBACL_API AnyOfSpec;
+class B10_LIBACL_API AllOfSpec;
 template<typename Mode, typename Context> class LogicOperator;
 
 /**
@@ -41,7 +42,7 @@ template<typename Mode, typename Context> class LogicOperator;
  *
  * Checks may subclass this exception for similar errors if they see it fit.
  */
-class LoaderError : public BadValue {
+class B10_LIBACL_API LoaderError : public BadValue {
 private:
     const data::ConstElementPtr element_;
 public:
@@ -86,7 +87,7 @@ public:
  *     and contain one of "ACCEPT", "REJECT" or "DROP.
  * \note We could define different names or add aliases if needed.
  */
-BasicAction defaultActionLoader(data::ConstElementPtr action);
+B10_LIBACL_API BasicAction defaultActionLoader(data::ConstElementPtr action);
 
 /**
  * \brief Loader of ACLs.

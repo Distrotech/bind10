@@ -27,6 +27,7 @@
 
 #include <exceptions/exceptions.h>
 
+#include <asiolink/dll.h>
 #include <asiolink/io_endpoint.h>
 #include <asiolink/io_socket.h>
 
@@ -45,7 +46,7 @@ namespace asiolink {
 /// It only provides a minimal level of support that is necessary for
 /// the current implementation of the authoritative server.
 /// A future version of this class will definitely support more.
-class IOMessage : isc::util::noncopyable {
+class B10_LIBASIOLINK_API IOMessage : isc::util::noncopyable {
     ///
     /// \name Constructors and Destructor
     ///

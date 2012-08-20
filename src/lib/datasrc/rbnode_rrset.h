@@ -22,6 +22,7 @@
 #include <dns/rrttl.h>
 #include <dns/rrtype.h>
 #include <util/buffer.h>
+#include <datasrc/dll.h>
 
 #include <string>
 #include <vector>
@@ -43,7 +44,7 @@ struct RBNodeRRsetImpl;
 // Note that the definition of the structure is still hidden within the
 // implementation, so, basically, a normal application should never be able
 // to use it directly even if it peeks into the "internal" namespace.
-struct AdditionalNodeInfo;
+struct B10_LIBDATASRC_API AdditionalNodeInfo;
 
 /// \brief Special RRset for optimizing memory datasource requirement
 ///
@@ -84,7 +85,7 @@ struct AdditionalNodeInfo;
 ///
 // Note: non-Doxygen-documented methods are documented in the base class.
 
-class RBNodeRRset : public isc::dns::AbstractRRset {
+class B10_LIBDATASRC_API RBNodeRRset : public isc::dns::AbstractRRset {
 public:
     /// \brief Usual Constructor
     ///

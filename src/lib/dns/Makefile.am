@@ -90,7 +90,7 @@ lib_LTLIBRARIES = libb10-dns++.la
 
 libb10_dns___la_LDFLAGS = -no-undefined -version-info 2:0:0
 
-libb10_dns___la_SOURCES =
+libb10_dns___la_SOURCES  = dll.h
 libb10_dns___la_SOURCES += edns.h edns.cc
 libb10_dns___la_SOURCES += exceptions.h exceptions.cc
 libb10_dns___la_SOURCES += labelsequence.h labelsequence.cc

@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBRESOLVE_EXPORT
+
 #include <config.h>
 
 #include <stdlib.h>
@@ -87,7 +89,7 @@ questionText(const isc::dns::Question& question) {
 /// \param name The name we want to delegate to.
 /// \param rrclass The class.
 /// \param cache The place too look for known delegations.
-std::string
+B10_LIBRESOLVE_API std::string
 deepestDelegation(Name name, RRClass rrclass,
                   isc::cache::ResolverCache& cache)
 {
@@ -898,7 +900,7 @@ public:
     }
 };
 
-class ForwardQuery : public IOFetch::Callback {
+class B10_LIBRESOLVE_API ForwardQuery : public IOFetch::Callback {
 private:
     // The io service to handle async calls
     IOService& io_;

@@ -29,6 +29,8 @@
 #include <util/noncopyable.h>
 #include <exceptions/exceptions.h>
 
+#include "dll.h"
+
 namespace isc {
 namespace perfdhcp {
 

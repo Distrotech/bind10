@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include <dns/dll.h>
 #include <dns/name.h>
 #include <dns/rdata.h>
 
@@ -34,7 +35,7 @@
 /// This class implements the basic interfaces inherited from the abstract
 /// \c rdata::Rdata class, and provides trivial accessors specific to the
 /// AFSDB RDATA.
-class AFSDB : public Rdata {
+class B10_LIBDNS_API AFSDB : public Rdata {
 public:
     // BEGIN_COMMON_MEMBERS
     // END_COMMON_MEMBERS

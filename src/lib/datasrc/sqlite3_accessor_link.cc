@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDATASRC_EXPORT
+
 #include <cc/data.h>
 
 #include <dns/rrclass.h>
@@ -75,7 +77,7 @@ checkConfig(ConstElementPtr config, ElementPtr errors) {
 
 } // end unnamed namespace
 
-DataSourceClient *
+B10_LIBDATASRC_API DataSourceClient *
 createInstance(isc::data::ConstElementPtr config, std::string& error) {
     ElementPtr errors(Element::createList());
     if (!checkConfig(config, errors)) {
@@ -99,7 +101,7 @@ createInstance(isc::data::ConstElementPtr config, std::string& error) {
     }
 }
 
-void destroyInstance(DataSourceClient* instance) {
+B10_LIBDATASRC_API void destroyInstance(DataSourceClient* instance) {
     delete instance;
 }
 

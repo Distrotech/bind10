@@ -23,15 +23,17 @@
 #include <stdexcept>
 #include <string>
 
+#include <dns/python/dll.h>
+
 namespace isc {
 namespace dns {
 namespace python {
 // For our 'general' isc::Exceptions
-extern PyObject* po_IscException;
-extern PyObject* po_InvalidParameter;
+extern B10_LIBDNS_PYTHON_API PyObject* po_IscException;
+extern B10_LIBDNS_PYTHON_API PyObject* po_InvalidParameter;
 
 // For our own isc::dns::Exception
-extern PyObject* po_DNSMessageBADVERS;
+extern B10_LIBDNS_PYTHON_API PyObject* po_DNSMessageBADVERS;
 
 // This function reads 'bytes' from a sequence
 // This sequence can be anything that implements the Sequence interface,
@@ -43,8 +45,10 @@ extern PyObject* po_DNSMessageBADVERS;
 // The current implementation removes read items from the
 // head of the sequence, unless it fails (and returns -1), in which
 // case nothing is removed
+B10_LIBDNS_PYTHON_API
 int readDataFromSequence(uint8_t *data, size_t len, PyObject* sequence);
 
+B10_LIBDNS_PYTHON_API
 int addClassVariable(PyTypeObject& c, const char* name, PyObject* obj);
 
 // Short term workaround for unifying the return type of tp_hash

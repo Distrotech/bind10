@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBUTIL_UNITTESTS_EXPORT
+
 #include "resource.h"
 
 #include <gtest/gtest.h>
@@ -23,7 +25,7 @@ namespace isc {
 namespace util {
 namespace unittests {
 
-void
+B10_LIBUTIL_UNITTESTS_API void
 dontCreateCoreDumps() {
     const rlimit core_limit = {0, 0};
 

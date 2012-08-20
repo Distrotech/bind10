@@ -18,7 +18,7 @@
 #include <dns/rrset.h>
 
 #include <util/noncopyable.h>
-
+#include <datasrc/dll.h>
 #include <datasrc/zone.h>
 
 namespace isc {
@@ -34,7 +34,7 @@ namespace datasrc {
  *
  * There's no way to start iterating from the beginning again or return.
  */
-class ZoneIterator : public isc::util::noncopyable {
+class B10_LIBDATASRC_API ZoneIterator : public isc::util::noncopyable {
 public:
     /**
      * \brief Destructor

@@ -20,6 +20,7 @@
 #include <stdexcept>
 #include <string>
 
+#include <dns/python/dll.h>
 #include <dns/messagerenderer.h>
 
 #include <util/nonassignable.h>

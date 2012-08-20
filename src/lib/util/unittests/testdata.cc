@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBUTIL_UNITTESTS_EXPORT
+
 #include <string>
 #include <stdexcept>
 #include <fstream>
@@ -33,12 +35,12 @@ namespace isc {
 namespace util {
 namespace unittests {
 
-void
+B10_LIBUTIL_UNITTESTS_API void
 addTestDataPath(const string& path) {
     getDataPaths().push_back(path);
 }
 
-void
+B10_LIBUTIL_UNITTESTS_API void
 openTestData(const char* const datafile, ifstream& ifs) {
     vector<string>::const_iterator it = getDataPaths().begin();
     for (; it != getDataPaths().end(); ++it) {

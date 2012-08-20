@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#define B10_LIBDNS_EXPORT
+
 #include <stdint.h>
 
 #include <string>
@@ -57,7 +59,7 @@ RRType::toWire(AbstractMessageRenderer& renderer) const {
     renderer.writeUint16(typecode_);
 }
 
-ostream&
+B10_LIBDNS_API ostream&
 operator<<(ostream& os, const RRType& rrtype) {
     os << rrtype.toText();
     return (os);
