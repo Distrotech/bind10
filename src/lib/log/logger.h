@@ -93,7 +93,7 @@ class LoggerImpl;   // Forward declaration of the implementation class
 ///
 /// Exception thrown if an attempt is made to access a logging function
 /// if the logging system has not been initialized.
-class ISC_LIBLOG_API LoggingNotInitialized : public isc::Exception {
+class B10_LIBLOG_API LoggingNotInitialized : public isc::Exception {
 public:
     LoggingNotInitialized(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what)
@@ -104,7 +104,7 @@ public:
 ///
 /// Exception thrown if a bad InterprocessSync object (such as NULL) is
 /// used.
-class ISC_LIBLOG_API BadInterprocessSync : public isc::Exception {
+class B10_LIBLOG_API BadInterprocessSync : public isc::Exception {
 public:
     BadInterprocessSync(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what)
@@ -123,7 +123,7 @@ public:
 /// These will avoid the potentially-expensive evaluation of arguments if the
 /// severity is such that the message will be suppressed.)
 
-class ISC_LIBLOG_API Logger {
+class B10_LIBLOG_API Logger {
 public:
     /// Maximum size of a logger name
     static const size_t MAX_LOGGER_NAME_SIZE = 31;

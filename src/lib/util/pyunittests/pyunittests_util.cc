@@ -22,7 +22,7 @@
 namespace isc {
 namespace util {
 namespace detail {
-extern ISC_LIBUTIL_API int64_t (*gettimeFunction)();
+extern B10_LIBUTIL_API int64_t (*gettimeFunction)();
 }
 }
 }

@@ -31,7 +31,7 @@
 
 template<class Type, uint16_t typeCode> class TXTLikeImpl;
 
-class ISC_LIBDNS_API TXT : public Rdata {
+class B10_LIBDNS_API TXT : public Rdata {
 public:
     // BEGIN_COMMON_MEMBERS
     // END_COMMON_MEMBERS

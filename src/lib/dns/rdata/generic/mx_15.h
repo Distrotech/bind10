@@ -29,7 +29,7 @@
 
 // BEGIN_RDATA_NAMESPACE
 
-class ISC_LIBDNS_API MX : public Rdata {
+class B10_LIBDNS_API MX : public Rdata {
 public:
     // BEGIN_COMMON_MEMBERS
     // END_COMMON_MEMBERS

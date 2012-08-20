@@ -44,7 +44,7 @@ namespace encode {
 ///
 /// \param binary A vector object storing the data to be encoded. 
 /// \return A newly created string that stores base64 encoded value for binary.
-ISC_LIBUTIL_API
+B10_LIBUTIL_API
 std::string encodeBase64(const std::vector<uint8_t>& binary);
 
 /// \brief Decode a text encoded in the base64 format into the original %data.
@@ -69,7 +69,7 @@ std::string encodeBase64(const std::vector<uint8_t>& binary);
 ///
 /// \param input A text encoded in the base64 format.
 /// \param result A vector in which the decoded %data is to be stored.
-ISC_LIBUTIL_API
+B10_LIBUTIL_API
 void decodeBase64(const std::string& input, std::vector<uint8_t>& result);
 
 } // namespace encode

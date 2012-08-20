@@ -25,7 +25,7 @@ class Rcode;
 
 namespace python {
 
-extern ISC_LIBDNS_PYTHON_API PyTypeObject rcode_type;
+extern B10_LIBDNS_PYTHON_API PyTypeObject rcode_type;
 
 /// This is a simple shortcut to create a python Rcode object (in the
 /// form of a pointer to PyObject) with minimal exception safety.
@@ -34,7 +34,7 @@ extern ISC_LIBDNS_PYTHON_API PyTypeObject rcode_type;
 /// returns a NULL pointer).
 /// This function is expected to be called within a try block
 /// followed by necessary setup for python exception.
-ISC_LIBDNS_PYTHON_API PyObject* createRcodeObject(const Rcode& source);
+B10_LIBDNS_PYTHON_API PyObject* createRcodeObject(const Rcode& source);
 
 /// \brief Checks if the given python object is a Rcode object
 ///
@@ -42,7 +42,7 @@ ISC_LIBDNS_PYTHON_API PyObject* createRcodeObject(const Rcode& source);
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type Rcode, false otherwise
-ISC_LIBDNS_PYTHON_API bool PyRcode_Check(PyObject* obj);
+B10_LIBDNS_PYTHON_API bool PyRcode_Check(PyObject* obj);
 
 /// \brief Returns a reference to the Rcode object contained within the given
 ///        Python object.
@@ -54,7 +54,7 @@ ISC_LIBDNS_PYTHON_API bool PyRcode_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param rcode_obj The rcode object to convert
-ISC_LIBDNS_PYTHON_API const Rcode& PyRcode_ToRcode(const PyObject* rcode_obj);
+B10_LIBDNS_PYTHON_API const Rcode& PyRcode_ToRcode(const PyObject* rcode_obj);
 
 } // namespace python
 } // namespace dns

@@ -35,7 +35,7 @@ namespace dhcp {
 /// interfaces, configured addresses, link-local addresses, and provides
 /// API for using sockets.
 ///
-class ISC_LIBDHCP_API IfaceMgr : public boost::noncopyable {
+class B10_LIBDHCP_API IfaceMgr : public boost::noncopyable {
 public:
     /// type that defines list of addresses
     typedef std::vector<isc::asiolink::IOAddress> AddressCollection;
@@ -89,7 +89,7 @@ public:
     /// Iface structure represents network interface with all useful
     /// information, like name, interface index, MAC address and
     /// list of assigned addresses
-    class ISC_LIBDHCP_API Iface {
+    class B10_LIBDHCP_API Iface {
     public:
         /// @brief Iface constructor.
         ///

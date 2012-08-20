@@ -28,13 +28,13 @@ namespace config {
 /// This exception is thrown when the caller is trying to access
 /// data that doesn't exist (i.e. with an identifier that does not
 /// point to anything defined in the .spec file)
-class ISC_LIBCONFIG_API DataNotFoundError : public isc::Exception {
+class B10_LIBCONFIG_API DataNotFoundError : public isc::Exception {
 public:
     DataNotFoundError(const char* file, size_t line, const std::string& what) :
         isc::Exception(file, line, what) {}
 };
 
-class ISC_LIBCONFIG_API ConfigData {
+class B10_LIBCONFIG_API ConfigData {
 public:
     /// Constructs a ConfigData option with no specification and an
     /// empty configuration.

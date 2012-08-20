@@ -24,11 +24,11 @@ namespace isc {
 namespace dns {
 namespace python {
 
-extern ISC_LIBDNS_PYTHON_API PyObject* po_InvalidRdataLength;
-extern ISC_LIBDNS_PYTHON_API PyObject* po_InvalidRdataText;
-extern ISC_LIBDNS_PYTHON_API PyObject* po_CharStringTooLong;
+extern B10_LIBDNS_PYTHON_API PyObject* po_InvalidRdataLength;
+extern B10_LIBDNS_PYTHON_API PyObject* po_InvalidRdataText;
+extern B10_LIBDNS_PYTHON_API PyObject* po_CharStringTooLong;
 
-extern ISC_LIBDNS_PYTHON_API PyTypeObject rdata_type;
+extern B10_LIBDNS_PYTHON_API PyTypeObject rdata_type;
 
 /// This is a simple shortcut to create a python Rdata object (in the
 /// form of a pointer to PyObject) with minimal exception safety.
@@ -37,7 +37,7 @@ extern ISC_LIBDNS_PYTHON_API PyTypeObject rdata_type;
 /// returns a NULL pointer).
 /// This function is expected to be called within a try block
 /// followed by necessary setup for python exception.
-ISC_LIBDNS_PYTHON_API PyObject* createRdataObject(isc::dns::rdata::ConstRdataPtr source);
+B10_LIBDNS_PYTHON_API PyObject* createRdataObject(isc::dns::rdata::ConstRdataPtr source);
 
 /// \brief Checks if the given python object is a Rdata object
 ///
@@ -45,7 +45,7 @@ ISC_LIBDNS_PYTHON_API PyObject* createRdataObject(isc::dns::rdata::ConstRdataPtr
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type Rdata, false otherwise
-ISC_LIBDNS_PYTHON_API bool PyRdata_Check(PyObject* obj);
+B10_LIBDNS_PYTHON_API bool PyRdata_Check(PyObject* obj);
 
 /// \brief Returns a reference to the Rdata object contained within the given
 ///        Python object.
@@ -57,7 +57,7 @@ ISC_LIBDNS_PYTHON_API bool PyRdata_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param rdata_obj The rdata object to convert
-ISC_LIBDNS_PYTHON_API const isc::dns::rdata::Rdata&
+B10_LIBDNS_PYTHON_API const isc::dns::rdata::Rdata&
 PyRdata_ToRdata(const PyObject* rdata_obj);
 
 } // namespace python

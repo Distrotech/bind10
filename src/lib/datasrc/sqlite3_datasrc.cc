@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBDATASRC_EXPORT
+#define B10_LIBDATASRC_EXPORT
 
 #include <config.h>
 
@@ -53,7 +53,7 @@ using namespace isc::dns::rdata;
 namespace isc {
 namespace datasrc {
 
-struct ISC_LIBDATASRC_API Sqlite3Parameters {
+struct B10_LIBDATASRC_API Sqlite3Parameters {
     Sqlite3Parameters() :  db_(NULL), major_version_(-1), minor_version_(-1),
         q_zone_(NULL), q_record_(NULL), q_addrs_(NULL), q_referral_(NULL),
         q_any_(NULL), q_count_(NULL), q_previous_(NULL), q_nsec3_(NULL),

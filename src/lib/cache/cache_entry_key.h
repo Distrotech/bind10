@@ -37,7 +37,7 @@ namespace cache {
 /// \param name The Name to create a text entry for
 /// \param type The RRType to create a text entry for
 /// \return return the entry name.
-ISC_LIBCACHE_API const std::string
+B10_LIBCACHE_API const std::string
 genCacheEntryName(const isc::dns::Name& name, const isc::dns::RRType& type);
 
 ///
@@ -45,7 +45,7 @@ genCacheEntryName(const isc::dns::Name& name, const isc::dns::RRType& type);
 ///
 /// \param namestr A string representation of a DNS Name
 /// \param type The value of a DNS RRType
-ISC_LIBCACHE_API const std::string
+B10_LIBCACHE_API const std::string
 genCacheEntryName(const std::string& namestr, const uint16_t type);
 
 } // namespace cache

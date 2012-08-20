@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBTESTUTILS_EXPORT
+#define B10_LIBTESTUTILS_EXPORT
 
 #include <config.h>
 
@@ -24,7 +24,7 @@
 
 // Instantiate class
 
-class ISC_LIBTESTUTILS_API TestSocketRequestor;
+class B10_LIBTESTUTILS_API TestSocketRequestor;
 
 // Local Variables:
 // mode: c++

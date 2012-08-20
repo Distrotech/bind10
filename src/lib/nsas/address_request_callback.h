@@ -40,7 +40,7 @@ namespace nsas {
 /// callback object is up to the caller - if the caller wants to retain it
 /// they should keep the shared pointer.
 
-class ISC_LIBNSAS_API AddressRequestCallback {
+class B10_LIBNSAS_API AddressRequestCallback {
 public:
 
     /// Default constructor, copy contructor and assignment operator

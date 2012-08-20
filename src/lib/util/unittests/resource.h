@@ -28,7 +28,7 @@ namespace unittests {
 /// is used, where processes abort (and create cores in the process).
 /// As a new process is forked to run EXPECT_DEATH tests, the rlimits of
 /// the parent process that runs the other tests should be unaffected.
-ISC_LIBUTIL_UNITTESTS_API void dontCreateCoreDumps();
+B10_LIBUTIL_UNITTESTS_API void dontCreateCoreDumps();
 
 } // end of namespace unittests
 } // end of namespace util

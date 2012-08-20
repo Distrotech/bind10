@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBDNS_EXPORT
+#define B10_LIBDNS_EXPORT
 
 #include <cctype>
 #include <cassert>
@@ -798,7 +798,7 @@ Name::downcase() {
     return (*this);
 }
 
-ISC_LIBDNS_API std::ostream&
+B10_LIBDNS_API std::ostream&
 operator<<(std::ostream& os, const Name& name) {
     os << name.toText();
     return (os);

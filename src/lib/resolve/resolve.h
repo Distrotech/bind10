@@ -39,7 +39,7 @@ namespace resolve {
 ///
 /// \param answer_message The message to clear and place the error in
 /// \param error_code The error Rcode
-ISC_LIBRESOLVE_API void
+B10_LIBRESOLVE_API void
 makeErrorMessage(isc::dns::MessagePtr answer_message,
                  const isc::dns::Rcode& error_code);
 
@@ -58,7 +58,7 @@ makeErrorMessage(isc::dns::MessagePtr answer_message,
 ///                      and Opcode from.
 /// \param response_message The fresh response message to initialize
 ///                         (must be in RENDER mode)
-ISC_LIBRESOLVE_API void
+B10_LIBRESOLVE_API void
 initResponseMessage(const isc::dns::Message& query_message,
                     isc::dns::Message& response_message);
 
@@ -76,7 +76,7 @@ initResponseMessage(const isc::dns::Message& query_message,
 /// \param question The question to place in the Question section
 /// \param response_message The fresh response message to initialize
 ///                         (must be in RENDER mode)
-ISC_LIBRESOLVE_API void
+B10_LIBRESOLVE_API void
 initResponseMessage(const isc::dns::Question& question,
                     isc::dns::Message& response_message);
 
@@ -89,7 +89,7 @@ initResponseMessage(const isc::dns::Question& question,
 /// code
 /// \param source The Message to copy the data from
 /// \param target The Message to copy the data to
-ISC_LIBRESOLVE_API void
+B10_LIBRESOLVE_API void
 copyResponseMessage(const isc::dns::Message& source,
                     isc::dns::MessagePtr target);
 

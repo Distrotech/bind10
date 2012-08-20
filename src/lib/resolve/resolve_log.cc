@@ -14,7 +14,7 @@
 
 /// Defines the logger used by the NSAS
 
-#define ISC_LIBRESOLVE_EXPORT
+#define B10_LIBRESOLVE_EXPORT
 
 #include <resolve/resolve_log.h>
 

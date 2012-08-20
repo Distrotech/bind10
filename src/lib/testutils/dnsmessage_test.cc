@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBTESTUTILS_EXPORT
+#define B10_LIBTESTUTILS_EXPORT
 
 #include <dns/message.h>
 #include <dns/opcode.h>
@@ -35,13 +35,13 @@ using namespace isc::dns;
 
 namespace isc {
 namespace testutils {
-ISC_LIBTESTUTILS_API const unsigned int QR_FLAG = 0x1;
-ISC_LIBTESTUTILS_API const unsigned int AA_FLAG = 0x2;
-ISC_LIBTESTUTILS_API const unsigned int TC_FLAG = 0x4;
-ISC_LIBTESTUTILS_API const unsigned int RD_FLAG = 0x8;
-ISC_LIBTESTUTILS_API const unsigned int RA_FLAG = 0x10;
-ISC_LIBTESTUTILS_API const unsigned int AD_FLAG = 0x20;
-ISC_LIBTESTUTILS_API const unsigned int CD_FLAG = 0x40;
+B10_LIBTESTUTILS_API const unsigned int QR_FLAG = 0x1;
+B10_LIBTESTUTILS_API const unsigned int AA_FLAG = 0x2;
+B10_LIBTESTUTILS_API const unsigned int TC_FLAG = 0x4;
+B10_LIBTESTUTILS_API const unsigned int RD_FLAG = 0x8;
+B10_LIBTESTUTILS_API const unsigned int RA_FLAG = 0x10;
+B10_LIBTESTUTILS_API const unsigned int AD_FLAG = 0x20;
+B10_LIBTESTUTILS_API const unsigned int CD_FLAG = 0x40;
 
 void
 headerCheck(const Message& message, const qid_t qid, const Rcode& rcode,

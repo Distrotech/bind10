@@ -33,7 +33,7 @@
 
 struct NSECImpl;
 
-class ISC_LIBDNS_API NSEC : public Rdata {
+class B10_LIBDNS_API NSEC : public Rdata {
 public:
     // BEGIN_COMMON_MEMBERS
     // END_COMMON_MEMBERS

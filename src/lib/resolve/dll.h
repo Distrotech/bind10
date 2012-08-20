@@ -16,22 +16,22 @@
 #define __LIBRESOLVE_H 1
 
 #if !defined(_WIN32) || defined(USE_STATIC_LINK)
-#define ISC_LIBRESOLVE_API
+#define B10_LIBRESOLVE_API
 #else
-#ifdef ISC_LIBRESOLVE_EXPORT
-#define ISC_LIBRESOLVE_API __declspec(dllexport)
+#ifdef B10_LIBRESOLVE_EXPORT
+#define B10_LIBRESOLVE_API __declspec(dllexport)
 #else
-#define ISC_LIBRESOLVE_API __declspec(dllimport)
+#define B10_LIBRESOLVE_API __declspec(dllimport)
 #endif
 #endif
 
 #if !defined(_WIN32) || defined(USE_STATIC_LINK)
-#define ISC_LIBNSASRESOLVE_API
+#define B10_LIBNSASRESOLVE_API
 #else
-#if defined(ISC_LIBNSAS_EXPORT) || defined(ISC_LIBRESOLVE_EXPORT)
-#define ISC_LIBNSASRESOLVE_API __declspec(dllexport)
+#if defined(B10_LIBNSAS_EXPORT) || defined(B10_LIBRESOLVE_EXPORT)
+#define B10_LIBNSASRESOLVE_API __declspec(dllexport)
 #else
-#define ISC_LIBNSASRESOLVE_API __declspec(dllimport)
+#define B10_LIBNSASRESOLVE_API __declspec(dllimport)
 #endif
 #endif
 

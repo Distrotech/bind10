@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBDNS_PYTHON_EXPORT
+#define B10_LIBDNS_PYTHON_EXPORT
 
 #include <Python.h>
 
@@ -349,9 +349,9 @@ namespace python {
 // Initialization and addition of these go in the module init at the
 // end
 //
-ISC_LIBDNS_PYTHON_API PyObject* po_EmptyRRset;
+B10_LIBDNS_PYTHON_API PyObject* po_EmptyRRset;
 
-ISC_LIBDNS_PYTHON_API PyTypeObject rrset_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject rrset_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.RRset",
     sizeof(s_RRset),                    // tp_basicsize
@@ -416,7 +416,7 @@ ISC_LIBDNS_PYTHON_API PyTypeObject rrset_type = {
     0                                   // tp_version_tag
 };
 
-ISC_LIBDNS_PYTHON_API PyObject*
+B10_LIBDNS_PYTHON_API PyObject*
 createRRsetObject(const AbstractRRset& source) {
 
     // RRsets are noncopyable, so as a workaround we recreate a new one
@@ -444,7 +444,7 @@ createRRsetObject(const AbstractRRset& source) {
     return (py_rrset);
 }
 
-ISC_LIBDNS_PYTHON_API bool
+B10_LIBDNS_PYTHON_API bool
 PyRRset_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -452,13 +452,13 @@ PyRRset_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &rrset_type));
 }
 
-ISC_LIBDNS_PYTHON_API AbstractRRset&
+B10_LIBDNS_PYTHON_API AbstractRRset&
 PyRRset_ToRRset(PyObject* rrset_obj) {
     s_RRset* rrset = static_cast<s_RRset*>(rrset_obj);
     return (*rrset->cppobj);
 }
 
-ISC_LIBDNS_PYTHON_API RRsetPtr
+B10_LIBDNS_PYTHON_API RRsetPtr
 PyRRset_ToRRsetPtr(PyObject* rrset_obj) {
     if (rrset_obj == NULL) {
         isc_throw(PyCPPWrapperException,

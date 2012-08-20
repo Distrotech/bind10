@@ -16,12 +16,12 @@
 #define __LIBBENCH_H 1
 
 #if !defined(_WIN32) || defined(USE_STATIC_LINK)
-#define ISC_LIBBENCH_API
+#define B10_LIBBENCH_API
 #else
-#ifdef ISC_LIBBENCH_EXPORT
-#define ISC_LIBBENCH_API __declspec(dllexport)
+#ifdef B10_LIBBENCH_EXPORT
+#define B10_LIBBENCH_API __declspec(dllexport)
 #else
-#define ISC_LIBBENCH_API __declspec(dllimport)
+#define B10_LIBBENCH_API __declspec(dllimport)
 #endif
 #endif
 

@@ -30,7 +30,7 @@
 
 namespace isc { namespace data {
 
-class ISC_LIBCC_API Element;
+class B10_LIBCC_API Element;
 // todo: describe the rationale behind ElementPtr?
 typedef boost::shared_ptr<Element> ElementPtr;
 typedef boost::shared_ptr<const Element> ConstElementPtr;
@@ -40,7 +40,7 @@ typedef boost::shared_ptr<const Element> ConstElementPtr;
 /// is called for an Element that has a wrong type (e.g. int_value on a
 /// ListElement)
 ///
-class ISC_LIBCC_API TypeError : public isc::Exception {
+class B10_LIBCC_API TypeError : public isc::Exception {
 public:
     TypeError(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -53,7 +53,7 @@ public:
 // i'd like to use Exception here but we need one that is derived from
 // runtime_error (as this one is directly based on external data, and
 // i want to add some values to any static data string that is provided)
-class ISC_LIBCC_API JSONError : public isc::Exception {
+class B10_LIBCC_API JSONError : public isc::Exception {
 public:
     JSONError(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -76,7 +76,7 @@ public:
 /// raising a \c TypeError for functions that are not supported for
 /// the type in question.
 ///
-class ISC_LIBCC_API Element {
+class B10_LIBCC_API Element {
     
 private:
     // technically the type could be omitted; is it useful?
@@ -377,7 +377,7 @@ public:
     //@}
 };
 
-class ISC_LIBCC_API IntElement : public Element {
+class B10_LIBCC_API IntElement : public Element {
     long int i;
 
 public:
@@ -391,7 +391,7 @@ public:
     bool equals(const Element& other) const;
 };
 
-class ISC_LIBCC_API DoubleElement : public Element {
+class B10_LIBCC_API DoubleElement : public Element {
     double d;
 
 public:
@@ -405,7 +405,7 @@ public:
     bool equals(const Element& other) const;
 };
 
-class ISC_LIBCC_API BoolElement : public Element {
+class B10_LIBCC_API BoolElement : public Element {
     bool b;
 
 public:
@@ -419,14 +419,14 @@ public:
     bool equals(const Element& other) const;
 };
 
-class ISC_LIBCC_API NullElement : public Element {
+class B10_LIBCC_API NullElement : public Element {
 public:
     NullElement() : Element(null) {};
     void toJSON(std::ostream& ss) const;
     bool equals(const Element& other) const;
 };
 
-class ISC_LIBCC_API StringElement : public Element {
+class B10_LIBCC_API StringElement : public Element {
     std::string s;
 
 public:
@@ -440,7 +440,7 @@ public:
     bool equals(const Element& other) const;
 };
 
-class ISC_LIBCC_API ListElement : public Element {
+class B10_LIBCC_API ListElement : public Element {
     std::vector<ConstElementPtr> l;
 
 public:
@@ -470,7 +470,7 @@ public:
     bool equals(const Element& other) const;
 };
 
-class ISC_LIBCC_API MapElement : public Element {
+class B10_LIBCC_API MapElement : public Element {
     std::map<std::string, ConstElementPtr> m;
 
 public:
@@ -521,7 +521,7 @@ public:
 /// Checks whether the given ElementPtr is a NULL pointer
 /// \param p The ElementPtr to check
 /// \return true if it is NULL, false if not.
-ISC_LIBCC_API bool isNull(ConstElementPtr p);
+B10_LIBCC_API bool isNull(ConstElementPtr p);
 
 ///
 /// \brief Remove all values from the first ElementPtr that are
@@ -530,14 +530,14 @@ ISC_LIBCC_API bool isNull(ConstElementPtr p);
 /// only contains new and changed values (for ModuleCCSession and
 /// configuration update handlers)
 /// Raises a TypeError if a or b are not MapElements
-ISC_LIBCC_API void removeIdentical(ElementPtr a, ConstElementPtr b);
+B10_LIBCC_API void removeIdentical(ElementPtr a, ConstElementPtr b);
 
 /// \brief Create a new ElementPtr from the first ElementPtr, removing all
 /// values that are equal in the second. Both ElementPtrs MUST be MapElements.
 /// The returned ElementPtr will be a MapElement that only contains new and
 /// changed values (for ModuleCCSession and configuration update handlers).
 /// Raises a TypeError if a or b are not MapElements
-ISC_LIBCC_API ConstElementPtr
+B10_LIBCC_API ConstElementPtr
 removeIdentical(ConstElementPtr a, ConstElementPtr b);
 
 /// \brief Merges the data from other into element.
@@ -552,7 +552,7 @@ removeIdentical(ConstElementPtr a, ConstElementPtr b);
 /// configuration data (which would then result in reverting back
 /// to the default).
 /// Raises a TypeError if either ElementPtr is not a MapElement
-ISC_LIBCC_API void merge(ElementPtr element, ConstElementPtr other);
+B10_LIBCC_API void merge(ElementPtr element, ConstElementPtr other);
 
 ///
 /// \brief Insert the Element as a string into stream.
@@ -569,11 +569,11 @@ ISC_LIBCC_API void merge(ElementPtr element, ConstElementPtr other);
 /// \param e The \c ElementPtr object to insert.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c out after the insertion operation.
-ISC_LIBCC_API std::ostream&
+B10_LIBCC_API std::ostream&
 operator<<(std::ostream& out, const Element& e);
 
-ISC_LIBCC_API bool operator==(const Element& a, const Element& b);
-ISC_LIBCC_API bool operator!=(const Element& a, const Element& b);
+B10_LIBCC_API bool operator==(const Element& a, const Element& b);
+B10_LIBCC_API bool operator!=(const Element& a, const Element& b);
 } }
 
 #ifdef _MSC_VER

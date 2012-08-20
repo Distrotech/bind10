@@ -16,12 +16,12 @@
 #define __LIBCACHE_H 1
 
 #if !defined(_WIN32) || defined(USE_STATIC_LINK)
-#define ISC_LIBCACHE_API
+#define B10_LIBCACHE_API
 #else
-#ifdef ISC_LIBCACHE_EXPORT
-#define ISC_LIBCACHE_API __declspec(dllexport)
+#ifdef B10_LIBCACHE_EXPORT
+#define B10_LIBCACHE_API __declspec(dllexport)
 #else
-#define ISC_LIBCACHE_API __declspec(dllimport)
+#define B10_LIBCACHE_API __declspec(dllimport)
 #endif
 #endif
 

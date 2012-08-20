@@ -31,11 +31,11 @@
 namespace isc {
 namespace datasrc {
 
-class ISC_LIBDATASRC_API Query;
+class B10_LIBDATASRC_API Query;
 typedef boost::shared_ptr<Query> QueryPtr;
 
 // An individual task to be carried out by the query logic
-class ISC_LIBDATASRC_API QueryTask {
+class B10_LIBDATASRC_API QueryTask {
 private:
     /// Note: The copy constructor and the assignment operator are intentionally
     /// defined as private.
@@ -159,7 +159,7 @@ typedef boost::shared_ptr<QueryTask> QueryTaskPtr;
 typedef std::queue<QueryTaskPtr> QueryTaskQueue;
 
 // Data Source query
-class ISC_LIBDATASRC_API Query {
+class B10_LIBDATASRC_API Query {
 public:
     // The state of a query: pending or answered.
     enum Status {

@@ -27,7 +27,7 @@ using namespace isc::nsas;
 namespace isc {
 namespace cache {
 
-class ISC_LIBCACHE_API RRsetEntry;
+class B10_LIBCACHE_API RRsetEntry;
 
 /// \brief RRset Cache
 /// The object of RRsetCache represented the cache for class-specific
@@ -35,7 +35,7 @@ class ISC_LIBCACHE_API RRsetEntry;
 ///
 /// \todo The rrset cache class should provide the interfaces for
 ///       loading, dumping and resizing.
-class ISC_LIBCACHE_API RRsetCache{
+class B10_LIBCACHE_API RRsetCache{
     ///
     /// \name Constructors and Destructor
     ///

@@ -43,7 +43,7 @@ heading_txt = '''///////////////
 '''
 export_txt = '''
 
-#define ISC_LIBDNS_EXPORT
+#define B10_LIBDNS_EXPORT
 
 '''
 

@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBDNS_EXPORT
+#define B10_LIBDNS_EXPORT
 
 #include <dns/labelsequence.h>
 #include <dns/name_internal.h>

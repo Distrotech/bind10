@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBUTIL_UNITTESTS_EXPORT
+#define B10_LIBUTIL_UNITTESTS_EXPORT
 
 #include <stdlib.h>
 
@@ -46,8 +46,8 @@ operator delete(void* p) throw() {
 namespace isc {
 namespace util {
 namespace unittests {
-ISC_LIBUTIL_UNITTESTS_API bool force_throw_on_new = false;
-ISC_LIBUTIL_UNITTESTS_API size_t throw_size_on_new = 0;
+B10_LIBUTIL_UNITTESTS_API bool force_throw_on_new = false;
+B10_LIBUTIL_UNITTESTS_API size_t throw_size_on_new = 0;
 }
 }
 }

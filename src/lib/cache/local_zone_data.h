@@ -28,7 +28,7 @@ namespace cache {
 /// The object of LocalZoneData represents the data of one
 /// local zone. It provides the interface for lookup the rrsets
 /// in the zone.
-class ISC_LIBCACHE_API LocalZoneData {
+class B10_LIBCACHE_API LocalZoneData {
 public:
     LocalZoneData(uint16_t rrset_class) : class_(rrset_class)
     {}

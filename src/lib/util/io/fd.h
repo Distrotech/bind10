@@ -46,13 +46,13 @@ namespace io {
  * \param data The buffer to write.
  * \param length How much data is there to write.
  */
-ISC_LIBUTIL_IO_API bool
+B10_LIBUTIL_IO_API bool
 write_data(const int fd, const void *data, const size_t length);
 #ifdef _WIN32
-ISC_LIBUTIL_IO_API bool
+B10_LIBUTIL_IO_API bool
 send_data(const SOCKET fd, const void *data, const size_t length);
 #else
-ISC_LIBUTIL_IO_API bool
+B10_LIBUTIL_IO_API bool
 send_data(const int fd, const void *data, const size_t length);
 #endif
 
@@ -66,13 +66,13 @@ send_data(const int fd, const void *data, const size_t length);
  * \param data Where to put the data.
  * \param length How many of them.
  */
-ISC_LIBUTIL_IO_API ssize_t
+B10_LIBUTIL_IO_API ssize_t
 read_data(const int fd, void *buffer, const size_t length);
 #ifdef _WIN32
-ISC_LIBUTIL_IO_API ssize_t
+B10_LIBUTIL_IO_API ssize_t
 recv_data(const SOCKET fd, void *buffer, const size_t length);
 #else
-ISC_LIBUTIL_IO_API ssize_t
+B10_LIBUTIL_IO_API ssize_t
 recv_data(const int fd, void *buffer, const size_t length);
 #endif
 

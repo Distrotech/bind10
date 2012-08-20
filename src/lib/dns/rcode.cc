@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBDNS_EXPORT
+#define B10_LIBDNS_EXPORT
 
 #include <string>
 #include <sstream>
@@ -95,7 +95,7 @@ Rcode::toText() const {
     return (oss.str());
 }
 
-ISC_LIBDNS_API ostream&
+B10_LIBDNS_API ostream&
 operator<<(std::ostream& os, const Rcode& rcode) {
     return (os << rcode.toText());
 }

@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBCONFIG_EXPORT
+#define B10_LIBCONFIG_EXPORT
 
 #include <config.h>
 
@@ -62,7 +62,7 @@ namespace isc {
 namespace config {
 
 /// Creates a standard config/command protocol answer message
-ISC_LIBCONFIG_API ConstElementPtr
+B10_LIBCONFIG_API ConstElementPtr
 createAnswer() {
     ElementPtr answer = Element::fromJSON("{\"result\": [] }");
     ElementPtr answer_content = Element::createList();
@@ -72,7 +72,7 @@ createAnswer() {
     return (answer);
 }
 
-ISC_LIBCONFIG_API ConstElementPtr
+B10_LIBCONFIG_API ConstElementPtr
 createAnswer(const int rcode, ConstElementPtr arg) {
     if (rcode != 0 && (!arg || arg->getType() != Element::string)) {
         isc_throw(CCSessionError, "Bad or no argument for rcode != 0");
@@ -86,7 +86,7 @@ createAnswer(const int rcode, ConstElementPtr arg) {
     return (answer);
 }
 
-ISC_LIBCONFIG_API ConstElementPtr
+B10_LIBCONFIG_API ConstElementPtr
 createAnswer(const int rcode, const std::string& arg) {
     ElementPtr answer = Element::fromJSON("{\"result\": [] }");
     ElementPtr answer_content = Element::createList();
@@ -97,7 +97,7 @@ createAnswer(const int rcode, const std::string& arg) {
     return (answer);
 }
 
-ISC_LIBCONFIG_API ConstElementPtr
+B10_LIBCONFIG_API ConstElementPtr
 parseAnswer(int &rcode, ConstElementPtr msg) {
     if (msg &&
         msg->getType() == Element::map &&
@@ -127,12 +127,12 @@ parseAnswer(int &rcode, ConstElementPtr msg) {
     }
 }
 
-ISC_LIBCONFIG_API ConstElementPtr
+B10_LIBCONFIG_API ConstElementPtr
 createCommand(const std::string& command) {
     return (createCommand(command, ElementPtr()));
 }
 
-ISC_LIBCONFIG_API ConstElementPtr
+B10_LIBCONFIG_API ConstElementPtr
 createCommand(const std::string& command, ConstElementPtr arg) {
     ElementPtr cmd = Element::createMap();
     ElementPtr cmd_parts = Element::createList();
@@ -144,7 +144,7 @@ createCommand(const std::string& command, ConstElementPtr arg) {
     return (cmd);
 }
 
-ISC_LIBCONFIG_API std::string
+B10_LIBCONFIG_API std::string
 parseCommand(ConstElementPtr& arg, ConstElementPtr command) {
     if (command &&
         command->getType() == Element::map &&
@@ -312,7 +312,7 @@ copyLogger(ConstElementPtr& cur_logger, const std::string& new_name) {
 } // end anonymous namespace
 
 
-ISC_LIBCONFIG_API ConstElementPtr
+B10_LIBCONFIG_API ConstElementPtr
 getRelatedLoggers(ConstElementPtr loggers) {
     // Keep a list of names for easier lookup later
     std::set<std::string> our_names;
@@ -377,7 +377,7 @@ getRelatedLoggers(ConstElementPtr loggers) {
     return (result);
 }
 
-ISC_LIBCONFIG_API void
+B10_LIBCONFIG_API void
 default_logconfig_handler(const std::string& module_name,
                           ConstElementPtr new_config,
                           const ConfigData& config_data) {

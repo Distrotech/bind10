@@ -21,7 +21,7 @@
 
 // Generated if, when updating the logging specification, an unknown
 // destination is encountered.
-class ISC_LIBLOG_API UnknownLoggingDestination : public isc::Exception {
+class B10_LIBLOG_API UnknownLoggingDestination : public isc::Exception {
 public:
     UnknownLoggingDestination(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what)
@@ -41,7 +41,7 @@ class LoggerManagerImpl;
 /// To isolate the underlying implementation from basic processing, the
 /// LoggerManager is implemented using the "pimpl" idiom.
 
-class ISC_LIBLOG_API LoggerManager {
+class B10_LIBLOG_API LoggerManager {
 public:
     /// \brief Constructor
     LoggerManager();

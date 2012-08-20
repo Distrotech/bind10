@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBDNS_PYTHON_EXPORT
+#define B10_LIBDNS_PYTHON_EXPORT
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
@@ -286,14 +286,14 @@ namespace python {
 // Initialization and addition of these go in the initModulePart
 // function in pydnspp
 //
-ISC_LIBDNS_PYTHON_API PyObject* po_InvalidRdataLength;
-ISC_LIBDNS_PYTHON_API PyObject* po_InvalidRdataText;
-ISC_LIBDNS_PYTHON_API PyObject* po_CharStringTooLong;
+B10_LIBDNS_PYTHON_API PyObject* po_InvalidRdataLength;
+B10_LIBDNS_PYTHON_API PyObject* po_InvalidRdataText;
+B10_LIBDNS_PYTHON_API PyObject* po_CharStringTooLong;
 
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_Rdata
 // Most of the functions are not actually implemented and NULL here.
-ISC_LIBDNS_PYTHON_API PyTypeObject rdata_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject rdata_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.Rdata",
     sizeof(s_Rdata),                    // tp_basicsize
@@ -344,7 +344,7 @@ ISC_LIBDNS_PYTHON_API PyTypeObject rdata_type = {
     0                                   // tp_version_tag
 };
 
-ISC_LIBDNS_PYTHON_API PyObject*
+B10_LIBDNS_PYTHON_API PyObject*
 createRdataObject(ConstRdataPtr source) {
     s_Rdata* py_rdata =
         static_cast<s_Rdata*>(rdata_type.tp_alloc(&rdata_type, 0));
@@ -356,7 +356,7 @@ createRdataObject(ConstRdataPtr source) {
     return (py_rdata);
 }
 
-ISC_LIBDNS_PYTHON_API bool
+B10_LIBDNS_PYTHON_API bool
 PyRdata_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -364,7 +364,7 @@ PyRdata_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &rdata_type));
 }
 
-ISC_LIBDNS_PYTHON_API const Rdata&
+B10_LIBDNS_PYTHON_API const Rdata&
 PyRdata_ToRdata(const PyObject* rdata_obj) {
     if (rdata_obj == NULL) {
         isc_throw(PyCPPWrapperException,

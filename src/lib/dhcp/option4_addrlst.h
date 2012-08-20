@@ -32,7 +32,7 @@ namespace dhcp {
 ///
 /// This class handles a list of IPv4 addresses. An example of such option
 /// is dns-servers option. It can also be used to handle a single address.
-class ISC_LIBDHCP_API Option4AddrLst : public isc::dhcp::Option {
+class B10_LIBDHCP_API Option4AddrLst : public isc::dhcp::Option {
 public:
 
     /// Defines a collection of IPv4 addresses.

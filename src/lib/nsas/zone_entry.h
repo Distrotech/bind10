@@ -39,8 +39,8 @@
 namespace isc {
 namespace nsas {
 
-class ISC_LIBNSAS_API NameserverEntry;
-class ISC_LIBNSAS_API AddressRequestCallback;
+class B10_LIBNSAS_API NameserverEntry;
+class B10_LIBNSAS_API AddressRequestCallback;
 
 /// \brief Zone Entry
 ///
@@ -53,7 +53,7 @@ class ISC_LIBNSAS_API AddressRequestCallback;
 ///
 /// It uses shared_from_this in its methods. It must live inside a shared_ptr.
 
-class ISC_LIBNSAS_API ZoneEntry :
+class B10_LIBNSAS_API ZoneEntry :
  public NsasEntry<ZoneEntry>, public Fetchable {
 public:
 

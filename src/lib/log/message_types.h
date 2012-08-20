@@ -29,7 +29,7 @@ typedef const char* MessageID;
 /// \param m1 First message ID
 /// \param m2 Second message ID
 /// \return true if they are equal, false if not
-ISC_LIBLOG_API bool equalMessageID(const MessageID& m1, const MessageID& m2);
+B10_LIBLOG_API bool equalMessageID(const MessageID& m1, const MessageID& m2);
 
 } // namespace log
 } // namespace isc

@@ -41,13 +41,13 @@ namespace log {
 /// and throw an exception if logging is not initialized at that point.
 ///
 /// \return true if logging has been initialized, false if not
-ISC_LIBLOG_API bool isLoggingInitialized();
+B10_LIBLOG_API bool isLoggingInitialized();
 
 /// \brief Set state of "logging initialized" flag
 ///
 /// \param state State to set the flag to. (This is expected to be "true" - the
 ///        default - for all code apart from specific unit tests.)
-ISC_LIBLOG_API void setLoggingInitialized(bool state = true);
+B10_LIBLOG_API void setLoggingInitialized(bool state = true);
 
 /// \brief Run-time initialization
 ///
@@ -64,7 +64,7 @@ ISC_LIBLOG_API void setLoggingInitialized(bool state = true);
 /// \param severity Severity at which to log
 /// \param dbglevel Debug severity (ignored if "severity" is not "DEBUG")
 /// \param file Name of the local message file.
-ISC_LIBLOG_API
+B10_LIBLOG_API
 void initLogger(const std::string& root,
                 isc::log::Severity severity = isc::log::INFO,
                 int dbglevel = 0, const char* file = NULL);

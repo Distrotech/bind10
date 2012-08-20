@@ -27,7 +27,7 @@
 /// to do something with address labels. Getting a list of interfaces with
 /// addresses configured on it is just a small subset of all possible actions.
 
-#define ISC_LIBDHCP_EXPORT
+#define B10_LIBDHCP_EXPORT
 
 #include <config.h>
 

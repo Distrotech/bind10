@@ -29,7 +29,7 @@
 namespace isc {
 namespace dns {
 
-class ISC_LIBDNS_API DuplicateRRset : public Exception {
+class B10_LIBDNS_API DuplicateRRset : public Exception {
 public:
     DuplicateRRset(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -95,7 +95,7 @@ private:
 /// reason and is actually quite specific to a particular need for libdatasrc.
 /// If you are tempted to use it, think twice to assess if this class
 /// is really what you want.  Again, in many cases the answer will be no.
-class ISC_LIBDNS_API RRsetList {
+class B10_LIBDNS_API RRsetList {
 private:
     RRsetList(const RRsetList& source);
     RRsetList& operator=(const RRsetList& source);

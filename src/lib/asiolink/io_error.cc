@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBASIOLINK_EXPORT
+#define B10_LIBASIOLINK_EXPORT
 
 #include <config.h>
 
@@ -23,10 +23,10 @@
 
 // Instantiate classes
 
-class ISC_LIBASIOLINK_API SocketNotOpen;
-class ISC_LIBASIOLINK_API SocketSetError;
-class ISC_LIBASIOLINK_API BufferOverflow;
-class ISC_LIBASIOLINK_API BufferTooLarge;
+class B10_LIBASIOLINK_API SocketNotOpen;
+class B10_LIBASIOLINK_API SocketSetError;
+class B10_LIBASIOLINK_API BufferOverflow;
+class B10_LIBASIOLINK_API BufferTooLarge;
 
 // Local Variables:
 // mode: c++

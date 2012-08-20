@@ -63,7 +63,7 @@ namespace log {
 /// of logging levels between log4cplus and BIND 10, and to register those
 /// levels with log4cplus.
 
-class ISC_LIBLOG_API LoggerLevelImpl {
+class B10_LIBLOG_API LoggerLevelImpl {
 public:
 
     /// \brief Convert BIND 10 level to log4cplus logging level

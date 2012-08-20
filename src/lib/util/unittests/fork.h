@@ -42,13 +42,13 @@ namespace unittests {
  * @return True if the process terminates with 0, false otherwise.
  * @param process The ID of process to wait for.
  */
-ISC_LIBUTIL_UNITTESTS_API bool
+B10_LIBUTIL_UNITTESTS_API bool
 process_ok(pid_t process);
 
-ISC_LIBUTIL_UNITTESTS_API pid_t
+B10_LIBUTIL_UNITTESTS_API pid_t
 provide_input(int *read_pipe, const void *input, const size_t length);
 
-ISC_LIBUTIL_UNITTESTS_API pid_t
+B10_LIBUTIL_UNITTESTS_API pid_t
 check_output(int *write_pipe, const void *output, const size_t length);
 
 } // End of the namespace

@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBUTIL_UNITTESTS_EXPORT
+#define B10_LIBUTIL_UNITTESTS_EXPORT
 
 #include <string>
 #include <stdexcept>
@@ -40,7 +40,7 @@ addTestDataPath(const string& path) {
     getDataPaths().push_back(path);
 }
 
-ISC_LIBUTIL_UNITTESTS_API void
+B10_LIBUTIL_UNITTESTS_API void
 openTestData(const char* const datafile, ifstream& ifs) {
     vector<string>::const_iterator it = getDataPaths().begin();
     for (; it != getDataPaths().end(); ++it) {

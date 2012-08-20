@@ -16,12 +16,12 @@
 #define __LIBDNS_H 1
 
 #if !defined(_WIN32) || defined(USE_STATIC_LINK)
-#define ISC_LIBDNS_API
+#define B10_LIBDNS_API
 #else
-#ifdef ISC_LIBDNS_EXPORT
-#define ISC_LIBDNS_API __declspec(dllexport)
+#ifdef B10_LIBDNS_EXPORT
+#define B10_LIBDNS_API __declspec(dllexport)
 #else
-#define ISC_LIBDNS_API __declspec(dllimport)
+#define B10_LIBDNS_API __declspec(dllimport)
 #endif
 #endif
 

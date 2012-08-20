@@ -16,19 +16,19 @@
 #define __LIBDNS_PYTHON_H 1
 
 #if !defined(_WIN32) || defined(USE_STATIC_LINK)
-#define ISC_LIBDNS_PYTHON_API
+#define B10_LIBDNS_PYTHON_API
 #else
-#ifdef ISC_LIBDNS_PYTHON_EXPORT
-#define ISC_LIBDNS_PYTHON_API __declspec(dllexport)
+#ifdef B10_LIBDNS_PYTHON_EXPORT
+#define B10_LIBDNS_PYTHON_API __declspec(dllexport)
 #else
-#define ISC_LIBDNS_PYTHON_API __declspec(dllimport)
+#define B10_LIBDNS_PYTHON_API __declspec(dllimport)
 #endif
 #endif
 
 #if !defined(_WIN32) || defined(USE_STATIC_LINK) || defined(USE_STATIC_WRAPPER)
 #define ISC_PYTHON_WRAPPER_API
 #else
-#ifdef ISC_LIBDNS_PYTHON_EXPORT
+#ifdef B10_LIBDNS_PYTHON_EXPORT
 #define ISC_PYTHON_WRAPPER_API __declspec(dllexport)
 #else
 #define ISC_PYTHON_WRAPPER_API __declspec(dllimport)

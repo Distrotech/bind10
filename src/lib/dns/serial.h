@@ -48,7 +48,7 @@ const uint64_t MAX_SERIAL_VALUE = 4294967296ull;
 /// \note RFC 1982 defines everything based on the value SERIAL_BITS. Since
 /// the serial number has a fixed length of 32 bits, the values we use are
 /// hard-coded, and not computed based on variable bit lengths.
-class ISC_LIBDNS_API Serial {
+class B10_LIBDNS_API Serial {
 public:
     /// \brief Constructor with value
     ///
@@ -149,7 +149,7 @@ private:
 /// \param os The ostream to write to
 /// \param serial The Serial to write
 /// \return the output stream
-ISC_LIBDNS_API std::ostream&
+B10_LIBDNS_API std::ostream&
 operator<<(std::ostream& os, const Serial& serial);
 
 } // end namespace dns

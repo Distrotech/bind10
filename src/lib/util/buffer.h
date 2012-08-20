@@ -34,7 +34,7 @@ namespace util {
 /// \brief A standard DNS module exception that is thrown if an out-of-range
 /// buffer operation is being performed.
 ///
-class ISC_LIBUTIL_API InvalidBufferPosition : public Exception {
+class B10_LIBUTIL_API InvalidBufferPosition : public Exception {
 public:
     InvalidBufferPosition(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -88,7 +88,7 @@ public:
 /// head of the unread data.  An object of this class internally holds (a
 /// notion of) where the next read operation should start.  We call it the
 /// <em>read position</em> in this document.
-class ISC_LIBUTIL_API InputBuffer {
+class B10_LIBUTIL_API InputBuffer {
 public:
     ///
     /// \name Constructors and Destructor
@@ -301,7 +301,7 @@ protected:
 /// if we really want that flexibility.  We may revisit the class design as
 /// we see more applications of the class.  The same considerations apply to
 /// the \c InputBuffer and \c MessageRenderer classes.
-class ISC_LIBUTIL_API OutputBuffer {
+class B10_LIBUTIL_API OutputBuffer {
 public:
     ///
     /// \name Constructors and Destructor

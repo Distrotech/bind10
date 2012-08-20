@@ -26,7 +26,7 @@ class TSIGRecord;
 namespace python {
 
 
-extern ISC_LIBDNS_PYTHON_API PyTypeObject tsigrecord_type;
+extern B10_LIBDNS_PYTHON_API PyTypeObject tsigrecord_type;
 
 /// This is A simple shortcut to create a python TSIGRecord object (in the
 /// form of a pointer to PyObject) with minimal exception safety.
@@ -35,7 +35,7 @@ extern ISC_LIBDNS_PYTHON_API PyTypeObject tsigrecord_type;
 /// returns a NULL pointer).
 /// This function is expected to be called with in a try block
 /// followed by necessary setup for python exception.
-ISC_LIBDNS_PYTHON_API PyObject*
+B10_LIBDNS_PYTHON_API PyObject*
 createTSIGRecordObject(const TSIGRecord& source);
 
 /// \brief Checks if the given python object is a TSIGRecord object
@@ -44,7 +44,7 @@ createTSIGRecordObject(const TSIGRecord& source);
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type TSIGRecord, false otherwise
-ISC_LIBDNS_PYTHON_API bool PyTSIGRecord_Check(PyObject* obj);
+B10_LIBDNS_PYTHON_API bool PyTSIGRecord_Check(PyObject* obj);
 
 /// \brief Returns a reference to the TSIGRecord object contained within the given
 ///        Python object.
@@ -56,7 +56,7 @@ ISC_LIBDNS_PYTHON_API bool PyTSIGRecord_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param rrtype_obj The rrtype object to convert
-ISC_LIBDNS_PYTHON_API const TSIGRecord&
+B10_LIBDNS_PYTHON_API const TSIGRecord&
 PyTSIGRecord_ToTSIGRecord(PyObject* tsigrecord_obj);
 
 } // namespace python

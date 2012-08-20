@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBDNS_PYTHON_EXPORT
+#define B10_LIBDNS_PYTHON_EXPORT
 
 #include <Python.h>
 #include <vector>
@@ -232,13 +232,13 @@ namespace python {
 // Initialization and addition of these go in the initModulePart
 // function in pydnspp.cc
 //
-ISC_LIBDNS_PYTHON_API PyObject* po_InvalidRRTTL;
-ISC_LIBDNS_PYTHON_API PyObject* po_IncompleteRRTTL;
+B10_LIBDNS_PYTHON_API PyObject* po_InvalidRRTTL;
+B10_LIBDNS_PYTHON_API PyObject* po_IncompleteRRTTL;
 
 // This defines the complete type for reflection in python and
 // parsing of PyObject* to s_RRTTL
 // Most of the functions are not actually implemented and NULL here.
-ISC_LIBDNS_PYTHON_API PyTypeObject rrttl_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject rrttl_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.RRTTL",
     sizeof(s_RRTTL),                    // tp_basicsize
@@ -293,14 +293,14 @@ ISC_LIBDNS_PYTHON_API PyTypeObject rrttl_type = {
     0                                   // tp_version_tag
 };
 
-ISC_LIBDNS_PYTHON_API PyObject*
+B10_LIBDNS_PYTHON_API PyObject*
 createRRTTLObject(const RRTTL& source) {
     RRTTLContainer container(PyObject_New(s_RRTTL, &rrttl_type));
     container.set(new RRTTL(source));
     return (container.release());
 }
 
-ISC_LIBDNS_PYTHON_API bool
+B10_LIBDNS_PYTHON_API bool
 PyRRTTL_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -308,7 +308,7 @@ PyRRTTL_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &rrttl_type));
 }
 
-ISC_LIBDNS_PYTHON_API const RRTTL&
+B10_LIBDNS_PYTHON_API const RRTTL&
 PyRRTTL_ToRRTTL(const PyObject* rrttl_obj) {
     if (rrttl_obj == NULL) {
         isc_throw(PyCPPWrapperException,

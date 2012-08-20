@@ -16,12 +16,12 @@
 #define __LIBACL_H 1
 
 #if !defined(_WIN32) || defined(USE_STATIC_LINK)
-#define ISC_LIBACL_API
+#define B10_LIBACL_API
 #else
-#ifdef ISC_LIBACL_EXPORT
-#define ISC_LIBACL_API __declspec(dllexport)
+#ifdef B10_LIBACL_EXPORT
+#define B10_LIBACL_API __declspec(dllexport)
 #else
-#define ISC_LIBACL_API __declspec(dllimport)
+#define B10_LIBACL_API __declspec(dllimport)
 #endif
 #endif
 

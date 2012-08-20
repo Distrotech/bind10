@@ -70,7 +70,7 @@ namespace isc {
 namespace datasrc {
 
 // The iterator.h is not included on purpose, most application won't need it
-class ISC_LIBDATASRC_API ZoneIterator;
+class B10_LIBDATASRC_API ZoneIterator;
 typedef boost::shared_ptr<ZoneIterator> ZoneIteratorPtr;
 
 /// \brief The base class of data source clients.
@@ -129,7 +129,7 @@ typedef boost::shared_ptr<ZoneIterator> ZoneIteratorPtr;
 ///
 /// \todo This class is still not complete. It will need more factory methods,
 /// e.g. for (re)loading a zone.
-class ISC_LIBDATASRC_API DataSourceClient : boost::noncopyable {
+class B10_LIBDATASRC_API DataSourceClient : boost::noncopyable {
 public:
     /// \brief A helper structure to represent the search result of
     /// \c find().

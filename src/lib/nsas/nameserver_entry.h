@@ -39,13 +39,13 @@
 namespace isc {
 namespace nsas {
 
-class ISC_LIBNSAS_API NameserverAddress;
+class B10_LIBNSAS_API NameserverAddress;
 
 /// \brief Inconsistent Owner Names
 ///
 /// Thrown if a NameserverEntry is constructed from both an A and AAAA RRset
 /// where the owner names do not match.
-class ISC_LIBNSAS_API InconsistentOwnerNames : public Exception {
+class B10_LIBNSAS_API InconsistentOwnerNames : public Exception {
 public:
     InconsistentOwnerNames(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what)
@@ -55,7 +55,7 @@ public:
 /// \brief RTT is zero
 ///
 /// Thrown if a RTT related with an address is 0.
-class ISC_LIBNSAS_API RTTIsZero : public Exception {
+class B10_LIBNSAS_API RTTIsZero : public Exception {
 public:
     RTTIsZero(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what)
@@ -66,14 +66,14 @@ public:
 ///
 /// Thrown if a NameserverEntry is constructed from both an A and AAAA RRset
 /// where the classes do not match.
-class ISC_LIBNSAS_API InconsistentClass : public Exception {
+class B10_LIBNSAS_API InconsistentClass : public Exception {
 public:
     InconsistentClass(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what)
     {}
 };
 
-class ISC_LIBNSAS_API ZoneEntry;
+class B10_LIBNSAS_API ZoneEntry;
 
 /// \brief Nameserver Entry
 ///
@@ -92,7 +92,7 @@ class ISC_LIBNSAS_API ZoneEntry;
 ///
 /// It uses shared_from_this in its methods. It must live inside a shared_ptr.
 
-class ISC_LIBNSAS_API NameserverEntry :
+class B10_LIBNSAS_API NameserverEntry :
  public NsasEntry<NameserverEntry>, public Fetchable {
 public:
     /// List of addresses associated with this nameserver

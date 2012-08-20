@@ -31,8 +31,8 @@ namespace isc {
 namespace log {
 
 // Forward declarations
-class ISC_LIBLOG_API LoggerSpecification;
-struct ISC_LIBLOG_API OutputOption;
+class B10_LIBLOG_API LoggerSpecification;
+struct B10_LIBLOG_API OutputOption;
 
 /// \brief Logger Manager Implementation
 ///

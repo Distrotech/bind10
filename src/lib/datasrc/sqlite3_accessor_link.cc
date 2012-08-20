@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBDATASRC_EXPORT
+#define B10_LIBDATASRC_EXPORT
 
 #include <cc/data.h>
 
@@ -77,7 +77,7 @@ checkConfig(ConstElementPtr config, ElementPtr errors) {
 
 } // end unnamed namespace
 
-ISC_LIBDATASRC_API DataSourceClient *
+B10_LIBDATASRC_API DataSourceClient *
 #if defined(_WIN32) && defined(USE_STATIC_LINK)
 SQLCreateInstance
 #else
@@ -106,7 +106,7 @@ createInstance
     }
 }
 
-ISC_LIBDATASRC_API void
+B10_LIBDATASRC_API void
 #if defined(_WIN32) && defined(USE_STATIC_LINK)
 SQLDestroyInstance
 #else

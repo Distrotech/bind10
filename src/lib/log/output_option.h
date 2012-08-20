@@ -44,7 +44,7 @@
 namespace isc {
 namespace log {
 
-struct ISC_LIBLOG_API OutputOption {
+struct B10_LIBLOG_API OutputOption {
 
     /// Destinations.  Prefixed "DEST_" to avoid problems with the C stdio.h
     /// FILE type.
@@ -77,9 +77,9 @@ struct ISC_LIBLOG_API OutputOption {
     unsigned int    maxver;             ///< Maximum versions (none if <= 0)
 };
 
-ISC_LIBLOG_API
+B10_LIBLOG_API
 OutputOption::Destination getDestination(const std::string& dest_str);
-ISC_LIBLOG_API
+B10_LIBLOG_API
 OutputOption::Stream getStream(const std::string& stream_str);
 
 

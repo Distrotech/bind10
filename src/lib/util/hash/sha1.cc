@@ -51,7 +51,7 @@
  *      
  */
 
-#define ISC_LIBUTIL_EXPORT
+#define B10_LIBUTIL_EXPORT
 
 #include <util/hash/sha1.h>
 
@@ -113,7 +113,7 @@ SHA1AddLength(SHA1Context *context, uint32_t length) {
  *      sha Error Code.
  *
  */
-ISC_LIBUTIL_API int
+B10_LIBUTIL_API int
 SHA1Reset(SHA1Context *context) {
     if (!context) {
         return (SHA_NULL);
@@ -155,7 +155,7 @@ SHA1Reset(SHA1Context *context) {
  *      sha Error Code.
  *
  */
-ISC_LIBUTIL_API int
+B10_LIBUTIL_API int
 SHA1Input(SHA1Context *context, const uint8_t *message_array, unsigned length) {
     if (!length) {
         return (SHA_SUCCESS);
@@ -209,7 +209,7 @@ SHA1Input(SHA1Context *context, const uint8_t *message_array, unsigned length) {
  * Returns:
  *   sha Error Code.
  */
-ISC_LIBUTIL_API int
+B10_LIBUTIL_API int
 SHA1FinalBits(SHA1Context *context, const uint8_t message_bits,
               unsigned int length)
 {
@@ -277,7 +277,7 @@ SHA1FinalBits(SHA1Context *context, const uint8_t message_bits,
  *      sha Error Code.
  *
  */
-ISC_LIBUTIL_API int
+B10_LIBUTIL_API int
 SHA1Result(SHA1Context *context, uint8_t Message_Digest[SHA1_HASHSIZE]) {
     int i;
 

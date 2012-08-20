@@ -16,12 +16,12 @@
 #define __LIBCONFIG_H 1
 
 #if !defined(_WIN32) || defined(USE_STATIC_LINK)
-#define ISC_LIBCONFIG_API
+#define B10_LIBCONFIG_API
 #else
-#ifdef ISC_LIBCONFIG_EXPORT
-#define ISC_LIBCONFIG_API __declspec(dllexport)
+#ifdef B10_LIBCONFIG_EXPORT
+#define B10_LIBCONFIG_API __declspec(dllexport)
 #else
-#define ISC_LIBCONFIG_API __declspec(dllimport)
+#define B10_LIBCONFIG_API __declspec(dllimport)
 #endif
 #endif
 

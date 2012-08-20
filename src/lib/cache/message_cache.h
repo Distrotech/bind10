@@ -33,7 +33,7 @@ namespace cache {
 ///
 /// \todo The message cache class should provide the interfaces for
 ///       loading, dumping and resizing.
-class ISC_LIBCACHE_API MessageCache {
+class B10_LIBCACHE_API MessageCache {
 // Noncopyable
 private:
     MessageCache(const MessageCache& source);

@@ -41,7 +41,7 @@ namespace dns {
 /// data can be requested (which then points to part of the original
 /// data of the associated Name object).
 ///
-class ISC_LIBDNS_API LabelSequence {
+class B10_LIBDNS_API LabelSequence {
 public:
     /// \brief Constructs a LabelSequence for the given name
     ///

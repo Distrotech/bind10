@@ -38,7 +38,7 @@ namespace random {
 ///
 /// It automatically seeds it with the current time when it is first
 /// used.
-class ISC_LIBUTIL_API QidGenerator {
+class B10_LIBUTIL_API QidGenerator {
 public:
     /// \brief Returns the singleton instance of the QidGenerator
     ///

@@ -29,7 +29,7 @@ class TSIG;
 
 namespace python {
 
-extern ISC_LIBDNS_PYTHON_API PyTypeObject tsig_type;
+extern B10_LIBDNS_PYTHON_API PyTypeObject tsig_type;
 
 /// This is A simple shortcut to create a python TSIG object (in the
 /// form of a pointer to PyObject) with minimal exception safety.
@@ -38,7 +38,7 @@ extern ISC_LIBDNS_PYTHON_API PyTypeObject tsig_type;
 /// returns a NULL pointer).
 /// This function is expected to be called with in a try block
 /// followed by necessary setup for python exception.
-ISC_LIBDNS_PYTHON_API PyObject*
+B10_LIBDNS_PYTHON_API PyObject*
 createTSIGObject(const rdata::any::TSIG& source);
 
 /// \brief Checks if the given python object is a TSIG object
@@ -47,7 +47,7 @@ createTSIGObject(const rdata::any::TSIG& source);
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type TSIG, false otherwise
-ISC_LIBDNS_PYTHON_API bool PyTSIG_Check(PyObject* obj);
+B10_LIBDNS_PYTHON_API bool PyTSIG_Check(PyObject* obj);
 
 /// \brief Returns a reference to the TSIG object contained within the given
 ///        Python object.
@@ -59,7 +59,7 @@ ISC_LIBDNS_PYTHON_API bool PyTSIG_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param tsig_obj The tsig object to convert
-ISC_LIBDNS_PYTHON_API const rdata::any::TSIG&
+B10_LIBDNS_PYTHON_API const rdata::any::TSIG&
 PyTSIG_ToTSIG(const PyObject* tsig_obj);
 
 } // namespace python

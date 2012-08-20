@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBDNS_EXPORT
+#define B10_LIBDNS_EXPORT
 
 #include <algorithm>
 #include <cctype>
@@ -46,7 +46,7 @@ namespace rdata {
 
 // XXX: we need to specify std:: for string to help doxygen match the
 // function signature with that given in the header file.
-ISC_LIBDNS_API RdataPtr
+B10_LIBDNS_API RdataPtr
 createRdata(const RRType& rrtype, const RRClass& rrclass,
             const std::string& rdata_string)
 {
@@ -54,7 +54,7 @@ createRdata(const RRType& rrtype, const RRClass& rrclass,
                                                        rdata_string));
 }
 
-ISC_LIBDNS_API RdataPtr
+B10_LIBDNS_API RdataPtr
 createRdata(const RRType& rrtype, const RRClass& rrclass,
             isc::util::InputBuffer& buffer, size_t len)
 {
@@ -76,14 +76,14 @@ createRdata(const RRType& rrtype, const RRClass& rrclass,
     return (rdata);
 }
 
-ISC_LIBDNS_API RdataPtr
+B10_LIBDNS_API RdataPtr
 createRdata(const RRType& rrtype, const RRClass& rrclass, const Rdata& source)
 {
     return (RRParamRegistry::getRegistry().createRdata(rrtype, rrclass,
                                                        source));
 }
 
-ISC_LIBDNS_API int
+B10_LIBDNS_API int
 compareNames(const Name& n1, const Name& n2) {
     size_t len1 = n1.getLength();
     size_t len2 = n2.getLength();
@@ -265,7 +265,7 @@ Generic::compare(const Rdata& other) const {
     return (compare_internal(*impl_, *other_rdata.impl_));
 }
 
-ISC_LIBDNS_API std::ostream&
+B10_LIBDNS_API std::ostream&
 operator<<(std::ostream& os, const Generic& rdata) {
     return (os << rdata.toText());
 }

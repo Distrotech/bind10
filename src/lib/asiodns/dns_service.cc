@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBASIODNS_EXPORT
+#define B10_LIBASIODNS_EXPORT
 
 #include <config.h>
 
@@ -39,8 +39,8 @@ using namespace isc::asiolink;
 namespace isc {
 namespace asiodns {
 
-class ISC_LIBASIODNS_API DNSLookup;
-class ISC_LIBASIODNS_API DNSAnswer;
+class B10_LIBASIODNS_API DNSLookup;
+class B10_LIBASIODNS_API DNSAnswer;
 
 class DNSServiceImpl {
 public:

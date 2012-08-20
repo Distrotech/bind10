@@ -29,7 +29,7 @@ namespace asiolink {
 /// \c IOEndpoint that represents an endpoint of a TCP packet.
 ///
 /// Other notes about \c TCPEndpoint applies to this class, too.
-class ISC_LIBASIOLINK_API TCPEndpoint : public IOEndpoint {
+class B10_LIBASIOLINK_API TCPEndpoint : public IOEndpoint {
 public:
     ///
     /// \name Constructors and Destructor.

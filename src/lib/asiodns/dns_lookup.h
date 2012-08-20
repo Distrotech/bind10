@@ -37,7 +37,7 @@ namespace asiodns {
 /// a DNS query (e.g., from authoritative data source, cache, or upstream
 /// query).  After it has run, the OutputBuffer object passed to it
 /// should contain the answer to the query, in an internal representation.
-class ISC_LIBASIODNS_API DNSLookup {
+class B10_LIBASIODNS_API DNSLookup {
     ///
     /// \name Constructors and Destructor
     ///

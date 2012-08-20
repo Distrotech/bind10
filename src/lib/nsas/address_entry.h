@@ -28,7 +28,7 @@
 namespace isc {
 namespace nsas {
 
-class ISC_LIBNSAS_API AddressEntry {
+class B10_LIBNSAS_API AddressEntry {
 public:
     /// Creates an address entry given IOAddress entry and RTT
     /// This is the only constructor; the default copy constructor and

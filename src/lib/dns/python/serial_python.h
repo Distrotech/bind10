@@ -25,7 +25,7 @@ class Serial;
 
 namespace python {
 
-extern ISC_LIBDNS_PYTHON_API PyTypeObject serial_type;
+extern B10_LIBDNS_PYTHON_API PyTypeObject serial_type;
 
 /// This is a simple shortcut to create a python Serial object (in the
 /// form of a pointer to PyObject) with minimal exception safety.
@@ -34,7 +34,7 @@ extern ISC_LIBDNS_PYTHON_API PyTypeObject serial_type;
 /// returns a NULL pointer).
 /// This function is expected to be called within a try block
 /// followed by necessary setup for python exception.
-ISC_LIBDNS_PYTHON_API PyObject* createSerialObject(const Serial& source);
+B10_LIBDNS_PYTHON_API PyObject* createSerialObject(const Serial& source);
 
 /// \brief Checks if the given python object is a Serial object
 ///
@@ -42,7 +42,7 @@ ISC_LIBDNS_PYTHON_API PyObject* createSerialObject(const Serial& source);
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type Serial, false otherwise
-ISC_LIBDNS_PYTHON_API bool PySerial_Check(PyObject* obj);
+B10_LIBDNS_PYTHON_API bool PySerial_Check(PyObject* obj);
 
 /// \brief Returns a reference to the Serial object contained within the given
 ///        Python object.
@@ -54,7 +54,7 @@ ISC_LIBDNS_PYTHON_API bool PySerial_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param Serial_obj The Serial object to convert
-ISC_LIBDNS_PYTHON_API const Serial&
+B10_LIBDNS_PYTHON_API const Serial&
 PySerial_ToSerial(const PyObject* Serial_obj);
 
 } // namespace python

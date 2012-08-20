@@ -29,23 +29,23 @@ namespace dns {
 ///
 /// \brief A standard DNS module exception ...[TBD]
 ///
-class ISC_LIBDNS_API Rcode;                    // forward declaration
+class B10_LIBDNS_API Rcode;                    // forward declaration
 
-class ISC_LIBDNS_API DNSProtocolError : public isc::Exception {
+class B10_LIBDNS_API DNSProtocolError : public isc::Exception {
 public:
     DNSProtocolError(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
     virtual const Rcode& getRcode() const = 0;
 };
 
-class ISC_LIBDNS_API DNSMessageFORMERR : public DNSProtocolError {
+class B10_LIBDNS_API DNSMessageFORMERR : public DNSProtocolError {
 public:
     DNSMessageFORMERR(const char* file, size_t line, const char* what) :
         DNSProtocolError(file, line, what) {}
     virtual const Rcode& getRcode() const;
 };
 
-class ISC_LIBDNS_API DNSMessageBADVERS : public DNSProtocolError {
+class B10_LIBDNS_API DNSMessageBADVERS : public DNSProtocolError {
 public:
     DNSMessageBADVERS(const char* file, size_t line, const char* what) :
         DNSProtocolError(file, line, what) {}

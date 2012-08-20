@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBDNS_EXPORT
+#define B10_LIBDNS_EXPORT
 
 #include <istream>
 #include <fstream>
@@ -62,7 +62,7 @@ stripLine(string& s, const Exception& ex) {
 }
 }
 
-ISC_LIBDNS_API void
+B10_LIBDNS_API void
 masterLoad(const char* const filename, const Name& origin,
            const RRClass& zone_class, MasterLoadCallback callback)
 {
@@ -79,7 +79,7 @@ masterLoad(const char* const filename, const Name& origin,
     ifs.close();
 }
 
-ISC_LIBDNS_API void
+B10_LIBDNS_API void
 masterLoad(istream& input, const Name& origin, const RRClass& zone_class,
            MasterLoadCallback callback)
 {

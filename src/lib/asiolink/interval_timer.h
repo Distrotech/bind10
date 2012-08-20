@@ -56,7 +56,7 @@ class IntervalTimerImpl;
 ///  intervalTimer.setup(function_to_call_back, interval_in_milliseconds);
 ///  io_service.run();
 /// \endcode
-class ISC_LIBASIOLINK_API IntervalTimer {
+class B10_LIBASIOLINK_API IntervalTimer {
 public:
     /// \name The type of timer callback function
     typedef boost::function<void()> Callback;

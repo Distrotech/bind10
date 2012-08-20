@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBASIOLINK_EXPORT
+#define B10_LIBASIOLINK_EXPORT
 
 #include <config.h>
 
@@ -20,7 +20,7 @@
 
 // Instantiate class
 
-class ISC_LIBASIOLINK_API IOMessage;
+class B10_LIBASIOLINK_API IOMessage;
 
 // Local Variables:
 // mode: c++

@@ -35,7 +35,7 @@
 namespace isc {
 namespace log {
 
-class ISC_LIBLOG_API LoggerSpecification {
+class B10_LIBLOG_API LoggerSpecification {
 public:
     typedef std::vector<OutputOption>::iterator         iterator;
     typedef std::vector<OutputOption>::const_iterator   const_iterator;

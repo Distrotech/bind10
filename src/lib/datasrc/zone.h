@@ -32,7 +32,7 @@ namespace datasrc {
 ///
 /// This is thrown when a method is called for a name or RRset which
 /// is not in or below the zone.
-class ISC_LIBDATASRC_API OutOfZone : public Exception {
+class B10_LIBDATASRC_API OutOfZone : public Exception {
 public:
     OutOfZone(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -63,7 +63,7 @@ public:
 /// same name and type can be different if other threads or programs make
 /// updates to the zone between the lookups.  We should revisit this point
 /// as we gain more experiences.
-class ISC_LIBDATASRC_API ZoneFinder {
+class B10_LIBDATASRC_API ZoneFinder {
 public:
     /// Result codes of the \c find() method.
     ///
@@ -168,7 +168,7 @@ public:
     /// ZoneFinder that originally performed the \c find() call, and expects
     /// the finder is valid throughout the lifetime of this object.  It's
     /// caller's responsibility to ensure that assumption.
-    class ISC_LIBDATASRC_API Context {
+    class B10_LIBDATASRC_API Context {
     public:
         /// \brief The constructor for the normal find call.
         ///
@@ -686,7 +686,7 @@ typedef boost::shared_ptr<ZoneFinder::Context> ConstZoneFinderContextPtr;
 /// \note This initial implementation provides a quite simple interface of
 /// adding and deleting RRs (see the description of the related methods).
 /// It may be revisited as we gain more experiences.
-class ISC_LIBDATASRC_API ZoneUpdater {
+class B10_LIBDATASRC_API ZoneUpdater {
 protected:
     /// The default constructor.
     ///
@@ -904,7 +904,7 @@ typedef boost::shared_ptr<ZoneUpdater> ZoneUpdaterPtr;
 /// over the sequences.  Every time the \c getNextDiff() method is called
 /// it returns one element of the differences in the form of an \c RRset
 /// until it reaches the end of the entire sequences.
-class ISC_LIBDATASRC_API ZoneJournalReader {
+class B10_LIBDATASRC_API ZoneJournalReader {
 public:
     /// Result codes used by a factory method for \c ZoneJournalReader
     enum Result {

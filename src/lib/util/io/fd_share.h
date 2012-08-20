@@ -43,7 +43,7 @@ const int FD_OTHER_ERROR = -1;
  * \param sock The unix domain socket to read from. Tested and it does
  *     not work with a pipe.
  */
-ISC_LIBUTIL_IO_API
+B10_LIBUTIL_IO_API
 #ifdef _WIN32
 SOCKET recv_fd(const SOCKET sock);
 #else
@@ -63,7 +63,7 @@ int recv_fd(const int sock);
  * \param fd The file descriptor to send. It should work with any valid
  *     file descriptor.
  */
-ISC_LIBUTIL_IO_API
+B10_LIBUTIL_IO_API
 #ifdef _WIN32
 int send_fd(const SOCKET sock, const SOCKET fd);
 #else

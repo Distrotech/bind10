@@ -14,7 +14,7 @@
 
 // $Id$
 
-#define ISC_LIBRESOLVE_EXPORT
+#define B10_LIBRESOLVE_EXPORT
 
 #include <cstddef>
 #include <vector>

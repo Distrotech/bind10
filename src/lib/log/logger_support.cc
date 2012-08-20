@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE
 
-#define ISC_LIBLOG_EXPORT
+#define B10_LIBLOG_EXPORT
 
 #include <config.h>
 
@@ -33,7 +33,7 @@ namespace isc {
 namespace log {
 
 // Return initialization state.
-ISC_LIBLOG_API bool
+B10_LIBLOG_API bool
 isLoggingInitialized() {
     return (logging_init_state);
 }
@@ -41,14 +41,14 @@ isLoggingInitialized() {
 // Set initialization state.  (Note: as logging can be initialized via a direct
 // call to LoggerManager::init(), this function is called from there, not from
 // the initialization functions in this file.
-ISC_LIBLOG_API void
+B10_LIBLOG_API void
 setLoggingInitialized(bool state) {
     logging_init_state = state;
 }
 
 // Logger Run-Time Initialization.
 
-ISC_LIBLOG_API void
+B10_LIBLOG_API void
 initLogger(const string& root, isc::log::Severity severity, int dbglevel,
     const char* file) {
     LoggerManager::init(root, severity, dbglevel, file);

@@ -46,7 +46,7 @@ namespace asiolink {
 /// It only provides a minimal level of support that is necessary for
 /// the current implementation of the authoritative server.
 /// A future version of this class will definitely support more.
-class ISC_LIBASIOLINK_API IOMessage {
+class B10_LIBASIOLINK_API IOMessage {
     ///
     /// \name Constructors and Destructor
     ///

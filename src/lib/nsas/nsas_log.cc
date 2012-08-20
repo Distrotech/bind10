@@ -14,7 +14,7 @@
 
 /// Defines the logger used by the NSAS
 
-#define ISC_LIBNSAS_EXPORT
+#define B10_LIBNSAS_EXPORT
 
 #include "nsas/nsas_log.h"
 

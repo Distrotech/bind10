@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBACL_EXPORT
+#define B10_LIBACL_EXPORT
 
 #include <memory>
 #include <string>
@@ -106,7 +106,7 @@ internal::RequestCheckCreator::create(const string& name,
     }
 }
 
-ISC_LIBACL_API RequestLoader&
+B10_LIBACL_API RequestLoader&
 getRequestLoader() {
     static RequestLoader* loader(NULL);
     if (loader == NULL) {

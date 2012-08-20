@@ -22,7 +22,7 @@
 namespace isc {
 namespace dhcp {
 
-class ISC_LIBDHCP_API Option6IAAddr: public Option {
+class B10_LIBDHCP_API Option6IAAddr: public Option {
 
 public:
     /// length of the fixed part of the IAADDR option

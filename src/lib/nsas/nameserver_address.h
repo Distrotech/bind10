@@ -27,14 +27,14 @@
 namespace isc {
 namespace nsas {
 
-class ISC_LIBNSAS_API ZoneEntry;
-class ISC_LIBNSAS_API NameserverEntry;
+class B10_LIBNSAS_API ZoneEntry;
+class B10_LIBNSAS_API NameserverEntry;
 
 /// \brief Empty \c NameserverEntry pointer exception
 ///
 /// Thrown if the the \c NameservrEntry pointer in the \c boost::shared_ptr that passed
 /// into \c NameserverAddress' constructor is NULL
-class ISC_LIBNSAS_API NullNameserverEntryPointer : public isc::Exception {
+class B10_LIBNSAS_API NullNameserverEntryPointer : public isc::Exception {
 public:
     NullNameserverEntryPointer(const char* file, size_t line,
         const char* what) :
@@ -53,7 +53,7 @@ public:
 /// It is not thread safe, only reentrant. It is expected to be kept inside
 /// the resolver and used only once for the address and once for the update.
 
-class ISC_LIBNSAS_API NameserverAddress {
+class B10_LIBNSAS_API NameserverAddress {
 public:
     /// \brief Constructor
     ///

@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBLOG_EXPORT
+#define B10_LIBLOG_EXPORT
 
 #include <cstddef>
 #include <log/message_dictionary.h>

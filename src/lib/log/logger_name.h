@@ -34,12 +34,12 @@ namespace log {
 /// any logging functions are called.
 ///
 /// \param name Name of the root logger.  This should be the program name.
-ISC_LIBLOG_API void setRootLoggerName(const std::string& name);
+B10_LIBLOG_API void setRootLoggerName(const std::string& name);
 
 /// \brief Get root logger name
 ///
 /// \return Name of the root logger.
-ISC_LIBLOG_API const std::string& getRootLoggerName();
+B10_LIBLOG_API const std::string& getRootLoggerName();
 
 /// \brief Expand logger name
 ///
@@ -50,7 +50,7 @@ ISC_LIBLOG_API const std::string& getRootLoggerName();
 /// \param name Name to expand.
 ///
 /// \return Fully-expanded logger name.
-ISC_LIBLOG_API std::string expandLoggerName(const std::string& name);
+B10_LIBLOG_API std::string expandLoggerName(const std::string& name);
 
 }
 }

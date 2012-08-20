@@ -28,10 +28,10 @@
 
 namespace isc {
 namespace util {
-class ISC_LIBDNS_API OutputBuffer;
+class B10_LIBDNS_API OutputBuffer;
 }
 namespace dns {
-class ISC_LIBDNS_API AbstractMessageRenderer;
+class B10_LIBDNS_API AbstractMessageRenderer;
 
 /// TSIG resource record.
 ///
@@ -60,7 +60,7 @@ class ISC_LIBDNS_API AbstractMessageRenderer;
 /// handle it through a generic interface in a polymorphic way.
 /// We therefore chose to define it as a separate class.  This is also
 /// similar to why \c EDNS is a separate class.
-class ISC_LIBDNS_API TSIGRecord {
+class B10_LIBDNS_API TSIGRecord {
 public:
     ///
     /// \name Constructors
@@ -298,7 +298,7 @@ typedef boost::shared_ptr<const TSIGRecord> ConstTSIGRecordPtr;
 /// \param record A \c TSIGRecord object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-ISC_LIBDNS_API std::ostream&
+B10_LIBDNS_API std::ostream&
 operator<<(std::ostream& os, const TSIGRecord& record);
 }
 }

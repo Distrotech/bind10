@@ -28,29 +28,29 @@
 #include "mockups.h"
 
 namespace asiolink {
-class ISC_LIBTESTUTILS_API IOSocket;
-class ISC_LIBTESTUTILS_API IOMessage;
-class ISC_LIBTESTUTILS_API IOEndpoint;
+class B10_LIBTESTUTILS_API IOSocket;
+class B10_LIBTESTUTILS_API IOMessage;
+class B10_LIBTESTUTILS_API IOEndpoint;
 }
 
 namespace isc {
 namespace testutils {
-extern ISC_LIBTESTUTILS_API const char* const DEFAULT_REMOTE_ADDRESS;
-extern ISC_LIBTESTUTILS_API const uint16_t DEFAULT_REMOTE_PORT;
+extern B10_LIBTESTUTILS_API const char* const DEFAULT_REMOTE_ADDRESS;
+extern B10_LIBTESTUTILS_API const uint16_t DEFAULT_REMOTE_PORT;
 
 // These are flags to indicate whether the corresponding flag bit of the
 // DNS header is to be set in the test cases.  (The flag values
 // is irrelevant to their wire-format values)
-extern ISC_LIBTESTUTILS_API const unsigned int QR_FLAG;
-extern ISC_LIBTESTUTILS_API const unsigned int AA_FLAG;
-extern ISC_LIBTESTUTILS_API const unsigned int TC_FLAG;
-extern ISC_LIBTESTUTILS_API const unsigned int RD_FLAG;
-extern ISC_LIBTESTUTILS_API const unsigned int RA_FLAG;
-extern ISC_LIBTESTUTILS_API const unsigned int AD_FLAG;
-extern ISC_LIBTESTUTILS_API const unsigned int CD_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int QR_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int AA_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int TC_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int RD_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int RA_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int AD_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int CD_FLAG;
 
 /// \brief The base class for Auth and Recurse test case
-class ISC_LIBTESTUTILS_API SrvTestBase : public ::testing::Test {
+class B10_LIBTESTUTILS_API SrvTestBase : public ::testing::Test {
 protected:
     SrvTestBase();
     virtual ~SrvTestBase();

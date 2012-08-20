@@ -32,7 +32,7 @@ namespace resolve {
 ///
 /// This class will ignore the response MessagePtr in the callback,
 /// as the server itself should also have a reference.
-class ISC_LIBRESOLVE_API ResolverCallbackServer :
+class B10_LIBRESOLVE_API ResolverCallbackServer :
  public ResolverInterface::Callback {
 public:
     ResolverCallbackServer(asiodns::DNSServer* server) :

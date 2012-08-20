@@ -29,7 +29,7 @@ namespace isc {
 
 namespace dhcp {
 
-class ISC_LIBDHCP_API Pkt4 {
+class B10_LIBDHCP_API Pkt4 {
 public:
 
     /// length of the CHADDR field in DHCPv4 message

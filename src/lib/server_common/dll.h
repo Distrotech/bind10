@@ -16,12 +16,12 @@
 #define __LIBSERVER_COMMON_H 1
 
 #if !defined(_WIN32) || defined(USE_STATIC_LINK)
-#define ISC_LIBSERVER_COMMON_API
+#define B10_LIBSERVER_COMMON_API
 #else
-#ifdef ISC_LIBSERVER_COMMON_EXPORT
-#define ISC_LIBSERVER_COMMON_API __declspec(dllexport)
+#ifdef B10_LIBSERVER_COMMON_EXPORT
+#define B10_LIBSERVER_COMMON_API __declspec(dllexport)
 #else
-#define ISC_LIBSERVER_COMMON_API __declspec(dllimport)
+#define B10_LIBSERVER_COMMON_API __declspec(dllimport)
 #endif
 #endif
 

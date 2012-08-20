@@ -41,7 +41,7 @@ namespace asiodns {
 /// That means, the lookup handler must provide the answer right away.
 /// This allows for implementation with less overhead, compared with
 /// the UDPClass.
-class ISC_LIBASIODNS_API SyncUDPServer :
+class B10_LIBASIODNS_API SyncUDPServer :
  public DNSServer, public boost::noncopyable {
 public:
     /// \brief Constructor

@@ -45,7 +45,7 @@ namespace resolve {
 ///
 /// It is abstract to allow tests pass dummy resolvers.
 ///
-class ISC_LIBNSASRESOLVE_API ResolverInterface {
+class B10_LIBNSASRESOLVE_API ResolverInterface {
     public:
         /// \short An abstract callback for when the resolver is done.
         ///

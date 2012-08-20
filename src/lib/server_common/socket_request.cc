@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBSERVER_COMMON_EXPORT
+#define B10_LIBSERVER_COMMON_EXPORT
 
 #include <config.h>
 
@@ -463,7 +463,7 @@ private:
 
 }
 
-ISC_LIBSERVER_COMMON_API SocketRequestor&
+B10_LIBSERVER_COMMON_API SocketRequestor&
 socketRequestor() {
     if (requestor != NULL) {
         return (*requestor);
@@ -472,7 +472,7 @@ socketRequestor() {
     }
 }
 
-ISC_LIBSERVER_COMMON_API void
+B10_LIBSERVER_COMMON_API void
 initSocketRequestor(cc::AbstractSession& session,
                     const std::string& app_name)
 {
@@ -484,12 +484,12 @@ initSocketRequestor(cc::AbstractSession& session,
     }
 }
 
-ISC_LIBSERVER_COMMON_API void
+B10_LIBSERVER_COMMON_API void
 initTestSocketRequestor(SocketRequestor* new_requestor) {
     requestor = new_requestor;
 }
 
-ISC_LIBSERVER_COMMON_API void
+B10_LIBSERVER_COMMON_API void
 cleanupSocketRequestor() {
     if (requestor != NULL) {
         delete requestor;

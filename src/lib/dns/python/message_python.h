@@ -25,12 +25,12 @@ class Message;
 
 namespace python {
 
-extern ISC_LIBDNS_PYTHON_API PyObject* po_MessageTooShort;
-extern ISC_LIBDNS_PYTHON_API PyObject* po_InvalidMessageSection;
-extern ISC_LIBDNS_PYTHON_API PyObject* po_InvalidMessageOperation;
-extern ISC_LIBDNS_PYTHON_API PyObject* po_InvalidMessageUDPSize;
+extern B10_LIBDNS_PYTHON_API PyObject* po_MessageTooShort;
+extern B10_LIBDNS_PYTHON_API PyObject* po_InvalidMessageSection;
+extern B10_LIBDNS_PYTHON_API PyObject* po_InvalidMessageOperation;
+extern B10_LIBDNS_PYTHON_API PyObject* po_InvalidMessageUDPSize;
 
-extern ISC_LIBDNS_PYTHON_API PyTypeObject message_type;
+extern B10_LIBDNS_PYTHON_API PyTypeObject message_type;
 
 } // namespace python
 } // namespace dns

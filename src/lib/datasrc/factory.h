@@ -30,7 +30,7 @@ namespace datasrc {
 
 /// \brief Raised if there is an error loading the datasource implementation
 ///        library
-class ISC_LIBDATASRC_API DataSourceLibraryError : public DataSourceError {
+class B10_LIBDATASRC_API DataSourceLibraryError : public DataSourceError {
 public:
     DataSourceLibraryError(const char* file, size_t line, const char* what) :
         DataSourceError(file, line, what) {}
@@ -38,7 +38,7 @@ public:
 
 /// \brief Raised if there is an error reading a symbol from the datasource
 ///        implementation library
-class ISC_LIBDATASRC_API DataSourceLibrarySymbolError :
+class B10_LIBDATASRC_API DataSourceLibrarySymbolError :
  public DataSourceError {
 public:
     DataSourceLibrarySymbolError(const char* file, size_t line,
@@ -62,7 +62,7 @@ typedef void ds_destructor(DataSourceClient* instance);
 ///       in other places than for dynamically loading datasources, then, apart
 ///       from moving it to another location, we also need to make the
 ///       exceptions raised more general.
-class ISC_LIBDATASRC_API LibraryContainer : boost::noncopyable {
+class B10_LIBDATASRC_API LibraryContainer : boost::noncopyable {
 public:
     /// \brief Constructor
     ///
@@ -155,7 +155,7 @@ private:
 /// derived classes as well. Currently, the class is actually derived in some
 /// of the tests, which is rather unclean (as this class as written is really
 /// intended to be used directly).
-class ISC_LIBDATASRC_API DataSourceClientContainer : boost::noncopyable {
+class B10_LIBDATASRC_API DataSourceClientContainer : boost::noncopyable {
 public:
     /// \brief Constructor
     ///

@@ -25,10 +25,10 @@ class RRClass;
 
 namespace python {
 
-extern ISC_LIBDNS_PYTHON_API PyObject* po_InvalidRRClass;
-extern ISC_LIBDNS_PYTHON_API PyObject* po_IncompleteRRClass;
+extern B10_LIBDNS_PYTHON_API PyObject* po_InvalidRRClass;
+extern B10_LIBDNS_PYTHON_API PyObject* po_IncompleteRRClass;
 
-extern ISC_LIBDNS_PYTHON_API PyTypeObject rrclass_type;
+extern B10_LIBDNS_PYTHON_API PyTypeObject rrclass_type;
 
 /// This is a simple shortcut to create a python RRClass object (in the
 /// form of a pointer to PyObject) with minimal exception safety.
@@ -37,7 +37,7 @@ extern ISC_LIBDNS_PYTHON_API PyTypeObject rrclass_type;
 /// returns a NULL pointer).
 /// This function is expected to be called within a try block
 /// followed by necessary setup for python exception.
-ISC_LIBDNS_PYTHON_API PyObject* createRRClassObject(const RRClass& source);
+B10_LIBDNS_PYTHON_API PyObject* createRRClassObject(const RRClass& source);
 
 /// \brief Checks if the given python object is a RRClass object
 ///
@@ -45,7 +45,7 @@ ISC_LIBDNS_PYTHON_API PyObject* createRRClassObject(const RRClass& source);
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type RRClass, false otherwise
-ISC_LIBDNS_PYTHON_API bool PyRRClass_Check(PyObject* obj);
+B10_LIBDNS_PYTHON_API bool PyRRClass_Check(PyObject* obj);
 
 /// \brief Returns a reference to the RRClass object contained within the given
 ///        Python object.
@@ -57,7 +57,7 @@ ISC_LIBDNS_PYTHON_API bool PyRRClass_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param rrclass_obj The rrclass object to convert
-ISC_LIBDNS_PYTHON_API const RRClass&
+B10_LIBDNS_PYTHON_API const RRClass&
 PyRRClass_ToRRClass(const PyObject* rrclass_obj);
 
 

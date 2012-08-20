@@ -12,14 +12,14 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBUTIL_EXPORT
+#define B10_LIBUTIL_EXPORT
 
 #include <util/buffer.h>
 
 // Instantiate classes
 
-class ISC_LIBUTIL_API InputBuffer;
-class ISC_LIBUTIL_API OutputBuffer;
+class B10_LIBUTIL_API InputBuffer;
+class B10_LIBUTIL_API OutputBuffer;
 
 // Local Variables:
 // mode: c++

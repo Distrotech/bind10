@@ -34,7 +34,7 @@ namespace log {
 /// code and its arguments to be encapsulated in an exception and thrown
 /// up the stack.
 
-class ISC_LIBLOG_API MessageException : public isc::Exception {
+class B10_LIBLOG_API MessageException : public isc::Exception {
 public:
 
     /// \brief Constructor

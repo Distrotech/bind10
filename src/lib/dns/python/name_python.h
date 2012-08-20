@@ -25,24 +25,24 @@ class Name;
 
 namespace python {
 
-extern ISC_LIBDNS_PYTHON_API PyObject* po_EmptyLabel;
-extern ISC_LIBDNS_PYTHON_API PyObject* po_TooLongName;
-extern ISC_LIBDNS_PYTHON_API PyObject* po_TooLongLabel;
-extern ISC_LIBDNS_PYTHON_API PyObject* po_BadLabelType;
-extern ISC_LIBDNS_PYTHON_API PyObject* po_BadEscape;
-extern ISC_LIBDNS_PYTHON_API PyObject* po_IncompleteName;
-extern ISC_LIBDNS_PYTHON_API PyObject* po_InvalidBufferPosition;
-extern ISC_LIBDNS_PYTHON_API PyObject* po_DNSMessageFORMERR;
+extern B10_LIBDNS_PYTHON_API PyObject* po_EmptyLabel;
+extern B10_LIBDNS_PYTHON_API PyObject* po_TooLongName;
+extern B10_LIBDNS_PYTHON_API PyObject* po_TooLongLabel;
+extern B10_LIBDNS_PYTHON_API PyObject* po_BadLabelType;
+extern B10_LIBDNS_PYTHON_API PyObject* po_BadEscape;
+extern B10_LIBDNS_PYTHON_API PyObject* po_IncompleteName;
+extern B10_LIBDNS_PYTHON_API PyObject* po_InvalidBufferPosition;
+extern B10_LIBDNS_PYTHON_API PyObject* po_DNSMessageFORMERR;
 
 //
 // Declaration of enums
 // Initialization and addition of these go in the module init at the
 // end
 //
-extern ISC_LIBDNS_PYTHON_API PyObject* po_NameRelation;
+extern B10_LIBDNS_PYTHON_API PyObject* po_NameRelation;
 
-extern ISC_LIBDNS_PYTHON_API PyTypeObject name_comparison_result_type;
-extern ISC_LIBDNS_PYTHON_API PyTypeObject name_type;
+extern B10_LIBDNS_PYTHON_API PyTypeObject name_comparison_result_type;
+extern B10_LIBDNS_PYTHON_API PyTypeObject name_type;
 
 /// This is A simple shortcut to create a python Name object (in the
 /// form of a pointer to PyObject) with minimal exception safety.
@@ -51,7 +51,7 @@ extern ISC_LIBDNS_PYTHON_API PyTypeObject name_type;
 /// returns a NULL pointer).
 /// This function is expected to be called with in a try block
 /// followed by necessary setup for python exception.
-ISC_LIBDNS_PYTHON_API PyObject* createNameObject(const Name& source);
+B10_LIBDNS_PYTHON_API PyObject* createNameObject(const Name& source);
 
 /// \brief Checks if the given python object is a Name object
 ///
@@ -59,7 +59,7 @@ ISC_LIBDNS_PYTHON_API PyObject* createNameObject(const Name& source);
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type Name, false otherwise
-ISC_LIBDNS_PYTHON_API bool PyName_Check(PyObject* obj);
+B10_LIBDNS_PYTHON_API bool PyName_Check(PyObject* obj);
 
 /// \brief Returns a reference to the Name object contained within the given
 ///        Python object.
@@ -71,7 +71,7 @@ ISC_LIBDNS_PYTHON_API bool PyName_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param name_obj The name object to convert
-ISC_LIBDNS_PYTHON_API const Name& PyName_ToName(const PyObject* name_obj);
+B10_LIBDNS_PYTHON_API const Name& PyName_ToName(const PyObject* name_obj);
 
 } // namespace python
 } // namespace dns

@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBTESTUTILS_EXPORT
+#define B10_LIBTESTUTILS_EXPORT
 
 #include <config.h>
 
@@ -40,8 +40,8 @@ using namespace isc::asiolink;
 
 namespace isc {
 namespace testutils {
-const ISC_LIBTESTUTILS_API char* const DEFAULT_REMOTE_ADDRESS = "192.0.2.1";
-const ISC_LIBTESTUTILS_API uint16_t DEFAULT_REMOTE_PORT = 53210;
+const B10_LIBTESTUTILS_API char* const DEFAULT_REMOTE_ADDRESS = "192.0.2.1";
+const B10_LIBTESTUTILS_API uint16_t DEFAULT_REMOTE_PORT = 53210;
 
 SrvTestBase::SrvTestBase() : request_message(Message::RENDER),
                              parse_message(new Message(Message::PARSE)),

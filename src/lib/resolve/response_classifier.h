@@ -36,7 +36,7 @@ namespace resolve {
 ///
 /// TODO: The code here does not take into account any EDNS0 fields.
 
-class ISC_LIBRESOLVE_API ResponseClassifier {
+class B10_LIBRESOLVE_API ResponseClassifier {
 public:
 
     /// \brief Category of Answer

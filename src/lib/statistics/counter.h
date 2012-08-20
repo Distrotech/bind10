@@ -27,7 +27,7 @@ namespace statistics {
 // forward declaration for pImpl idiom
 class CounterImpl;
 
-class ISC_LIBSTATISTICS_API Counter : boost::noncopyable {
+class B10_LIBSTATISTICS_API Counter : boost::noncopyable {
 private:
     boost::scoped_ptr<CounterImpl> impl_;
 public:

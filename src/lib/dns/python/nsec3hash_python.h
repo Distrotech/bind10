@@ -32,12 +32,12 @@ public:
     NSEC3Hash* cppobj;
 };
 
-extern ISC_LIBDNS_PYTHON_API PyTypeObject nsec3hash_type;
+extern B10_LIBDNS_PYTHON_API PyTypeObject nsec3hash_type;
 
 // Public exception object.
-extern ISC_LIBDNS_PYTHON_API PyObject* po_UnknownNSEC3HashAlgorithm;
+extern B10_LIBDNS_PYTHON_API PyObject* po_UnknownNSEC3HashAlgorithm;
 
-ISC_LIBDNS_PYTHON_API bool initModulePart_NSEC3Hash(PyObject* mod);
+B10_LIBDNS_PYTHON_API bool initModulePart_NSEC3Hash(PyObject* mod);
 
 } // namespace python
 } // namespace dns

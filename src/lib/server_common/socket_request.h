@@ -44,7 +44,7 @@ namespace server_common {
 /// subclass when needed.
 ///
 /// \see socketRequestor function to access the object of this class.
-class ISC_LIBSERVER_COMMON_API SocketRequestor : boost::noncopyable {
+class B10_LIBSERVER_COMMON_API SocketRequestor : boost::noncopyable {
 protected:
     /// \brief Protected constructor
     ///
@@ -102,7 +102,7 @@ public:
     /// This is thrown if the other side doesn't want to comply to our
     /// requests, like when we ask for a socket already held by someone
     /// else or ask for nonsense (releasing a socket we don't own).
-    class ISC_LIBSERVER_COMMON_API SocketError : public Exception {
+    class B10_LIBSERVER_COMMON_API SocketError : public Exception {
     public:
         SocketError(const char* file, size_t line, const char* what) :
             Exception(file, line, what)
@@ -120,7 +120,7 @@ public:
     ///
     /// \see ShareError
     /// \see SocketAllocateError
-    class ISC_LIBSERVER_COMMON_API NonFatalSocketError : public SocketError {
+    class B10_LIBSERVER_COMMON_API NonFatalSocketError : public SocketError {
     public:
         NonFatalSocketError(const char* file, size_t line, const char* what) :
             SocketError(file, line, what)
@@ -134,7 +134,7 @@ public:
     /// allocated by bind10, but other bind10 module(s) is using it and
     /// the sharing parameters are incompatible (the socket can't be shared
     /// between the module and our module).
-    class ISC_LIBSERVER_COMMON_API ShareError : public NonFatalSocketError {
+    class B10_LIBSERVER_COMMON_API ShareError : public NonFatalSocketError {
     public:
         ShareError(const char* file, size_t line, const char* what) :
             NonFatalSocketError(file, line, what)
@@ -148,7 +148,7 @@ public:
     /// creator. This can happen when the address/port pair is already taken
     /// by a different application, the socket creator doesn't have enough
     /// privileges, or for some kind of similar reason.
-    class ISC_LIBSERVER_COMMON_API SocketAllocateError :
+    class B10_LIBSERVER_COMMON_API SocketAllocateError :
      public NonFatalSocketError {
     public:
         SocketAllocateError(const char* file, size_t line, const char* what) :
@@ -231,7 +231,7 @@ public:
 /// \return the active socket requestor object.
 /// \throw InvalidOperation if the object was not yet initialized.
 /// \see SocketRequestor::init to initialize the object.
-ISC_LIBSERVER_COMMON_API SocketRequestor& socketRequestor();
+B10_LIBSERVER_COMMON_API SocketRequestor& socketRequestor();
 
 /// \brief Initialize the singleton object
 ///
@@ -248,7 +248,7 @@ ISC_LIBSERVER_COMMON_API SocketRequestor& socketRequestor();
 ///                 to avoid them and provide the name of the application
 ///                 here.
 /// \throw InvalidOperation when it is called more than once
-ISC_LIBSERVER_COMMON_API void
+B10_LIBSERVER_COMMON_API void
 initSocketRequestor(cc::AbstractSession& session,
                     const std::string& app_name);
 
@@ -267,7 +267,7 @@ initSocketRequestor(cc::AbstractSession& session,
 /// \param requestor the object to be used. It can be NULL to reset to
 ///     an "virgin" state (which acts as if initTest or init was never
 ///     called before).
-ISC_LIBSERVER_COMMON_API void
+B10_LIBSERVER_COMMON_API void
 initTestSocketRequestor(SocketRequestor* requestor);
 
 /// \brief Destroy the singleton instance
@@ -278,7 +278,7 @@ initTestSocketRequestor(SocketRequestor* requestor);
 /// that want to be completely clean on exit.
 /// After this function has been called, all operations except init
 /// will fail.
-ISC_LIBSERVER_COMMON_API void cleanupSocketRequestor();
+B10_LIBSERVER_COMMON_API void cleanupSocketRequestor();
 
 }
 }

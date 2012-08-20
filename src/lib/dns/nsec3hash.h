@@ -22,12 +22,12 @@
 
 namespace isc {
 namespace dns {
-class ISC_LIBDNS_API Name;
+class B10_LIBDNS_API Name;
 
 namespace rdata {
 namespace generic {
-class ISC_LIBDNS_API NSEC3;
-class ISC_LIBDNS_API NSEC3PARAM;
+class B10_LIBDNS_API NSEC3;
+class B10_LIBDNS_API NSEC3PARAM;
 }
 }
 
@@ -37,7 +37,7 @@ class ISC_LIBDNS_API NSEC3PARAM;
 /// A specific exception class is used so that the caller can selectively
 /// catch this exception, e.g., while loading a zone, and handle it
 /// accordingly.
-class ISC_LIBDNS_API UnknownNSEC3HashAlgorithm : public isc::Exception {
+class B10_LIBDNS_API UnknownNSEC3HashAlgorithm : public isc::Exception {
 public:
     UnknownNSEC3HashAlgorithm(const char* file, size_t line,
                               const char* what) :
@@ -78,7 +78,7 @@ public:
 /// - Allow producing hash value as binary data
 /// - Allow updating NSEC3 parameters of a class object so we can still reuse
 ///   the internal resources for different sets of parameters.
-class ISC_LIBDNS_API NSEC3Hash {
+class B10_LIBDNS_API NSEC3Hash {
 protected:
     /// \brief The default constructor.
     ///
@@ -183,7 +183,7 @@ public:
 /// as const member functions for this reason.  But if we see the need for
 /// having a customized creator that benefits from its own state in future,
 /// this condition can be loosened.
-class ISC_LIBDNS_API NSEC3HashCreator {
+class B10_LIBDNS_API NSEC3HashCreator {
 protected:
     /// \brief The default constructor.
     ///
@@ -222,7 +222,7 @@ public:
 /// convenience of special applications that want to customize the creator
 /// behavior for a particular type of parameters while preserving the default
 /// behavior for others.
-class ISC_LIBDNS_API DefaultNSEC3HashCreator : public NSEC3HashCreator {
+class B10_LIBDNS_API DefaultNSEC3HashCreator : public NSEC3HashCreator {
 public:
     virtual NSEC3Hash* create(const rdata::generic::NSEC3PARAM& param) const;
     virtual NSEC3Hash* create(const rdata::generic::NSEC3& nsec3) const;
@@ -243,7 +243,7 @@ public:
 ///
 /// \exception None
 /// \param new_creator A pointer to the new creator object or NULL.
-ISC_LIBDNS_API void setNSEC3HashCreator(const NSEC3HashCreator* new_creator);
+B10_LIBDNS_API void setNSEC3HashCreator(const NSEC3HashCreator* new_creator);
 
 }
 }

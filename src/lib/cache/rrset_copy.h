@@ -33,7 +33,7 @@ namespace cache {
 ///       doing RRset copy. But in cache's code, sometime
 ///       we have to do the copy.
 
-ISC_LIBCACHE_API void
+B10_LIBCACHE_API void
 rrsetCopy(const isc::dns::AbstractRRset& src, isc::dns::AbstractRRset& dst);
 
 } // namespace cache

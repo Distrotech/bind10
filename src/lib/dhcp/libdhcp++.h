@@ -23,7 +23,7 @@
 namespace isc {
 namespace dhcp {
 
-class ISC_LIBDHCP_API LibDHCP {
+class B10_LIBDHCP_API LibDHCP {
 
 public:
     /// Builds collection of options.

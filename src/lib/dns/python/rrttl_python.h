@@ -25,10 +25,10 @@ class RRTTL;
 
 namespace python {
 
-extern ISC_LIBDNS_PYTHON_API PyObject* po_InvalidRRTTL;
-extern ISC_LIBDNS_PYTHON_API PyObject* po_IncompleteRRTTL;
+extern B10_LIBDNS_PYTHON_API PyObject* po_InvalidRRTTL;
+extern B10_LIBDNS_PYTHON_API PyObject* po_IncompleteRRTTL;
 
-extern ISC_LIBDNS_PYTHON_API PyTypeObject rrttl_type;
+extern B10_LIBDNS_PYTHON_API PyTypeObject rrttl_type;
 
 /// This is a simple shortcut to create a python RRTTL object (in the
 /// form of a pointer to PyObject) with minimal exception safety.
@@ -37,7 +37,7 @@ extern ISC_LIBDNS_PYTHON_API PyTypeObject rrttl_type;
 /// returns a NULL pointer).
 /// This function is expected to be called within a try block
 /// followed by necessary setup for python exception.
-ISC_LIBDNS_PYTHON_API PyObject* createRRTTLObject(const RRTTL& source);
+B10_LIBDNS_PYTHON_API PyObject* createRRTTLObject(const RRTTL& source);
 
 /// \brief Checks if the given python object is a RRTTL object
 ///
@@ -45,7 +45,7 @@ ISC_LIBDNS_PYTHON_API PyObject* createRRTTLObject(const RRTTL& source);
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type RRTTL, false otherwise
-ISC_LIBDNS_PYTHON_API bool PyRRTTL_Check(PyObject* obj);
+B10_LIBDNS_PYTHON_API bool PyRRTTL_Check(PyObject* obj);
 
 /// \brief Returns a reference to the RRTTL object contained within the given
 ///        Python object.
@@ -57,7 +57,7 @@ ISC_LIBDNS_PYTHON_API bool PyRRTTL_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param rrttl_obj The rrttl object to convert
-ISC_LIBDNS_PYTHON_API const RRTTL& PyRRTTL_ToRRTTL(const PyObject* rrttl_obj);
+B10_LIBDNS_PYTHON_API const RRTTL& PyRRTTL_ToRRTTL(const PyObject* rrttl_obj);
 
 } // namespace python
 } // namespace dns

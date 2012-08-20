@@ -30,7 +30,7 @@
 /// static class constant, and define it in this source file.  As we can control
 /// the order of include files, this ensures that the value is defined.
 
-#define ISC_LIBNSAS_EXPORT
+#define B10_LIBNSAS_EXPORT
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>

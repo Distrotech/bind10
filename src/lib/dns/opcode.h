@@ -39,7 +39,7 @@ namespace dns {
 /// to handle OPCODEs through this class.  In fact, public interfaces of
 /// this library uses this class to pass or return OPCODEs instead of the
 /// bare code values.
-class ISC_LIBDNS_API Opcode {
+class B10_LIBDNS_API Opcode {
 public:
     /// Constants for standard OPCODE values.
     enum CodeValue {
@@ -282,7 +282,7 @@ Opcode::RESERVED15() {
 /// \param opcode A reference to an \c Opcode object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-ISC_LIBDNS_API std::ostream&
+B10_LIBDNS_API std::ostream&
 operator<<(std::ostream& os, const Opcode& opcode);
 }
 }

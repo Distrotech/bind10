@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBCACHE_EXPORT
+#define B10_LIBCACHE_EXPORT
 
 #include <sstream>
 #include "cache_entry_key.h"
@@ -21,7 +21,7 @@ using namespace std;
 
 namespace isc {
 namespace cache {
-ISC_LIBCACHE_API const std::string
+B10_LIBCACHE_API const std::string
 genCacheEntryName(const isc::dns::Name& name, const isc::dns::RRType& type) {
     std::string keystr = name.toText();
     ostringstream stream;
@@ -30,7 +30,7 @@ genCacheEntryName(const isc::dns::Name& name, const isc::dns::RRType& type) {
     return (keystr);
 }
 
-ISC_LIBCACHE_API const std::string
+B10_LIBCACHE_API const std::string
 genCacheEntryName(const std::string& namestr, const uint16_t type) {
     std::string keystr = namestr;
     ostringstream stream;

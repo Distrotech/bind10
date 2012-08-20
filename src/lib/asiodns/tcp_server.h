@@ -36,7 +36,7 @@ namespace asiodns {
 ///
 /// This class inherits from both \c DNSServer and from \c coroutine,
 /// defined in coroutine.h. 
-class ISC_LIBASIODNS_API TCPServer :
+class B10_LIBASIODNS_API TCPServer :
  public virtual DNSServer, public virtual coroutine {
 public:
     /// \brief Constructor

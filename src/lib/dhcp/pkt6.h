@@ -28,7 +28,7 @@ namespace isc {
 
 namespace dhcp {
 
-class ISC_LIBDHCP_API Pkt6 {
+class B10_LIBDHCP_API Pkt6 {
 public:
     /// specifes DHCPv6 packet header length
     const static size_t DHCPV6_PKT_HDR_LEN = 4;

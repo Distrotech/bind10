@@ -42,7 +42,7 @@ namespace nsas {
 ///
 /// To avoid passing round three elements (key, key length, and class), they
 /// have been combined into this simple struct.
-struct ISC_LIBNSAS_API HashKey {
+struct B10_LIBNSAS_API HashKey {
 
     /// \brief Constructor
     ///

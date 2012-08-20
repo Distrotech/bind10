@@ -16,12 +16,12 @@
 #define __LIBNSAS_H 1
 
 #if !defined(_WIN32) || defined(USE_STATIC_LINK)
-#define ISC_LIBNSAS_API
+#define B10_LIBNSAS_API
 #else
-#ifdef ISC_LIBNSAS_EXPORT
-#define ISC_LIBNSAS_API __declspec(dllexport)
+#ifdef B10_LIBNSAS_EXPORT
+#define B10_LIBNSAS_API __declspec(dllexport)
 #else
-#define ISC_LIBNSAS_API __declspec(dllimport)
+#define B10_LIBNSAS_API __declspec(dllimport)
 #endif
 #endif
 

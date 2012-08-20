@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBCC_EXPORT
+#define B10_LIBCC_EXPORT
 
 #include <config.h>
 #include <cc/session_config.h>

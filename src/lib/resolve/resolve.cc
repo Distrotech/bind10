@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBRESOLVE_EXPORT
+#define B10_LIBRESOLVE_EXPORT
 
 #include <config.h>
 
@@ -45,7 +45,7 @@ namespace {
 namespace isc {
 namespace resolve {
 
-ISC_LIBRESOLVE_API void
+B10_LIBRESOLVE_API void
 makeErrorMessage(MessagePtr answer_message,
                  const Rcode& error_code)
 {
@@ -56,7 +56,7 @@ makeErrorMessage(MessagePtr answer_message,
     answer_message->setRcode(error_code);
 }
 
-ISC_LIBRESOLVE_API void
+B10_LIBRESOLVE_API void
 initResponseMessage(const isc::dns::Message& query_message,
                     isc::dns::Message& response_message)
 {
@@ -67,7 +67,7 @@ initResponseMessage(const isc::dns::Message& query_message,
         query_message);
 }
 
-ISC_LIBRESOLVE_API void
+B10_LIBRESOLVE_API void
 initResponseMessage(const isc::dns::Question& question,
                     isc::dns::Message& response_message)
 {
@@ -75,7 +75,7 @@ initResponseMessage(const isc::dns::Question& question,
     response_message.addQuestion(question);
 }
 
-ISC_LIBRESOLVE_API void
+B10_LIBRESOLVE_API void
 copyResponseMessage(const Message& source, MessagePtr target) {
     target->setRcode(source.getRcode());
 

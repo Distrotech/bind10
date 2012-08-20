@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBBENCH_EXPORT
+#define B10_LIBBENCH_EXPORT
 
 #include <fstream>
 #include <iostream>
@@ -41,7 +41,7 @@ using namespace isc::util;
 
 namespace isc {
 namespace bench {
-ISC_LIBBENCH_API void
+B10_LIBBENCH_API void
 loadQueryData(const char* const input_file, BenchQueries& queries,
               const RRClass& qclass, const bool strict)
 {
@@ -56,7 +56,7 @@ loadQueryData(const char* const input_file, BenchQueries& queries,
     ifs.close();
 }
 
-ISC_LIBBENCH_API void
+B10_LIBBENCH_API void
 loadQueryData(istream& input, BenchQueries& queries, const RRClass& qclass,
               const bool strict)
 {

@@ -27,14 +27,14 @@
 
 namespace isc {
 namespace util {
-class ISC_LIBDNS_API InputBuffer;
-class ISC_LIBDNS_API OutputBuffer;
+class B10_LIBDNS_API InputBuffer;
+class B10_LIBDNS_API OutputBuffer;
 }
 
 namespace dns {
 
-class ISC_LIBDNS_API AbstractMessageRenderer;
-class ISC_LIBDNS_API Question;
+class B10_LIBDNS_API AbstractMessageRenderer;
+class B10_LIBDNS_API Question;
 
 /// \brief A pointer-like type pointing to an \c Question object.
 typedef boost::shared_ptr<Question> QuestionPtr;
@@ -101,7 +101,7 @@ typedef boost::shared_ptr<const Question> ConstQuestionPtr;
 /// \c AbstractRRset such as \c %getName() or \c %toWire().
 /// So the user class may use a template function that is applicable to both
 /// \c Question and \c RRset to avoid writing duplicate code logic.
-class ISC_LIBDNS_API Question {
+class B10_LIBDNS_API Question {
     ///
     /// \name Constructors and Destructor
     ///
@@ -286,7 +286,7 @@ private:
 /// operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-ISC_LIBDNS_API std::ostream&
+B10_LIBDNS_API std::ostream&
 operator<<(std::ostream& os, const Question& question);
 } // end of namespace dns
 } // end of namespace isc

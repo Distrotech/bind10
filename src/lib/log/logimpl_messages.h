@@ -9,9 +9,9 @@
 namespace isc {
 namespace log {
 
-extern const ISC_LIBLOG_API isc::log::MessageID LOGIMPL_ABOVE_MAX_DEBUG;
-extern const ISC_LIBLOG_API isc::log::MessageID LOGIMPL_BAD_DEBUG_STRING;
-extern const ISC_LIBLOG_API isc::log::MessageID LOGIMPL_BELOW_MIN_DEBUG;
+extern const B10_LIBLOG_API isc::log::MessageID LOGIMPL_ABOVE_MAX_DEBUG;
+extern const B10_LIBLOG_API isc::log::MessageID LOGIMPL_BAD_DEBUG_STRING;
+extern const B10_LIBLOG_API isc::log::MessageID LOGIMPL_BELOW_MIN_DEBUG;
 
 } // namespace log
 } // namespace isc

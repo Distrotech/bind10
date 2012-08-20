@@ -26,7 +26,7 @@ class MessageRenderer;
 
 namespace python {
 
-extern ISC_LIBDNS_PYTHON_API PyTypeObject messagerenderer_type;
+extern B10_LIBDNS_PYTHON_API PyTypeObject messagerenderer_type;
 
 /// \brief Checks if the given python object is a MessageRenderer object
 ///
@@ -34,7 +34,7 @@ extern ISC_LIBDNS_PYTHON_API PyTypeObject messagerenderer_type;
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type MessageRenderer, false otherwise
-ISC_LIBDNS_PYTHON_API bool PyMessageRenderer_Check(PyObject* obj);
+B10_LIBDNS_PYTHON_API bool PyMessageRenderer_Check(PyObject* obj);
 
 /// \brief Returns a reference to the MessageRenderer object contained within the given
 ///        Python object.
@@ -46,7 +46,7 @@ ISC_LIBDNS_PYTHON_API bool PyMessageRenderer_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param messagerenderer_obj The messagerenderer object to convert
-ISC_LIBDNS_PYTHON_API MessageRenderer&
+B10_LIBDNS_PYTHON_API MessageRenderer&
 PyMessageRenderer_ToMessageRenderer(PyObject* messagerenderer_obj);
 
 } // namespace python

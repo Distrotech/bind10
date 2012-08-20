@@ -41,7 +41,7 @@ template <class Type, uint16_t typeCode> class DSLikeImpl;
 /// This class implements the basic interfaces inherited from the abstract
 /// \c rdata::Rdata class, and provides trivial accessors specific to the
 /// DS RDATA.
-class ISC_LIBDNS_API DS : public Rdata {
+class B10_LIBDNS_API DS : public Rdata {
 public:
     // BEGIN_COMMON_MEMBERS
     // END_COMMON_MEMBERS

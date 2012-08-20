@@ -158,7 +158,7 @@ namespace io {
 /// In general the errors are unusual but possible failures such as unexpected
 /// connection reset, and suggest the application to close the connection and
 /// (if necessary) reestablish it.
-class ISC_LIBUTIL_IO_API SocketSessionError: public Exception {
+class B10_LIBUTIL_IO_API SocketSessionError: public Exception {
 public:
     SocketSessionError(const char *file, size_t line, const char *what):
         isc::Exception(file, line, what) {}
@@ -179,7 +179,7 @@ public:
 /// version of this base class, while it's not prohibited at the API level.
 ///
 /// See description of \c SocketSessionForwarder for the expected interface.
-class ISC_LIBUTIL_IO_API BaseSocketSessionForwarder  {
+class B10_LIBUTIL_IO_API BaseSocketSessionForwarder  {
 protected:
     BaseSocketSessionForwarder() {}
 
@@ -207,7 +207,7 @@ public:
 ///
 /// See the description of \ref SocketSessionUtility for other details of how
 /// the session forwarding works.
-class ISC_LIBUTIL_IO_API SocketSessionForwarder :
+class B10_LIBUTIL_IO_API SocketSessionForwarder :
  boost::noncopyable, public BaseSocketSessionForwarder
 {
 public:
@@ -352,7 +352,7 @@ private:
 /// (e.g. a class or a function that constructs it) is responsible for validity
 /// of the data passed to the object.  See the description of
 /// \c SocketSessionReceiver::pop() for the specific case of that usage.
-class ISC_LIBUTIL_IO_API SocketSession {
+class B10_LIBUTIL_IO_API SocketSession {
 public:
     /// The constructor.
     ///
@@ -455,7 +455,7 @@ private:
 ///
 /// See the description of \ref SocketSessionUtility for other details of how
 /// the session forwarding works.
-class ISC_LIBUTIL_IO_API SocketSessionReceiver : boost::noncopyable {
+class B10_LIBUTIL_IO_API SocketSessionReceiver : boost::noncopyable {
 public:
     /// The constructor.
     ///

@@ -775,7 +775,7 @@ PyModuleDef pydnspp = {
 namespace isc {
 namespace util {
 namespace detail {
-extern ISC_LIBDNS_API int64_t (*gettimeFunction)();
+extern B10_LIBDNS_API int64_t (*gettimeFunction)();
 }
 }
 }

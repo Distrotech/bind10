@@ -29,20 +29,20 @@
 
 namespace isc {
 namespace util {
-class ISC_LIBDNS_API InputBuffer;
-class ISC_LIBDNS_API OutputBuffer;
+class B10_LIBDNS_API InputBuffer;
+class B10_LIBDNS_API OutputBuffer;
 }
 
 namespace dns {
 
 // forward declarations
-class ISC_LIBDNS_API AbstractMessageRenderer;
+class B10_LIBDNS_API AbstractMessageRenderer;
 
 ///
 /// \brief A standard DNS module exception that is thrown if an RRClass object
 /// is being constructed from an unrecognized string.
 ///
-class ISC_LIBDNS_API InvalidRRClass : public Exception {
+class B10_LIBDNS_API InvalidRRClass : public Exception {
 public:
     InvalidRRClass(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -52,7 +52,7 @@ public:
 /// \brief A standard DNS module exception that is thrown if an RRClass object
 /// is being constructed from a incomplete (too short) wire-format data.
 ///
-class ISC_LIBDNS_API IncompleteRRClass : public Exception {
+class B10_LIBDNS_API IncompleteRRClass : public Exception {
 public:
     IncompleteRRClass(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -92,7 +92,7 @@ public:
 /// the proxy function.
 ///
 /// Note to developers: same note as \c RRType applies.
-class ISC_LIBDNS_API RRClass {
+class B10_LIBDNS_API RRClass {
 public:
     ///
     /// \name Constructors and Destructor
@@ -284,7 +284,7 @@ RRClass::NONE() {
 /// \param rrclass The \c RRClass object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-ISC_LIBDNS_API std::ostream&
+B10_LIBDNS_API std::ostream&
 operator<<(std::ostream& os, const RRClass& rrclass);
 }
 }

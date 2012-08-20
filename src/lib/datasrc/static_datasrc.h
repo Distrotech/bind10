@@ -29,18 +29,18 @@
 namespace isc {
 
 namespace dns {
-class ISC_LIBDATASRC_API Name;
-class ISC_LIBDATASRC_API RRClass;
-class ISC_LIBDATASRC_API RRType;
-class ISC_LIBDATASRC_API RRType;
-class ISC_LIBDATASRC_API RRsetList;
+class B10_LIBDATASRC_API Name;
+class B10_LIBDATASRC_API RRClass;
+class B10_LIBDATASRC_API RRType;
+class B10_LIBDATASRC_API RRType;
+class B10_LIBDATASRC_API RRsetList;
 }
 
 namespace datasrc {
 
 struct StaticDataSrcImpl;
 
-class ISC_LIBDATASRC_API StaticDataSrc : public DataSrc {
+class B10_LIBDATASRC_API StaticDataSrc : public DataSrc {
 private:
     ///
     /// \name Constructors, Assignment Operator and Destructor.

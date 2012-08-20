@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBDNS_EXPORT
+#define B10_LIBDNS_EXPORT
 
 #include <stdint.h>
 
@@ -58,7 +58,7 @@ RRClass::toWire(AbstractMessageRenderer& renderer) const {
     renderer.writeUint16(classcode_);
 }
 
-ISC_LIBDNS_API ostream&
+B10_LIBDNS_API ostream&
 operator<<(ostream& os, const RRClass& rrclass) {
     os << rrclass.toText();
     return (os);

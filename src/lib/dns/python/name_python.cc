@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBDNS_PYTHON_EXPORT
+#define B10_LIBDNS_PYTHON_EXPORT
 
 #include <Python.h>
 
@@ -539,23 +539,23 @@ namespace python {
 // Initialization and addition of these go in the module init at the
 // end
 //
-ISC_LIBDNS_PYTHON_API PyObject* po_EmptyLabel;
-ISC_LIBDNS_PYTHON_API PyObject* po_TooLongName;
-ISC_LIBDNS_PYTHON_API PyObject* po_TooLongLabel;
-ISC_LIBDNS_PYTHON_API PyObject* po_BadLabelType;
-ISC_LIBDNS_PYTHON_API PyObject* po_BadEscape;
-ISC_LIBDNS_PYTHON_API PyObject* po_IncompleteName;
-ISC_LIBDNS_PYTHON_API PyObject* po_InvalidBufferPosition;
-ISC_LIBDNS_PYTHON_API PyObject* po_DNSMessageFORMERR;
+B10_LIBDNS_PYTHON_API PyObject* po_EmptyLabel;
+B10_LIBDNS_PYTHON_API PyObject* po_TooLongName;
+B10_LIBDNS_PYTHON_API PyObject* po_TooLongLabel;
+B10_LIBDNS_PYTHON_API PyObject* po_BadLabelType;
+B10_LIBDNS_PYTHON_API PyObject* po_BadEscape;
+B10_LIBDNS_PYTHON_API PyObject* po_IncompleteName;
+B10_LIBDNS_PYTHON_API PyObject* po_InvalidBufferPosition;
+B10_LIBDNS_PYTHON_API PyObject* po_DNSMessageFORMERR;
 
 //
 // Definition of enums
 // Initialization and addition of these go in the module init at the
 // end
 //
-ISC_LIBDNS_PYTHON_API PyObject* po_NameRelation;
+B10_LIBDNS_PYTHON_API PyObject* po_NameRelation;
 
-ISC_LIBDNS_PYTHON_API PyTypeObject name_comparison_result_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject name_comparison_result_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.NameComparisonResult",
     sizeof(s_NameComparisonResult),           // tp_basicsize
@@ -611,7 +611,7 @@ ISC_LIBDNS_PYTHON_API PyTypeObject name_comparison_result_type = {
     0                                         // tp_version_tag
 };
 
-ISC_LIBDNS_PYTHON_API PyTypeObject name_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject name_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.Name",
     sizeof(s_Name),                     // tp_basicsize
@@ -666,14 +666,14 @@ ISC_LIBDNS_PYTHON_API PyTypeObject name_type = {
     0                                   // tp_version_tag
 };
 
-ISC_LIBDNS_PYTHON_API PyObject*
+B10_LIBDNS_PYTHON_API PyObject*
 createNameObject(const Name& source) {
     NameContainer container(PyObject_New(s_Name, &name_type));
     container.set(new Name(source));
     return (container.release());
 }
 
-ISC_LIBDNS_PYTHON_API bool
+B10_LIBDNS_PYTHON_API bool
 PyName_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -681,7 +681,7 @@ PyName_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &name_type));
 }
 
-ISC_LIBDNS_PYTHON_API const Name&
+B10_LIBDNS_PYTHON_API const Name&
 PyName_ToName(const PyObject* name_obj) {
     if (name_obj == NULL) {
         isc_throw(PyCPPWrapperException,

@@ -50,7 +50,7 @@ namespace asiolink {
 /// \brief Buffer Too Large
 ///
 /// Thrown on an attempt to send a buffer > 64k
-class ISC_LIBASIOLINK_API BufferTooLarge : public IOError {
+class B10_LIBASIOLINK_API BufferTooLarge : public IOError {
 public:
     BufferTooLarge(const char* file, size_t line, const char* what) :
         IOError(file, line, what) {}

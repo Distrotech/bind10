@@ -32,13 +32,13 @@ namespace isc {
 namespace util {
 namespace locks {
 
-class ISC_LIBUTIL_API mutex {
+class B10_LIBUTIL_API mutex {
 };
 
-class ISC_LIBUTIL_API recursive_mutex {
+class B10_LIBUTIL_API recursive_mutex {
 };
 
-class ISC_LIBUTIL_API upgradable_mutex {
+class B10_LIBUTIL_API upgradable_mutex {
 };
 
 template <typename T>

@@ -32,7 +32,7 @@ namespace log {
 /// This exception is used to wrap a bad_lexical_cast exception thrown during
 /// formatting an argument.
 
-class ISC_LIBLOG_API FormatFailure : public isc::Exception {
+class B10_LIBLOG_API FormatFailure : public isc::Exception {
 public:
     FormatFailure(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what)
@@ -45,7 +45,7 @@ public:
 /// This exception is used when the number of placeholders do not match
 /// the number of arguments passed to the formatter.
 
-class ISC_LIBLOG_API MismatchedPlaceholders : public isc::Exception {
+class B10_LIBLOG_API MismatchedPlaceholders : public isc::Exception {
 public:
     MismatchedPlaceholders(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what)
@@ -58,7 +58,7 @@ public:
 ///
 /// This is used internally by the Formatter to check for excess
 /// placeholders (and fewer arguments).
-ISC_LIBLOG_API void
+B10_LIBLOG_API void
 checkExcessPlaceholders(std::string* message, unsigned int placeholder);
 
 ///
@@ -67,7 +67,7 @@ checkExcessPlaceholders(std::string* message, unsigned int placeholder);
 /// This is used internally by the Formatter. Replaces a placeholder
 /// in the message by replacement. If the placeholder is not found,
 /// it adds a complain at the end.
-ISC_LIBLOG_API void
+B10_LIBLOG_API void
 replacePlaceholder(std::string* message, const std::string& replacement,
                    const unsigned placeholder);
 

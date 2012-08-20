@@ -22,7 +22,7 @@ namespace isc {
 
 namespace dns {
 // forward declarations
-class ISC_LIBDNS_API Name;
+class B10_LIBDNS_API Name;
 
 /// \brief The \c AbstractMessageRenderer class is an abstract base class
 /// that provides common interfaces for rendering a DNS message into a buffer
@@ -71,7 +71,7 @@ class ISC_LIBDNS_API Name;
 ///     The only one that is virtual is writeName and it's because this
 ///     function is much more complicated, therefore there's a lot of space
 ///     for different implementations or behaviours.
-class ISC_LIBDNS_API AbstractMessageRenderer {
+class B10_LIBDNS_API AbstractMessageRenderer {
 public:
     /// \brief Compression mode constants.
     ///
@@ -346,7 +346,7 @@ public:
 /// end of the buffer at the time of construction.  However, if the
 /// pre-existing portion of the buffer contains DNS names, these names won't
 /// be considered for name compression.
-class ISC_LIBDNS_API MessageRenderer : public AbstractMessageRenderer {
+class B10_LIBDNS_API MessageRenderer : public AbstractMessageRenderer {
 public:
     using AbstractMessageRenderer::CASE_INSENSITIVE;
     using AbstractMessageRenderer::CASE_SENSITIVE;

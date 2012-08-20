@@ -35,7 +35,7 @@ namespace datasrc {
  *
  * There's no way to start iterating from the beginning again or return.
  */
-class ISC_LIBDATASRC_API ZoneIterator : public boost::noncopyable {
+class B10_LIBDATASRC_API ZoneIterator : public boost::noncopyable {
 public:
     /**
      * \brief Destructor

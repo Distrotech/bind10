@@ -25,10 +25,10 @@ class TSIGContext;
 
 namespace python {
 
-extern ISC_LIBDNS_PYTHON_API PyTypeObject tsigcontext_type;
+extern B10_LIBDNS_PYTHON_API PyTypeObject tsigcontext_type;
 
 // Class specific exceptions
-extern ISC_LIBDNS_PYTHON_API PyObject* po_TSIGContextError;
+extern B10_LIBDNS_PYTHON_API PyObject* po_TSIGContextError;
 
 /// \brief Checks if the given python object is a TSIGContext object
 ///
@@ -36,7 +36,7 @@ extern ISC_LIBDNS_PYTHON_API PyObject* po_TSIGContextError;
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type TSIGContext, false otherwise
-ISC_LIBDNS_PYTHON_API bool PyTSIGContext_Check(PyObject* obj);
+B10_LIBDNS_PYTHON_API bool PyTSIGContext_Check(PyObject* obj);
 
 /// \brief Returns a reference to the TSIGContext object contained within the given
 ///        Python object.
@@ -48,7 +48,7 @@ ISC_LIBDNS_PYTHON_API bool PyTSIGContext_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param tsigcontext_obj The tsigcontext object to convert
-ISC_LIBDNS_PYTHON_API TSIGContext&
+B10_LIBDNS_PYTHON_API TSIGContext&
 PyTSIGContext_ToTSIGContext(PyObject* tsigcontext_obj);
 
 

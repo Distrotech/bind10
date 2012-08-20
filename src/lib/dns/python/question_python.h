@@ -25,9 +25,9 @@ class Question;
 
 namespace python {
 
-extern ISC_LIBDNS_PYTHON_API PyObject* po_EmptyQuestion;
+extern B10_LIBDNS_PYTHON_API PyObject* po_EmptyQuestion;
 
-extern ISC_LIBDNS_PYTHON_API PyTypeObject question_type;
+extern B10_LIBDNS_PYTHON_API PyTypeObject question_type;
 
 /// This is a simple shortcut to create a python Question object (in the
 /// form of a pointer to PyObject) with minimal exception safety.
@@ -36,7 +36,7 @@ extern ISC_LIBDNS_PYTHON_API PyTypeObject question_type;
 /// returns a NULL pointer).
 /// This function is expected to be called within a try block
 /// followed by necessary setup for python exception.
-ISC_LIBDNS_PYTHON_API PyObject* createQuestionObject(const Question& source);
+B10_LIBDNS_PYTHON_API PyObject* createQuestionObject(const Question& source);
 
 /// \brief Checks if the given python object is a Question object
 ///
@@ -44,7 +44,7 @@ ISC_LIBDNS_PYTHON_API PyObject* createQuestionObject(const Question& source);
 ///
 /// \param obj The object to check the type of
 /// \return true if the object is of type Question, false otherwise
-ISC_LIBDNS_PYTHON_API bool PyQuestion_Check(PyObject* obj);
+B10_LIBDNS_PYTHON_API bool PyQuestion_Check(PyObject* obj);
 
 /// \brief Returns a reference to the Question object contained within the given
 ///        Python object.
@@ -56,7 +56,7 @@ ISC_LIBDNS_PYTHON_API bool PyQuestion_Check(PyObject* obj);
 /// may be destroyed, the caller must copy it itself.
 ///
 /// \param question_obj The question object to convert
-ISC_LIBDNS_PYTHON_API const Question&
+B10_LIBDNS_PYTHON_API const Question&
 PyQuestion_ToQuestion(const PyObject* question_obj);
 
 } // namespace python

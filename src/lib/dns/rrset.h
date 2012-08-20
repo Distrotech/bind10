@@ -28,7 +28,7 @@
 
 namespace isc {
 namespace util {
-class ISC_LIBDNS_API OututBuffer;
+class B10_LIBDNS_API OututBuffer;
 }
 
 namespace dns {
@@ -37,23 +37,23 @@ namespace dns {
 /// \brief A standard DNS module exception that is thrown if an RRset object
 /// does not contain any RDATA where required.
 ///
-class ISC_LIBDNS_API EmptyRRset : public Exception {
+class B10_LIBDNS_API EmptyRRset : public Exception {
 public:
     EmptyRRset(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
 };
 
 // forward declarations
-class ISC_LIBDNS_API Name;
-class ISC_LIBDNS_API RRType;
-class ISC_LIBDNS_API RRClass;
-class ISC_LIBDNS_API RRTTL;
-class ISC_LIBDNS_API AbstractMessageRenderer;
-class ISC_LIBDNS_API AbstractRRset;
-class ISC_LIBDNS_API BasicRRset;
-class ISC_LIBDNS_API RdataIterator;
+class B10_LIBDNS_API Name;
+class B10_LIBDNS_API RRType;
+class B10_LIBDNS_API RRClass;
+class B10_LIBDNS_API RRTTL;
+class B10_LIBDNS_API AbstractMessageRenderer;
+class B10_LIBDNS_API AbstractRRset;
+class B10_LIBDNS_API BasicRRset;
+class B10_LIBDNS_API RdataIterator;
 class BasicRRsetImpl;
-class ISC_LIBDNS_API RRset;
+class B10_LIBDNS_API RRset;
 
 /// \brief A pointer-like type pointing to an \c RRset object.
 ///
@@ -160,7 +160,7 @@ typedef boost::shared_ptr<RdataIterator> RdataIteratorPtr;
 ///     monolithic.)
 ///   - Do we need to allow the user to remove specific Rdata?
 ///     Probably not, according to the current usage of the BIND9 code.
-class ISC_LIBDNS_API AbstractRRset {
+class B10_LIBDNS_API AbstractRRset {
     ///
     /// \name Constructors and Destructor
     ///
@@ -524,7 +524,7 @@ public:
 /// Most applications will simply go through the RDATA objects contained in
 /// an RRset, examining (and possibly using) each object, as one path
 /// operation.
-class ISC_LIBDNS_API RdataIterator {
+class B10_LIBDNS_API RdataIterator {
     ///
     /// \name Constructors and Destructor
     ///
@@ -595,7 +595,7 @@ public:
 /// Highly performance-sensitive applications, such as a large scale
 /// authoritative or caching name servers will implement and use a customized
 /// version of derived \c AbstractRRset class.
-class ISC_LIBDNS_API BasicRRset : public AbstractRRset {
+class B10_LIBDNS_API BasicRRset : public AbstractRRset {
     ///
     /// \name Constructors and Destructor
     ///
@@ -804,7 +804,7 @@ private:
 /// containing associated RRSIG records.  This allows DNSSEC aware
 /// applications to treat data associated with a particular
 /// QNAME/QTYPE/QCLASS as a single object.
-class ISC_LIBDNS_API RRset : public BasicRRset {
+class B10_LIBDNS_API RRset : public BasicRRset {
 public:
     RRset(const Name& name, const RRClass& rrclass,
           const RRType& rrtype, const RRTTL& ttl);
@@ -888,7 +888,7 @@ private:
 /// output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-ISC_LIBDNS_API std::ostream&
+B10_LIBDNS_API std::ostream&
 operator<<(std::ostream& os, const AbstractRRset& rrset);
 } // end of namespace dns
 } // end of namespace isc

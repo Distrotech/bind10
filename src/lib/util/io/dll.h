@@ -16,12 +16,12 @@
 #define __LIBUTIL_IO_H 1
 
 #if !defined(_WIN32) || defined(USE_STATIC_LINK)
-#define ISC_LIBUTIL_IO_API
+#define B10_LIBUTIL_IO_API
 #else
-#ifdef ISC_LIBUTIL_IO_EXPORT
-#define ISC_LIBUTIL_IO_API __declspec(dllexport)
+#ifdef B10_LIBUTIL_IO_EXPORT
+#define B10_LIBUTIL_IO_API __declspec(dllexport)
 #else
-#define ISC_LIBUTIL_IO_API __declspec(dllimport)
+#define B10_LIBUTIL_IO_API __declspec(dllimport)
 #endif
 #endif
 

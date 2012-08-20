@@ -42,13 +42,13 @@ namespace testutils {
 /// (The flag values is irrelevant to their wire-format values).
 /// The meaning of the flags should be obvious from the variable names.
 //@{
-extern ISC_LIBTESTUTILS_API const unsigned int QR_FLAG;
-extern ISC_LIBTESTUTILS_API const unsigned int AA_FLAG;
-extern ISC_LIBTESTUTILS_API const unsigned int TC_FLAG;
-extern ISC_LIBTESTUTILS_API const unsigned int RD_FLAG;
-extern ISC_LIBTESTUTILS_API const unsigned int RA_FLAG;
-extern ISC_LIBTESTUTILS_API const unsigned int AD_FLAG;
-extern ISC_LIBTESTUTILS_API const unsigned int CD_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int QR_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int AA_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int TC_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int RD_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int RA_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int AD_FLAG;
+extern B10_LIBTESTUTILS_API const unsigned int CD_FLAG;
 //@}
 
 /// Set of unit tests to examine a DNS message header.
@@ -80,7 +80,7 @@ extern ISC_LIBTESTUTILS_API const unsigned int CD_FLAG;
 /// \param ancount The expected value of ANCOUNT
 /// \param nscount The expected value of NSCOUNT
 /// \param arcount The expected value of ARCOUNT
-ISC_LIBTESTUTILS_API void
+B10_LIBTESTUTILS_API void
 headerCheck(const isc::dns::Message& message, const isc::dns::qid_t qid,
             const isc::dns::Rcode& rcode,
             const uint16_t opcodeval, const unsigned int flags,
@@ -113,7 +113,7 @@ headerCheck(const isc::dns::Message& message, const isc::dns::qid_t qid,
 ///
 /// \param expected_rrset The expected RRset
 /// \param actual_rrset The RRset to be tested
-ISC_LIBTESTUTILS_API void
+B10_LIBTESTUTILS_API void
 rrsetCheck(isc::dns::ConstRRsetPtr expected_rrset,
            isc::dns::ConstRRsetPtr actual_rrset);
 
@@ -194,7 +194,7 @@ private:
 /// parameter normally doesn't have to be specified, but for an SOA RR it
 /// must be set to its owner name, due to the internal check of
 /// \c dns::masterLoad().
-ISC_LIBTESTUTILS_API isc::dns::RRsetPtr
+B10_LIBTESTUTILS_API isc::dns::RRsetPtr
 textToRRset(const std::string& text_rrset,
             const isc::dns::RRClass& rrclass =
             isc::dns::RRClass::IN(),

@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBCACHE_EXPORT
+#define B10_LIBCACHE_EXPORT
 
 #include "rrset_copy.h"
 
@@ -21,7 +21,7 @@ using namespace isc::dns;
 namespace isc {
 namespace cache {
 
-ISC_LIBCACHE_API void
+B10_LIBCACHE_API void
 rrsetCopy(const isc::dns::AbstractRRset& src, isc::dns::AbstractRRset& dst) {
     RdataIteratorPtr rdata_itor = src.getRdataIterator();
     rdata_itor->first();

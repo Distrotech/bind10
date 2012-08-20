@@ -46,7 +46,7 @@ namespace asiodns {
 ///
 /// Because these objects are frequently copied, it is recommended
 /// that derived classes be kept small to reduce copy overhead.
-class ISC_LIBASIODNS_API DNSServer {
+class B10_LIBASIODNS_API DNSServer {
 protected:
     ///
     /// \name Constructors and destructors

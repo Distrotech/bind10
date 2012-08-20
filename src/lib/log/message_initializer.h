@@ -64,7 +64,7 @@ namespace log {
 /// global dictionary's overflow vector whence they can be retrieved at
 /// run-time.
 
-class ISC_LIBLOG_API MessageInitializer {
+class B10_LIBLOG_API MessageInitializer {
 public:
     /// Maximum number of message arrays that can be initialized in this way
     static const size_t MAX_MESSAGE_ARRAYS = 256;

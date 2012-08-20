@@ -30,30 +30,30 @@
 namespace isc {
 
 namespace dns {
-class ISC_LIBDATASRC_API Name;
-class ISC_LIBDATASRC_API RRClass;
-class ISC_LIBDATASRC_API RRType;
-class ISC_LIBDATASRC_API RRsetList;
+class B10_LIBDATASRC_API Name;
+class B10_LIBDATASRC_API RRClass;
+class B10_LIBDATASRC_API RRType;
+class B10_LIBDATASRC_API RRsetList;
 }
 
 namespace datasrc {
 
-class ISC_LIBDATASRC_API Query;
-struct ISC_LIBDATASRC_API Sqlite3Parameters;
+class B10_LIBDATASRC_API Query;
+struct B10_LIBDATASRC_API Sqlite3Parameters;
 
-class ISC_LIBDATASRC_API Sqlite3Error : public Exception {
+class B10_LIBDATASRC_API Sqlite3Error : public Exception {
 public:
     Sqlite3Error(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
 };
 
-class ISC_LIBDATASRC_API IncompatibleDbVersion : public Exception {
+class B10_LIBDATASRC_API IncompatibleDbVersion : public Exception {
 public:
     IncompatibleDbVersion(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
 };
 
-class ISC_LIBDATASRC_API Sqlite3DataSrc : public DataSrc {
+class B10_LIBDATASRC_API Sqlite3DataSrc : public DataSrc {
     ///
     /// \name Constructors, Assignment Operator and Destructor.
     ///

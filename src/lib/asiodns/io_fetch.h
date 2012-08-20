@@ -44,7 +44,7 @@ struct IOFetchData;
 ///
 /// \param E Endpoint type to use.
 
-class ISC_LIBASIODNS_API IOFetch : public coroutine {
+class B10_LIBASIODNS_API IOFetch : public coroutine {
 public:
     /// \brief Protocol to use on the fetch
     enum Protocol {

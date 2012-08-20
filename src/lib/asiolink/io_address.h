@@ -43,7 +43,7 @@ namespace asiolink {
 /// agnostic)
 ///
 /// This class is a wrapper for the ASIO \c ip::address class.
-class ISC_LIBASIOLINK_API IOAddress {
+class B10_LIBASIOLINK_API IOAddress {
 public:
     ///
     /// \name Constructors and Destructor

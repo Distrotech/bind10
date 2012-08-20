@@ -16,12 +16,12 @@
 #define __LIBUTIL_UNITTESTS_H 1
 
 #if !defined(_WIN32) || defined(USE_STATIC_LINK)
-#define ISC_LIBUTIL_UNITTESTS_API
+#define B10_LIBUTIL_UNITTESTS_API
 #else
-#ifdef ISC_LIBUTIL_UNITTESTS_EXPORT
-#define ISC_LIBUTIL_UNITTESTS_API __declspec(dllexport)
+#ifdef B10_LIBUTIL_UNITTESTS_EXPORT
+#define B10_LIBUTIL_UNITTESTS_API __declspec(dllexport)
 #else
-#define ISC_LIBUTIL_UNITTESTS_API __declspec(dllimport)
+#define B10_LIBUTIL_UNITTESTS_API __declspec(dllimport)
 #endif
 #endif
 

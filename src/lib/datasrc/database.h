@@ -60,7 +60,7 @@ namespace datasrc {
 ///     database, having multiple instances of this class. If the database
 ///     allows having multiple open queries at one connection, the connection
 ///     class may share it.
-class ISC_LIBDATASRC_API DatabaseAccessor : boost::noncopyable {
+class B10_LIBDATASRC_API DatabaseAccessor : boost::noncopyable {
 public:
     /// \brief Data columns for by IteratorContext::getNext()
     ///
@@ -810,7 +810,7 @@ public:
 /// While it is possible to subclass it for specific database in case
 /// of special needs, it is not expected to be needed. This should just
 /// work as it is with whatever DatabaseAccessor.
-class ISC_LIBDATASRC_API DatabaseClient : public DataSourceClient {
+class B10_LIBDATASRC_API DatabaseClient : public DataSourceClient {
 public:
     /// \brief Constructor
     ///

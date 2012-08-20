@@ -25,12 +25,12 @@
 
 namespace isc {
 namespace asiolink {
-class ISC_LIBSERVER_COMMON_API IOMessage;
-class ISC_LIBSERVER_COMMON_API IOEndpoint;
+class B10_LIBSERVER_COMMON_API IOMessage;
+class B10_LIBSERVER_COMMON_API IOEndpoint;
 }
 
 namespace acl {
-struct ISC_LIBSERVER_COMMON_API IPAddress;
+struct B10_LIBSERVER_COMMON_API IPAddress;
 }
 
 namespace server_common {
@@ -68,7 +68,7 @@ namespace server_common {
 /// We might also want to separate DNS clients for authoritative servers
 /// and clients for the resolver, especially because the former could be
 /// simpler with performance optimizations.
-class ISC_LIBSERVER_COMMON_API Client : boost::noncopyable {
+class B10_LIBSERVER_COMMON_API Client : boost::noncopyable {
 public:
     ///
     /// \name Constructors and Destructor
@@ -144,7 +144,7 @@ private:
 /// \param client A reference to a \c Client object output by the operation.
 /// \return A reference to the same \c std::ostream object referenced by
 /// parameter \c os after the insertion operation.
-ISC_LIBSERVER_COMMON_API std::ostream&
+B10_LIBSERVER_COMMON_API std::ostream&
 operator<<(std::ostream& os, const Client& client);
 }
 }

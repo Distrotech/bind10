@@ -31,7 +31,7 @@ namespace nsas {
  * This just holds a state of information that can be fetched from somewhere.
  * No locking is performed, if it is desirable, it should be locked manually.
  */
-class ISC_LIBNSAS_API Fetchable {
+class B10_LIBNSAS_API Fetchable {
     public:
         /// \short States the Fetchable object can be in.
         enum State {

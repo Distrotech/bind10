@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBDNS_PYTHON_EXPORT
+#define B10_LIBDNS_PYTHON_EXPORT
 
 #include <Python.h>
 
@@ -292,7 +292,7 @@ namespace isc {
 namespace dns {
 namespace python {
 
-ISC_LIBDNS_PYTHON_API PyTypeObject opcode_type = {
+B10_LIBDNS_PYTHON_API PyTypeObject opcode_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pydnspp.Opcode",
     sizeof(s_Opcode),                   // tp_basicsize
@@ -343,14 +343,14 @@ ISC_LIBDNS_PYTHON_API PyTypeObject opcode_type = {
     0                                   // tp_version_tag
 };
 
-ISC_LIBDNS_PYTHON_API PyObject*
+B10_LIBDNS_PYTHON_API PyObject*
 createOpcodeObject(const Opcode& source) {
     OpcodeContainer container(PyObject_New(s_Opcode, &opcode_type));
     container.set(new Opcode(source));
     return (container.release());
 }
 
-ISC_LIBDNS_PYTHON_API bool
+B10_LIBDNS_PYTHON_API bool
 PyOpcode_Check(PyObject* obj) {
     if (obj == NULL) {
         isc_throw(PyCPPWrapperException, "obj argument NULL in typecheck");
@@ -358,7 +358,7 @@ PyOpcode_Check(PyObject* obj) {
     return (PyObject_TypeCheck(obj, &opcode_type));
 }
 
-ISC_LIBDNS_PYTHON_API const Opcode&
+B10_LIBDNS_PYTHON_API const Opcode&
 PyOpcode_ToOpcode(const PyObject* opcode_obj) {
     if (opcode_obj == NULL) {
         isc_throw(PyCPPWrapperException,

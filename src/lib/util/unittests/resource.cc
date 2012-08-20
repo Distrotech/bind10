@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBUTIL_UNITTESTS_EXPORT
+#define B10_LIBUTIL_UNITTESTS_EXPORT
 
 #include <config.h>
 
@@ -29,7 +29,7 @@ namespace isc {
 namespace util {
 namespace unittests {
 
-ISC_LIBUTIL_UNITTESTS_API void
+B10_LIBUTIL_UNITTESTS_API void
 dontCreateCoreDumps() {
 #ifndef _WIN32
     const rlimit core_limit = {0, 0};

@@ -56,7 +56,7 @@ namespace util {
 /// substituting components.
 
 
-class ISC_LIBUTIL_API Filename {
+class B10_LIBUTIL_API Filename {
 public:
 
     /// \brief Constructor

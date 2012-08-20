@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBUTIL_EXPORT
+#define B10_LIBUTIL_EXPORT
 
 #include <config.h>
 
@@ -25,8 +25,8 @@
 
 // Instantiate classes
 
-class ISC_LIBUTIL_API UniformRandomIntegerGenerator;
-class ISC_LIBUTIL_API WeightedRandomIntegerGenerator;
+class B10_LIBUTIL_API UniformRandomIntegerGenerator;
+class B10_LIBUTIL_API WeightedRandomIntegerGenerator;
 
 // Local Variables:
 // mode: c++

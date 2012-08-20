@@ -59,7 +59,7 @@ namespace unittests {
 /// Switch to enable the use of special operator new
 ///
 /// This is set to \c false by default.
-extern ISC_LIBUTIL_UNITTESTS_API bool force_throw_on_new;
+extern B10_LIBUTIL_UNITTESTS_API bool force_throw_on_new;
 
 /// The allocation size that triggers an exception in the special operator new
 ///
@@ -72,7 +72,7 @@ extern ISC_LIBUTIL_UNITTESTS_API bool force_throw_on_new;
 /// The default value is 0.  The value of this variable has no meaning
 /// unless the use of the special operator is enabled at build time and
 /// via \c force_throw_on_new.
-extern ISC_LIBUTIL_UNITTESTS_API size_t throw_size_on_new;
+extern B10_LIBUTIL_UNITTESTS_API size_t throw_size_on_new;
 }
 }
 }

@@ -41,7 +41,7 @@ namespace characterstr {
     ///        the iterator will be updated to new position after the function
     ///        is returned
     /// \return A std::string that contains the extracted <character-string>
-    ISC_LIBDNS_API std::string
+    B10_LIBDNS_API std::string
     getNextCharacterString(const std::string& input_str,
                            std::string::const_iterator& input_iterator);
 
@@ -50,7 +50,7 @@ namespace characterstr {
     /// \param buffer The input buffer
     /// \param len The input buffer total length
     /// \return A std::string that contains the extracted <character-string>
-    ISC_LIBDNS_API std::string
+    B10_LIBDNS_API std::string
     getNextCharacterString(util::InputBuffer& buffer, size_t len);
 
 } // namespace characterstr

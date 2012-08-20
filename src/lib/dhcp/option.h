@@ -41,11 +41,11 @@ typedef OptionBuffer::const_iterator OptionBufferConstIter;
 typedef boost::shared_ptr<OptionBuffer> OptionBufferPtr;
 
 /// shared pointer to Option object
-class ISC_LIBDHCP_API Option;
+class B10_LIBDHCP_API Option;
 typedef boost::shared_ptr<Option> OptionPtr;
 
 
-class ISC_LIBDHCP_API Option {
+class B10_LIBDHCP_API Option {
 public:
     /// length of the usual DHCPv4 option header (there are exceptions)
     const static size_t OPTION4_HDR_LEN = 2;

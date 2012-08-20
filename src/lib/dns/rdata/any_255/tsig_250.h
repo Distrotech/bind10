@@ -23,7 +23,7 @@
 
 namespace isc {
 namespace dns {
-class ISC_LIBDNS_API Name;
+class B10_LIBDNS_API Name;
 }
 }
 
@@ -40,7 +40,7 @@ class ISC_LIBDNS_API Name;
 /// This class implements the basic interfaces inherited from the abstract
 /// \c rdata::Rdata class, and provides trivial accessors specific to the
 /// TSIG RDATA.
-class ISC_LIBDNS_API TSIG : public Rdata {
+class B10_LIBDNS_API TSIG : public Rdata {
 public:
     // BEGIN_COMMON_MEMBERS
     // END_COMMON_MEMBERS

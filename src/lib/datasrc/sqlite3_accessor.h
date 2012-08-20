@@ -30,7 +30,7 @@
 
 namespace isc {
 namespace dns {
-class ISC_LIBDATASRC_API RRClass;
+class B10_LIBDATASRC_API RRClass;
 }
 
 namespace datasrc {
@@ -42,13 +42,13 @@ namespace datasrc {
  * It might mean corrupt database file, invalid request or that something is
  * rotten in the library.
  */
-class ISC_LIBDATASRC_API SQLite3Error : public DataSourceError {
+class B10_LIBDATASRC_API SQLite3Error : public DataSourceError {
 public:
     SQLite3Error(const char* file, size_t line, const char* what) :
         DataSourceError(file, line, what) {}
 };
 
-class ISC_LIBDATASRC_API IncompatibleDbVersion : public Exception {
+class B10_LIBDATASRC_API IncompatibleDbVersion : public Exception {
 public:
     IncompatibleDbVersion(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}
@@ -60,7 +60,7 @@ public:
  * Thrown if a query expecting a certain number of rows back returned too
  * many rows.
  */
-class ISC_LIBDATASRC_API TooMuchData : public DataSourceError {
+class B10_LIBDATASRC_API TooMuchData : public DataSourceError {
 public:
     TooMuchData(const char* file, size_t line, const char* what) :
         DataSourceError(file, line, what) {}
@@ -72,7 +72,7 @@ public:
  * Thrown if a query expecting a certain number of rows back returned too
  * few rows (including none).
  */
-class ISC_LIBDATASRC_API TooLittleData : public DataSourceError {
+class B10_LIBDATASRC_API TooLittleData : public DataSourceError {
 public:
     TooLittleData(const char* file, size_t line, const char* what) :
         DataSourceError(file, line, what) {}
@@ -87,7 +87,7 @@ struct SQLite3Parameters;
  * According to the design, it doesn't interpret the data in any way, it just
  * provides unified access to the DB.
  */
-class ISC_LIBDATASRC_API SQLite3Accessor : public DatabaseAccessor,
+class B10_LIBDATASRC_API SQLite3Accessor : public DatabaseAccessor,
     public boost::enable_shared_from_this<SQLite3Accessor> {
 public:
     /**
@@ -284,18 +284,18 @@ private:
 /// \return An instance of the sqlite3 datasource client, or NULL if there was
 ///         an error
 #if defined(_WIN32) && defined(USE_STATIC_LINK)
-extern "C" ISC_LIBDATASRC_API DataSourceClient*
+extern "C" B10_LIBDATASRC_API DataSourceClient*
 SQLCreateInstance(isc::data::ConstElementPtr config, std::string& error);
 
 /// \brief Destroy the instance created by createInstance()
-extern "C" ISC_LIBDATASRC_API void
+extern "C" B10_LIBDATASRC_API void
 SQLDestroyInstance(DataSourceClient* instance);
 #else
-extern "C" ISC_LIBDATASRC_API DataSourceClient*
+extern "C" B10_LIBDATASRC_API DataSourceClient*
 createInstance(isc::data::ConstElementPtr config, std::string& error);
 
 /// \brief Destroy the instance created by createInstance()
-extern "C" ISC_LIBDATASRC_API void destroyInstance(DataSourceClient* instance);
+extern "C" B10_LIBDATASRC_API void destroyInstance(DataSourceClient* instance);
 #endif
 
 }

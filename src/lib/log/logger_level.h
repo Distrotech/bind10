@@ -69,7 +69,7 @@ struct Level {
 ///
 /// \return The severity. If the string is not recognized, an error will be
 ///         logged and the string will return  isc::log::INFO.
-ISC_LIBLOG_API isc::log::Severity getSeverity(const std::string& sev_str);
+B10_LIBLOG_API isc::log::Severity getSeverity(const std::string& sev_str);
 
 }   // namespace log
 }   // namespace isc

@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBLOG_EXPORT
+#define B10_LIBLOG_EXPORT
 
 #include <config.h>
 
@@ -38,7 +38,7 @@ namespace log {
 // of "FATAL".  (Note that the string must be in upper case with no leading
 // of trailing blanks.)  If not present, the default severity passed to the
 // function is returned.
-ISC_LIBLOG_API isc::log::Severity
+B10_LIBLOG_API isc::log::Severity
 b10LoggerSeverity(isc::log::Severity defseverity) {
     const char* sev_char = getenv("B10_LOGGER_SEVERITY");
     if (sev_char) {
@@ -50,7 +50,7 @@ b10LoggerSeverity(isc::log::Severity defseverity) {
 // Get the debug level.  This is defined by the envornment variable
 // B10_LOGGER_DBGLEVEL.  If not defined, a default value passed to the function
 // is returned.
-ISC_LIBLOG_API int
+B10_LIBLOG_API int
 b10LoggerDbglevel(int defdbglevel) {
     const char* dbg_char = getenv("B10_LOGGER_DBGLEVEL");
     if (dbg_char) {
@@ -83,7 +83,7 @@ b10LoggerDbglevel(int defdbglevel) {
 // Reset characteristics of the root logger to that set by the environment
 // variables B10_LOGGER_SEVERITY, B10_LOGGER_DBGLEVEL and B10_LOGGER_DESTINATION.
 
-ISC_LIBLOG_API void
+B10_LIBLOG_API void
 resetUnitTestRootLogger() {
 
     using namespace isc::log;
@@ -155,7 +155,7 @@ resetUnitTestRootLogger() {
 
 
 // Logger Run-Time Initialization via Environment Variables
-ISC_LIBLOG_API void initLogger(isc::log::Severity severity, int dbglevel) {
+B10_LIBLOG_API void initLogger(isc::log::Severity severity, int dbglevel) {
 
     // Root logger name is defined by the environment variable B10_LOGGER_ROOT.
     // If not present, the name is "bind10".

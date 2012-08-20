@@ -29,7 +29,7 @@ class IOServiceImpl;
 /// \brief The \c IOService class is a wrapper for the ASIO \c io_service
 /// class.
 ///
-class ISC_LIBASIOLINK_API IOService {
+class B10_LIBASIOLINK_API IOService {
     ///
     /// \name Constructors and Destructor
     ///

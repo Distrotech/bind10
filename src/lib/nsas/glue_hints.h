@@ -26,7 +26,7 @@
 namespace isc {
 namespace nsas {
 
-class ISC_LIBNSAS_API GlueHints {
+class B10_LIBNSAS_API GlueHints {
 public:
     /// \brief Empty constructor
     GlueHints() {};

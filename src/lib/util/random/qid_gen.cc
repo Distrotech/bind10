@@ -18,7 +18,7 @@
 // (and other parts where we need randomness, perhaps another thing
 // for a general libutil?)
 
-#define ISC_LIBUTIL_EXPORT
+#define B10_LIBUTIL_EXPORT
 
 #include <config.h>
 #include <stdint.h>

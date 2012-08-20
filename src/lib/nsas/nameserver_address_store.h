@@ -30,7 +30,7 @@ namespace isc {
 // Some forward declarations, so we do not need to include so many headers
 
 namespace dns {
-class ISC_LIBNSAS_API RRClass;
+class B10_LIBNSAS_API RRClass;
 }
 
 namespace util {
@@ -40,9 +40,9 @@ template<class T> class LruList;
 namespace nsas {
 
 template<class T> class HashTable;
-class ISC_LIBNSAS_API ZoneEntry;
-class ISC_LIBNSAS_API NameserverEntry;
-class ISC_LIBNSAS_API AddressRequestCallback;
+class B10_LIBNSAS_API ZoneEntry;
+class B10_LIBNSAS_API NameserverEntry;
+class B10_LIBNSAS_API AddressRequestCallback;
 
 /// \brief Nameserver Address Store
 ///
@@ -51,7 +51,7 @@ class ISC_LIBNSAS_API AddressRequestCallback;
 /// the logic for sending queries for the nameserver addresses if they are not
 /// in the store.
 
-class ISC_LIBNSAS_API NameserverAddressStore {
+class B10_LIBNSAS_API NameserverAddressStore {
 public:
 
     /// \brief Constructor

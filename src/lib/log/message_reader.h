@@ -31,7 +31,7 @@ namespace log {
 /// Reads a message file and creates a map of identifier against the text of the
 /// message.  This map can be retrieved for subsequent processing.
 
-class ISC_LIBLOG_API MessageReader {
+class B10_LIBLOG_API MessageReader {
 public:
 
     /// \brief Read Mode

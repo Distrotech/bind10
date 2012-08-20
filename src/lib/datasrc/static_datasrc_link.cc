@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBDATASRC_EXPORT
+#define B10_LIBDATASRC_EXPORT
 
 #include "client.h"
 #include "memory_datasrc.h"
@@ -31,7 +31,7 @@ using namespace std;
 namespace isc {
 namespace datasrc {
 
-ISC_LIBDATASRC_API DataSourceClient*
+B10_LIBDATASRC_API DataSourceClient*
 #if defined(_WIN32) && defined(USE_STATIC_LINK)
 StaticCreateInstance
 #else
@@ -60,7 +60,7 @@ createInstance
     return (NULL);
 }
 
-ISC_LIBDATASRC_API void
+B10_LIBDATASRC_API void
 #if defined(_WIN32) && defined(USE_STATIC_LINK)
 StaticDestroyInstance
 #else

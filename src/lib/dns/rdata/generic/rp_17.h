@@ -33,7 +33,7 @@
 /// This class implements the basic interfaces inherited from the abstract
 /// \c rdata::Rdata class, and provides trivial accessors specific to the
 /// RP RDATA.
-class ISC_LIBDNS_API RP : public Rdata {
+class B10_LIBDNS_API RP : public Rdata {
 public:
     // BEGIN_COMMON_MEMBERS
     // END_COMMON_MEMBERS

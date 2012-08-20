@@ -27,11 +27,11 @@
 namespace isc {
 namespace datasrc {
 
-class ISC_LIBDATASRC_API ZoneFinder;
+class B10_LIBDATASRC_API ZoneFinder;
 typedef boost::shared_ptr<ZoneFinder> ZoneFinderPtr;
-class ISC_LIBDATASRC_API DataSourceClient;
+class B10_LIBDATASRC_API DataSourceClient;
 typedef boost::shared_ptr<DataSourceClient> DataSourceClientPtr;
-class ISC_LIBDATASRC_API DataSourceClientContainer;
+class B10_LIBDATASRC_API DataSourceClientContainer;
 typedef boost::shared_ptr<DataSourceClientContainer>
     DataSourceClientContainerPtr;
 
@@ -48,7 +48,7 @@ typedef boost::shared_ptr<DataSourceClientContainer>
 /// have it to allow easy testing. It is possible to create a mock-up class
 /// instead of creating a full-blown configuration. The real implementation
 /// is the ConfigurableClientList.
-class ISC_LIBDATASRC_API ClientList : public boost::noncopyable {
+class B10_LIBDATASRC_API ClientList : public boost::noncopyable {
 protected:
     /// \brief Constructor.
     ///
@@ -184,7 +184,7 @@ typedef boost::shared_ptr<const ClientList> ConstClientListPtr;
 ///
 /// While it is possible to inherit this class, it is not expected to be
 /// inherited except for tests.
-class ISC_LIBDATASRC_API ConfigurableClientList : public ClientList {
+class B10_LIBDATASRC_API ConfigurableClientList : public ClientList {
 public:
     /// \brief Exception thrown when there's an error in configuration.
     class ConfigurationError : public Exception {

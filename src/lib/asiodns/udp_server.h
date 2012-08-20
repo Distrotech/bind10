@@ -38,7 +38,7 @@ namespace asiodns {
 ///        DNS query event. As such, it is both a \c DNSServer and
 ///        a \c coroutine
 ///
-class ISC_LIBASIODNS_API UDPServer :
+class B10_LIBASIODNS_API UDPServer :
  public virtual DNSServer, public virtual coroutine {
 public:
     /// \brief Constructor

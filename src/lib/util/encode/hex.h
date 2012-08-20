@@ -41,7 +41,7 @@ namespace encode {
 /// \param binary A vector object storing the data to be encoded. 
 /// \return A newly created string that stores base16 encoded value for
 /// binary.
-ISC_LIBUTIL_API
+B10_LIBUTIL_API
 std::string encodeHex(const std::vector<uint8_t>& binary);
 
 /// \brief Decode a text encoded in the base16 ('hex') format into the
@@ -55,7 +55,7 @@ std::string encodeHex(const std::vector<uint8_t>& binary);
 ///
 /// \param input A text encoded in the base16 format.
 /// \param result A vector in which the decoded %data is to be stored.
-ISC_LIBUTIL_API
+B10_LIBUTIL_API
 void decodeHex(const std::string& input, std::vector<uint8_t>& result);
 
 } // namespace encode

@@ -12,7 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#define ISC_LIBDNS_EXPORT
+#define B10_LIBDNS_EXPORT
 
 #include <ostream>
 #include <string>
@@ -62,7 +62,7 @@ TSIGError::toRcode() const {
     return (Rcode::NOTAUTH());
 }
 
-ISC_LIBDNS_API std::ostream&
+B10_LIBDNS_API std::ostream&
 operator<<(std::ostream& os, const TSIGError& error) {
     return (os << error.toText());
 }

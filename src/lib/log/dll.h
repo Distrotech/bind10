@@ -16,12 +16,12 @@
 #define __LIBLOG_H 1
 
 #if !defined(_WIN32) || defined(USE_STATIC_LINK)
-#define ISC_LIBLOG_API
+#define B10_LIBLOG_API
 #else
-#ifdef ISC_LIBLOG_EXPORT
-#define ISC_LIBLOG_API __declspec(dllexport)
+#ifdef B10_LIBLOG_EXPORT
+#define B10_LIBLOG_API __declspec(dllexport)
 #else
-#define ISC_LIBLOG_API __declspec(dllimport)
+#define B10_LIBLOG_API __declspec(dllimport)
 #endif
 #endif
 

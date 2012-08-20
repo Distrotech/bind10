@@ -44,7 +44,7 @@ struct RBNodeRRsetImpl;
 // Note that the definition of the structure is still hidden within the
 // implementation, so, basically, a normal application should never be able
 // to use it directly even if it peeks into the "internal" namespace.
-struct ISC_LIBDATASRC_API AdditionalNodeInfo;
+struct B10_LIBDATASRC_API AdditionalNodeInfo;
 
 /// \brief Special RRset for optimizing memory datasource requirement
 ///
@@ -85,7 +85,7 @@ struct ISC_LIBDATASRC_API AdditionalNodeInfo;
 ///
 // Note: non-Doxygen-documented methods are documented in the base class.
 
-class ISC_LIBDATASRC_API RBNodeRRset : public isc::dns::AbstractRRset {
+class B10_LIBDATASRC_API RBNodeRRset : public isc::dns::AbstractRRset {
 
 private:
     // Note: The copy constructor and the assignment operator are intentionally
