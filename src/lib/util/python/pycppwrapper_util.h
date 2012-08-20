@@ -61,7 +61,7 @@ namespace python {
 
 /// This is thrown inside this utility when it finds a NULL pointer is passed
 /// when it should not be NULL.
-class ISC_PYTHON_WRAPPER_API PyCPPWrapperException : public isc::Exception {
+class B10_PYTHON_WRAPPER_API PyCPPWrapperException : public isc::Exception {
 public:
     PyCPPWrapperException(const char* file, size_t line, const char* what) :
         isc::Exception(file, line, what) {}

@@ -26,12 +26,12 @@
 #endif
 
 #if !defined(_WIN32) || defined(USE_STATIC_LINK) || defined(USE_STATIC_WRAPPER)
-#define ISC_PYTHON_WRAPPER_API
+#define B10_PYTHON_WRAPPER_API
 #else
 #ifdef B10_LIBDNS_PYTHON_EXPORT
-#define ISC_PYTHON_WRAPPER_API __declspec(dllexport)
+#define B10_PYTHON_WRAPPER_API __declspec(dllexport)
 #else
-#define ISC_PYTHON_WRAPPER_API __declspec(dllimport)
+#define B10_PYTHON_WRAPPER_API __declspec(dllimport)
 #endif
 #endif
 
