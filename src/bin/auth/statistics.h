@@ -177,7 +177,7 @@ public:
     /// \throw bad_alloc
     ///
     /// \return a tree of statistics items whose values are not zero.
-    const item_tree_type get_clear(const item_node_name_set_type &items);
+    const item_tree_type getClear(const item_node_name_set_type &items);
 
     /// \brief Dump all of the counters.
     ///

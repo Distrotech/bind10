@@ -68,7 +68,7 @@ public:
     /// \param type %Counter item to get the value of
     ///
     /// \throw isc::OutOfRange \a type is invalid
-    const Value get_clear(const Type& type);
+    const Value getClear(const Type& type);
 };
 
 }   // namespace statistics

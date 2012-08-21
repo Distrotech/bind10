@@ -125,7 +125,7 @@ TEST_F(CountersTest, incrementNormalQuery_delta) {
     names.insert("auth.server.qr");
 
     expect_nonzero.clear();
-    checkCountersAllZeroExcept(counters.get_clear(names), expect_nonzero);
+    checkCountersAllZeroExcept(counters.getClear(names), expect_nonzero);
 
     qrattrs.setQueryIPVersion(AF_INET6);
     qrattrs.setQueryTransportProtocol(IPPROTO_UDP);
@@ -149,12 +149,12 @@ TEST_F(CountersTest, incrementNormalQuery_delta) {
     expect_nonzero.insert("auth.server.qr.response");
     expect_nonzero.insert("auth.server.qr.qrynoauthans");
     expect_nonzero.insert("auth.server.qr.rcode.refused");
-    checkCountersAllZeroExcept(counters.get_clear(names), expect_nonzero);
+    checkCountersAllZeroExcept(counters.getClear(names), expect_nonzero);
     expect_nonzero.clear();
-    checkCountersAllZeroExcept(counters.get_clear(names), expect_nonzero);
+    checkCountersAllZeroExcept(counters.getClear(names), expect_nonzero);
     qrattrs.setQueryIPVersion(AF_INET6);
     expect_nonzero.insert("auth.server.qr.qtype.aaaa");
-    checkCountersAllZeroExcept(counters.get_clear(names), expect_nonzero);
+    checkCountersAllZeroExcept(counters.getClear(names), expect_nonzero);
 }
 
 TEST_F(CountersTest, checkDumpItems) {
@@ -223,7 +223,7 @@ TEST_F(CountersTest, checkGetClearItems) {
 
     // get "auth.server.qr"
     names.insert("auth.server.qr");
-    counters.get_clear(names)->getValue(stats_map);
+    counters.getClear(names)->getValue(stats_map);
     EXPECT_EQ(0, stats_map.size());
 
     qrattrs.setQueryIPVersion(AF_INET6);
@@ -233,7 +233,7 @@ TEST_F(CountersTest, checkGetClearItems) {
     qrattrs.setQueryDO(true);
     qrattrs.answerHasSent();
 
-    counters.get_clear(names)->getValue(stats_map);
+    counters.getClear(names)->getValue(stats_map);
     EXPECT_EQ(0, stats_map.size());
 }
 

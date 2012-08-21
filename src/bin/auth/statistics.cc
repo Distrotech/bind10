@@ -62,15 +62,15 @@ fillNodes(const Counter &counter, const char *nodename[], const size_t size,
 }
 
 void
-fillNodes_clear(Counter &counter, const char *nodename[], const size_t size,
-          const std::string &prefix, Counters::item_tree_type &trees)
+fillNodesClear(Counter &counter, const char *nodename[], const size_t size,
+                const std::string &prefix, Counters::item_tree_type &trees)
 {
     long int value;
 
     for (size_t i = 0; i < size; ++i) {
-	value = static_cast<long int>( counter.get_clear(i) );
+        value = static_cast<long int>( counter.getClear(i) );
         if (value != 0) {
-            trees->set (prefix + nodename[i], Element::create(value));
+            trees->set(prefix + nodename[i], Element::create(value));
         }
     }
 }
@@ -89,7 +89,7 @@ public:
     const Counters::item_tree_type
         get(const Counters::item_node_name_set_type& trees) const;
     const Counters::item_tree_type
-        get_clear(const Counters::item_node_name_set_type& trees);
+        getClear(const Counters::item_node_name_set_type& trees);
     // Currently for testing purpose only
     const Counters::item_tree_type dump() const;
     bool submitStatistics() const;
@@ -333,18 +333,18 @@ CountersImpl::get(const Counters::item_node_name_set_type &trees) const {
 }
 
 const Counters::item_tree_type
-CountersImpl::get_clear(const Counters::item_node_name_set_type &trees) {
+CountersImpl::getClear(const Counters::item_node_name_set_type &trees) {
     using namespace isc::data;
 
     Counters::item_tree_type item_tree = Element::createMap();
 
     BOOST_FOREACH(const Counters::item_node_name_type& node, trees) {
         if (node == "auth.server.qr") {
-            fillNodes_clear(server_qr_counter_, QRCounterItemName, QR_COUNTER_TYPES,
+            fillNodesClear(server_qr_counter_, QRCounterItemName, QR_COUNTER_TYPES,
                       "auth.server.qr.", item_tree);
         } else if (node == "auth.server.socket") {
             // currently not implemented
-            fillNodes_clear(server_socket_counter_, SocketCounterItemName,
+            fillNodesClear(server_socket_counter_, SocketCounterItemName,
                       SOCKET_COUNTER_TYPES, "auth.server.socket.", item_tree);
         } else if (node == "auth.zones") {
             // currently not implemented
@@ -385,8 +385,8 @@ Counters::get(const Counters::item_node_name_set_type &trees) const {
 }
 
 const Counters::item_tree_type
-Counters::get_clear(const Counters::item_node_name_set_type &trees) {
-    return (impl_->get_clear(trees));
+Counters::getClear(const Counters::item_node_name_set_type &trees) {
+    return (impl_->getClear(trees));
 }
 
 const Counters::item_tree_type

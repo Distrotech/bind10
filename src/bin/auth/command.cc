@@ -133,6 +133,7 @@ public:
 };
 
 // Handle the "getstats" command.  The argument is a list.
+// "getstats_delta" command responds statistics counters.
 class GetStatsCommand : public AuthCommand {
 public:
     virtual ConstElementPtr exec(AuthSrv& server, isc::data::ConstElementPtr) {
@@ -144,13 +145,14 @@ public:
 };
 
 // Handle the "getstats_delta" command.  The argument is a list.
+// "getstats_delta" command responds statistics counters and clear them.
 class GetStatsDeltaCommand : public AuthCommand {
 public:
     virtual ConstElementPtr exec(AuthSrv& server, isc::data::ConstElementPtr) {
         LOG_DEBUG(auth_logger, DBG_AUTH_OPS, AUTH_RECEIVED_GETSTATS);
         statistics::Counters::item_node_name_set_type trees;
         trees.insert("auth.server.qr");
-        return (createAnswer(0, server.getStatistics_delta(trees)));
+        return (createAnswer(0, server.getStatisticsDelta(trees)));
     }
 };
 

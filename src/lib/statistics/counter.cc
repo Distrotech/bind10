@@ -33,7 +33,7 @@ class CounterImpl : boost::noncopyable {
         ~CounterImpl();
         void inc(const Counter::Type&);
         const Counter::Value& get(const Counter::Type&) const;
-        const Counter::Value get_clear(const Counter::Type&);
+        const Counter::Value getClear(const Counter::Type&);
 };
 
 CounterImpl::CounterImpl(const size_t items) :
@@ -64,7 +64,7 @@ CounterImpl::get(const Counter::Type& type) const {
 }
 
 const Counter::Value
-CounterImpl::get_clear(const Counter::Type& type) {
+CounterImpl::getClear(const Counter::Type& type) {
     Counter::Value value;
     if(type >= counters_.size()) {
         isc_throw(isc::OutOfRange, "Counter type is out of range");
@@ -91,8 +91,8 @@ Counter::get(const Type& type) const {
 }
 
 const Counter::Value
-Counter::get_clear(const Type& type) {
-    return (impl_->get_clear(type));
+Counter::getClear(const Type& type) {
+    return (impl_->getClear(type));
 }
 
 }   // namespace statistics
