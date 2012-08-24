@@ -100,4 +100,7 @@ class TSigKeysTest(unittest.TestCase):
         self.assertNotEqual(None, tsig_keys.check({'keys': {}}))
 
 if __name__ == '__main__':
+    try:
+        unittest.main(verbosity=2)
+    except TypeError:
         unittest.main()

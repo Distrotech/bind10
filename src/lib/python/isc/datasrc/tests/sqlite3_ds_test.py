@@ -36,4 +36,7 @@ class NewDBFile(unittest.TestCase):
         self.assertNotEqual(None, sqlite3_ds.open(DBFILE_NEW_MINOR_SCHEMA)[0])
 
 if __name__ == '__main__':
-    unittest.main()
+    try:
+        unittest.main(verbosity=2)
+    except TypeError:
+        unittest.main()

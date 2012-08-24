@@ -626,4 +626,7 @@ if __name__ == '__main__':
         exit(1)
     isc.log.init("unittests")
     isc.log.resetUnitTestRootLogger()
-    unittest.main()
+    try:
+        unittest.main(verbosity=2)
+    except TypeError:
+        unittest.main()

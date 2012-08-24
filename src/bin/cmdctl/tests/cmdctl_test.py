@@ -488,6 +488,9 @@ class TestFuncNotInClass(unittest.TestCase):
 
 if __name__== "__main__":
     isc.log.resetUnitTestRootLogger()
-    unittest.main()
+    try:
+        unittest.main(verbosity=2)
+    except TypeError:
+        unittest.main()
 
 

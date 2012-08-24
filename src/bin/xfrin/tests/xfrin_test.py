@@ -3029,6 +3029,9 @@ class TestXfrinTransferStats(unittest.TestCase):
 if __name__== "__main__":
     try:
         isc.log.resetUnitTestRootLogger()
-        unittest.main()
+        try:
+            unittest.main(verbosity=2)
+        except TypeError:
+            unittest.main()
     except KeyboardInterrupt as e:
         print(e)

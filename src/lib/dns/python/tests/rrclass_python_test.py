@@ -94,4 +94,7 @@ class RRClassTest(unittest.TestCase):
         self.assertEqual(255, RRClass.ANY().get_code())
 
 if __name__ == '__main__':
-    unittest.main()
+    try:
+        unittest.main(verbosity=2)
+    except TypeError:
+        unittest.main()

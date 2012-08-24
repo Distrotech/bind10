@@ -190,4 +190,7 @@ class TSIGKeyRingTest(unittest.TestCase):
 if __name__ == "__main__":
     isc.log.init("bind10") # FIXME Should this be needed?
     isc.log.resetUnitTestRootLogger()
-    unittest.main()
+    try:
+        unittest.main(verbosity=2)
+    except TypeError:
+        unittest.main()

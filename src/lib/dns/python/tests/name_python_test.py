@@ -241,4 +241,7 @@ class NameTest(unittest.TestCase):
                                 hash(Name('EXAMPLE.ORG')))
 
 if __name__ == '__main__':
-    unittest.main()
+    try:
+        unittest.main(verbosity=2)
+    except TypeError:
+        unittest.main()

@@ -409,5 +409,8 @@ class testSession(unittest.TestCase):
             os.remove(TEST_SOCKET_FILE)
 
 if __name__ == "__main__":
-    unittest.main()
+    try:
+        unittest.main(verbosity=2)
+    except TypeError:
+        unittest.main()
 

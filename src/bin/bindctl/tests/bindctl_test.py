@@ -484,5 +484,8 @@ class TestCommandLineOptions(unittest.TestCase):
                           ['--csv-file-dir'])
 
 if __name__== "__main__":
-    unittest.main()
+    try:
+        unittest.main(verbosity=2)
+    except TypeError:
+        unittest.main()
 

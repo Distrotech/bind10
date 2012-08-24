@@ -80,4 +80,7 @@ class RRTTLTest(unittest.TestCase):
         self.assertTrue(self.t1 <= self.t2)
 
 if __name__ == '__main__':
-    unittest.main()
+    try:
+        unittest.main(verbosity=2)
+    except TypeError:
+        unittest.main()

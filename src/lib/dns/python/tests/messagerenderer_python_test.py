@@ -117,4 +117,7 @@ class MessageRendererTest(unittest.TestCase):
         self.assertRaises(TypeError, renderer.set_compress_mode, "wrong")
 
 if __name__ == '__main__':
-    unittest.main()
+    try:
+        unittest.main(verbosity=2)
+    except TypeError:
+        unittest.main()

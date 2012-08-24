@@ -92,4 +92,7 @@ class RdataTest(unittest.TestCase):
         
 
 if __name__ == '__main__':
-    unittest.main()
+    try:
+        unittest.main(verbosity=2)
+    except TypeError:
+        unittest.main()

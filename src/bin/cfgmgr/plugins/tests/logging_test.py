@@ -132,4 +132,7 @@ class LoggingConfCheckTest(unittest.TestCase):
                                             'severity': 123}]}))
 
 if __name__ == '__main__':
+    try:
+        unittest.main(verbosity=2)
+    except TypeError:
         unittest.main()

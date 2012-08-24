@@ -912,7 +912,10 @@ class TestOSEnv(unittest.TestCase):
         imp.reload(stats)
 
 def test_main():
-    unittest.main()
+    try:
+        unittest.main(verbosity=2)
+    except TypeError:
+        unittest.main()
 
 if __name__ == "__main__":
     test_main()

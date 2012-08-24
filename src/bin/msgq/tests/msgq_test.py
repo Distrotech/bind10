@@ -246,4 +246,7 @@ class SendNonblock(unittest.TestCase):
         self.send_many(data)
 
 if __name__ == '__main__':
-    unittest.main()
+    try:
+        unittest.main(verbosity=2)
+    except TypeError:
+        unittest.main()

@@ -211,5 +211,8 @@ class TestParseArgs(unittest.TestCase):
         self.assertTrue(parsed.clear_config)
 
 if __name__ == '__main__':
-    unittest.main()
+    try:
+        unittest.main(verbosity=2)
+    except TypeError:
+        unittest.main()
 

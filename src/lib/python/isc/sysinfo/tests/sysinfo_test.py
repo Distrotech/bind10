@@ -419,4 +419,7 @@ class SysInfoTest(unittest.TestCase):
         self.assertEqual(1075988.48, s.get_mem_swap_free())
 
 if __name__ == "__main__":
-    unittest.main()
+    try:
+        unittest.main(verbosity=2)
+    except TypeError:
+        unittest.main()
