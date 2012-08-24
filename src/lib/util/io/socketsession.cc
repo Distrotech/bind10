@@ -24,7 +24,6 @@
 #include <fcntl.h>
 #include <stdint.h>
 
-#include <cerrno>
 #include <csignal>
 #include <cstddef>
 #include <cstring>
@@ -38,12 +37,15 @@
 #include <exceptions/exceptions.h>
 
 #include <util/buffer.h>
+#include <util/error.h>
+#include <util/networking.h>
 
 #include "socket_share.h"
 #include "socketsession.h"
 #include "sockaddr_util.h"
 
 using namespace std;
+using namespace isc::util;
 
 namespace isc {
 namespace util {
@@ -95,7 +97,7 @@ SocketSessionForwarder::SocketSessionForwarder(const std::string& unix_file) :
     // We need to filter SIGPIPE for subsequent push().  See the class
     // description.
     if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-        isc_throw(Unexpected, "Failed to filter SIGPIPE: " << strerror(errno));
+        isc_throw(Unexpected, "Failed to filter SIGPIPE: " << strneterror());
     }
 
     ForwarderImpl impl;
@@ -139,7 +141,7 @@ SocketSessionForwarder::connectToReceiver() {
     impl_->sd_ = socket(AF_UNIX, SOCK_STREAM, 0);
     if (impl_->sd_ == invalid_socket) {
         isc_throw(SocketSessionError, "Failed to create a UNIX domain socket: "
-                  << strerror(errno));
+                  << strneterror());
     }
     // Make the socket non blocking
     int fcntl_flags = fcntl(impl_->sd_, F_GETFL, 0);
@@ -151,17 +153,23 @@ SocketSessionForwarder::connectToReceiver() {
         close();   // note: this is the internal method, not ::close()
         isc_throw(SocketSessionError,
                   "Failed to make UNIX domain socket non blocking: " <<
-                  strerror(errno));
+                  strerror());
     }
     // Ensure the socket send buffer is large enough.  If we can't get the
     // current size, simply set the sufficient size.
     int sndbuf_size;
     socklen_t sndbuf_size_len = sizeof(sndbuf_size);
-    if (getsockopt(impl_->sd_, SOL_SOCKET, SO_SNDBUF, &sndbuf_size,
-                   &sndbuf_size_len) == -1 ||
+    if (getsockopt(impl_->sd_,
+                   SOL_SOCKET,
+                   SO_SNDBUF,
+                   (char *) &sndbuf_size,
+                   &sndbuf_size_len) == socket_error_retval ||
         sndbuf_size < SOCKSESSION_BUFSIZE) {
-        if (setsockopt(impl_->sd_, SOL_SOCKET, SO_SNDBUF, &SOCKSESSION_BUFSIZE,
-                       sizeof(SOCKSESSION_BUFSIZE)) == -1) {
+        if (setsockopt(impl_->sd_,
+                       SOL_SOCKET,
+                       SO_SNDBUF,
+                       (char *) &SOCKSESSION_BUFSIZE,
+                       sizeof(SOCKSESSION_BUFSIZE)) == socket_error_retval) {
             close();
             isc_throw(SocketSessionError, "Failed to set send buffer size");
         }
@@ -171,7 +179,7 @@ SocketSessionForwarder::connectToReceiver() {
         close();
         isc_throw(SocketSessionError, "Failed to connect to UNIX domain "
                   "endpoint " << impl_->sock_un_.sun_path << ": " <<
-                  strerror(errno));
+                  strneterror());
     }
 }
 
@@ -180,7 +188,7 @@ SocketSessionForwarder::close() {
     if (impl_->sd_ == invalid_socket) {
         isc_throw(BadValue, "Attempt of close before connect");
     }
-    ::close(impl_->sd_);
+    closesocket(impl_->sd_);
     impl_->sd_ = invalid_socket;
 }
 
@@ -218,7 +226,7 @@ SocketSessionForwarder::push(socket_type sock,
 
     if (send_socket(impl_->sd_, sock) != 0) {
         isc_throw(SocketSessionError, "socket passing failed: " <<
-                  strerror(errno));
+                  strneterror());
     }
 
     impl_->buf_.clear();
@@ -250,7 +258,7 @@ SocketSessionForwarder::push(socket_type sock,
         if (cc < 0) {
             isc_throw(SocketSessionError,
                       "Write failed in forwarding a socket session: " <<
-                      strerror(errno));
+                      strerror());
         }
         isc_throw(SocketSessionError,
                   "Incomplete write in forwarding a socket session: " << cc <<
@@ -285,8 +293,11 @@ struct SocketSessionReceiver::ReceiverImpl {
                                    header_buf_(DEFAULT_HEADER_BUFLEN),
                                    data_buf_(INITIAL_BUFSIZE)
     {
-        if (setsockopt(sd_, SOL_SOCKET, SO_RCVBUF, &SOCKSESSION_BUFSIZE,
-                       sizeof(SOCKSESSION_BUFSIZE)) == -1) {
+        if (setsockopt(sd_,
+                       SOL_SOCKET,
+                       SO_RCVBUF,
+                       (char *) &SOCKSESSION_BUFSIZE,
+                       sizeof(SOCKSESSION_BUFSIZE)) == socket_error_retval) {
             isc_throw(SocketSessionError,
                       "Failed to set receive buffer size");
         }
@@ -318,7 +329,7 @@ void
 readFail(int actual_len, int expected_len) {
     if (expected_len < 0) {
         isc_throw(SocketSessionError, "Failed to receive data from "
-                  "SocketSessionForwarder: " << strerror(errno));
+                  "SocketSessionForwarder: " << strneterror());
     }
     isc_throw(SocketSessionError, "Incomplete data from "
               "SocketSessionForwarder: " << actual_len << "/" <<
@@ -332,7 +343,7 @@ struct ScopedSocket : boost::noncopyable {
     ScopedSocket(socket_type sd) : sd_(sd) {}
     ~ScopedSocket() {
         if (sd_ != invalid_socket) {
-            close(sd_);
+            closesocket(sd_);
         }
     }
     int release() {
@@ -349,7 +360,7 @@ SocketSessionReceiver::pop() {
     ScopedSocket passed_sock(invalid_socket);
     if (recv_socket(impl_->sd_, &passed_sock.sd_) == SOCKET_SYSTEM_ERROR) {
         isc_throw(SocketSessionError,
-                  "Receiving a forwarded socket failed: " << strerror(errno));
+                  "Receiving a forwarded socket failed: " << strneterror());
     } else if (passed_sock.sd_ == invalid_socket) {
         isc_throw(SocketSessionError, "No socket forwarded");
     }

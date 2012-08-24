@@ -15,10 +15,11 @@
 
 #include <config/module_spec.h>
 
+#include <util/error.h>
+
 #include <sstream>
 #include <iostream>
 #include <fstream>
-#include <cerrno>
 
 #include <boost/foreach.hpp>
 
@@ -314,7 +315,7 @@ moduleSpecFromFile(const std::string& file_name, const bool check)
     file.open(file_name.c_str());
     if (!file) {
         std::stringstream errs;
-        errs << "Error opening " << file_name << ": " << strerror(errno);
+        errs << "Error opening " << file_name << ": " << isc::util::strerror();
         isc_throw(ModuleSpecError, errs.str());
     }
 

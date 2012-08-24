@@ -23,6 +23,7 @@
 #include <exceptions/exceptions.h>
 
 #include <util/buffer.h>
+#include <util/networking.h>
 #include <dns/exceptions.h>
 #include <dns/messagerenderer.h>
 #include <dns/rdata.h>
@@ -78,7 +79,10 @@ string
 A::toText() const {
     char addr_string[sizeof("255.255.255.255")];
 
-    if (inet_ntop(AF_INET, &addr_, addr_string, sizeof(addr_string)) == NULL) {
+    if (isc::util::inetntop(AF_INET,
+                            &addr_,
+                            addr_string,
+                            sizeof(addr_string)) == NULL) {
         isc_throw(Unexpected,
                   "Failed to convert IN/A RDATA to textual IPv4 address");
     }

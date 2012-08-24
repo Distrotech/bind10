@@ -75,7 +75,10 @@ string
 AAAA::toText() const {
     char addr_string[sizeof("ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255")];
 
-    if (inet_ntop(AF_INET6, &addr_, addr_string, sizeof(addr_string)) == NULL) {
+    if (isc::util::inetntop(AF_INET6,
+                            &addr_,
+                            addr_string,
+                            sizeof(addr_string)) == NULL) {
         isc_throw(Unexpected,
                   "Failed to convert IN/AAAA RDATA to textual IPv6 address");
     }

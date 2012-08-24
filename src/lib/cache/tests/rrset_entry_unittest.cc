@@ -14,6 +14,9 @@
 
 #include <config.h>
 #include <string>
+#ifdef _WIN32
+#include <ctime>
+#endif
 #include <gtest/gtest.h>
 #include <cache/cache_entry_key.h>
 #include <cache/rrset_entry.h>

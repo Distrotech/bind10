@@ -28,10 +28,12 @@
 #include <asiolink/udp_endpoint.h>
 #include <asiolink/io_error.h>
 #include <util/io/pktinfo_utilities.h>
+#include <util/networking.h>
 
 using namespace std;
 using namespace asio::detail;
 using namespace isc::asiolink;
+using namespace isc::util;
 using namespace isc::util::io::internal;
 
 namespace isc {
@@ -115,7 +117,7 @@ bool IfaceMgr::Iface::delSocket(socket_type sockfd) {
     list<SocketInfo>::iterator sock = sockets_.begin();
     while (sock!=sockets_.end()) {
         if (sock->sockfd_ == sockfd) {
-            close(sockfd);
+            closesocket(sockfd);
             sockets_.erase(sock);
             return (true); //socket found
         }
@@ -159,7 +161,7 @@ void IfaceMgr::closeSockets() {
         for (SocketCollection::iterator sock = iface->sockets_.begin();
              sock != iface->sockets_.end(); ++sock) {
             cout << "Closing socket " << sock->sockfd_ << endl;
-            close(sock->sockfd_);
+            closesocket(sock->sockfd_);
         }
         iface->sockets_.clear();
     }
@@ -304,7 +306,7 @@ bool IfaceMgr::openSockets6(const uint16_t port) {
             // on Linux.
             if ( !joinMulticast(sock, iface->getName(),
                                 string(ALL_DHCP_RELAY_AGENTS_AND_SERVERS))) {
-                close(sock);
+                closesocket(sock);
                 isc_throw(Unexpected, "Failed to join " << ALL_DHCP_RELAY_AGENTS_AND_SERVERS
                           << " multicast group.");
             }
@@ -533,7 +535,7 @@ socket_type IfaceMgr::openSocket4(Iface& iface,
     }
 
     if (bind(sock, (struct sockaddr *)&addr4, sizeof(addr4)) < 0) {
-        close(sock);
+        closesocket(sock);
         isc_throw(Unexpected, "Failed to bind socket " << sock << " to " << addr.toText()
                   << "/port=" << port);
     }
@@ -542,8 +544,9 @@ socket_type IfaceMgr::openSocket4(Iface& iface,
     // it will be difficult to undersand, where this packet came from
 #if defined(IP_PKTINFO)
     int flag = 1;
-    if (setsockopt(sock, IPPROTO_IP, IP_PKTINFO, &flag, sizeof(flag)) != 0) {
-        close(sock);
+    if (setsockopt(sock, IPPROTO_IP, IP_PKTINFO,
+                   (char *)&flag, sizeof(flag)) != 0) {
+        closesocket(sock);
         isc_throw(Unexpected, "setsockopt: IP_PKTINFO: failed.");
     }
 #endif
@@ -591,27 +594,27 @@ socket_type IfaceMgr::openSocket6(Iface& iface,
     int flag = 1;
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
                    (char *)&flag, sizeof(flag)) < 0) {
-        close(sock);
+        closesocket(sock);
         isc_throw(Unexpected, "Can't set SO_REUSEADDR option on dhcpv6 socket.");
     }
 
     if (bind(sock, (struct sockaddr *)&addr6, sizeof(addr6)) < 0) {
-        close(sock);
+        closesocket(sock);
         isc_throw(Unexpected, "Failed to bind socket " << sock << " to " << addr.toText()
                   << "/port=" << port);
     }
 #ifdef IPV6_RECVPKTINFO
     // RFC3542 - a new way
     if (setsockopt(sock, IPPROTO_IPV6, IPV6_RECVPKTINFO,
-                   &flag, sizeof(flag)) != 0) {
-        close(sock);
+                   (char *)&flag, sizeof(flag)) != 0) {
+        closesocket(sock);
         isc_throw(Unexpected, "setsockopt: IPV6_RECVPKTINFO failed.");
     }
 #else
     // RFC2292 - an old way
     if (setsockopt(sock, IPPROTO_IPV6, IPV6_PKTINFO,
-                   &flag, sizeof(flag)) != 0) {
-        close(sock);
+                   (char *)&flag, sizeof(flag)) != 0) {
+        closesocket(sock);
         isc_throw(Unexpected, "setsockopt: IPV6_PKTINFO: failed.");
     }
 #endif
@@ -624,7 +627,7 @@ socket_type IfaceMgr::openSocket6(Iface& iface,
 
         if ( !joinMulticast( sock, iface.getName(),
                          string(ALL_DHCP_RELAY_AGENTS_AND_SERVERS) ) ) {
-            close(sock);
+            closesocket(sock);
             isc_throw(Unexpected, "Failed to join " << ALL_DHCP_RELAY_AGENTS_AND_SERVERS
                       << " multicast group.");
         }
@@ -654,7 +657,7 @@ IfaceMgr::joinMulticast(socket_type sock,
 
     mreq.ipv6mr_interface = if_nametoindex(ifname.c_str());
     if (setsockopt(sock, IPPROTO_IPV6, IPV6_JOIN_GROUP,
-                   &mreq, sizeof(mreq)) < 0) {
+                   (char *)&mreq, sizeof(mreq)) < 0) {
         cout << "Failed to join " << mcast << " multicast group." << endl;
         return (false);
     }
@@ -861,7 +864,7 @@ IfaceMgr::receive4(uint32_t timeout) {
         // nothing received and timeout has been reached
         return (Pkt4Ptr()); // NULL
     } else if (result < 0) {
-        cout << "Socket read error: " << strerror(errno) << endl;
+        cout << "Socket read error: " << strneterror() << endl;
 
         /// @todo: perhaps throw here?
         return (Pkt4Ptr()); // NULL
@@ -1029,7 +1032,7 @@ Pkt6Ptr IfaceMgr::receive6(uint32_t timeout) {
         // nothing received and timeout has been reached
         return (Pkt6Ptr()); // NULL
     } else if (result < 0) {
-        cout << "Socket read error: " << strerror(errno) << endl;
+        cout << "Socket read error: " << strneterror() << endl;
 
         /// @todo: perhaps throw here?
         return (Pkt6Ptr()); // NULL

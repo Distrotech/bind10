@@ -14,6 +14,7 @@
 
 #include "fork.h"
 
+#include <util/error.h>
 #include <util/io/socket.h>
 
 #include <sys/types.h>
@@ -21,7 +22,6 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
-#include <cerrno>
 #include <stdlib.h>
 #include <stdio.h>
 

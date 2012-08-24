@@ -18,10 +18,13 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
-#include <errno.h>
 #include <stdlib.h>             // for malloc and free
 #include <unistd.h>
 #include "socket_share.h"
+#include <util/error.h>
+#include <util/networking.h>
+
+using isc::util::closesocket;
 
 namespace isc {
 namespace util {
@@ -97,7 +100,7 @@ recv_socket(const socket_type sock, socket_type *val) {
     if (cc <= 0) {
         free(msghdr.msg_control);
         if (cc == 0) {
-            errno = ECONNRESET;
+            setneterror(ECONNRESET);
         }
         return (SOCKET_SYSTEM_ERROR);
     }
@@ -112,13 +115,14 @@ recv_socket(const socket_type sock, socket_type *val) {
     // one returned previously, even if that one is not closed yet. So,
     // we just re-number every one we get, so they are unique.
     socket_type new_sd(dup(s));
-    int close_error(close(s));
+    int close_error(closesocket(s));
     if (close_error == socket_error_retval || new_sd == invalid_socket) {
         // We need to return an error, because something failed. But in case
         // it was the previous close, we at least try to close the duped SD.
         if (new_sd != invalid_socket) {
-            close(new_sd); // If this fails, nothing but returning error can't
-                           // be done and we are doing that anyway.
+            closesocket(new_sd); // If this fails, nothing but returning error
+                                 // can't be done and we are doing that anyway.
+
         }
         return (SOCKET_SYSTEM_ERROR);
     }

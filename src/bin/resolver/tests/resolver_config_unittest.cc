@@ -19,7 +19,6 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
-#include <cerrno>
 #include <cstring>
 #include <string>
 
@@ -46,6 +45,8 @@
 
 #include <resolver/resolver.h>
 
+#include <util/networking.h>
+
 #include <dns/tests/unittest_util.h>
 #include <testutils/srv_test.h>
 #include <testutils/mockups.h>
@@ -62,6 +63,7 @@ using namespace isc::testutils;
 using namespace isc::asiodns;
 using namespace isc::asiolink;
 using namespace isc::server_common;
+using namespace isc::util;
 using isc::UnitTestUtil;
 
 namespace {
@@ -197,7 +199,7 @@ private:
 struct ScopedSocket : public boost::noncopyable {
 public:
     ScopedSocket(socket_type sd) : sd_(sd) {}
-    ~ScopedSocket() { close(sd_); }
+    ~ScopedSocket() { closesocket(sd_); }
 private:
     const socket_type sd_;
 };
@@ -219,12 +221,12 @@ createSocket(const char* address, const char* port) {
     const int s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
     if (s == -1) {
         isc_throw(TestConfigError, "socket system call failed: " <<
-                  strerror(errno));
+                  strneterror());
     }
     if (bind(s, res->ai_addr, res->ai_addrlen) == -1) {
-        close(s);
+        closesocket(s);
         isc_throw(TestConfigError, "bind system call failed: " <<
-                  strerror(errno));
+                  strneterror());
     }
     return (s);
 }

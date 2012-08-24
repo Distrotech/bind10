@@ -23,9 +23,10 @@
 #include <asiodns/tcp_server.h>
 #include <asiodns/dns_answer.h>
 #include <asiodns/dns_lookup.h>
+#include <util/error.h>
+#include <util/networking.h>
 #include <string>
 #include <cstring>
-#include <cerrno>
 #include <csignal>
 #include <unistd.h> //for alarm
 
@@ -439,21 +440,28 @@ private:
         }
 
         socket_type sock;
+#ifndef _WIN32
         const int on(1);
+#endif
         // Go as far as you can and stop on failure
         // Create the socket
         // set the options
         // and bind it
         sock = socket(res->ai_family, res->ai_socktype,	res->ai_protocol);
         const bool failed(sock == invalid_socket ||
-                          setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on,
-                                     sizeof(on)) == -1 ||
+#ifndef _WIN32
+                          setsockopt(sock,
+                                     SOL_SOCKET,
+                                     SO_REUSEADDR,
+                                     (char *) &on,
+                                     sizeof(on)) == socket_error_retval ||
+#endif
                           bind(sock, res->ai_addr, res->ai_addrlen) == -1);
         // No matter if it succeeded or not, free the address info
         freeaddrinfo(res);
         if (failed) {
             if (sock != invalid_socket) {
-                close(sock);
+                isc::util::closesocket(sock);
             }
             return (invalid_socket);
         } else {
@@ -464,13 +472,13 @@ protected:
     // Using SetUp here so we can ASSERT_*
     void SetUp() {
         const socket_type socketUDP(getSocket(SOCK_DGRAM));
-        ASSERT_NE(invalid_socket, socketUDP) << strerror(errno);
+        ASSERT_NE(invalid_socket, socketUDP) << isc::util::strneterror();
         this->udp_server_ = new UDPServerClass(this->service,
                                                socketUDP, AF_INET6,
                                                this->checker_, this->lookup_,
                                                this->answer_);
         const socket_type socketTCP(getSocket(SOCK_STREAM));
-        ASSERT_NE(invalid_socket, socketTCP) << strerror(errno);
+        ASSERT_NE(invalid_socket, socketTCP) << isc::util::strneterror();
         this->tcp_server_ = new TCPServer(this->service,
                                           socketTCP, AF_INET6,
                                           this->checker_, this->lookup_,

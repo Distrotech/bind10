@@ -26,16 +26,18 @@
 
 #include <cstdlib>
 #include <cstddef>
-#include <cerrno>
 #include <sys/socket.h>
 #include <sys/un.h>
 
 #include <boost/foreach.hpp>
 #include <boost/scoped_ptr.hpp>
 
+#include <util/error.h>
+#include <util/networking.h>
 #include <util/io/socket.h>
 #include <util/io/socket_share.h>
 
+using namespace isc::util;
 using namespace isc::data;
 using namespace isc::config;
 using namespace isc::server_common;
@@ -327,13 +329,14 @@ TEST_F(SocketRequestorTest, testBadSocketReleaseAnswers) {
 bool
 setRecvTimo(socket_type s) {
     const struct timeval timeo = { 10, 0 }; // 10sec, arbitrary choice
-    if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &timeo, sizeof(timeo)) == 0) {
+    if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO,
+                   (char *)&timeo, sizeof(timeo)) == 0) {
         return (true);
     }
-    if (errno == ENOPROTOOPT) { // deviant OS, give up using it.
+    if (getneterror() == ENOPROTOOPT) { // deviant OS, give up using it.
         return (false);
     }
-    isc_throw(isc::Unexpected, "set RCVTIMEO failed: " << strerror(errno));
+    isc_throw(isc::Unexpected, "set RCVTIMEO failed: " << strneterror());
 }
 
 // Helper test class that creates a randomly named domain socket
@@ -349,10 +352,10 @@ public:
         // Misuse mkstemp to generate a file name.
         const int f = mkstemp(path_);
         if (f == -1) {
-            isc_throw(Unexpected, "mkstemp failed: " << strerror(errno));
+            isc_throw(Unexpected, "mkstemp failed: " << strerror());
         }
         // Just need the name, so immediately close
-        close(f);
+        closesocket(f);
     }
 
     ~TestSocket() {
@@ -367,7 +370,7 @@ public:
             path_ = NULL;
         }
         if (sd_ != invalid_socket) {
-            close(sd_);
+            closesocket(sd_);
             sd_ = invalid_socket;
         }
     }
@@ -390,7 +393,7 @@ public:
             exit(0);
         } else {
             // parent does not need sd_ anymore
-            close(sd_);
+            closesocket(sd_);
             sd_ = invalid_socket;
         }
         return (timo_ok);
@@ -423,13 +426,13 @@ private:
         if (bind(sd_, (const struct sockaddr*)&socket_address, len) == -1) {
             isc_throw(Unexpected,
                       "unable to bind to test domain socket " << path_ <<
-                      ": " << strerror(errno));
+                      ": " << strneterror());
         }
 
         if (listen(sd_, 1) == -1) {
             isc_throw(Unexpected,
                       "unable to listen on test domain socket " << path_ <<
-                      ": " << strerror(errno));
+                      ": " << strneterror());
         }
     }
 
@@ -453,7 +456,7 @@ private:
     serve(const std::vector<std::pair<std::string, int> >& data) {
         const socket_type client_sd = accept(sd_, NULL, NULL);
         if (client_sd == invalid_socket) {
-            isc_throw(Unexpected, "Error in accept(): " << strerror(errno));
+            isc_throw(Unexpected, "Error in accept(): " << strneterror());
         }
         if (!setRecvTimo(client_sd)) {
             // In the loop below we do blocking read.  To avoid deadlock
@@ -496,11 +499,11 @@ private:
                 }
             }
             if (!result) {
-                isc_throw(Exception, "Error in send_socket(): " <<
-                          strerror(errno));
+                isc_throw(Exception,
+                          "Error in send_socket(): " << strerror());
             }
         }
-        close(client_sd);
+        closesocket(client_sd);
     }
 
     socket_type sd_;
@@ -528,19 +531,19 @@ TEST_F(SocketRequestorTest, testSocketPassing) {
         addAnswer("foo", ts.getPath());
         socket_id = doRequest();
         EXPECT_EQ("foo", socket_id.second);
-        EXPECT_EQ(0, close(socket_id.first));
+        EXPECT_EQ(0, closesocket(socket_id.first));
 
         // 2 should be ok too
         addAnswer("bar", ts.getPath());
         socket_id = doRequest();
         EXPECT_EQ("bar", socket_id.second);
-        EXPECT_EQ(0, close(socket_id.first));
+        EXPECT_EQ(0, closesocket(socket_id.first));
 
         // 3 should be ok too (reuse earlier token)
         addAnswer("foo", ts.getPath());
         socket_id = doRequest();
         EXPECT_EQ("foo", socket_id.second);
-        EXPECT_EQ(0, close(socket_id.first));
+        EXPECT_EQ(0, closesocket(socket_id.first));
     }
 
     // Create a second socket server, to test that multiple different
@@ -556,7 +559,7 @@ TEST_F(SocketRequestorTest, testSocketPassing) {
         addAnswer("foo", ts2.getPath());
         socket_id = doRequest();
         EXPECT_EQ("foo", socket_id.second);
-        EXPECT_EQ(0, close(socket_id.first));
+        EXPECT_EQ(0, closesocket(socket_id.first));
     }
 
     if (timo_ok) {
@@ -564,7 +567,7 @@ TEST_F(SocketRequestorTest, testSocketPassing) {
         addAnswer("foo", ts.getPath());
         socket_id = doRequest();
         EXPECT_EQ("foo", socket_id.second);
-        EXPECT_EQ(0, close(socket_id.first));
+        EXPECT_EQ(0, closesocket(socket_id.first));
 
         // -1 is a "normal" error
         addAnswer("foo", ts.getPath());

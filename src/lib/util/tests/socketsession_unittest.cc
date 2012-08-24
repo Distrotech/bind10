@@ -23,9 +23,6 @@
 #include <netdb.h>
 #include <unistd.h>
 
-#include <cerrno>
-#include <cstring>
-
 #include <algorithm>
 #include <string>
 #include <utility>
@@ -41,6 +38,8 @@
 #include <exceptions/exceptions.h>
 
 #include <util/buffer.h>
+#include <util/error.h>
+#include <util/networking.h>
 #include <util/io/socket_share.h>
 #include <util/io/socketsession.h>
 #include <util/io/sockaddr_util.h>
@@ -49,6 +48,7 @@ using namespace std;
 using namespace isc;
 using namespace asio::detail;
 using boost::scoped_ptr;
+using namespace isc::util;
 using namespace isc::util::io;
 using namespace isc::util::io::internal;
 
@@ -75,7 +75,7 @@ struct ScopedSocket : boost::noncopyable {
 private:
     void closeSocket() {
         if (sd != invalid_socket) {
-            close(sd);
+            closesocket(sd);
         }
     }
 };
@@ -92,7 +92,7 @@ setNonBlock(socket_type s, bool on) {
     }
     if (fcntl(s, F_SETFL, fcntl_flags) == -1) {
         isc_throw(isc::Unexpected, "fcntl(O_NONBLOCK) failed: " <<
-                  strerror(errno));
+                  strerror());
     }
 }
 
@@ -102,13 +102,17 @@ setNonBlock(socket_type s, bool on) {
 int
 setRecvDelay(socket_type s) {
     const struct timeval timeo = { 10, 0 };
-    if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &timeo, sizeof(timeo)) == -1) {
-        if (errno == ENOPROTOOPT) {
+        if (setsockopt(s,
+                       SOL_SOCKET,
+                       SO_RCVTIMEO,
+                       (char *) &timeo,
+                       sizeof(timeo)) == socket_error_retval) {
+        if (getneterror() == ENOPROTOOPT) {
             // Workaround for Solaris: see recursive_query_unittest
             return (MSG_DONTWAIT);
         } else {
             isc_throw(isc::Unexpected, "set RCVTIMEO failed: " <<
-                      strerror(errno));
+                      strneterror());
         }
     }
     return (0);
@@ -172,7 +176,7 @@ protected:
 
     ~ForwardTest() {
         if (listen_sd_ != invalid_socket) {
-            close(listen_sd_);
+            closesocket(listen_sd_);
         }
         unlink(TEST_UNIX_FILE);
     }
@@ -185,16 +189,16 @@ protected:
         listen_sd_ = socket(AF_UNIX, SOCK_STREAM, 0);
         if (listen_sd_ == invalid_socket) {
             isc_throw(isc::Unexpected, "failed to create UNIX domain socket" <<
-                      strerror(errno));
+                      strneterror());
         }
         if (bind(listen_sd_, convertSockAddr(&test_un_), test_un_len_) == -1) {
             isc_throw(isc::Unexpected, "failed to bind UNIX domain socket" <<
-                      strerror(errno));
+                      strneterror());
         }
         // 10 is an arbitrary choice, should be sufficient for a single test
         if (listen(listen_sd_, 10) == -1) {
             isc_throw(isc::Unexpected, "failed to listen on UNIX domain socket"
-                      << strerror(errno));
+                      << strneterror());
         }
     }
 
@@ -223,7 +227,7 @@ protected:
                                      convertSockAddr(&from),
                                      &from_len);
         if (s == invalid_socket) {
-            isc_throw(isc::Unexpected, "accept failed: " << strerror(errno));
+            isc_throw(isc::Unexpected, "accept failed: " << strneterror());
         }
         // Make sure the socket is *blocking*.  We may pass large data, through
         // it, and apparently non blocking read could cause some unexpected
@@ -247,23 +251,25 @@ protected:
     {
         socket_type s = socket(family, type, protocol);
         if (s == invalid_socket) {
-            isc_throw(isc::Unexpected, "socket(2) failed: " <<
-                      strerror(errno));
+            isc_throw(isc::Unexpected, "socket(2) failed: " << strneterror());
         }
         const int on = 1;
-        if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1) {
+        if (setsockopt(s,
+                       SOL_SOCKET,
+                       SO_REUSEADDR,
+                       (char *) &on,
+                       sizeof(on)) == socket_error_retval) {
             isc_throw(isc::Unexpected, "setsockopt(SO_REUSEADDR) failed: " <<
-                      strerror(errno));
+                      strneterror());
         }
         if (bind(s, sainfo.first, sainfo.second) < 0) {
-            close(s);
-            isc_throw(isc::Unexpected, "bind(2) failed: " <<
-                      strerror(errno));
+            closesocket(s);
+            isc_throw(isc::Unexpected, "bind(2) failed: " << strneterror());
         }
         if (do_listen && protocol == IPPROTO_TCP) {
             if (listen(s, 1) == -1) {
                 isc_throw(isc::Unexpected, "listen(2) failed: " <<
-                          strerror(errno));
+                          strneterror());
             }
         }
         return (s);
@@ -476,7 +482,7 @@ ForwardTest::checkPushAndPop(int family, int type, int protocol,
         server_sock.reset(accept(sock.sd, convertSockAddr(&ss), &salen));
         if (server_sock.sd == invalid_socket) {
             isc_throw(isc::Unexpected, "internal accept failed: " <<
-                      strerror(errno));
+                      strneterror());
         }
         fwd_sd = server_sock.sd;
     }
@@ -670,7 +676,7 @@ TEST_F(ForwardTest, badPush) {
     // Close the receiver before push.  It will result in SIGPIPE (should be
     // ignored) and EPIPE, which will be converted to SocketSessionError.
     const int receiver_sd = acceptForwarder();
-    close(receiver_sd);
+    closesocket(receiver_sd);
     EXPECT_THROW(forwarder_.push(1, AF_INET, SOCK_DGRAM, IPPROTO_UDP,
                                  *getSockAddr("192.0.2.1", "53").first,
                                  *getSockAddr("192.0.2.2", "53").first,

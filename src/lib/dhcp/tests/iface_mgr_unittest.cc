@@ -23,6 +23,7 @@
 #include <gtest/gtest.h>
 
 #include <asiolink/io_address.h>
+#include <util/networking.h>
 #include <dhcp/pkt6.h>
 #include <dhcp/iface_mgr.h>
 #include <dhcp/dhcp4.h>
@@ -30,6 +31,7 @@
 using namespace std;
 using namespace asio::detail;
 using namespace isc;
+using namespace isc::util;
 using namespace isc::asiolink;
 using namespace isc::dhcp;
 
@@ -242,8 +244,8 @@ TEST_F(IfaceMgrTest, sockets6) {
     // removed code for binding socket twice to the same address/port
     // as it caused problems on some platforms (e.g. Mac OS X)
 
-    close(socket1);
-    close(socket2);
+    closesocket(socket1);
+    closesocket(socket2);
 
     delete ifacemgr;
 }
@@ -258,7 +260,7 @@ TEST_F(IfaceMgrTest, socketsFromIface) {
     );
     // Socket descriptor must be positive integer
     EXPECT_NE(socket1, invalid_socket);
-    close(socket1);
+    closesocket(socket1);
 
     // Open v4 socket on loopback interface and bind to different port
     socket_type socket2 = invalid_socket;
@@ -267,7 +269,7 @@ TEST_F(IfaceMgrTest, socketsFromIface) {
     );
     // socket descriptor must be positive integer
     EXPECT_NE(socket2, invalid_socket);
-    close(socket2);
+    closesocket(socket2);
 
 }
 
@@ -283,7 +285,7 @@ TEST_F(IfaceMgrTest, socketsFromAddress) {
     );
     // socket descriptor must be positive integer
     EXPECT_NE(socket1, invalid_socket);
-    close(socket1);
+    closesocket(socket1);
 
     // Open v4 socket on loopback interface and bind to different port
     socket_type socket2 = invalid_socket;
@@ -293,7 +295,7 @@ TEST_F(IfaceMgrTest, socketsFromAddress) {
     );
     // socket descriptor must be positive integer
     EXPECT_NE(socket2, invalid_socket);
-    close(socket2);
+    closesocket(socket2);
 }
 
 TEST_F(IfaceMgrTest, socketsFromRemoteAddress) {
@@ -308,7 +310,7 @@ TEST_F(IfaceMgrTest, socketsFromRemoteAddress) {
         socket1 = ifacemgr->openSocketFromRemoteAddress(loAddr6, PORT1);
     );
     EXPECT_NE(socket1, invalid_socket);
-    close(socket1);
+    closesocket(socket1);
 
     // Open v4 socket to connect to remote address.
     socket_type socket2 = invalid_socket;
@@ -317,7 +319,7 @@ TEST_F(IfaceMgrTest, socketsFromRemoteAddress) {
         socket2 = ifacemgr->openSocketFromRemoteAddress(loAddr, PORT2);
     );
     EXPECT_NE(socket2, invalid_socket);
-    close(socket2);
+    closesocket(socket2);
 }
 
 // TODO: disabled due to other naming on various systems
@@ -345,8 +347,8 @@ TEST_F(IfaceMgrTest, DISABLED_sockets6Mcast) {
     // to iterate thru available interfaces and check if there
     // are interfaces without multicast-capable flag.
 
-    close(socket1);
-    close(socket2);
+    closesocket(socket1);
+    closesocket(socket2);
 
     delete ifacemgr;
 }
@@ -521,7 +523,7 @@ TEST_F(IfaceMgrTest, socket4) {
     // Expect that we get the socket that we just opened.
     EXPECT_EQ(socket1, ifacemgr->getSocket(pkt));
 
-    close(socket1);
+    closesocket(socket1);
 
     delete ifacemgr;
 }

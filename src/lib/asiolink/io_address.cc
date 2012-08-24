@@ -22,6 +22,7 @@
 #include <asio.hpp>
 
 #include <exceptions/exceptions.h>
+#include <util/networking.h>
 #include <asiolink/io_address.h>
 #include <asiolink/io_error.h>
 #include <boost/static_assert.hpp>
@@ -72,7 +73,7 @@ IOAddress::from_bytes(short family, const uint8_t* data) {
 
     BOOST_STATIC_ASSERT(INET6_ADDRSTRLEN >= INET_ADDRSTRLEN);
     char addr_str[INET6_ADDRSTRLEN];
-    inet_ntop(family, data, addr_str, INET6_ADDRSTRLEN);
+    isc::util::inetntop(family, data, addr_str, INET6_ADDRSTRLEN);
     return IOAddress(string(addr_str));
 }
 

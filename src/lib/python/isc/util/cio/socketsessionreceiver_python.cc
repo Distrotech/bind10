@@ -34,12 +34,14 @@
 
 #include <util/python/pycppwrapper_util.h>
 
+#include <util/networking.h>
 #include <util/io/socketsession.h>
 
 #include "socketsession_python.h"
 #include "socketsessionreceiver_python.h"
 
 using namespace std;
+using namespace isc::util;
 using namespace isc::util::python;
 using namespace isc::util::io;
 using namespace isc::util::io::python;
@@ -162,7 +164,7 @@ SocketSessionReceiver_destroy(PyObject* po_self) {
 struct ScopedSocket : boost::noncopyable {
     ScopedSocket(socket_type sd) : sd_(sd) {}
     ~ScopedSocket() {
-        close(sd_);
+        closesocket(sd_);
     }
     const socket_type sd_;
 };

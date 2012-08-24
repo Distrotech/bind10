@@ -14,10 +14,10 @@
 
 #include "sockcreator.h"
 
+#include <util/networking.h>
 #include <util/io/socket.h>
 #include <util/io/sockaddr_util.h>
 
-#include <cerrno>
 #include <string.h>
 
 #include <unistd.h>
@@ -25,6 +25,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+using namespace isc::util;
 using namespace isc::util::io;
 using namespace isc::util::io::internal;
 using namespace isc::socket_creator;
@@ -176,7 +177,7 @@ handleRequest(const socket_type input_sd, const socket_type output_sd,
         writeMessage(output_sd, error_message, sizeof(error_message));
 
         // ...and append the reason code to the error message
-        const int error_number = errno;
+        const int error_number = getneterror();
         writeMessage(output_sd, &error_number, sizeof(error_number));
     }
 }
@@ -191,22 +192,24 @@ mtu(socket_type s) {
 #ifdef IPV6_USE_MIN_MTU        /* RFC 3542, not too common yet*/
     const int on(1);
     // use minimum MTU
-    if (setsockopt(s, IPPROTO_IPV6, IPV6_USE_MIN_MTU, &on, sizeof(on)) < 0) {
+    if (setsockopt(s, IPPROTO_IPV6, IPV6_USE_MIN_MTU,
+                   (char *)&on, sizeof(on)) < 0) {
         return (false);
     }
 #else // Try the following as fallback
 #ifdef IPV6_MTU
     // Use minimum MTU on systems that don't have the IPV6_USE_MIN_MTU
     const int mtu = 1280;
-    if (setsockopt(s, IPPROTO_IPV6, IPV6_MTU, &mtu, sizeof(mtu)) < 0) {
+    if (setsockopt(s, IPPROTO_IPV6, IPV6_MTU,
+                   (char *)&mtu, sizeof(mtu)) < 0) {
         return (false);
     }
 #endif
 #if defined(IPV6_MTU_DISCOVER) && defined(IPV6_PMTUDISC_DONT)
     // Turn off Path MTU discovery on IPv6/UDP sockets.
     const int action = IPV6_PMTUDISC_DONT;
-    if (setsockopt(s, IPPROTO_IPV6, IPV6_MTU_DISCOVER, &action,
-                   sizeof(action)) < 0) {
+    if (setsockopt(s, IPPROTO_IPV6, IPV6_MTU_DISCOVER,
+                   (char *)&action, sizeof(action)) < 0) {
 
         return (false);
     }
@@ -247,13 +250,15 @@ getSock(const int type, struct sockaddr* bind_addr, bool* bind_failed,
         return (invalid_socket);
     }
     const int on = 1;
-    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1) {
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+                   (char *)&on, sizeof(on)) == socket_error_retval) {
         // This is part of the binding process, so it's a bind error
 	*bind_failed = true;
         return (maybeClose(false, sock, close_fun));
     }
     if (bind_addr->sa_family == AF_INET6 &&
-        setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)) == -1) {
+        setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
+                   (char *)&on, sizeof(on)) == socket_error_retval) {
         // This is part of the binding process, so it's a bind error
 	*bind_failed = true;
         return (maybeClose(false, sock, close_fun));

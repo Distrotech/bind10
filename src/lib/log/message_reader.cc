@@ -13,8 +13,6 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <cassert>
-#include <errno.h>
-#include <string.h>
 #include <iostream>
 
 #include <iostream>
@@ -23,6 +21,7 @@
 #include <log/log_messages.h>
 #include <log/message_exception.h>
 #include <log/message_reader.h>
+#include <util/error.h>
 #include <util/strutil.h>
 
 using namespace std;
@@ -49,7 +48,7 @@ MessageReader::readFile(const string& file, MessageReader::Mode mode) {
     ifstream infile(file.c_str());
     if (infile.fail()) {
         isc_throw_4(MessageException, "Failed to open message file",
-                    LOG_INPUT_OPEN_FAIL, file, strerror(errno), 0);
+                    LOG_INPUT_OPEN_FAIL, file, isc::util::strerror(), 0);
     }
 
     // Loop round reading it.  As we process the file one line at a time,
@@ -67,7 +66,7 @@ MessageReader::readFile(const string& file, MessageReader::Mode mode) {
     // Why did the loop terminate?
     if (!infile.eof()) {
         isc_throw_4(MessageException, "Error reading message file",
-                    LOG_READ_ERROR, file, strerror(errno), 0);
+                    LOG_READ_ERROR, file, isc::util::strerror(), 0);
     }
     infile.close();
 }

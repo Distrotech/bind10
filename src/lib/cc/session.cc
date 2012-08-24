@@ -35,7 +35,13 @@
 #include <iostream>
 #include <sstream>
 
+#ifdef _WIN32
+#define DONT_USE_LOCAL_SOCKET
+#endif
+
+#ifndef DONT_USE_LOCAL_SOCKET
 #include <sys/un.h>
+#endif
 
 #include <boost/bind.hpp>
 #include <boost/optional.hpp>
@@ -101,7 +107,11 @@ private:
 
 private:
     io_service& io_service_;
+#ifndef DONT_USE_LOCAL_SOCKET
     asio::local::stream_protocol::socket socket_;
+#else
+    asio::ip::tcp::socket socket_;
+#endif
     uint32_t data_length_;
     boost::function<void()> user_handler_;
     asio::error_code error_;
@@ -122,12 +132,30 @@ void
 SessionImpl::establish(const char& socket_file) {
     try {
         LOG_DEBUG(logger, DBG_TRACE_BASIC, CC_ESTABLISH).arg(&socket_file);
-        socket_.connect(asio::local::stream_protocol::endpoint(&socket_file),
-                        error_);
+#ifndef DONT_USE_LOCAL_SOCKET
+        asio::local::stream_protocol::endpoint ep(&socket_file);
+#else
+        const std::string spec(&socket_file);
+        asio::ip::address addr;
+        if (spec.find("v4_") == 0)
+            addr = asio::ip::address_v4::loopback();
+        else if (spec.find("v6_") == 0)
+            addr = asio::ip::address_v6::loopback();
+        else {
+             isc_throw(SessionError, "bad endpoint: " << spec);
+        }
+        uint16_t port = boost::lexical_cast<uint16_t>(spec.substr(3));
+        asio::ip::tcp::endpoint ep(addr, port);
+#endif
+        socket_.connect(ep, error_);
         LOG_DEBUG(logger, DBG_TRACE_BASIC, CC_ESTABLISHED);
     } catch(const asio::system_error& se) {
         LOG_FATAL(logger, CC_CONN_ERROR).arg(se.what());
         isc_throw(SessionError, se.what());
+#ifdef DONT_USE_LOCAL_SOCKET
+    } catch(const boost::bad_lexical_cast&) {
+        isc_throw(SessionError, "bad port");
+#endif
     }
     if (error_) {
         LOG_FATAL(logger, CC_NO_MSGQ).arg(error_.message());

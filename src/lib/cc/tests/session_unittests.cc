@@ -28,6 +28,10 @@
 #include <cc/data.h>
 #include <session_unittests_config.h>
 
+#ifdef _WIN32
+#define DONT_USE_LOCAL_SOCKET
+#endif
+
 using namespace asio::detail;
 using namespace isc::cc;
 
@@ -63,10 +67,28 @@ class TestDomainSocket {
 public:
     TestDomainSocket(asio::io_service& io_service, const char* file) :
         io_service_(io_service),
+#ifndef DONT_USE_LOCAL_SOCKET
         ep_(file),
         acceptor_(io_service_, ep_),
+#else
+        acceptor_(io_service_),
+#endif
         socket_(io_service_)
     {
+#ifdef DONT_USE_LOCAL_SOCKET
+        std::string spec(file);
+        asio::ip::address addr;
+        if (spec.find("v4_") == 0)
+            addr = asio::ip::address_v4::loopback();
+        else if (spec.find("v6_") == 0)
+            addr = asio::ip::address_v6::loopback();
+        uint16_t port = boost::lexical_cast<uint16_t>(spec.substr(3));
+        ep_ = asio::ip::tcp::endpoint(addr, port);
+        acceptor_.open(ep_.protocol());
+        acceptor_.set_option(asio::socket_base::reuse_address(true));
+        acceptor_.bind(ep_);
+        acceptor_.listen(asio::socket_base::max_connections);
+#endif
         acceptor_.async_accept(socket_,
                                boost::bind(&TestDomainSocket::acceptHandler,
                                            this, _1));
@@ -74,7 +96,9 @@ public:
     
     ~TestDomainSocket() {
         socket_.close();
+#ifndef DONT_USE_LOCAL_SOCKET
         unlink(BIND10_TEST_SOCKET_FILE);
+#endif
     }
 
     void
@@ -116,9 +140,15 @@ public:
     
 private:
     asio::io_service& io_service_;
+#ifndef DONT_USE_LOCAL_SOCKET
     asio::local::stream_protocol::endpoint ep_;
     asio::local::stream_protocol::acceptor acceptor_;
     asio::local::stream_protocol::socket socket_;
+#else
+    asio::ip::tcp::endpoint ep_;
+    asio::ip::tcp::acceptor acceptor_;
+    asio::ip::tcp::socket socket_;
+#endif
     char data_buf[1024];
 };
 
@@ -127,7 +157,9 @@ protected:
     SessionTest() : sess(my_io_service), work(my_io_service) {
         // The TestDomainSocket is held as a 'new'-ed pointer,
         // so we can call unlink() first.
+#ifndef DONT_USE_LOCAL_SOCKET
         unlink(BIND10_TEST_SOCKET_FILE);
+#endif
         tds = new TestDomainSocket(my_io_service, BIND10_TEST_SOCKET_FILE);
     }
 

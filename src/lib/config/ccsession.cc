@@ -21,7 +21,6 @@
 #include <ctype.h>
 
 #include <algorithm>
-#include <cerrno>
 #include <fstream>
 #include <iostream>
 #include <set>
@@ -35,6 +34,7 @@
 #include <module_spec.h>
 #include <cc/session.h>
 #include <exceptions/exceptions.h>
+#include <util/error.h>
 
 #include <config/config_log.h>
 #include <config/ccsession.h>
@@ -399,8 +399,8 @@ ModuleCCSession::readModuleSpecification(const std::string& filename) {
     // this file should be declared in a @something@ directive
     file.open(filename.c_str());
     if (!file) {
-        LOG_ERROR(config_logger, CONFIG_OPEN_FAIL).arg(filename).arg(strerror(errno));
-        isc_throw(CCSessionInitError, strerror(errno));
+        LOG_ERROR(config_logger, CONFIG_OPEN_FAIL).arg(filename).arg(isc::util::strerror());
+        isc_throw(CCSessionInitError, isc::util::strerror());
     }
 
     try {

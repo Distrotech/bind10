@@ -1,4 +1,4 @@
-// Copyright (C) 2011  Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2012  Internet Systems Consortium, Inc. ("ISC")
 //
 // Permission to use, copy, modify, and/or distribute this software for any
 // purpose with or without fee is hereby granted, provided that the above
@@ -12,21 +12,45 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#include "sockcreator.h"
-#include <unistd.h>
+#ifndef __ERROR_H
+#define __ERROR_H
 
-using namespace isc::socket_creator;
+#include <cstring>
+#include <cerrno>
 
-int
-main() {
-    /*
-     * TODO Maybe use some OS-specific caps interface and drop everything
-     * but ability to bind ports? It would be nice.
-     */
-    try {
-        run(STDIN_FILENO, STDOUT_FILENO, getSock, isc::util::io::send_socket, isc::util::closesocket);
-    } catch (const SocketCreatorError& ec) {
-        return (ec.getExitCode());
-    }
-    return (0);
+namespace isc {
+namespace util {
+
+/// \brief Error code portability inlines
+
+inline int geterror(void) {
+#ifdef _WIN32
+    return (GetLastError());
+#else
+    return (errno);
+#endif
 }
+
+inline void seterror(int errnum) {
+#ifdef _WIN32
+    SetLastError(errnum);
+#else
+    errno = errnum;
+#endif
+}
+
+inline char *strerror(void) {
+#ifdef _WIN32
+#define ERRBUF 128
+    static char buf[ERRBUF];
+    strerror_s<ERRBUF>(buf, geterror());
+    return (buf);
+#else
+    return (::strerror(geterror()));
+#endif
+}
+
+} // namespace util
+} // namespace isc
+
+#endif // __ERROR_H

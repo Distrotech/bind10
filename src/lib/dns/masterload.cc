@@ -17,11 +17,12 @@
 #include <sstream>
 #include <string>
 #include <cctype>
-#include <cerrno>
 
 #include <boost/scoped_ptr.hpp>
 
 #include <exceptions/exceptions.h>
+
+#include <util/error.h>
 
 #include <dns/masterload.h>
 #include <dns/name.h>
@@ -73,7 +74,7 @@ masterLoad(const char* const filename, const Name& origin,
     ifs.open(filename, ios_base::in);
     if (ifs.fail()) {
         isc_throw(MasterLoadError, "Failed to open master file: " <<
-                  filename << ": " << strerror(errno));
+                  filename << ": " << isc::util::strerror());
     }
     masterLoad(ifs, origin, zone_class, callback);
     ifs.close();

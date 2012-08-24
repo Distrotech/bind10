@@ -70,7 +70,9 @@ struct UDPServer::Data {
         // otherwise ASIO will bind to both
         udp proto = addr.is_v4() ? udp::v4() : udp::v6();
         socket_.reset(new udp::socket(io_service, proto));
+#ifndef _WIN32
         socket_->set_option(socket_base::reuse_address(true));
+#endif
         if (addr.is_v6()) {
             socket_->set_option(asio::ip::v6_only(true));
         }

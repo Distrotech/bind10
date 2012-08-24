@@ -21,6 +21,8 @@
 #include <asiolink/asiolink.h>
 #include <asiodns/asiodns.h>
 
+#include <util/networking.h>
+
 #include <boost/scoped_ptr.hpp>
 #include <boost/lexical_cast.hpp>
 
@@ -182,7 +184,7 @@ getSocketSD(int family, const char* const address, const char* const port) {
     }
     if (error != 0) {
         if (s != invalid_socket) {
-            close(s);
+            isc::util::closesocket(s);
         }
         isc_throw(isc::Unexpected, "failed to open test socket");
     }

@@ -14,6 +14,7 @@
 
 #include <util/io/socket.h>
 #include <util/io/socket_share.h>
+#include <util/networking.h>
 
 #include <util/unittests/fork.h>
 
@@ -23,6 +24,7 @@
 #include <sys/socket.h>
 #include <cstdio>
 
+using namespace isc::util;
 using namespace isc::util::io;
 using namespace isc::util::unittests;
 
@@ -45,7 +47,7 @@ TEST(SDShare, transfer) {
         // Now, send the socket descriptor, close it and close the pipe
         EXPECT_NE(-1, send_socket(pipes[1], sd));
         EXPECT_NE(-1, close(pipes[1]));
-        EXPECT_NE(-1, close(sd));
+        EXPECT_NE(socket_error_retval, closesocket(sd));
         // Check both subprocesses ended well
         EXPECT_TRUE(process_ok(sender));
         EXPECT_TRUE(process_ok(checker));
@@ -64,7 +66,8 @@ TEST(SDShare, transfer) {
             exit(1);
         }
         // Send "data" trough the received socket, close it and be done
-        if(!write_data(sd, "data", 4) || close(sd) == -1) {
+        if(!write_data(sd, "data", 4) ||
+           closesocket(sd) == socket_error_retval) {
             exit(1);
         }
         exit(0);

@@ -14,8 +14,10 @@
 
 #include "socket.h"
 
+#include <util/error.h>
+#include <util/networking.h>
+
 #include <unistd.h>
-#include <cerrno>
 
 namespace isc {
 namespace util {
@@ -30,7 +32,7 @@ write_data(const socket_type s, const void *buffer_v, const size_t length) {
     while (remaining > 0) {
         const int written = write(s, buffer, remaining);
         if (written == -1) {
-            if (errno == EINTR) { // Just keep going
+            if (isc::util::geterror() == EINTR) { // Just keep going
                 continue;
             } else {
                 return (false);
@@ -60,7 +62,8 @@ read_data(const socket_type s, void *buffer_v, const size_t length) {
     while (remaining > 0) {
         const int amount = read(s, buffer, remaining);
         if (amount == -1) {
-            if (errno == EINTR) { // Continue on interrupted call
+            if (isc::util::geterror() == EINTR) {
+                // Continue on interrupted call
                 continue;
             } else {
                 return (-1);

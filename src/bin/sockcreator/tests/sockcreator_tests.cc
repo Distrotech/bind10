@@ -14,6 +14,7 @@
 
 #include "../sockcreator.h"
 
+#include <util/networking.h>
 #include <util/unittests/fork.h>
 #include <util/io/socket.h>
 
@@ -27,9 +28,9 @@
 
 #include <iostream>
 #include <cstring>
-#include <cerrno>
 
 using namespace isc::socket_creator;
+using namespace isc::util;
 using namespace isc::util::unittests;
 using namespace isc::util::io;
 
@@ -87,11 +88,11 @@ udpCheck(const socket_type socknum) {
 
     // Send the packet to ourselves and check we receive it.
     ASSERT_EQ(5, sendto(socknum, "test", 5, 0, addr_ptr, sizeof(addr))) <<
-        "Send failed with error " << strerror(errno) << " on socket " <<
+        "Send failed with error " << strneterror() << " on socket " <<
         socknum;
     char buffer[5];
     ASSERT_EQ(5, recv(socknum, buffer, 5, 0)) <<
-        "Recv failed with error " << strerror(errno) << " on socket " <<
+        "Recv failed with error " << strneterror() << " on socket " <<
         socknum;
     EXPECT_STREQ("test", buffer);
 }
@@ -116,15 +117,15 @@ void addressFamilySpecificCheck(const sockaddr_in6*, const socket_type socknum,
 {
     int options;
     socklen_t len = sizeof(options);
-    EXPECT_EQ(0, getsockopt(socknum, IPPROTO_IPV6, IPV6_V6ONLY, &options,
-                            &len));
+    EXPECT_EQ(0, getsockopt(socknum, IPPROTO_IPV6, IPV6_V6ONLY,
+                            (char *)&options, &len));
     EXPECT_NE(0, options);
     if (s_type == SOCK_DGRAM) {
     // Some more checks for UDP - MTU
 #ifdef IPV6_USE_MIN_MTU        /* RFC 3542, not too common yet*/
         // use minimum MTU
         EXPECT_EQ(0, getsockopt(socknum, IPPROTO_IPV6, IPV6_USE_MIN_MTU,
-                                &options, &len)) << strerror(errno);
+                                (char *)&options, &len)) << strneterror();
         EXPECT_NE(0, options);
 #else
         // We do not check for the IPV6_MTU, because while setting works (eg.
@@ -136,7 +137,7 @@ void addressFamilySpecificCheck(const sockaddr_in6*, const socket_type socknum,
 #if defined(IPV6_MTU_DISCOVER) && defined(IPV6_PMTUDISC_DONT)
         // Turned off Path MTU discovery on IPv6/UDP sockets?
         EXPECT_EQ(0, getsockopt(socknum, IPPROTO_IPV6, IPV6_MTU_DISCOVER,
-                                &options, &len)) << strerror(errno);
+                                (char *)&options, &len)) << strneterror();
         EXPECT_EQ(IPV6_PMTUDISC_DONT, options);
 #endif
 #endif
@@ -171,7 +172,7 @@ void testAnyCreate(int s_type, socket_check_t socket_check) {
                                        sizeof(addr), closeIgnore);
     ASSERT_NE(socket, invalid_socket) <<
         "Couldn't create socket: failed with " <<
-        "return code " << socket << " and error " << strerror(errno);
+        "return code " << socket << " and error " << strneterror();
 
     // Perform socket-type-specific testing.
     socket_check(socket);
@@ -179,14 +180,15 @@ void testAnyCreate(int s_type, socket_check_t socket_check) {
     // Do address-family-independent
     int options;
     socklen_t len = sizeof(options);
-    EXPECT_EQ(0, getsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &options, &len));
+    EXPECT_EQ(0, getsockopt(socket, SOL_SOCKET, SO_REUSEADDR,
+                            (char *)&options, &len));
     EXPECT_NE(0, options);
 
     // ...and the address-family specific tests.
     addressFamilySpecificCheck(&addr, socket, s_type);
 
     // Tidy up and exit.
-    EXPECT_EQ(0, close(socket));
+    EXPECT_EQ(0, closesocket(socket));
 }
 
 
@@ -213,7 +215,7 @@ bool close_called(false);
 // called, you can use the close_called variable. But set it to false before the
 // test.
 int closeCall(socket_type socket) {
-    close(socket);
+    closesocket(socket);
     close_called = true;
     return (0);
 }
@@ -300,7 +302,7 @@ getSockDummy(const int type, struct sockaddr* addr, bool* bf,
     // The port of 0xbbbb means bind should fail and 0xcccc means
     // socket should fail.
     if (port != 0xffff) {
-        errno = 0;
+        setneterror(0);
         if (port == 0xbbbb) {
             *bf = true;
             return (invalid_socket);
@@ -356,8 +358,8 @@ void runTest(const char* input_data, const size_t input_size,
     }
 
     // Close the pipes
-    close(input_sd);
-    close(output_sd);
+    closesocket(input_sd);
+    closesocket(output_sd);
 
     // Check the subprocesses say everything is OK too
     EXPECT_TRUE(process_ok(input));

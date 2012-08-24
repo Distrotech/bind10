@@ -21,6 +21,7 @@
 #ifndef __SOCKCREATOR_H
 #define __SOCKCREATOR_H 1
 
+#include <util/networking.h>
 #include <util/io/socket_share.h>
 #include <exceptions/exceptions.h>
 

@@ -19,12 +19,13 @@
 #include <config/ccsession.h>
 #include <cc/session.h>
 #include <cc/data.h>
+#include <util/error.h>
+#include <util/networking.h>
 #include <util/io/socket.h>
 #include <util/io/socket_share.h>
 
 #include <sys/un.h>
 #include <sys/socket.h>
-#include <cerrno>
 #include <csignal>
 #include <cstddef>
 
@@ -179,12 +180,12 @@ createSdShareSocket(const std::string& path) {
     if (sock_pass_sd == invalid_socket) {
         isc_throw(SocketRequestor::SocketError,
                   "Unable to open domain socket " << path <<
-                  ": " << strerror(errno));
+                  ": " << isc::util::strneterror());
     }
     struct sockaddr_un sock_pass_addr;
     sock_pass_addr.sun_family = AF_UNIX;
     if (path.size() >= sizeof(sock_pass_addr.sun_path)) {
-        close(sock_pass_sd);
+        isc::util::closesocket(sock_pass_sd);
         isc_throw(SocketRequestor::SocketError,
                   "Unable to open domain socket " << path <<
                   ": path too long");
@@ -197,10 +198,10 @@ createSdShareSocket(const std::string& path) {
     // Yes, C-style cast bad. See previous comment about SocketSessionReceiver.
     if (connect(sock_pass_sd, (const struct sockaddr*)&sock_pass_addr,
                 len) == -1) {
-        close(sock_pass_sd);
+        isc::util::closesocket(sock_pass_sd);
         isc_throw(SocketRequestor::SocketError,
                   "Unable to open domain socket " << path <<
-                  ": " << strerror(errno));
+                  ": " << isc::util::strneterror());
     }
     return (sock_pass_sd);
 }
@@ -271,6 +272,7 @@ public:
         session_(session),
         app_name_(app_name)
     {
+#ifndef _WIN32
         // We need to filter SIGPIPE to prevent it from happening in
         // getSocketSd() while writing to the UNIX domain socket after the
         // remote end closed it.  See lib/util/io/socketsession for more
@@ -280,8 +282,9 @@ public:
         // term workaround.
         if (std::signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
             isc_throw(Unexpected, "Failed to filter SIGPIPE: " <<
-                      strerror(errno));
+                      isc::util::strerror());
         }
+#endif
         LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, SOCKETREQUESTOR_CREATED).
             arg(app_name);
     }
@@ -376,11 +379,11 @@ private:
     // Closes the sockets that has been used for socket_share
     void
     closeSdShareSockets() {
-        for (std::map<std::string, int>::const_iterator it =
+        for (std::map<std::string, socket_type>::const_iterator it =
                 share_sockets_.begin();
              it != share_sockets_.end();
              ++it) {
-            close((*it).second);
+            isc::util::closesocket((*it).second);
         }
     }
 

@@ -34,6 +34,7 @@
 #include <dns/rcode.h>
 
 #include <util/buffer.h>
+#include <util/networking.h>
 #include <util/unittests/resolver.h>
 #include <dns/message.h>
 #include <dns/rdataclass.h>
@@ -138,12 +139,12 @@ struct ScopedSocket : private boost::noncopyable {
     ScopedSocket(socket_type s) : s_(s) {}
     ~ScopedSocket() {
         if (s_ != invalid_socket) {
-            close(s_);
+            closesocket(s_);
         }
     }
     void reset(socket_type new_s) {
         if (s_ != invalid_socket) {
-            close(s_);
+            closesocket(s_);
         }
         s_ = new_s;
     }
@@ -232,7 +233,7 @@ protected:
         }
 
         if (bind(sock_.s_, res->ai_addr, res->ai_addrlen) < 0) {
-            isc_throw(IOError, "bind failed: " << strerror(errno));
+            isc_throw(IOError, "bind failed: " << strneterror());
         }
 
         // The IO service queue should have a RecursiveQuery object scheduled
@@ -251,9 +252,9 @@ protected:
         // we add an ad hoc timeout.
         const struct timeval timeo = { 10, 0 };
         int recv_options = 0;
-        if (setsockopt(sock_.s_, SOL_SOCKET, SO_RCVTIMEO, &timeo,
-                       sizeof(timeo))) {
-            if (errno == ENOPROTOOPT) {
+        if (setsockopt(sock_.s_, SOL_SOCKET, SO_RCVTIMEO,
+                       (char *)&timeo, sizeof(timeo))) {
+            if (getneterror() == ENOPROTOOPT) {
                 // Workaround for Solaris: it doesn't accept SO_RCVTIMEO
                 // with the error of ENOPROTOOPT.  Since this is a workaround
                 // for rare error cases anyway, we simply switch to the
@@ -261,12 +262,12 @@ protected:
                 // can happen often we'll consider a more complete solution.
                 recv_options = MSG_DONTWAIT;
             } else {
-                isc_throw(IOError, "set RCVTIMEO failed: " << strerror(errno));
+                isc_throw(IOError, "set RCVTIMEO failed: " << strneterror());
             }
         }
         const int ret = recv(sock_.s_, buffer, size, recv_options);
         if (ret < 0) {
-            isc_throw(IOError, "recvfrom failed: " << strerror(errno));
+            isc_throw(IOError, "recvfrom failed: " << strneterror());
         }
         
         // Pass the message size back via the size parameter
@@ -287,13 +288,14 @@ protected:
         }
         const int on = 1;
         if (family == AF_INET6) {
-            if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)) ==
-                -1) {
+            if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY,
+                           (char *)&on, sizeof(on)) == socket_error_retval) {
                 isc_throw(isc::Unexpected,
                           "failed to set socket option(IPV6_V6ONLY)");
             }
         }
-        if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1) {
+        if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR,
+                       (char *)&on, sizeof(on)) == socket_error_retval) {
             isc_throw(isc::Unexpected,
                       "failed to set socket option(SO_REUSEADDR)");
         }
@@ -699,11 +701,12 @@ int
 setSocketTimeout(int sock, size_t tv_sec, size_t tv_usec) {
     const struct timeval timeo = { tv_sec, tv_usec };
     int recv_options = 0;
-    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeo, sizeof(timeo))) {
-        if (errno == ENOPROTOOPT) { // see RecursiveQueryTest::recvUDP()
+    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,
+                   (char *)&timeo, sizeof(timeo))) {
+        if (getneterror() == ENOPROTOOPT) { // see RecursiveQueryTest::recvUDP()
             recv_options = MSG_DONTWAIT;
         } else {
-            isc_throw(IOError, "set RCVTIMEO failed: " << strerror(errno));
+            isc_throw(IOError, "set RCVTIMEO failed: " << strneterror());
         }
     }
     return (recv_options);
