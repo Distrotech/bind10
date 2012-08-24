@@ -50,8 +50,8 @@ using namespace isc::data;
 using isc::statistics::Counter;
 using isc::auth::statistics::Counters;
 void
-fillNodes(const Counter &counter, const char *nodename[], const size_t size,
-          const std::string &prefix, Counters::item_tree_type &trees)
+fillNodes(const Counter& counter, const char* nodename[], const size_t size,
+          const std::string& prefix, Counters::item_tree_type& trees)
 {
     for (size_t i = 0; i < size; ++i) {
         trees->set (prefix + nodename[i],
@@ -369,7 +369,7 @@ CountersImpl::registerStatisticsValidator
 }
 
 const Counters::item_tree_type
-CountersImpl::get(const Counters::item_node_name_set_type &trees) const {
+CountersImpl::get(const Counters::item_node_name_set_type& trees) const {
     using namespace isc::data;
 
     Counters::item_tree_type item_tree = Element::createMap();
@@ -416,7 +416,7 @@ Counters::inc(const QRAttributes& qrattrs, const Message& response) {
 }
 
 const Counters::item_tree_type
-Counters::get(const Counters::item_node_name_set_type &trees) const {
+Counters::get(const Counters::item_node_name_set_type& trees) const {
     return (impl_->get(trees));
 }
 

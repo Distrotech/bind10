@@ -209,7 +209,7 @@ public:
     /// \throw bad_alloc
     ///
     /// \return a tree of statistics items.
-    const item_tree_type get(const item_node_name_set_type &items) const;
+    const item_tree_type get(const item_node_name_set_type& items) const;
 
     /// \brief Dump all of the counters.
     ///
