@@ -180,7 +180,7 @@ const char* const text_statements[NUM_STATEMENTS] = {
     // DEL_NSEC3_RECORD: delete specified NSEC3-related records
     "DELETE FROM nsec3 WHERE zone_id=?1 AND hash=?2 "
     "AND rdtype=?3 AND rdata=?4",
-    "SELECT id, name FROM newzones WHERE class=?1 and rname<?2 " // NEW_ZONE
+    "SELECT id, name FROM newzones WHERE class=?1 and rname<=?2 " // NEW_ZONE
     "order by rname desc limit 1"
 };
 
