@@ -236,6 +236,16 @@ public:
         ///         updated. false if there was no more data, in which case
         ///         the columns array is untouched.
         virtual bool getNext(std::string (&columns)[COLUMN_COUNT]) = 0;
+
+        virtual bool next() {
+            return (false);     // XXX dummy value
+        }
+        virtual std::string getColumnAsText(RecordColumns) {
+            return ("");        // XXX dummy value
+        }
+        virtual int getColumnAsInt(RecordColumns) {
+            return (-1);        // XXX dummy value
+        }
     };
 
     typedef boost::shared_ptr<IteratorContext> IteratorContextPtr;

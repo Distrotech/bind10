@@ -172,6 +172,8 @@ public:
         }
     }
 
+    bool empty() const { return (sigs.empty()); }
+
 private:
     std::map<isc::dns::RRType, std::vector<isc::dns::rdata::RdataPtr> > sigs;
 };
@@ -195,7 +197,6 @@ DatabaseClient::Finder::getRRsets(const string& name, const WantedTypes& types,
         isc_throw(isc::Unexpected, "Iterator context null at " + name);
     }
 
-    std::string columns[DatabaseAccessor::COLUMN_COUNT];
     if (construct_name == NULL) {
         construct_name = &name;
     }
@@ -205,12 +206,13 @@ DatabaseClient::Finder::getRRsets(const string& name, const WantedTypes& types,
     bool seen_cname(false);
     bool seen_other(false);
 
-    while (context->getNext(columns)) {
+    while (context->next()) {
         // The domain is not empty
         records_found = true;
 
         try {
-            const RRType cur_type(columns[DatabaseAccessor::TYPE_COLUMN]);
+            const RRType cur_type(context->getColumnAsText(
+                                      DatabaseAccessor::TYPE_COLUMN));
 
             if (cur_type == RRType::RRSIG()) {
                 // If we get signatures before we get the actual data, we
@@ -220,13 +222,16 @@ DatabaseClient::Finder::getRRsets(const string& name, const WantedTypes& types,
                 // done.
                 // A possible optimization here is to not store them for
                 // types we are certain we don't need
-                sig_store.addSig(rdata::createRdata(cur_type, getClass(),
-                     columns[DatabaseAccessor::RDATA_COLUMN]));
+                sig_store.addSig(rdata::createRdata(
+                                     cur_type, getClass(),
+                                     context->getColumnAsText(
+                                         DatabaseAccessor::RDATA_COLUMN)));
             }
 
             if (types.find(cur_type) != types.end() || any) {
                 // This type is requested, so put it into result
-                const RRTTL cur_ttl(columns[DatabaseAccessor::TTL_COLUMN]);
+                const RRTTL cur_ttl(context->getColumnAsInt(
+                                        DatabaseAccessor::TTL_COLUMN));
                 // Ths sigtype column was an optimization for finding the
                 // relevant RRSIG RRs for a lookup. Currently this column is
                 // not used in this revised datasource implementation. We
@@ -240,7 +245,8 @@ DatabaseClient::Finder::getRRsets(const string& name, const WantedTypes& types,
                 //cur_sigtype(columns[SIGTYPE_COLUMN]);
                 addOrCreate(result[cur_type], construct_name_object,
                             getClass(), cur_type, cur_ttl,
-                            columns[DatabaseAccessor::RDATA_COLUMN],
+                            context->getColumnAsText(
+                                DatabaseAccessor::RDATA_COLUMN),
                             *accessor_);
             }
 
@@ -259,16 +265,16 @@ DatabaseClient::Finder::getRRsets(const string& name, const WantedTypes& types,
             }
         } catch (const InvalidRRType&) {
             isc_throw(DataSourceError, "Invalid RRType in database for " <<
-                      name << ": " << columns[DatabaseAccessor::
-                      TYPE_COLUMN]);
+                      name << ": " <<
+                      context->getColumnAsText(DatabaseAccessor::TYPE_COLUMN));
         } catch (const InvalidRRTTL&) {
             isc_throw(DataSourceError, "Invalid TTL in database for " <<
-                      name << ": " << columns[DatabaseAccessor::
-                      TTL_COLUMN]);
+                      name << ": " <<
+                      context->getColumnAsText(DatabaseAccessor::TTL_COLUMN));
         } catch (const rdata::InvalidRdataText&) {
             isc_throw(DataSourceError, "Invalid rdata in database for " <<
-                      name << ": " << columns[DatabaseAccessor::
-                      RDATA_COLUMN]);
+                      name << ": " <<context->getColumnAsText(
+                          DatabaseAccessor::RDATA_COLUMN));
         }
     }
     if (seen_cname && seen_other) {
@@ -276,11 +282,13 @@ DatabaseClient::Finder::getRRsets(const string& name, const WantedTypes& types,
                   " with something else");
     }
     // Add signatures to all found RRsets
-    for (std::map<RRType, RRsetPtr>::iterator i(result.begin());
-         i != result.end(); ++ i) {
-        sig_store.appendSignatures(i->second);
+    if (!sig_store.empty()) {
+        for (std::map<RRType, RRsetPtr>::iterator i(result.begin());
+             i != result.end(); ++ i) {
+            sig_store.appendSignatures(i->second);
+        }
     }
-    if (records_found && any) {
+    if (any && records_found) {
         result[RRType::ANY()] = RRsetPtr();
         // These will be sitting on the other RRsets.
         result.erase(RRType::RRSIG());
@@ -353,6 +361,18 @@ DELEGATION_TYPES() {
     if (!initialized) {
         result.insert(RRType::DNAME());
         result.insert(RRType::NS());
+        initialized = true;
+    }
+    return (result);
+}
+
+const WantedTypes&
+DNAME_TYPES() {
+    static bool initialized(false);
+    static WantedTypes result;
+
+    if (!initialized) {
+        result.insert(RRType::DNAME());
         initialized = true;
     }
     return (result);
@@ -444,19 +464,20 @@ DatabaseClient::Finder::findDelegationPoint(const isc::dns::Name& name,
     for (int i = remove_labels; i > 0; --i) {
         const Name superdomain(name.split(i));
 
+        // Note if this is the origin. (We don't count NS records at the
+        // origin as a delegation so this controls whether NS RRs are
+        // included in the results of some searches.)
+        const bool not_origin = (i != remove_labels);
+
         // Look if there's NS or DNAME at this point of the tree, but ignore
         // the NS RRs at the apex of the zone.
         const FoundRRsets found = getRRsets(superdomain.toText(),
-                                            DELEGATION_TYPES());
+                                            not_origin ?
+                                            DELEGATION_TYPES() : DNAME_TYPES());
         if (found.first) {
             // This node contains either NS or DNAME RRs so it does exist.
             const FoundIterator nsi(found.second.find(RRType::NS()));
             const FoundIterator dni(found.second.find(RRType::DNAME()));
-
-            // Note if this is the origin. (We don't count NS records at the
-            // origin as a delegation so this controls whether NS RRs are
-            // included in the results of some searches.)
-            const bool not_origin = (i != remove_labels);
 
             // An optimisation.  We know that there is an exact match for
             // something at this point in the tree so remember it.  If we have

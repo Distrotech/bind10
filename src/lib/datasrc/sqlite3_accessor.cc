@@ -725,7 +725,7 @@ public:
         bindName();
     }
 
-    bool getNext(std::string (&data)[COLUMN_COUNT]) {
+    virtual bool getNext(std::string (&data)[COLUMN_COUNT]) {
         // If there's another row, get it
         // If finalize has been called (e.g. when previous getNext() got
         // SQLITE_DONE), directly return false
@@ -755,6 +755,30 @@ public:
         }
         finalize();
         return (false);
+    }
+
+    virtual bool next() {
+        if (statement_ == NULL) {
+            return false;
+        }
+        const int rc = sqlite3_step(statement_);
+        if (rc == SQLITE_ROW) {
+            return (true);
+        } else if (rc == SQLITE_DONE) {
+            finalize();
+            return (false);
+        } else {
+            isc_throw(DataSourceError,
+                      "Unexpected failure in sqlite3_step: " <<
+                      sqlite3_errmsg(accessor_->dbparameters_->db_));
+        }
+    }
+    virtual std::string getColumnAsText(RecordColumns column) {
+        return (convertToPlainChar(sqlite3_column_text(statement_, column),
+                                   accessor_->dbparameters_->db_));
+    }
+    virtual int getColumnAsInt(RecordColumns column) {
+        return (sqlite3_column_int(statement_, column));
     }
 
     virtual ~Context() {
