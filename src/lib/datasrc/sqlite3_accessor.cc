@@ -703,16 +703,15 @@ public:
         name_(name)
     {
         // Choose the statement text depending on the query type
-        const char* statement(NULL);
         switch (qtype) {
             case QT_ANY:
-                statement = text_statements[ANY];
+                statement_ = accessor->dbparameters_->getStatement(ANY);
                 break;
             case QT_SUBDOMAINS:
-                statement = text_statements[ANY_SUB];
+                statement_ = accessor->dbparameters_->getStatement(ANY_SUB);
                 break;
             case QT_NSEC3:
-                statement = text_statements[NSEC3];
+                statement_ = accessor->dbparameters_->getStatement(NSEC3);
                 break;
             default:
                 // Can Not Happen - there isn't any other type of query
@@ -722,11 +721,8 @@ public:
                           "Invalid qtype passed - unreachable code branch "
                           "reached");
         }
-
-        // We create the statement now and then just keep getting data from it
-        statement_ = prepare(accessor->dbparameters_->db_, statement);
         bindZoneId(id);
-        bindName(name_);
+        bindName();
     }
 
     bool getNext(std::string (&data)[COLUMN_COUNT]) {
@@ -790,18 +786,22 @@ private:
         }
     }
 
-    void bindName(const std::string& name) {
-        if (sqlite3_bind_text(statement_, 2, name.c_str(), -1,
-                              SQLITE_TRANSIENT) != SQLITE_OK) {
+    void bindName() {
+        if (sqlite3_bind_text(statement_, 2, name_.c_str(), -1,
+                              SQLITE_STATIC) != SQLITE_OK) {
             const char* errmsg = sqlite3_errmsg(accessor_->dbparameters_->db_);
             finalize();
-            isc_throw(SQLite3Error, "Could not bind text '" << name <<
+            isc_throw(SQLite3Error, "Could not bind text '" << name_ <<
                       "' to SQL statement: " << errmsg);
         }
     }
 
     void finalize() {
-        sqlite3_finalize(statement_);
+        if (iterator_type_ == ITT_ALL) {
+            sqlite3_finalize(statement_);
+        } else {
+            sqlite3_reset(statement_);
+        }
         statement_ = NULL;
     }
 
