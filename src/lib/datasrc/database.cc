@@ -57,6 +57,28 @@ DatabaseClient::DatabaseClient(RRClass rrclass,
 
 DataSourceClient::FindResult
 DatabaseClient::findZone(const Name& name) const {
+    string zname_txt;
+    std::pair<bool, int> zone(accessor_->getZone(name.reverse().toText(),
+                                                 zname_txt));
+    if (zone.first) {
+        const Name zname(zname_txt);
+        const NameComparisonResult::NameRelation rel =
+                name.compare(zname).getRelation();
+        if (rel == NameComparisonResult::EQUAL) {
+            return (FindResult(result::SUCCESS,
+                               ZoneFinderPtr(new Finder(accessor_,
+                                                        zone.second, name))));
+        } else if (rel == NameComparisonResult::SUBDOMAIN) {
+            return (FindResult(result::PARTIALMATCH,
+                               ZoneFinderPtr(new Finder(accessor_,
+                                                        zone.second,
+                                                        zname))));
+        }
+    }
+    // No, really nothing
+    return (FindResult(result::NOTFOUND, ZoneFinderPtr()));
+
+#if 0
     std::pair<bool, int> zone(accessor_->getZone(name.toText()));
     // Try exact first
     if (zone.first) {
@@ -78,6 +100,7 @@ DatabaseClient::findZone(const Name& name) const {
     }
     // No, really nothing
     return (FindResult(result::NOTFOUND, ZoneFinderPtr()));
+#endif
 }
 
 DatabaseClient::Finder::Finder(boost::shared_ptr<DatabaseAccessor> accessor,

@@ -176,6 +176,11 @@ public:
     ///     be returned - the ID is only passed back to the database as
     ///     an opaque handle.
     virtual std::pair<bool, int> getZone(const std::string& name) const = 0;
+    virtual std::pair<bool, int> getZone(const std::string& /*rname*/,
+                                         std::string& /*zname_txt*/) const
+    {
+        assert(false);
+    }
 
     /// \brief This holds the internal context of ZoneIterator for databases
     ///

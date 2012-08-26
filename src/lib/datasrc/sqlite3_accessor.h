@@ -131,6 +131,9 @@ public:
      */
     virtual std::pair<bool, int> getZone(const std::string& name) const;
 
+    virtual std::pair<bool, int> getZone(const std::string& rname,
+                                         std::string& zname_txt) const;
+
     /** \brief Look up all resource records for a name
      *
      * This implements the getRecords() method from DatabaseAccessor
@@ -253,6 +256,7 @@ private:
     const std::string filename_;
     /// \brief The class for which the queries are done
     const std::string class_;
+    const uint16_t class_n_;
     /// \brief Database name
     const std::string database_name_;
 

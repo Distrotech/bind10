@@ -48,6 +48,29 @@ const int SQLITE_SCHEMA_MINOR_VERSION = 0;
 namespace isc {
 namespace datasrc {
 
+namespace {
+
+// Conversion to plain char
+const char*
+convertToPlainChar(const unsigned char* ucp, sqlite3 *db) {
+    if (ucp == NULL) {
+        // The field can really be NULL, in which case we return an
+        // empty string, or sqlite may have run out of memory, in
+        // which case we raise an error
+        if (sqlite3_errcode(db) == SQLITE_NOMEM) {
+            isc_throw(DataSourceError,
+                      "Sqlite3 backend encountered a memory allocation "
+                      "error in sqlite3_column_text()");
+        } else {
+            return ("");
+        }
+    }
+    const void* p = ucp;
+    return (static_cast<const char*>(p));
+}
+
+}
+
 // The following enum and char* array define the SQL statements commonly
 // used in this implementation.  Corresponding prepared statements (of
 // type sqlite3_stmt*) are maintained in the statements_ array of the
@@ -75,7 +98,8 @@ enum StatementID {
     ADD_NSEC3_RECORD = 18,
     DEL_ZONE_NSEC3_RECORDS = 19,
     DEL_NSEC3_RECORD = 20,
-    NUM_STATEMENTS = 21
+    NEW_ZONE = 21,
+    NUM_STATEMENTS = 22
 };
 
 const char* const text_statements[NUM_STATEMENTS] = {
@@ -155,7 +179,9 @@ const char* const text_statements[NUM_STATEMENTS] = {
     "DELETE FROM nsec3 WHERE zone_id=?1",
     // DEL_NSEC3_RECORD: delete specified NSEC3-related records
     "DELETE FROM nsec3 WHERE zone_id=?1 AND hash=?2 "
-    "AND rdtype=?3 AND rdata=?4"
+    "AND rdtype=?3 AND rdata=?4",
+    "SELECT id, name FROM newzones WHERE class=?1 and rname<?2 "
+    "order by rname desc limit 1"
 };
 
 struct SQLite3Parameters {
@@ -285,6 +311,7 @@ SQLite3Accessor::SQLite3Accessor(const std::string& filename,
     dbparameters_(new SQLite3Parameters),
     filename_(filename),
     class_(rrclass),
+    class_n_(1),                // class 'IN', hardcode for now
     database_name_("sqlite3_" +
                    isc::util::Filename(filename).nameAndExtension())
 {
@@ -602,28 +629,46 @@ SQLite3Accessor::getZone(const std::string& name) const {
     return (std::pair<bool, int>(false, 0));
 }
 
-namespace {
+std::pair<bool, int>
+SQLite3Accessor::getZone(const std::string& rname,
+                         std::string& zname_txt) const
+{
+    sqlite3_stmt* const stmt = dbparameters_->getStatement(NEW_ZONE);
+    sqlite3_reset(stmt);
 
-// Conversion to plain char
-const char*
-convertToPlainChar(const unsigned char* ucp, sqlite3 *db) {
-    if (ucp == NULL) {
-        // The field can really be NULL, in which case we return an
-        // empty string, or sqlite may have run out of memory, in
-        // which case we raise an error
-        if (sqlite3_errcode(db) == SQLITE_NOMEM) {
-            isc_throw(DataSourceError,
-                      "Sqlite3 backend encountered a memory allocation "
-                      "error in sqlite3_column_text()");
-        } else {
-            return ("");
-        }
+    if (sqlite3_bind_int(stmt, 1, class_n_) != SQLITE_OK) {
+        isc_throw(SQLite3Error, "Could not bind " << class_ <<
+                  " to SQL statement (zone): " <<
+                  sqlite3_errmsg(dbparameters_->db_));
     }
-    const void* p = ucp;
-    return (static_cast<const char*>(p));
+    if (sqlite3_bind_text(stmt, 2, rname.c_str(), -1, SQLITE_STATIC) !=
+        SQLITE_OK) {
+        isc_throw(SQLite3Error, "Could not bind " << rname <<
+                  " to SQL statement (zone)" <<
+                  sqlite3_errmsg(dbparameters_->db_));
+    }
+    
+    // Get the data there and see if it found anything
+    const int rc = sqlite3_step(stmt);
+    if (rc == SQLITE_ROW) {
+        const int zone_id = sqlite3_column_int(stmt, 0);
+        zname_txt = convertToPlainChar(sqlite3_column_text(stmt, 1),
+                                       dbparameters_->db_);
+        sqlite3_reset(stmt);
+        return (pair<bool, int>(true, zone_id));
+    } else if (rc == SQLITE_DONE) {
+        // Free resources
+        sqlite3_reset(stmt);
+        return (pair<bool, int>(false, 0));
+    }
+
+    sqlite3_reset(stmt);
+    isc_throw(DataSourceError, "Unexpected failure in sqlite3_step: " <<
+              sqlite3_errmsg(dbparameters_->db_));
+    // Compilers might not realize isc_throw always throws
+    return (std::pair<bool, int>(false, 0));
 }
 
-}
 class SQLite3Accessor::Context : public DatabaseAccessor::IteratorContext {
 public:
     // Construct an iterator for all records. When constructed this
