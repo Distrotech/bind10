@@ -77,30 +77,6 @@ DatabaseClient::findZone(const Name& name) const {
     }
     // No, really nothing
     return (FindResult(result::NOTFOUND, ZoneFinderPtr()));
-
-#if 0
-    std::pair<bool, int> zone(accessor_->getZone(name.toText()));
-    // Try exact first
-    if (zone.first) {
-        return (FindResult(result::SUCCESS,
-                           ZoneFinderPtr(new Finder(accessor_,
-                                                    zone.second, name))));
-    }
-    // Then super domains
-    // Start from 1, as 0 is covered above
-    for (size_t i(1); i < name.getLabelCount(); ++i) {
-        isc::dns::Name superdomain(name.split(i));
-        zone = accessor_->getZone(superdomain.toText());
-        if (zone.first) {
-            return (FindResult(result::PARTIALMATCH,
-                               ZoneFinderPtr(new Finder(accessor_,
-                                                        zone.second,
-                                                        superdomain))));
-        }
-    }
-    // No, really nothing
-    return (FindResult(result::NOTFOUND, ZoneFinderPtr()));
-#endif
 }
 
 DatabaseClient::Finder::Finder(boost::shared_ptr<DatabaseAccessor> accessor,
