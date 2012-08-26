@@ -15,7 +15,7 @@
 
 import sqlite3, re, random
 import isc
-
+import isc.dns
 
 #define the index of different part of one record
 RR_TYPE_INDEX = 5
@@ -61,6 +61,11 @@ def create(cur):
                     rdclass TEXT NOT NULL COLLATE NOCASE DEFAULT 'IN',
                     dnssec BOOLEAN NOT NULL DEFAULT 0)""")
         cur.execute("CREATE INDEX zones_byname ON zones (name)")
+        cur.execute("""CREATE TABLE newzones (id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL COLLATE NOCASE,
+                    class INTEGER NOT NULL DEFAULT 1,
+                    rname TEXT NOT NULL COLLATE NOCASE)""")
+        cur.execute("CREATE INDEX zones_byrname ON newzones (rname)")
         cur.execute("""CREATE TABLE records (id INTEGER PRIMARY KEY,
                     zone_id INTEGER NOT NULL,
                     name TEXT NOT NULL COLLATE NOCASE,
@@ -68,7 +73,8 @@ def create(cur):
                     ttl INTEGER NOT NULL,
                     rdtype TEXT NOT NULL COLLATE NOCASE,
                     sigtype TEXT COLLATE NOCASE,
-                    rdata TEXT NOT NULL)""")
+                    rdata TEXT NOT NULL,
+                    typecode INTEGER NOT NULL)""")
         cur.execute("CREATE INDEX records_byname ON records (name)")
         cur.execute("CREATE INDEX records_byrname ON records (rname)")
         cur.execute("""CREATE INDEX records_bytype_and_rname ON records
@@ -282,6 +288,7 @@ def load(dbfile, zone, reader):
         temp = str(random.randrange(100000))
         cur.execute("INSERT INTO zones (name, rdclass) VALUES (?, 'IN')", [temp])
         new_zone_id = cur.lastrowid
+        cur.execute("INSERT INTO newzones (name, class, rname) VALUES (?, 1, ?)", [temp, reverse_name(temp)])
 
         for name, ttl, rdclass, rdtype, rdata in reader():
             sigtype = ''
@@ -297,26 +304,32 @@ def load(dbfile, zone, reader):
             elif rdtype.lower() == 'rrsig':
                 cur.execute("""INSERT INTO records
                                (zone_id, name, rname, ttl,
-                                rdtype, sigtype, rdata)
-                               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                                rdtype, sigtype, rdata, typecode)
+                               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                             [new_zone_id, name, reverse_name(name), ttl,
-                             rdtype, sigtype, rdata])
+                             rdtype, sigtype, rdata, 46])
             else:
                 cur.execute("""INSERT INTO records
-                               (zone_id, name, rname, ttl, rdtype, rdata)
-                               VALUES (?, ?, ?, ?, ?, ?)""",
+                               (zone_id, name, rname, ttl, rdtype,
+                                rdata, typecode)
+                               VALUES (?, ?, ?, ?, ?, ?, ?)""",
                             [new_zone_id, name, reverse_name(name), ttl,
-                             rdtype, rdata])
+                             rdtype, rdata, isc.dns.RRType(rdtype).get_code()])
 
         if old_zone_id:
             cur.execute("DELETE FROM zones WHERE id=?", [old_zone_id])
             cur.execute("UPDATE zones SET name=? WHERE id=?", [zone, new_zone_id])
+            cur.execute("DELETE FROM newzones WHERE id=?", [old_zone_id])
+            cur.execute("UPDATE newzones SET name=? WHERE id=?", [zone, new_zone_id])
+            cur.execute("UPDATE newzones SET rname=? WHERE id=?", [reverse_name(zone), new_zone_id])
             conn.commit()
             cur.execute("DELETE FROM records WHERE zone_id=?", [old_zone_id])
             cur.execute("DELETE FROM nsec3 WHERE zone_id=?", [old_zone_id])
             conn.commit()
         else:
             cur.execute("UPDATE zones SET name=? WHERE id=?", [zone, new_zone_id])
+            cur.execute("UPDATE newzones SET name=? WHERE id=?", [zone, new_zone_id])
+            cur.execute("UPDATE newzones SET rname=? WHERE id=?", [reverse_name(zone), new_zone_id])
             conn.commit()
     except Exception as e:
         fail = "Error while loading " + zone + ": " + e.args[0]

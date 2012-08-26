@@ -206,7 +206,7 @@ DatabaseClient::Finder::getRRsets(const string& name_txt,
         records_found = true;
 
         try {
-            const RRType cur_type(context->getColumnAsText(
+            const RRType cur_type(context->getColumnAsInt(
                                       DatabaseAccessor::TYPE_COLUMN));
 
             if (cur_type == RRType::RRSIG()) {

@@ -106,7 +106,7 @@ const char* const text_statements[NUM_STATEMENTS] = {
     // note for ANY and ITERATE: the order of the SELECT values is
     // specifically chosen to match the enum values in RecordColumns
     "SELECT id FROM zones WHERE name=?1 AND rdclass = ?2", // ZONE
-    "SELECT rdtype, ttl, sigtype, rdata FROM records "     // ANY
+    "SELECT typecode, ttl, sigtype, rdata FROM records "     // ANY
         "WHERE zone_id=?1 AND name=?2",
     "SELECT rdtype, ttl, sigtype, rdata " // ANY_SUB
         "FROM records WHERE zone_id=?1 AND name LIKE (\"%.\" || ?2)",
@@ -180,7 +180,7 @@ const char* const text_statements[NUM_STATEMENTS] = {
     // DEL_NSEC3_RECORD: delete specified NSEC3-related records
     "DELETE FROM nsec3 WHERE zone_id=?1 AND hash=?2 "
     "AND rdtype=?3 AND rdata=?4",
-    "SELECT id, name FROM newzones WHERE class=?1 and rname<?2 "
+    "SELECT id, name FROM newzones WHERE class=?1 and rname<?2 " // NEW_ZONE
     "order by rname desc limit 1"
 };
 
