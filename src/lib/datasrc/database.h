@@ -997,9 +997,9 @@ public:
         ///     all (so you'll not find NULL pointer in the result).
         /// \throw DataSourceError If there's a low-level error with the
         ///     database or the database contains bad data.
-        FoundRRsets getRRsets(const std::string& name,
+        FoundRRsets getRRsets(const std::string& name_txt,
+                              const dns::Name& construct_name,
                               const WantedTypes& types,
-                              const std::string* construct_name = NULL,
                               bool any = false,
                               DatabaseAccessor::IteratorContextPtr srcContext =
                               DatabaseAccessor::IteratorContextPtr());
