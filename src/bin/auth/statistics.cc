@@ -70,10 +70,10 @@ public:
     CountersImpl();
     ~CountersImpl();
     void inc(const QRAttributes& qrattrs, const Message& response);
-    const Counters::ItemTreeType
+    Counters::ItemTreeType
         get(const Counters::ItemNodeNameSetType& trees) const;
     // Currently for testing purpose only
-    const Counters::ItemTreeType dump() const;
+    Counters::ItemTreeType dump() const;
     bool submitStatistics() const;
     void setStatisticsSession(isc::cc::AbstractSession* statistics_session);
     void registerStatisticsValidator (Counters::validator_type validator);
@@ -321,7 +321,7 @@ CountersImpl::registerStatisticsValidator
     validator_ = validator;
 }
 
-const Counters::ItemTreeType
+Counters::ItemTreeType
 CountersImpl::get(const Counters::ItemNodeNameSetType& trees) const {
     using namespace isc::data;
 
@@ -346,7 +346,7 @@ CountersImpl::get(const Counters::ItemNodeNameSetType& trees) const {
 }
 
 // Currently for testing purpose only
-const Counters::ItemTreeType
+Counters::ItemTreeType
 CountersImpl::dump() const {
     using namespace isc::data;
 
@@ -368,12 +368,12 @@ Counters::inc(const QRAttributes& qrattrs, const Message& response) {
     impl_->inc(qrattrs, response);
 }
 
-const Counters::ItemTreeType
+Counters::ItemTreeType
 Counters::get(const Counters::ItemNodeNameSetType& trees) const {
     return (impl_->get(trees));
 }
 
-const Counters::ItemTreeType
+Counters::ItemTreeType
 Counters::dump() const {
     return (impl_->dump());
 }

@@ -217,7 +217,7 @@ public:
     ///
     /// \return A tree of statistics items formatted in a map.
     ///         { item_name => item_value, item_name => item_value, ... }
-    const ItemTreeType get(const ItemNodeNameSetType& items) const;
+    ItemTreeType get(const ItemNodeNameSetType& items) const;
 
     /// \brief Dump the values of all statistics counters.
     ///
@@ -227,7 +227,7 @@ public:
     ///
     /// \return A tree of statistics items formatted in a map.
     ///         { item_name => item_value, item_name => item_value, ... }
-    const ItemTreeType dump() const;
+    ItemTreeType dump() const;
 
     /// \brief A type of validation function for the specification in
     /// isc::config::ModuleSpec.

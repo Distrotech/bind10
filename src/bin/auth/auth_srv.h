@@ -269,7 +269,7 @@ public:
     /// \return A tree of statistics items formatted in a map.
     ///         { item_name => item_value, item_name => item_value, ... }
     ///         See statistics.h for detail.
-    const isc::auth::statistics::Counters::ItemTreeType getStatistics(
+    isc::auth::statistics::Counters::ItemTreeType getStatistics(
         const isc::auth::statistics::Counters::ItemNodeNameSetType& items)
         const;
 
@@ -282,7 +282,7 @@ public:
     /// \return A tree of statistics items formatted in a map.
     ///         { item_name => item_value, item_name => item_value, ... }
     ///         See statistics.h for detail.
-    const isc::auth::statistics::Counters::ItemTreeType dumpStatistics() const;
+    isc::auth::statistics::Counters::ItemTreeType dumpStatistics() const;
 
     /**
      * \brief Set and get the addresses we listen on.

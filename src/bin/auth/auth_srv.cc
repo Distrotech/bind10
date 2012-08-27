@@ -894,12 +894,12 @@ bool AuthSrv::submitStatistics() const {
     return (impl_->counters_.submitStatistics());
 }
 
-const Counters::ItemTreeType
+Counters::ItemTreeType
 AuthSrv::getStatistics(const Counters::ItemNodeNameSetType& trees) const {
     return (impl_->counters_.get(trees));
 }
 
-const Counters::ItemTreeType
+Counters::ItemTreeType
 AuthSrv::dumpStatistics() const {
     return (impl_->counters_.dump());
 }
