@@ -117,7 +117,7 @@ private:
     IOEndpointPtr dummy_endpoint;
 };
 
-class Sqlite3QueryBenchMark  : public QueryBenchMark {
+class Sqlite3QueryBenchMark : public QueryBenchMark {
 public:
     Sqlite3QueryBenchMark(const char* const datasrc_file,
                           const BenchQueries& queries,
@@ -132,6 +132,21 @@ public:
                               "    \"params\": {"
                               "      \"database_file\": \"" +
                               string(datasrc_file) + "\"}}]}"));
+    }
+};
+
+class MySQLQueryBenchMark : public QueryBenchMark {
+public:
+    MySQLQueryBenchMark(const BenchQueries& queries,
+                        Message& query_message,
+                        OutputBuffer& buffer) :
+        QueryBenchMark(queries, query_message, buffer)
+    {
+        DataSourceConfigurator::testReconfigure(
+            server_.get(),
+            Element::fromJSON("{\"IN\":"
+                              "  [{\"type\": \"mysql\","
+                              "    \"params\": {}}]}"));
     }
 };
 
@@ -177,6 +192,12 @@ BenchMark<Sqlite3QueryBenchMark>::printResult() const {
 
 template<>
 void
+BenchMark<MySQLQueryBenchMark>::printResult() const {
+    printQPSResult(getIteration(), getDuration(), getIterationPerSecond());
+}
+
+template<>
+void
 BenchMark<MemoryQueryBenchMark>::printResult() const {
     printQPSResult(getIteration(), getDuration(), getIterationPerSecond());
 }
@@ -187,6 +208,7 @@ namespace {
 const int ITERATION_DEFAULT = 1;
 enum DataSrcType {
     SQLITE3,
+    MYSQL,
     MEMORY
 };
 
@@ -198,7 +220,7 @@ usage() {
         "  -d Enable debug logging to stdout\n"
         "  -n Number of iterations per test case (default: "
          << ITERATION_DEFAULT << ")\n"
-        "  -t Type of data source: sqlite3|memory (default: sqlite3)\n"
+        "  -t Type of data source: sqlite3|mysql|memory (default: sqlite3)\n"
         "  -o Origin name of datasrc_file necessary for \"memory\", "
         "ignored for others\n"
         "  datasrc_file: sqlite3 DB file for \"sqlite3\", "
@@ -250,6 +272,8 @@ main(int argc, char* argv[]) {
     DataSrcType datasrc_type = SQLITE3;
     if (strcmp(opt_datasrc_type, "sqlite3") == 0) {
         ;                       // no need to override
+    } else if (strcmp(opt_datasrc_type, "mysql") == 0) {
+        datasrc_type = MYSQL;
     } else if (strcmp(opt_datasrc_type, "memory") == 0) {
         datasrc_type = MEMORY;
     } else {
@@ -284,6 +308,11 @@ main(int argc, char* argv[]) {
             BenchMark<Sqlite3QueryBenchMark>(
                 iteration, Sqlite3QueryBenchMark(datasrc_file, queries,
                                                  message, buffer));
+            break;
+        case MYSQL:
+            cout << "Benchmark with MySQL" << endl;
+            BenchMark<MySQLQueryBenchMark>(
+                iteration, MySQLQueryBenchMark(queries, message, buffer));
             break;
         case MEMORY:
             cout << "Benchmark with In Memory Data Source" << endl;
