@@ -11,16 +11,46 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\lib\config\tests\fake_session.h" />
+    <ClInclude Include="..\..\..\src\lib\util\buffer.h" />
+    <ClInclude Include="..\..\..\src\lib\util\dll.h" />
+    <ClInclude Include="..\..\..\src\lib\util\encode\base16_from_binary.h" />
+    <ClInclude Include="..\..\..\src\lib\util\encode\base32hex.h" />
+    <ClInclude Include="..\..\..\src\lib\util\encode\base32hex_from_binary.h" />
+    <ClInclude Include="..\..\..\src\lib\util\encode\base64.h" />
+    <ClInclude Include="..\..\..\src\lib\util\encode\binary_from_base16.h" />
+    <ClInclude Include="..\..\..\src\lib\util\encode\binary_from_base32hex.h" />
+    <ClInclude Include="..\..\..\src\lib\util\encode\hex.h" />
+    <ClInclude Include="..\..\..\src\lib\util\filename.h" />
+    <ClInclude Include="..\..\..\src\lib\util\hash\sha1.h" />
+    <ClInclude Include="..\..\..\src\lib\util\interprocess_sync.h" />
+    <ClInclude Include="..\..\..\src\lib\util\interprocess_sync_file.h" />
+    <ClInclude Include="..\..\..\src\lib\util\interprocess_sync_null.h" />
+    <ClInclude Include="..\..\..\src\lib\util\io_utilities.h" />
+    <ClInclude Include="..\..\..\src\lib\util\locks.h" />
+    <ClInclude Include="..\..\..\src\lib\util\lru_list.h" />
+    <ClInclude Include="..\..\..\src\lib\util\random\qid_gen.h" />
+    <ClInclude Include="..\..\..\src\lib\util\random\random_number_generator.h" />
+    <ClInclude Include="..\..\..\src\lib\util\range_utilities.h" />
+    <ClInclude Include="..\..\..\src\lib\util\strutil.h" />
+    <ClInclude Include="..\..\..\src\lib\util\time_utilities.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\lib\config\tests\fake_session.cc" />
+    <ClCompile Include="..\..\..\src\lib\util\buffer.cc" />
+    <ClCompile Include="..\..\..\src\lib\util\encode\base_n.cc" />
+    <ClCompile Include="..\..\..\src\lib\util\filename.cc" />
+    <ClCompile Include="..\..\..\src\lib\util\hash\sha1.cc" />
+    <ClCompile Include="..\..\..\src\lib\util\interprocess_sync_file.cc" />
+    <ClCompile Include="..\..\..\src\lib\util\interprocess_sync_null.cc" />
+    <ClCompile Include="..\..\..\src\lib\util\random\qid_gen.cc" />
+    <ClCompile Include="..\..\..\src\lib\util\random\random_number_generator.cc" />
+    <ClCompile Include="..\..\..\src\lib\util\strutil.cc" />
+    <ClCompile Include="..\..\..\src\lib\util\time_utilities.cc" />
     <ClCompile Include="..\..\dllmain.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{33927325-C9B5-4FE6-B69F-318433AFF4BD}</ProjectGuid>
+    <ProjectGuid>{8F120666-1A69-4506-8546-0F665E80FFB7}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>libfake_session</RootNamespace>
+    <RootNamespace>libb10-util</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -52,16 +82,27 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;LOCKFILE_DIR="/Temp/locks";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\exceptions;..\..\..\src\lib\util;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libb10-exceptionsd.lib;libb10-ccd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libexceptionsd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>cd ..\..\..\src\lib\util\python
+copy gen_wiredata.py.win32 gen_wiredata.py
+copy mkpywrapper.py.win32 mkpywrapper.py
+</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>mkdir C:\Temp\locks
+exit 0
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -70,8 +111,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;LOCKFILE_DIR="/Temp/locks";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\exceptions;..\..\..\src\lib\util;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
@@ -80,8 +121,19 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>..\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libb10-exceptions.lib;libb10-cc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libexceptions.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>cd ..\..\..\src\lib\util\python
+copy gen_wiredata.py.win32 gen_wiredata.py
+copy mkpywrapper.py.win32 mkpywrapper.py
+</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>mkdir C:\Temp\locks
+exit 0
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -61,7 +61,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)b10-resolver.exe</OutputFile>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libexceptionsd.lib;libutild.lib;libutil_iod.lib;liblogd.lib;libcryptolinkd.lib;libdns++d.lib;libccd.lib;libcfgclientd.lib;libacld.lib;libdnsacld.lib;libasiolinkd.lib;libasiodnsd.lib;libnsasd.lib;libcached.lib;libresolved.lib;libserver_commond.lib;botand.lib;log4cplusD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libb10-exceptionsd.lib;libb10-utild.lib;libb10-util-iod.lib;libb10-logd.lib;libcryptolinkd.lib;libdns++d.lib;libccd.lib;libcfgclientd.lib;libacld.lib;libdnsacld.lib;libasiolinkd.lib;libasiodnsd.lib;libnsasd.lib;libcached.lib;libresolved.lib;libserver_commond.lib;botand.lib;log4cplusD.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>cd ..\..\..\src\bin\resolver
@@ -89,7 +89,7 @@ copy spec_config.h.pre.win32 spec_config.h
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)b10-resolver.exe</OutputFile>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_io.lib;liblog.lib;libcryptolink.lib;libdns++.lib;libcc.lib;libcfgclient.lib;libacl.lib;libdnsacl.lib;libasiolink.lib;libasiodns.lib;libnsas.lib;libcache.lib;libresolve.lib;libserver_common.lib;botan.lib;log4cplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libb10-util-io.lib;libb10-log.lib;libcryptolink.lib;libdns++.lib;libcc.lib;libcfgclient.lib;libacl.lib;libdnsacl.lib;libasiolink.lib;libasiodns.lib;libnsas.lib;libcache.lib;libresolve.lib;libserver_common.lib;botan.lib;log4cplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>cd ..\..\..\src\bin\resolver

@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{1ADF152B-0153-424D-B195-5821B30128D6}</ProjectGuid>
+    <ProjectGuid>{C90961EC-3DDF-432F-8E3D-BDA06E4859D9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>b10resolver_tests</RootNamespace>
+    <RootNamespace>log-example</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -40,29 +40,37 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(Configuration)\</OutDir>
-    <TargetName>run_unittests</TargetName>
+    <TargetName>logger_example</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(Configuration)\</OutDir>
-    <TargetName>run_unittests</TargetName>
+    <TargetName>logger_example</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;GTEST_CREATE_SHARED_LIBRARY=1;TEST_DATA_DIR="%BIND10HOME%/src/lib/testutils/testdata";TEST_DATA_BUILDDIR="%BIND10HOME%/src/lib/testutils/testdata";_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\bin;..\..\..\ext\asio;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>$(OutDir)run_unittests.exe</OutputFile>
-      <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%BOOST%/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libb10-exceptionsd.lib;libutild.lib;libutil_iod.lib;libutil_unittestsd.lib;liblogd.lib;libcryptolinkd.lib;libdns++d.lib;libccd.lib;libcfgclientd.lib;libacld.lib;libdnsacld.lib;libasiolinkd.lib;libasiodnsd.lib;libnsasd.lib;libcached.lib;libresolved.lib;libtestutilsd.lib;libserver_commond.lib;botand.lib;log4cplusD.lib;gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)logger_example$(TargetExt)</OutputFile>
+      <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libb10-exceptionsd.lib;libb10-utild.lib;libb1-logd.lib;log4cplusD.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>cd ..\..\..\src\lib\log\tests
+copy console_test.sh.win32 console_test.sh
+copy destination_test.sh.win32 destination_test.sh
+copy local_file_test.sh.win32 local_file_test.sh
+copy severity_test.sh.win32 severity_test.sh
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -71,8 +79,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;GTEST_CREATE_SHARED_LIBRARY=1;TEST_DATA_DIR="%BIND10HOME%/src/lib/testutils/testdata";TEST_DATA_BUILDDIR="%BIND10HOME%/src/lib/testutils/testdata";NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\bin;..\..\..\ext\asio;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
@@ -80,28 +88,25 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <OutputFile>$(OutDir)run_unittests.exe</OutputFile>
-      <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%BOOST%/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libb10-exceptions.lib;libutil.lib;libutil_io.lib;libutil_unittests.lib;liblog.lib;libcryptolink.lib;libdns++.lib;libcc.lib;libcfgclient.lib;libacl.lib;libdnsacl.lib;libasiolink.lib;libasiodns.lib;libnsas.lib;libcache.lib;libresolve.lib;libtestutils.lib;libserver_common.lib;botan.lib;log4cplus.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)logger_example$(TargetExt)</OutputFile>
+      <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libb10-log.lib;log4cplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>cd ..\..\..\src\lib\log\tests
+copy console_test.sh.win32 console_test.sh
+copy destination_test.sh.win32 destination_test.sh
+copy local_file_test.sh.win32 local_file_test.sh
+copy severity_test.sh.win32 severity_test.sh
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\bin\resolver\resolver.cc" />
-    <ClCompile Include="..\..\..\src\bin\resolver\resolver_log.cc" />
-    <ClCompile Include="..\..\..\src\bin\resolver\resolver_messages.cc" />
-    <ClCompile Include="..\..\..\src\bin\resolver\response_scrubber.cc" />
-    <ClCompile Include="..\..\..\src\bin\resolver\tests\resolver_config_unittest.cc" />
-    <ClCompile Include="..\..\..\src\bin\resolver\tests\resolver_unittest.cc" />
-    <ClCompile Include="..\..\..\src\bin\resolver\tests\response_scrubber_unittest.cc" />
-    <ClCompile Include="..\..\..\src\bin\resolver\tests\run_unittests.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\tests\unittest_util.cc" />
+    <ClInclude Include="..\..\getopt.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\bin\resolver\resolver.h" />
-    <ClInclude Include="..\..\..\src\bin\resolver\resolver_log.h" />
-    <ClInclude Include="..\..\..\src\bin\resolver\resolver_messages.h" />
-    <ClInclude Include="..\..\..\src\bin\resolver\response_scrubber.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\tests\unittest_util.h" />
+    <ClCompile Include="..\..\..\src\lib\log\tests\logger_example.cc" />
+    <ClCompile Include="..\..\getopt.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

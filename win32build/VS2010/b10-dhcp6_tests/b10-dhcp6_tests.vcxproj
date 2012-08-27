@@ -61,7 +61,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)dhcp6_unittests$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libexceptionsd.lib;libutild.lib;libutil_unittestsd.lib;liblogd.lib;libccd.lib;libcfgclientd.lib;libasiolinkd.lib;libdhcpd.lib;log4cplusD.lib;gtestd.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libb10-exceptionsd.lib;libb10-utild.lib;libutil_unittestsd.lib;liblogd.lib;libccd.lib;libcfgclientd.lib;libasiolinkd.lib;libdhcpd.lib;log4cplusD.lib;gtestd.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -82,7 +82,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)dhcp6_unittests$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;liblog.lib;libcc.lib;libcfgclient.lib;libasiolink.lib;libdhcp.lib;log4cplus.lib;gtest.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libutil_unittests.lib;liblog.lib;libcc.lib;libcfgclient.lib;libasiolink.lib;libdhcp.lib;log4cplus.lib;gtest.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
