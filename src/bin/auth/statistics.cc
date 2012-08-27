@@ -50,7 +50,7 @@ using namespace isc::data;
 using isc::statistics::Counter;
 using isc::auth::statistics::Counters;
 void
-fillNodes(const Counter& counter, const char* nodename[], const size_t size,
+fillNodes(const Counter& counter, const char* const nodename[], const size_t size,
           const std::string& prefix, Counters::item_tree_type& trees)
 {
     for (size_t i = 0; i < size; ++i) {
@@ -151,36 +151,9 @@ CountersImpl::inc(const QRAttributes& qrattrs, const Message& response) {
         if (qptr != NULL) {
             // get the qtype code
             const unsigned int qtype = qptr->getType().getCode();
-            if (qtype == 0) {
-                // qtype 0
-                qtype_type = QR_QTYPE_OTHER;
-            } else if (qtype < 52) {
-                // qtype 1..51
-                qtype_type = QR_QTYPE_A + (qtype - 1);
-            } else if (qtype < 55) {
-                // qtype 52..54
-                qtype_type = QR_QTYPE_OTHER;
-            } else if (qtype < 59) {
-                // qtype 55..58
-                qtype_type = QR_QTYPE_HIP + (qtype - 55);
-            } else if (qtype < 99) {
-                // qtype 59..98
-                qtype_type = QR_QTYPE_OTHER;
-            } else if (qtype < 104) {
-                // qtype 99..103
-                qtype_type = QR_QTYPE_SPF + (qtype - 99);
-            } else if (qtype < 249) {
-                // qtype 104..248
-                qtype_type = QR_QTYPE_OTHER;
-            } else if (qtype < 255) {
-                // qtype 249..254
-                qtype_type = QR_QTYPE_TKEY + (qtype - 249);
-            } else if (qtype == 255) {
-                // qtype 255: all records
-                qtype_type = QR_QTYPE_OTHER;
-            } else if (qtype < 258) {
-                // qtype 256..257
-                qtype_type = QR_QTYPE_URI + (qtype - 256);
+            if (qtype < 258) {
+                // qtype 0..257
+                qtype_type = QRQTypeToQRCounterType[qtype];
             } else if (qtype < 32768) {
                 // qtype 258..32767
                 qtype_type = QR_QTYPE_OTHER;
@@ -195,21 +168,7 @@ CountersImpl::inc(const QRAttributes& qrattrs, const Message& response) {
     }
     server_qr_counter_.inc(qtype_type);
     // OPCODE
-    unsigned int opcode_type = QR_OPCODE_OTHER;
-    if (qrattrs.req_opcode_ < 3) {
-        // opcode 0..2
-        opcode_type = QR_OPCODE_QUERY + qrattrs.req_opcode_;
-    } else if (qrattrs.req_opcode_ == 3) {
-        // opcode 3 is reserved
-        opcode_type = QR_OPCODE_OTHER;
-    } else if (qrattrs.req_opcode_ < 6) {
-        // opcode 4..5
-        opcode_type = QR_OPCODE_NOTIFY + (qrattrs.req_opcode_ - 4);
-    } else {
-        // opcode larger than 6 is reserved
-        opcode_type = QR_OPCODE_OTHER;
-    }
-    server_qr_counter_.inc(opcode_type);
+    server_qr_counter_.inc(QROpCodeToQRCounterType[qrattrs.req_opcode_]);
 
     // response
     if (qrattrs.answer_sent_) {
@@ -238,18 +197,9 @@ CountersImpl::inc(const QRAttributes& qrattrs, const Message& response) {
         // RCODE
         const unsigned int rcode = response.getRcode().getCode();
         unsigned int rcode_type = QR_RCODE_OTHER;
-        if (rcode < 11) {
-            // rcode 0..10
-            rcode_type = QR_RCODE_NOERROR + rcode;
-        } else if (rcode < 16) {
-            // rcode 11..15 is reserved
-            rcode_type = QR_RCODE_OTHER;
-        } else if (rcode == 16) {
-            // rcode 16
-            rcode_type = QR_RCODE_BADSIGVERS;
-        } else if (rcode < 23) {
-            // rcode 17..22
-            rcode_type = QR_RCODE_BADKEY + (rcode - 17);
+        if (rcode < 23) {
+            // rcode 0..22
+            rcode_type = QRRCodeToQRCounterType[rcode];
         } else {
             // opcode larger than 22 is reserved or unassigned
             rcode_type = QR_RCODE_OTHER;
@@ -282,6 +232,9 @@ CountersImpl::inc(const QRAttributes& qrattrs, const Message& response) {
                     server_qr_counter_.inc(QR_QRYREFERRAL);
                 }
             }
+        } else if (rcode == Rcode::REFUSED_CODE) {
+            // AuthRej
+            server_qr_counter_.inc(QR_QRYREJECT);
         }
     }
 }

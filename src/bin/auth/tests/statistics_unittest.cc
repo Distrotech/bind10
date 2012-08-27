@@ -357,6 +357,7 @@ TEST_F(CountersTest, incrementNormalQuery) {
     expect_nonzero.insert("auth.server.qr.response");
     expect_nonzero.insert("auth.server.qr.qrynoauthans");
     expect_nonzero.insert("auth.server.qr.rcode.refused");
+    expect_nonzero.insert("auth.server.qr.authqryrej");
     checkCountersAllZeroExcept(counters.dump(), expect_nonzero);
 }
 
