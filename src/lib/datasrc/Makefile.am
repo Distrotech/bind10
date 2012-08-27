@@ -40,7 +40,7 @@ libb10_datasrc_la_SOURCES += memory_datasrc.h memory_datasrc.cc
 nodist_libb10_datasrc_la_SOURCES = datasrc_messages.h datasrc_messages.cc
 libb10_datasrc_la_LDFLAGS = -no-undefined -version-info 1:0:1
 
-pkglib_LTLIBRARIES =  sqlite3_ds.la memory_ds.la static_ds.la
+pkglib_LTLIBRARIES =  sqlite3_ds.la memory_ds.la static_ds.la mysql_ds.la
 
 sqlite3_ds_la_SOURCES = sqlite3_accessor.h sqlite3_accessor.cc
 sqlite3_ds_la_SOURCES += sqlite3_accessor_link.cc
@@ -49,6 +49,18 @@ sqlite3_ds_la_LDFLAGS += -no-undefined -version-info 1:0:0
 sqlite3_ds_la_LIBADD = $(top_builddir)/src/lib/exceptions/libb10-exceptions.la
 sqlite3_ds_la_LIBADD += libb10-datasrc.la
 sqlite3_ds_la_LIBADD += $(SQLITE_LIBS)
+
+mysql_ds_la_SOURCES = mysql_accessor.h mysql_accessor.cc
+mysql_ds_la_SOURCES += mysql_accessor_link.cc
+mysql_ds_la_CPPFLAGS = $(AM_CPPFLAGS) -I/usr/local/Cellar/mysql/5.5.25a/include
+mysql_ds_la_LDFLAGS = -module -avoid-version
+mysql_ds_la_LDFLAGS += -no-undefined -version-info 1:0:0
+mysql_ds_la_LDFLAGS += -L/usr/local/Cellar/mysql/5.5.25a/lib
+mysql_ds_la_LIBADD = $(top_builddir)/src/lib/exceptions/libb10-exceptions.la
+mysql_ds_la_LIBADD += $(top_builddir)/src/lib/dns/libb10-dns++.la
+mysql_ds_la_LIBADD += $(top_builddir)/src/lib/cc/libb10-cc.la
+mysql_ds_la_LIBADD += libb10-datasrc.la
+mysql_ds_la_LIBADD += -lmysqlclient
 
 memory_ds_la_SOURCES = memory_datasrc_link.cc
 memory_ds_la_LDFLAGS = -module -avoid-version
