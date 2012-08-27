@@ -253,24 +253,35 @@ public:
     /// session error).
     bool submitStatistics() const;
 
-    /// \brief Get the values of specified counters.
+    /// \brief Get the values of specified statistics counters.
     ///
-    /// This function returns names and values of counter.
+    /// This function returns names and values of counter specified with
+    /// \c items. If \c items is empty, empty map is returned. Duplicated item
+    /// names cannot be specified because \c items is a set.
     ///
-    /// \throw bad_alloc
+    /// \param items A set of item names. An item name must be the name of
+    ///              a sub-tree of statistics items, one of the following:
+    ///                auth.server.qr: Query / Response counters
+    ///                auth.server.socket: Socket statistics
     ///
-    /// \return a tree of statistics items.
+    /// \throw std::bad_alloc Internal resource allocation fails.
+    ///
+    /// \return A tree of statistics items formatted in a map.
+    ///         { item_name => item_value, item_name => item_value, ... }
+    ///         See statistics.h for detail.
     const isc::auth::statistics::Counters::ItemTreeType getStatistics(
         const isc::auth::statistics::Counters::ItemNodeNameSetType& items)
         const;
 
-    /// \brief Dump the values of counters.
+    /// \brief Dump the values of all statistics counters.
     ///
-    /// This function returns names and values of counter.
+    /// This function returns names and values of all counters for testing.
     ///
-    /// \throw bad_alloc
+    /// \throw std::bad_alloc Internal resource allocation fails.
     ///
-    /// \return a tree of statistics items.
+    /// \return A tree of statistics items formatted in a map.
+    ///         { item_name => item_value, item_name => item_value, ... }
+    ///         See statistics.h for detail.
     const isc::auth::statistics::Counters::ItemTreeType dumpStatistics() const;
 
     /**
