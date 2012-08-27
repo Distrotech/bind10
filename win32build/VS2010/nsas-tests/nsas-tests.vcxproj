@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{6AC4F7A4-9BDC-415F-81DB-6332CACA38B3}</ProjectGuid>
+    <ProjectGuid>{B5D971AD-D95B-4A15-9E31-38AEF4F69627}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>libasiolink_tests</RootNamespace>
+    <RootNamespace>nsas-tests</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -52,16 +52,16 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;GTEST_LINKED_AS_SHARED_LIBRARY=1;TEST_DATA_DIR="testdata";_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\ext\asio;..\..\..\ext\coroutine;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;GTEST_LINKED_AS_SHARED_LIBRARY=1;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\nsas;..\..\..\ext\asio;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libexceptionsd.lib;libutild.lib;libutil_unittestsd.lib;libdns++d.lib;liblogd.lib;libasiolinkd.lib;log4cplusD.lib;gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libb10-exceptionsd.lib;libb10-utild.lib;libutil_unittestsd.lib;libb10-logd.lib;libb10-cryptolinkd.lib;libb10-dns++d.lib;libb10-asiolinkd.lib;libb10-nsasd.lib;botand.lib;log4cplusD.lib;gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -71,8 +71,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;GTEST_LINKED_AS_SHARED_LIBRARY=1;TEST_DATA_DIR="testdata";NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\ext\asio;..\..\..\ext\coroutine;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;GTEST_LINKED_AS_SHARED_LIBRARY=1;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\nsas;..\..\..\ext\asio;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
@@ -81,20 +81,27 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;libdns++.lib;liblog.lib;libasiolink.lib;log4cplus.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libutil_unittests.lib;libb10-log.lib;libb10-cryptolink.lib;libb10-dns++.lib;libb10-asiolink.lib;libb10-nsas.lib;botan.lib;log4cplus.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\lib\asiolink\tests\interval_timer_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\asiolink\tests\io_address_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\asiolink\tests\io_endpoint_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\asiolink\tests\io_socket_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\asiolink\tests\run_unittests.cc" />
-    <ClCompile Include="..\..\..\src\lib\asiolink\tests\tcp_endpoint_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\asiolink\tests\tcp_socket_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\asiolink\tests\udp_endpoint_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\asiolink\tests\udp_socket_unittest.cc" />
+    <ClInclude Include="..\..\..\src\lib\nsas\tests\nsas_test.h" />
+    <ClInclude Include="..\..\..\src\lib\util\unittests\resolver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\lib\nsas\tests\address_entry_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\tests\fetchable_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\tests\hash_deleter_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\tests\hash_key_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\tests\hash_table_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\tests\hash_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\tests\nameserver_address_store_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\tests\nameserver_address_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\tests\nameserver_entry_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\tests\nsas_entry_compare_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\tests\run_unittests.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\tests\zone_entry_unittest.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

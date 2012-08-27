@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{9C5774EF-E833-4150-8B7A-B6082D879775}</ProjectGuid>
+    <ProjectGuid>{6D55503E-0B43-4273-B6A5-4CEB39E114AC}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>libresolve_tests</RootNamespace>
+    <RootNamespace>asiodns-tests</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -52,15 +52,15 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;GTEST_CREATE_SHARED_LIBRARY=1;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\ext\asio;..\..\..\ext\coroutine;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;GTEST_LINKED_AS_SHARED_LIBRARY=1;TEST_DATA_DIR="testdata";_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\ext\asio;..\..\..\ext\coroutine;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libb10-exceptionsd.lib;libb10-utild.lib;libutil_unittestsd.lib;libb10-cryptolinkd.lib;libb10-dns++d.lib;libb10-logd.lib;libb10-asiolinkd.lib;libb10-asiodnsd.lib;botand.lib;log4cplusD.lib;gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libexceptionsd.lib;libutild.lib;libutil_unittestsd.lib;libcryptolinkd.lib;libdns++d.lib;liblogd.lib;libasiolinkd.lib;libasiodnsd.lib;libnsasd.lib;libcached.lib;libresolved.lib;botand.lib;log4cplusD.lib;gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -71,8 +71,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;GTEST_CREATE_SHARED_LIBRARY=1;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\ext\asio;..\..\..\ext\coroutine;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;GTEST_LINKED_AS_SHARED_LIBRARY=1;TEST_DATA_DIR="testdata";NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\ext\asio;..\..\..\ext\coroutine;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
@@ -81,23 +81,19 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;libutil_unittests.lib;libcryptolink.lib;libdns++.lib;liblog.lib;libasiolink.lib;libasiodns.lib;libnsas.lib;libcache.lib;libresolve.lib;botan.lib;log4cplus.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libutil_unittests.lib;libb10-cryptolink.lib;libb10-dns++.lib;libb10-log.lib;libb10-asiolink.lib;libb10-asiodns.lib;botan.lib;log4cplus.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\lib\dns\tests\unittest_util.h" />
-    <ClInclude Include="..\..\..\src\lib\util\unittests\resolver.h" />
+    <ClCompile Include="..\..\..\src\lib\asiodns\tests\dns_server_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\asiodns\tests\dns_service_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\asiodns\tests\io_fetch_unittest.cc" />
+    <ClCompile Include="..\..\..\src\lib\asiodns\tests\run_unittests.cc" />
+    <ClCompile Include="..\..\..\src\lib\dns\tests\unittest_util.cc" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\lib\dns\tests\unittest_util.cc" />
-    <ClCompile Include="..\..\..\src\lib\resolve\tests\recursive_query_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\resolve\tests\recursive_query_unittest_2.cc" />
-    <ClCompile Include="..\..\..\src\lib\resolve\tests\recursive_query_unittest_3.cc" />
-    <ClCompile Include="..\..\..\src\lib\resolve\tests\resolver_callback_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\resolve\tests\resolve_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\resolve\tests\response_classifier_unittest.cc" />
-    <ClCompile Include="..\..\..\src\lib\resolve\tests\run_unittests.cc" />
+    <ClInclude Include="..\..\..\src\lib\dns\tests\unittest_util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

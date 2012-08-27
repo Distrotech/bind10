@@ -11,37 +11,43 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\lib\cache\cache_entry_key.h" />
-    <ClInclude Include="..\..\..\src\lib\cache\cache_messages.h" />
-    <ClInclude Include="..\..\..\src\lib\cache\dll.h" />
-    <ClInclude Include="..\..\..\src\lib\cache\local_zone_data.h" />
-    <ClInclude Include="..\..\..\src\lib\cache\logger.h" />
-    <ClInclude Include="..\..\..\src\lib\cache\message_cache.h" />
-    <ClInclude Include="..\..\..\src\lib\cache\message_entry.h" />
-    <ClInclude Include="..\..\..\src\lib\cache\message_utility.h" />
-    <ClInclude Include="..\..\..\src\lib\cache\resolver_cache.h" />
-    <ClInclude Include="..\..\..\src\lib\cache\rrset_cache.h" />
-    <ClInclude Include="..\..\..\src\lib\cache\rrset_copy.h" />
-    <ClInclude Include="..\..\..\src\lib\cache\rrset_entry.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\address_entry.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\address_request_callback.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\asiolink.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\dll.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\fetchable.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\glue_hints.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\hash.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\hash_deleter.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\hash_key.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\hash_table.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\nameserver_address.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\nameserver_address_store.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\nameserver_entry.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\nsas_entry.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\nsas_entry_compare.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\nsas_log.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\nsas_messages.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\nsas_types.h" />
+    <ClInclude Include="..\..\..\src\lib\nsas\zone_entry.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\lib\cache\cache_entry_key.cc" />
-    <ClCompile Include="..\..\..\src\lib\cache\cache_messages.cc" />
-    <ClCompile Include="..\..\..\src\lib\cache\local_zone_data.cc" />
-    <ClCompile Include="..\..\..\src\lib\cache\logger.cc" />
-    <ClCompile Include="..\..\..\src\lib\cache\message_cache.cc" />
-    <ClCompile Include="..\..\..\src\lib\cache\message_entry.cc" />
-    <ClCompile Include="..\..\..\src\lib\cache\message_utility.cc" />
-    <ClCompile Include="..\..\..\src\lib\cache\resolver_cache.cc" />
-    <ClCompile Include="..\..\..\src\lib\cache\rrset_cache.cc" />
-    <ClCompile Include="..\..\..\src\lib\cache\rrset_copy.cc" />
-    <ClCompile Include="..\..\..\src\lib\cache\rrset_entry.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\address_entry.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\glue_hints.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\hash.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\hash_key.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\nameserver_address.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\nameserver_address_store.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\nameserver_entry.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\nsas_log.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\nsas_messages.cc" />
+    <ClCompile Include="..\..\..\src\lib\nsas\zone_entry.cc" />
     <ClCompile Include="..\..\dllmain.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F8616086-9CE9-4F32-BC97-8494EADAEC6F}</ProjectGuid>
+    <ProjectGuid>{67046450-CCEA-4CAC-A05B-17516F3FB540}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>libcache</RootNamespace>
+    <RootNamespace>libb10-nsas</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -74,18 +80,18 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\nsas;..\..\..\src\lib\cache;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\nsas;..\..\..\ext\asio;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libexceptionsd.lib;libutild.lib;liblogd.lib;libdns++d.lib;libnsasd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\$(configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libb10-exceptionsd.lib;libb10-utild.lib;libb10-logd.lib;libb10-dns++d.lib;libb10-asiolinkd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>cd ..\..\..\src\lib\cache
-..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe cache_messages.mes
+      <Command>cd ..\..\..\src\lib\nsas
+..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe nsas_messages.mes
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -97,7 +103,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\nsas;..\..\..\src\lib\cache;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\nsas;..\..\..\ext\asio;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
@@ -105,12 +111,12 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>..\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libexceptions.lib;libutil.lib;liblog.lib;libdns++.lib;libnsas.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\$(configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libb10-log.lib;libb10-dns++.lib;libb10-asiolink.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>cd ..\..\..\src\lib\cache
-..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe cache_messages.mes
+      <Command>cd ..\..\..\src\lib\nsas
+..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe nsas_messages.mes
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>

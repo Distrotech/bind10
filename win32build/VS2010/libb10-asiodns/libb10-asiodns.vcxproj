@@ -11,39 +11,33 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\lib\asiolink\asiolink.h" />
-    <ClInclude Include="..\..\..\src\lib\asiolink\dll.h" />
-    <ClInclude Include="..\..\..\src\lib\asiolink\dummy_io_cb.h" />
-    <ClInclude Include="..\..\..\src\lib\asiolink\interval_timer.h" />
-    <ClInclude Include="..\..\..\src\lib\asiolink\io_address.h" />
-    <ClInclude Include="..\..\..\src\lib\asiolink\io_asio_socket.h" />
-    <ClInclude Include="..\..\..\src\lib\asiolink\io_endpoint.h" />
-    <ClInclude Include="..\..\..\src\lib\asiolink\io_error.h" />
-    <ClInclude Include="..\..\..\src\lib\asiolink\io_message.h" />
-    <ClInclude Include="..\..\..\src\lib\asiolink\io_service.h" />
-    <ClInclude Include="..\..\..\src\lib\asiolink\io_socket.h" />
-    <ClInclude Include="..\..\..\src\lib\asiolink\simple_callback.h" />
-    <ClInclude Include="..\..\..\src\lib\asiolink\tcp_endpoint.h" />
-    <ClInclude Include="..\..\..\src\lib\asiolink\tcp_socket.h" />
-    <ClInclude Include="..\..\..\src\lib\asiolink\udp_endpoint.h" />
-    <ClInclude Include="..\..\..\src\lib\asiolink\udp_socket.h" />
+    <ClInclude Include="..\..\..\src\lib\asiodns\asiodns.h" />
+    <ClInclude Include="..\..\..\src\lib\asiodns\asiodns_messages.h" />
+    <ClInclude Include="..\..\..\src\lib\asiodns\dll.h" />
+    <ClInclude Include="..\..\..\src\lib\asiodns\dns_answer.h" />
+    <ClInclude Include="..\..\..\src\lib\asiodns\dns_lookup.h" />
+    <ClInclude Include="..\..\..\src\lib\asiodns\dns_server.h" />
+    <ClInclude Include="..\..\..\src\lib\asiodns\dns_service.h" />
+    <ClInclude Include="..\..\..\src\lib\asiodns\io_fetch.h" />
+    <ClInclude Include="..\..\..\src\lib\asiodns\logger.h" />
+    <ClInclude Include="..\..\..\src\lib\asiodns\sync_udp_server.h" />
+    <ClInclude Include="..\..\..\src\lib\asiodns\tcp_server.h" />
+    <ClInclude Include="..\..\..\src\lib\asiodns\udp_server.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\lib\asiolink\dummy_io_cb.cc" />
-    <ClCompile Include="..\..\..\src\lib\asiolink\interval_timer.cc" />
-    <ClCompile Include="..\..\..\src\lib\asiolink\io_address.cc" />
-    <ClCompile Include="..\..\..\src\lib\asiolink\io_endpoint.cc" />
-    <ClCompile Include="..\..\..\src\lib\asiolink\io_error.cc" />
-    <ClCompile Include="..\..\..\src\lib\asiolink\io_message.cc" />
-    <ClCompile Include="..\..\..\src\lib\asiolink\io_service.cc" />
-    <ClCompile Include="..\..\..\src\lib\asiolink\io_socket.cc" />
-    <ClCompile Include="..\..\..\src\lib\asiolink\simple_callback.cc" />
+    <ClCompile Include="..\..\..\src\lib\asiodns\asiodns_messages.cc" />
+    <ClCompile Include="..\..\..\src\lib\asiodns\dns_service.cc" />
+    <ClCompile Include="..\..\..\src\lib\asiodns\io_fetch.cc" />
+    <ClCompile Include="..\..\..\src\lib\asiodns\logger.cc" />
+    <ClCompile Include="..\..\..\src\lib\asiodns\sync_udp_server.cc" />
+    <ClCompile Include="..\..\..\src\lib\asiodns\tcp_server.cc" />
+    <ClCompile Include="..\..\..\src\lib\asiodns\udp_server.cc" />
     <ClCompile Include="..\..\dllmain.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{69048307-9655-4AAA-B07E-B67345C1DEF9}</ProjectGuid>
+    <ProjectGuid>{7EB244E7-D381-4CF4-A2D4-739B81F77588}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>libasiolink</RootNamespace>
+    <RootNamespace>libb10-asiodns</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -76,15 +70,20 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\ext\asio;..\..\..\ext\coroutine;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\asiodns;..\..\..\ext\asio;..\..\..\ext\coroutine;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libexceptionsd.lib;liblogd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libb10-exceptionsd.lib;libb10-utild.lib;libb10-logd.lib;libb10-dns++d.lib;libb10-asiolinkd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>cd ..\..\..\src\lib\asiodns
+..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe asiodns_messages.mes
+</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -94,7 +93,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\ext\asio;..\..\..\ext\coroutine;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;..\..\..\src\lib\asiodns;..\..\..\ext\asio;..\..\..\ext\coroutine;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
@@ -103,8 +102,13 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>..\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libexceptions.lib;liblog.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libb10-log.lib;libb10-dns++.lib;libb10-asiolink.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>cd ..\..\..\src\lib\asiodns
+..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe asiodns_messages.mes
+</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
