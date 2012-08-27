@@ -46,13 +46,13 @@ using namespace isc::auth;
 using namespace isc::statistics;
 
 namespace {
-using namespace isc::data;
 using isc::statistics::Counter;
 using isc::auth::statistics::Counters;
 void
 fillNodes(const Counter& counter, const char* const nodename[], const size_t size,
-          const std::string& prefix, Counters::item_tree_type& trees)
+          const std::string& prefix, Counters::ItemTreeType& trees)
 {
+    using namespace isc::data;
     for (size_t i = 0; i < size; ++i) {
         trees->set (prefix + nodename[i],
                     Element::create( static_cast<long int>( counter.get(i) ) )
@@ -70,10 +70,10 @@ public:
     CountersImpl();
     ~CountersImpl();
     void inc(const QRAttributes& qrattrs, const Message& response);
-    const Counters::item_tree_type
-        get(const Counters::item_node_name_set_type& trees) const;
+    const Counters::ItemTreeType
+        get(const Counters::ItemNodeNameSetType& trees) const;
     // Currently for testing purpose only
-    const Counters::item_tree_type dump() const;
+    const Counters::ItemTreeType dump() const;
     bool submitStatistics() const;
     void setStatisticsSession(isc::cc::AbstractSession* statistics_session);
     void registerStatisticsValidator (Counters::validator_type validator);
@@ -321,13 +321,13 @@ CountersImpl::registerStatisticsValidator
     validator_ = validator;
 }
 
-const Counters::item_tree_type
-CountersImpl::get(const Counters::item_node_name_set_type& trees) const {
+const Counters::ItemTreeType
+CountersImpl::get(const Counters::ItemNodeNameSetType& trees) const {
     using namespace isc::data;
 
-    Counters::item_tree_type item_tree = Element::createMap();
+    Counters::ItemTreeType item_tree = Element::createMap();
 
-    BOOST_FOREACH(const Counters::item_node_name_type& node, trees) {
+    BOOST_FOREACH(const Counters::ItemNodeNameType& node, trees) {
         if (node == "auth.server.qr") {
             fillNodes(server_qr_counter_, QRCounterItemName, QR_COUNTER_TYPES,
                       "auth.server.qr.", item_tree);
@@ -346,11 +346,11 @@ CountersImpl::get(const Counters::item_node_name_set_type& trees) const {
 }
 
 // Currently for testing purpose only
-const Counters::item_tree_type
+const Counters::ItemTreeType
 CountersImpl::dump() const {
     using namespace isc::data;
 
-    Counters::item_tree_type item_tree = Element::createMap();
+    Counters::ItemTreeType item_tree = Element::createMap();
 
     fillNodes(server_qr_counter_, QRCounterItemName, QR_COUNTER_TYPES,
               "auth.server.qr.", item_tree);
@@ -368,12 +368,12 @@ Counters::inc(const QRAttributes& qrattrs, const Message& response) {
     impl_->inc(qrattrs, response);
 }
 
-const Counters::item_tree_type
-Counters::get(const Counters::item_node_name_set_type& trees) const {
+const Counters::ItemTreeType
+Counters::get(const Counters::ItemNodeNameSetType& trees) const {
     return (impl_->get(trees));
 }
 
-const Counters::item_tree_type
+const Counters::ItemTreeType
 Counters::dump() const {
     return (impl_->dump());
 }

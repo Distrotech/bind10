@@ -305,7 +305,7 @@ TEST_F(CountersTest, submitStatisticsWithValidator) {
     EXPECT_FALSE(counters.submitStatistics());
 }
 
-bool checkCountersAllZeroExcept(const Counters::item_tree_type counters,
+bool checkCountersAllZeroExcept(const Counters::ItemTreeType counters,
                                 const std::set<std::string>& except_for) {
     std::map<std::string, ConstElementPtr> stats_map;
     counters->getValue(stats_map);
@@ -384,7 +384,7 @@ TEST_F(CountersTest, checkDumpItems) {
 TEST_F(CountersTest, checkGetItems) {
     std::map<std::string, ConstElementPtr> stats_map;
 
-    Counters::item_node_name_set_type names;
+    Counters::ItemNodeNameSetType names;
 
     // get "auth.server.qr"
     names.insert("auth.server.qr");

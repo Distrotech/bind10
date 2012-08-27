@@ -190,17 +190,17 @@ public:
 
     /// \brief item node name
     ///
-    typedef std::string item_node_name_type;
+    typedef std::string ItemNodeNameType;
 
     /// \brief item node set
     ///
-    typedef std::set<item_node_name_type> item_node_name_set_type;
+    typedef std::set<ItemNodeNameType> ItemNodeNameSetType;
 
     /// \brief A type of statistics item tree in isc::data::MapElement.
     ///        { item_name => item_value, item_name => item_value, ... }
     ///        item_name is a string seperated by '.'.
     ///        item_value is an integer.
-    typedef isc::data::ElementPtr item_tree_type;
+    typedef isc::data::ElementPtr ItemTreeType;
 
     /// \brief Get the values of specified counters.
     ///
@@ -209,7 +209,7 @@ public:
     /// \throw bad_alloc
     ///
     /// \return a tree of statistics items.
-    const item_tree_type get(const item_node_name_set_type& items) const;
+    const ItemTreeType get(const ItemNodeNameSetType& items) const;
 
     /// \brief Dump all of the counters.
     ///
@@ -218,7 +218,7 @@ public:
     /// \throw bad_alloc
     ///
     /// \return a tree of statistics items.
-    const item_tree_type dump() const;
+    const ItemTreeType dump() const;
 
     /// \brief A type of validation function for the specification in
     /// isc::config::ModuleSpec.
