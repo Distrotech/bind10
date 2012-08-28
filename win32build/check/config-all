@@ -1,0 +1,2 @@
+${BIND10HOME}/win32build/check/config-release && \
+${BIND10HOME}/win32build/check/config-debug

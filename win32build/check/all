@@ -1,0 +1,18 @@
+${BIND10HOME}/win32build/check/exceptions-all && \
+${BIND10HOME}/win32build/check/util-all && \
+${BIND10HOME}/win32build/check/log-all && \
+${BIND10HOME}/win32build/check/cryptolink-all && \
+${BIND10HOME}/win32build/check/dns++-all && \
+${BIND10HOME}/win32build/check/cc-all && \
+${BIND10HOME}/win32build/check/config-all && \
+${BIND10HOME}/win32build/check/acl-all && \
+${BIND10HOME}/win32build/check/bench-all && \
+${BIND10HOME}/win32build/check/asiolink-all && \
+${BIND10HOME}/win32build/check/asiodns-all && \
+${BIND10HOME}/win32build/check/nsas-all && \
+${BIND10HOME}/win32build/check/cache-all && \
+${BIND10HOME}/win32build/check/resolve-all && \
+${BIND10HOME}/win32build/check/datasrc-all && \
+${BIND10HOME}/win32build/check/server-common-all && \
+${BIND10HOME}/win32build/check/dhcp++-all && \
+${BIND10HOME}/win32build/check/statistics-all

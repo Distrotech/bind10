@@ -1,0 +1,2 @@
+${BIND10HOME}/win32build/check/cryptolink-release && \
+${BIND10HOME}/win32build/check/cryptolink-debug

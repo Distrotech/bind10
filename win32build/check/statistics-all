@@ -1,0 +1,2 @@
+${BIND10HOME}/win32build/check/statistics-release && \
+${BIND10HOME}/win32build/check/statistics-debug

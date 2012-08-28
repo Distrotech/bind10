@@ -1,0 +1,5 @@
+. ${BIND10HOME}/win32build/check/site-release
+echo
+echo acl-tests / Release
+echo
+${BIND10HOME}/win32build/${VSVER}/acl-tests/Release/run_unittests.exe
