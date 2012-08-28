@@ -13,7 +13,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{48B8644A-79FB-4D03-A981-1CA21FEE3286}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>b10resolver</RootNamespace>
+    <RootNamespace>b10-resolver</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -61,7 +61,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)b10-resolver.exe</OutputFile>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libb10-exceptionsd.lib;libb10-utild.lib;libb10-util-iod.lib;libb10-logd.lib;libcryptolinkd.lib;libdns++d.lib;libccd.lib;libcfgclientd.lib;libacld.lib;libdnsacld.lib;libasiolinkd.lib;libasiodnsd.lib;libnsasd.lib;libcached.lib;libresolved.lib;libserver_commond.lib;botand.lib;log4cplusD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libb10-exceptionsd.lib;libb10-utild.lib;libb10-util-iod.lib;libb10-logd.lib;libb10-cryptolinkd.lib;libb10-dns++d.lib;libb10-ccd.lib;libb10-cfgclientd.lib;libb10-acld.lib;libb10-dnsacld.lib;libb10-asiolinkd.lib;libb10-asiodnsd.lib;libb10-nsasd.lib;libb10-cached.lib;libb10-resolved.lib;libb10-server-commond.lib;botand.lib;log4cplusD.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>cd ..\..\..\src\bin\resolver
@@ -89,7 +89,7 @@ copy spec_config.h.pre.win32 spec_config.h
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)b10-resolver.exe</OutputFile>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libb10-util-io.lib;libb10-log.lib;libcryptolink.lib;libdns++.lib;libcc.lib;libcfgclient.lib;libacl.lib;libdnsacl.lib;libasiolink.lib;libasiodns.lib;libnsas.lib;libcache.lib;libresolve.lib;libserver_common.lib;botan.lib;log4cplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libb10-util-io.lib;libb10-log.lib;libb10-cryptolink.lib;libb10-dns++.lib;libb10-cc.lib;libb10-cfgclient.lib;libb10-acl.lib;libb10-dnsacl.lib;libb10-asiolink.lib;libb10-asiodns.lib;libb10-nsas.lib;libb10-cache.lib;libb10-resolve.lib;libb10-server-common.lib;botan.lib;log4cplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>cd ..\..\..\src\bin\resolver
