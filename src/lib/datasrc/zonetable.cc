@@ -67,7 +67,7 @@ struct ZoneTable::ZoneTableImpl {
                 assert(0);
         }
         // Can Not Happen
-        assert(node);
+        assert(node != NULL);
 
         // Is it empty? We either just created it or it might be nonterminal
         if (node->isEmpty()) {
