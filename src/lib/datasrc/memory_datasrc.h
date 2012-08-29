@@ -15,14 +15,11 @@
 #ifndef __MEMORY_DATA_SOURCE_H
 #define __MEMORY_DATA_SOURCE_H 1
 
-#include <string>
+#include <datasrc/client.h>
+#include <cc/data.h>
 
 #include <boost/noncopyable.hpp>
-
-#include <datasrc/zonetable.h>
-#include <datasrc/client.h>
-
-#include <cc/data.h>
+#include <string>
 
 namespace isc {
 namespace dns {
