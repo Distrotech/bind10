@@ -70,11 +70,7 @@ TEST(FactoryTest, paths) {
     pathtestHelper("/no_such_file.so", error + "/no_such_file.so");
 
     // If no ending in .so, it should get _ds.so
-#if !defined(_WIN32) || !defined(_DEBUG)
     pathtestHelper("/no_such_file", error + "/no_such_file_ds.so");
-#else
-    pathtestHelper("/no_such_file", error + "/no_such_file_dsD.so");
-#endif
 
     // If not starting with /, path should be added. For this test that
     // means the build directory as set in B10_FROM_BUILD
@@ -93,7 +89,7 @@ TEST(FactoryTest, paths) {
     pathtestHelper("no_such_file.so", error + builddir +
                    "/win32build/VS2010/Debug/no_such_file.so");
     pathtestHelper("no_such_file", error + builddir +
-                   "/win32build/VS2010/Debug/no_such_file_dsD.so");
+                   "/win32build/VS2010/Debug/no_such_file_ds.so");
 #endif
 #endif
 
@@ -107,16 +103,11 @@ TEST(FactoryTest, paths) {
                    "/win32build/VS2010/Release/no_such_file.so.something_ds.so");
 #else
     pathtestHelper("no_such_file.so.something", error + builddir +
-                   "/win32build/VS2010/Debug/no_such_file.so.something_dsD.so");
+                   "/win32build/VS2010/Debug/no_such_file.so.something_ds.so");
 #endif
 #endif
-#if !defined(_WIN32) || !defined(_DEBUG)
     pathtestHelper("/no_such_file.so.something", error +
                    "/no_such_file.so.something_ds.so");
-#else
-    pathtestHelper("/no_such_file.so.something", error +
-                   "/no_such_file.so.something_dsD.so");
-#endif
     pathtestHelper("/no_such_file.so.something.so", error +
                    "/no_such_file.so.something.so");
     pathtestHelper("/no_such_file.so.so", error +
@@ -130,7 +121,7 @@ TEST(FactoryTest, paths) {
                    "/win32build/VS2010/Release/no_such_file.so.something_ds.so");
 #else
     pathtestHelper("no_such_file.so.something", error + builddir +
-                   "/win32build/VS2010/Debug/no_such_file.so.something_dsD.so");
+                   "/win32build/VS2010/Debug/no_such_file.so.something_ds.so");
 #endif
 #endif
 

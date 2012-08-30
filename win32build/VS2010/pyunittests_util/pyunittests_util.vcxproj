@@ -62,7 +62,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>$(OutDir)pyunittests_util.pyd</OutputFile>
+      <OutputFile>$(OutDir)pyunittests_util_d.pyd</OutputFile>
       <AdditionalLibraryDirectories>..\$(Configuration);C:\Python32\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libb10-util.lib;python32_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>

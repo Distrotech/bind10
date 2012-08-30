@@ -133,7 +133,7 @@ class NotifyOut:
         self._waiting_zones = []
         self._notifying_zones = []
         self._serving = False
-        self._read_sock, self._write_sock = socketpair.socketpair()
+        self._read_sock, self._write_sock = socketpair()
         self._read_sock.setblocking(False)
         self.notify_num = 0  # the count of in progress notifies
         self._verbose = verbose

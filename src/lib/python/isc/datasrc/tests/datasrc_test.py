@@ -25,8 +25,8 @@ import shutil
 import sys
 import json
 
-TESTDATA_PATH = os.environ['TESTDATA_PATH'] + os.sep
-TESTDATA_WRITE_PATH = os.environ['TESTDATA_WRITE_PATH'] + os.sep
+TESTDATA_PATH = os.environ['TESTDATA_PATH'] + '/'
+TESTDATA_WRITE_PATH = os.environ['TESTDATA_WRITE_PATH'] + '/'
 
 READ_ZONE_DB_FILE = TESTDATA_PATH + "example.com.sqlite3"
 WRITE_ZONE_DB_FILE = TESTDATA_WRITE_PATH + "rwtest.sqlite3.copied"

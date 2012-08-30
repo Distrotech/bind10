@@ -19,8 +19,8 @@ import socket
 import unittest
 import sqlite3
 
-TESTDATA_PATH = os.environ['TESTDATA_PATH'] + os.sep
-TESTDATA_WRITE_PATH = os.environ['TESTDATA_WRITE_PATH'] + os.sep
+TESTDATA_PATH = os.environ['TESTDATA_PATH'] + '/'
+TESTDATA_WRITE_PATH = os.environ['TESTDATA_WRITE_PATH'] + '/'
 
 DBFILE_NEWSCHEMA = TESTDATA_PATH + "/newschema.sqlite3";
 DBFILE_OLDSCHEMA = TESTDATA_PATH + "/oldschema.sqlite3";

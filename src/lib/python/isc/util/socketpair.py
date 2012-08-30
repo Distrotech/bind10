@@ -28,10 +28,10 @@ def socketpair(family=pairfamily, type_=socket.SOCK_STREAM, proto=0):
     try:
         sock1, sock2 = socket.socketpair(family, type_, proto)
         return (sock1, sock2)
-    except NameError:
+    except AttributeError:
         # get passive socket
         psock = socket.socket(family, type_, proto)
-        psock.setsocketop(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        psock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         psock.bind(('127.0.0.1', 0))
         intf, port = psock.getsockname()
         psock.listen(1)

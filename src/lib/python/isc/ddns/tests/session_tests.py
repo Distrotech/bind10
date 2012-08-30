@@ -23,9 +23,9 @@ from isc.ddns.session import *
 from isc.ddns.zone_config import *
 
 # Some common test parameters
-TESTDATA_PATH = os.environ['TESTDATA_PATH'] + os.sep
+TESTDATA_PATH = os.environ['TESTDATA_PATH'] + '/'
 READ_ZONE_DB_FILE = TESTDATA_PATH + "rwtest.sqlite3" # original, to be copied
-TESTDATA_WRITE_PATH = os.environ['TESTDATA_WRITE_PATH'] + os.sep
+TESTDATA_WRITE_PATH = os.environ['TESTDATA_WRITE_PATH'] + '/'
 WRITE_ZONE_DB_FILE = TESTDATA_WRITE_PATH + "rwtest.sqlite3.copied"
 WRITE_ZONE_DB_CONFIG = "{ \"database_file\": \"" + WRITE_ZONE_DB_FILE + "\"}"
 

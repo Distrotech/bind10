@@ -31,7 +31,7 @@ class TestModuleSpec(unittest.TestCase):
             self.data_path = "../../../testdata"
 
     def spec_file(self, filename):
-        return(self.data_path + os.sep + filename)
+        return(self.data_path + '/' + filename)
 
     def read_spec_file(self, filename):
         return isc.config.module_spec_from_file(self.spec_file(filename))

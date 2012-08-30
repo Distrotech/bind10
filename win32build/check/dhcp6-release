@@ -5,7 +5,7 @@ echo
 exit 0
 ${BIND10HOME}/win32build/${VSVER}/dhcp6-tests/Release/dhcp6_unittests.exe
 if test $? -ne 0; then
-    exit $?
+    exit -1
 fi
 if [ ${PYTHON} == "None" ]; then
     echo skipping dhcp6 python / Release
@@ -22,6 +22,6 @@ PYTESTS='dhcp6_test.py'
 #        echo ${pytest}
 #        ${PYTHON} ${BIND10HOME}/src/bin/dhcp6/tests/${pytest}
 #        if test $? -ne 0; then
-#            exit $?
+#            exit -1
 #        fi
 #    done

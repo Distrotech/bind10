@@ -62,11 +62,7 @@ getDataSourceLibFile(const std::string& type) {
     std::string lib_file = type;
     const int ext_pos = lib_file.rfind(".so");
     if (ext_pos == std::string::npos || ext_pos + 3 != lib_file.length()) {
-#if !defined(_WIN32) || !defined(_DEBUG)
         lib_file.append("_ds.so");
-#else
-        lib_file.append("_dsD.so");
-#endif
     }
     // And if it is not an absolute path, prepend it with our
     // loadable backend library path
@@ -116,14 +112,11 @@ LibraryContainer::LibraryContainer(const std::string& name) {
                                           ": " << strerror(GetLastError()));
     }
 #else
-    if ((strcmp(name.c_str(), "sqlite3_ds.so") == 0) ||
-        (strcmp(name.c_str(), "sqlite3_dsD.so") == 0))
+    if (strcmp(name.c_str(), "sqlite3_ds.so") == 0)
         ds_lib_ = 1;
-    else if ((strcmp(name.c_str(), "memory_ds.so") == 0) ||
-             (strcmp(name.c_str(), "memory_dsD.so") == 0))
+    else if (strcmp(name.c_str(), "memory_ds.so") == 0)
         ds_lib_ = 2;
-    else if ((strcmp(name.c_str(), "static_ds.so") == 0) ||
-             (strcmp(name.c_str(), "static_dsD.so") == 0))
+    else if (strcmp(name.c_str(), "static_ds.so") == 0)
         ds_lib_ = 3;
     else {
         isc_throw(DataSourceLibraryError,

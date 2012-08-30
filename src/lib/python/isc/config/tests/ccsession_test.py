@@ -106,7 +106,7 @@ class TestModuleCCSession(unittest.TestCase):
             self.data_path = "../../../testdata"
 
     def spec_file(self, file):
-        return self.data_path + os.sep + file
+        return self.data_path + '/' + file
         
     def create_session(self, spec_file_name, config_handler = None,
                        command_handler = None, cc_session = None):
@@ -918,7 +918,7 @@ class TestUIModuleCCSession(unittest.TestCase):
             self.data_path = "../../../testdata"
 
     def spec_file(self, file):
-        return self.data_path + os.sep + file
+        return self.data_path + '/' + file
         
     def create_uccs2(self, fake_conn):
         module_spec = isc.config.module_spec_from_file(self.spec_file("spec2.spec"))

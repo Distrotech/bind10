@@ -54,7 +54,7 @@ class NoPollMixIn:
     some other thread.
     '''
     def __init__(self):
-        self.__read_sock, self.__write_sock = socketpair.socketpair()
+        self.__read_sock, self.__write_sock = socketpair()
         self._is_shut_down = threading.Event()
 
     def serve_forever(self, poll_interval=None):

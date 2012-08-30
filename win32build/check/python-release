@@ -22,41 +22,43 @@ for pytest in ${PYTESTS}
         echo ${pytest}
         ${PYTHON} ${BIND10HOME}/src/lib/python/isc/datasrc/tests/${pytest}
         if test $? -ne 0; then
-            exit $?
+            exit -1
         fi
     done
 
-echo skipping python cc / Release
+echo partial python cc / Release
 export PYTHONPATH=${CPYTHONPATH}
 #export BIND10_TEST_SOCKET_FILE=
-PYTESTS='message_test.py data_test.py session_test.py'
-#for pytest in ${PYTESTS}
-#    do
-#        echo ${pytest}
-#        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/cc/tests/${pytest}
-#        if test $? -ne 0; then
-#            exit $?
-#        fi
-#    done
+#PYTESTS='message_test.py data_test.py session_test.py'
+PYTESTS='message_test.py data_test.py'
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/cc/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
 
-echo skipping python config / Release
+echo partial python config / Release
 export PYTHONPATH="${CPYTHONPATH};${BIND10HOME}/src/lib/python/isc/config"
 export B10_LOCKFILE_DIR_FROM_BUILD=${BIND10HOME}
 export B10_TEST_PLUGIN_DIR=${BIND10HOME}/src/bin/cfgmgr/plugins
-export CONFIG_TESTDATA_PATH=${CTESTDATA}
-export CONFIG_WR_TESTDATA_PATH=${CTESTDATA}
-PYTESTS='ccsession_test.py
-    cfgmgr_test.py
-    config_data_test.py
-    module_spec_test.py'
-#for pytest in ${PYTESTS}
-#    do
-#        echo ${pytest}
-#        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/config/tests/${pytest}
-#        if test $? -ne 0; then
-#            exit $?
-#        fi
-#    done
+export CONFIG_TESTDATA_PATH=${BIND10HOME}/src/lib/config/tests/testdata
+export CONFIG_WR_TESTDATA_PATH=${BIND10HOME}/src/lib/config/tests/testdata
+#PYTESTS='ccsession_test.py
+#    cfgmgr_test.py
+#    config_data_test.py
+#    module_spec_test.py'
+PYTESTS='config_data_test.py module_spec_test.py'
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/config/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
 
 echo python log / Release
 export PYTHONPATH="${CPYTHONPATH};${BIND10HOME}/src/lib/python/isc/log"
@@ -67,7 +69,7 @@ export CONFIG_WR_TESTDATA_PATH=${CTESTDATA}
 BDIR=${BIND10HOME}/src/lib/python/isc/log/tests
 ${BDIR}/check_output-win32.sh ${BDIR}/log_console.py ${BDIR}/console.out
 if test $? -ne 0; then
-    exit $?
+    exit -1
 fi
 PYTESTS='log_test.py log_console.py'
 for pytest in ${PYTESTS}
@@ -75,34 +77,34 @@ for pytest in ${PYTESTS}
         echo ${pytest}
         ${PYTHON} ${BIND10HOME}/src/lib/python/isc/log/tests/${pytest}
         if test $? -ne 0; then
-            exit $?
+            exit -1
         fi
     done
 
-echo skipping python net / Release
+echo python net / Release
 export PYTHONPATH=${CPYTHONPATH}
 PYTESTS='addr_test.py parse_test.py'
-#for pytest in ${PYTESTS}
-#    do
-#        echo ${pytest}
-#        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/net/tests/${pytest}
-#        if test $? -ne 0; then
-#            exit $?
-#        fi
-#    done
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/net/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
 
-echo skipping python notify / Release
+echo python notify / Release
 export PYTHONPATH=${CPYTHONPATH}
 export TESTDATASRCDIR=${BIND10HOME}/src/lib/python/isc/notify/tests/testdata/
 PYTESTS='notify_out_test.py'
-#for pytest in ${PYTESTS}
-#    do
-#        echo ${pytest}
-#        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/notify/tests/${pytest}
-#        if test $? -ne 0; then
-#            exit $?
-#        fi
-#    done
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/notify/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
 
 echo skipping python util cio / Release
 export PYTHONPATH=${CPYTHONPATH}
@@ -113,21 +115,22 @@ PYTESTS='socketsession_test.py'
 #        echo ${pytest}
 #        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/util/cio/tests/${pytest}
 #        if test $? -ne 0; then
-#            exit $?
+#            exit -1
 #        fi
 #    done
 
-echo skipping python util / Release
+echo partial python util / Release
 export PYTHONPATH=${CPYTHONPATH}
-PYTESTS='process_test.py socketserver_mixin_test.py file_test.py'
-#for pytest in ${PYTESTS}
-#    do
-#        echo ${pytest}
-#        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/util/tests/${pytest}
-#        if test $? -ne 0; then
-#            exit $?
-#        fi
-#    done
+#PYTESTS='process_test.py socketserver_mixin_test.py file_test.py'
+PYTESTS='process_test.py socketserver_mixin_test.py'
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/util/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
 
 echo python acl / Release
 export PYTHONPATH=${CPYTHONPATH}
@@ -137,7 +140,7 @@ for pytest in ${PYTESTS}
         echo ${pytest}
         ${PYTHON} ${BIND10HOME}/src/lib/python/isc/acl/tests/${pytest}
         if test $? -ne 0; then
-            exit $?
+            exit -1
         fi
     done
 
@@ -152,60 +155,60 @@ PYTESTS='sockcreator_test.py component_test.py socket_cache_test.py'
 #        echo ${pytest}
 #        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/bind10/tests/${pytest}
 #        if test $? -ne 0; then
-#            exit $?
+#            exit -1
 #        fi
 #    done
 
-echo skipping python xfrin / Release
+echo python xfrin / Release
 export PYTHONPATH=${CPYTHONPATH}
 export B10_LOCKFILE_DIR_FROM_BUILD=${BIND10HOME}
 PYTESTS='diff_tests.py'
-#for pytest in ${PYTESTS}
-#    do
-#        echo ${pytest}
-#        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/xfrin/tests/${pytest}
-#        if test $? -ne 0; then
-#            exit $?
-#        fi
-#    done
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/xfrin/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
 
-echo skipping python server-common / Release
+echo python server-common / Release
 export PYTHONPATH=${CPYTHONPATH}
 export B10_LOCKFILE_DIR_FROM_BUILD=${BIND10HOME}
 PYTESTS='tsig_keyring_test.py dns_tcp_test.py'
-#for pytest in ${PYTESTS}
-#    do
-#        echo ${pytest}
-#        ${PYTHON} \
-#            ${BIND10HOME}/src/lib/python/isc/server_common/tests/${pytest}
-#        if test $? -ne 0; then
-#            exit $?
-#        fi
-#    done
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} \
+            ${BIND10HOME}/src/lib/python/isc/server_common/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
 
-echo skipping python ddns / Release
+echo python ddns / Release
 export PYTHONPATH=${CPYTHONPATH}
-export TESTDATA_PATH=${CTESTDATA}
+export TESTDATA_PATH=${BIND10HOME}/src/lib/testutils/testdata
 export TESTDATA_WRITE_PATH=${BIND10HOME}/src/lib/python/isc/ddns/tests
 PYTESTS='session_tests.py zone_config_tests.py'
-#for pytest in ${PYTESTS}
-#    do
-#        echo ${pytest}
-#        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/ddns/tests/${pytest}
-#        if test $? -ne 0; then
-#            exit $?
-#        fi
-#    done
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/ddns/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
 
-echo skipping python sysinfo / Release
+echo python sysinfo / Release
 export PYTHONPATH=${CPYTHONPATH}
 PYTESTS='sysinfo_test.py'
-#for pytest in ${PYTESTS}
-#    do
-#        echo ${pytest}
-#        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/sysinfo/tests/${pytest}
-#        if test $? -ne 0; then
-#            exit $?
-#        fi
-#    done
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/sysinfo/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
 

@@ -4,7 +4,7 @@ echo dns++-tests / Release
 echo
 ${BIND10HOME}/win32build/${VSVER}/dns++-tests/Release/run_unittests.exe
 if test $? -ne 0; then
-    exit $?
+    exit -1
 fi
 if [ ${PYTHON} == "None" ]; then
     echo skipping dns python / Release
@@ -36,6 +36,6 @@ for pytest in ${PYTESTS}
         echo ${pytest}
         ${PYTHON} ${BIND10HOME}/src/lib/dns/python/tests/${pytest}
         if test $? -ne 0; then
-            exit $?
+            exit -1
         fi
     done

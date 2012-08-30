@@ -36,7 +36,7 @@ class TestConfigManagerData(unittest.TestCase):
         Test what happens if we give the config manager an absolute path.
         It shouldn't append the data path to it.
         """
-        abs_path = self.data_path + os.sep + "b10-config-imaginary.db"
+        abs_path = self.data_path + '/' + "b10-config-imaginary.db"
         data = ConfigManagerData(self.data_path, abs_path)
         self.assertEqual(abs_path, data.db_filename)
         self.assertEqual(self.data_path, data.data_path)
@@ -47,7 +47,7 @@ class TestConfigManagerData(unittest.TestCase):
         self.assertEqual(self.config_manager_data.data_path,
                          self.writable_data_path)
         self.assertEqual(self.config_manager_data.db_filename,
-                         self.writable_data_path + os.sep + "b10-config.db")
+                         self.writable_data_path + '/' + "b10-config.db")
 
     def test_read_from_file(self):
         ConfigManagerData.read_from_file(self.writable_data_path, "b10-config.db")
@@ -154,7 +154,7 @@ class TestConfigManager(unittest.TestCase):
                                 database_filename="b10-config.db",
                                 session=self.fake_session)
         self.name = "TestModule"
-        self.spec = isc.config.module_spec_from_file(self.data_path + os.sep + "/spec2.spec")
+        self.spec = isc.config.module_spec_from_file(self.data_path + '/' + "/spec2.spec")
 
     def test_paths(self):
         """
@@ -162,11 +162,11 @@ class TestConfigManager(unittest.TestCase):
         underlying ConfigManagerData.
         """
         cm = ConfigManager("datapath", "filename", self.fake_session)
-        self.assertEqual("datapath" + os.sep + "filename",
+        self.assertEqual("datapath" + '/' + "filename",
                          cm.config.db_filename)
         # It should preserve it while reading
         cm.read_config()
-        self.assertEqual("datapath" + os.sep + "filename",
+        self.assertEqual("datapath" + '/' + "filename",
                          cm.config.db_filename)
 
     def test_init(self):
@@ -185,7 +185,7 @@ class TestConfigManager(unittest.TestCase):
         self.assertEqual(msg, {"running": "ConfigManager"})
 
     def test_set_module_spec(self):
-        module_spec = isc.config.module_spec.module_spec_from_file(self.data_path + os.sep + "spec1.spec")
+        module_spec = isc.config.module_spec.module_spec_from_file(self.data_path + '/' + "spec1.spec")
         self.assert_(module_spec.get_module_name() not in self.cm.module_specs)
         self.cm.set_module_spec(module_spec)
         self.assert_(module_spec.get_module_name() in self.cm.module_specs)
@@ -193,7 +193,7 @@ class TestConfigManager(unittest.TestCase):
                      self.cm.virtual_modules)
 
     def test_remove_module_spec(self):
-        module_spec = isc.config.module_spec.module_spec_from_file(self.data_path + os.sep + "spec1.spec")
+        module_spec = isc.config.module_spec.module_spec_from_file(self.data_path + '/' + "spec1.spec")
         self.assert_(module_spec.get_module_name() not in self.cm.module_specs)
         self.cm.set_module_spec(module_spec)
         self.assert_(module_spec.get_module_name() in self.cm.module_specs)
@@ -204,7 +204,7 @@ class TestConfigManager(unittest.TestCase):
 
     def test_add_remove_virtual_module(self):
         module_spec = isc.config.module_spec.module_spec_from_file(
-            self.data_path + os.sep + "spec1.spec")
+            self.data_path + '/' + "spec1.spec")
         check_func = lambda: True
         # Make sure it's not in there before
         self.assert_(module_spec.get_module_name() not in self.cm.module_specs)
@@ -225,7 +225,7 @@ class TestConfigManager(unittest.TestCase):
                      self.cm.virtual_modules)
 
     def test_get_module_spec(self):
-        module_spec = isc.config.module_spec.module_spec_from_file(self.data_path + os.sep + "spec1.spec")
+        module_spec = isc.config.module_spec.module_spec_from_file(self.data_path + '/' + "spec1.spec")
         self.assert_(module_spec.get_module_name() not in self.cm.module_specs)
         self.cm.set_module_spec(module_spec)
         self.assert_(module_spec.get_module_name() in self.cm.module_specs)
@@ -237,14 +237,14 @@ class TestConfigManager(unittest.TestCase):
     def test_get_config_spec(self):
         config_spec = self.cm.get_config_spec()
         self.assertEqual(config_spec, {})
-        module_spec = isc.config.module_spec.module_spec_from_file(self.data_path + os.sep + "spec1.spec")
+        module_spec = isc.config.module_spec.module_spec_from_file(self.data_path + '/' + "spec1.spec")
         self.assert_(module_spec.get_module_name() not in self.cm.module_specs)
         self.cm.set_module_spec(module_spec)
         self.assert_(module_spec.get_module_name() in self.cm.module_specs)
         config_spec = self.cm.get_config_spec()
         self.assertEqual(config_spec, { 'Spec1': None })
         self.cm.remove_module_spec('Spec1')
-        module_spec = isc.config.module_spec.module_spec_from_file(self.data_path + os.sep + "spec2.spec")
+        module_spec = isc.config.module_spec.module_spec_from_file(self.data_path + '/' + "spec2.spec")
         self.assert_(module_spec.get_module_name() not in self.cm.module_specs)
         self.cm.set_module_spec(module_spec)
         self.assert_(module_spec.get_module_name() in self.cm.module_specs)
@@ -257,14 +257,14 @@ class TestConfigManager(unittest.TestCase):
     def test_get_commands_spec(self):
         commands_spec = self.cm.get_commands_spec()
         self.assertEqual(commands_spec, {})
-        module_spec = isc.config.module_spec.module_spec_from_file(self.data_path + os.sep + "spec1.spec")
+        module_spec = isc.config.module_spec.module_spec_from_file(self.data_path + '/' + "spec1.spec")
         self.assert_(module_spec.get_module_name() not in self.cm.module_specs)
         self.cm.set_module_spec(module_spec)
         self.assert_(module_spec.get_module_name() in self.cm.module_specs)
         commands_spec = self.cm.get_commands_spec()
         self.assertEqual(commands_spec, { 'Spec1': None })
         self.cm.remove_module_spec('Spec1')
-        module_spec = isc.config.module_spec.module_spec_from_file(self.data_path + os.sep + "spec2.spec")
+        module_spec = isc.config.module_spec.module_spec_from_file(self.data_path + '/' + "spec2.spec")
         self.assert_(module_spec.get_module_name() not in self.cm.module_specs)
         self.cm.set_module_spec(module_spec)
         self.assert_(module_spec.get_module_name() in self.cm.module_specs)
@@ -276,14 +276,14 @@ class TestConfigManager(unittest.TestCase):
     def test_get_statistics_spec(self):
         statistics_spec = self.cm.get_statistics_spec()
         self.assertEqual(statistics_spec, {})
-        module_spec = isc.config.module_spec.module_spec_from_file(self.data_path + os.sep + "spec1.spec")
+        module_spec = isc.config.module_spec.module_spec_from_file(self.data_path + '/' + "spec1.spec")
         self.assert_(module_spec.get_module_name() not in self.cm.module_specs)
         self.cm.set_module_spec(module_spec)
         self.assert_(module_spec.get_module_name() in self.cm.module_specs)
         statistics_spec = self.cm.get_statistics_spec()
         self.assertEqual(statistics_spec, { 'Spec1': None })
         self.cm.remove_module_spec('Spec1')
-        module_spec = isc.config.module_spec.module_spec_from_file(self.data_path + os.sep + "spec2.spec")
+        module_spec = isc.config.module_spec.module_spec_from_file(self.data_path + '/' + "spec2.spec")
         self.assert_(module_spec.get_module_name() not in self.cm.module_specs)
         self.cm.set_module_spec(module_spec)
         self.assert_(module_spec.get_module_name() in self.cm.module_specs)
