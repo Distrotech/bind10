@@ -141,13 +141,9 @@ ConfigurableClientList::configure(const ConstElementPtr& config,
                 for (vector<string>::const_iterator it(zones_origins.begin());
                      it != zones_origins.end(); ++it) {
                     const Name origin(*it);
-                    shared_ptr<InMemoryZoneFinder>
-                        finder(new
-                            InMemoryZoneFinder(rrclass_, origin));
                     if (type == "MasterFiles") {
                         try {
-                            finder->load(paramConf->get(*it)->stringValue());
-                            cache->addZone(finder);
+                            cache->load(origin, paramConf->get(*it)->stringValue());
                         } catch (const isc::dns::MasterLoadError& mle) {
                             LOG_ERROR(logger, DATASRC_MASTERLOAD_ERROR)
                                 .arg(mle.what());
@@ -165,8 +161,7 @@ ConfigurableClientList::configure(const ConstElementPtr& config,
                             isc_throw(isc::Unexpected, "Got NULL iterator "
                                       "for zone " << origin);
                         }
-                        finder->load(*iterator);
-                        cache->addZone(finder);
+                        cache->load(origin, *iterator);
                     }
                 }
             }
@@ -331,7 +326,8 @@ ConfigurableClientList::reload(const Name& name) {
     if (!info->cache_ || !finder) {
         return (ZONE_NOT_CACHED);
     }
-    DataSourceClient* client(info->data_src_client_);
+    InMemoryClient* client =
+        dynamic_cast<InMemoryClient*>(info->data_src_client_);
     if (client) {
         // Now do the final reload. If it does not exist in client,
         // DataSourceError is thrown, which is exactly the result what we
@@ -340,7 +336,7 @@ ConfigurableClientList::reload(const Name& name) {
         if (!iterator) {
             isc_throw(isc::Unexpected, "Null iterator from " << name);
         }
-        finder->load(*iterator);
+        client->load(name, *iterator);
     } else {
         // The MasterFiles special case
         const string filename(finder->getFileName());
@@ -348,7 +344,7 @@ ConfigurableClientList::reload(const Name& name) {
             isc_throw(isc::Unexpected, "Confused about missing both filename "
                       "and data source");
         }
-        finder->load(filename);
+        client->load(name, filename);
     }
     return (ZONE_RELOADED);
 }

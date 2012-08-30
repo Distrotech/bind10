@@ -34,14 +34,9 @@ createInstance(ConstElementPtr config, string& error) {
     try {
         // Create the data source
         auto_ptr<InMemoryClient> client(new InMemoryClient(RRClass::CH()));
-        // Hardcode the origin and class
-        shared_ptr<InMemoryZoneFinder>
-            finder(new InMemoryZoneFinder(RRClass::CH(), Name("BIND")));
         // Fill it with data
         const string path(config->stringValue());
-        finder->load(path);
-        // And put the zone inside
-        client->addZone(finder);
+        client->load(Name("BIND"), path);
         return (client.release());
     }
     catch (const std::exception& e) {

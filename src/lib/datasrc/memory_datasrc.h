@@ -32,11 +32,6 @@ class InMemoryClient;
 
 /// A derived zone finder class intended to be used with the memory data source.
 ///
-/// Conceptually this "finder" maintains a local in-memory copy of all RRs
-/// of a single zone from some kind of source (right now it's a textual
-/// master file, but it could also be another data source with a database
-/// backend).  This is why the class has methods like \c load() or \c add().
-///
 /// This class is non copyable.
 class InMemoryZoneFinder : boost::noncopyable, public ZoneFinder {
     ///
@@ -85,58 +80,6 @@ public:
     virtual FindNSEC3Result
     findNSEC3(const isc::dns::Name& name, bool recursive);
 
-    /// \brief Inserts an rrset into the zone.
-    ///
-    /// It puts another RRset into the zone.
-    ///
-    /// In the current implementation, this method doesn't allow an existing
-    /// RRset to be updated or overridden.  So the caller must make sure that
-    /// all RRs of the same type and name must be given in the form of a
-    /// single RRset.  The current implementation will also require that
-    /// when an RRSIG is added the RRset to be covered has already been
-    /// added.  These restrictions are probably too strict when this data
-    /// source accepts various forms of input, so they should be revisited
-    /// later.
-    ///
-    /// Except for NullRRset and OutOfZone, this method does not guarantee
-    /// strong exception safety (it is currently not needed, if it is needed
-    /// in future, it should be implemented).
-    ///
-    /// \throw NullRRset \c rrset is a NULL pointer.
-    /// \throw OutOfZone The owner name of \c rrset is outside of the
-    /// origin of the zone.
-    /// \throw AddError Other general errors.
-    /// \throw Others This method might throw standard allocation exceptions.
-    ///
-    /// \param rrset The set to add.
-    /// \return SUCCESS or EXIST (if an rrset for given name and type already
-    ///    exists).
-    result::Result add(const isc::dns::ConstRRsetPtr& rrset);
-
-    /// \brief RRset is NULL exception.
-    ///
-    /// This is thrown if the provided RRset parameter is NULL.
-    struct NullRRset : public InvalidParameter {
-        NullRRset(const char* file, size_t line, const char* what) :
-            InvalidParameter(file, line, what)
-        { }
-    };
-
-    /// \brief General failure exception for \c add().
-    ///
-    /// This is thrown against general error cases in adding an RRset
-    /// to the zone.
-    ///
-    /// Note: this exception would cover cases for \c OutOfZone or
-    /// \c NullRRset.  We'll need to clarify and unify the granularity
-    /// of exceptions eventually.  For now, exceptions are added as
-    /// developers see the need for it.
-    struct AddError : public InvalidParameter {
-        AddError(const char* file, size_t line, const char* what) :
-            InvalidParameter(file, line, what)
-        { }
-    };
-
     /// Return the master file name of the zone
     ///
     /// This method returns the name of the zone's master file to be loaded.
@@ -150,51 +93,6 @@ public:
     /// \return The name of the zone file loaded in the zone finder, or an empty
     /// string if the zone hasn't loaded any file.
     const std::string getFileName() const;
-
-    /// \brief Load zone from masterfile.
-    ///
-    /// This loads data from masterfile specified by filename. It replaces
-    /// current content. The masterfile parsing ability is kind of limited,
-    /// see isc::dns::masterLoad.
-    ///
-    /// This throws isc::dns::MasterLoadError if there is problem with loading
-    /// (missing file, malformed, it contains different zone, etc - see
-    /// isc::dns::masterLoad for details).
-    ///
-    /// In case of internal problems, OutOfZone, NullRRset or AssertError could
-    /// be thrown, but they should not be expected. Exceptions caused by
-    /// allocation may be thrown as well.
-    ///
-    /// If anything is thrown, the previous content is preserved (so it can
-    /// be used to update the data, but if user makes a typo, the old one
-    /// is kept).
-    ///
-    /// \param filename The master file to load.
-    ///
-    /// \todo We may need to split it to some kind of build and commit/abort.
-    ///     This will probably be needed when a better implementation of
-    ///     configuration reloading is written.
-    void load(const std::string& filename);
-
-    /// \brief Load zone from another data source.
-    ///
-    /// This is similar to the other version, but zone's RRsets are provided
-    /// by an iterator of another data source.  On successful load, the
-    /// internal filename will be cleared.
-    ///
-    /// This implementation assumes the iterator produces combined RRsets,
-    /// that is, there should exactly one RRset for the same owner name and
-    /// RR type.  This means the caller is expected to create the iterator
-    /// with \c separate_rrs being \c false.  This implementation also assumes
-    /// RRsets of different names are not mixed; so if the iterator produces
-    /// an RRset of a different name than that of the previous RRset, that
-    /// previous name must never appear in the subsequent sequence of RRsets.
-    /// Note that the iterator API does not ensure this.  If the underlying
-    /// implementation does not follow it, load() will fail.  Note, however,
-    /// that this whole interface is tentative.  in-memory zone loading will
-    /// have to be revisited fundamentally, and at that point this restriction
-    /// probably won't matter.
-    void load(ZoneIterator& iterator);
 
     /// Exchanges the content of \c this zone finder with that of the given
     /// \c zone_finder.
@@ -279,20 +177,103 @@ public:
     /// \return The number of zones stored in the client.
     virtual unsigned int getZoneCount() const;
 
-    /// Add a zone (in the form of \c ZoneFinder) to the \c InMemoryClient.
+    /// \brief Load zone from masterfile.
     ///
-    /// \c zone_finder must not be associated with a NULL pointer; otherwise
-    /// an exception of class \c InvalidParameter will be thrown.
-    /// If internal resource allocation fails, a corresponding standard
-    /// exception will be thrown.
-    /// This method never throws an exception otherwise.
+    /// This loads data from masterfile specified by filename. It replaces
+    /// current content. The masterfile parsing ability is kind of limited,
+    /// see isc::dns::masterLoad.
     ///
-    /// \param zone_finder A \c ZoneFinder object to be added.
-    /// \return \c result::SUCCESS If the zone_finder is successfully
-    /// added to the client.
-    /// \return \c result::EXIST The memory data source already
-    /// stores a zone that has the same origin.
-    result::Result addZone(ZoneFinderPtr zone_finder);
+    /// This throws isc::dns::MasterLoadError if there is problem with loading
+    /// (missing file, malformed, it contains different zone, etc - see
+    /// isc::dns::masterLoad for details).
+    ///
+    /// In case of internal problems, OutOfZone, NullRRset or AssertError could
+    /// be thrown, but they should not be expected. Exceptions caused by
+    /// allocation may be thrown as well.
+    ///
+    /// If anything is thrown, the previous content is preserved (so it can
+    /// be used to update the data, but if user makes a typo, the old one
+    /// is kept).
+    ///
+    /// \param filename The master file to load.
+    ///
+    /// \todo We may need to split it to some kind of build and commit/abort.
+    ///     This will probably be needed when a better implementation of
+    ///     configuration reloading is written.
+    result::Result load(const isc::dns::Name& zone_name, const std::string& filename);
+
+    /// \brief Load zone from another data source.
+    ///
+    /// This is similar to the other version, but zone's RRsets are provided
+    /// by an iterator of another data source.  On successful load, the
+    /// internal filename will be cleared.
+    ///
+    /// This implementation assumes the iterator produces combined RRsets,
+    /// that is, there should exactly one RRset for the same owner name and
+    /// RR type.  This means the caller is expected to create the iterator
+    /// with \c separate_rrs being \c false.  This implementation also assumes
+    /// RRsets of different names are not mixed; so if the iterator produces
+    /// an RRset of a different name than that of the previous RRset, that
+    /// previous name must never appear in the subsequent sequence of RRsets.
+    /// Note that the iterator API does not ensure this.  If the underlying
+    /// implementation does not follow it, load() will fail.  Note, however,
+    /// that this whole interface is tentative.  in-memory zone loading will
+    /// have to be revisited fundamentally, and at that point this restriction
+    /// probably won't matter.
+    result::Result load(const isc::dns::Name& zone_name, ZoneIterator& iterator);
+
+    /// \brief Inserts an rrset into the zone.
+    ///
+    /// It puts another RRset into the zone.
+    ///
+    /// In the current implementation, this method doesn't allow an existing
+    /// RRset to be updated or overridden.  So the caller must make sure that
+    /// all RRs of the same type and name must be given in the form of a
+    /// single RRset.  The current implementation will also require that
+    /// when an RRSIG is added the RRset to be covered has already been
+    /// added.  These restrictions are probably too strict when this data
+    /// source accepts various forms of input, so they should be revisited
+    /// later.
+    ///
+    /// Except for NullRRset and OutOfZone, this method does not guarantee
+    /// strong exception safety (it is currently not needed, if it is needed
+    /// in future, it should be implemented).
+    ///
+    /// \throw NullRRset \c rrset is a NULL pointer.
+    /// \throw OutOfZone The owner name of \c rrset is outside of the
+    /// origin of the zone.
+    /// \throw AddError Other general errors.
+    /// \throw Others This method might throw standard allocation exceptions.
+    ///
+    /// \param rrset The set to add.
+    /// \return SUCCESS or EXIST (if an rrset for given name and type already
+    ///    exists).
+    result::Result add(const isc::dns::Name& zone_name,
+                       const isc::dns::ConstRRsetPtr& rrset);
+
+    /// \brief RRset is NULL exception.
+    ///
+    /// This is thrown if the provided RRset parameter is NULL.
+    struct NullRRset : public InvalidParameter {
+        NullRRset(const char* file, size_t line, const char* what) :
+            InvalidParameter(file, line, what)
+        { }
+    };
+
+    /// \brief General failure exception for \c add().
+    ///
+    /// This is thrown against general error cases in adding an RRset
+    /// to the zone.
+    ///
+    /// Note: this exception would cover cases for \c OutOfZone or
+    /// \c NullRRset.  We'll need to clarify and unify the granularity
+    /// of exceptions eventually.  For now, exceptions are added as
+    /// developers see the need for it.
+    struct AddError : public InvalidParameter {
+        AddError(const char* file, size_t line, const char* what) :
+            InvalidParameter(file, line, what)
+        { }
+    };
 
     /// Returns a \c ZoneFinder for a zone_finder that best matches the given
     /// name.

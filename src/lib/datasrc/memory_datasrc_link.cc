@@ -163,7 +163,6 @@ checkConfig(ConstElementPtr config, ElementPtr errors) {
 // checked by the caller
 void
 applyConfig(isc::datasrc::InMemoryClient& client,
-            isc::dns::RRClass rrclass,
             isc::data::ConstElementPtr config_value)
 {
     ConstElementPtr zones_config = config_value->get("zones");
@@ -208,20 +207,6 @@ applyConfig(isc::datasrc::InMemoryClient& client,
         // specific error.  We may eventually want to introduce some unified
         // error handling framework as we have more configuration parameters.
         // See bug #1627 for the relevant discussion.
-        InMemoryZoneFinder* imzf = NULL;
-        try {
-            imzf = new InMemoryZoneFinder(rrclass, Name(origin_txt));
-        } catch (const isc::dns::NameParserException& ex) {
-            isc_throw(InMemoryConfigError, "unable to parse zone's origin: " <<
-                      ex.what());
-        }
-
-        boost::shared_ptr<InMemoryZoneFinder> zone_finder(imzf);
-        const result::Result result = client.addZone(zone_finder);
-        if (result == result::EXIST) {
-            isc_throw(InMemoryConfigError, "zone "<< origin->str()
-                      << " already exists");
-        }
 
         /*
          * TODO: Once we have better reloading of configuration (something
@@ -229,11 +214,16 @@ applyConfig(isc::datasrc::InMemoryClient& client,
          * need the load method to be split into some kind of build and
          * commit/abort parts.
          */
-        if (filetype_txt == "text") {
-            zone_finder->load(file_txt);
-        } else {
-            zone_finder->load(*container->getInstance().getIterator(
-                                  Name(origin_txt)));
+        try {
+            if (filetype_txt == "text") {
+                client.load(Name(origin_txt), file_txt);
+            } else {
+                client.load(Name(origin_txt),
+                    *container->getInstance().getIterator(Name(origin_txt)));
+            }
+        } catch (const isc::dns::NameParserException& ex) {
+            isc_throw(InMemoryConfigError, "unable to parse zone's origin: " <<
+                      ex.what());
         }
     }
 }
@@ -255,7 +245,7 @@ createInstance(isc::data::ConstElementPtr config, std::string& error) {
             rrclass = RRClass(config->get("class")->stringValue());
         }
         std::auto_ptr<InMemoryClient> client(new isc::datasrc::InMemoryClient(rrclass));
-        applyConfig(*client, rrclass, config);
+        applyConfig(*client, config);
         return (client.release());
     } catch (const isc::Exception& isce) {
         error = isce.what();
