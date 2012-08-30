@@ -10,13 +10,12 @@ CPYTHONPATH="${PYTHONPATH};${BIND10HOME}/src/lib/python/isc/log_messages"
 CPYTHONPATH="${CPYTHONPATH};${BIND10HOME}/src/lib/python"
 CTESTDATA=${BIND10HOME}/src/lib/python/isc/datasrc/tests/testdata
 
-echo partial python datasrc / Release
+echo python datasrc / Release
 export PYTHONPATH="${CPYTHONPATH};${BIND10HOME}/src/lib/python/isc/log"
 export TESTDATA_PATH=${CTESTDATA}
 export TESTDATA_WRITE_PATH=${BIND10HOME}/src/lib/python/isc/datasrc/tests
 export GLOBAL_TESTDATA_PATH=${BIND10HOME}/src/lib/testutils/testdata
-#PYTESTS='datasrc_test.py sqlite3_ds_test.py'
-PYTESTS='sqlite3_ds_test.py'
+PYTESTS='datasrc_test.py sqlite3_ds_test.py'
 for pytest in ${PYTESTS}
     do
         echo ${pytest}
