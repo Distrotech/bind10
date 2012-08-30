@@ -855,13 +855,13 @@ private:
 // Private data and hidden methods of InMemoryZoneFinder
 struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
     // Constructor
-    InMemoryZoneFinderImpl(const RRClass& zone_class, const Name& origin) :
-        zone_class_(zone_class), origin_(origin),
+    InMemoryZoneFinderImpl(const InMemoryClient& client, const Name& origin) :
+        client_(client), origin_(origin),
         zone_data_(new ZoneData(origin_))
     {}
 
     // Information about the zone
-    RRClass zone_class_;
+    const InMemoryClient& client_;
     Name origin_;
     string file_name_;
 
@@ -1441,12 +1441,12 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
     }
 };
 
-InMemoryZoneFinder::InMemoryZoneFinder(const RRClass& zone_class,
+InMemoryZoneFinder::InMemoryZoneFinder(const InMemoryClient& client,
                                        const Name& origin) :
-    impl_(new InMemoryZoneFinderImpl(zone_class, origin))
+    impl_(new InMemoryZoneFinderImpl(client, origin))
 {
     LOG_DEBUG(logger, DBG_TRACE_BASIC, DATASRC_MEM_CREATE).arg(origin).
-        arg(zone_class);
+        arg(client.getClass());
 }
 
 InMemoryZoneFinder::~InMemoryZoneFinder() {
@@ -1462,7 +1462,7 @@ InMemoryZoneFinder::getOrigin() const {
 
 RRClass
 InMemoryZoneFinder::getClass() const {
-    return (impl_->zone_class_);
+  return (impl_->client_.getClass());
 }
 
 ZoneFinderContextPtr
@@ -1492,20 +1492,20 @@ InMemoryZoneFinder::findNSEC3(const Name& name, bool recursive) {
     if (!impl_->zone_data_->nsec3_data_) {
         isc_throw(DataSourceError,
                   "findNSEC3 attempt for non NSEC3 signed zone: " <<
-                  impl_->origin_ << "/" << impl_->zone_class_);
+                  impl_->origin_ << "/" << getClass());
     }
     const NSEC3Map& map = impl_->zone_data_->nsec3_data_->map_;
     if (map.empty()) {
         isc_throw(DataSourceError,
                   "findNSEC3 attempt but zone has no NSEC3 RR: " <<
-                  impl_->origin_ << "/" << impl_->zone_class_);
+                  impl_->origin_ << "/" << getClass());
     }
     const NameComparisonResult cmp_result = name.compare(impl_->origin_);
     if (cmp_result.getRelation() != NameComparisonResult::EQUAL &&
         cmp_result.getRelation() != NameComparisonResult::SUBDOMAIN) {
         isc_throw(OutOfZone, "findNSEC3 attempt for out-of-zone name: "
                   << name << ", zone: " << impl_->origin_ << "/"
-                  << impl_->zone_class_);
+                  << getClass());
     }
 
     // Convenient shortcuts
@@ -1558,7 +1558,7 @@ InMemoryZoneFinder::findNSEC3(const Name& name, bool recursive) {
 
     isc_throw(DataSourceError, "recursive findNSEC3 mode didn't stop, likely "
               "a broken NSEC3 zone: " << impl_->origin_ << "/"
-              << impl_->zone_class_);
+              << getClass());
 }
 
 result::Result
@@ -1732,7 +1732,7 @@ InMemoryZoneFinder::InMemoryZoneFinderImpl::load(
         if (tmp->origin_data_->getData()->find(RRType::NSEC3PARAM()) ==
             tmp->origin_data_->getData()->end()) {
             LOG_WARN(logger, DATASRC_MEM_NO_NSEC3PARAM).
-                arg(origin_).arg(zone_class_);
+                arg(origin_).arg(client_.getClass());
         }
     }
 
@@ -1826,7 +1826,7 @@ public:
     InMemoryClientImpl(RRClass rrclass) :
         rrclass_(rrclass),
         zone_count(0),
-	zone_table(ZoneTable::create(local_mem_sgmt, rrclass))
+        zone_table(ZoneTable::create(local_mem_sgmt, rrclass))
     {}
     ~InMemoryClientImpl() {
         ZoneTable::destroy(local_mem_sgmt, zone_table, rrclass_);

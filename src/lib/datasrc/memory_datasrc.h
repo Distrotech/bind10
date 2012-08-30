@@ -28,6 +28,7 @@ class RRsetList;
 };
 
 namespace datasrc {
+class InMemoryClient;
 
 /// A derived zone finder class intended to be used with the memory data source.
 ///
@@ -49,7 +50,7 @@ public:
     ///
     /// \param rrclass The RR class of the zone.
     /// \param origin The origin name of the zone.
-    InMemoryZoneFinder(const isc::dns::RRClass& rrclass,
+    InMemoryZoneFinder(const InMemoryClient& client,
                        const isc::dns::Name& origin);
 
     /// The destructor.
