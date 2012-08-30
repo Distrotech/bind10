@@ -39,7 +39,7 @@ ConfigurableClientList::DataSourceInfo::DataSourceInfo(
     container_(container)
 {
     if (has_cache) {
-        cache_.reset(new InMemoryClient);
+        cache_.reset(new InMemoryClient(data_src_client->getClass()));
     }
 }
 
@@ -47,7 +47,7 @@ ConfigurableClientList::DataSourceInfo::DataSourceInfo(bool has_cache) :
     data_src_client_(NULL)
 {
     if (has_cache) {
-        cache_.reset(new InMemoryClient);
+        cache_.reset(new InMemoryClient(RRClass::NONE()));
     }
 }
 

@@ -59,7 +59,9 @@ using result::EXIST;
 
 class InMemoryClientTest : public ::testing::Test {
 protected:
-    InMemoryClientTest() : rrclass(RRClass::IN())
+    InMemoryClientTest() :
+        rrclass(RRClass::IN()),
+        memory_client(rrclass)
     {}
     RRClass rrclass;
     InMemoryClient memory_client;

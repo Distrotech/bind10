@@ -17,6 +17,7 @@
 #include <datasrc/client.h>
 
 #include <dns/name.h>
+#include <dns/rrclass.h>
 
 #include <gtest/gtest.h>
 
@@ -44,6 +45,9 @@ public:
         isc_throw(isc::NotImplemented, "Journaling isn't supported "
                   "in Nop data source");
     }
+    virtual isc::dns::RRClass getClass() const {
+        return (isc::dns::RRClass::NONE());
+    };
 };
 
 class ClientTest : public ::testing::Test {

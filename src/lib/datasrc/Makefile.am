@@ -28,7 +28,6 @@ libb10_datasrc_la_SOURCES += query.h query.cc
 libb10_datasrc_la_SOURCES += cache.h cache.cc
 libb10_datasrc_la_SOURCES += rbnode_rrset.h
 libb10_datasrc_la_SOURCES += rbtree.h
-libb10_datasrc_la_SOURCES += zonetable.h zonetable.cc
 libb10_datasrc_la_SOURCES += zone.h zone_finder_context.cc
 libb10_datasrc_la_SOURCES += result.h
 libb10_datasrc_la_SOURCES += logger.h logger.cc

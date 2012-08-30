@@ -163,14 +163,9 @@ checkConfig(ConstElementPtr config, ElementPtr errors) {
 // checked by the caller
 void
 applyConfig(isc::datasrc::InMemoryClient& client,
+            isc::dns::RRClass rrclass,
             isc::data::ConstElementPtr config_value)
 {
-    // XXX: We have lost the context to get to the default values here,
-    // as a temporary workaround we hardcode the IN class here.
-    isc::dns::RRClass rrclass = RRClass::IN();
-    if (config_value->contains("class")) {
-        rrclass = RRClass(config_value->get("class")->stringValue());
-    }
     ConstElementPtr zones_config = config_value->get("zones");
     if (!zones_config) {
         // XXX: Like the RR class, we cannot retrieve the default value here,
@@ -253,8 +248,14 @@ createInstance(isc::data::ConstElementPtr config, std::string& error) {
         return (NULL);
     }
     try {
-        std::auto_ptr<InMemoryClient> client(new isc::datasrc::InMemoryClient());
-        applyConfig(*client, config);
+        // XXX: We have lost the context to get to the default values here,
+        // as a temporary workaround we hardcode the IN class here.
+        isc::dns::RRClass rrclass = RRClass::IN();
+        if (config->contains("class")) {
+            rrclass = RRClass(config->get("class")->stringValue());
+        }
+        std::auto_ptr<InMemoryClient> client(new isc::datasrc::InMemoryClient(rrclass));
+        applyConfig(*client, rrclass, config);
         return (client.release());
     } catch (const isc::Exception& isce) {
         error = isce.what();

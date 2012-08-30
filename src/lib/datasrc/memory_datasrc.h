@@ -262,11 +262,14 @@ public:
     /// This constructor internally involves resource allocation, and if
     /// it fails, a corresponding standard exception will be thrown.
     /// It never throws an exception otherwise.
-    InMemoryClient();
+    InMemoryClient(isc::dns::RRClass rrclass);
 
     /// The destructor.
     ~InMemoryClient();
     //@}
+
+    /// \brief Returns the class of the data source client.
+    virtual isc::dns::RRClass getClass() const;
 
     /// Return the number of zones stored in the client.
     ///

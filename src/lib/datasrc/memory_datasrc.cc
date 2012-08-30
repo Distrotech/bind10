@@ -30,7 +30,7 @@
 #include <datasrc/iterator.h>
 #include <datasrc/data_source.h>
 #include <datasrc/factory.h>
-#include <datasrc/zonetable.h>
+#include <datasrc/memory/zone_table.h>
 
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
@@ -47,6 +47,7 @@
 using namespace std;
 using namespace isc::dns;
 using namespace isc::dns::rdata;
+using namespace isc::datasrc::memory;
 using boost::scoped_ptr;
 
 namespace isc {
@@ -1822,11 +1823,13 @@ InMemoryZoneFinder::getFileName() const {
 /// member variables later for new features.
 class InMemoryClient::InMemoryClientImpl {
 public:
-    InMemoryClientImpl() : zone_count(0),
-                           zone_table(ZoneTable::create(local_mem_sgmt))
+    InMemoryClientImpl(RRClass rrclass) :
+        rrclass_(rrclass),
+        zone_count(0),
+	zone_table(ZoneTable::create(local_mem_sgmt, rrclass))
     {}
     ~InMemoryClientImpl() {
-        ZoneTable::destroy(local_mem_sgmt, zone_table);
+        ZoneTable::destroy(local_mem_sgmt, zone_table, rrclass_);
 
         // see above for the assert().
         assert(local_mem_sgmt.allMemoryDeallocated());
@@ -1836,15 +1839,22 @@ public:
     // (This will eventually have to be abstract; for now we hardcode the
     // specific derived segment class).
     util::MemorySegmentLocal local_mem_sgmt;
+    RRClass rrclass_;
     unsigned int zone_count;
     ZoneTable* zone_table;
 };
 
-InMemoryClient::InMemoryClient() : impl_(new InMemoryClientImpl)
+InMemoryClient::InMemoryClient(RRClass rrclass) :
+    impl_(new InMemoryClientImpl(rrclass))
 {}
 
 InMemoryClient::~InMemoryClient() {
     delete impl_;
+}
+
+RRClass
+InMemoryClient::getClass() const {
+    return (impl_->rrclass_);
 }
 
 unsigned int

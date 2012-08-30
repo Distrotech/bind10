@@ -59,7 +59,7 @@ typedef DataSourceClientPtr (*ClientCreator)(RRClass, const Name&);
 // Creator for the in-memory client to be tested
 DataSourceClientPtr
 createInMemoryClient(RRClass zclass, const Name& zname) {
-    shared_ptr<InMemoryClient> client(new InMemoryClient);
+    shared_ptr<InMemoryClient> client(new InMemoryClient(zclass));
 
     shared_ptr<InMemoryZoneFinder> finder(
         new InMemoryZoneFinder(zclass, zname));

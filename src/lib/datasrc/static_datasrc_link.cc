@@ -33,7 +33,7 @@ DataSourceClient*
 createInstance(ConstElementPtr config, string& error) {
     try {
         // Create the data source
-        auto_ptr<InMemoryClient> client(new InMemoryClient());
+        auto_ptr<InMemoryClient> client(new InMemoryClient(RRClass::CH()));
         // Hardcode the origin and class
         shared_ptr<InMemoryZoneFinder>
             finder(new InMemoryZoneFinder(RRClass::CH(), Name("BIND")));

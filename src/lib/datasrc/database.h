@@ -825,6 +825,10 @@ public:
     DatabaseClient(isc::dns::RRClass rrclass,
                    boost::shared_ptr<DatabaseAccessor> accessor);
 
+    /// \brief Returns the class of the data source client.
+    virtual isc::dns::RRClass getClass() const {
+        return (rrclass_);
+    };
 
     /// \brief Corresponding ZoneFinder implementation
     ///

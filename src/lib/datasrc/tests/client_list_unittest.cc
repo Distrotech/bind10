@@ -159,6 +159,9 @@ public:
             }
         }
     }
+    virtual isc::dns::RRClass getClass() const {
+        return (isc::dns::RRClass::NONE());
+    };
     const string type_;
     const ConstElementPtr configuration_;
 private:
@@ -243,7 +246,7 @@ public:
         }
     }
     void prepareCache(size_t index, const Name& zone, bool prefill = false) {
-        const shared_ptr<InMemoryClient> cache(new InMemoryClient());
+        const shared_ptr<InMemoryClient> cache(new InMemoryClient(RRClass::IN()));
         const shared_ptr<InMemoryZoneFinder>
             finder(new InMemoryZoneFinder(RRClass::IN(), zone));
         if (prefill) {

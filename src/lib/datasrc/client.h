@@ -174,6 +174,9 @@ public:
     virtual ~DataSourceClient() {}
     //@}
 
+    /// \brief Returns the class of the data source client.
+    virtual isc::dns::RRClass getClass() const = 0;
+
     /// Returns a \c ZoneFinder for a zone that best matches the given name.
     ///
     /// A concrete derived version of this method gets access to its backend
