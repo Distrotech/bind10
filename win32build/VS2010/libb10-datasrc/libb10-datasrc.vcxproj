@@ -74,7 +74,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <TargetName>$(ProjectName)d</TargetName>
+    <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -89,12 +89,13 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\$(Configuration);C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libb10-exceptionsd.lib;libb10-utild.lib;libb10-logd.lib;libb10-dns++d.lib;libb10-ccd.lib;libb10-cached.lib;sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libb10-log.lib;libb10-dns++.lib;libb10-cc.lib;libb10-cache.lib;sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
     </Link>
     <PreBuildEvent>
-      <Command>cd ..\..\..\src\lib\datasrc
+      <Command>set PATH=%PATH%;%BIND10HOME%/../log4cplus/v100/$(Configuration);%BIND10HOME%/win32build/VS2010/$(Configuration)
+cd ..\..\..\src\lib\datasrc
 ..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe datasrc_messages.mes
 copy datasrc_config.h.pre.win32 datasrc_config.h
 copy static.zone.pre static.zone
@@ -126,7 +127,8 @@ copy static.zone.win32 static.zone
       <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libb10-log.lib;libb10-dns++.lib;libb10-cc.lib;libb10-cache.lib;sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>cd ..\..\..\src\lib\datasrc
+      <Command>set PATH=%PATH%;%BIND10HOME%/../log4cplus/v100/$(Configuration);%BIND10HOME%/win32build/VS2010/$(Configuration)
+cd ..\..\..\src\lib\datasrc
 ..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe datasrc_messages.mes
 copy datasrc_config.h.pre.win32 datasrc_config.h
 copy static.zone.pre static.zone

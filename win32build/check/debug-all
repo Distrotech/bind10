@@ -14,5 +14,8 @@ ${BIND10HOME}/win32build/check/cache-debug && \
 ${BIND10HOME}/win32build/check/resolve-debug && \
 ${BIND10HOME}/win32build/check/datasrc-debug && \
 ${BIND10HOME}/win32build/check/server-common-debug && \
+${BIND10HOME}/win32build/check/python-debug && \
 ${BIND10HOME}/win32build/check/dhcp++-debug && \
-${BIND10HOME}/win32build/check/statistics-debug
+${BIND10HOME}/win32build/check/statistics-debug && \
+${BIND10HOME}/win32build/check/resolver-debug && \
+${BIND10HOME}/win32build/check/dhcp6-debug

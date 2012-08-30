@@ -60,7 +60,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libb10-exceptionsd.lib;libb10-utild.lib;libb10-util-iod.lib;libutil_unittestsd.lib;libb10-logd.lib;libb10-cryptolinkd.lib;libb10-dns++d.lib;libb10-ccd.lib;libb10-cfgclientd.lib;libfake_sessiond.lib;libb10-asiolinkd.lib;libb10-asiodnsd.lib;libb10-acld.lib;libb10-server-commond.lib;log4cplusD.lib;botand.lib;gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libb10-util-io.lib;libutil_unittests.lib;libb10-log.lib;libb10-cryptolink.lib;libb10-dns++.lib;libb10-cc.lib;libb10-cfgclient.lib;libfake_session.lib;libb10-asiolink.lib;libb10-asiodns.lib;libb10-acl.lib;libb10-server-common.lib;log4cplus.lib;botan.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>

@@ -67,13 +67,13 @@ How to compile google test:
   for gtest and bind10
 
  - msvc gives the gtestd.dll (in place of gtest.dll) for the debug version
-  (a good thing when both Release and Debug are in path)
+  so you have to fix this
 
 How to compile botan:
 
  - works well with a (second) Python in version 2.x installed
 
- - modify the Debug (--enable-debug) Makefile to produce a botand.{dll,lib}
+ - modify the Debug (--enable-debug) Makefile to produce a botan.{dll,lib}
 
 How to recompile python:
 
@@ -110,12 +110,15 @@ Where I put things (hardwired paths):
 
  - <home>\gtest\include
 
- - <home>\gtest\v100\{Debug,Release} gtest{d,}.{dll,lib} and vc100.*
+ - <home>\gtest\v100\{Debug,Release}/gtest.{dll,lib} and vc100.*
 
- - <home>\botan\include and <home>\botan\v100\{Debug,Release}
-   (--disable-shared to get static libs, no DLL)
+ - <home>\botan\include
 
- - <home>\log4cplus\include and <home>\log4cplus\v100\{Debug,Release}
+ - <home>\botan\v100\{Debug,Release}/botan.{dll,lib}
+
+ - <home>\log4cplus\include
+
+ - <home>\log4cplus\v100\{Debug,Release}/log4cplus.{dll,lib}
 
  - "C:\Program Files (x86)\boost\boost_1_47" (the include and
   sometimes the libraries (in lib, called by the auto_link) too,
@@ -124,8 +127,8 @@ Where I put things (hardwired paths):
  - C:\Python32 (update your PATH, same for perl)
 
  - C:\sqlite3 (don't forget to copy the DLL in a place in the PATH,
-  on Window7 I can't get the permissions right but it works by putting
-  the DLL directory in the PATH)
+  on Window7 64 bits it is sysWOW64 in place of system32 but it works
+  too by putting the DLL directory in the PATH)
 
 How to compile:
 

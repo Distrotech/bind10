@@ -21,9 +21,6 @@
     <ClInclude Include="..\..\..\src\lib\cache\tests\cache_test_sectioncount.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\lib\dns\tests\unittest_util.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\cache\tests\local_zone_data_unittest.cc">
@@ -48,9 +45,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\lib\cache\tests\run_unittests.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\lib\dns\tests\unittest_util.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

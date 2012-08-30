@@ -18,6 +18,7 @@
 #include <vector>
 #include <string>
 
+#include <dns/tests/dll.h>
 #include <dns/name.h>
 #include <dns/message.h>
 
@@ -25,7 +26,7 @@
 
 namespace isc {
 
-class UnitTestUtil {
+class B10_LIBUNITTEST_UTIL_API UnitTestUtil {
 public:
     ///
     /// read text format wire data from a file and put it to the given vector.

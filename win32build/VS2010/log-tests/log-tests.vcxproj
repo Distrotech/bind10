@@ -82,11 +82,12 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libb10-exceptionsd.lib;libb10-utild.lib;libutil_unittestsd.lib;libb10-logd.lib;log4cplusD.lib;gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libutil_unittests.lib;libb10-log.lib;log4cplus.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
-      <Command>cd ..\..\..\src\lib\log\tests
+      <Command>set PATH=%PATH%;%BIND10HOME%/../log4cplus/v100/$(Configuration);%BIND10HOME%/win32build/VS2010/$(Configuration)
+cd ..\..\..\src\lib\log\tests
 copy tempdir.h.win32 tempdir.h
 ..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe log_test_messages.mes
 </Command>
@@ -113,10 +114,10 @@ copy tempdir.h.win32 tempdir.h
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
-      <Command>cd ..\..\..\src\lib\log\tests
+      <Command>set PATH=%PATH%;%BIND10HOME%/../log4cplus/v100/$(Configuration);%BIND10HOME%/win32build/VS2010/$(Configuration)
+cd ..\..\..\src\lib\log\tests
 copy tempdir.h.win32 tempdir.h
 ..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe log_test_messages.mes
-
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>

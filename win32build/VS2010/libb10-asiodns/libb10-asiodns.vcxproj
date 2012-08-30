@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -62,7 +62,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <TargetName>$(ProjectName)d</TargetName>
+    <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -77,10 +77,11 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libb10-exceptionsd.lib;libb10-utild.lib;libb10-logd.lib;libb10-dns++d.lib;libb10-asiolinkd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libb10-log.lib;libb10-dns++.lib;libb10-asiolink.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>cd ..\..\..\src\lib\asiodns
+      <Command>set PATH=%PATH%;%BIND10HOME%/../log4cplus/v100/$(Configuration);%BIND10HOME%/win32build/VS2010/$(Configuration)
+cd ..\..\..\src\lib\asiodns
 ..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe asiodns_messages.mes
 </Command>
     </PreBuildEvent>
@@ -105,7 +106,8 @@
       <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libb10-log.lib;libb10-dns++.lib;libb10-asiolink.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>cd ..\..\..\src\lib\asiodns
+      <Command>set PATH=%PATH%;%BIND10HOME%/../log4cplus/v100/$(Configuration);%BIND10HOME%/win32build/VS2010/$(Configuration)
+cd ..\..\..\src\lib\asiodns
 ..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe asiodns_messages.mes
 </Command>
     </PreBuildEvent>

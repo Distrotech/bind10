@@ -60,7 +60,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libb10-exceptionsd.lib;libb10-utild.lib;libutil_unittestsd.lib;libb10-cryptolinkd.lib;libb10-dns++d.lib;libb10-logd.lib;libb10-asiolinkd.lib;libb10-asiodnsd.lib;libb10-nsasd.lib;libb10-cached.lib;libb10-resolved.lib;botand.lib;log4cplusD.lib;gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libutil_unittests.lib;libb10-cryptolink.lib;libb10-dns++.lib;libunittest_util.lib;libb10-log.lib;libb10-asiolink.lib;libb10-asiodns.lib;libb10-nsas.lib;libb10-cache.lib;libb10-resolve.lib;botan.lib;log4cplus.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -81,16 +81,14 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libutil_unittests.lib;libb10-cryptolink.lib;libb10-dns++.lib;libb10-log.lib;libb10-asiolink.lib;libb10-asiodns.lib;libb10-nsas.lib;libb10-cache.lib;libb10-resolve.lib;botan.lib;log4cplus.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libutil_unittests.lib;libb10-cryptolink.lib;libb10-dns++.lib;libunittest_util.lib;libb10-log.lib;libb10-asiolink.lib;libb10-asiodns.lib;libb10-nsas.lib;libb10-cache.lib;libb10-resolve.lib;botan.lib;log4cplus.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%BOOST%\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\lib\dns\tests\unittest_util.h" />
     <ClInclude Include="..\..\..\src\lib\util\unittests\resolver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\lib\dns\tests\unittest_util.cc" />
     <ClCompile Include="..\..\..\src\lib\resolve\tests\recursive_query_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\resolve\tests\recursive_query_unittest_2.cc" />
     <ClCompile Include="..\..\..\src\lib\resolve\tests\recursive_query_unittest_3.cc" />

@@ -60,7 +60,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libb10-exceptionsd.lib;libb10-utild.lib;libutil_unittestsd.lib;libb10-logd.lib;libb10-cryptolinkd.lib;libb10-dns++d.lib;libb10-asiolinkd.lib;libb10-nsasd.lib;libb10-cached.lib;botand.lib;log4cplusD.lib;gtestd.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libutil_unittests.lib;libb10-log.lib;libb10-cryptolink.lib;libb10-dns++.lib;libunittest_util.lib;libb10-asiolink.lib;libb10-nsas.lib;libb10-cache.lib;botan.lib;log4cplus.lib;gtest.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -81,14 +81,13 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)run_unittests$(TargetExt)</OutputFile>
-      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libutil_unittests.lib;libb10-log.lib;libb10-cryptolink.lib;libb10-dns++.lib;libb10-asiolink.lib;libb10-nsas.lib;libb10-cache.lib;botan.lib;log4cplus.lib;gtest.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libutil_unittests.lib;libb10-log.lib;libb10-cryptolink.lib;libb10-dns++.lib;libunittest_util.lib;libb10-asiolink.lib;libb10-nsas.lib;libb10-cache.lib;botan.lib;log4cplus.lib;gtest.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);..\..\..\..\gtest\v100\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\lib\cache\tests\cache_test_messagefromfile.h" />
     <ClInclude Include="..\..\..\src\lib\cache\tests\cache_test_sectioncount.h" />
-    <ClInclude Include="..\..\..\src\lib\dns\tests\unittest_util.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\cache\tests\local_zone_data_unittest.cc" />
@@ -99,7 +98,6 @@
     <ClCompile Include="..\..\..\src\lib\cache\tests\rrset_cache_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\cache\tests\rrset_entry_unittest.cc" />
     <ClCompile Include="..\..\..\src\lib\cache\tests\run_unittests.cc" />
-    <ClCompile Include="..\..\..\src\lib\dns\tests\unittest_util.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

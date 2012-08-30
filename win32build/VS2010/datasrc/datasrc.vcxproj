@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -61,8 +61,20 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)datasrc_d.pyd</OutputFile>
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);C:\Python32\libs;C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libb10-exceptionsd.lib;libb10-utild.lib;libb10-logd.lib;libb10-cryptolinkd.lib;libb10-dns++d.lib;libb10-pydnsppd.lib;libb10-ccd.lib;libb10-datasrcd.lib;botand.lib;log4cplusD.lib;sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libb10-log.lib;libb10-cryptolink.lib;libb10-dns++.lib;libb10-pydnspp.lib;libb10-cc.lib;libb10-datasrc.lib;botan.lib;log4cplus.lib;sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>set PATH=%PATH%;%BIND10HOME%/../log4cplus/v100/$(Configuration);%BIND10HOME%/win32build/VS2010/$(Configuration)
+cd ..\..\..\src\lib\python\isc
+copy log_messages\work\__init__.py.in  log_messages\work\__init__.py
+..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe -d log_messages\work -p config\cfgmgr_messages.mes
+..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe -d log_messages\work -p config\config_messages.mes
+..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe -d log_messages\work -p notify\notify_out_messages.mes
+..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe -d log_messages\work -p xfrin\libxfrin_messages.mes
+..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe -d log_messages\work -p server_common\server_common_messages.mes
+..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe -d log_messages\work -p ddns\libddns_messages.mes
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -84,6 +96,18 @@
       <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\v100\$(Configuration);..\..\..\..\log4cplus\v100\$(Configuration);C:\Python32\libs;C:\sqlite3;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libb10-log.lib;libb10-cryptolink.lib;libb10-dns++.lib;libb10-pydnspp.lib;libb10-cc.lib;libb10-datasrc.lib;botan.lib;log4cplus.lib;sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>set PATH=%PATH%;%BIND10HOME%/../log4cplus/v100/$(Configuration);%BIND10HOME%/win32build/VS2010/$(Configuration)
+cd ..\..\..\src\lib\python\isc
+copy log_messages\work\__init__.py.in  log_messages\work\__init__.py
+..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe -d log_messages\work -p config\cfgmgr_messages.mes
+..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe -d log_messages\work -p config\config_messages.mes
+..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe -d log_messages\work -p notify\notify_out_messages.mes
+..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe -d log_messages\work -p xfrin\libxfrin_messages.mes
+..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe -d log_messages\work -p server_common\server_common_messages.mes
+..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe -d log_messages\work -p ddns\libddns_messages.mes
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lib\python\isc\datasrc\client_inc.cc" />

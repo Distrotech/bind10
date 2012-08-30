@@ -1,7 +1,9 @@
 export B10_FROM_BUILD=${BIND10HOME}
 export VSVER=VS2010
 export RTVER=v100
-export PATH=${PATH}:${BIND10HOME}/../gtest/${RTVER}/Debug:${BIND10HOME}/../botan/${RTVER}/Debug:${BIND10HOME}/../log4cplus/${RTVER}/Debug:${BIND10HOME}/win32build/${VSVER}/Debug
-export PYTHONPATH=${PYTHONPATH};${BIND10HOME}/win32build/${VSVER}/Debug
-#export PYTHON=c:/Python32/python_d.exe
-export PYTHON=None
+parent=`cd ${BIND10HOME}/..; pwd`
+b10home=`cd ${BIND10HOME}; pwd`
+export PATH=${PATH}:${parent}/gtest/${RTVER}/Debug:${parent}/botan/${RTVER}/Debug:${parent}/log4cplus/${RTVER}/Debug:${b10home}/win32build/${VSVER}/Debug
+export PYTHONPATH="${PYTHONPATH};${BIND10HOME}/win32build/${VSVER}/Debug"
+export PYTHONPATH="${PYTHONPATH};${BIND10HOME}/src/lib/python/isc/util"
+export PYTHON=c:/Python32/python_d.exe

@@ -16,12 +16,15 @@ if sys.platform != 'win32':
 # having both 'normal' python modules and a wrapper module
 # Once all programs use the new interface, we should remove the
 # old, and the setup can be made similar to that of the log wrappers.
-intree = False
-for base in sys.path[:]:
-    datasrc_libdir = os.path.join(base, 'isc/datasrc/.libs')
-    if os.path.exists(datasrc_libdir):
-        sys.path.insert(0, datasrc_libdir)
-        intree = True
+if sys.platform != 'win32':
+    intree = False
+    for base in sys.path[:]:
+        datasrc_libdir = os.path.join(base, 'isc/datasrc/.libs')
+        if os.path.exists(datasrc_libdir):
+            sys.path.insert(0, datasrc_libdir)
+            intree = True
+else:
+    intree = True
 
 if intree:
     from datasrc import *

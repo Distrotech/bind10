@@ -1,6 +1,9 @@
 export B10_FROM_BUILD=${BIND10HOME}
 export VSVER=VS2010
 export RTVER=v100
-export PATH=${PATH}:${BIND10HOME}/../gtest/${RTVER}/Release:${BIND10HOME}/../botan/${RTVER}/Release:${BIND10HOME}/../log4cplus/${RTVER}/Release:${BIND10HOME}/win32build/${VSVER}/Release
-export PYTHONPATH=${PYTHONPATH};${BIND10HOME}/win32build/${VSVER}/Release
+parent=`cd ${BIND10HOME}/..; pwd`
+b10home=`cd ${BIND10HOME}; pwd`
+export PATH=${PATH}:${parent}/gtest/${RTVER}/Release:${parent}/botan/${RTVER}/Release:${parent}/log4cplus/${RTVER}/Release:${b10home}/win32build/${VSVER}/Release
+export PYTHONPATH="${PYTHONPATH};${BIND10HOME}/win32build/${VSVER}/Release"
+export PYTHONPATH="${PYTHONPATH};${BIND10HOME}/src/lib/python/isc/util"
 export PYTHON=c:/Python32/python.exe

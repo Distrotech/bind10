@@ -20,7 +20,7 @@ import threading
 
 try:
     pairfamily = socket.AF_UNIX
-except NameError:
+except AttributeError:
     pairfamily = socket.AF_INET
 
 def socketpair(family=pairfamily, type_=socket.SOCK_STREAM, proto=0):
@@ -45,6 +45,6 @@ def socketpair(family=pairfamily, type_=socket.SOCK_STREAM, proto=0):
         psock.close()
         return (sock1, sock2)
 
-def pconnect_(sock.port):
+def pconnect_(sock, port):
     """connect helper"""
     sock.connect(('127.0.0.1', port))
