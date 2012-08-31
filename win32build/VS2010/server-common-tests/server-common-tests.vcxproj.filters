@@ -27,6 +27,9 @@
     <ClCompile Include="..\..\..\src\lib\server_common\tests\socket_requestor_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\lib\server_common\tests\portconfig_unittest.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\lib\server_common\tests\data_path.h">
