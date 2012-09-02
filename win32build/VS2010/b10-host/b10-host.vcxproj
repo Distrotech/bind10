@@ -91,7 +91,14 @@ copy xfrout\run_b10-xfrout.sh.win32 xfrout\run_b10-xfrout.sh
 copy xfrout\xfrout.py.win32 xfrout\xfrout.py
 copy xfrout\tests\xfrout_test.py.win32 xfrout\tests\xfrout_test.py
 copy xfrout\tests\xfrout_test.win32 xfrout\tests\xfrout_test.sh
-
+copy usermgr\b10-cmdctl-usermgr.py.win32 usermgr\b10-cmdctl-usermgr.py
+copy usermgr\run_b10-cmdctl-usermgr.sh.win32 usermgr\run_b10-cmdctl-usermgr.sh
+copy zonemgr\run_b10-zonemgr.sh.win32 zonemgr\run_b10-zonemgr.sh
+copy zonemgr\zonemgr.py.win32 zonemgr\zonemgr.py
+copy zonemgr\tests\zonemgr_test.win32 zonemgr\tests\zonemgr_test.sh
+copy stats\stats.py.win32 stats\stats.py
+copy stats\stats_httpd.py.win32 stats\stats_httpd.py
+copy tests\process_rename_test.py.win32 tests\process_rename_test.py
 copy dbutil\dbutil.py.win32 dbutil\dbutil.py
 copy dbutil\run_dbutil.sh.win32 dbutil\run_dbutil.sh
 copy dbutil\tests\dbutil_test.sh.win32 dbutil\tests\dbutil_test.sh
@@ -166,7 +173,14 @@ copy xfrout\run_b10-xfrout.sh.win32 xfrout\run_b10-xfrout.sh
 copy xfrout\xfrout.py.win32 xfrout\xfrout.py
 copy xfrout\tests\xfrout_test.py.win32 xfrout\tests\xfrout_test.py
 copy xfrout\tests\xfrout_test.win32 xfrout\tests\xfrout_test.sh
-
+copy usermgr\b10-cmdctl-usermgr.py.win32 usermgr\b10-cmdctl-usermgr.py
+copy usermgr\run_b10-cmdctl-usermgr.sh.win32 usermgr\run_b10-cmdctl-usermgr.sh
+copy zonemgr\run_b10-zonemgr.sh.win32 zonemgr\run_b10-zonemgr.sh
+copy zonemgr\zonemgr.py.win32 zonemgr\zonemgr.py
+copy zonemgr\tests\zonemgr_test.win32 zonemgr\tests\zonemgr_test.sh
+copy stats\stats.py.win32 stats\stats.py
+copy stats\stats_httpd.py.win32 stats\stats_httpd.py
+copy tests\process_rename_test.py.win32 tests\process_rename_test.py
 copy dbutil\dbutil.py.win32 dbutil\dbutil.py
 copy dbutil\run_dbutil.sh.win32 dbutil\run_dbutil.sh
 copy dbutil\tests\dbutil_test.sh.win32 dbutil\tests\dbutil_test.sh

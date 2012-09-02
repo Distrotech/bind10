@@ -51,5 +51,5 @@ export B10_FROM_BUILD
 BIND10_MSGQ_SOCKET_FILE=${BIND10HOME}/msgq_socket
 export BIND10_MSGQ_SOCKET_FILE
 
-exec ${PYTHON} -O ${BIND10_PATH}/bind10.py "$@"
+exec ${PYTHON} -O ${BIND10_PATH}/bind10_src.py "$@"
 

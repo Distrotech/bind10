@@ -18,9 +18,12 @@
 . ${BIND10HOME}/win32build/env-${VSCNF:-release}.sh
 
 MYPATH_PATH=${BIND10HOME}/src/bin/usermgr
+PYTHONPATH="${PYTHONPATH};${BIND10HOME}/src/lib/python/isc/log_messages"
+PYTHONPATH="${PYTHONPATH};${BIND10HOME}/src/lib/python"
+export PYTHONPATH
 
 BIND10_MSGQ_SOCKET_FILE=${BIND10HOME}/msgq_socket
 export BIND10_MSGQ_SOCKET_FILE
 
 cd ${MYPATH_PATH}
-exec ${PYTHON} b10-cmdctl-usermgr "$@"
+exec ${PYTHON} b10-cmdctl-usermgr.py "$@"

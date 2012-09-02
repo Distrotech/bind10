@@ -6,6 +6,7 @@ ${BIND10HOME}/win32build/check/dns++-debug.sh && \
 ${BIND10HOME}/win32build/check/cc-debug.sh && \
 ${BIND10HOME}/win32build/check/config-debug.sh && \
 ${BIND10HOME}/win32build/check/acl-debug.sh && \
+${BIND10HOME}/win32build/check/xfr-debug.sh && \
 ${BIND10HOME}/win32build/check/bench-debug.sh && \
 ${BIND10HOME}/win32build/check/asiolink-debug.sh && \
 ${BIND10HOME}/win32build/check/asiodns-debug.sh && \
@@ -19,6 +20,8 @@ ${BIND10HOME}/win32build/check/dhcp++-debug.sh && \
 ${BIND10HOME}/win32build/check/statistics-debug.sh && \
 ${BIND10HOME}/win32build/check/cfgmgr-debug.sh && \
 ${BIND10HOME}/win32build/check/loadzone-debug.sh && \
+${BIND10HOME}/win32build/check/stats-debug.sh && \
 ${BIND10HOME}/win32build/check/resolver-debug.sh && \
 ${BIND10HOME}/win32build/check/dhcp6-debug.sh && \
-${BIND10HOME}/win32build/check/dbutil-debug.sh
+${BIND10HOME}/win32build/check/dbutil-debug.sh && \
+${BIND10HOME}/win32build/check/badpacket-debug.sh

@@ -14,7 +14,11 @@
 
 #include <gtest/gtest.h>
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <sys/un.h>
+#endif
 #include <string>
 
 #include <xfr/xfrout_client.h>
@@ -24,7 +28,8 @@ using namespace isc::xfr;
 
 namespace {
 
-TEST(ClientTest, connetFile) {
+#ifndef _WIN32
+TEST(ClientTest, connectFile) {
     // File path is too long
     struct sockaddr_un s;     // can't be const; some compiler complains
     EXPECT_THROW(XfroutClient(string(sizeof(s.sun_path), 'x')).connect(),
@@ -33,5 +38,17 @@ TEST(ClientTest, connetFile) {
     // File doesn't exist (we assume the file "no_such_file" doesn't exist)
     EXPECT_THROW(XfroutClient("no_such_file").connect(), XfroutError);
 }
+#else
+TEST(ClientTest, connect) {
+    // Invalid spec
+    EXPECT_THROW(XfroutClient("invalid_spec").connect(), XfroutError);
+
+    // Invalid port
+    EXPECT_THROW(XfroutClient("v4_99999").connect(), XfroutError);
+
+    // Port doesn't exist (we assume the port 100 doesn't exist)
+    EXPECT_THROW(XfroutClient("v6_100").connect(), XfroutError);
+}
+#endif
 
 }

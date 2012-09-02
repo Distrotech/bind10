@@ -19,6 +19,7 @@
 
 MYPATH_PATH=${BIND10HOME}/src/bin/msgq
 
+PYTHONPATH="${PYTHONPATH};${BIND10HOME}/src/lib/python/isc/log_messages"
 PYTHONPATH="${PYTHONPATH};${BIND10HOME}/src/lib/python"
 export PYTHONPATH
 
@@ -26,4 +27,4 @@ BIND10_MSGQ_SOCKET_FILE=${BIND10HOME}/msgq_socket
 export BIND10_MSGQ_SOCKET_FILE
 
 cd ${MYPATH_PATH}
-exec ${PYTHON} -O b10-msgq.py "$@"
+exec ${PYTHON} -O msgq.py "$@"

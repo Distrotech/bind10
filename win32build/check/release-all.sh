@@ -6,6 +6,7 @@ ${BIND10HOME}/win32build/check/dns++-release.sh && \
 ${BIND10HOME}/win32build/check/cc-release.sh && \
 ${BIND10HOME}/win32build/check/config-release.sh && \
 ${BIND10HOME}/win32build/check/acl-release.sh && \
+${BIND10HOME}/win32build/check/xfr-release.sh && \
 ${BIND10HOME}/win32build/check/bench-release.sh && \
 ${BIND10HOME}/win32build/check/asiolink-release.sh && \
 ${BIND10HOME}/win32build/check/asiodns-release.sh && \
@@ -19,6 +20,8 @@ ${BIND10HOME}/win32build/check/dhcp++-release.sh && \
 ${BIND10HOME}/win32build/check/statistics-release.sh && \
 ${BIND10HOME}/win32build/check/cfgmgr-release.sh && \
 ${BIND10HOME}/win32build/check/loadzone-release.sh && \
+${BIND10HOME}/win32build/check/stats-release.sh && \
 ${BIND10HOME}/win32build/check/resolver-release.sh && \
 ${BIND10HOME}/win32build/check/dhcp6-release.sh && \
-${BIND10HOME}/win32build/check/dbutil-release.sh
+${BIND10HOME}/win32build/check/dbutil-release.sh && \
+${BIND10HOME}/win32build/check/badpacket-release.sh

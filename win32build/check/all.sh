@@ -6,6 +6,7 @@ ${BIND10HOME}/win32build/check/dns++-all.sh && \
 ${BIND10HOME}/win32build/check/cc-all.sh && \
 ${BIND10HOME}/win32build/check/config-all.sh && \
 ${BIND10HOME}/win32build/check/acl-all.sh && \
+${BIND10HOME}/win32build/check/xfr-all.sh && \
 ${BIND10HOME}/win32build/check/bench-all.sh && \
 ${BIND10HOME}/win32build/check/asiolink-all.sh && \
 ${BIND10HOME}/win32build/check/asiodns-all.sh && \
@@ -19,6 +20,8 @@ ${BIND10HOME}/win32build/check/dhcp++-all.sh && \
 ${BIND10HOME}/win32build/check/statistics-all.sh && \
 ${BIND10HOME}/win32build/check/cfgmgr-all.sh && \
 ${BIND10HOME}/win32build/check/loadzone-all.sh && \
+${BIND10HOME}/win32build/check/stats-all.sh && \
 ${BIND10HOME}/win32build/check/resolver-all.sh && \
 ${BIND10HOME}/win32build/check/dhcp6-all.sh && \
-${BIND10HOME}/win32build/check/dbutil-all.sh
+${BIND10HOME}/win32build/check/dbutil-all.sh && \
+${BIND10HOME}/win32build/check/badpacket-all.sh

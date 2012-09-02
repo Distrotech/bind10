@@ -27,4 +27,4 @@ BIND10_MSGQ_SOCKET_FILE=${BIND10HOME}/msgq_socket
 export BIND10_MSGQ_SOCKET_FILE
 
 cd ${CMD_CTRLD_PATH}
-exec ${PYTHON} b10-cmdctl "$@"
+exec ${PYTHON} cmdctl.py "$@"

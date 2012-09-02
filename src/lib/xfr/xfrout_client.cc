@@ -79,6 +79,10 @@ XfroutClient::connect() {
         stream_protocol::endpoint ep(addr, port);
 #endif
         impl_->socket_.connect(ep);
+#ifdef _WIN32
+    } catch (const boost::bad_lexical_cast&) {
+        isc_throw(XfroutError, "bad port in endpoint: " << impl_->file_path_);
+#endif
     } catch (const asio::system_error& err) {
         isc_throw(XfroutError, "socket connect failed for " <<
                   impl_->file_path_ << ": " << err.what());
