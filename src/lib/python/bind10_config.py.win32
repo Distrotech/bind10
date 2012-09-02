@@ -24,11 +24,11 @@ def reload():
     global PLUGIN_PATHS
     global PREFIX
     global LIBEXECPATH
-    BIND10_MSGQ_SOCKET_FILE = os.path.join("c:/Temp",
+    PREFIX = os.environ["BIND10PREFIX"]
+    BIND10_MSGQ_SOCKET_FILE = os.path.join("${prefix}/var",
                                            "bind10-devel",
                                            "msgq_socket").replace("${prefix}",
-                                                                  "/Temp")
-    PREFIX = "/Temp"
+                                                                  PREFIX)
 
     # B10_FROM_SOURCE is set in the environment for internal tests and
     # an experimental run without installagion.  In that case we need to
@@ -68,11 +68,11 @@ def reload():
         LIBEXECPATH = ':'.join([BIND10HOME + '/src/bin/' + p for p in
                                 programdirs])
     else:
-        DATA_PATH = "c:/Temp/bind10-devel".replace("${prefix}", PREFIX)
-        PLUGIN_PATHS = ["/Temp/share/bind10-devel/config_plugins"]
-        LIBEXECPATH = ("@libexecdir@/@PACKAGE@"). \
-            replace("${exec_prefix}", "@exec_prefix@"). \
-            replace("${prefix}", "@prefix@")
+        DATA_PATH = "${prefix}/var/bind10-devel".replace("${prefix}", PREFIX)
+        PLUGIN_PATHS = [PREFIX + "/share/bind10-devel/config_plugins"]
+        LIBEXECPATH = ("${exec_prefix}/bind10-devel"). \
+            replace("${exec_prefix}", "${prefix}"). \
+            replace("${prefix}", PREFIX)
     # For testing the plugins so they can find their own spec files
     if "B10_TEST_PLUGIN_DIR" in os.environ:
         PLUGIN_PATHS = os.environ["B10_TEST_PLUGIN_DIR"].split(':')

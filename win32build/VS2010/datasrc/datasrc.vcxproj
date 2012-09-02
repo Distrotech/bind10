@@ -73,6 +73,9 @@ copy log_messages\work\__init__.py.in  log_messages\work\__init__.py
 ..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe -d log_messages\work -p xfrin\libxfrin_messages.mes
 ..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe -d log_messages\work -p server_common\server_common_messages.mes
 ..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe -d log_messages\work -p ddns\libddns_messages.mes
+copy cc\tests\cc_test.win32 cc\tests\cc_test.sh
+copy config\tests\config_test.win32 config\tests\config_test.sh
+copy notify\tests\notify_out_test.win32 notify\tests\notify_out_test.sh
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -106,6 +109,9 @@ copy log_messages\work\__init__.py.in  log_messages\work\__init__.py
 ..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe -d log_messages\work -p xfrin\libxfrin_messages.mes
 ..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe -d log_messages\work -p server_common\server_common_messages.mes
 ..\..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe -d log_messages\work -p ddns\libddns_messages.mes
+copy cc\tests\cc_test.win32 cc\tests\cc_test.sh
+copy config\tests\config_test.win32 config\tests\config_test.sh
+copy notify\tests\notify_out_test.win32 notify\tests\notify_out_test.sh
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

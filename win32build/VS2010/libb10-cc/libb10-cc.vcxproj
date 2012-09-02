@@ -73,7 +73,7 @@
     <PreBuildEvent>
       <Command>set PATH=%PATH%;%BIND10HOME%/../log4cplus/v100/$(Configuration);%BIND10HOME%/win32build/VS2010/$(Configuration)
 cd ..\..\..\src\lib\cc
-copy session_config.h.win32 session_config.h
+copy session_config.h.pre.win32 session_config.h
 ..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe cc_messages.mes
 
 </Command>
@@ -101,7 +101,7 @@ copy session_config.h.win32 session_config.h
     <PreBuildEvent>
       <Command>set PATH=%PATH%;%BIND10HOME%/../log4cplus/v100/$(Configuration);%BIND10HOME%/win32build/VS2010/$(Configuration)
 cd ..\..\..\src\lib\cc
-copy session_config.h.win32 session_config.h
+copy session_config.h.pre.win32 session_config.h
 ..\..\..\win32build\VS2010\liblog_compiler\$(Configuration)\message.exe cc_messages.mes
 
 </Command>

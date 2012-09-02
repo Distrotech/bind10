@@ -52,7 +52,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;BIND10PREFIX="%BIND10PREFIX%";_DEBUG;_CONSOLE;%(PreprocessorDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\bin;..\..\..\ext\asio;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -64,7 +64,7 @@
     </Link>
     <PreBuildEvent>
       <Command>cd ..\..\..\src\bin\dhcp6
-copy spec_config.h.win32 spec_config.h
+copy spec_config.h.pre.win32 spec_config.h
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -75,7 +75,7 @@ copy spec_config.h.win32 spec_config.h
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;BIND10PREFIX="%BIND10PREFIX%";NDEBUG;_CONSOLE;%(PreprocessorDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\bin;..\..\..\ext\asio;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -89,7 +89,7 @@ copy spec_config.h.win32 spec_config.h
     </Link>
     <PreBuildEvent>
       <Command>cd ..\..\..\src\bin\dhcp6
-copy spec_config.h.win32 spec_config.h
+copy spec_config.h.pre.win32 spec_config.h
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>

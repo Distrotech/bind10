@@ -19,9 +19,9 @@ testname="Destination test"
 echo $testname
 
 failcount=0
-tempfile=$BIND10HOME/src/lib/log/tests/destination_test_tempfile_$$
-destfile1=$BIND10HOME/src/lib/log/tests/destination_test_destfile_1_$$
-destfile2=$BIND10HOME/src/lib/log/tests/destination_test_destfile_2_$$
+tempfile=${BIND10HOME}/src/lib/log/tests/destination_test_tempfile_$$
+destfile1=${BIND10HOME}/src/lib/log/tests/destination_test_destfile_1_$$
+destfile2=${BIND10HOME}/src/lib/log/tests/destination_test_destfile_2_$$
 
 passfail() {
     if [ $1 -eq 0 ]; then

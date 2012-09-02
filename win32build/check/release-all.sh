@@ -1,0 +1,24 @@
+${BIND10HOME}/win32build/check/exceptions-release.sh && \
+${BIND10HOME}/win32build/check/util-release.sh && \
+${BIND10HOME}/win32build/check/log-release.sh && \
+${BIND10HOME}/win32build/check/cryptolink-release.sh && \
+${BIND10HOME}/win32build/check/dns++-release.sh && \
+${BIND10HOME}/win32build/check/cc-release.sh && \
+${BIND10HOME}/win32build/check/config-release.sh && \
+${BIND10HOME}/win32build/check/acl-release.sh && \
+${BIND10HOME}/win32build/check/bench-release.sh && \
+${BIND10HOME}/win32build/check/asiolink-release.sh && \
+${BIND10HOME}/win32build/check/asiodns-release.sh && \
+${BIND10HOME}/win32build/check/nsas-release.sh && \
+${BIND10HOME}/win32build/check/cache-release.sh && \
+${BIND10HOME}/win32build/check/resolve-release.sh && \
+${BIND10HOME}/win32build/check/datasrc-release.sh && \
+${BIND10HOME}/win32build/check/server-common-release.sh && \
+${BIND10HOME}/win32build/check/python-release.sh && \
+${BIND10HOME}/win32build/check/dhcp++-release.sh && \
+${BIND10HOME}/win32build/check/statistics-release.sh && \
+${BIND10HOME}/win32build/check/cfgmgr-release.sh && \
+${BIND10HOME}/win32build/check/loadzone-release.sh && \
+${BIND10HOME}/win32build/check/resolver-release.sh && \
+${BIND10HOME}/win32build/check/dhcp6-release.sh && \
+${BIND10HOME}/win32build/check/dbutil-release.sh

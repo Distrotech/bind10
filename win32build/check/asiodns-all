@@ -1,2 +1,0 @@
-${BIND10HOME}/win32build/check/asiodns-release && \
-${BIND10HOME}/win32build/check/asiodns-debug

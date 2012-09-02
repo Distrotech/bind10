@@ -61,6 +61,14 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
+    <PostBuildEvent>
+      <Command>mkdir %BIND10PREFIX%\var\bind10-devel
+mkdir %BIND10PREFIX%\share\bind10-devel
+mkdir %BIND10PREFIX%\etc\bind10-devel
+cd ..\..\..\doc
+copy version.ent.win32 version.ent
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -79,6 +87,14 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PostBuildEvent>
+      <Command>mkdir %BIND10PREFIX%\var\bind10-devel
+mkdir %BIND10PREFIX%\share\bind10-devel
+mkdir %BIND10PREFIX%\etc\bind10-devel
+cd ..\..\..\doc
+copy version.ent.win32 version.ent
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

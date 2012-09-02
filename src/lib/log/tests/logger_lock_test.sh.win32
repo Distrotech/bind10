@@ -17,8 +17,8 @@
 # released correctly.
 
 failcount=0
-tempfile=$BIND10HOME/src/lib/log/tests/logger_lock_test_tempfile_$$
-destfile=$BIND10HOME/src/lib/log/tests/logger_lock_test_destfile_$$
+tempfile=${BIND10HOME}/src/lib/log/tests/logger_lock_test_tempfile_$$
+destfile=${BIND10HOME}/src/lib/log/tests/logger_lock_test_destfile_$$
 
 passfail() {
     if [ $1 -eq 0 ]; then

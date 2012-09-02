@@ -15,22 +15,25 @@
 # NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
 # WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-PYTHON_EXEC=${PYTHON_EXEC:-"C:\Python32\python.exe"}
-export PYTHON_EXEC
+. ${BIND10HOME}/win32build/env-${VSCNF:-release}.sh
 
-CONFIG_PATH=%BIND10HOME%/src/lib/python/isc/config/tests
+CONFIG_PATH=${BIND10HOME}/src/lib/python/isc/config/tests
 
-PYTHONPATH=%BIND10HOME%/src/lib/python
+PYTHONPATH="${PYTHONPATH};${BIND10HOME}/src/lib/python"
+PYTHONPATH="${PYTHONPATH};${BIND10HOME}/src/lib/python/isc/log_messages"
 export PYTHONPATH
 
-CONFIG_TESTDATA_PATH=%BIND10HOME%/src/lib/config/testdata
+CONFIG_TESTDATA_PATH=${BIND10HOME}/src/lib/config/testdata
 export CONFIG_TESTDATA_PATH
 
+export CONFIG_TESTDATA_PATH=${BIND10HOME}/src/lib/config/tests/testdata
+export CONFIG_WR_TESTDATA_PATH=${BIND10HOME}/src/lib/config/tests/testdata
+
 cd ${BIND10_PATH}
-${PYTHON_EXEC} -O ${CONFIG_PATH}/config_data_test.py $*
+${PYTHON} -O ${CONFIG_PATH}/config_data_test.py $*
 
-${PYTHON_EXEC} -O ${CONFIG_PATH}/module_spec_test.py $*
+${PYTHON} -O ${CONFIG_PATH}/module_spec_test.py $*
 
-${PYTHON_EXEC} -O ${CONFIG_PATH}/ccsession_test.py $*
+${PYTHON} -O ${CONFIG_PATH}/ccsession_test.py $*
 
-${PYTHON_EXEC} -O ${CONFIG_PATH}/cfgmgr_test.py $*
+${PYTHON} -O ${CONFIG_PATH}/cfgmgr_test.py $*

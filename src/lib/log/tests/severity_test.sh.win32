@@ -20,7 +20,7 @@ testname="Severity test"
 echo $testname
 
 failcount=0
-tempfile=$BIND10HOME/src/lib/log/tests/severity_test_tempfile_$$
+tempfile=${BIND10HOME}/src/lib/log/tests/severity_test_tempfile_$$
 
 passfail() {
     if [ $1 -eq 0 ]; then

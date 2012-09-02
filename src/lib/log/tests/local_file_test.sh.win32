@@ -20,8 +20,8 @@ testname="Local message file test"
 echo $testname
 
 failcount=0
-localmes=$BIND10HOME/src/lib/log/tests/localdef_mes_$$
-tempfile=$BIND10HOME/src/lib/log/tests/run_time_init_test_tempfile_$$
+localmes=${BIND10HOME}/src/lib/log/tests/localdef_mes_$$
+tempfile=${BIND10HOME}/src/lib/log/tests/run_time_init_test_tempfile_$$
 
 passfail() {
     if [ $1 -eq 0 ]; then

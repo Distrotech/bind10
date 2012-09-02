@@ -146,7 +146,7 @@ def import_definitions(classcode2txt, typecode2txt, typeandclass):
     dirlist = os.listdir('./rdata')
     dirlist.sort()
     for dir in dirlist:
-        classdir = './rdata' + os.sep + dir
+        classdir = './rdata/' + dir
         m = re_typecode.match(dir)
         if os.path.isdir(classdir) and (m != None or dir == 'generic'):
             if dir == 'generic':
@@ -163,7 +163,7 @@ def import_definitions(classcode2txt, typecode2txt, typeandclass):
             filelist = os.listdir(classdir)
             filelist.sort()
             for file in filelist:
-                file = classdir + os.sep + file
+                file = classdir + '/' + file
                 m = re_typecode.match(os.path.split(file)[1])
                 if m != None:
                     type_txt = m.group(1)

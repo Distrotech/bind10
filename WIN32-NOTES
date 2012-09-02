@@ -46,11 +46,20 @@ What is needed:
   https://log4cplus.svn.sourceforge.net/svnroot/log4cplus
   and the PRODUCTION_1_0_x branch includes a msvc10 directory)
 
+ - xsltproc, for instance from http://www.zlatkovic.com/libxml.en.html,
+  or the Cygwin one, if you want to generate man files from xml.
+
 Environment variables (with examples):
 
  - BOOST -> C:\Program Files (x86)\boost\boost_1_47
 
  - BIND10HOME -> c:/cygwin/home/dupont/bind10
+
+ - BIND10PREFIX -> c:/Temp
+
+ - VSCNF -> unset or release (default) or debug
+
+ - BIND10_MSGQ_SOCKET (todo)
 
 How to compile google test:
 
@@ -194,3 +203,28 @@ DLL specific:
  - Release and Debug DLLs MUST get different names (put a final 'd' on
   Debug) or the system runtime will select the wrong DLL!
  - define GTEST_LINKED_AS_SHARED_LIBRARY=1 for gtest DLL users
+
+Variable substitutions (aka @XXX@ -> YYY):
+ abs_builddir -> ${BIND10HOME}/<relative path>
+ abs_srcdir == abs_builddir
+ abs_top_builddir -> $BIND10HOME or its Cygwin value
+ abs_top_srcdir == abs_top_builddir
+ datadir -> ${datarootdir}
+ datarootdir -> ${prefix}/share
+ exec_prefix -> ${prefix}
+ libexecdir -> ${exec_prefix}
+ localstatedir -> ${prefix}/var
+ prefix -> $BIND10PREFIX aka /Temp (was /usr/local)
+ sysconfdir -> ${prefix}/etc
+ LOCALSTATEDIR -> ${prefix}/var (aka /Temp/var)
+ PACKAGE -> bind10-devel
+ PACKAGE_NAME == PACKAGE
+ PACKAGE_VERSION -> date '+%Y%m%d' from configure.ac AC_INIT(), here 20120817
+ PYTHON -> /usr/bin/python (ignored in #!)
+ PYTHONPATH -> real $PYTHONPATH env variable (unneeded in sys.path.append)
+ SYSCONFDIR -> ${sysconfdir} (aka /Temp/etc)
+
+require in $BIND10PREFIX:
+ ${BIND10PREFIX}/var ${BIND10PREFIX}/var/bind10-devel
+ ${BIND10PREFIX}/share ${BIND10PREFIX}/share/bind10-devel
+ ${BIND10PREFIX}/etc

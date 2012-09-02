@@ -1,2 +1,0 @@
-${BIND10HOME}/win32build/check/acl-release && \
-${BIND10HOME}/win32build/check/acl-debug

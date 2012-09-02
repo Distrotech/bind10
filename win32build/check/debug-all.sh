@@ -1,0 +1,24 @@
+${BIND10HOME}/win32build/check/exceptions-debug.sh && \
+${BIND10HOME}/win32build/check/util-debug.sh && \
+${BIND10HOME}/win32build/check/log-debug.sh && \
+${BIND10HOME}/win32build/check/cryptolink-debug.sh && \
+${BIND10HOME}/win32build/check/dns++-debug.sh && \
+${BIND10HOME}/win32build/check/cc-debug.sh && \
+${BIND10HOME}/win32build/check/config-debug.sh && \
+${BIND10HOME}/win32build/check/acl-debug.sh && \
+${BIND10HOME}/win32build/check/bench-debug.sh && \
+${BIND10HOME}/win32build/check/asiolink-debug.sh && \
+${BIND10HOME}/win32build/check/asiodns-debug.sh && \
+${BIND10HOME}/win32build/check/nsas-debug.sh && \
+${BIND10HOME}/win32build/check/cache-debug.sh && \
+${BIND10HOME}/win32build/check/resolve-debug.sh && \
+${BIND10HOME}/win32build/check/datasrc-debug.sh && \
+${BIND10HOME}/win32build/check/server-common-debug.sh && \
+${BIND10HOME}/win32build/check/python-debug.sh && \
+${BIND10HOME}/win32build/check/dhcp++-debug.sh && \
+${BIND10HOME}/win32build/check/statistics-debug.sh && \
+${BIND10HOME}/win32build/check/cfgmgr-debug.sh && \
+${BIND10HOME}/win32build/check/loadzone-debug.sh && \
+${BIND10HOME}/win32build/check/resolver-debug.sh && \
+${BIND10HOME}/win32build/check/dhcp6-debug.sh && \
+${BIND10HOME}/win32build/check/dbutil-debug.sh

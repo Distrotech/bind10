@@ -1,0 +1,13 @@
+export B10_FROM_BUILD=${BIND10HOME}
+export VSVER=VS2010
+export RTVER=v100
+parent=`cygpath ${BIND10HOME}/..`
+b10home=`cygpath ${BIND10HOME}`
+export PATH="${PATH}:${parent}gtest/${RTVER}/Debug"
+export PATH="${PATH}:${parent}botan/${RTVER}/Debug"
+export PATH="${PATH}:${parent}log4cplus/${RTVER}/Debug"
+export PATH="${PATH}:${b10home}/win32build/${VSVER}/Debug"
+export PYTHONPATH="${PYTHONPATH};${BIND10HOME}/win32build/${VSVER}/Debug"
+export PYTHONPATH="${PYTHONPATH};${BIND10HOME}/src/lib/python/isc/util"
+export PYTHON=c:/Python32/python_d.exe
+export BIND10_PATH=${BIND10HOME}/src/bin/bind10

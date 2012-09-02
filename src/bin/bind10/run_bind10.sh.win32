@@ -1,0 +1,55 @@
+#! /bin/sh
+
+# Copyright (C) 2010  Internet Systems Consortium.
+#
+# Permission to use, copy, modify, and distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND INTERNET SYSTEMS CONSORTIUM
+# DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL
+# INTERNET SYSTEMS CONSORTIUM BE LIABLE FOR ANY SPECIAL, DIRECT,
+# INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
+# FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+# NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+# WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+. ${BIND10HOME}/win32build/env-${VSCNF:-release}.sh
+
+b10home=`cygpath ${BIND10HOME}`
+
+BIND10_PATH=${BIND10HOME}/src/bin/bind10
+
+PATH="${b10home}/src/bin/sockcreator;${PATH}"
+PATH="${b10home}/src/bin/dhcp6;${PATH}"
+PATH="${b10home}/src/bin/ddns;${PATH}"
+PATH="${b10home}/src/bin/zonemgr;${PATH}"
+PATH="${b10home}/src/bin/xfrout;${PATH}"
+PATH="${b10home}/src/bin/xfrin;${PATH}"
+PATH="${b10home}/src/bin/stats;${PATH}"
+PATH="${b10home}/src/bin/cmdctl;${PATH}"
+PATH="${b10home}/src/bin/cfgmgr;${PATH}"
+PATH="${b10home}/src/bin/resolver;${PATH}"
+PATH="${b10home}/src/bin/auth;${PATH}"
+PATH="${b10home}/src/bin/msgq;${PATH}"
+export PATH
+
+PYTHONPATH="${PYTHONPATH};${b10home}/src/lib/python/isc/log_messages"
+PYTHONPATH="${PYTHONPATH};${b10home}/src/lib/python"
+PYTHONPATH="${PYTHONPATH};${b10home}/src/lib/python/isc/config"
+export PYTHONPATH
+
+B10_FROM_SOURCE=${BIND10HOME}
+export B10_FROM_SOURCE
+# TODO: We need to do this feature based (ie. no general from_source)
+# But right now we need a second one because some spec files are
+# generated and hence end up under builddir
+B10_FROM_BUILD=${BIND10HOME}
+export B10_FROM_BUILD
+
+BIND10_MSGQ_SOCKET_FILE=${BIND10HOME}/msgq_socket
+export BIND10_MSGQ_SOCKET_FILE
+
+exec ${PYTHON} -O ${BIND10_PATH}/bind10.py "$@"
+

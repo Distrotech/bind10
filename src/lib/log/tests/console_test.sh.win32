@@ -20,7 +20,7 @@ testname="Console output test"
 echo $testname
 
 failcount=0
-tempfile=$BIND10HOME/src/lib/log/tests/console_test_tempfile_$$
+tempfile=${BIND10HOME}/src/lib/log/tests/console_test_tempfile_$$
 
 # Look at tempfile and check that the count equals the expected count
 passfail() {

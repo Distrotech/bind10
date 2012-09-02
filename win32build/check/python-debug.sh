@@ -1,0 +1,213 @@
+. ${BIND10HOME}/win32build/env-debug.sh
+echo
+echo partial python / Debug
+echo
+if [ ${PYTHON} == "None" ]; then
+    echo skipping python / Debug
+    exit 0
+fi
+CPYTHONPATH="${PYTHONPATH};${BIND10HOME}/src/lib/python/isc/log_messages"
+CPYTHONPATH="${CPYTHONPATH};${BIND10HOME}/src/lib/python"
+CTESTDATA=${BIND10HOME}/src/lib/python/isc/datasrc/tests/testdata
+
+echo python datasrc / Debug
+export PYTHONPATH="${CPYTHONPATH};${BIND10HOME}/src/lib/python/isc/log"
+export TESTDATA_PATH=${CTESTDATA}
+export TESTDATA_WRITE_PATH=${BIND10HOME}/src/lib/python/isc/datasrc/tests
+export GLOBAL_TESTDATA_PATH=${BIND10HOME}/src/lib/testutils/testdata
+PYTESTS='datasrc_test.py sqlite3_ds_test.py'
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/datasrc/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
+
+echo partial python cc / Debug
+export PYTHONPATH=${CPYTHONPATH}
+#export BIND10_TEST_SOCKET_FILE=
+#PYTESTS='message_test.py data_test.py session_test.py'
+PYTESTS='message_test.py data_test.py'
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/cc/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
+
+echo partial python config / Debug
+export PYTHONPATH="${CPYTHONPATH};${BIND10HOME}/src/lib/python/isc/config"
+export B10_LOCKFILE_DIR_FROM_BUILD=${BIND10HOME}
+export B10_TEST_PLUGIN_DIR=${BIND10HOME}/src/bin/cfgmgr/plugins
+export CONFIG_TESTDATA_PATH=${BIND10HOME}/src/lib/config/tests/testdata
+export CONFIG_WR_TESTDATA_PATH=${BIND10HOME}/src/lib/config/tests/testdata
+#PYTESTS='ccsession_test.py
+#    cfgmgr_test.py
+#    config_data_test.py
+#    module_spec_test.py'
+PYTESTS='config_data_test.py module_spec_test.py'
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/config/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
+
+echo python log / Debug
+export PYTHONPATH="${CPYTHONPATH};${BIND10HOME}/src/lib/python/isc/log"
+export B10_LOCKFILE_DIR_FROM_BUILD=${BIND10HOME}
+export B10_TEST_PLUGIN_DIR=${BIND10HOME}/src/bin/cfgmgr/plugins
+export CONFIG_TESTDATA_PATH=${CTESTDATA}
+export CONFIG_WR_TESTDATA_PATH=${CTESTDATA}
+BDIR=${BIND10HOME}/src/lib/python/isc/log/tests
+${BDIR}/check_output-win32.sh ${BDIR}/log_console.py ${BDIR}/console.out
+if test $? -ne 0; then
+    exit -1
+fi
+PYTESTS='log_test.py log_console.py'
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/log/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
+
+echo python net / Debug
+export PYTHONPATH=${CPYTHONPATH}
+PYTESTS='addr_test.py parse_test.py'
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/net/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
+
+echo python notify / Debug
+export PYTHONPATH=${CPYTHONPATH}
+export TESTDATASRCDIR=${BIND10HOME}/src/lib/python/isc/notify/tests/testdata/
+PYTESTS='notify_out_test.py'
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/notify/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
+
+echo skipping python util cio / Debug
+export PYTHONPATH=${CPYTHONPATH}
+export TESTDATAOBJDIR=${BIND10HOME}/src/lib/python/isc/util/cio/tests
+PYTESTS='socketsession_test.py'
+#for pytest in ${PYTESTS}
+#    do
+#        echo ${pytest}
+#        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/util/cio/tests/${pytest}
+#        if test $? -ne 0; then
+#            exit -1
+#        fi
+#    done
+
+echo partial python util / Debug
+export PYTHONPATH=${CPYTHONPATH}
+#PYTESTS='process_test.py socketserver_mixin_test.py file_test.py'
+PYTESTS='process_test.py socketserver_mixin_test.py'
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/util/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
+
+echo python acl / Debug
+export PYTHONPATH=${CPYTHONPATH}
+PYTESTS='acl_test.py dns_test.py'
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/acl/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
+
+echo skipping python bind10 / Debug
+export PYTHONPATH="${CPYTHONPATH};${BIND10HOME}/src/bin"
+export PYTHONPATH="${PYTHONPATH};${BIND10HOME}/src/bin/bind10"
+export B10_LOCKFILE_DIR_FROM_BUILD=${BIND10HOME}
+#BIND10_MSGQ_SOCKET_FILE=
+PYTESTS='sockcreator_test.py component_test.py socket_cache_test.py'
+#for pytest in ${PYTESTS}
+#    do
+#        echo ${pytest}
+#        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/bind10/tests/${pytest}
+#        if test $? -ne 0; then
+#            exit -1
+#        fi
+#    done
+
+echo python xfrin / Debug
+export PYTHONPATH=${CPYTHONPATH}
+export B10_LOCKFILE_DIR_FROM_BUILD=${BIND10HOME}
+PYTESTS='diff_tests.py'
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/xfrin/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
+
+echo python server-common / Debug
+export PYTHONPATH=${CPYTHONPATH}
+export B10_LOCKFILE_DIR_FROM_BUILD=${BIND10HOME}
+PYTESTS='tsig_keyring_test.py dns_tcp_test.py'
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} \
+            ${BIND10HOME}/src/lib/python/isc/server_common/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
+
+echo python ddns / Debug
+export PYTHONPATH=${CPYTHONPATH}
+export TESTDATA_PATH=${BIND10HOME}/src/lib/testutils/testdata
+export TESTDATA_WRITE_PATH=${BIND10HOME}/src/lib/python/isc/ddns/tests
+PYTESTS='session_tests.py zone_config_tests.py'
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/ddns/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
+
+echo python sysinfo / Debug
+export PYTHONPATH=${CPYTHONPATH}
+PYTESTS='sysinfo_test.py'
+for pytest in ${PYTESTS}
+    do
+        echo ${pytest}
+        ${PYTHON} ${BIND10HOME}/src/lib/python/isc/sysinfo/tests/${pytest}
+        if test $? -ne 0; then
+            exit -1
+        fi
+    done
+
