@@ -1090,9 +1090,11 @@ public:
     /// Another special feature of this version is the ability to record
     /// more detailed information regarding the search result.
     ///
-    /// This information will be returned via the \c node_path parameter,
-    /// which is an object of class \c RBTreeNodeChain.
-    /// The passed parameter must be empty.
+    /// This information will be returned via the \c node_path
+    /// parameter, which is an object of class \c RBTreeNodeChain.  The
+    /// passed parameter must be empty if the label sequence is
+    /// absolute. If the label sequence is not absolute, then find()
+    /// will begin from the top of the node chain.
     ///
     /// On success, the node sequence stored in \c node_path will contain all
     /// the ancestor nodes from the found node towards the root.
