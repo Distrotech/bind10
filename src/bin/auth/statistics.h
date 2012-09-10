@@ -62,41 +62,100 @@ public:
     /// This constructor is mostly exception free. But it may still throw
     /// a standard exception if memory allocation fails inside the method.
     ///
-    QRAttributes();
+    inline QRAttributes();
     /// The destructor.
     ///
     /// This method never throws an exception.
     ///
-    ~QRAttributes();
+    inline ~QRAttributes();
     /// \brief Set query opcode.
     /// \throw None
-    void setQueryOpCode(const int opcode);
+    inline void setQueryOpCode(const int opcode);
     /// \brief Set IP version carrying a query.
     /// \throw None
-    void setQueryIPVersion(const int ip_version);
+    inline void setQueryIPVersion(const int ip_version);
     /// \brief Set transport protocol carrying a query.
     /// \throw None
-    void setQueryTransportProtocol(const int transport_protocol);
+    inline void setQueryTransportProtocol(const int transport_protocol);
     /// \brief Set query EDNS attributes.
     /// \throw None
-    void setQueryEDNS(const bool is_edns_0, const bool is_edns_badver);
+    inline void setQueryEDNS(const bool is_edns_0, const bool is_edns_badver);
     /// \brief Set query DO bit.
     /// \throw None
-    void setQueryDO(const bool is_dnssec_ok);
+    inline void setQueryDO(const bool is_dnssec_ok);
     /// \brief Set query TSIG attributes.
     /// \throw None
-    void setQuerySig(const bool is_tsig, const bool is_sig0,
-                     const bool is_badsig);
+    inline void setQuerySig(const bool is_tsig, const bool is_sig0,
+                            const bool is_badsig);
     /// \brief Set zone origin.
     /// \throw None
-    void setOrigin(const std::string& origin);
+    inline void setOrigin(const std::string& origin);
     /// \brief Set if the answer has sent.
     /// \throw None
-    void answerHasSent();
+    inline void answerHasSent();
     /// \brief Set if the response is truncated.
     /// \throw None
-    void setResponseTruncated(const bool is_truncated);
+    inline void setResponseTruncated(const bool is_truncated);
 };
+
+inline QRAttributes::QRAttributes() :
+    req_ip_version_(0), req_transport_protocol_(0),
+    req_opcode_(0),
+    req_is_edns_0_(false), req_is_edns_badver_(false),
+    req_is_dnssec_ok_(false),
+    req_is_tsig_(false), req_is_sig0_(false), req_is_badsig_(false),
+    zone_origin_(),
+    answer_sent_(false),
+    res_is_truncated_(false)
+{}
+
+inline QRAttributes::~QRAttributes()
+{}
+
+inline void
+QRAttributes::setQueryIPVersion(const int ip_version) {
+    req_ip_version_ = ip_version;
+}
+
+inline void
+QRAttributes::setQueryTransportProtocol(const int transport_protocol) {
+    req_transport_protocol_ = transport_protocol;
+}
+
+inline void
+QRAttributes::setQueryOpCode(const int opcode) {
+    req_opcode_ = opcode;
+}
+
+inline void
+QRAttributes::setQueryEDNS(const bool is_edns_0, const bool is_edns_badver) {
+    req_is_edns_0_ = is_edns_0;
+    req_is_edns_badver_ = is_edns_badver;
+}
+
+inline void
+QRAttributes::setQueryDO(const bool is_dnssec_ok) {
+    req_is_dnssec_ok_ = is_dnssec_ok;
+}
+
+inline void
+QRAttributes::setQuerySig(const bool is_tsig, const bool is_sig0,
+                          const bool is_badsig)
+{
+    req_is_tsig_ = is_tsig;
+    req_is_sig0_ = is_sig0;
+    req_is_badsig_ = is_badsig;
+}
+
+inline void
+QRAttributes::answerHasSent() {
+    answer_sent_ = true;
+}
+
+inline void
+QRAttributes::setResponseTruncated(const bool is_truncated) {
+    res_is_truncated_ = is_truncated;
+}
 
 /// \brief Set of query counters.
 ///
