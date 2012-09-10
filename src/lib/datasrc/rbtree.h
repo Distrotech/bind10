@@ -1380,11 +1380,22 @@ RBTree<T>::find(const isc::dns::LabelSequence& target_labels_orig,
                 bool (*callback)(const RBNode<T>&, CBARG),
                 CBARG callback_arg) const
 {
-    if (!node_path.isEmpty()) {
-        isc_throw(isc::BadValue, "RBTree::find is given a non empty chain");
+    if (node_path.isEmpty() ^ target_labels_orig.isAbsolute()) {
+        isc_throw(isc::BadValue,
+                  "RBTree::find() is given mismatched node chain"
+                  " and label sequence");
     }
 
-    RBNode<T>* node = root_.get();
+    RBNode<T>* node;
+    if (!node_path.isEmpty()) {
+        // Get the top node in the node chain
+        node = const_cast<RBNode<T>*>(node_path.top());
+        // Start searching from its down pointer
+        node = node->getDown();
+    } else {
+        node = root_.get();
+    }
+
     Result ret = NOTFOUND;
     dns::LabelSequence target_labels(target_labels_orig);
 

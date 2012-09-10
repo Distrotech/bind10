@@ -433,6 +433,40 @@ TEST_F(RBTreeTest, callbackLabelSequence) {
     performCallbackTest(rbtree, mem_sgmt_, ls1, ls2);
 }
 
+TEST_F(RBTreeTest, findInSubTree) {
+    // For the version that takes a node chain, the chain must be empty.
+    RBTreeNodeChain<int> chain;
+    bool flag;
+
+    // First, find a sub-tree node
+    const Name n1("w.y.d.e.f");
+    const LabelSequence ls1(n1);
+    RBTree<int>::Result result =
+        rbtree_expose_empty_node.find(ls1, &crbtnode, chain,
+                                      testCallback, &flag);
+    EXPECT_EQ(RBTree<int>::EXACTMATCH, result);
+    EXPECT_EQ(n1, chain.getAbsoluteName());
+
+    // Searching for an absolute label sequence when chain is already
+    // populated should throw.
+    const Name n2a("o");
+    const LabelSequence ls2a(n2a);
+    EXPECT_THROW(rbtree_expose_empty_node.find(ls2a, &crbtnode, chain,
+                                               testCallback, &flag),
+                  isc::BadValue);
+
+    // Now, find "o.w.y.d.e.f." by right-stripping the "w.y.d.e.f."
+    // suffix.
+    const Name n2("o.w.y.d.e.f");
+    LabelSequence ls2(n2);
+    ls2.stripRight(6);
+
+    result = rbtree_expose_empty_node.find(ls2, &crbtnode, chain,
+                                           testCallback, &flag);
+    EXPECT_EQ(RBTree<int>::EXACTMATCH, result);
+    EXPECT_EQ(n2, chain.getAbsoluteName());
+}
+
 TEST_F(RBTreeTest, chainLevel) {
     RBTreeNodeChain<int> chain;
 
