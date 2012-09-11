@@ -15,6 +15,7 @@
 #include "util/interprocess_sync_file.h"
 #include <gtest/gtest.h>
 #include <unistd.h>
+#include <pthread.h>
 
 using namespace std;
 
@@ -104,6 +105,52 @@ TEST(InterprocessSyncFileTest, TestLock) {
 
   EXPECT_TRUE(locker.unlock());
   EXPECT_FALSE(locker.isLocked());
+
+  EXPECT_EQ (0, unlink(TEST_DATA_TOPBUILDDIR "/test_lockfile"));
+}
+
+void*
+test_thread_fn(void* data)
+{
+    bool* locked = static_cast<bool*>(data);
+
+    InterprocessSyncFile sync2("test");
+    InterprocessSyncLocker locker2(sync2);
+
+    *locked = !locker2.tryLock();
+
+    return NULL;
+}
+
+TEST(InterprocessSyncFileTest, TestLockThreaded) {
+  InterprocessSyncFile sync("test");
+  InterprocessSyncLocker locker(sync);
+
+  EXPECT_FALSE(locker.isLocked());
+  EXPECT_TRUE(locker.lock());
+  EXPECT_TRUE(locker.isLocked());
+
+  bool locked_in_other_thread = false;
+
+  // Here, we check that a lock has been taken by creating a new thread
+  // and checking from the new thread that a lock exists. The lock
+  // attempt must fail to pass our check.
+
+  pthread_t thread;
+  pthread_create(&thread, NULL, test_thread_fn, &locked_in_other_thread);
+  pthread_join(thread, NULL);
+
+  EXPECT_TRUE(locked_in_other_thread);
+
+  // Release the lock and try again. This time, the attempt must pass.
+
+  EXPECT_TRUE(locker.unlock());
+  EXPECT_FALSE(locker.isLocked());
+
+  pthread_create(&thread, NULL, test_thread_fn, &locked_in_other_thread);
+  pthread_join(thread, NULL);
+
+  EXPECT_FALSE(locked_in_other_thread);
 
   EXPECT_EQ (0, unlink(TEST_DATA_TOPBUILDDIR "/test_lockfile"));
 }
