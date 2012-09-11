@@ -28,6 +28,9 @@
 #include <assert.h>
 
 namespace {
+// The size_t counts the number of current InterprocessSyncFile
+// objects with the same task name. The pthread_mutex_t is the lock that
+// should be first acquired by every thread when locking.
 typedef std::pair<size_t,pthread_mutex_t> SyncMapData;
 typedef std::map <std::string,SyncMapData*> SyncMap;
 
@@ -48,12 +51,14 @@ InterprocessSyncFile::InterprocessSyncFile(const std::string& task_name) :
     if (it != sync_map.end()) {
         data = it->second;
     } else {
+        // No data was found in the map, so create and insert one.
         data = new SyncMapData;
         data->first = 0;
         pthread_mutex_init(&data->second, NULL);
         sync_map[task_name] = data;
     }
 
+    // Increment number of users for this task_name.
     data->first++;
 
     pthread_mutex_unlock(&sync_map_mutex);
@@ -140,6 +145,7 @@ InterprocessSyncFile::lock() {
         return (true);
     }
 
+    // First grab the thread lock...
     SyncMap::iterator it = sync_map.find(task_name_);
     assert(it != sync_map.end());
 
@@ -148,6 +154,7 @@ InterprocessSyncFile::lock() {
         return (false);
     }
 
+    // ... then the file lock.
     if (do_lock(F_SETLKW, F_WRLCK)) {
         is_locked_ = true;
         return (true);
@@ -163,6 +170,7 @@ InterprocessSyncFile::tryLock() {
         return (true);
     }
 
+    // First grab the thread lock...
     SyncMap::iterator it = sync_map.find(task_name_);
     assert(it != sync_map.end());
 
@@ -171,6 +179,7 @@ InterprocessSyncFile::tryLock() {
         return (false);
     }
 
+    // ... then the file lock.
     if (do_lock(F_SETLK, F_WRLCK)) {
         is_locked_ = true;
         return (true);
@@ -186,10 +195,12 @@ InterprocessSyncFile::unlock() {
         return (true);
     }
 
+    // First release the file lock...
     if (do_lock(F_SETLKW, F_UNLCK) == 0) {
         return (false);
     }
 
+    // ... then the thread lock.
     SyncMap::iterator it = sync_map.find(task_name_);
     assert(it != sync_map.end());
 
