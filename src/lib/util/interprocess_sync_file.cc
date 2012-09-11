@@ -15,6 +15,8 @@
 #include "interprocess_sync_file.h"
 
 #include <string>
+#include <utility>
+#include <map>
 
 #include <stdlib.h>
 #include <string.h>
@@ -22,6 +24,16 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <pthread.h>
+#include <assert.h>
+
+namespace {
+typedef std::pair<size_t,pthread_mutex_t> SyncMapData;
+typedef std::map <std::string,SyncMapData*> SyncMap;
+
+pthread_mutex_t sync_map_mutex = PTHREAD_MUTEX_INITIALIZER;
+SyncMap sync_map;
+}
 
 namespace isc {
 namespace util {
@@ -29,6 +41,22 @@ namespace util {
 InterprocessSyncFile::InterprocessSyncFile(const std::string& task_name) :
     InterprocessSync(task_name), fd_(-1)
 {
+    pthread_mutex_lock(&sync_map_mutex);
+
+    SyncMap::iterator it = sync_map.find(task_name);
+    SyncMapData* data;
+    if (it != sync_map.end()) {
+        data = it->second;
+    } else {
+        data = new SyncMapData;
+        data->first = 0;
+        pthread_mutex_init(&data->second, NULL);
+        sync_map[task_name] = data;
+    }
+
+    data->first++;
+
+    pthread_mutex_unlock(&sync_map_mutex);
 }
 
 InterprocessSyncFile::~InterprocessSyncFile() {
@@ -38,6 +66,23 @@ InterprocessSyncFile::~InterprocessSyncFile() {
         // The lockfile will continue to exist, and we must not delete
         // it.
     }
+
+    pthread_mutex_lock(&sync_map_mutex);
+
+    SyncMap::iterator it = sync_map.find(task_name_);
+    assert(it != sync_map.end());
+
+    SyncMapData* data = it->second;
+    assert(data->first > 0);
+
+    data->first--;
+    if (data->first == 0) {
+        sync_map.erase(it);
+        pthread_mutex_destroy(&data->second);
+        delete data;
+    }
+
+    pthread_mutex_unlock(&sync_map_mutex);
 }
 
 bool
@@ -95,11 +140,20 @@ InterprocessSyncFile::lock() {
         return (true);
     }
 
+    SyncMap::iterator it = sync_map.find(task_name_);
+    assert(it != sync_map.end());
+
+    SyncMapData* data = it->second;
+    if (pthread_mutex_lock(&data->second) != 0) {
+        return (false);
+    }
+
     if (do_lock(F_SETLKW, F_WRLCK)) {
         is_locked_ = true;
         return (true);
     }
 
+    pthread_mutex_unlock(&data->second);
     return (false);
 }
 
@@ -109,11 +163,20 @@ InterprocessSyncFile::tryLock() {
         return (true);
     }
 
+    SyncMap::iterator it = sync_map.find(task_name_);
+    assert(it != sync_map.end());
+
+    SyncMapData* data = it->second;
+    if (pthread_mutex_trylock(&data->second) != 0) {
+        return (false);
+    }
+
     if (do_lock(F_SETLK, F_WRLCK)) {
         is_locked_ = true;
         return (true);
     }
 
+    pthread_mutex_unlock(&data->second);
     return (false);
 }
 
@@ -123,12 +186,20 @@ InterprocessSyncFile::unlock() {
         return (true);
     }
 
-    if (do_lock(F_SETLKW, F_UNLCK)) {
-        is_locked_ = false;
-        return (true);
+    if (do_lock(F_SETLKW, F_UNLCK) == 0) {
+        return (false);
     }
 
-    return (false);
+    SyncMap::iterator it = sync_map.find(task_name_);
+    assert(it != sync_map.end());
+
+    SyncMapData* data = it->second;
+    if (pthread_mutex_unlock(&data->second) != 0) {
+        return (false);
+    }
+
+    is_locked_ = false;
+    return (true);
 }
 
 } // namespace util
