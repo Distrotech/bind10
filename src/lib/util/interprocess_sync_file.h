@@ -55,9 +55,7 @@ public:
     /// \param name Name of the synchronization task. This has to be
     /// identical among the various processes that need to be
     /// synchronized for the same task.
-    InterprocessSyncFile(const std::string& task_name) :
-        InterprocessSync(task_name), fd_(-1)
-    {}
+    InterprocessSyncFile(const std::string& task_name);
 
     /// \brief Destructor
     virtual ~InterprocessSyncFile();

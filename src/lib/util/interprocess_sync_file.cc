@@ -26,6 +26,11 @@
 namespace isc {
 namespace util {
 
+InterprocessSyncFile::InterprocessSyncFile(const std::string& task_name) :
+    InterprocessSync(task_name), fd_(-1)
+{
+}
+
 InterprocessSyncFile::~InterprocessSyncFile() {
     if (fd_ != -1) {
         // This will also release any applied locks.
