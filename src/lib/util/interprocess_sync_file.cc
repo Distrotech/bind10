@@ -32,7 +32,7 @@ namespace {
 // objects with the same task name. The pthread_mutex_t is the lock that
 // should be first acquired by every thread when locking.
 typedef std::pair<size_t,pthread_mutex_t> SyncMapData;
-typedef std::map <std::string,SyncMapData*> SyncMap;
+typedef std::map<std::string,SyncMapData*> SyncMap;
 
 pthread_mutex_t sync_map_mutex = PTHREAD_MUTEX_INITIALIZER;
 SyncMap sync_map;
