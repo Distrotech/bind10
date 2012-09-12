@@ -50,7 +50,7 @@ using isc::statistics::Counter;
 using isc::auth::statistics::Counters;
 void
 fillNodes(const Counter& counter, const char* const nodename[], const size_t size,
-          const std::string& prefix, Counters::ItemTreeType& trees)
+          const std::string& prefix, Counters::item_tree_type& trees)
 {
     using namespace isc::data;
     for (size_t i = 0; i < size; ++i) {
@@ -70,24 +70,16 @@ public:
     CountersImpl();
     ~CountersImpl();
     void inc(const QRAttributes& qrattrs, const Message& response);
-    Counters::ItemTreeType
-        get(const Counters::ItemNodeNameSetType& trees) const;
+    Counters::item_tree_type
+        get(const Counters::item_node_name_set_type& trees) const;
     // Currently for testing purpose only
-    Counters::ItemTreeType dump() const;
-    bool submitStatistics() const;
-    void setStatisticsSession(isc::cc::AbstractSession* statistics_session);
-    void registerStatisticsValidator (Counters::validator_type validator);
-    // Currently for testing purpose only
+    Counters::item_tree_type dump() const;
 private:
     // counter for server
     Counter server_qr_counter_;
     Counter server_socket_counter_;
     // set of counters for zones
     CounterDictionary zone_qr_counters_;
-    // statistics session
-    isc::cc::AbstractSession* statistics_session_;
-    // validator
-    Counters::validator_type validator_;
 };
 
 CountersImpl::CountersImpl() :
@@ -96,9 +88,7 @@ CountersImpl::CountersImpl() :
     // size of server_socket_counter_: SOCKET_COUNTER_TYPES
     server_qr_counter_(QR_COUNTER_TYPES),
     server_socket_counter_(SOCKET_COUNTER_TYPES),
-    zone_qr_counters_(QR_COUNTER_TYPES),
-    statistics_session_(NULL),
-    validator_()
+    zone_qr_counters_(QR_COUNTER_TYPES)
 {}
 
 CountersImpl::~CountersImpl()
@@ -239,95 +229,13 @@ CountersImpl::inc(const QRAttributes& qrattrs, const Message& response) {
     }
 }
 
-bool
-CountersImpl::submitStatistics() const {
-    if (statistics_session_ == NULL) {
-        LOG_ERROR(auth_logger, AUTH_NO_STATS_SESSION);
-        return (false);
-    }
-    std::stringstream statistics_string;
-    // add pid in order for stats to identify which auth sends
-    // statistics in the situation that multiple auth instances are
-    // working
-    statistics_string << "{\"command\": [\"set\","
-                      <<   "{ \"owner\": \"Auth\","
-                      <<   "  \"pid\":" << getpid()
-                      <<   ", \"data\":"
-                      <<     "{ \"queries.udp\": "
-                      <<     server_qr_counter_.get(QR_REQUEST_UDP)
-                      <<     ", \"queries.tcp\": "
-                      <<     server_qr_counter_.get(QR_REQUEST_TCP);
-    // Insert non 0 Opcode counters.
-    for (int i = QR_OPCODE_QUERY; i <= QR_OPCODE_OTHER; ++i) {
-        const Counter::Type counter = server_qr_counter_.get(i);
-        if (counter != 0) {
-            statistics_string << ", \"" << QRCounterItemName[i] << "\": "
-                              << counter;
-        }
-    }
-    // Insert non 0 Rcode counters.
-    for (int i = QR_RCODE_NOERROR; i <= QR_RCODE_OTHER; ++i) {
-        const Counter::Type counter = server_qr_counter_.get(i);
-        if (counter != 0) {
-            statistics_string << ", \"" << QRCounterItemName[i] << "\": "
-                              << counter;
-        }
-    }
-    statistics_string <<   " }"
-                      <<   "}"
-                      << "]}";
-    isc::data::ConstElementPtr statistics_element =
-        isc::data::Element::fromJSON(statistics_string);
-    // validate the statistics data before send
-    if (validator_) {
-        if (!validator_(
-                statistics_element->get("command")->get(1)->get("data"))) {
-            LOG_ERROR(auth_logger, AUTH_INVALID_STATISTICS_DATA);
-            return (false);
-        }
-    }
-    try {
-        // group_{send,recv}msg() can throw an exception when encountering
-        // an error, and group_recvmsg() will throw an exception on timeout.
-        // We don't want to kill the main server just due to this, so we
-        // handle them here.
-        const int seq =
-            statistics_session_->group_sendmsg(statistics_element, "Stats");
-        isc::data::ConstElementPtr env, answer;
-        // TODO: parse and check response from statistics module
-        // currently it just returns empty message
-        statistics_session_->group_recvmsg(env, answer, false, seq);
-    } catch (const isc::cc::SessionError& ex) {
-        LOG_ERROR(auth_logger, AUTH_STATS_COMMS).arg(ex.what());
-        return (false);
-    } catch (const isc::cc::SessionTimeout& ex) {
-        LOG_ERROR(auth_logger, AUTH_STATS_TIMEOUT).arg(ex.what());
-        return (false);
-    }
-    return (true);
-}
-
-void
-CountersImpl::setStatisticsSession
-    (isc::cc::AbstractSession* statistics_session)
-{
-    statistics_session_ = statistics_session;
-}
-
-void
-CountersImpl::registerStatisticsValidator
-    (Counters::validator_type validator)
-{
-    validator_ = validator;
-}
-
-Counters::ItemTreeType
-CountersImpl::get(const Counters::ItemNodeNameSetType& trees) const {
+Counters::item_tree_type
+CountersImpl::get(const Counters::item_node_name_set_type& trees) const {
     using namespace isc::data;
 
-    Counters::ItemTreeType item_tree = Element::createMap();
+    Counters::item_tree_type item_tree = Element::createMap();
 
-    BOOST_FOREACH(const Counters::ItemNodeNameType& node, trees) {
+    BOOST_FOREACH(const Counters::item_node_name_type& node, trees) {
         if (node == "auth.server.qr") {
             fillNodes(server_qr_counter_, QRCounterItemName, QR_COUNTER_TYPES,
                       "auth.server.qr.", item_tree);
@@ -346,11 +254,11 @@ CountersImpl::get(const Counters::ItemNodeNameSetType& trees) const {
 }
 
 // Currently for testing purpose only
-Counters::ItemTreeType
+Counters::item_tree_type
 CountersImpl::dump() const {
     using namespace isc::data;
 
-    Counters::ItemTreeType item_tree = Element::createMap();
+    Counters::item_tree_type item_tree = Element::createMap();
 
     fillNodes(server_qr_counter_, QRCounterItemName, QR_COUNTER_TYPES,
               "auth.server.qr.", item_tree);
@@ -368,31 +276,14 @@ Counters::inc(const QRAttributes& qrattrs, const Message& response) {
     impl_->inc(qrattrs, response);
 }
 
-Counters::ItemTreeType
-Counters::get(const Counters::ItemNodeNameSetType& trees) const {
+Counters::item_tree_type
+Counters::get(const Counters::item_node_name_set_type& trees) const {
     return (impl_->get(trees));
 }
 
-Counters::ItemTreeType
+Counters::item_tree_type
 Counters::dump() const {
     return (impl_->dump());
-}
-
-bool
-Counters::submitStatistics() const {
-    return (impl_->submitStatistics());
-}
-
-void
-Counters::setStatisticsSession (isc::cc::AbstractSession* statistics_session) {
-    impl_->setStatisticsSession(statistics_session);
-}
-
-void
-Counters::registerStatisticsValidator
-    (Counters::validator_type validator) const
-{
-    return (impl_->registerStatisticsValidator(validator));
 }
 
 } // namespace statistics

@@ -167,12 +167,9 @@ QRAttributes::setResponseTruncated(const bool is_truncated) {
 /// statistics module.
 ///
 /// This class is designed to be a part of \c AuthSrv.
-/// Call \c setStatisticsSession() to set a session to communicate with
-/// statistics module like Xfrin session.
 /// Call \c inc() to increment a counter for the query.
-/// Call \c submitStatistics() to submit statistics information to statistics
-/// module with statistics_session, periodically or at a time the command
-/// \c sendstats is received.
+/// Call \c get() to get statistics information to send to statistics module
+/// when the command \c getstats is received.
 ///
 /// We may eventually want to change the structure to hold values that are
 /// not counters (such as concurrent TCP connections), or seperate generic
@@ -209,57 +206,19 @@ public:
     ///
     void inc(const QRAttributes& qrattrs, const isc::dns::Message& response);
 
-    /// \brief Submit statistics counters to statistics module.
-    ///
-    /// This method is desinged to be called periodically
-    /// with \c asio_link::StatisticsSendTimer, or arbitrary
-    /// by the command 'sendstats'.
-    ///
-    /// Note: Set the session to communicate with statistics module
-    /// by \c setStatisticsSession() before calling \c submitStatistics().
-    ///
-    /// This method is mostly exception free (error conditions are
-    /// represented via the return value). But it may still throw
-    /// a standard exception if memory allocation fails inside the method.
-    ///
-    /// \return true on success, false on error.
-    ///
-    /// \todo Do not block message handling in auth_srv while submitting
-    /// statistics data.
-    ///
-    bool submitStatistics() const;
-
-    /// \brief Set the session to communicate with Statistics
-    /// module.
-    ///
-    /// This method never throws an exception.
-    ///
-    /// Note: this interface is tentative.  We'll revisit the ASIO and session
-    /// frameworks, at which point the session will probably be passed on
-    /// construction of the server.
-    ///
-    /// Ownership isn't transferred: the caller is responsible for keeping
-    /// this object to be valid while the server object is working and for
-    /// disconnecting the session and destroying the object when the server
-    /// is shutdown.
-    ///
-    /// \param statistics_session A pointer to the session
-    ///
-    void setStatisticsSession(isc::cc::AbstractSession* statistics_session);
-
     /// \brief item node name
     ///
-    typedef std::string ItemNodeNameType;
+    typedef std::string item_node_name_type;
 
     /// \brief item node set
     ///
-    typedef std::set<ItemNodeNameType> ItemNodeNameSetType;
+    typedef std::set<item_node_name_type> item_node_name_set_type;
 
     /// \brief A type of statistics item tree in isc::data::MapElement.
     ///        { item_name => item_value, item_name => item_value, ... }
     ///        item_name is a string seperated by '.'.
     ///        item_value is an integer.
-    typedef isc::data::ElementPtr ItemTreeType;
+    typedef isc::data::ElementPtr item_tree_type;
 
     /// \brief Get the values of specified statistics counters.
     ///
@@ -276,7 +235,7 @@ public:
     ///
     /// \return A tree of statistics items formatted in a map.
     ///         { item_name => item_value, item_name => item_value, ... }
-    ItemTreeType get(const ItemNodeNameSetType& items) const;
+    item_tree_type get(const item_node_name_set_type& items) const;
 
     /// \brief Dump the values of all statistics counters.
     ///
@@ -286,27 +245,7 @@ public:
     ///
     /// \return A tree of statistics items formatted in a map.
     ///         { item_name => item_value, item_name => item_value, ... }
-    ItemTreeType dump() const;
-
-    /// \brief A type of validation function for the specification in
-    /// isc::config::ModuleSpec.
-    ///
-    /// This type might be useful for not only statistics
-    /// specificatoin but also for config_data specification and for
-    /// command.
-    ///
-    typedef boost::function<bool(const isc::data::ConstElementPtr&)>
-    validator_type;
-
-    /// \brief Register a function type of the statistics validation
-    /// function for Counters.
-    ///
-    /// This method never throws an exception.
-    ///
-    /// \param validator A function type of the validation of
-    /// statistics specification.
-    ///
-    void registerStatisticsValidator(Counters::validator_type validator) const;
+    item_tree_type dump() const;
 };
 
 } // namespace statistics

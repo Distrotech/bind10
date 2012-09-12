@@ -17,7 +17,6 @@
 
 #include <string>
 
-#include <cc/data.h>
 #include <config/ccsession.h>
 #include <datasrc/factory.h>
 #include <dns/message.h>
@@ -202,57 +201,6 @@ public:
     ///
     void setXfrinSession(isc::cc::AbstractSession* xfrin_session);
 
-    /// \brief Set the communication session with Statistics.
-    ///
-    /// This function never throws an exception as far as
-    /// Counters::setStatisticsSession() doesn't throw.
-    ///
-    /// Note: this interface is tentative.  We'll revisit the ASIO and
-    /// session frameworks, at which point the session will probably
-    /// be passed on construction of the server.
-    ///
-    /// \param statistics_session A Session object over which statistics
-    /// information is exchanged with statistics module.
-    /// The session must be established before setting in the server
-    /// object.
-    /// Ownership isn't transferred: the caller is responsible for keeping
-    /// this object to be valid while the server object is working and for
-    /// disconnecting the session and destroying the object when the server
-    /// is shutdown.
-    void setStatisticsSession(isc::cc::AbstractSession* statistics_session);
-
-    /// Return the interval of periodic submission of statistics in seconds.
-    ///
-    /// If the statistics submission is disabled, it returns 0.
-    ///
-    /// This method never throws an exception.
-    uint32_t getStatisticsTimerInterval() const;
-
-    /// Set the interval of periodic submission of statistics.
-    ///
-    /// If the specified value is non 0, the \c AuthSrv object will submit
-    /// its statistics to the statistics module every \c interval seconds.
-    /// If it's 0, and \c AuthSrv currently submits statistics, the submission
-    /// will be disabled. \c interval must be equal to or shorter than 86400
-    /// seconds (1 day).
-    ///
-    /// This method should normally not throw an exception; however, its
-    /// underlying library routines may involve resource allocation, and
-    /// when it fails it would result in a corresponding standard exception.
-    ///
-    /// \param interval The submission interval in seconds if non 0;
-    /// or a value of 0 to disable the submission.
-    void setStatisticsTimerInterval(uint32_t interval);
-
-    /// \brief Submit statistics counters to statistics module.
-    ///
-    /// This function can throw an exception from
-    /// Counters::submitStatistics().
-    ///
-    /// \return true on success, false on failure (e.g. session timeout,
-    /// session error).
-    bool submitStatistics() const;
-
     /// \brief Get the values of specified statistics counters.
     ///
     /// This function returns names and values of counter specified with
@@ -269,8 +217,8 @@ public:
     /// \return A tree of statistics items formatted in a map.
     ///         { item_name => item_value, item_name => item_value, ... }
     ///         See statistics.h for detail.
-    isc::auth::statistics::Counters::ItemTreeType getStatistics(
-        const isc::auth::statistics::Counters::ItemNodeNameSetType& items)
+    isc::auth::statistics::Counters::item_tree_type getStatistics(
+        const isc::auth::statistics::Counters::item_node_name_set_type& items)
         const;
 
     /// \brief Dump the values of all statistics counters.
@@ -282,7 +230,7 @@ public:
     /// \return A tree of statistics items formatted in a map.
     ///         { item_name => item_value, item_name => item_value, ... }
     ///         See statistics.h for detail.
-    isc::auth::statistics::Counters::ItemTreeType dumpStatistics() const;
+    isc::auth::statistics::Counters::item_tree_type dumpStatistics() const;
 
     /**
      * \brief Set and get the addresses we listen on.
@@ -348,6 +296,16 @@ public:
     /// \return List of classes for which a non-NULL client list
     ///     has been set by setClientList.
     std::vector<isc::dns::RRClass> getClientListClasses() const;
+
+    /// \brief Sets the timeout for incoming TCP connections
+    ///
+    /// Incoming TCP connections that have not sent their data
+    /// withing this time are dropped.
+    ///
+    /// \param timeout The timeout (in milliseconds). If se to
+    /// zero, no timeouts are used, and the connection will remain
+    /// open forever.
+    void setTCPRecvTimeout(size_t timeout);
 
 private:
     AuthSrvImpl* impl_;

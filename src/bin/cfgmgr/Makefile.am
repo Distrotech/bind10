@@ -10,12 +10,19 @@ b10_cfgmgrdir = @localstatedir@/@PACKAGE@
 #B10_cfgmgr_DATA = 
 
 man_MANS = b10-cfgmgr.8
+DISTCLEANFILES = $(man_MANS)
 EXTRA_DIST = $(man_MANS) b10-cfgmgr.xml
 
-if ENABLE_MAN
+if GENERATE_DOCS
 
 b10-cfgmgr.8: b10-cfgmgr.xml
-	xsltproc --novalid --xinclude --nonet -o $@ http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $(srcdir)/b10-cfgmgr.xml
+	@XSLTPROC@ --novalid --xinclude --nonet -o $@ http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $(srcdir)/b10-cfgmgr.xml
+
+else
+
+$(man_MANS):
+	@echo Man generation disabled.  Creating dummy $@.  Configure with --enable-generate-docs to enable it.
+	@echo Man generation disabled.  Remove this file, configure with --enable-generate-docs, and rebuild BIND 10 > $@
 
 endif
 
@@ -26,8 +33,9 @@ b10-cfgmgr: b10-cfgmgr.py
 
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)/@localstatedir@/@PACKAGE@
-# TODO: permissions handled later
 
+install-data-hook:
+	-chmod 2770 $(DESTDIR)/@localstatedir@/@PACKAGE@
 
 CLEANDIRS = __pycache__
 

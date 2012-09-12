@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT(bind10-devel, 20120712, bind10-dev@isc.org)
+AC_INIT(bind10-devel, 20120817, bind10-dev@isc.org)
 AC_CONFIG_SRCDIR(README)
 AM_INIT_AUTOMAKE
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])dnl be backward compatible
@@ -809,6 +809,17 @@ AC_TRY_COMPILE([
  CPPFLAGS_BOOST_THREADCONF="-DBOOST_DISABLE_THREADS=1"],
 [AC_MSG_RESULT(yes)])
 
+# Boost offset_ptr is required in one library (not optional right now), and
+# it's known it doesn't compile on some platforms, depending on boost version,
+# its local configuration, and compiler.
+AC_MSG_CHECKING([Boost offset_ptr compiles])
+AC_TRY_COMPILE([
+#include <boost/interprocess/offset_ptr.hpp>
+],,
+[AC_MSG_RESULT(yes)],
+[AC_MSG_RESULT(no)
+ AC_MSG_ERROR([Failed to compile a required header file.  Try upgrading Boost to 1.44 or higher (when using clang++) or specifying --without-werror.  See the ChangeLog entry for Trac no. 2147 for more details.])])
+
 CPPFLAGS="$CPPFLAGS_SAVES $CPPFLAGS_BOOST_THREADCONF"
 AC_SUBST(BOOST_INCLUDES)
 
@@ -1016,10 +1027,32 @@ AC_SUBST(PERL)
 AC_PATH_PROGS(AWK, gawk awk)
 AC_SUBST(AWK)
 
-AC_ARG_ENABLE(man, [AC_HELP_STRING([--enable-man],
-  [regenerate man pages [default=no]])], enable_man=$enableval, enable_man=no)
+AC_ARG_ENABLE(generate_docs, [AC_HELP_STRING([--enable-generate-docs],
+  [regenerate documentation using Docbook [default=no]])],
+  enable_generate_docs=$enableval, enable_generate_docs=no)
 
-AM_CONDITIONAL(ENABLE_MAN, test x$enable_man != xno)
+# Check for xsltproc
+if test "x$enable_generate_docs" != xno ; then
+  AC_PATH_PROG([XSLTPROC], [xsltproc])
+  if test -z "$XSLTPROC"; then
+    AC_MSG_ERROR("xsltproc not found; it is required for --enable-generate-docs")
+  else
+    AC_MSG_CHECKING([if $XSLTPROC works])
+    # run xsltproc to see if works
+    $XSLTPROC --novalid --xinclude --nonet http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl
+    if test $? -ne 0 ; then
+      AC_MSG_ERROR("Error with $XSLTPROC using release/xsl/current/manpages/docbook.xsl")
+    fi
+    $XSLTPROC --novalid --xinclude --nonet http://docbook.sourceforge.net/release/xsl/current/html/docbook.xsl
+    if test $? -ne 0 ; then
+      AC_MSG_ERROR("Error with $XSLTPROC using release/xsl/current/html/docbook.xsl")
+    fi
+    AC_MSG_RESULT(yes)
+  fi
+fi
+
+
+AM_CONDITIONAL(GENERATE_DOCS, test x$enable_generate_docs != xno)
 
 AC_ARG_ENABLE(install-configurations,
   [AC_HELP_STRING([--disable-install-configurations],
@@ -1078,7 +1111,7 @@ AC_CONFIG_FILES([Makefile
                  src/bin/dhcp4/tests/Makefile
                  src/bin/resolver/Makefile
                  src/bin/resolver/tests/Makefile
-                 src/bin/showtech/Makefile
+                 src/bin/sysinfo/Makefile
                  src/bin/sockcreator/Makefile
                  src/bin/sockcreator/tests/Makefile
                  src/bin/xfrin/Makefile
@@ -1090,6 +1123,7 @@ AC_CONFIG_FILES([Makefile
                  src/bin/zonemgr/tests/Makefile
                  src/bin/stats/Makefile
                  src/bin/stats/tests/Makefile
+                 src/bin/stats/tests/testdata/Makefile
                  src/bin/usermgr/Makefile
                  src/bin/tests/Makefile
                  src/lib/Makefile
@@ -1154,6 +1188,7 @@ AC_CONFIG_FILES([Makefile
                  src/lib/datasrc/Makefile
                  src/lib/datasrc/memory/Makefile
                  src/lib/datasrc/memory/tests/Makefile
+                 src/lib/datasrc/memory/benchmarks/Makefile
                  src/lib/datasrc/tests/Makefile
                  src/lib/datasrc/tests/testdata/Makefile
                  src/lib/xfr/Makefile
@@ -1216,7 +1251,7 @@ AC_OUTPUT([doc/version.ent
            src/bin/zonemgr/zonemgr.spec.pre
            src/bin/zonemgr/tests/zonemgr_test
            src/bin/zonemgr/run_b10-zonemgr.sh
-           src/bin/showtech/showtech.py
+           src/bin/sysinfo/sysinfo.py
            src/bin/stats/stats.py
            src/bin/stats/stats_httpd.py
            src/bin/bind10/bind10_src.py
@@ -1363,7 +1398,7 @@ Developer:
   C++ Code Coverage: $USE_LCOV
   Python Code Coverage: $USE_PYCOVERAGE
   Logger checks: $enable_logger_checks
-  Generate Manuals: $enable_man
+  Generate Documentation: $enable_generate_docs
 
 END
 
