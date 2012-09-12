@@ -22,8 +22,7 @@
 #include <cc/data.h>
 #include <cc/session.h>
 
-#include <statistics/counter.h>
-#include <statistics/counter_dict.h>
+#include <boost/foreach.hpp>
 
 #include <algorithm>
 #include <cctype>
@@ -31,9 +30,6 @@
 #include <string>
 #include <sstream>
 #include <iostream>
-
-#include <boost/noncopyable.hpp>
-#include <boost/foreach.hpp>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -46,7 +42,6 @@ using namespace isc::auth;
 using namespace isc::statistics;
 
 namespace {
-using isc::statistics::Counter;
 using isc::auth::statistics::Counters;
 void
 fillNodes(const Counter& counter, const char* const nodename[], const size_t size,
@@ -65,24 +60,7 @@ namespace isc {
 namespace auth {
 namespace statistics {
 
-class CountersImpl : boost::noncopyable {
-public:
-    CountersImpl();
-    ~CountersImpl();
-    void inc(const QRAttributes& qrattrs, const Message& response);
-    Counters::item_tree_type
-        get(const Counters::item_node_name_set_type& trees) const;
-    // Currently for testing purpose only
-    Counters::item_tree_type dump() const;
-private:
-    // counter for server
-    Counter server_qr_counter_;
-    Counter server_socket_counter_;
-    // set of counters for zones
-    CounterDictionary zone_qr_counters_;
-};
-
-CountersImpl::CountersImpl() :
+Counters::Counters() :
     // initialize counter
     // size of server_qr_counter_, zone_qr_counters_: QR_COUNTER_TYPES
     // size of server_socket_counter_: SOCKET_COUNTER_TYPES
@@ -91,11 +69,11 @@ CountersImpl::CountersImpl() :
     zone_qr_counters_(QR_COUNTER_TYPES)
 {}
 
-CountersImpl::~CountersImpl()
+Counters::~Counters()
 {}
 
 void
-CountersImpl::inc(const QRAttributes& qrattrs, const Message& response) {
+Counters::inc(const QRAttributes& qrattrs, const Message& response) {
     // protocols carrying request
     if (qrattrs.req_ip_version_ == AF_INET) {
         server_qr_counter_.inc(QR_REQUEST_IPV4);
@@ -230,7 +208,7 @@ CountersImpl::inc(const QRAttributes& qrattrs, const Message& response) {
 }
 
 Counters::item_tree_type
-CountersImpl::get(const Counters::item_node_name_set_type& trees) const {
+Counters::get(const Counters::item_node_name_set_type& trees) const {
     using namespace isc::data;
 
     Counters::item_tree_type item_tree = Element::createMap();
@@ -255,7 +233,7 @@ CountersImpl::get(const Counters::item_node_name_set_type& trees) const {
 
 // Currently for testing purpose only
 Counters::item_tree_type
-CountersImpl::dump() const {
+Counters::dump() const {
     using namespace isc::data;
 
     Counters::item_tree_type item_tree = Element::createMap();
@@ -264,26 +242,6 @@ CountersImpl::dump() const {
               "auth.server.qr.", item_tree);
 
     return (item_tree);
-}
-
-Counters::Counters() : impl_(new CountersImpl())
-{}
-
-Counters::~Counters() {}
-
-void
-Counters::inc(const QRAttributes& qrattrs, const Message& response) {
-    impl_->inc(qrattrs, response);
-}
-
-Counters::item_tree_type
-Counters::get(const Counters::item_node_name_set_type& trees) const {
-    return (impl_->get(trees));
-}
-
-Counters::item_tree_type
-Counters::dump() const {
-    return (impl_->dump());
 }
 
 } // namespace statistics

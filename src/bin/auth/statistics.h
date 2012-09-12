@@ -19,17 +19,19 @@
 
 #include <dns/message.h>
 
+#include <statistics/counter.h>
+#include <statistics/counter_dict.h>
+
+#include <boost/noncopyable.hpp>
+
 #include <string>
 #include <set>
 
 #include <stdint.h>
-#include <boost/scoped_ptr.hpp>
 
 namespace isc {
 namespace auth {
 namespace statistics {
-
-class CountersImpl;
 
 class QRAttributes {
 /// \brief Query/Response attributes for statistics.
@@ -38,8 +40,8 @@ class QRAttributes {
 /// for statistics data collection.
 ///
 /// This class does not have getter methods since it exposes private members
-/// to \c CountersImpl directly.
-friend class CountersImpl;
+/// to \c Counters directly.
+friend class Counters;
 private:
     // request attributes
     int req_ip_version_;            // IP version
@@ -96,6 +98,9 @@ public:
     /// \brief Set if the response is truncated.
     /// \throw None
     inline void setResponseTruncated(const bool is_truncated);
+    /// \brief Reset attributes.
+    /// \throw None
+    inline void reset();
 };
 
 inline QRAttributes::QRAttributes() :
@@ -157,6 +162,22 @@ QRAttributes::setResponseTruncated(const bool is_truncated) {
     res_is_truncated_ = is_truncated;
 }
 
+inline void
+QRAttributes::reset() {
+    req_ip_version_ = 0;
+    req_transport_protocol_ = 0;
+    req_opcode_ = 0;
+    req_is_edns_0_ = false;
+    req_is_edns_badver_ = false;
+    req_is_dnssec_ok_ = false;
+    req_is_tsig_ = false;
+    req_is_sig0_ = false;
+    req_is_badsig_ = false;
+    zone_origin_.clear();
+    answer_sent_ = false;
+    res_is_truncated_ = false;
+}
+
 /// \brief Set of query counters.
 ///
 /// \c Counters is set of query counters class. It holds query counters
@@ -181,9 +202,13 @@ QRAttributes::setResponseTruncated(const bool is_truncated) {
 ///
 /// \todo Hold counters for each query types (Notify, Axfr, Ixfr, Normal)
 /// \todo Consider overhead of \c Counters::inc()
-class Counters {
+class Counters : boost::noncopyable {
 private:
-    boost::scoped_ptr<CountersImpl> impl_;
+    // counter for server
+    isc::statistics::Counter server_qr_counter_;
+    isc::statistics::Counter server_socket_counter_;
+    // set of counters for zones
+    isc::statistics::CounterDictionary zone_qr_counters_;
 public:
     /// The constructor.
     ///
