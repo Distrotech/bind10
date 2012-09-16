@@ -25,11 +25,10 @@ for pytest in ${PYTESTS}
         fi
     done
 
-echo partial python cc / Debug
+echo python cc / Debug
 export PYTHONPATH=${CPYTHONPATH}
-#export BIND10_TEST_SOCKET_FILE=
-#PYTESTS='message_test.py data_test.py session_test.py'
-PYTESTS='message_test.py data_test.py'
+export BIND10_TEST_SOCKET_FILE=v4_12345
+PYTESTS='message_test.py data_test.py session_test.py'
 for pytest in ${PYTESTS}
     do
         echo ${pytest}
@@ -39,17 +38,16 @@ for pytest in ${PYTESTS}
         fi
     done
 
-echo partial python config / Debug
+echo python config / Debug
 export PYTHONPATH="${CPYTHONPATH};${BIND10HOME}/src/lib/python/isc/config"
 export B10_LOCKFILE_DIR_FROM_BUILD=${BIND10HOME}
 export B10_TEST_PLUGIN_DIR=${BIND10HOME}/src/bin/cfgmgr/plugins
 export CONFIG_TESTDATA_PATH=${BIND10HOME}/src/lib/config/tests/testdata
 export CONFIG_WR_TESTDATA_PATH=${BIND10HOME}/src/lib/config/tests/testdata
-#PYTESTS='ccsession_test.py
-#    cfgmgr_test.py
-#    config_data_test.py
-#    module_spec_test.py'
-PYTESTS='config_data_test.py module_spec_test.py'
+PYTESTS='ccsession_test.py
+    cfgmgr_test.py
+    config_data_test.py
+    module_spec_test.py'
 for pytest in ${PYTESTS}
     do
         echo ${pytest}
@@ -118,10 +116,9 @@ PYTESTS='socketsession_test.py'
 #        fi
 #    done
 
-echo partial python util / Debug
+echo python util / Debug
 export PYTHONPATH=${CPYTHONPATH}
-#PYTESTS='process_test.py socketserver_mixin_test.py file_test.py'
-PYTESTS='process_test.py socketserver_mixin_test.py'
+PYTESTS='process_test.py socketserver_mixin_test.py file_test_win32.py'
 for pytest in ${PYTESTS}
     do
         echo ${pytest}

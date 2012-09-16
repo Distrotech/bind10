@@ -2,10 +2,8 @@
 
 @echo off
 
-setlocal
-c:\cygwin\bin\cygpath -w %BIND10HOME% | set /p b10home=
-c:\cygwin\bin\cygpath -w %BIND10HOME%/.. | set /p b10parent=
-endlocal
+for /f %%p in ('c:\cygwin\bin\cygpath -w %BIND10HOME%') do set b10home=%%p
+for /f %%p in ('c:\cygwin\bin\cygpath -w %BIND10HOME%/..') do set b10parent=%%p
 
 set B10_FROM_BUILD=%BIND10HOME%
 set VSVER=VS2010

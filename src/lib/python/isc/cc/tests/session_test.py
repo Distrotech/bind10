@@ -19,7 +19,9 @@
 
 import unittest
 import os
+import sys
 from isc.cc.session import *
+import isc.util.socketspec
 
 # our fake socket, where we can read and insert messages
 class MySocket():
@@ -389,24 +391,27 @@ class testSession(unittest.TestCase):
         if "BIND10_TEST_SOCKET_FILE" not in os.environ:
             self.assertEqual("", "This test can only run if the value BIND10_TEST_SOCKET_FILE is set in the environment")
         TEST_SOCKET_FILE = os.environ["BIND10_TEST_SOCKET_FILE"]
+        af, address = isc.util.socketspec.parse(TEST_SOCKET_FILE)
 
         # create a read domain socket to pass into the session
-        s1 = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        if os.path.exists(TEST_SOCKET_FILE):
-            os.remove(TEST_SOCKET_FILE)
-        s1.bind(TEST_SOCKET_FILE)
+        s1 = socket.socket(af, socket.SOCK_STREAM)
+        if sys.platform != 'win32':
+            if os.path.exists(TEST_SOCKET_FILE):
+                os.remove(TEST_SOCKET_FILE)
+        s1.bind(address)
 
         try:
             s1.listen(1)
 
-            s2 = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            s2.connect(TEST_SOCKET_FILE)
+            s2 = socket.socket(af, socket.SOCK_STREAM)
+            s2.connect(address)
             sess = MySession(1, s2)
             # set timeout to 100 msec, so test does not take too long
             sess.set_timeout(100)
             self.assertRaises(SessionTimeout, sess.group_recvmsg, False)
         finally:
-            os.remove(TEST_SOCKET_FILE)
+            if sys.platform != 'win32':
+                os.remove(TEST_SOCKET_FILE)
 
 if __name__ == "__main__":
     unittest.main()

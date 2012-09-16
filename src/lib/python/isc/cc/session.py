@@ -22,6 +22,7 @@ import threading
 import bind10_config
 
 import isc.cc.message
+import isc.util.socketspec
 
 class ProtocolError(Exception): pass
 class NetworkError(Exception): pass
@@ -31,7 +32,7 @@ class SessionTimeout(Exception): pass
 class Session:
     MSGQ_DEFAULT_TIMEOUT = 4000
     
-    def __init__(self, socket_file=None):
+    def __init__(self, socket_name=None):
         self._socket = None
         self._lname = None
         self._sequence = 1
@@ -42,17 +43,18 @@ class Session:
         self._recv_len_size = 0
         self._recv_size = 0
 
-        if socket_file is None:
+        if socket_name is None:
             if "BIND10_MSGQ_SOCKET_FILE" in os.environ:
-                self.socket_file = os.environ["BIND10_MSGQ_SOCKET_FILE"]
+                self.socket_name = os.environ["BIND10_MSGQ_SOCKET_FILE"]
             else:
-                self.socket_file = bind10_config.BIND10_MSGQ_SOCKET_FILE
+                self.socket_name = bind10_config.BIND10_MSGQ_SOCKET_FILE
         else:
-            self.socket_file = socket_file
+            self.socket_name = socket_name
 
         try:
-            self._socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            self._socket.connect(self.socket_file)
+            af, address = isc.util.socketspec.parse(self.socket_name)
+            self._socket = socket.socket(af, socket.SOCK_STREAM)
+            self._socket.connect(address)
             self.sendmsg({ "type": "getlname" })
             env, msg = self.recvmsg(False)
             if not env:

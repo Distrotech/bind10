@@ -15,9 +15,7 @@ rem FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
 rem NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
 rem WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-setlocal
-c:\cygwin\bin\cygpath -w %BIND10HOME% | set /p b10home=
-endlocal
+for /f %%p in ('c:\cygwin\bin\cygpath -w %BIND10HOME%') do set b10home=%%p
 
 if "%VSCNF%"=="" set VSCNF=release
 
@@ -50,4 +48,4 @@ set B10_FROM_BUILD=%BIND10HOME%
 
 set BIND10_MSGQ_SOCKET_FILE=%BIND10HOME%/msgq_socket
 
-%PYTHON% -O %BIND10_PATH%\bind10.py %*
+%PYTHON% -O %BIND10_PATH%\bind10_src.py %*

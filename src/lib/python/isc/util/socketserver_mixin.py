@@ -16,7 +16,7 @@
 import threading
 import socket
 import select
-from socketpair import socketpair
+from isc.util.socketpair import socketpair
 
 SOCK_DATA = b'somedata'
 class NoPollMixIn:

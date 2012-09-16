@@ -20,9 +20,9 @@
 """
 
 import isc
-import signal
 import ast
 import os
+import sys
 import copy
 import tempfile
 import json
@@ -135,8 +135,14 @@ class ConfigManagerData:
             file.write("\n")
             file.close()
             if output_file_name:
+                if sys.platform == 'win32':
+                    if os.path.exists(output_file_name):
+                        os.remove(output_file_name)
                 os.rename(filename, output_file_name)
             else:
+                if sys.platform== 'win32':
+                    if os.path.exists(self.db_filename):
+                        os.remove(self.db_filename)
                 os.rename(filename, self.db_filename)
         except IOError as ioe:
             logger.error(CFGMGR_IOERROR_WHILE_WRITING_CONFIGURATION, ioe)
