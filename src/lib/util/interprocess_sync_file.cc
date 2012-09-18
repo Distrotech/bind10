@@ -210,11 +210,24 @@ InterprocessSyncFile::lock() {
         return (true);
     }
 
-    // First grab the thread lock...
+    SyncMapMutex mutex;
+    if (!mutex.lock()) {
+        isc_throw(isc::InvalidOperation,
+                  "Error locking SyncMapMutex: "
+                  << strerror(mutex.getLastStatus()));
+    }
+
     SyncMap::iterator it = sync_map.find(task_name_);
     assert(it != sync_map.end());
-
     SyncMapData* data = it->second;
+
+    if (!mutex.unlock()) {
+        isc_throw(isc::InvalidOperation,
+                  "Error unlocking SyncMapMutex: "
+                  << strerror(mutex.getLastStatus()));
+    }
+
+    // First grab the thread lock...
     if (pthread_mutex_lock(&data->second) != 0) {
         return (false);
     }
@@ -235,11 +248,24 @@ InterprocessSyncFile::tryLock() {
         return (true);
     }
 
-    // First grab the thread lock...
+    SyncMapMutex mutex;
+    if (!mutex.lock()) {
+        isc_throw(isc::InvalidOperation,
+                  "Error locking SyncMapMutex: "
+                  << strerror(mutex.getLastStatus()));
+    }
+
     SyncMap::iterator it = sync_map.find(task_name_);
     assert(it != sync_map.end());
-
     SyncMapData* data = it->second;
+
+    if (!mutex.unlock()) {
+        isc_throw(isc::InvalidOperation,
+                  "Error unlocking SyncMapMutex: "
+                  << strerror(mutex.getLastStatus()));
+    }
+
+    // First grab the thread lock...
     if (pthread_mutex_trylock(&data->second) != 0) {
         return (false);
     }
@@ -265,11 +291,24 @@ InterprocessSyncFile::unlock() {
         return (false);
     }
 
-    // ... then the thread lock.
+    SyncMapMutex mutex;
+    if (!mutex.lock()) {
+        isc_throw(isc::InvalidOperation,
+                  "Error locking SyncMapMutex: "
+                  << strerror(mutex.getLastStatus()));
+    }
+
     SyncMap::iterator it = sync_map.find(task_name_);
     assert(it != sync_map.end());
-
     SyncMapData* data = it->second;
+
+    if (!mutex.unlock()) {
+        isc_throw(isc::InvalidOperation,
+                  "Error unlocking SyncMapMutex: "
+                  << strerror(mutex.getLastStatus()));
+    }
+
+    // ... then the thread lock.
     if (pthread_mutex_unlock(&data->second) != 0) {
         return (false);
     }
