@@ -27,6 +27,9 @@
 #include <pthread.h>
 #include <assert.h>
 
+namespace isc {
+namespace util {
+
 namespace {
 // The size_t counts the number of current InterprocessSyncFile
 // objects with the same task name. The pthread_mutex_t is the lock that
@@ -38,8 +41,6 @@ pthread_mutex_t sync_map_mutex = PTHREAD_MUTEX_INITIALIZER;
 SyncMap sync_map;
 }
 
-namespace isc {
-namespace util {
 
 InterprocessSyncFile::InterprocessSyncFile(const std::string& task_name) :
     InterprocessSync(task_name), fd_(-1)
