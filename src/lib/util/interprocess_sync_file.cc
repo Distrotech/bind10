@@ -44,7 +44,8 @@ SyncMap sync_map;
 class SyncMapMutex {
 public:
     SyncMapMutex() :
-        locked_(false)
+        locked_(false),
+        last_(0)
     {
     }
 
@@ -53,7 +54,8 @@ public:
             return (true);
         }
 
-        if (pthread_mutex_lock(&sync_map_mutex) == 0) {
+        last_ = pthread_mutex_lock(&sync_map_mutex);
+        if (last_ == 0) {
             locked_ = true;
         }
 
@@ -65,26 +67,31 @@ public:
             return (true);
         }
 
-        if (pthread_mutex_unlock(&sync_map_mutex) == 0) {
+        last_ = pthread_mutex_unlock(&sync_map_mutex);
+        if (last_ == 0) {
             locked_ = false;
         }
 
         return (!locked_);
     }
 
+    int getLastStatus() {
+         return (last_);
+    }
+
     ~SyncMapMutex() {
         if (locked_) {
-            int ret = pthread_mutex_unlock(&sync_map_mutex);
-            if (ret != 0) {
+            if (!unlock()) {
                 isc_throw(isc::InvalidOperation,
-                          "Error unlocking in SyncMapMutex: "
-                          << strerror(ret));
+                          "Error unlocking SyncMapMutex: "
+                          << strerror(getLastStatus()));
             }
         }
     }
 
 private:
     bool locked_;
+    int last_;
 };
 
 InterprocessSyncFile::InterprocessSyncFile(const std::string& task_name) :
@@ -92,7 +99,9 @@ InterprocessSyncFile::InterprocessSyncFile(const std::string& task_name) :
 {
     SyncMapMutex mutex;
     if (!mutex.lock()) {
-        isc_throw(isc::InvalidOperation, "Error locking SyncMapMutex");
+        isc_throw(isc::InvalidOperation,
+                  "Error locking SyncMapMutex: "
+                  << strerror(mutex.getLastStatus()));
     }
 
     SyncMap::iterator it = sync_map.find(task_name);
@@ -124,7 +133,9 @@ InterprocessSyncFile::~InterprocessSyncFile() {
 
     SyncMapMutex mutex;
     if (!mutex.lock()) {
-        isc_throw(isc::InvalidOperation, "Error locking SyncMapMutex");
+        isc_throw(isc::InvalidOperation,
+                  "Error locking SyncMapMutex: "
+                  << strerror(mutex.getLastStatus()));
     }
 
     SyncMap::iterator it = sync_map.find(task_name_);
