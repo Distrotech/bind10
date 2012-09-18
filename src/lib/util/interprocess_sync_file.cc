@@ -112,7 +112,14 @@ InterprocessSyncFile::InterprocessSyncFile(const std::string& task_name) :
         // No data was found in the map, so create and insert one.
         data = new SyncMapData;
         data->first = 0;
-        pthread_mutex_init(&data->second, NULL);
+
+        int ret = pthread_mutex_init(&data->second, NULL);
+        if (ret != 0) {
+            isc_throw(isc::InvalidOperation,
+                      "Error initializing InterprocessSyncFile mutex: "
+                      << strerror(ret));
+        }
+
         sync_map[task_name] = data;
     }
 
@@ -147,7 +154,14 @@ InterprocessSyncFile::~InterprocessSyncFile() {
     data->first--;
     if (data->first == 0) {
         sync_map.erase(it);
-        pthread_mutex_destroy(&data->second);
+
+        int ret = pthread_mutex_destroy(&data->second);
+        if (ret != 0) {
+            isc_throw(isc::InvalidOperation,
+                      "Error destroying InterprocessSyncFile mutex: "
+                      << strerror(ret));
+        }
+
         delete data;
     }
 
