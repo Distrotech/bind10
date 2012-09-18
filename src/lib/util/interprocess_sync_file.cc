@@ -238,7 +238,13 @@ InterprocessSyncFile::lock() {
         return (true);
     }
 
-    pthread_mutex_unlock(&data->second);
+    int ret = pthread_mutex_unlock(&data->second);
+    if (ret != 0) {
+        isc_throw(isc::InvalidOperation,
+                  "Error unlocking InterprocessSyncFile mutex: "
+                  << strerror(ret));
+    }
+
     return (false);
 }
 
@@ -276,7 +282,13 @@ InterprocessSyncFile::tryLock() {
         return (true);
     }
 
-    pthread_mutex_unlock(&data->second);
+    int ret = pthread_mutex_unlock(&data->second);
+    if (ret != 0) {
+        isc_throw(isc::InvalidOperation,
+                  "Error unlocking InterprocessSyncFile mutex: "
+                  << strerror(ret));
+    }
+
     return (false);
 }
 
@@ -308,9 +320,11 @@ InterprocessSyncFile::unlock() {
                   << strerror(mutex.getLastStatus()));
     }
 
-    // ... then the thread lock.
-    if (pthread_mutex_unlock(&data->second) != 0) {
-        return (false);
+    int ret = pthread_mutex_unlock(&data->second);
+    if (ret != 0) {
+        isc_throw(isc::InvalidOperation,
+                  "Error unlocking InterprocessSyncFile mutex: "
+                  << strerror(ret));
     }
 
     is_locked_ = false;
