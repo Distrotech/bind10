@@ -90,7 +90,10 @@ private:
 InterprocessSyncFile::InterprocessSyncFile(const std::string& task_name) :
     InterprocessSync(task_name), fd_(-1)
 {
-    pthread_mutex_lock(&sync_map_mutex);
+    SyncMapMutex mutex;
+    if (!mutex.lock()) {
+        isc_throw(isc::InvalidOperation, "Error locking SyncMapMutex");
+    }
 
     SyncMap::iterator it = sync_map.find(task_name);
     SyncMapData* data;
@@ -107,7 +110,8 @@ InterprocessSyncFile::InterprocessSyncFile(const std::string& task_name) :
     // Increment number of users for this task_name.
     data->first++;
 
-    pthread_mutex_unlock(&sync_map_mutex);
+    // `mutex` is automatically unlocked during destruction when basic
+    // block is exited.
 }
 
 InterprocessSyncFile::~InterprocessSyncFile() {
@@ -118,7 +122,10 @@ InterprocessSyncFile::~InterprocessSyncFile() {
         // it.
     }
 
-    pthread_mutex_lock(&sync_map_mutex);
+    SyncMapMutex mutex;
+    if (!mutex.lock()) {
+        isc_throw(isc::InvalidOperation, "Error locking SyncMapMutex");
+    }
 
     SyncMap::iterator it = sync_map.find(task_name_);
     assert(it != sync_map.end());
@@ -133,7 +140,8 @@ InterprocessSyncFile::~InterprocessSyncFile() {
         delete data;
     }
 
-    pthread_mutex_unlock(&sync_map_mutex);
+    // `mutex` is automatically unlocked during destruction when basic
+    // block is exited.
 }
 
 bool
