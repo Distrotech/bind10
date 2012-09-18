@@ -41,6 +41,51 @@ pthread_mutex_t sync_map_mutex = PTHREAD_MUTEX_INITIALIZER;
 SyncMap sync_map;
 }
 
+class SyncMapMutex {
+public:
+    SyncMapMutex() :
+        locked_(false)
+    {
+    }
+
+    bool lock() {
+        if (locked_) {
+            return (true);
+        }
+
+        if (pthread_mutex_lock(&sync_map_mutex) == 0) {
+            locked_ = true;
+        }
+
+        return (locked_);
+    }
+
+    bool unlock() {
+        if (!locked_) {
+            return (true);
+        }
+
+        if (pthread_mutex_unlock(&sync_map_mutex) == 0) {
+            locked_ = false;
+        }
+
+        return (!locked_);
+    }
+
+    ~SyncMapMutex() {
+        if (locked_) {
+            int ret = pthread_mutex_unlock(&sync_map_mutex);
+            if (ret != 0) {
+                isc_throw(isc::InvalidOperation,
+                          "Error unlocking in SyncMapMutex: "
+                          << strerror(ret));
+            }
+        }
+    }
+
+private:
+    bool locked_;
+};
 
 InterprocessSyncFile::InterprocessSyncFile(const std::string& task_name) :
     InterprocessSync(task_name), fd_(-1)
