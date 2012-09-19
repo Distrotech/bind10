@@ -1090,6 +1090,8 @@ class TestAXFR(TestXfrinConnection):
         self.assertRaises(isc.cc.data.DataNotFoundError,
                           self.conn._counters.get, 'zones',
                           TEST_ZONE_NAME_STR,'soaoutv6')
+        self.assertRaises(isc.cc.data.DataNotFoundError,
+                          counter.get_soa_in_progress)
         self.assertEqual(self.conn._check_soa_serial(), XFRIN_OK)
         self.assertEqual(1, self.conn._counters.get('zones',
                                                     TEST_ZONE_NAME_STR,
@@ -1097,6 +1099,7 @@ class TestAXFR(TestXfrinConnection):
         self.assertEqual(0, self.conn._counters.get('zones',
                                                     TEST_ZONE_NAME_STR,
                                                     'soaoutv6'))
+        self.assertEqual(0, counter.get_soa_in_progress())
 
     def test_soacheck_with_bad_response(self):
         self.conn.response_generator = self._create_broken_response_data
@@ -1482,6 +1485,14 @@ class TestAXFR(TestXfrinConnection):
         self.assertRaises(isc.cc.data.DataNotFoundError,
                           self.conn._counters.get, 'zones',
                           TEST_ZONE_NAME_STR, 'time_to_axfr')
+        self.assertRaises(isc.cc.data.DataNotFoundError,
+                          counter.get_ixfr_running)
+        self.assertRaises(isc.cc.data.DataNotFoundError,
+                          counter.get_axfr_running)
+        self.assertRaises(isc.cc.data.DataNotFoundError,
+                          counter.get_axfr_deferred)
+        self.assertRaises(isc.cc.data.DataNotFoundError,
+                          counter.get_ixfr_deferred)
         self.assertEqual(self.conn.do_xfrin(False), XFRIN_OK)
         self.assertFalse(self.conn._datasrc_client._journaling_enabled)
 
@@ -1516,6 +1527,12 @@ class TestAXFR(TestXfrinConnection):
                                                         TEST_ZONE_NAME_STR,
                                                         'time_to_axfr'),
                                 0.0)
+        self.assertRaises(isc.cc.data.DataNotFoundError,
+                          counter.get_ixfr_running)
+        self.assertEqual(0, counter.get_axfr_running())
+        self.assertRaises(isc.cc.data.DataNotFoundError,
+                          counter.get_ixfr_deferred)
+        self.assertEqual(0, counter.get_axfr_deferred())
 
     def test_do_xfrin_with_tsig(self):
         # use TSIG with a mock context.  we fake all verify results to
@@ -1541,11 +1558,25 @@ class TestAXFR(TestXfrinConnection):
         self.assertRaises(isc.cc.data.DataNotFoundError,
                           self.conn._counters.get, 'zones',
                           TEST_ZONE_NAME_STR, 'xfrfail')
+        self.assertRaises(isc.cc.data.DataNotFoundError,
+                          counter.get_ixfr_running)
+        self.assertRaises(isc.cc.data.DataNotFoundError,
+                          counter.get_axfr_running)
+        self.assertRaises(isc.cc.data.DataNotFoundError,
+                          counter.get_axfr_deferred)
+        self.assertRaises(isc.cc.data.DataNotFoundError,
+                          counter.get_ixfr_deferred)
         self.assertEqual(self.conn.do_xfrin(False), XFRIN_FAIL)
         self.assertEqual(1, self.conn._tsig_ctx.verify_called)
         self.assertEqual(1, self.conn._counters.get('zones',
                                                     TEST_ZONE_NAME_STR,
                                                     'xfrfail'))
+        self.assertRaises(isc.cc.data.DataNotFoundError,
+                          counter.get_ixfr_running)
+        self.assertEqual(0, counter.get_axfr_running())
+        self.assertRaises(isc.cc.data.DataNotFoundError,
+                          counter.get_ixfr_deferred)
+        self.assertEqual(0, counter.get_axfr_deferred())
 
     def test_do_xfrin_without_last_tsig(self):
         # TSIG verify will succeed, but it will pretend the last message is
