@@ -206,6 +206,46 @@
             }
           ]
         }
+      },
+      {
+        "item_name": "ixfr_running",
+        "item_type": "integer",
+        "item_optional": false,
+        "item_default": 0,
+        "item_title": "IXFRs running",
+        "item_description": "Number of IXFRs in progress"
+      },
+      {
+        "item_name": "axfr_running",
+        "item_type": "integer",
+        "item_optional": false,
+        "item_default": 0,
+        "item_title": "AXFRs running",
+        "item_description": "Number of AXFRs in progress"
+      },
+      {
+        "item_name": "ixfr_deferred",
+        "item_type": "integer",
+        "item_optional": false,
+        "item_default": 0,
+        "item_title": "IXFRs deferred",
+        "item_description": "Number of deferred IXFRs"
+      },
+      {
+        "item_name": "axfr_deferred",
+        "item_type": "integer",
+        "item_optional": false,
+        "item_default": 0,
+        "item_title": "AXFRs deferred",
+        "item_description": "Number of deferred AXFRs"
+      },
+      {
+        "item_name": "soa_in_progress",
+        "item_type": "integer",
+        "item_optional": false,
+        "item_default": 0,
+        "item_title": "SOA queries",
+        "item_description": "Number of SOA queries in progress"
       }
     ]
   }
