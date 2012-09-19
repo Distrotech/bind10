@@ -22,7 +22,7 @@ import struct
 import socket
 from isc.net.addr import IPAddr
 import isc.log
-import isc.util.socketpair
+from isc.util.socketpair import socketpair
 from libutil_io_python import send_fd
 from isc.bind10.sockcreator import Parser, CreatorError, WrappedSocket
 
@@ -297,9 +297,9 @@ class WrapTests(unittest.TestCase):
         # check the received one can be used as a socket
 
         # The transport socket
-        (t1, t2) = socketpair.socketpair()
+        (t1, t2) = socketpair()
         # The payload socket
-        (p1, p2) = socketpair.socketpair()
+        (p1, p2) = socketpair()
 
         t2 = WrappedSocket(t2)
 
