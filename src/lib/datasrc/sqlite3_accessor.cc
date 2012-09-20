@@ -665,24 +665,23 @@ public:
     {
         // Choose the statement text depending on the query type, and
         // prepare a statement to get data from it.
-        const char* statement(NULL);
         switch (qtype) {
             case QT_ANY:
-                statement = text_statements[ANY];
-                statement_ = prepare(accessor->dbparameters_->db_, statement);
+                statement_ = prepare(accessor->dbparameters_->db_,
+                                     text_statements[ANY]);
                 bindZoneId(id);
                 bindName(name_);
                 break;
             case QT_SUBDOMAINS:
-                statement = text_statements[ANY_SUB];
-                statement_ = prepare(accessor->dbparameters_->db_, statement);
+                statement_ = prepare(accessor->dbparameters_->db_,
+                                     text_statements[ANY_SUB]);
                 bindZoneId(id);
                 // Done once, this should not be very inefficient.
                 bindName(isc::dns::Name(name_).reverse().toText() + "%");
                 break;
             case QT_NSEC3:
-                statement = text_statements[NSEC3];
-                statement_ = prepare(accessor->dbparameters_->db_, statement);
+                statement_ = prepare(accessor->dbparameters_->db_,
+                                     text_statements[NSEC3]);
                 bindZoneId(id);
                 bindName(name_);
                 break;
