@@ -416,20 +416,11 @@ TEST_F(AuthCommandTest, loadZoneInvalidParams) {
 }
 
 TEST_F(AuthCommandTest, getStats) {
-    result_ = execAuthServerCommand(server_, "getstats",
-                                    ConstElementPtr());
+    result_ = execAuthServerCommand(server_, "getstats", ConstElementPtr());
     parseAnswer(rcode_, result_);
-    // Just check some message has been sent.  Detailed tests specific to
+    // Just check the command execution succeeded.  Detailed tests specific to
     // statistics are done in its own tests.
     EXPECT_EQ(0, rcode_);
 }
 
-TEST_F(AuthCommandTest, getStats_delta) {
-    result_ = execAuthServerCommand(server_, "getstats_delta",
-                                    ConstElementPtr());
-    parseAnswer(rcode_, result_);
-    // Just check some message has been sent.  Detailed tests specific to
-    // statistics are done in its own tests.
-    EXPECT_EQ(0, rcode_);
-}
 }

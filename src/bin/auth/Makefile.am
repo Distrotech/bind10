@@ -20,12 +20,19 @@ CLEANFILES  = *.gcno *.gcda auth.spec spec_config.h
 CLEANFILES += auth_messages.h auth_messages.cc
 
 man_MANS = b10-auth.8
+DISTCLEANFILES = $(man_MANS)
 EXTRA_DIST = $(man_MANS) b10-auth.xml
 
-if ENABLE_MAN
+if GENERATE_DOCS
 
 b10-auth.8: b10-auth.xml
-	xsltproc --novalid --xinclude --nonet -o $@ http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $(srcdir)/b10-auth.xml
+	@XSLTPROC@ --novalid --xinclude --nonet -o $@ http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $(srcdir)/b10-auth.xml
+
+else
+
+$(man_MANS):
+	@echo Man generation disabled.  Creating dummy $@.  Configure with --enable-generate-docs to enable it.
+	@echo Man generation disabled.  Remove this file, configure with --enable-generate-docs, and rebuild BIND 10 > $@
 
 endif
 
@@ -72,7 +79,6 @@ b10_auth_LDADD += $(top_builddir)/src/lib/asiolink/libb10-asiolink.la
 b10_auth_LDADD += $(top_builddir)/src/lib/log/libb10-log.la
 b10_auth_LDADD += $(top_builddir)/src/lib/xfr/libb10-xfr.la
 b10_auth_LDADD += $(top_builddir)/src/lib/server_common/libb10-server-common.la
-b10_auth_LDADD += $(top_builddir)/src/lib/statistics/libb10-statistics.la
 b10_auth_LDADD += $(SQLITE_LIBS)
 
 # TODO: config.h.in is wrong because doesn't honor pkgdatadir

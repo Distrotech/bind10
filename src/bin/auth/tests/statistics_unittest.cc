@@ -48,16 +48,8 @@ namespace {
 class CountersTest : public ::testing::Test {
 protected:
     CountersTest() : counters() {}
-    ~CountersTest() {
-    }
+    ~CountersTest() {}
     Counters counters;
-    // no need to be inherited from the original class here.
-    class MockModuleSpec {
-    public:
-        bool validateStatistics(ConstElementPtr, const bool valid) const
-            { return (valid); }
-    };
-    MockModuleSpec module_spec_;
 };
 
 bool checkCountersAllZeroExcept(const Counters::item_tree_type counters,
@@ -112,6 +104,7 @@ TEST_F(CountersTest, incrementNormalQuery) {
     expect_nonzero.insert("auth.server.qr.response");
     expect_nonzero.insert("auth.server.qr.qrynoauthans");
     expect_nonzero.insert("auth.server.qr.rcode.refused");
+    expect_nonzero.insert("auth.server.qr.authqryrej");
     checkCountersAllZeroExcept(counters.dump(), expect_nonzero);
 }
 
@@ -125,7 +118,7 @@ TEST_F(CountersTest, incrementNormalQuery_delta) {
     names.insert("auth.server.qr");
 
     expect_nonzero.clear();
-    checkCountersAllZeroExcept(counters.getClear(names), expect_nonzero);
+    checkCountersAllZeroExcept(counters.get(names), expect_nonzero);
 
     qrattrs.setQueryIPVersion(AF_INET6);
     qrattrs.setQueryTransportProtocol(IPPROTO_UDP);
@@ -149,12 +142,12 @@ TEST_F(CountersTest, incrementNormalQuery_delta) {
     expect_nonzero.insert("auth.server.qr.response");
     expect_nonzero.insert("auth.server.qr.qrynoauthans");
     expect_nonzero.insert("auth.server.qr.rcode.refused");
-    checkCountersAllZeroExcept(counters.getClear(names), expect_nonzero);
+    checkCountersAllZeroExcept(counters.get(names), expect_nonzero);
     expect_nonzero.clear();
-    checkCountersAllZeroExcept(counters.getClear(names), expect_nonzero);
+    checkCountersAllZeroExcept(counters.get(names), expect_nonzero);
     qrattrs.setQueryIPVersion(AF_INET6);
     expect_nonzero.insert("auth.server.qr.qtype.aaaa");
-    checkCountersAllZeroExcept(counters.getClear(names), expect_nonzero);
+    checkCountersAllZeroExcept(counters.get(names), expect_nonzero);
 }
 
 TEST_F(CountersTest, checkDumpItems) {
@@ -185,7 +178,7 @@ TEST_F(CountersTest, checkGetItems) {
     // get "auth.server.qr"
     names.insert("auth.server.qr");
     counters.get(names)->getValue(stats_map);
-    EXPECT_EQ(QR_COUNTER_TYPES, stats_map.size());
+    EXPECT_EQ(QR_COUNTER_TYPES, 0);
     for (std::map<std::string, ConstElementPtr>::const_iterator
             i = stats_map.begin(), e = stats_map.end();
             i != e;
@@ -223,7 +216,7 @@ TEST_F(CountersTest, checkGetClearItems) {
 
     // get "auth.server.qr"
     names.insert("auth.server.qr");
-    counters.getClear(names)->getValue(stats_map);
+    counters.get(names)->getValue(stats_map);
     EXPECT_EQ(0, stats_map.size());
 
     qrattrs.setQueryIPVersion(AF_INET6);
@@ -233,7 +226,7 @@ TEST_F(CountersTest, checkGetClearItems) {
     qrattrs.setQueryDO(true);
     qrattrs.answerHasSent();
 
-    counters.getClear(names)->getValue(stats_map);
+    counters.get(names)->getValue(stats_map);
     EXPECT_EQ(0, stats_map.size());
 }
 

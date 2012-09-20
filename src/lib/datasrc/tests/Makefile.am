@@ -46,17 +46,21 @@ common_ldadd += $(GTEST_LDADD) $(SQLITE_LIBS)
 
 # The general tests
 run_unittests_SOURCES = $(common_sources)
-run_unittests_SOURCES += datasrc_unittest.cc
-run_unittests_SOURCES += static_unittest.cc
-run_unittests_SOURCES += query_unittest.cc
-run_unittests_SOURCES += cache_unittest.cc
+
+# Commented out by ticket #2165. If you re-enable these, please modify
+# EXTRA_DIST at the bottom of this file.
+#run_unittests_SOURCES += datasrc_unittest.cc
+#run_unittests_SOURCES += static_unittest.cc
+#run_unittests_SOURCES += query_unittest.cc
+#run_unittests_SOURCES += cache_unittest.cc
+#run_unittests_SOURCES += sqlite3_unittest.cc
+#run_unittests_SOURCES += test_datasrc.h test_datasrc.cc
+
 run_unittests_SOURCES += test_client.h test_client.cc
-run_unittests_SOURCES += test_datasrc.h test_datasrc.cc
 run_unittests_SOURCES += rbtree_unittest.cc
 run_unittests_SOURCES += logger_unittest.cc
 run_unittests_SOURCES += client_unittest.cc
 run_unittests_SOURCES += database_unittest.cc
-run_unittests_SOURCES += sqlite3_unittest.cc
 run_unittests_SOURCES += sqlite3_accessor_unittest.cc
 run_unittests_SOURCES += memory_datasrc_unittest.cc
 run_unittests_SOURCES += rbnode_rrset_unittest.cc
@@ -99,8 +103,10 @@ endif
 EXTRA_DIST =  testdata/brokendb.sqlite3
 EXTRA_DIST += testdata/contexttest.zone
 EXTRA_DIST += testdata/diffs.sqlite3
+EXTRA_DIST += testdata/duplicate_rrset.zone
 EXTRA_DIST += testdata/example2.com
 EXTRA_DIST += testdata/example2.com.sqlite3
+EXTRA_DIST += testdata/example.com.flattened
 EXTRA_DIST += testdata/example.com.signed
 EXTRA_DIST += testdata/example.org
 EXTRA_DIST += testdata/example.org.nsec3-signed
@@ -118,3 +124,11 @@ EXTRA_DIST += testdata/new_minor_schema.sqlite3
 EXTRA_DIST += testdata/newschema.sqlite3
 EXTRA_DIST += testdata/oldschema.sqlite3
 EXTRA_DIST += testdata/static.zone
+
+# Added by ticket #2165
+EXTRA_DIST += datasrc_unittest.cc
+EXTRA_DIST += static_unittest.cc
+EXTRA_DIST += query_unittest.cc
+EXTRA_DIST += cache_unittest.cc
+EXTRA_DIST += sqlite3_unittest.cc
+EXTRA_DIST += test_datasrc.h test_datasrc.cc

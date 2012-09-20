@@ -90,6 +90,11 @@
             }
           ]
         }
+      },
+      { "item_name": "tcp_recv_timeout",
+        "item_type": "integer",
+        "item_optional": false,
+        "item_default": 5000
       }
     ],
     "commands": [
@@ -915,6 +920,14 @@
         "item_default": 0,
         "item_title": "qrynxrrset",
         "item_description": "Number of queries resulted in NOERROR but answer RR == 0"
+      },
+      {
+        "item_name": "auth.server.qr.authqryrej",
+        "item_type": "integer",
+        "item_optional": false,
+        "item_default": 0,
+        "item_title": "authqryrej",
+        "item_description": "Number of authoritative queries rejected"
       },
       {
         "item_name": "auth.server.qr.rcode.noerror",

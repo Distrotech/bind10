@@ -59,18 +59,13 @@ const size_t Name::MAX_LABELS;
 
 namespace {
 
-class DeleterType {
-public:
-    DeleterType() {}
+void deleteData(int* i) {
+    delete i;
+}
 
-    void operator()(util::MemorySegment&, int* i) const {
-        delete i;
-    }
-};
-
-typedef DomainTree<int, DeleterType> TestDomainTree;
-typedef DomainTreeNode<int, DeleterType> TestDomainTreeNode;
-typedef DomainTreeNodeChain<int, DeleterType> TestDomainTreeNodeChain;
+typedef DomainTree<int> TestDomainTree;
+typedef DomainTreeNode<int> TestDomainTreeNode;
+typedef DomainTreeNodeChain<int> TestDomainTreeNodeChain;
 
 class TreeHolder {
 public:
@@ -78,7 +73,7 @@ public:
         mem_sgmt_(mem_sgmt), tree_(tree)
     {}
     ~TreeHolder() {
-        TestDomainTree::destroy(mem_sgmt_, tree_);
+        TestDomainTree::destroy(mem_sgmt_, tree_, deleteData);
     }
     TestDomainTree* get() { return (tree_); }
 private:
@@ -102,12 +97,13 @@ protected:
         int name_count = sizeof(domain_names) / sizeof(domain_names[0]);
         for (int i = 0; i < name_count; ++i) {
             dtree.insert(mem_sgmt_, Name(domain_names[i]), &dtnode);
-            dtnode->setData(mem_sgmt_, new int(i + 1));
+            // Check the node doesn't have any data initially.
+            EXPECT_EQ(static_cast<int*>(NULL),
+                      dtnode->setData(new int(i + 1)));
 
             dtree_expose_empty_node.insert(mem_sgmt_, Name(domain_names[i]),
                                             &dtnode);
-            dtnode->setData(mem_sgmt_, new int(i + 1));
-
+            EXPECT_EQ(static_cast<int*>(NULL), dtnode->setData(new int(i + 1)));
         }
     }
 
@@ -118,6 +114,7 @@ protected:
     TestDomainTree& dtree_expose_empty_node;
     TestDomainTreeNode* dtnode;
     const TestDomainTreeNode* cdtnode;
+    uint8_t buf[LabelSequence::MAX_SERIALIZED_LENGTH];
 };
 
 TEST_F(DomainTreeTest, nodeCount) {
@@ -125,13 +122,22 @@ TEST_F(DomainTreeTest, nodeCount) {
 
     // Delete all nodes, then the count should be set to 0.  This also tests
     // the behavior of deleteAllNodes().
-    dtree.deleteAllNodes(mem_sgmt_);
+    dtree.deleteAllNodes(mem_sgmt_, deleteData);
     EXPECT_EQ(0, dtree.getNodeCount());
 }
 
 TEST_F(DomainTreeTest, setGetData) {
-    dtnode->setData(mem_sgmt_, new int(11));
+    // set new data to an existing node.  It should have some data.
+    int* newdata = new int(11);
+    int* olddata = dtnode->setData(newdata);
+    EXPECT_NE(static_cast<int*>(NULL), olddata);
+    deleteData(olddata);
     EXPECT_EQ(11, *(dtnode->getData()));
+
+    // clear the node.  we should get the new data back we just passed.
+    olddata = dtnode->setData(NULL);
+    EXPECT_EQ(newdata, olddata);
+    deleteData(olddata);
 }
 
 TEST_F(DomainTreeTest, insertNames) {
@@ -151,7 +157,9 @@ TEST_F(DomainTreeTest, insertNames) {
                                                   Name("example.com"),
                                                   &dtnode));
     EXPECT_EQ(17, dtree.getNodeCount());
-    dtnode->setData(mem_sgmt_, new int(12));
+    // add data to it; also make sure it doesn't have data right now
+    // (otherwise it would leak)
+    EXPECT_EQ(static_cast<int*>(NULL), dtnode->setData(new int(12)));
 
     // return ALREADYEXISTS, since node "example.com" already has
     // been explicitly inserted
@@ -381,7 +389,7 @@ performCallbackTest(TestDomainTree& dtree,
     EXPECT_EQ(TestDomainTree::SUCCESS, dtree.insert(mem_sgmt,
                                                   Name("callback.example"),
                                                   &dtnode));
-    dtnode->setData(mem_sgmt, new int(1));
+    EXPECT_EQ(static_cast<int*>(NULL), dtnode->setData(new int(1)));
     EXPECT_FALSE(dtnode->getFlag(TestDomainTreeNode::FLAG_CALLBACK));
 
     // enable/re-disable callback
@@ -397,7 +405,7 @@ performCallbackTest(TestDomainTree& dtree,
     EXPECT_EQ(TestDomainTree::SUCCESS, dtree.insert(mem_sgmt,
                                                   Name("sub.callback.example"),
                                                   &subdtnode));
-    subdtnode->setData(mem_sgmt, new int(2));
+    EXPECT_EQ(static_cast<int*>(NULL), subdtnode->setData(new int(2)));
     TestDomainTreeNode* parentdtnode;
     EXPECT_EQ(TestDomainTree::ALREADYEXISTS, dtree.insert(mem_sgmt,
                                                         Name("example"),
@@ -463,6 +471,11 @@ TEST_F(DomainTreeTest, chainLevel) {
               tree.find(node_name, &cdtnode, chain));
     EXPECT_EQ(1, chain.getLevelCount());
 
+    // Check the name of the found node (should have '.' as both non-absolute
+    // and absolute name
+    EXPECT_EQ(".", cdtnode->getLabels().toText());
+    EXPECT_EQ(".", cdtnode->getAbsoluteLabels(buf).toText());
+
     /*
      * Now creating a possibly deepest tree with MAX_LABELS levels.
      * it should look like:
@@ -486,6 +499,12 @@ TEST_F(DomainTreeTest, chainLevel) {
         EXPECT_EQ(TestDomainTree::EXACTMATCH,
                   tree.find(node_name, &cdtnode, found_chain));
         EXPECT_EQ(i, found_chain.getLevelCount());
+
+        // The non-absolute name should only have the first label
+        EXPECT_EQ("a", cdtnode->getLabels().toText());
+        // But the absolute name should have all labels
+        EXPECT_EQ(node_name.toText(),
+                  cdtnode->getAbsoluteLabels(buf).toText());
     }
 
     // Confirm the last inserted name has the possible maximum length with
@@ -997,7 +1016,7 @@ TEST_F(DomainTreeTest, root) {
     TreeHolder tree_holder(mem_sgmt_, TestDomainTree::create(mem_sgmt_));
     TestDomainTree& root(*tree_holder.get());
     root.insert(mem_sgmt_, Name::ROOT_NAME(), &dtnode);
-    dtnode->setData(mem_sgmt_, new int(1));
+    EXPECT_EQ(static_cast<int*>(NULL), dtnode->setData(new int(1)));
 
     EXPECT_EQ(TestDomainTree::EXACTMATCH,
               root.find(Name::ROOT_NAME(), &cdtnode));
@@ -1009,7 +1028,7 @@ TEST_F(DomainTreeTest, root) {
     // Insert a new name that better matches the query name.  find() should
     // find the better one.
     root.insert(mem_sgmt_, Name("com"), &dtnode);
-    dtnode->setData(mem_sgmt_, new int(2));
+    EXPECT_EQ(static_cast<int*>(NULL), dtnode->setData(new int(2)));
     EXPECT_EQ(TestDomainTree::PARTIALMATCH,
               root.find(Name("example.com"), &cdtnode));
     EXPECT_EQ(dtnode, cdtnode);
@@ -1031,5 +1050,45 @@ TEST_F(DomainTreeTest, root) {
     EXPECT_EQ(TestDomainTree::PARTIALMATCH,
               root.find(Name("example.com"), &cdtnode));
     EXPECT_EQ(dtnode, cdtnode);
+}
+
+TEST_F(DomainTreeTest, getAbsoluteLabels) {
+    // The full absolute names of the nodes in the tree
+    // with the addition of the explicit root node
+    const char* const domain_names[] = {
+        "c", "b", "a", "x.d.e.f", "z.d.e.f", "g.h", "i.g.h", "o.w.y.d.e.f",
+        "j.z.d.e.f", "p.w.y.d.e.f", "q.w.y.d.e.f", "k.g.h"};
+    // The names of the nodes themselves, as they end up in the tree
+    const char* const first_labels[] = {
+        "c", "b", "a", "x", "z", "g.h", "i", "o",
+        "j", "p", "q", "k"};
+
+    const int name_count = sizeof(domain_names) / sizeof(domain_names[0]);
+    for (int i = 0; i < name_count; ++i) {
+        EXPECT_EQ(TestDomainTree::EXACTMATCH, dtree.find(Name(domain_names[i]),
+                  &cdtnode));
+
+        // First make sure the names themselves are not absolute
+        const LabelSequence ls(cdtnode->getLabels());
+        EXPECT_EQ(first_labels[i], ls.toText());
+        EXPECT_FALSE(ls.isAbsolute());
+
+        // Now check the absolute names
+        const LabelSequence abs_ls(cdtnode->getAbsoluteLabels(buf));
+        EXPECT_EQ(Name(domain_names[i]).toText(), abs_ls.toText());
+        EXPECT_TRUE(abs_ls.isAbsolute());
+    }
+
+    // Explicitly add and find a root node, to see that getAbsoluteLabels
+    // also works when getLabels() already returns an absolute LabelSequence
+    dtree.insert(mem_sgmt_, Name("."), &dtnode);
+    dtnode->setData(new int(1));
+
+    EXPECT_EQ(TestDomainTree::EXACTMATCH, dtree.find(Name("."), &cdtnode));
+
+    EXPECT_TRUE(cdtnode->getLabels().isAbsolute());
+    EXPECT_EQ(".", cdtnode->getLabels().toText());
+    EXPECT_TRUE(cdtnode->getAbsoluteLabels(buf).isAbsolute());
+    EXPECT_EQ(".", cdtnode->getAbsoluteLabels(buf).toText());
 }
 }

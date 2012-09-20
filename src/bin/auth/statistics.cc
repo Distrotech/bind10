@@ -22,8 +22,7 @@
 #include <cc/data.h>
 #include <cc/session.h>
 
-#include <statistics/counter.h>
-#include <statistics/counter_dict.h>
+#include <boost/foreach.hpp>
 
 #include <algorithm>
 #include <cctype>
@@ -31,9 +30,6 @@
 #include <string>
 #include <sstream>
 #include <iostream>
-
-#include <boost/noncopyable.hpp>
-#include <boost/foreach.hpp>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -46,14 +42,13 @@ using namespace isc::auth;
 using namespace isc::statistics;
 
 namespace {
-using namespace isc::data;
-using isc::statistics::Counter;
 using isc::auth::statistics::Counters;
 
 void
-fillNodes(const Counter &counter, const char *nodename[], const size_t size,
-          const std::string &prefix, Counters::item_tree_type &trees)
+fillNodes(const Counter& counter, const char* const nodename[], const size_t size,
+          const std::string& prefix, Counters::item_tree_type& trees)
 {
+    using namespace isc::data;
     for (size_t i = 0; i < size; ++i) {
         trees->set (prefix + nodename[i],
                     Element::create( static_cast<long int>( counter.get(i) ) )
@@ -62,10 +57,11 @@ fillNodes(const Counter &counter, const char *nodename[], const size_t size,
 }
 
 void
-fillNodesClear(Counter &counter, const char *nodename[], const size_t size,
-                const std::string &prefix, Counters::item_tree_type &trees)
+fillNodesClear(Counter& counter, const char* const nodename[], const size_t size,
+               const std::string& prefix, Counters::item_tree_type& trees)
 {
     long int value;
+    using namespace isc::data;
 
     for (size_t i = 0; i < size; ++i) {
         value = static_cast<long int>( counter.getClear(i) );
@@ -81,45 +77,20 @@ namespace isc {
 namespace auth {
 namespace statistics {
 
-class CountersImpl : boost::noncopyable {
-public:
-    CountersImpl();
-    ~CountersImpl();
-    void inc(const QRAttributes& qrattrs, const Message& response);
-    const Counters::item_tree_type
-        get(const Counters::item_node_name_set_type& trees) const;
-    const Counters::item_tree_type
-        getClear(const Counters::item_node_name_set_type& trees);
-    // Currently for testing purpose only
-    const Counters::item_tree_type dump() const;
-    bool submitStatistics() const;
-    void registerStatisticsValidator (Counters::validator_type validator);
-    // Currently for testing purpose only
-private:
-    // counter for server
-    Counter server_qr_counter_;
-    Counter server_socket_counter_;
-    // set of counters for zones
-    CounterDictionary zone_qr_counters_;
-    // validator
-    Counters::validator_type validator_;
-};
-
-CountersImpl::CountersImpl() :
+Counters::Counters() :
     // initialize counter
     // size of server_qr_counter_, zone_qr_counters_: QR_COUNTER_TYPES
     // size of server_socket_counter_: SOCKET_COUNTER_TYPES
     server_qr_counter_(QR_COUNTER_TYPES),
     server_socket_counter_(SOCKET_COUNTER_TYPES),
-    zone_qr_counters_(QR_COUNTER_TYPES),
-    validator_()
+    zone_qr_counters_(QR_COUNTER_TYPES)
 {}
 
-CountersImpl::~CountersImpl()
+Counters::~Counters()
 {}
 
 void
-CountersImpl::inc(const QRAttributes& qrattrs, const Message& response) {
+Counters::inc(const QRAttributes& qrattrs, const Message& response) {
     // protocols carrying request
     if (qrattrs.req_ip_version_ == AF_INET) {
         server_qr_counter_.inc(QR_REQUEST_IPV4);
@@ -165,36 +136,9 @@ CountersImpl::inc(const QRAttributes& qrattrs, const Message& response) {
         if (qptr != NULL) {
             // get the qtype code
             const unsigned int qtype = qptr->getType().getCode();
-            if (qtype == 0) {
-                // qtype 0
-                qtype_type = QR_QTYPE_OTHER;
-            } else if (qtype < 52) {
-                // qtype 1..51
-                qtype_type = QR_QTYPE_A + (qtype - 1);
-            } else if (qtype < 55) {
-                // qtype 52..54
-                qtype_type = QR_QTYPE_OTHER;
-            } else if (qtype < 59) {
-                // qtype 55..58
-                qtype_type = QR_QTYPE_HIP + (qtype - 55);
-            } else if (qtype < 99) {
-                // qtype 59..98
-                qtype_type = QR_QTYPE_OTHER;
-            } else if (qtype < 104) {
-                // qtype 99..103
-                qtype_type = QR_QTYPE_SPF + (qtype - 99);
-            } else if (qtype < 249) {
-                // qtype 104..248
-                qtype_type = QR_QTYPE_OTHER;
-            } else if (qtype < 255) {
-                // qtype 249..254
-                qtype_type = QR_QTYPE_TKEY + (qtype - 249);
-            } else if (qtype == 255) {
-                // qtype 255: all records
-                qtype_type = QR_QTYPE_OTHER;
-            } else if (qtype < 258) {
-                // qtype 256..257
-                qtype_type = QR_QTYPE_URI + (qtype - 256);
+            if (qtype < 258) {
+                // qtype 0..257
+                qtype_type = QRQTypeToQRCounterType[qtype];
             } else if (qtype < 32768) {
                 // qtype 258..32767
                 qtype_type = QR_QTYPE_OTHER;
@@ -209,21 +153,7 @@ CountersImpl::inc(const QRAttributes& qrattrs, const Message& response) {
     }
     server_qr_counter_.inc(qtype_type);
     // OPCODE
-    unsigned int opcode_type = QR_OPCODE_OTHER;
-    if (qrattrs.req_opcode_ < 3) {
-        // opcode 0..2
-        opcode_type = QR_OPCODE_QUERY + qrattrs.req_opcode_;
-    } else if (qrattrs.req_opcode_ == 3) {
-        // opcode 3 is reserved
-        opcode_type = QR_OPCODE_OTHER;
-    } else if (qrattrs.req_opcode_ < 6) {
-        // opcode 4..5
-        opcode_type = QR_OPCODE_NOTIFY + (qrattrs.req_opcode_ - 4);
-    } else {
-        // opcode larger than 6 is reserved
-        opcode_type = QR_OPCODE_OTHER;
-    }
-    server_qr_counter_.inc(opcode_type);
+    server_qr_counter_.inc(QROpCodeToQRCounterType[qrattrs.req_opcode_]);
 
     // response
     if (qrattrs.answer_sent_) {
@@ -252,18 +182,9 @@ CountersImpl::inc(const QRAttributes& qrattrs, const Message& response) {
         // RCODE
         const unsigned int rcode = response.getRcode().getCode();
         unsigned int rcode_type = QR_RCODE_OTHER;
-        if (rcode < 11) {
-            // rcode 0..10
-            rcode_type = QR_RCODE_NOERROR + rcode;
-        } else if (rcode < 16) {
-            // rcode 11..15 is reserved
-            rcode_type = QR_RCODE_OTHER;
-        } else if (rcode == 16) {
-            // rcode 16
-            rcode_type = QR_RCODE_BADSIGVERS;
-        } else if (rcode < 23) {
-            // rcode 17..22
-            rcode_type = QR_RCODE_BADKEY + (rcode - 17);
+        if (rcode < 23) {
+            // rcode 0..22
+            rcode_type = QRRCodeToQRCounterType[rcode];
         } else {
             // opcode larger than 22 is reserved or unassigned
             rcode_type = QR_RCODE_OTHER;
@@ -296,56 +217,28 @@ CountersImpl::inc(const QRAttributes& qrattrs, const Message& response) {
                     server_qr_counter_.inc(QR_QRYREFERRAL);
                 }
             }
+        } else if (rcode == Rcode::REFUSED_CODE) {
+            // AuthRej
+            server_qr_counter_.inc(QR_QRYREJECT);
         }
     }
 }
 
-
-void
-CountersImpl::registerStatisticsValidator
-    (Counters::validator_type validator)
-{
-    validator_ = validator;
-}
-
-const Counters::item_tree_type
-CountersImpl::get(const Counters::item_node_name_set_type &trees) const {
+Counters::item_tree_type
+Counters::get(const Counters::item_node_name_set_type& trees) {
     using namespace isc::data;
 
     Counters::item_tree_type item_tree = Element::createMap();
 
-    BOOST_FOREACH(const Counters::item_node_name_type& node, trees) {
-        if (node == "auth.server.qr") {
-            fillNodes(server_qr_counter_, QRCounterItemName, QR_COUNTER_TYPES,
-                      "auth.server.qr.", item_tree);
-        } else if (node == "auth.server.socket") {
-            // currently not implemented
-            fillNodes(server_socket_counter_, SocketCounterItemName,
-                      SOCKET_COUNTER_TYPES, "auth.server.socket.", item_tree);
-        } else if (node == "auth.zones") {
-            // currently not implemented
-        } else {
-            // unknown tree
-        }
-    }
-
-    return (item_tree);
-}
-
-const Counters::item_tree_type
-CountersImpl::getClear(const Counters::item_node_name_set_type &trees) {
-    using namespace isc::data;
-
-    Counters::item_tree_type item_tree = Element::createMap();
+    item_tree->set("__differential_mode", isc::data::Element::create("true"));
 
     BOOST_FOREACH(const Counters::item_node_name_type& node, trees) {
         if (node == "auth.server.qr") {
-            fillNodesClear(server_qr_counter_, QRCounterItemName, QR_COUNTER_TYPES,
+            fillNodesClear(server_qr_counter_,
+                      QRCounterItemName, QR_COUNTER_TYPES,
                       "auth.server.qr.", item_tree);
         } else if (node == "auth.server.socket") {
             // currently not implemented
-            fillNodesClear(server_socket_counter_, SocketCounterItemName,
-                      SOCKET_COUNTER_TYPES, "auth.server.socket.", item_tree);
         } else if (node == "auth.zones") {
             // currently not implemented
         } else {
@@ -357,8 +250,8 @@ CountersImpl::getClear(const Counters::item_node_name_set_type &trees) {
 }
 
 // Currently for testing purpose only
-const Counters::item_tree_type
-CountersImpl::dump() const {
+Counters::item_tree_type
+Counters::dump() const {
     using namespace isc::data;
 
     Counters::item_tree_type item_tree = Element::createMap();
@@ -367,102 +260,6 @@ CountersImpl::dump() const {
               "auth.server.qr.", item_tree);
 
     return (item_tree);
-}
-
-Counters::Counters() : impl_(new CountersImpl())
-{}
-
-Counters::~Counters() {}
-
-void
-Counters::inc(const QRAttributes& qrattrs, const Message& response) {
-    impl_->inc(qrattrs, response);
-}
-
-const Counters::item_tree_type
-Counters::get(const Counters::item_node_name_set_type &trees) const {
-    return (impl_->get(trees));
-}
-
-const Counters::item_tree_type
-Counters::getClear(const Counters::item_node_name_set_type &trees) {
-    return (impl_->getClear(trees));
-}
-
-const Counters::item_tree_type
-Counters::dump() const {
-    return (impl_->dump());
-}
-
-void
-Counters::registerStatisticsValidator
-    (Counters::validator_type validator) const
-{
-    return (impl_->registerStatisticsValidator(validator));
-}
-
-QRAttributes::QRAttributes() :
-    req_ip_version_(0), req_transport_protocol_(0),
-    req_opcode_(0),
-    req_is_edns_0_(false), req_is_edns_badver_(false),
-    req_is_dnssec_ok_(false),
-    req_is_tsig_(false), req_is_sig0_(false), req_is_badsig_(false),
-    zone_origin_(),
-    answer_sent_(false),
-    res_is_truncated_(false)
-{}
-
-QRAttributes::~QRAttributes()
-{}
-
-void
-QRAttributes::setQueryIPVersion(const int ip_version) {
-    req_ip_version_ = ip_version;
-}
-
-void
-QRAttributes::setQueryTransportProtocol(const int transport_protocol) {
-    req_transport_protocol_ = transport_protocol;
-}
-
-void
-QRAttributes::setQueryOpCode(const int opcode) {
-    req_opcode_ = opcode;
-}
-
-void
-QRAttributes::setQueryEDNS(const bool is_edns_0, const bool is_edns_badver) {
-    req_is_edns_0_ = is_edns_0;
-    req_is_edns_badver_ = is_edns_badver;
-}
-
-void
-QRAttributes::setQueryDO(const bool is_dnssec_ok) {
-    req_is_dnssec_ok_ = is_dnssec_ok;
-}
-
-void
-QRAttributes::setQuerySig(const bool is_tsig, const bool is_sig0,
-                          const bool is_badsig)
-{
-    req_is_tsig_ = is_tsig;
-    req_is_sig0_ = is_sig0;
-    req_is_badsig_ = is_badsig;
-}
-
-void
-QRAttributes::setOrigin(const std::string& origin) {
-    zone_origin_ = origin;
-}
-
-void
-QRAttributes::answerHasSent() {
-    answer_sent_ = true;
-}
-
-void
-QRAttributes::setResponseTruncated(const bool is_truncated) {
-    res_is_truncated_ = is_truncated;
 }
 
 } // namespace statistics

@@ -19,17 +19,19 @@
 
 #include <dns/message.h>
 
+#include <statistics/counter.h>
+#include <statistics/counter_dict.h>
+
+#include <boost/noncopyable.hpp>
+
 #include <string>
 #include <set>
 
 #include <stdint.h>
-#include <boost/scoped_ptr.hpp>
 
 namespace isc {
 namespace auth {
 namespace statistics {
-
-class CountersImpl;
 
 class QRAttributes {
 /// \brief Query/Response attributes for statistics.
@@ -38,8 +40,8 @@ class QRAttributes {
 /// for statistics data collection.
 ///
 /// This class does not have getter methods since it exposes private members
-/// to \c CountersImpl directly.
-friend class CountersImpl;
+/// to \c Counters directly.
+friend class Counters;
 private:
     // request attributes
     int req_ip_version_;            // IP version
@@ -62,41 +64,119 @@ public:
     /// This constructor is mostly exception free. But it may still throw
     /// a standard exception if memory allocation fails inside the method.
     ///
-    QRAttributes();
+    inline QRAttributes();
     /// The destructor.
     ///
     /// This method never throws an exception.
     ///
-    ~QRAttributes();
+    inline ~QRAttributes();
     /// \brief Set query opcode.
     /// \throw None
-    void setQueryOpCode(const int opcode);
+    inline void setQueryOpCode(const int opcode);
     /// \brief Set IP version carrying a query.
     /// \throw None
-    void setQueryIPVersion(const int ip_version);
+    inline void setQueryIPVersion(const int ip_version);
     /// \brief Set transport protocol carrying a query.
     /// \throw None
-    void setQueryTransportProtocol(const int transport_protocol);
+    inline void setQueryTransportProtocol(const int transport_protocol);
     /// \brief Set query EDNS attributes.
     /// \throw None
-    void setQueryEDNS(const bool is_edns_0, const bool is_edns_badver);
+    inline void setQueryEDNS(const bool is_edns_0, const bool is_edns_badver);
     /// \brief Set query DO bit.
     /// \throw None
-    void setQueryDO(const bool is_dnssec_ok);
+    inline void setQueryDO(const bool is_dnssec_ok);
     /// \brief Set query TSIG attributes.
     /// \throw None
-    void setQuerySig(const bool is_tsig, const bool is_sig0,
-                     const bool is_badsig);
+    inline void setQuerySig(const bool is_tsig, const bool is_sig0,
+                            const bool is_badsig);
     /// \brief Set zone origin.
     /// \throw None
-    void setOrigin(const std::string& origin);
+    inline void setOrigin(const std::string& origin);
     /// \brief Set if the answer has sent.
     /// \throw None
-    void answerHasSent();
+    inline void answerHasSent();
     /// \brief Set if the response is truncated.
     /// \throw None
-    void setResponseTruncated(const bool is_truncated);
+    inline void setResponseTruncated(const bool is_truncated);
+    /// \brief Reset attributes.
+    /// \throw None
+    inline void reset();
 };
+
+inline QRAttributes::QRAttributes() :
+    req_ip_version_(0), req_transport_protocol_(0),
+    req_opcode_(0),
+    req_is_edns_0_(false), req_is_edns_badver_(false),
+    req_is_dnssec_ok_(false),
+    req_is_tsig_(false), req_is_sig0_(false), req_is_badsig_(false),
+    zone_origin_(),
+    answer_sent_(false),
+    res_is_truncated_(false)
+{}
+
+inline QRAttributes::~QRAttributes()
+{}
+
+inline void
+QRAttributes::setQueryIPVersion(const int ip_version) {
+    req_ip_version_ = ip_version;
+}
+
+inline void
+QRAttributes::setQueryTransportProtocol(const int transport_protocol) {
+    req_transport_protocol_ = transport_protocol;
+}
+
+inline void
+QRAttributes::setQueryOpCode(const int opcode) {
+    req_opcode_ = opcode;
+}
+
+inline void
+QRAttributes::setQueryEDNS(const bool is_edns_0, const bool is_edns_badver) {
+    req_is_edns_0_ = is_edns_0;
+    req_is_edns_badver_ = is_edns_badver;
+}
+
+inline void
+QRAttributes::setQueryDO(const bool is_dnssec_ok) {
+    req_is_dnssec_ok_ = is_dnssec_ok;
+}
+
+inline void
+QRAttributes::setQuerySig(const bool is_tsig, const bool is_sig0,
+                          const bool is_badsig)
+{
+    req_is_tsig_ = is_tsig;
+    req_is_sig0_ = is_sig0;
+    req_is_badsig_ = is_badsig;
+}
+
+inline void
+QRAttributes::answerHasSent() {
+    answer_sent_ = true;
+}
+
+inline void
+QRAttributes::setResponseTruncated(const bool is_truncated) {
+    res_is_truncated_ = is_truncated;
+}
+
+inline void
+QRAttributes::reset() {
+    req_ip_version_ = 0;
+    req_transport_protocol_ = 0;
+    req_opcode_ = 0;
+    req_is_edns_0_ = false;
+    req_is_edns_badver_ = false;
+    req_is_dnssec_ok_ = false;
+    req_is_tsig_ = false;
+    req_is_sig0_ = false;
+    req_is_badsig_ = false;
+    zone_origin_.clear();
+    answer_sent_ = false;
+    res_is_truncated_ = false;
+}
 
 /// \brief Set of query counters.
 ///
@@ -122,9 +202,13 @@ public:
 ///
 /// \todo Hold counters for each query types (Notify, Axfr, Ixfr, Normal)
 /// \todo Consider overhead of \c Counters::inc()
-class Counters {
+class Counters : boost::noncopyable {
 private:
-    boost::scoped_ptr<CountersImpl> impl_;
+    // counter for server
+    isc::statistics::Counter server_qr_counter_;
+    isc::statistics::Counter server_socket_counter_;
+    // set of counters for zones
+    isc::statistics::CounterDictionary zone_qr_counters_;
 public:
     /// The constructor.
     ///
@@ -161,52 +245,32 @@ public:
     ///        item_value is an integer.
     typedef isc::data::ElementPtr item_tree_type;
 
-    /// \brief Get the values of specified counters.
+    /// \brief Get the values of specified statistics counters.
     ///
-    /// This function returns names and values of counter.
+    /// This function returns names and values of counter specified with
+    /// \c items. If \c items is empty, empty map is returned. Duplicated item
+    /// names cannot be specified because \c items is a set.
     ///
-    /// \throw bad_alloc
+    /// \param items A set of item names. An item name must be the name of
+    ///              a sub-tree of statistics items, one of the following:
+    ///                auth.server.qr: Query / Response counters
+    ///                auth.server.socket: Socket statistics
     ///
-    /// \return a tree of statistics items.
-    const item_tree_type get(const item_node_name_set_type &items) const;
+    /// \throw std::bad_alloc Internal resource allocation fails.
+    ///
+    /// \return A tree of statistics items formatted in a map.
+    ///         { item_name => item_value, item_name => item_value, ... }
+    item_tree_type get(const item_node_name_set_type& items);
 
-    /// \brief Get the values of specified counters and clear them.
+    /// \brief Dump the values of all statistics counters.
     ///
-    /// This function returns names and values of counter.
+    /// This function returns names and values of all counters for testing.
     ///
-    /// \throw bad_alloc
+    /// \throw std::bad_alloc Internal resource allocation fails.
     ///
-    /// \return a tree of statistics items whose values are not zero.
-    const item_tree_type getClear(const item_node_name_set_type &items);
-
-    /// \brief Dump all of the counters.
-    ///
-    /// This function returns names and values of counter.
-    ///
-    /// \throw bad_alloc
-    ///
-    /// \return a tree of statistics items.
-    const item_tree_type dump() const;
-
-    /// \brief A type of validation function for the specification in
-    /// isc::config::ModuleSpec.
-    ///
-    /// This type might be useful for not only statistics
-    /// specificatoin but also for config_data specification and for
-    /// command.
-    ///
-    typedef boost::function<bool(const isc::data::ConstElementPtr&)>
-    validator_type;
-
-    /// \brief Register a function type of the statistics validation
-    /// function for Counters.
-    ///
-    /// This method never throws an exception.
-    ///
-    /// \param validator A function type of the validation of
-    /// statistics specification.
-    ///
-    void registerStatisticsValidator(Counters::validator_type validator) const;
+    /// \return A tree of statistics items formatted in a map.
+    ///         { item_name => item_value, item_name => item_value, ... }
+    item_tree_type dump() const;
 };
 
 } // namespace statistics

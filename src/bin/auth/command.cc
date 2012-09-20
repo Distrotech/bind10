@@ -98,16 +98,27 @@ public:
     /// \c AuthCommandError when it encounters an internal error, such as
     /// semantics error on the command arguments.
     ///
+    /// This method should return the execution result in the form of
+    /// \c ConstElementPtr.  It will be transparently used as the return
+    /// value from the command handler called from the corresponding
+    /// \c CCSession object.  For a successful completion of the command,
+    /// it should suffice to return the return value of
+    /// \c isc::config::createAnswer() with no argument.
+    ///
     /// \param server The \c AuthSrv object on which the command is executed.
     /// \param args Command specific argument.
-    /// \return command result data in JSON format.
-    virtual ConstElementPtr exec(AuthSrv& server, isc::data::ConstElementPtr args) = 0;
+    /// \return Command execution result.
+    virtual ConstElementPtr exec(AuthSrv& server,
+                                 isc::data::ConstElementPtr args) = 0;
 };
 
-// Handle the "shutdown" command.
+// Handle the "shutdown" command. An optional parameter "pid" is used to
+// see if it is really for our instance.
 class ShutdownCommand : public AuthCommand {
 public:
-    virtual ConstElementPtr exec(AuthSrv& server, isc::data::ConstElementPtr args) {
+    virtual ConstElementPtr exec(AuthSrv& server,
+                                 isc::data::ConstElementPtr args)
+    {
         // Is the pid argument provided?
         if (args && args->contains("pid")) {
             // If it is, we check it is the same as our PID
@@ -133,32 +144,20 @@ public:
 };
 
 // Handle the "getstats" command.  The argument is a list.
-// "getstats_delta" command responds statistics counters.
+// "getstats" command responds statistics counters and clear them.
 class GetStatsCommand : public AuthCommand {
 public:
     virtual ConstElementPtr exec(AuthSrv& server, isc::data::ConstElementPtr) {
-        LOG_DEBUG(auth_logger, DBG_AUTH_OPS, AUTH_RECEIVED_GETSTATS);
         statistics::Counters::item_node_name_set_type trees;
         trees.insert("auth.server.qr");
         return (createAnswer(0, server.getStatistics(trees)));
     }
 };
 
-// Handle the "getstats_delta" command.  The argument is a list.
-// "getstats_delta" command responds statistics counters and clear them.
-class GetStatsDeltaCommand : public AuthCommand {
-public:
-    virtual ConstElementPtr exec(AuthSrv& server, isc::data::ConstElementPtr) {
-        LOG_DEBUG(auth_logger, DBG_AUTH_OPS, AUTH_RECEIVED_GETSTATS);
-        statistics::Counters::item_node_name_set_type trees;
-        trees.insert("auth.server.qr");
-        return (createAnswer(0, server.getStatisticsDelta(trees)));
-    }
-};
-
 class StartDDNSForwarderCommand : public AuthCommand {
 public:
-    virtual ConstElementPtr exec(AuthSrv& server, isc::data::ConstElementPtr) {
+    virtual ConstElementPtr exec(AuthSrv& server,
+                                 isc::data::ConstElementPtr) {
         server.createDDNSForwarder();
         return (createAnswer());
     }
@@ -166,7 +165,8 @@ public:
 
 class StopDDNSForwarderCommand : public AuthCommand {
 public:
-    virtual ConstElementPtr exec(AuthSrv& server, isc::data::ConstElementPtr) {
+    virtual ConstElementPtr exec(AuthSrv& server,
+                                 isc::data::ConstElementPtr) {
         server.destroyDDNSForwarder();
         return (createAnswer());
     }
@@ -175,7 +175,9 @@ public:
 // Handle the "loadzone" command.
 class LoadZoneCommand : public AuthCommand {
 public:
-    virtual ConstElementPtr exec(AuthSrv& server, isc::data::ConstElementPtr args) {
+    virtual ConstElementPtr exec(AuthSrv& server,
+                                 isc::data::ConstElementPtr args)
+    {
         if (args == NULL) {
             isc_throw(AuthCommandError, "Null argument");
         }
@@ -211,7 +213,7 @@ public:
             case ConfigurableClientList::ZONE_NOT_CACHED:
                 isc_throw(AuthCommandError, "Zone " << origin << "/" <<
                           zone_class << " is not served from memory, but "
-                          "direcly from the data source. It is not possible "
+                          "directly from the data source. It is not possible "
                           "to reload it into memory. Configure it to be cached "
                           "first.");
             case ConfigurableClientList::CACHE_DISABLED:
@@ -233,8 +235,6 @@ createAuthCommand(const string& command_id) {
         return (new ShutdownCommand());
     } else if (command_id == "getstats") {
         return (new GetStatsCommand());
-    } else if (command_id == "getstats_delta") {
-        return (new GetStatsDeltaCommand());
     } else if (command_id == "loadzone") {
         return (new LoadZoneCommand());
     } else if (command_id == "start_ddns_forwarder") {
@@ -257,17 +257,13 @@ ConstElementPtr
 execAuthServerCommand(AuthSrv& server, const string& command_id,
                       ConstElementPtr args)
 {
-    ConstElementPtr value;
-
     LOG_DEBUG(auth_logger, DBG_AUTH_OPS, AUTH_RECEIVED_COMMAND).arg(command_id);
     try {
-        value = scoped_ptr<AuthCommand>(createAuthCommand(command_id))->exec(server,
-                                                                             args);
+        return (scoped_ptr<AuthCommand>(
+                    createAuthCommand(command_id))->exec(server, args));
     } catch (const isc::Exception& ex) {
         LOG_ERROR(auth_logger, AUTH_COMMAND_FAILED).arg(command_id)
                                                    .arg(ex.what());
         return (createAnswer(1, ex.what()));
     }
-
-    return (value);
 }

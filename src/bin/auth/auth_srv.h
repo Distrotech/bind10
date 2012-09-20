@@ -201,36 +201,35 @@ public:
     ///
     void setXfrinSession(isc::cc::AbstractSession* xfrin_session);
 
-    /// \brief Get the values of specified counters.
+    /// \brief Get the values of specified statistics counters.
     ///
-    /// This function returns names and values of counter.
+    /// This function returns names and values of counter specified with
+    /// \c items. If \c items is empty, empty map is returned. Duplicated item
+    /// names cannot be specified because \c items is a set.
     ///
-    /// \throw bad_alloc
+    /// \param items A set of item names. An item name must be the name of
+    ///              a sub-tree of statistics items, one of the following:
+    ///                auth.server.qr: Query / Response counters
+    ///                auth.server.socket: Socket statistics
     ///
-    /// \return a tree of statistics items.
+    /// \throw std::bad_alloc Internal resource allocation fails.
+    ///
+    /// \return A tree of statistics items formatted in a map.
+    ///         { item_name => item_value, item_name => item_value, ... }
+    ///         See statistics.h for detail.
     const isc::auth::statistics::Counters::item_tree_type getStatistics(
-        const isc::auth::statistics::Counters::item_node_name_set_type &items)
-        const;
+        const isc::auth::statistics::Counters::item_node_name_set_type& items);
 
-    /// \brief Get the values of specified counters and clear them.
+    /// \brief Dump the values of all statistics counters.
     ///
-    /// This function returns names and values of counter.
+    /// This function returns names and values of all counters for testing.
     ///
-    /// \throw bad_alloc
+    /// \throw std::bad_alloc Internal resource allocation fails.
     ///
-    /// \return a tree of statistics items.
-    const isc::auth::statistics::Counters::item_tree_type getStatisticsDelta(
-        const isc::auth::statistics::Counters::item_node_name_set_type &items);
-
-    /// \brief Dump the values of counters.
-    ///
-    /// This function returns names and values of counter.
-    ///
-    /// \throw bad_alloc
-    ///
-    /// \return a tree of statistics items.
-    const isc::auth::statistics::Counters::item_tree_type dumpStatistics()
-        const;
+    /// \return A tree of statistics items formatted in a map.
+    ///         { item_name => item_value, item_name => item_value, ... }
+    ///         See statistics.h for detail.
+    isc::auth::statistics::Counters::item_tree_type dumpStatistics() const;
 
     /**
      * \brief Set and get the addresses we listen on.
@@ -296,6 +295,16 @@ public:
     /// \return List of classes for which a non-NULL client list
     ///     has been set by setClientList.
     std::vector<isc::dns::RRClass> getClientListClasses() const;
+
+    /// \brief Sets the timeout for incoming TCP connections
+    ///
+    /// Incoming TCP connections that have not sent their data
+    /// withing this time are dropped.
+    ///
+    /// \param timeout The timeout (in milliseconds). If se to
+    /// zero, no timeouts are used, and the connection will remain
+    /// open forever.
+    void setTCPRecvTimeout(size_t timeout);
 
 private:
     AuthSrvImpl* impl_;

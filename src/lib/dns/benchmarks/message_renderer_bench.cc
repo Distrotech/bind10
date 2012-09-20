@@ -15,6 +15,7 @@
 #include <bench/benchmark.h>
 
 #include <dns/name.h>
+#include <dns/labelsequence.h>
 #include <dns/messagerenderer.h>
 #include <oldmessagerenderer.h>
 
@@ -35,21 +36,28 @@ template <typename T>
 class MessageRendererBenchMark {
 public:
     MessageRendererBenchMark(const vector<Name>& names) :
+        renderer_(NULL),
         names_(names)
     {}
+    MessageRendererBenchMark() {
+        delete renderer_;
+    }
     unsigned int run() {
-        renderer_.clear();
+        if (renderer_ == NULL) {
+            renderer_ = new T();
+        }
+        renderer_->clear();
         vector<Name>::const_iterator it = names_.begin();
         const vector<Name>::const_iterator it_end = names_.end();
         for (; it != it_end; ++it) {
-            renderer_.writeName(*it);
+            renderer_->writeName(*it);
         }
         // Make sure truncation didn't accidentally happen.
-        assert(!renderer_.isTruncated());
+        assert(!renderer_->isTruncated());
         return (names_.size());
     }
 private:
-    T renderer_;
+    T* renderer_; // It's pointer, so we won't need to copy it.
     const vector<Name>& names_;
 };
 
@@ -107,6 +115,11 @@ public:
     virtual void setCompressMode(const CompressMode) {}
     virtual void writeName(const Name& name, const bool = false) {
         name.toWire(getBuffer());
+    }
+    virtual void writeName(const LabelSequence&, const bool) {
+        // We shouldn't use this version of writeName (and we internally
+        // control it, so we simply assert it here)
+        assert(false);
     }
 };
 

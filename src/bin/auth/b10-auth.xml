@@ -143,6 +143,22 @@
       on the IPv6 (::) and IPv4 (0.0.0.0) wildcard addresses.
     </para>
 
+    <para>
+      <varname>statistics-interval</varname> is the timer interval
+      in seconds for <command>b10-auth</command> to share its
+      statistics information to
+      <citerefentry><refentrytitle>b10-stats</refentrytitle><manvolnum>8</manvolnum></citerefentry>.
+      Statistics updates can be disabled by setting this to 0.
+      The default is 60.
+    </para>
+
+    <para>
+      <varname>tcp_recv_timeout</varname> is the timeout used on
+      incoming TCP connections, in milliseconds. If the query
+      is not sent within this time, the connection is closed.
+      Setting this to 0 will disable TCP timeouts completely.
+    </para>
+
 <!-- TODO: formating -->
     <para>
       The configuration commands are:

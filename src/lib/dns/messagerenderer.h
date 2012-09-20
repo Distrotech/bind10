@@ -17,6 +17,8 @@
 
 #include <util/buffer.h>
 
+#include <boost/noncopyable.hpp>
+
 namespace isc {
 
 namespace dns {
@@ -330,8 +332,21 @@ public:
     /// for compressing subsequent names.
     ///
     /// \param name A \c Name object to be written.
-    /// \param compress A boolean indicating whether to enable name compression.
+    /// \param compress A boolean indicating whether to enable name
+    /// compression.
     virtual void writeName(const Name& name, bool compress = true) = 0;
+
+    /// \brief Write a \c LabelSequence object into the internal buffer
+    /// in wire format, with or without name compression.
+    ///
+    /// This is the same as the other version, which takes \c Name instead
+    /// of \c LabelSequence, except for the parameter type.  The passed
+    /// \c LabelSequence must be absolute.
+    ///
+    /// \param ls A \c LabelSequence object to be written.
+    /// \param compress A boolean indicating whether to enable name
+    /// compression.
+    virtual void writeName(const LabelSequence& ls, bool compress = true) = 0;
     //@}
 };
 
@@ -346,7 +361,8 @@ public:
 /// end of the buffer at the time of construction.  However, if the
 /// pre-existing portion of the buffer contains DNS names, these names won't
 /// be considered for name compression.
-class MessageRenderer : public AbstractMessageRenderer {
+class MessageRenderer : public AbstractMessageRenderer,
+    public boost::noncopyable { // Can crash if copied
 public:
     using AbstractMessageRenderer::CASE_INSENSITIVE;
     using AbstractMessageRenderer::CASE_SENSITIVE;
@@ -373,22 +389,7 @@ public:
 
     virtual void clear();
     virtual void writeName(const Name& name, bool compress = true);
-
-    /// \brief Write a \c LabelSequence object into the internal buffer
-    /// in wire format, with or without name compression.
-    ///
-    /// If the optional parameter \c compress is \c true, this method tries to
-    /// compress the \c ls if possible, searching the entire message that has
-    /// been rendered.  Otherwise name compression is omitted.  Its default
-    /// value is \c true.
-    ///
-    /// Note: even if \c compress is \c true, the position of the \c ls (and
-    /// possibly its ancestor names) in the message is recorded and may be used
-    /// for compressing subsequent names.
-    ///
-    /// \param ls A \c LabelSequence object to be written.
-    /// \param compress A boolean indicating whether to enable name compression.
-    void writeName(const LabelSequence& ls, bool compress = true);
+    virtual void writeName(const LabelSequence& ls, bool compress = true);
 
 private:
     struct MessageRendererImpl;

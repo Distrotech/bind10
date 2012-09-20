@@ -79,6 +79,32 @@ TEST_F(AuthConfigTest, versionConfig) {
                         Element::fromJSON("{\"version\": 0}")));
 }
 
+TEST_F(AuthConfigTest, exceptionGuarantee) {
+    using namespace isc::server_common::portconfig;
+    AddressList a;
+    a.push_back(AddressPair("127.0.0.1", 53210));
+    server.setListenAddresses(a);
+    const AddressList b = server.getListenAddresses();
+    EXPECT_EQ(a.size(), b.size());
+    EXPECT_EQ(a.at(0).first, b.at(0).first);
+    EXPECT_EQ(a.at(0).second, b.at(0).second);
+    // The test socket request will reject the second address (192.0.2.2)
+    // with an exception
+    EXPECT_THROW(configureAuthServer(
+                     server,
+                     Element::fromJSON(
+                         "{ \"listen_on\": ["
+                           "{\"address\": \"::1\", \"port\": 53210},"
+                           "{\"address\": \"192.0.2.2\", \"port\": 53210}"
+                         "]}")),
+                 AuthConfigError);
+    // The server state shouldn't change
+    const AddressList c = server.getListenAddresses();
+    EXPECT_EQ(a.size(), c.size());
+    EXPECT_EQ(a.at(0).first, c.at(0).first);
+    EXPECT_EQ(a.at(0).second, c.at(0).second);
+}
+
 TEST_F(AuthConfigTest, badConfig) {
     // These should normally not happen, but should be handled to avoid
     // an unexpected crash due to a bug of the caller.
@@ -117,15 +143,17 @@ TEST_F(AuthConfigTest, listenAddressConfig) {
     EXPECT_EQ(DNSService::SERVER_SYNC_OK, dnss_.getUDPFdParams().at(1).options);
 }
 
-class StatisticsIntervalConfigTest : public AuthConfigTest {
-protected:
-    StatisticsIntervalConfigTest() :
-        parser(createAuthConfigParser(server, "statistics-interval"))
-    {}
-    ~StatisticsIntervalConfigTest() {
-        delete parser;
-    }
-    AuthConfigParser* parser;
-};
+// Try setting tcp receive timeout through config
+TEST_F(AuthConfigTest, tcpRecvTimeoutConfig) {
+    configureAuthServer(server, Element::fromJSON(
+    "{ \"tcp_recv_timeout\": 123 }"));
+    EXPECT_EQ(123, dnss_.getTCPRecvTimeout());
+    configureAuthServer(server, Element::fromJSON(
+    "{ \"tcp_recv_timeout\": 2000 }"));
+    EXPECT_EQ(2000, dnss_.getTCPRecvTimeout());
+    EXPECT_THROW(configureAuthServer(server, Element::fromJSON(
+                    "{ \"tcp_recv_timeout\": -123 }")),
+                 AuthConfigError);
+}
 
 }
