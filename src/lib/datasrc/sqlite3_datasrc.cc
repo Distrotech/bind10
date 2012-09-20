@@ -87,6 +87,7 @@ const char* const SCHEMA_LIST[] = {
     "CREATE INDEX records_byname ON records (name)",
     "CREATE INDEX records_byrname ON records (rname)",
     "CREATE INDEX records_bytype_and_rname ON records (rdtype, rname)",
+    "CREATE INDEX records_byrname_and_rdtype ON records (rname, rdtype)",
     "CREATE TABLE nsec3 (id INTEGER PRIMARY KEY, zone_id INTEGER NOT NULL, "
     "hash TEXT NOT NULL COLLATE NOCASE, "
     "owner TEXT NOT NULL COLLATE NOCASE, "
