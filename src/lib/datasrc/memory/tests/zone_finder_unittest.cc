@@ -31,6 +31,8 @@
 
 #include <gtest/gtest.h>
 
+#include <string>
+
 using namespace std;
 using namespace isc::dns;
 using namespace isc::dns::rdata;
@@ -46,24 +48,14 @@ namespace {
 using result::SUCCESS;
 using result::EXIST;
 
-// Some faked NSEC3 hash values commonly used in tests and the faked NSEC3Hash
-// object.
-//
-// For apex (example.org)
-const char* const apex_hash = "0P9MHAVEQVM6T7VBL5LOP2U3T2RP3TOM";
-const char* const apex_hash_lower = "0p9mhaveqvm6t7vbl5lop2u3t2rp3tom";
-// For ns1.example.org
-const char* const ns1_hash = "2T7B4G4VSA5SMI47K61MV5BV1A22BOJR";
-// For w.example.org
-const char* const w_hash = "01UDEMVP1J2F7EG6JEBPS17VP3N8I58H";
-// For x.y.w.example.org (lower-cased)
-const char* const xyw_hash = "2vptu5timamqttgl4luu9kg21e0aor3s";
-// For zzz.example.org.
-const char* const zzz_hash = "R53BQ7CC2UVMUBFU5OCMM6PERS9TK9EN";
-
-typedef map<Name, string> NSEC3HashMap;
-typedef NSEC3HashMap::value_type NSEC3HashPair;
-NSEC3HashMap nsec3_hash_map;
+// Proxy accessor for faked NSEC3 mapping for tests.  map isn't a trivial
+// type, so it's safer to get access to it via a proxy to avoid initialization
+// fiasco.
+NSEC3HashMap&
+getNSEC3HashMap() {
+    static NSEC3HashMap nsec3_hash_map;
+    return (nsec3_hash_map);
+}
 
 // A faked NSEC3 hash calculator for convenience. Tests that need to use
 // the faked hashed values should call setFakeNSEC3Calculate() on the
@@ -73,9 +65,10 @@ std::string
 fakeNSEC3Calculate(const Name& name,
                    const uint16_t,
                    const uint8_t*,
-                   size_t) {
-    const NSEC3HashMap::const_iterator found = nsec3_hash_map.find(name);
-    if (found != nsec3_hash_map.end()) {
+                   size_t)
+{
+    const NSEC3HashMap::const_iterator found = getNSEC3HashMap().find(name);
+    if (found != getNSEC3HashMap().end()) {
         return (found->second);
     }
 
@@ -84,27 +77,12 @@ fakeNSEC3Calculate(const Name& name,
 }
 
 class MyZoneFinder : public memory::InMemoryZoneFinder {
-private:
 public:
     MyZoneFinder(const ZoneData& zone_data,
                  const isc::dns::RRClass& rrclass) :
          memory::InMemoryZoneFinder(zone_data, rrclass)
     {
-        // Build pre-defined hash
-        nsec3_hash_map.clear();
-        nsec3_hash_map[Name("example.org")] = apex_hash;
-        nsec3_hash_map[Name("www.example.org")] = "2S9MHAVEQVM6T7VBL5LOP2U3T2RP3TOM";
-        nsec3_hash_map[Name("xxx.example.org")] = "Q09MHAVEQVM6T7VBL5LOP2U3T2RP3TOM";
-        nsec3_hash_map[Name("yyy.example.org")] = "0A9MHAVEQVM6T7VBL5LOP2U3T2RP3TOM";
-        nsec3_hash_map[Name("x.y.w.example.org")] =
-            "2VPTU5TIMAMQTTGL4LUU9KG21E0AOR3S";
-        nsec3_hash_map[Name("y.w.example.org")] = "K8UDEMVP1J2F7EG6JEBPS17VP3N8I58H";
-        nsec3_hash_map[Name("w.example.org")] = w_hash;
-        nsec3_hash_map[Name("zzz.example.org")] = zzz_hash;
-        nsec3_hash_map[Name("smallest.example.org")] =
-            "00000000000000000000000000000000";
-        nsec3_hash_map[Name("largest.example.org")] =
-            "UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU";
+        buildFakeNSEC3Map(getNSEC3HashMap());
     }
 
     void setFakeNSEC3Calculate() {
@@ -268,7 +246,7 @@ public:
              nsec3_data = NSEC3Data::create(mem_sgmt_, nsec3_rdata);
              zone_data_->setNSEC3Data(nsec3_data);
         } else {
-             size_t salt_len = nsec3_data->getSaltLen();
+             const size_t salt_len = nsec3_data->getSaltLen();
              const uint8_t* salt_data = nsec3_data->getSaltData();
              const vector<uint8_t>& salt_data_2 = nsec3_rdata.getSalt();
 
@@ -282,23 +260,16 @@ public:
              }
         }
 
-        // Make just the NSEC3 hash label uppercase, and insert the
-        // entire name into the NSEC3Data ZoneTree.
-        string fst_label = rrset->getName().split(0, 1).toText(true);
-        transform(fst_label.begin(), fst_label.end(), fst_label.begin(),
-                  ::toupper);
-        const string rest = rrset->getName().split(1).toText(true);
-
-        ZoneNode *node;
-        nsec3_data->insertName(mem_sgmt_, Name(fst_label + "." + rest), &node);
+        ZoneNode* node;
+        nsec3_data->insertName(mem_sgmt_, rrset->getName(), &node);
 
         // We assume that rrsig has already been checked to match rrset
         // by the caller.
-        RdataSet *set = RdataSet::create(mem_sgmt_, encoder_,
-                                         rrset, ConstRRsetPtr());
-        RdataSet *old_set = node->setData(set);
-        if (old_set != NULL) {
-             RdataSet::destroy(mem_sgmt_, class_, old_set);
+        RdataSet* rdset = RdataSet::create(mem_sgmt_, encoder_,
+                                           rrset, ConstRRsetPtr());
+        RdataSet* old_rdset = node->setData(rdset);
+        if (old_rdset != NULL) {
+             RdataSet::destroy(mem_sgmt_, class_, old_rdset);
         }
         zone_data_->setSigned(true);
     }
@@ -1476,31 +1447,6 @@ TEST_F(InMemoryZoneFinderTest, cancelWildcardNSEC) {
 }
 
 
-TEST_F(InMemoryZoneFinderTest, findNSEC3) {
-    // Set up the faked hash calculator.
-    zone_finder_.setFakeNSEC3Calculate();
-
-    // Add a few NSEC3 records:
-    // apex (example.org.): hash=0P..
-    // ns1.example.org:     hash=2T..
-    // w.example.org:       hash=01..
-    // zzz.example.org:     hash=R5..
-    const string apex_nsec3_text = string(apex_hash) + ".example.org." +
-        string(nsec3_common);
-    addZoneData(textToRRset(apex_nsec3_text));
-    const string ns1_nsec3_text = string(ns1_hash) + ".example.org." +
-        string(nsec3_common);
-    addZoneData(textToRRset(ns1_nsec3_text));
-    const string w_nsec3_text = string(w_hash) + ".example.org." +
-        string(nsec3_common);
-    addZoneData(textToRRset(w_nsec3_text));
-    const string zzz_nsec3_text = string(zzz_hash) + ".example.org." +
-        string(nsec3_common);
-    addZoneData(textToRRset(zzz_nsec3_text));
-
-    performNSEC3Test(zone_finder_);
-}
-
 TEST_F(InMemoryZoneFinderTest, findNSEC3ForBadZone) {
     // Set up the faked hash calculator.
     zone_finder_.setFakeNSEC3Calculate();
@@ -1525,4 +1471,104 @@ TEST_F(InMemoryZoneFinderTest, findNSEC3ForBadZone) {
                  DataSourceError);
 }
 
+/// \brief Test fixture for the InMemoryZoneFinder class
+class InMemoryZoneFinderNSEC3Test : public InMemoryZoneFinderTest {
+public:
+    InMemoryZoneFinderNSEC3Test() {
+        // Set up the faked hash calculator.
+        zone_finder_.setFakeNSEC3Calculate();
+
+        // Add a few NSEC3 records:
+        // apex (example.org.): hash=0P..
+        // ns1.example.org:     hash=2T..
+        // w.example.org:       hash=01..
+        // zzz.example.org:     hash=R5..
+        const string apex_nsec3_text = string(apex_hash) + ".example.org." +
+            string(nsec3_common);
+        addZoneData(textToRRset(apex_nsec3_text));
+        const string ns1_nsec3_text = string(ns1_hash) + ".example.org." +
+            string(nsec3_common);
+        addZoneData(textToRRset(ns1_nsec3_text));
+        const string w_nsec3_text = string(w_hash) + ".example.org." +
+            string(nsec3_common);
+        addZoneData(textToRRset(w_nsec3_text));
+        const string zzz_nsec3_text = string(zzz_hash) + ".example.org." +
+            string(nsec3_common);
+        addZoneData(textToRRset(zzz_nsec3_text));
+    }
+};
+
+TEST_F(InMemoryZoneFinderNSEC3Test, findNSEC3) {
+    performNSEC3Test(zone_finder_);
+}
+
+struct TestData {
+     const char* const name;
+     const bool recursive;
+     const bool matched;
+     const uint8_t closest_labels;
+     const char* const closest_proof;
+     const char* const next_proof;
+};
+
+const TestData nsec3_data[] = {
+     {"n0", false, false, 4, "R53BQ7CC2UVMUBFU5OCMM6PERS9TK9EN", NULL},
+     {"n1", false,  true, 4, "01UDEMVP1J2F7EG6JEBPS17VP3N8I58H", NULL},
+     {"n2", false, false, 4, "01UDEMVP1J2F7EG6JEBPS17VP3N8I58H", NULL},
+     {"n3", false,  true, 4, "0P9MHAVEQVM6T7VBL5LOP2U3T2RP3TOM", NULL},
+     {"n4", false, false, 4, "0P9MHAVEQVM6T7VBL5LOP2U3T2RP3TOM", NULL},
+     {"n5", false,  true, 4, "2T7B4G4VSA5SMI47K61MV5BV1A22BOJR", NULL},
+     {"n6", false, false, 4, "2T7B4G4VSA5SMI47K61MV5BV1A22BOJR", NULL},
+     {"n7", false,  true, 4, "R53BQ7CC2UVMUBFU5OCMM6PERS9TK9EN", NULL},
+     {"n8", false, false, 4, "R53BQ7CC2UVMUBFU5OCMM6PERS9TK9EN", NULL},
+     {"n0",  true,  true, 3, "0P9MHAVEQVM6T7VBL5LOP2U3T2RP3TOM",
+         "R53BQ7CC2UVMUBFU5OCMM6PERS9TK9EN"},
+     {"n1",  true,  true, 4, "01UDEMVP1J2F7EG6JEBPS17VP3N8I58H", NULL},
+     {"n2",  true,  true, 3, "0P9MHAVEQVM6T7VBL5LOP2U3T2RP3TOM",
+         "01UDEMVP1J2F7EG6JEBPS17VP3N8I58H"},
+     {"n3",  true,  true, 4, "0P9MHAVEQVM6T7VBL5LOP2U3T2RP3TOM", NULL},
+     {"n4",  true,  true, 3, "0P9MHAVEQVM6T7VBL5LOP2U3T2RP3TOM",
+         "0P9MHAVEQVM6T7VBL5LOP2U3T2RP3TOM"},
+     {"n5",  true,  true, 4, "2T7B4G4VSA5SMI47K61MV5BV1A22BOJR", NULL},
+     {"n6",  true,  true, 3, "0P9MHAVEQVM6T7VBL5LOP2U3T2RP3TOM",
+         "2T7B4G4VSA5SMI47K61MV5BV1A22BOJR"},
+     {"n7",  true,  true, 4, "R53BQ7CC2UVMUBFU5OCMM6PERS9TK9EN", NULL},
+     {"n8",  true,  true, 3, "0P9MHAVEQVM6T7VBL5LOP2U3T2RP3TOM",
+         "R53BQ7CC2UVMUBFU5OCMM6PERS9TK9EN"}
+};
+
+const size_t data_count(sizeof(nsec3_data) / sizeof(*nsec3_data));
+
+TEST_F(InMemoryZoneFinderNSEC3Test, findNSEC3Walk) {
+    const Name origin("example.org");
+    for (size_t i = 0; i < data_count; ++i) {
+        const Name name = Name(nsec3_data[i].name).concatenate(origin);
+
+        SCOPED_TRACE(name.toText() + (nsec3_data[i].recursive ?
+                                      ", recursive" :
+                                      ", non-recursive"));
+
+        const ZoneFinder::FindNSEC3Result result =
+            zone_finder_.findNSEC3(name, nsec3_data[i].recursive);
+
+        EXPECT_EQ(nsec3_data[i].matched, result.matched);
+        EXPECT_EQ(nsec3_data[i].closest_labels, result.closest_labels);
+
+        if (nsec3_data[i].closest_proof != NULL) {
+            ASSERT_TRUE(result.closest_proof);
+            EXPECT_EQ(Name(nsec3_data[i].closest_proof).concatenate(origin),
+                      result.closest_proof->getName());
+        } else {
+            EXPECT_FALSE(result.closest_proof);
+        }
+
+        if (nsec3_data[i].next_proof != NULL) {
+            ASSERT_TRUE(result.next_proof);
+             EXPECT_EQ(Name(nsec3_data[i].next_proof).concatenate(origin),
+                       result.next_proof->getName());
+        } else {
+            EXPECT_FALSE(result.next_proof);
+        }
+    }
+}
 }
