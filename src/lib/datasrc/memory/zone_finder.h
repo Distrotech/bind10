@@ -40,15 +40,18 @@ public:
     ZoneFinderResultContext(ZoneFinder::Result code_param,
                             TreeNodeRRsetPtr rrset_param,
                             ZoneFinder::FindResultFlags flags_param,
-                            const ZoneNode* node) :
-        code(code_param), rrset(rrset_param), flags(flags_param),
-        found_node(node)
+                            const ZoneData& zone_data_param,
+                            const ZoneNode* node, const RdataSet* rdset) :
+	code(code_param), rrset(rrset_param), flags(flags_param),
+        zone_data(&zone_data_param), found_node(node), found_rdset(rdset)
     {}
 
     const ZoneFinder::Result code;
     const TreeNodeRRsetPtr rrset;
     const ZoneFinder::FindResultFlags flags;
+    const ZoneData* const zone_data;
     const ZoneNode* const found_node;
+    const RdataSet* const found_rdset;
 };
 
 std::string

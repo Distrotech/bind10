@@ -39,6 +39,7 @@
 
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
@@ -55,6 +56,7 @@ using namespace isc::dns;
 using namespace isc::dns::rdata;
 using namespace isc::datasrc::memory;
 using boost::scoped_ptr;
+using boost::make_shared;
 
 namespace isc {
 namespace datasrc {
@@ -687,12 +689,13 @@ InMemoryClient::findZone(const isc::dns::Name& zone_name) const {
 
     ZoneTable::FindResult result(impl_->zone_table_->findZone(zone_name));
 
-    ZoneFinderPtr finder;
     if (result.code != result::NOTFOUND) {
-        finder.reset(new InMemoryZoneFinder(*result.zone_data, getClass()));
+        return (DataSourceClient::FindResult(
+                    result.code,
+                    make_shared<InMemoryZoneFinder>(*result.zone_data,
+                                                    getClass())));
     }
-
-    return (DataSourceClient::FindResult(result.code, finder));
+    return (DataSourceClient::FindResult(result.code, ZoneFinderPtr()));
 }
 
 isc::datasrc::memory::ZoneTable::FindResult

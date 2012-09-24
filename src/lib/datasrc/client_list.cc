@@ -23,6 +23,7 @@
 
 #include <memory>
 #include <boost/foreach.hpp>
+#include <boost/make_shared.hpp>
 
 using namespace isc::data;
 using namespace isc::dns;
@@ -30,6 +31,7 @@ using namespace std;
 using isc::util::MemorySegment;
 using boost::lexical_cast;
 using boost::shared_ptr;
+using boost::make_shared;
 using boost::dynamic_pointer_cast;
 using isc::datasrc::memory::InMemoryClient;
 
@@ -235,11 +237,9 @@ genKeeper(const ConfigurableClientList::DataSourceInfo* info) {
         return (boost::shared_ptr<ClientList::FindResult::LifeKeeper>());
     }
     if (info->cache_) {
-        return (boost::shared_ptr<ClientList::FindResult::LifeKeeper>(
-            new CacheKeeper(info->cache_)));
+        return (make_shared<CacheKeeper>(info->cache_));
     } else {
-        return (boost::shared_ptr<ClientList::FindResult::LifeKeeper>(
-            new ContainerKeeper(info->container_)));
+        return (make_shared<ContainerKeeper>(info->container_));
     }
 }
 
