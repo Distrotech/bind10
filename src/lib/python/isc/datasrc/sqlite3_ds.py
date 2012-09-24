@@ -25,7 +25,7 @@ RR_RDATA_INDEX = 7
 
 # Current major and minor versions of schema
 SCHEMA_MAJOR_VERSION = 2
-SCHEMA_MINOR_VERSION = 0
+SCHEMA_MINOR_VERSION = 1
 
 class Sqlite3DSError(Exception):
     """ Define exceptions."""

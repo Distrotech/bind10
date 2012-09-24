@@ -73,7 +73,7 @@ namespace {
 const char* const SCHEMA_LIST[] = {
     "CREATE TABLE schema_version (version INTEGER NOT NULL, "
         "minor INTEGER NOT NULL DEFAULT 0)",
-    "INSERT INTO schema_version VALUES (2, 0)",
+    "INSERT INTO schema_version VALUES (2, 1)",
     "CREATE TABLE zones (id INTEGER PRIMARY KEY, "
     "name TEXT NOT NULL COLLATE NOCASE, "
     "rdclass TEXT NOT NULL COLLATE NOCASE DEFAULT 'IN', "
