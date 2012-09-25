@@ -198,7 +198,8 @@ UPGRADES = [
     {'from': (2, 0), 'to': (2, 1),
         'statements': [
             # introduce a new index
-            "CREATE INDEX records_byrname_and_rdtype ON records (rname, rdtype)"
+            "CREATE INDEX records_byrname_and_rdtype ON records (rname, rdtype)",
+            "CREATE INDEX nsec3_byowner_and_rdtype ON nsec3 (owner, rdtype)"
         ]
     }
 

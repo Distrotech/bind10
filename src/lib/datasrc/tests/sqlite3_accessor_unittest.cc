@@ -177,6 +177,8 @@ TEST_F(SQLite3AccessorTest, iterator) {
 
     std::string data[DatabaseAccessor::COLUMN_COUNT];
 
+    checkRR(context, "0P9MHAVEQVM6T7VBL5LOP2U3T2RP3TOM.example.org.", "3600",
+            "NSEC3", "1 1 12 aabbccdd 2T7B4G4VSA5SMI47K61MV5BV1A22BOJR A RRSIG");
     checkRR(context, "example.org.", "3600", "MX", "10 mail.example.org.");
     checkRR(context, "example.org.", "3600", "NS", "ns1.example.org.");
     checkRR(context, "example.org.", "3600", "NS", "ns2.example.org.");

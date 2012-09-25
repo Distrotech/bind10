@@ -94,6 +94,7 @@ const char* const SCHEMA_LIST[] = {
     "ttl INTEGER NOT NULL, rdtype TEXT NOT NULL COLLATE NOCASE, "
     "rdata TEXT NOT NULL)",
     "CREATE INDEX nsec3_byhash ON nsec3 (hash)",
+    "CREATE INDEX nsec3_byowner_and_rdtype ON nsec3 (owner, rdtype)",
     "CREATE TABLE diffs (id INTEGER PRIMARY KEY, "
         "zone_id INTEGER NOT NULL, "
         "version INTEGER NOT NULL, "
