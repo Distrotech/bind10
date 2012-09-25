@@ -1184,7 +1184,8 @@ public:
             find(zone_name, RRType::SOA())->rrset;
 
         // Request the context
-        context_ = accessor_->getAllRecords(zone.second);
+        context_ = accessor_->getAllRecords(zone.second,
+                                            zone_name.reverse().toText());
         // It must not return NULL, that's a bug of the implementation
         if (!context_) {
             isc_throw(isc::Unexpected, "Iterator context null at " +

@@ -172,19 +172,20 @@ TEST_F(SQLite3AccessorTest, iterator) {
 
     // Get the iterator context
     DatabaseAccessor::IteratorContextPtr
-        context(accessor->getAllRecords(zone_info.second));
+        context(accessor->getAllRecords(zone_info.second,
+                                        std::string("org.example.")));
     ASSERT_NE(DatabaseAccessor::IteratorContextPtr(), context);
 
     std::string data[DatabaseAccessor::COLUMN_COUNT];
 
-    checkRR(context, "0P9MHAVEQVM6T7VBL5LOP2U3T2RP3TOM.example.org.", "3600",
-            "NSEC3", "1 1 12 aabbccdd 2T7B4G4VSA5SMI47K61MV5BV1A22BOJR A RRSIG");
     checkRR(context, "example.org.", "3600", "MX", "10 mail.example.org.");
     checkRR(context, "example.org.", "3600", "NS", "ns1.example.org.");
     checkRR(context, "example.org.", "3600", "NS", "ns2.example.org.");
     checkRR(context, "example.org.", "3600", "NS", "ns3.example.org.");
     checkRR(context, "example.org.", "3600", "SOA",
             "ns1.example.org. admin.example.org. 1234 3600 1800 2419200 7200");
+    checkRR(context, "0P9MHAVEQVM6T7VBL5LOP2U3T2RP3TOM.example.org.", "3600",
+            "NSEC3", "1 1 12 aabbccdd 2T7B4G4VSA5SMI47K61MV5BV1A22BOJR A RRSIG");
     checkRR(context, "dname.example.org.", "3600", "DNAME",
             "dname.example.info.");
     checkRR(context, "dname2.foo.example.org.", "3600", "DNAME",
@@ -212,7 +213,8 @@ TEST_F(SQLite3AccessorTest, nsec3Iterator) {
 
     // Iterate through it
     DatabaseAccessor::IteratorContextPtr
-        context(accessor->getAllRecords(zone_info.second));
+        context(accessor->getAllRecords(zone_info.second,
+                                        std::string("com.example.sql2.")));
 
     // We just pick a random NSEC3 to check, the check of complete iterator
     // is in the above test. In addition, we count the number of NSEC3, RRSIG
@@ -1039,7 +1041,7 @@ TEST_F(SQLite3Update, nsec3IteratorOnAdd) {
 
     // the zone should contain only one record we just added.
     DatabaseAccessor::IteratorContextPtr context =
-        accessor->getAllRecords(zone_id);
+        accessor->getAllRecords(zone_id, std::string("com.example."));
     string data[DatabaseAccessor::COLUMN_COUNT];
     EXPECT_TRUE(context->getNext(data));
     EXPECT_EQ(string(apex_hash) + ".example.com.",

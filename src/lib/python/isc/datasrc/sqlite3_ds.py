@@ -83,8 +83,8 @@ def create(cur):
                     rdtype TEXT NOT NULL COLLATE NOCASE,
                     rdata TEXT NOT NULL)""")
         cur.execute("CREATE INDEX nsec3_byhash ON nsec3 (hash)")
-        cur.execute("""CREATE INDEX nsec3_byowner_and_rdtype ON nsec3
-                       (owner, rdtype)""");
+        cur.execute("""CREATE INDEX nsec3_byhash_and_rdtype ON nsec3
+                       (hash, rdtype)""");
         cur.execute("""CREATE TABLE diffs (id INTEGER PRIMARY KEY,
                     zone_id INTEGER NOT NULL,
                     version INTEGER NOT NULL,

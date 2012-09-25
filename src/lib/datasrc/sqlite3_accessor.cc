@@ -108,8 +108,8 @@ const char* const text_statements[NUM_STATEMENTS] = {
     // The following iterates the whole zone in the nsec3 table. As the
     // RRSIGs are for NSEC3s, we can easily hardcode the sigtype.
     // ITERATE_NSEC3
-    "SELECT rdtype, ttl, \"NSEC3\", rdata, owner, owner FROM nsec3 "
-        "WHERE zone_id = ?1 ORDER by owner, rdtype",
+    "SELECT rdtype, ttl, \"NSEC3\", rdata, owner, hash FROM nsec3 "
+        "WHERE zone_id = ?1 ORDER by hash, rdtype",
     /*
      * This one looks for previous name with NSEC record. It is done by
      * using the reversed name. The NSEC is checked because we need to
@@ -354,7 +354,7 @@ const char* const SCHEMA_LIST[] = {
         "ttl INTEGER NOT NULL, rdtype TEXT NOT NULL COLLATE NOCASE, "
         "rdata TEXT NOT NULL)",
     "CREATE INDEX nsec3_byhash ON nsec3 (hash)",
-    "CREATE INDEX nsec3_byowner_and_rdtype ON nsec3 (owner, rdtype)",
+    "CREATE INDEX nsec3_byhash_and_rdtype ON nsec3 (hash, rdtype)",
     "CREATE TABLE diffs (id INTEGER PRIMARY KEY, "
         "zone_id INTEGER NOT NULL, "
         "version INTEGER NOT NULL, "
@@ -635,14 +635,15 @@ class SQLite3Accessor::Context : public DatabaseAccessor::IteratorContext {
 public:
     // Construct an iterator for all records. When constructed this
     // way, the getNext() call will copy all fields
-    Context(const boost::shared_ptr<const SQLite3Accessor>& accessor, int id) :
+    Context(const boost::shared_ptr<const SQLite3Accessor>& accessor, int id,
+            std::string& rname) :
         iterator_type_(ITT_ALL),
         accessor_(accessor),
         statement_(NULL),
         statement2_(NULL),
         rc_(SQLITE_OK),
         rc2_(SQLITE_OK),
-        name_("")
+        name_(rname)
     {
         // We create the statement now and then just keep getting data from it
         statement_ = prepare(accessor->dbparameters_->db_,
@@ -797,22 +798,25 @@ private:
     }
 
     int compareResults() {
-        // First compare rname column (this isn't in RecordColumn)
-        const char* a = convertToPlainChar(sqlite3_column_text(statement_, 5),
-                                           accessor_->dbparameters_->db_);
-        const char* b = convertToPlainChar(sqlite3_column_text(statement2_, 5),
-                                           accessor_->dbparameters_->db_);
-        int result = strcasecmp(a, b);
+        // First compare records.rname and nsec3.hash columns (these
+        // aren't in RecordColumn)
+        const char* r_r = convertToPlainChar(sqlite3_column_text(statement_, 5),
+                                               accessor_->dbparameters_->db_);
+        std::string ns_rs = name_ +
+            convertToPlainChar(sqlite3_column_text(statement2_, 5),
+                               accessor_->dbparameters_->db_) + ".";
+        int result = strcasecmp(r_r, ns_rs.c_str());
         if (result != 0) {
             return result;
         }
 
         // Then, the rdtype column
-        a = convertToPlainChar(sqlite3_column_text(statement_, TYPE_COLUMN),
-                                           accessor_->dbparameters_->db_);
-        b = convertToPlainChar(sqlite3_column_text(statement2_, TYPE_COLUMN),
-                                           accessor_->dbparameters_->db_);
-        return (strcasecmp(a, b));
+        r_r = convertToPlainChar(sqlite3_column_text(statement_, TYPE_COLUMN),
+                                 accessor_->dbparameters_->db_);
+        const char* ns_r = convertToPlainChar(sqlite3_column_text(statement2_,
+                                                                  TYPE_COLUMN),
+                                              accessor_->dbparameters_->db_);
+        return (strcasecmp(r_r, ns_r));
     }
 
     void bindName(const std::string& name) {
@@ -865,8 +869,8 @@ SQLite3Accessor::getNSEC3Records(const std::string& hash, int id) const {
 }
 
 DatabaseAccessor::IteratorContextPtr
-SQLite3Accessor::getAllRecords(int id) const {
-    return (IteratorContextPtr(new Context(shared_from_this(), id)));
+SQLite3Accessor::getAllRecords(int id, std::string rname) const {
+    return (IteratorContextPtr(new Context(shared_from_this(), id, rname)));
 }
 
 

@@ -199,7 +199,7 @@ UPGRADES = [
         'statements': [
             # introduce a new index
             "CREATE INDEX records_byrname_and_rdtype ON records (rname, rdtype)",
-            "CREATE INDEX nsec3_byowner_and_rdtype ON nsec3 (owner, rdtype)"
+            "CREATE INDEX nsec3_byhash_and_rdtype ON nsec3 (hash, rdtype)"
         ]
     }
 

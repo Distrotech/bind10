@@ -310,7 +310,7 @@ public:
                   "give you any NSEC3. Ever. Ask someone else.");
     }
 
-    virtual IteratorContextPtr getAllRecords(int) const {
+    virtual IteratorContextPtr getAllRecords(int, std::string) const {
         isc_throw(isc::NotImplemented,
                   "This database datasource can't be iterated");
     }
@@ -649,7 +649,7 @@ private:
         }
     };
 public:
-    virtual IteratorContextPtr getAllRecords(int id) const {
+     virtual IteratorContextPtr getAllRecords(int id, std::string) const {
         if (id == READONLY_ZONE_ID) {
             return (IteratorContextPtr(new MockIteratorContext(
                                            *readonly_records_)));
@@ -1110,7 +1110,7 @@ TEST(DatabaseConnectionTest, getRecords) {
 // This tests the default getAllRecords behaviour, throwing NotImplemented
 TEST(DatabaseConnectionTest, getAllRecords) {
     // The parameters don't matter
-    EXPECT_THROW(NopAccessor().getAllRecords(1),
+    EXPECT_THROW(NopAccessor().getAllRecords(1, std::string("")),
                  isc::NotImplemented);
 }
 

@@ -163,9 +163,10 @@ public:
      *                         the query
      *
      * \param id the zone id, as returned by getZone()
+     * \param rname the reversed zone name
      * \return Iterator that contains all records in the given zone
      */
-    virtual IteratorContextPtr getAllRecords(int id) const;
+    virtual IteratorContextPtr getAllRecords(int id, std::string rname) const;
 
     /** \brief Creates an iterator context for a set of differences.
      *

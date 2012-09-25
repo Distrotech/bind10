@@ -306,7 +306,8 @@ public:
     ///
     /// \param id The ID of the zone, returned from getZone().
     /// \return Newly created iterator context. Must not be NULL.
-    virtual IteratorContextPtr getAllRecords(int id) const = 0;
+    virtual IteratorContextPtr getAllRecords(int id,
+                                             std::string rname) const = 0;
 
     /// \brief Creates an iterator context for a set of differences.
     ///
