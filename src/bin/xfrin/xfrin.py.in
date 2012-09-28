@@ -954,12 +954,14 @@ class XfrinConnection(asyncore.dispatcher):
         # All okay, return it
         return soa
 
-    def get_ipver_str(self):
+    def get_ipver_str(self, family=None):
         """Returns a 'v4' or 'v6' string representing a IP version
         depending on the socket family"""
-        if self.socket.family == socket.AF_INET:
+        if family is None:
+            family = self.socket.family
+        if family == socket.AF_INET:
             return 'v4'
-        elif self.socket.family == socket.AF_INET6:
+        elif family == socket.AF_INET6:
             return 'v6'
 
     def _check_soa_serial(self):
