@@ -81,6 +81,22 @@ Feature: Xfrin incoming notify handling
     When I query statistics soa_in_progress of bind10 module Xfrin with cmdctl
     Then the statistics counter soa_in_progress should be 0
 
+    When I query statistics socket of bind10 module Xfrin with cmdctl
+    Then the statistics counter open for ipv4 should be 0
+    Then the statistics counter openfail for ipv4 should be 0
+    Then the statistics counter close for ipv4 should be 0
+    Then the statistics counter connfail for ipv4 should be 0
+    Then the statistics counter conn for ipv4 should be 0
+    Then the statistics counter senderr for ipv4 should be 0
+    Then the statistics counter recverr for ipv4 should be 0
+    Then the statistics counter open for ipv6 should be 0
+    Then the statistics counter openfail for ipv6 should be 0
+    Then the statistics counter close for ipv6 should be 0
+    Then the statistics counter connfail for ipv6 should be 0
+    Then the statistics counter conn for ipv6 should be 0
+    Then the statistics counter senderr for ipv6 should be 0
+    Then the statistics counter recverr for ipv6 should be 0
+
     When I send bind10 with cmdctl port 47804 the command Xfrout notify example.org IN
     Then wait for new master stderr message XFROUT_NOTIFY_COMMAND
     Then wait for new bind10 stderr message AUTH_RECEIVED_NOTIFY
@@ -156,6 +172,22 @@ Feature: Xfrin incoming notify handling
     Then the statistics counter time_to_ixfr for the zone example.org. should be 0.0
     Then the statistics counter time_to_axfr for the zone _SERVER_ should be greater than 0.0
     Then the statistics counter time_to_axfr for the zone example.org. should be greater than 0.0
+
+    When I query statistics socket of bind10 module Xfrin with cmdctl
+    Then the statistics counter open for ipv4 should be 0
+    Then the statistics counter openfail for ipv4 should be 0
+    Then the statistics counter close for ipv4 should be 0
+    Then the statistics counter connfail for ipv4 should be 0
+    Then the statistics counter conn for ipv4 should be 0
+    Then the statistics counter senderr for ipv4 should be 0
+    Then the statistics counter recverr for ipv4 should be 0
+    Then the statistics counter open for ipv6 should be greater than 0
+    Then the statistics counter openfail for ipv6 should be 0
+    Then the statistics counter close for ipv6 should be greater than 0
+    Then the statistics counter connfail for ipv6 should be 0
+    Then the statistics counter conn for ipv6 should be greater than 0
+    Then the statistics counter senderr for ipv6 should be 0
+    Then the statistics counter recverr for ipv6 should be 0
 
     #
     # Test for Xfr request rejected
@@ -239,6 +271,22 @@ Feature: Xfrin incoming notify handling
 
     When I query statistics soa_in_progress of bind10 module Xfrin with cmdctl
     Then the statistics counter soa_in_progress should be 0
+
+    When I query statistics socket of bind10 module Xfrin with cmdctl
+    Then the statistics counter open for ipv4 should be 0
+    Then the statistics counter openfail for ipv4 should be 0
+    Then the statistics counter close for ipv4 should be 0
+    Then the statistics counter connfail for ipv4 should be 0
+    Then the statistics counter conn for ipv4 should be 0
+    Then the statistics counter senderr for ipv4 should be 0
+    Then the statistics counter recverr for ipv4 should be 0
+    Then the statistics counter open for ipv6 should be 0
+    Then the statistics counter openfail for ipv6 should be 0
+    Then the statistics counter close for ipv6 should be 0
+    Then the statistics counter connfail for ipv6 should be 0
+    Then the statistics counter conn for ipv6 should be 0
+    Then the statistics counter senderr for ipv6 should be 0
+    Then the statistics counter recverr for ipv6 should be 0
 
     #
     # set transfer_acl rejection
@@ -328,6 +376,23 @@ Feature: Xfrin incoming notify handling
     Then the statistics counter time_to_ixfr for the zone example.org. should be 0.0
     Then the statistics counter time_to_axfr for the zone _SERVER_ should be 0.0
     Then the statistics counter time_to_axfr for the zone example.org. should be 0.0
+
+    When I query statistics socket of bind10 module Xfrin with cmdctl
+    last bindctl output should not contain "error"
+    Then the statistics counter open for ipv4 should be 0
+    Then the statistics counter openfail for ipv4 should be 0
+    Then the statistics counter close for ipv4 should be 0
+    Then the statistics counter connfail for ipv4 should be 0
+    Then the statistics counter conn for ipv4 should be 0
+    Then the statistics counter senderr for ipv4 should be 0
+    Then the statistics counter recverr for ipv4 should be 0
+    Then the statistics counter open for ipv6 should be greater than 0
+    Then the statistics counter openfail for ipv6 should be 0
+    Then the statistics counter close for ipv6 should be greater than 0
+    Then the statistics counter connfail for ipv6 should be 0
+    Then the statistics counter conn for ipv6 should be greater than 0
+    Then the statistics counter senderr for ipv6 should be 0
+    Then the statistics counter recverr for ipv6 should be 0
 
     #
     # Test for unreachable slave
