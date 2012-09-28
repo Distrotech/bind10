@@ -66,6 +66,21 @@ Feature: Xfrin incoming notify handling
     Then the statistics counter time_to_ixfr for the zone _SERVER_ should be 0.0
     Then the statistics counter time_to_axfr for the zone _SERVER_ should be 0.0
 
+    When I query statistics ixfr_deferred of bind10 module Xfrin with cmdctl
+    Then the statistics counter ixfr_deferred should be 0
+
+    When I query statistics axfr_deferred of bind10 module Xfrin with cmdctl
+    Then the statistics counter axfr_deferred should be 0
+
+    When I query statistics ixfr_running of bind10 module Xfrin with cmdctl
+    Then the statistics counter ixfr_running should be 0
+
+    When I query statistics axfr_running of bind10 module Xfrin with cmdctl
+    Then the statistics counter axfr_running should be 0
+
+    When I query statistics soa_in_progress of bind10 module Xfrin with cmdctl
+    Then the statistics counter soa_in_progress should be 0
+
     When I send bind10 with cmdctl port 47804 the command Xfrout notify example.org IN
     Then wait for new master stderr message XFROUT_NOTIFY_COMMAND
     Then wait for new bind10 stderr message AUTH_RECEIVED_NOTIFY
@@ -209,6 +224,21 @@ Feature: Xfrin incoming notify handling
     Then the statistics counter xfrfail for the zone _SERVER_ should be 0
     Then the statistics counter time_to_ixfr for the zone _SERVER_ should be 0.0
     Then the statistics counter time_to_axfr for the zone _SERVER_ should be 0.0
+
+    When I query statistics ixfr_deferred of bind10 module Xfrin with cmdctl
+    Then the statistics counter ixfr_deferred should be 0
+
+    When I query statistics axfr_deferred of bind10 module Xfrin with cmdctl
+    Then the statistics counter axfr_deferred should be 0
+
+    When I query statistics ixfr_running of bind10 module Xfrin with cmdctl
+    Then the statistics counter ixfr_running should be 0
+
+    When I query statistics axfr_running of bind10 module Xfrin with cmdctl
+    Then the statistics counter axfr_running should be 0
+
+    When I query statistics soa_in_progress of bind10 module Xfrin with cmdctl
+    Then the statistics counter soa_in_progress should be 0
 
     #
     # set transfer_acl rejection
