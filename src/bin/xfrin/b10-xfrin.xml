@@ -351,6 +351,55 @@ operation
         </simpara></listitem>
       </varlistentry>
 
+      <varlistentry>
+        <term>open</term>
+        <listitem><simpara>
+         IPv4 and IPv6 TCP sockets opened successfully
+        </simpara></listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>openfail</term>
+        <listitem><simpara>
+         IPv4 and IPv6 TCP sockets open failures
+        </simpara></listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>close</term>
+        <listitem><simpara>
+         IPv4 and IPv6 TCP sockets closed
+        </simpara></listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>connfail</term>
+        <listitem><simpara>
+         IPv4 and IPv6 TCP sockets connection failures
+        </simpara></listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>conn</term>
+        <listitem><simpara>
+         IPv4 and IPv6 TCP connections established successfully
+        </simpara></listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>senderr</term>
+        <listitem><simpara>
+         IPv4 and IPv6 TCP sockets send errors
+        </simpara></listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>recverr</term>
+        <listitem><simpara>
+         IPv4 and IPv6 TCP sockets receive errors
+        </simpara></listitem>
+      </varlistentry>
+
     </variablelist>
 
     <para>
