@@ -39,14 +39,14 @@ Feature: Xfrin incoming notify handling
     Then the statistics counter axfr_running should be 0
 
     When I query statistics socket of bind10 module Xfrout with cmdctl port 47804
-    Then the statistics counter open should be between 0 and 1
-    Then the statistics counter openfail should be 0
-    Then the statistics counter close should be 0
-    Then the statistics counter bindfail should be 0
-    Then the statistics counter acceptfail should be 0
-    Then the statistics counter accept should be 0
-    Then the statistics counter senderr should be 0
-    Then the statistics counter recverr should be 0
+    Then the statistics counter open for unixdomain should be between 0 and 1
+    Then the statistics counter openfail for unixdomain should be 0
+    Then the statistics counter close for unixdomain should be 0
+    Then the statistics counter bindfail for unixdomain should be 0
+    Then the statistics counter acceptfail for unixdomain should be 0
+    Then the statistics counter accept for unixdomain should be 0
+    Then the statistics counter senderr for unixdomain should be 0
+    Then the statistics counter recverr for unixdomain should be 0
 
     #
     # Test2 for Xfrin statistics
@@ -115,14 +115,14 @@ Feature: Xfrin incoming notify handling
     Then the statistics counter xfrreqdone for the zone example.org. should be 1
 
     When I query statistics socket of bind10 module Xfrout with cmdctl port 47804
-    Then the statistics counter open should be 1
-    Then the statistics counter openfail should be 0
-    Then the statistics counter close should be 0
-    Then the statistics counter bindfail should be 0
-    Then the statistics counter acceptfail should be 0
-    Then the statistics counter accept should be 1
-    Then the statistics counter senderr should be 0
-    Then the statistics counter recverr should be 0
+    Then the statistics counter open for unixdomain should be 1
+    Then the statistics counter openfail for unixdomain should be 0
+    Then the statistics counter close for unixdomain should be 0
+    Then the statistics counter bindfail for unixdomain should be 0
+    Then the statistics counter acceptfail for unixdomain should be 0
+    Then the statistics counter accept for unixdomain should be 1
+    Then the statistics counter senderr for unixdomain should be 0
+    Then the statistics counter recverr for unixdomain should be 0
 
     #
     # Test4 for Xfrin statistics
@@ -198,14 +198,14 @@ Feature: Xfrin incoming notify handling
     Then the statistics counter axfr_running should be 0
 
     When I query statistics socket of bind10 module Xfrout with cmdctl port 47804
-    Then the statistics counter open should be between 0 and 1
-    Then the statistics counter openfail should be 0
-    Then the statistics counter close should be 0
-    Then the statistics counter bindfail should be 0
-    Then the statistics counter acceptfail should be 0
-    Then the statistics counter accept should be 0
-    Then the statistics counter senderr should be 0
-    Then the statistics counter recverr should be 0
+    Then the statistics counter open for unixdomain should be between 0 and 1
+    Then the statistics counter openfail for unixdomain should be 0
+    Then the statistics counter close for unixdomain should be 0
+    Then the statistics counter bindfail for unixdomain should be 0
+    Then the statistics counter acceptfail for unixdomain should be 0
+    Then the statistics counter accept for unixdomain should be 0
+    Then the statistics counter senderr for unixdomain should be 0
+    Then the statistics counter recverr for unixdomain should be 0
 
     #
     # Test6 for Xfrin statistics
@@ -287,14 +287,14 @@ Feature: Xfrin incoming notify handling
     Then the statistics counter xfrreqdone for the zone example.org. should be 0
 
     When I query statistics socket of bind10 module Xfrout with cmdctl port 47804
-    Then the statistics counter open should be 1
-    Then the statistics counter openfail should be 0
-    Then the statistics counter close should be 0
-    Then the statistics counter bindfail should be 0
-    Then the statistics counter acceptfail should be 0
-    Then the statistics counter accept should be 1
-    Then the statistics counter senderr should be 0
-    Then the statistics counter recverr should be 0
+    Then the statistics counter open for unixdomain should be 1
+    Then the statistics counter openfail for unixdomain should be 0
+    Then the statistics counter close for unixdomain should be 0
+    Then the statistics counter bindfail for unixdomain should be 0
+    Then the statistics counter acceptfail for unixdomain should be 0
+    Then the statistics counter accept for unixdomain should be 1
+    Then the statistics counter senderr for unixdomain should be 0
+    Then the statistics counter recverr for unixdomain should be 0
 
     #
     # Test8 for Xfrin statistics
@@ -368,11 +368,12 @@ Feature: Xfrin incoming notify handling
     Then the statistics counter xfrreqdone for the zone example.org. should be 0
 
     When I query statistics socket of bind10 module Xfrout with cmdctl port 47804
-    Then the statistics counter open should be 1
-    Then the statistics counter openfail should be 0
-    Then the statistics counter close should be 0
-    Then the statistics counter bindfail should be 0
-    Then the statistics counter acceptfail should be 0
-    Then the statistics counter accept should be 0
-    Then the statistics counter senderr should be 0
-    Then the statistics counter recverr should be 0
+    Then the statistics counter open for unixdomain should be 1
+    Then the statistics counter openfail for unixdomain should be 0
+    Then the statistics counter close for unixdomain should be 0
+    Then the statistics counter bindfail for unixdomain should be 0
+    Then the statistics counter acceptfail for unixdomain should be 0
+    Then the statistics counter accept for unixdomain should be 0
+    Then the statistics counter senderr for unixdomain should be 0
+    Then the statistics counter recverr for unixdomain should be 0
+
