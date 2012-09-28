@@ -392,16 +392,16 @@ def find_value(dictionary, key):
             return find_value(v, key)
 
 @step('the statistics counter (\S+)(?: in the category (\S+))?'+ \
-          '(?: for the zone (\S+))? should be' + \
+          '(?: for(?: the zone)? (\S+))? should be' + \
           '(?:( greater than| less than| between))? (\-?\d+)(?: and (\-?\d+))?')
-def check_statistics(step, counter, category, zone, gtltbt, number, upper):
+def check_statistics(step, counter, category, zone_or_sock, gtltbt, number, upper):
     """
     check the output of bindctl for statistics of specified counter
     and zone.
     Parameters:
     counter ('counter <counter>'): The counter name of statistics.
     category ('category <category>', optional): The category of counter.
-    zone ('zone <zone>', optional): The zone name.
+    zone_or_sock ('<zone_or_sock>', optional): The zone name or socket name.
     gtltbt (' greater than'|' less than'|' between', optional): greater than
           <number> or less than <number> or between <number> and <upper>.
     number ('<number>): The expect counter number. <number> is assumed
@@ -412,25 +412,25 @@ def check_statistics(step, counter, category, zone, gtltbt, number, upper):
     output = parse_bindctl_output_as_data_structure()
     found = None
     category_str = ""
-    zone_str = ""
+    zone_or_sock_str = ""
     depth = []
     if category:
         depth.insert(0, category)
         category_str = " for category %s" % category
-    if zone:
-        depth.insert(0, zone)
-        zone_str = " for zone %s" % zone
+    if zone_or_sock:
+        depth.insert(0, zone_or_sock)
+        zone_or_sock_str = " for %s" % zone_or_sock
     for level in depth:
         output = find_value(output, level)
     found = find_value(output, counter)
     assert found is not None, \
         'Not found statistics counter %s%s%s' % \
-            (counter, category_str, zone_str)
+            (counter, category_str, zone_or_sock_str)
     msg = "Got %s, expected%s %s as counter %s%s" % \
-        (found, '' if gtltbt is None else gtltbt, number, counter, zone_str)
+        (found, '' if gtltbt is None else gtltbt, number, counter, zone_or_sock_str)
     if gtltbt and 'between' in gtltbt and upper:
         msg = "Got %s, expected%s %s and %s as counter %s%s" % \
-            (found, gtltbt, number, upper, counter, zone_str)
+            (found, gtltbt, number, upper, counter, zone_or_sock_str)
         assert float(number) <= float(found) \
             and float(found) <= float(upper), msg
     elif gtltbt and 'greater' in gtltbt:
