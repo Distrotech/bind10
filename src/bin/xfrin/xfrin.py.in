@@ -615,6 +615,67 @@ class XfrinConnection(asyncore.dispatcher):
         self._transfer_stats = XfrinTransferStats()
         self._counters = Counters(SPECFILE_LOCATION)
 
+    def create_socket(self, family, type):
+        """create_socket() overridden from the super class for
+        statistics counter open and openfail"""
+        try:
+            ret = super().create_socket(family, type)
+            # count open
+            getattr(counter,
+                    'inc_ip%ssocket_open' % self.get_ipver_str(family))()
+            return ret
+        except:
+            # count openfail
+            getattr(counter,
+                    'inc_ip%ssocket_openfail' % self.get_ipver_str(family))()
+            raise
+
+    def close(self):
+        """close() overridden from the super class for
+        statistics counter close"""
+        ret = super().close()
+        # count close
+        getattr(counter,
+                'inc_ip%ssocket_close' % self.get_ipver_str())()
+        return ret
+
+    def connect(self, address):
+        """connect() overridden from the super class for
+        statistics counter conn and connfail"""
+        try:
+            ret = super().connect(address)
+            # count conn
+            getattr(counter,
+                    'inc_ip%ssocket_conn' % self.get_ipver_str())()
+            return ret
+        except:
+            # count connfail
+            getattr(counter,
+                    'inc_ip%ssocket_connfail' % self.get_ipver_str())()
+            raise
+
+    def send(self, data):
+        """send() overridden from the super class for
+        statistics counter senderr"""
+        try:
+            return super().send(data)
+        except:
+            # count senderr
+            getattr(counter,
+                    'inc_ip%ssocket_senderr' % self.get_ipver_str())()
+            raise
+
+    def recv(self, buffer_size):
+        """recv() overridden from the super class for
+        statistics counter senderr"""
+        try:
+            return super().recv(buffer_size)
+        except:
+            # count recverr
+            getattr(counter,
+                    'inc_ip%ssocket_recverr' % self.get_ipver_str())()
+            raise
+
     def init_socket(self):
         '''Initialize the underlyig socket.
 
