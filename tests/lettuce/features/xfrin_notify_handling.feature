@@ -442,3 +442,48 @@ Feature: Xfrin incoming notify handling
     Then the statistics counter senderr for unixdomain should be 0
     Then the statistics counter recverr for unixdomain should be 0
 
+    #
+    # Test for unreachable master
+    #
+    Scenario: Handle incoming notify (unreachable master)
+    And I have bind10 running with configuration xfrin/retransfer_slave_notify.conf
+    And wait for bind10 stderr message BIND10_STARTED_CC
+    And wait for bind10 stderr message CMDCTL_STARTED
+    And wait for bind10 stderr message AUTH_SERVER_STARTED
+    And wait for bind10 stderr message XFRIN_STARTED
+    And wait for bind10 stderr message ZONEMGR_STARTED
+
+    A query for www.example.org to [::1]:47806 should have rcode NXDOMAIN
+
+    #
+    # execute reftransfer for Xfrin
+    #
+    When I send bind10 the command Xfrin retransfer example.org IN
+    Then wait for new bind10 stderr message XFRIN_CONNECT_MASTER
+    Then wait for new bind10 stderr message ZONEMGR_RECEIVE_XFRIN_FAILED
+
+    #
+    # Test10 for Xfrin statistics
+    #
+    # check initial statistics
+    #
+
+    # wait until the last stats requesting is finished
+    wait for new bind10 stderr message STATS_SEND_STATISTICS_REQUEST
+    wait for new bind10 stderr message XFRIN_RECEIVED_GETSTATS_COMMAND
+
+    When I query statistics socket of bind10 module Xfrin with cmdctl
+    Then the statistics counter open for ipv4 should be 0
+    Then the statistics counter openfail for ipv4 should be 0
+    Then the statistics counter close for ipv4 should be 0
+    Then the statistics counter connfail for ipv4 should be 0
+    Then the statistics counter conn for ipv4 should be 0
+    Then the statistics counter senderr for ipv4 should be 0
+    Then the statistics counter recverr for ipv4 should be 0
+    Then the statistics counter open for ipv6 should be greater than 0
+    Then the statistics counter openfail for ipv6 should be 0
+    Then the statistics counter close for ipv6 should be greater than 0
+    Then the statistics counter connfail for ipv6 should be greater than 0
+    Then the statistics counter conn for ipv6 should be 0
+    Then the statistics counter senderr for ipv6 should be 0
+    Then the statistics counter recverr for ipv6 should be 0
