@@ -41,8 +41,6 @@ void MySQL_uBenchmark::stmt_failure(MYSQL_STMT * stmt, const char* operation) {
     throw tmp.str();
 }
 
-
-
 void MySQL_uBenchmark::failure(const char* operation) {
     stringstream tmp;
     tmp << "Error " << mysql_errno(conn_) << " during " << operation
@@ -71,19 +69,21 @@ void MySQL_uBenchmark::connect() {
         failure("dropping old lease4 entries.");
     }
 
-    q = "ALTER TABLE lease4 engine=";
-    if (sync_) {
-        q += "InnoDB";
-    } else {
-        q += "MyISAM";
-    }
+    q = "ALTER TABLE lease4 engine=InnoDB";
     if (mysql_query(conn_, q.c_str())) {
         q = "Failed to run query:" + q;
         failure(q.c_str());
     }
+
+    if (mysql_autocommit(conn_, sync_ ? 1 : 0)) {
+        failure("Failed to disable autocommit");
+    }
 }
 
 void MySQL_uBenchmark::disconnect() {
+    if (mysql_commit(conn_)) {
+        failure("Failed to commit changes to the database");
+    }
     if (!conn_) {
         throw "NULL MySQL connection pointer.";
     }
@@ -98,14 +98,14 @@ void MySQL_uBenchmark::createLease4Test() {
 
     uint32_t addr = BASE_ADDR4; // Let's start with 1.0.0.0 address
     char hwaddr[20];
-    size_t hwaddr_len = 20;    // Not a real field
+    unsigned long hwaddr_len = 20;    // Not a real field
     char client_id[128];
-    size_t client_id_len = 128;
+    unsigned long client_id_len = 128;
     uint32_t valid_lft = 1000;  // We can use the same value for all leases
     uint32_t recycle_time = 7;  //    not supported in any foresable future,
 
     char cltt[48];              // timestamp (specified as text)
-    size_t cltt_len;
+    unsigned long cltt_len = 48;
 
     sprintf(cltt, "2012-07-11 15:43:00");
     cltt_len = strlen(cltt);
@@ -114,7 +114,7 @@ void MySQL_uBenchmark::createLease4Test() {
     bool fixed = false;
 
     char hostname[] = "foo";    // Will generate it dynamically
-    size_t hostname_len;
+    unsigned long hostname_len;
     hostname_len = strlen(hostname);
 
     bool fqdn_fwd = true;       // Let's pretend to do AAAA update
@@ -233,7 +233,7 @@ void MySQL_uBenchmark::createLease4Test() {
         sprintf(cltt, "2012-07-11 15:43:%02d", i % 60);
 
 
-        addr++;
+        addr = BASE_ADDR4 + i;
 
         if (!compiled_stmt_) {
             // the first address is 1.0.0.0.
@@ -281,7 +281,6 @@ void MySQL_uBenchmark::createLease4Test() {
             failure("Failed to close compiled statement, mysql_stmt_close returned non-zero");
         }
     }
-
     cout << endl;
 }
 
@@ -379,7 +378,7 @@ void MySQL_uBenchmark::searchLease4Test() {
 
             MYSQL_BIND response[11];
 
-            size_t length[11];
+            unsigned long length[11];
             my_bool is_null[11];
             my_bool error[11];
 

@@ -148,33 +148,37 @@ int uBenchmark::run() {
     srandom(time(NULL));
 
     try {
-        connect();
-
         ts_[0] = getTime();
 
-        createLease4Test();
+        connect();
         ts_[1] = getTime();
 
-        searchLease4Test();
+        createLease4Test();
         ts_[2] = getTime();
 
-        updateLease4Test();
+        searchLease4Test();
         ts_[3] = getTime();
 
-        deleteLease4Test();
+        updateLease4Test();
         ts_[4] = getTime();
 
+        deleteLease4Test();
+        ts_[5] = getTime();
+
         disconnect();
+        ts_[6] = getTime();
 
     } catch (const std::string& e) {
         cout << "Failed: " << e << endl;
         return (-1);
     }
 
-    printClock("Create leases4", num_, ts_[0], ts_[1]);
-    printClock("Search leases4", num_, ts_[1], ts_[2]);
-    printClock("Update leases4", num_, ts_[2], ts_[3]);
-    printClock("Delete leases4", num_, ts_[3], ts_[4]);
+    printClock("Connect time   ", 1,    ts_[0], ts_[1]);
+    printClock("Create leases4 ", num_, ts_[1], ts_[2]);
+    printClock("Search leases4 ", num_, ts_[2], ts_[3]);
+    printClock("Update leases4 ", num_, ts_[3], ts_[4]);
+    printClock("Delete leases4 ", num_, ts_[4], ts_[5]);
+    printClock("Disconnect time", 1,    ts_[5], ts_[6]);
 
     return (0);
 }

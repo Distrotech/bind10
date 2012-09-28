@@ -199,8 +199,8 @@ protected:
     /// benchmarks must generate the leases starting from 1.0.0.0 address
     const static uint32_t BASE_ADDR4 = 0x01000000;
 
-    /// five timestamps (1 at the beginning and 4 after each step)
-    struct timespec ts_[5];
+    /// seven timestamps (1 at the beginning and 5 after each step)
+    struct timespec ts_[7];
 
     /// should compiled statements be used?
     bool compiled_stmt_;
