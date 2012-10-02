@@ -135,17 +135,18 @@ public:
     }
 };
 
-class MySQLQueryBenchMark : public QueryBenchMark {
+class GenericSQLQueryBenchMark : public QueryBenchMark {
 public:
-    MySQLQueryBenchMark(const BenchQueries& queries,
-                        Message& query_message,
-                        OutputBuffer& buffer) :
+    GenericSQLQueryBenchMark(const BenchQueries& queries,
+                             Message& query_message,
+                             OutputBuffer& buffer,
+                             const char* const datasrc_type) :
         QueryBenchMark(queries, query_message, buffer)
     {
         DataSourceConfigurator::testReconfigure(
             server_.get(),
             Element::fromJSON("{\"IN\":"
-                              "  [{\"type\": \"mysql\","
+                              "  [{\"type\": \"" + string(datasrc_type) + "\","
                               "    \"params\": {}}]}"));
     }
 };
@@ -192,7 +193,7 @@ BenchMark<Sqlite3QueryBenchMark>::printResult() const {
 
 template<>
 void
-BenchMark<MySQLQueryBenchMark>::printResult() const {
+BenchMark<GenericSQLQueryBenchMark>::printResult() const {
     printQPSResult(getIteration(), getDuration(), getIterationPerSecond());
 }
 
@@ -208,7 +209,7 @@ namespace {
 const int ITERATION_DEFAULT = 1;
 enum DataSrcType {
     SQLITE3,
-    MYSQL,
+    GENERIC_SQL,
     MEMORY
 };
 
@@ -272,8 +273,9 @@ main(int argc, char* argv[]) {
     DataSrcType datasrc_type = SQLITE3;
     if (strcmp(opt_datasrc_type, "sqlite3") == 0) {
         ;                       // no need to override
-    } else if (strcmp(opt_datasrc_type, "mysql") == 0) {
-        datasrc_type = MYSQL;
+    } else if (strcmp(opt_datasrc_type, "mysql") == 0 ||
+               strcmp(opt_datasrc_type, "postgres") == 0) {
+        datasrc_type = GENERIC_SQL;
     } else if (strcmp(opt_datasrc_type, "memory") == 0) {
         datasrc_type = MEMORY;
     } else {
@@ -309,10 +311,11 @@ main(int argc, char* argv[]) {
                 iteration, Sqlite3QueryBenchMark(datasrc_file, queries,
                                                  message, buffer));
             break;
-        case MYSQL:
-            cout << "Benchmark with MySQL" << endl;
-            BenchMark<MySQLQueryBenchMark>(
-                iteration, MySQLQueryBenchMark(queries, message, buffer));
+        case GENERIC_SQL:
+            cout << "Benchmark with " << opt_datasrc_type << endl;
+            BenchMark<GenericSQLQueryBenchMark>(
+                iteration, GenericSQLQueryBenchMark(queries, message, buffer,
+                                                    opt_datasrc_type));
             break;
         case MEMORY:
             cout << "Benchmark with In Memory Data Source" << endl;
