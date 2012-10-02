@@ -41,6 +41,7 @@ nodist_libb10_datasrc_la_SOURCES = datasrc_messages.h datasrc_messages.cc
 libb10_datasrc_la_LDFLAGS = -no-undefined -version-info 1:0:1
 
 pkglib_LTLIBRARIES =  sqlite3_ds.la memory_ds.la static_ds.la mysql_ds.la
+pkglib_LTLIBRARIES +=  postgres_ds.la
 
 sqlite3_ds_la_SOURCES = sqlite3_accessor.h sqlite3_accessor.cc
 sqlite3_ds_la_SOURCES += sqlite3_accessor_link.cc
@@ -61,6 +62,18 @@ mysql_ds_la_LIBADD += $(top_builddir)/src/lib/dns/libb10-dns++.la
 mysql_ds_la_LIBADD += $(top_builddir)/src/lib/cc/libb10-cc.la
 mysql_ds_la_LIBADD += libb10-datasrc.la
 mysql_ds_la_LIBADD += -lmysqlclient
+
+postgres_ds_la_SOURCES = postgres_accessor.h postgres_accessor.cc
+postgres_ds_la_SOURCES += postgres_accessor_link.cc
+postgres_ds_la_CPPFLAGS = $(AM_CPPFLAGS)
+postgres_ds_la_LDFLAGS = -module -avoid-version
+postgres_ds_la_LDFLAGS += -no-undefined -version-info 1:0:0
+postgres_ds_la_LDFLAGS += -L/usr/local/lib
+postgres_ds_la_LIBADD = $(top_builddir)/src/lib/exceptions/libb10-exceptions.la
+postgres_ds_la_LIBADD += $(top_builddir)/src/lib/dns/libb10-dns++.la
+postgres_ds_la_LIBADD += $(top_builddir)/src/lib/cc/libb10-cc.la
+postgres_ds_la_LIBADD += libb10-datasrc.la
+postgres_ds_la_LIBADD += -lpq
 
 memory_ds_la_SOURCES = memory_datasrc_link.cc
 memory_ds_la_LDFLAGS = -module -avoid-version

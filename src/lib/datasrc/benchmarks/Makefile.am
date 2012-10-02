@@ -9,7 +9,7 @@ endif
 
 CLEANFILES = *.gcno *.gcda
 
-noinst_PROGRAMS = sqlite3_bench mysql_bench datasrc_loader
+noinst_PROGRAMS = sqlite3_bench mysql_bench postgres_bench datasrc_loader
 
 sqlite3_bench_SOURCES = sqlite3_bench.cc
 
@@ -24,6 +24,13 @@ mysql_bench_CPPFLAGS += -I/usr/local/Cellar/mysql/5.5.25a/include
 mysql_bench_LDFLAGS = -L/usr/local/Cellar/mysql/5.5.25a/lib
 mysql_bench_LDADD = $(top_builddir)/src/lib/datasrc/libb10-datasrc.la
 mysql_bench_LDADD += -lmysqlclient
+
+postgres_bench_SOURCES = postgres_bench.cc
+postgres_bench_CPPFLAGS = $(AM_CPPFLAGS)
+postgres_bench_CPPFLAGS += -I/usr/local/include
+postgres_bench_LDFLAGS = -L/usr/local/lib
+postgres_bench_LDADD = $(top_builddir)/src/lib/datasrc/libb10-datasrc.la
+postgres_bench_LDADD += -lpq
 
 datasrc_loader_SOURCES = datasrc_loader.cc
 datasrc_loader_LDADD = $(top_builddir)/src/lib/datasrc/libb10-datasrc.la

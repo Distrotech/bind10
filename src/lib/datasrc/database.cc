@@ -464,6 +464,9 @@ DatabaseClient::Finder::findDelegationPoint(const isc::dns::Name& name,
         // included in the results of some searches.)
         const bool not_origin = (i != remove_labels);
 
+        // Shortcut if you know the origin doesn't have DNAME
+        //if (i == remove_labels) continue;
+
         // Look if there's NS or DNAME at this point of the tree, but ignore
         // the NS RRs at the apex of the zone.
         const FoundRRsets found = getRRsets(superdomain.toText(), superdomain,
