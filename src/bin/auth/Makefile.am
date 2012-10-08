@@ -57,12 +57,6 @@ b10_auth_SOURCES += common.h common.cc
 b10_auth_SOURCES += statistics.cc statistics.h
 b10_auth_SOURCES += datasrc_configurator.h
 b10_auth_SOURCES += main.cc
-# This is a temporary workaround for #1206, where the InMemoryClient has been
-# moved to an ldopened library. We could add that library to LDADD, but that
-# is nonportable. This should've been moot after #1207, but there is still
-# one dependency; the in-memory-specific zone loader call is still in
-# auth.
-b10_auth_SOURCES += ${top_srcdir}/src/lib/datasrc/memory_datasrc.cc
 
 nodist_b10_auth_SOURCES = auth_messages.h auth_messages.cc
 EXTRA_DIST += auth_messages.mes
@@ -80,6 +74,7 @@ b10_auth_LDADD += $(top_builddir)/src/lib/log/libb10-log.la
 b10_auth_LDADD += $(top_builddir)/src/lib/xfr/libb10-xfr.la
 b10_auth_LDADD += $(top_builddir)/src/lib/server_common/libb10-server-common.la
 b10_auth_LDADD += $(top_builddir)/src/lib/statistics/libb10-statistics.la
+b10_auth_LDADD += $(top_builddir)/src/lib/util/threads/libb10-threads.la
 b10_auth_LDADD += $(SQLITE_LIBS)
 
 # TODO: config.h.in is wrong because doesn't honor pkgdatadir

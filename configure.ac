@@ -990,20 +990,6 @@ CPPFLAGS="$CPPFLAGS -DASIO_DISABLE_THREADS=1"
 # Check for functions that are not available on all platforms
 AC_CHECK_FUNCS([pselect])
 
-# perfdhcp: If the clock_gettime() function does not exist on the system,
-# use an alternative supplied in the code based on gettimeofday().
-CLOCK_GETTIME_LDFLAGS=
-AC_CHECK_LIB([rt], [clock_gettime], [CLOCK_GETTIME_LDFLAGS=-lrt], [])
-AC_SUBST([CLOCK_GETTIME_LDFLAGS])
-
-# perfdhcp: if getifaddrs() does not exist, have the code output a message
-# that it can't be run on this version of the operating system.  For the
-# systems on which BIND 10 is built, this means Solaris 10. (Replacements
-# for this function are long and involved, and the function is reported present
-# on Solaris 11 and later, either in the libsocket or libnsl libraries.)
-AC_SEARCH_LIBS([getifaddrs], [socket nsl],
-               [AC_DEFINE([HAVE_GETIFADDRS], [1], [getifaddrs() present])])
-
 # /dev/poll issue: ASIO uses /dev/poll by default if it's available (generally
 # the case with Solaris).  Unfortunately its /dev/poll specific code would
 # trigger the gcc's "missing-field-initializers" warning, which would
@@ -1073,6 +1059,26 @@ found_valgrind="not found"
 if test "x$VALGRIND" != "xno"; then
    found_valgrind="found"
 fi
+
+# Check for optreset in unistd.h. On BSD systems the optreset is
+# used to reset the state of getopt() function. Resetting its state
+# is required if command line arguments are parsed multiple times
+# during a program. On Linux this variable will not exist because
+# getopt() reset is performed by setting optind = 0. On Operating
+# Systems where optreset is defined use optreset = 1 and optind = 1
+# to reset internal state of getopt(). Failing to do so will result
+# in unpredictable output from getopt().
+AC_MSG_CHECKING([whether optreset variable is defined in unistd.h])
+AC_TRY_LINK(
+    [#include <unistd.h>],
+    [extern int optreset; optreset=1;],
+    [ AC_MSG_RESULT(yes)
+      var_optreset_exists=yes],
+    [ AC_MSG_RESULT(no)
+      var_optreset_exists=no]
+)
+AM_CONDITIONAL(HAVE_OPTRESET, test "x$var_optreset_exists" != "xno")
+AM_COND_IF([HAVE_OPTRESET], [AC_DEFINE([HAVE_OPTRESET], [1], [Check for optreset?])])
 
 AC_CONFIG_FILES([Makefile
                  doc/Makefile
@@ -1187,11 +1193,11 @@ AC_CONFIG_FILES([Makefile
                  src/lib/exceptions/tests/Makefile
                  src/lib/datasrc/Makefile
                  src/lib/datasrc/memory/Makefile
-                 src/lib/datasrc/memory/tests/Makefile
-                 src/lib/datasrc/memory/tests/testdata/Makefile
                  src/lib/datasrc/memory/benchmarks/Makefile
                  src/lib/datasrc/tests/Makefile
                  src/lib/datasrc/tests/testdata/Makefile
+                 src/lib/datasrc/tests/memory/Makefile
+                 src/lib/datasrc/tests/memory/testdata/Makefile
                  src/lib/xfr/Makefile
                  src/lib/xfr/tests/Makefile
                  src/lib/log/Makefile
@@ -1209,6 +1215,8 @@ AC_CONFIG_FILES([Makefile
                  src/lib/server_common/tests/Makefile
                  src/lib/util/Makefile
                  src/lib/util/io/Makefile
+                 src/lib/util/threads/Makefile
+                 src/lib/util/threads/tests/Makefile
                  src/lib/util/unittests/Makefile
                  src/lib/util/python/Makefile
                  src/lib/util/pyunittests/Makefile

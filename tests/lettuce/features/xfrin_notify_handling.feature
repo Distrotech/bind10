@@ -27,10 +27,18 @@ Feature: Xfrin incoming notify handling
     When I query statistics zones of bind10 module Xfrout with cmdctl port 47804
     last bindctl output should not contain "error"
     last bindctl output should not contain "example.org."
-    The counter notifyoutv4 for the zone _SERVER_ should be 0
-    The counter notifyoutv6 for the zone _SERVER_ should be 0
-    The counter xfrrej for the zone _SERVER_ should be 0
-    The counter xfrreqdone for the zone _SERVER_ should be 0
+    Then the statistics counter notifyoutv4 for the zone _SERVER_ should be 0
+    Then the statistics counter notifyoutv6 for the zone _SERVER_ should be 0
+    Then the statistics counter xfrrej for the zone _SERVER_ should be 0
+    Then the statistics counter xfrreqdone for the zone _SERVER_ should be 0
+
+    When I query statistics ixfr_running of bind10 module Xfrout with cmdctl port 47804
+    Then the statistics counter ixfr_running should be 0
+    Then the statistics counter ixfr_running should be 0
+
+    When I query statistics axfr_running of bind10 module Xfrout with cmdctl port 47804
+    Then the statistics counter axfr_running should be 0
+    Then the statistics counter axfr_running should be 0
 
     When I send bind10 with cmdctl port 47804 the command Xfrout notify example.org IN
     Then wait for new master stderr message XFROUT_NOTIFY_COMMAND
@@ -49,17 +57,21 @@ Feature: Xfrin incoming notify handling
     #
     # check for statistics change
     #
+
+    # wait until the last stats requesting is finished
+    wait for new master stderr message STATS_SEND_STATISTICS_REQUEST
+    wait for new master stderr message XFROUT_RECEIVED_GETSTATS_COMMAND
+
     When I query statistics zones of bind10 module Xfrout with cmdctl port 47804
     last bindctl output should not contain "error"
-    Then wait for new master stderr message XFROUT_RECEIVED_GETSTATS_COMMAND
-    The counter notifyoutv4 for the zone _SERVER_ should be 0
-    The counter notifyoutv4 for the zone example.org. should be 0
-    The counter notifyoutv6 for the zone _SERVER_ should be 5
-    The counter notifyoutv6 for the zone example.org. should be 5
-    The counter xfrrej for the zone _SERVER_ should be 0
-    The counter xfrrej for the zone example.org. should be 0
-    The counter xfrreqdone for the zone _SERVER_ should be 1
-    The counter xfrreqdone for the zone example.org. should be 1
+    Then the statistics counter notifyoutv4 for the zone _SERVER_ should be 0
+    Then the statistics counter notifyoutv4 for the zone example.org. should be 0
+    Then the statistics counter notifyoutv6 for the zone _SERVER_ should be 5
+    Then the statistics counter notifyoutv6 for the zone example.org. should be 5
+    Then the statistics counter xfrrej for the zone _SERVER_ should be 0
+    Then the statistics counter xfrrej for the zone example.org. should be 0
+    Then the statistics counter xfrreqdone for the zone _SERVER_ should be 1
+    Then the statistics counter xfrreqdone for the zone example.org. should be 1
 
     #
     # Test for Xfr request rejected
@@ -90,10 +102,10 @@ Feature: Xfrin incoming notify handling
     When I query statistics zones of bind10 module Xfrout with cmdctl port 47804
     last bindctl output should not contain "error"
     last bindctl output should not contain "example.org."
-    The counter notifyoutv4 for the zone _SERVER_ should be 0
-    The counter notifyoutv6 for the zone _SERVER_ should be 0
-    The counter xfrrej for the zone _SERVER_ should be 0
-    The counter xfrreqdone for the zone _SERVER_ should be 0
+    Then the statistics counter notifyoutv4 for the zone _SERVER_ should be 0
+    Then the statistics counter notifyoutv6 for the zone _SERVER_ should be 0
+    Then the statistics counter xfrrej for the zone _SERVER_ should be 0
+    Then the statistics counter xfrreqdone for the zone _SERVER_ should be 0
 
     #
     # set transfer_acl rejection
@@ -123,18 +135,20 @@ Feature: Xfrin incoming notify handling
     #
     # check for statistics change
     #
+
+    # wait until the last stats requesting is finished
+    wait for new master stderr message STATS_SEND_STATISTICS_REQUEST
+    wait for new master stderr message XFROUT_RECEIVED_GETSTATS_COMMAND
+
     When I query statistics zones of bind10 module Xfrout with cmdctl port 47804
     last bindctl output should not contain "error"
-    Then wait for new master stderr message XFROUT_RECEIVED_GETSTATS_COMMAND
-    The counter notifyoutv4 for the zone _SERVER_ should be 0
-    The counter notifyoutv4 for the zone example.org. should be 0
-    The counter notifyoutv6 for the zone _SERVER_ should be 5
-    The counter notifyoutv6 for the zone example.org. should be 5
+    Then the statistics counter notifyoutv4 for the zone _SERVER_ should be 0
+    Then the statistics counter notifyoutv4 for the zone example.org. should be 0
+    Then the statistics counter notifyoutv6 for the zone _SERVER_ should be 5
+    Then the statistics counter notifyoutv6 for the zone example.org. should be 5
     # The counts of rejection would be between 1 and 2. They are not
     # fixed. It would depend on timing or the platform.
-    The counter xfrrej for the zone _SERVER_ should be greater than 0
-    The counter xfrrej for the zone _SERVER_ should be less than 3
-    The counter xfrrej for the zone example.org. should be greater than 0
-    The counter xfrrej for the zone example.org. should be less than 3
-    The counter xfrreqdone for the zone _SERVER_ should be 0
-    The counter xfrreqdone for the zone example.org. should be 0
+    Then the statistics counter xfrrej for the zone _SERVER_ should be greater than 0
+    Then the statistics counter xfrrej for the zone example.org. should be greater than 0
+    Then the statistics counter xfrreqdone for the zone _SERVER_ should be 0
+    Then the statistics counter xfrreqdone for the zone example.org. should be 0

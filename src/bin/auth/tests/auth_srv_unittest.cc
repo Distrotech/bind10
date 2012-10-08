@@ -15,6 +15,7 @@
 #include <config.h>
 
 #include <util/io/sockaddr_util.h>
+#include <util/memory_segment_local.h>
 
 #include <dns/message.h>
 #include <dns/messagerenderer.h>
@@ -38,6 +39,7 @@
 #include <auth/datasrc_configurator.h>
 
 #include <util/unittests/mock_socketsession.h>
+#include <util/threads/lock.h>
 #include <dns/tests/unittest_util.h>
 #include <testutils/dnsmessage_test.h>
 #include <testutils/srv_test.h>
@@ -1285,7 +1287,7 @@ public:
         if (fake_rrset_ && fake_rrset_->getName() == name &&
             fake_rrset_->getType() == type)
         {
-            return (ZoneFinderContextPtr(new ZoneFinder::Context(
+            return (ZoneFinderContextPtr(new ZoneFinder::GenericContext(
                                              *this, options,
                                              ResultContext(SUCCESS,
                                                            fake_rrset_))));
@@ -1393,16 +1395,19 @@ public:
              const isc::datasrc::DataSourceClientPtr
                  client(new FakeClient(info.data_src_client_ != NULL ?
                                        info.data_src_client_ :
-                                       info.cache_.get(),
+                                       info.getCacheClient(),
                                        throw_when, isc_exception, fake_rrset));
              clients_.push_back(client);
-             data_sources_.push_back(DataSourceInfo(client.get(),
-                 isc::datasrc::DataSourceClientContainerPtr(), false));
+             data_sources_.push_back(
+                 DataSourceInfo(client.get(),
+                                isc::datasrc::DataSourceClientContainerPtr(),
+                                false, RRClass::IN(), mem_sgmt_));
         }
     }
 private:
     const boost::shared_ptr<isc::datasrc::ConfigurableClientList> real_;
     vector<isc::datasrc::DataSourceClientPtr> clients_;
+    MemorySegmentLocal mem_sgmt_;
 };
 
 } // end anonymous namespace for throwing proxy classes
@@ -1421,10 +1426,13 @@ TEST_F(AuthSrvTest,
 {
     // Set real inmem client to proxy
     updateInMemory(&server, "example.", CONFIG_INMEMORY_EXAMPLE);
-    boost::shared_ptr<isc::datasrc::ConfigurableClientList>
-        list(new FakeList(server.getClientList(RRClass::IN()), THROW_NEVER,
-                          false));
-    server.setClientList(RRClass::IN(), list);
+    {
+        isc::util::thread::Mutex::Locker locker(server.getClientListMutex());
+        boost::shared_ptr<isc::datasrc::ConfigurableClientList>
+            list(new FakeList(server.getClientList(RRClass::IN()), THROW_NEVER,
+                              false));
+        server.setClientList(RRClass::IN(), list);
+    }
 
     createDataFromFile("nsec3query_nodnssec_fromWire.wire");
     server.processMessage(*io_message, *parse_message, *response_obuffer,
@@ -1447,6 +1455,7 @@ setupThrow(AuthSrv* server, ThrowWhen throw_when, bool isc_exception,
 {
     updateInMemory(server, "example.", CONFIG_INMEMORY_EXAMPLE);
 
+    isc::util::thread::Mutex::Locker locker(server->getClientListMutex());
     boost::shared_ptr<isc::datasrc::ConfigurableClientList>
         list(new FakeList(server->getClientList(RRClass::IN()), throw_when,
                           isc_exception, rrset));
@@ -1759,6 +1768,10 @@ TEST_F(AuthSrvTest, DDNSForwardCreateDestroy) {
 
 // Check the client list accessors
 TEST_F(AuthSrvTest, clientList) {
+    // We need to lock the mutex to make the (get|set)ClientList happy.
+    // There's a debug-build only check in them to make sure everything
+    // locks them and we call them directly here.
+    isc::util::thread::Mutex::Locker locker(server.getClientListMutex());
     // The lists don't exist. Therefore, the list of RRClasses is empty.
     // We also have no IN list.
     EXPECT_TRUE(server.getClientListClasses().empty());
@@ -1787,6 +1800,18 @@ TEST_F(AuthSrvTest, clientList) {
     ASSERT_EQ(1, classes.size());
     EXPECT_EQ(RRClass::IN(), classes[0]);
     EXPECT_EQ(list, server.getClientList(RRClass::IN()));
+}
+
+// We just test the mutex can be locked (exactly once).
+TEST_F(AuthSrvTest, mutex) {
+    isc::util::thread::Mutex::Locker l1(server.getClientListMutex());
+    // TODO: Once we have non-debug build, this one will not work, since
+    // we currently use the fact that we can't lock twice from the same
+    // thread. In the non-debug mode, this would deadlock.
+    // Skip then.
+    EXPECT_THROW({
+        isc::util::thread::Mutex::Locker l2(server.getClientListMutex());
+    }, isc::InvalidOperation);
 }
 
 }

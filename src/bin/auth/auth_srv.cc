@@ -26,6 +26,7 @@
 #include <exceptions/exceptions.h>
 
 #include <util/buffer.h>
+#include <util/threads/lock.h>
 
 #include <dns/edns.h>
 #include <dns/exceptions.h>
@@ -41,10 +42,7 @@
 
 #include <asiodns/dns_service.h>
 
-#include <datasrc/query.h>
 #include <datasrc/data_source.h>
-#include <datasrc/static_datasrc.h>
-#include <datasrc/sqlite3_datasrc.h>
 #include <datasrc/client_list.h>
 
 #include <xfr/xfrout_client.h>
@@ -275,6 +273,10 @@ public:
     boost::shared_ptr<ConfigurableClientList> getClientList(const RRClass&
                                                             rrclass)
     {
+        // TODO: Debug-build only check
+        if (!mutex_.locked()) {
+            isc_throw(isc::Unexpected, "Not locked!");
+        }
         const std::map<RRClass, boost::shared_ptr<ConfigurableClientList> >::
             const_iterator it(client_lists_.find(rrclass));
         if (it == client_lists_.end()) {
@@ -311,6 +313,8 @@ public:
     void resumeServer(isc::asiodns::DNSServer* server,
                       isc::dns::Message& message,
                       bool done);
+
+    mutable util::thread::Mutex mutex_;
 
 private:
     bool xfrout_connected_;
@@ -639,6 +643,10 @@ AuthSrvImpl::processNormalQuery(const IOMessage& io_message, Message& message,
         local_edns->setUDPSize(AuthSrvImpl::DEFAULT_LOCAL_UDPSIZE);
         message.setEDNS(local_edns);
     }
+    // Lock the client lists and keep them under the lock until the processing
+    // and rendering is done (this is the same mutex as from
+    // AuthSrv::getClientListMutex()).
+    isc::util::thread::Mutex::Locker locker(mutex_);
 
     try {
         const ConstQuestionPtr question = *message.beginQuestion();
@@ -670,6 +678,8 @@ AuthSrvImpl::processNormalQuery(const IOMessage& io_message, Message& message,
     LOG_DEBUG(auth_logger, DBG_AUTH_MESSAGES, AUTH_SEND_NORMAL_RESPONSE)
               .arg(renderer_.getLength()).arg(message);
     return (true);
+    // The message can contain some data from the locked resource. But outside
+    // this method, we touch only the RCode of it, so it should be safe.
 }
 
 bool
@@ -923,6 +933,11 @@ AuthSrv::destroyDDNSForwarder() {
 void
 AuthSrv::setClientList(const RRClass& rrclass,
                        const boost::shared_ptr<ConfigurableClientList>& list) {
+    // TODO: Debug-build only check
+    if (!impl_->mutex_.locked()) {
+        isc_throw(isc::Unexpected, "Not locked");
+    }
+
     if (list) {
         impl_->client_lists_[rrclass] = list;
     } else {
@@ -936,6 +951,11 @@ AuthSrv::getClientList(const RRClass& rrclass) {
 
 vector<RRClass>
 AuthSrv::getClientListClasses() const {
+    // TODO: Debug-build only check
+    if (!impl_->mutex_.locked()) {
+        isc_throw(isc::Unexpected, "Not locked");
+    }
+
     vector<RRClass> result;
     for (std::map<RRClass, boost::shared_ptr<ConfigurableClientList> >::
          const_iterator it(impl_->client_lists_.begin());
@@ -943,6 +963,11 @@ AuthSrv::getClientListClasses() const {
         result.push_back(it->first);
     }
     return (result);
+}
+
+util::thread::Mutex&
+AuthSrv::getClientListMutex() const {
+    return (impl_->mutex_);
 }
 
 void

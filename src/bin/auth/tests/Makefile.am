@@ -52,13 +52,6 @@ run_unittests_SOURCES += query_unittest.cc
 run_unittests_SOURCES += statistics_unittest.cc
 run_unittests_SOURCES += datasrc_configurator_unittest.cc
 run_unittests_SOURCES += run_unittests.cc
-# This is a temporary workaround for #1206, where the InMemoryClient has been
-# moved to an ldopened library. We could add that library to LDADD, but that
-# is nonportable. This should've been moot after #1207, but there is still
-# one dependency; the in-memory-specific zone loader call is still in
-# auth.
-run_unittests_SOURCES += ${top_srcdir}/src/lib/datasrc/memory_datasrc.cc
-
 
 nodist_run_unittests_SOURCES = ../auth_messages.h ../auth_messages.cc
 
@@ -80,6 +73,7 @@ run_unittests_LDADD += $(top_builddir)/src/lib/nsas/libb10-nsas.la
 run_unittests_LDADD += $(top_builddir)/src/lib/util/unittests/libutil_unittests.la
 run_unittests_LDADD += $(top_builddir)/src/lib/statistics/libb10-statistics.la
 run_unittests_LDADD += $(top_builddir)/src/lib/config/tests/libfake_session.la
+run_unittests_LDADD += $(top_builddir)/src/lib/util/threads/libb10-threads.la
 run_unittests_LDADD += $(GTEST_LDADD)
 run_unittests_LDADD += $(SQLITE_LIBS)
 

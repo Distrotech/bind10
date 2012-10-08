@@ -1,11 +1,89 @@
+485.	[bug]		jelte
+	Several bugs have been fixed in bindctl; tab-completion now works
+	within configuration lists, the problem where sometimes the
+	completion added a part twice has been solved, and it no longer
+	suggests the confusing value 'argument' as a completion-hint for
+	configuration items. Additionally, bindctl no longer crashes upon
+	input like 'config remove Boss'.
+	(Trac #2254, git 9047de5e8f973e12e536f7180738e6b515439448)
+
+484.	[func]		tomek
+	A new library (libb10-dhcpsrv) has been created. At present, it
+	only holds the code for the DHCP Configuration Manager. Currently
+	this object only supports basic configuration storage for the DHCPv6
+	server,	but that capability will be expanded.
+	(Trac #2238, git 6f29861b92742da34be9ae76968e82222b5bfd7d)
+
+bind10-devel-20120927 released on September 27, 2012
+
+483.	[func]		marcin
+	libdhcp++: Added new parameter to define sub-second timeout
+	for DHCP packet reception. The total timeout is now specified
+	by two parameters:  first specifies integral number of
+	seconds, second (which defaults to 0) specifies fractional
+	seconds with microsecond resolution.
+	(Trac #2231, git 15560cac16e4c52129322e3cb1787e0f47cf7850)
+
+482.	[func]		team
+	Memory footprint of the in-memory data source has been
+	substantially improved.  For example, b10-auth now requires much
+	less memory than BIND 9 named for loading and serving the same
+	zone in-memory.  This is a transparent change in terms of user
+	operation; there's no need to update or change the configuration
+	to enable this feature.
+	Notes: multiple instances of b10-auth still make separate copies
+	of the memory image.  Also, loading zones in memory still suspends
+	query processing, so manual reloading or reloading after incoming
+	transfer may cause service disruption for huge zones.
+	(Multiple Trac tickets, Summarized in Trac #2101)
+
+481.	[bug]		vorner
+	The abbreviated form of IP addresses in ACLs is accepted
+	(eg. "from": ["127.0.0.1", "::1"] now works).
+	(Trac #2191, git 48b6e91386b46eed383126ad98dddfafc9f7e75e)
+
+480.	[doc]		vorner
+	Added documentation about global TSIG key ring to the Guide.
+	(Trac #2189, git 52177bb31f5fb8e134aecb9fd039c368684ad2df)
+
+479.	[func]		marcin
+	Refactored perfdhcp tool to C++, added missing unit tests and removed
+	the old code. The new code uses libdhcp++ (src/lib/dhcp) for DHCP
+	packet management, network interface management and packet
+	transmission.
+	(Trac #1954, git 8d56105742f3043ed4b561f26241f3e4331f51dc)
+	(Trac #1955, git 6f914bb2c388eb4dd3e5c55297f8988ab9529b3f)
+	(Trac #1956, git 6f914bb2c388eb4dd3e5c55297f8988ab9529b3f)
+	(Trac #1957, git 7fca81716ad3a755bf5744e88c3adeef15b04450)
+	(Trac #1958, git 94e17184270cda58f55e6da62e845695117fede3)
+	(Trac #1959, git a8cf043db8f44604c7773e047a9dc2861e58462a)
+	(Trac #1960, git 6c192e5c0903f349b4d80cf2bb6cd964040ae7da)
+
+478.	[func]		naokikambe
+	New statistics items added into b10-xfrout: ixfr_running and
+	axfr_running.  Their values can be obtained by invoking "Stats show
+	Xfrout" via bindctl while b10-xfrout is running.
+	(Trac #2222, git 91311bdbfea95f65c5e8bd8294ba08fac12405f1)
+
+477.	[bug]		jelte
+	Fixed a problem with b10-msgq on OSX when using a custom Python
+	installation, that offers an unreliable select.poll() interface.
+	(Trac #2190, git e0ffa11d49ab949ee5a4ffe7682b0e6906667baa)
+
+476.	[bug]		vorner
+	The Xfrin now accepts transfers with some TSIG signatures omitted, as
+	allowed per RFC2845, section 4.4. This solves a compatibility
+	issues with Knot and NSD.
+	(Trac #1357, git 7ca65cb9ec528118f370142d7e7b792fcc31c9cf)
+
 475.	[func]		naokikambe
-	Added Xfrout statistics counters: notifyoutv4, notifyoutv6, xfrrej, and
-	xfrreqdone. These are per-zone type counters. The value of these
-	counters can be seen with zone name by invoking "Stats show Xfrout" via
-	bindctl.
+	Added Xfrout statistics counters: notifyoutv4, notifyoutv6,
+	xfrrej, and xfrreqdone. These are per-zone type counters.
+	The value of these counters can be seen with zone name by
+	invoking "Stats show Xfrout" via bindctl.
 	(Trac #2158, git e68c127fed52e6034ab5309ddd506da03c37a08a)
 
-474.	[func]      stephen
+474.	[func]		stephen
 	DHCP servers now use the BIND 10 logging system for messages.
 	(Trac #1545, git de69a92613b36bd3944cb061e1b7c611c3c85506)
 
@@ -24,7 +102,7 @@
 	contain the generated documentation.
 	(Trac #1687, git 2d4063b1a354f5048ca9dfb195e8e169650f43d0)
 
-471.    [bug]		vorner
+471.	[bug]		vorner
 	Fixed a problem when b10-loadzone tried to tread semicolon
 	in string data as start of comment, which caused invalid
 	data being loaded.

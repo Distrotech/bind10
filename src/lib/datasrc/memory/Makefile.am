@@ -1,4 +1,4 @@
-SUBDIRS = . tests benchmarks
+SUBDIRS = . benchmarks
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/lib -I$(top_builddir)/src/lib
 AM_CPPFLAGS += -I$(top_srcdir)/src/lib/dns -I$(top_builddir)/src/lib/dns
@@ -20,6 +20,8 @@ libdatasrc_memory_la_SOURCES += memory_client.h memory_client.cc
 libdatasrc_memory_la_SOURCES += logger.h logger.cc
 libdatasrc_memory_la_SOURCES += zone_table.h zone_table.cc
 libdatasrc_memory_la_SOURCES += zone_finder.h zone_finder.cc
+libdatasrc_memory_la_SOURCES += zone_table_segment.h zone_table_segment.cc
+libdatasrc_memory_la_SOURCES += zone_table_segment_local.h zone_table_segment_local.cc
 nodist_libdatasrc_memory_la_SOURCES = memory_messages.h memory_messages.cc
 
 EXTRA_DIST  = rdata_serialization_priv.cc

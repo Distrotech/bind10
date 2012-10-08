@@ -1,4 +1,4 @@
-SUBDIRS = . memory tests
+SUBDIRS = memory . tests
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/lib -I$(top_builddir)/src/lib
 AM_CPPFLAGS += -I$(top_srcdir)/src/lib/dns -I$(top_builddir)/src/lib/dns
@@ -12,7 +12,9 @@ pkglibdir = $(libexecdir)/@PACKAGE@/backends
 datasrc_config.h: datasrc_config.h.pre
 	$(SED) -e "s|@@PKGLIBDIR@@|$(pkglibdir)|" datasrc_config.h.pre >$@
 
-static.zone: static.zone.pre
+# The top config.h defines "PACKAGE_STRING".  When it's changed we neeed to
+# regenerate this zone file.
+static.zone: static.zone.pre $(top_builddir)/config.h $(top_srcdir)/AUTHORS
 	$(SED) -e "s|@@VERSION_STRING@@|$(PACKAGE_STRING)|" $(srcdir)/static.zone.pre >$@
 	$(SED) -e 's/\(.*\)/AUTHORS.BIND.	0	CH	TXT	"\1"/' $(top_srcdir)/AUTHORS >>$@
 
@@ -21,11 +23,7 @@ CLEANFILES += datasrc_config.h
 CLEANFILES += static.zone
 
 lib_LTLIBRARIES = libb10-datasrc.la
-libb10_datasrc_la_SOURCES = data_source.h data_source.cc
-libb10_datasrc_la_SOURCES += static_datasrc.h static_datasrc.cc
-libb10_datasrc_la_SOURCES += sqlite3_datasrc.h sqlite3_datasrc.cc
-libb10_datasrc_la_SOURCES += query.h query.cc
-libb10_datasrc_la_SOURCES += cache.h cache.cc
+libb10_datasrc_la_SOURCES = data_source.h
 libb10_datasrc_la_SOURCES += rbnode_rrset.h
 libb10_datasrc_la_SOURCES += rbtree.h
 libb10_datasrc_la_SOURCES += zonetable.h zonetable.cc
@@ -64,6 +62,7 @@ libb10_datasrc_la_LIBADD = $(top_builddir)/src/lib/exceptions/libb10-exceptions.
 libb10_datasrc_la_LIBADD += $(top_builddir)/src/lib/dns/libb10-dns++.la
 libb10_datasrc_la_LIBADD += $(top_builddir)/src/lib/log/libb10-log.la
 libb10_datasrc_la_LIBADD += $(top_builddir)/src/lib/cc/libb10-cc.la
+libb10_datasrc_la_LIBADD += $(builddir)/memory/libdatasrc_memory.la
 libb10_datasrc_la_LIBADD += $(SQLITE_LIBS)
 
 BUILT_SOURCES = datasrc_config.h datasrc_messages.h datasrc_messages.cc
