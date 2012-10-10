@@ -1,0 +1,56 @@
+# Copyright (C) 2012  Internet Systems Consortium.
+#
+# Permission to use, copy, modify, and distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND INTERNET SYSTEMS CONSORTIUM
+# DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL
+# INTERNET SYSTEMS CONSORTIUM BE LIABLE FOR ANY SPECIAL, DIRECT,
+# INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
+# FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+# NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+# WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+CREATE TABLE lease4 (
+    address INT UNSIGNED UNIQUE NOT NULL,   # IPv4 address
+    hwaddr VARCHAR(20),                     # Hardware address
+    client_id VARCHAR(128),                 # Client ID
+    valid_lft INT,                          # Valid lifetime (seconds)
+    recycle_time INT DEFAULT 0,             # Recycle time (seconds)
+    cllt TIMESTAMP,                         # Client last comm time
+    pool_id INT,                            # Pool identification
+    options TEXT                            # List of options
+    ) ENGINE = INNODB;
+
+# Holds the IPv6 leases
+CREATE TABLE lease6 (
+    address BINARY(16) UNIQUE NOT NULL,     # IPv6 address
+    hwaddr VARCHAR(20),                     # Hardware address
+    client_id VARCHAR(128),                 # Client ID
+    fixed BOOL DEFAULT FALSE,               # Is this lease fixed?
+    valid_lft INT,                          # Valid lifetime (seconds)
+    recycle_time INT DEFAULT 0,             # Recycle time (seconds)
+    cllt TIMESTAMP,                         # Client last comm time
+    pool_id INT,                            # Pool identification
+    iaid INT UNSIGNED,                      # IA ID
+    prefix_len TINYINT UNSIGNED,            # For IA_PD only
+    options TEXT                            # Textual form of options
+    ) ENGINE = INNODB;
+
+# The host table
+CREATE TABLE host (
+    hostname VARCHAR(255) UNIQUE,           # Name of the host
+    address4 INT UNSIGNED DEFAULT NULL,     # IPv4 address
+    address6 BINARY(16) DEFAULT NULL,       # IPv6 address
+    options TEXT                            # Textual form of the options
+    ) ENGINE = INNODB;
+
+# Finally, the version of the schema.  We start at 0.0 during development.
+# This table is only modified during schema upgrades.
+CREATE TABLE schema_version (
+    major INT NOT NULL,                     # Major version number
+    minor INT NOT NULL                      # Minor version number
+    );
+INSERT INTO schema_version VALUES (0, 0);

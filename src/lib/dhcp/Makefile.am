@@ -53,3 +53,7 @@ if USE_CLANGPP
 # Boost headers when compiling with clang.
 libb10_dhcp___la_CXXFLAGS += -Wno-unused-parameter
 endif
+
+EXTRA_DIST += dhcpdb_create.mysql
+dist_pkgdata_DATA = dhcpdb_create.mysql
+
