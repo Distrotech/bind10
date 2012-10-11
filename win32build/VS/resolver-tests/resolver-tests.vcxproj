@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{1ADF152B-0153-424D-B195-5821B30128D6}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>resolver-tests</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(Configuration)\</OutDir>
+    <TargetName>run_unittests</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(Configuration)\</OutDir>
+    <TargetName>run_unittests</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;GTEST_LINKED_AS_SHARED_LIBRARY=1;_VARIADIC_MAX=10;TEST_DATA_DIR="%BIND10HOME%/src/lib/testutils/testdata";TEST_DATA_BUILDDIR="%BIND10HOME%/src/lib/testutils/testdata";_DEBUG;_CONSOLE;%(PreprocessorDefinitions);%(PreprocessorDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\bin;..\..\..\ext\asio;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OutputFile>$(OutDir)run_unittests.exe</OutputFile>
+      <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\$(Configuration);..\..\..\..\log4cplus\$(Configuration);..\..\..\..\gtest\$(Configuration);%BOOST%/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libb10-util-io.lib;libutil_unittests.lib;libb10-log.lib;libb10-cryptolink.lib;libb10-dns++.lib;libunittest_util.lib;libb10-cc.lib;libb10-cfgclient.lib;libb10-acl.lib;libb10-dnsacl.lib;libb10-asiolink.lib;libb10-asiodns.lib;libb10-nsas.lib;libb10-cache.lib;libb10-resolve.lib;libb10-testutils.lib;libb10-server-common.lib;botan.lib;log4cplus.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;GTEST_LINKED_AS_SHARED_LIBRARY=1;_VARIADIC_MAX=10;TEST_DATA_DIR="%BIND10HOME%/src/lib/testutils/testdata";TEST_DATA_BUILDDIR="%BIND10HOME%/src/lib/testutils/testdata";NDEBUG;_CONSOLE;%(PreprocessorDefinitions);%(PreprocessorDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\bin;..\..\..\ext\asio;..\..\..\..\gtest\include;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <OutputFile>$(OutDir)run_unittests.exe</OutputFile>
+      <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\$(Configuration);..\..\..\..\log4cplus\$(Configuration);..\..\..\..\gtest\$(Configuration);%BOOST%/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libb10-util-io.lib;libutil_unittests.lib;libb10-log.lib;libb10-cryptolink.lib;libb10-dns++.lib;libunittest_util.lib;libb10-cc.lib;libb10-cfgclient.lib;libb10-acl.lib;libb10-dnsacl.lib;libb10-asiolink.lib;libb10-asiodns.lib;libb10-nsas.lib;libb10-cache.lib;libb10-resolve.lib;libb10-testutils.lib;libb10-server-common.lib;botan.lib;log4cplus.lib;gtest.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\bin\resolver\resolver.cc" />
+    <ClCompile Include="..\..\..\src\bin\resolver\resolver_log.cc" />
+    <ClCompile Include="..\..\..\src\bin\resolver\resolver_messages.cc" />
+    <ClCompile Include="..\..\..\src\bin\resolver\response_scrubber.cc" />
+    <ClCompile Include="..\..\..\src\bin\resolver\tests\resolver_config_unittest.cc" />
+    <ClCompile Include="..\..\..\src\bin\resolver\tests\resolver_unittest.cc" />
+    <ClCompile Include="..\..\..\src\bin\resolver\tests\response_scrubber_unittest.cc" />
+    <ClCompile Include="..\..\..\src\bin\resolver\tests\run_unittests.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\bin\resolver\resolver.h" />
+    <ClInclude Include="..\..\..\src\bin\resolver\resolver_log.h" />
+    <ClInclude Include="..\..\..\src\bin\resolver\resolver_messages.h" />
+    <ClInclude Include="..\..\..\src\bin\resolver\response_scrubber.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -3,7 +3,7 @@ echo
 echo skipping dhcp6-tests / Debug
 echo
 exit 0
-${BIND10HOME}/win32build/${VSVER}/dhcp6-tests/Debug/dhcp6_unittests.exe
+${BIND10HOME}/win32build/VS/dhcp6-tests/Debug/dhcp6_unittests.exe
 if test $? -ne 0; then
     exit -1
 fi

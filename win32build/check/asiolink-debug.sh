@@ -2,4 +2,4 @@
 echo
 echo asiolink-tests / Debug
 echo
-${BIND10HOME}/win32build/${VSVER}/asiolink-tests/Debug/run_unittests.exe
+${BIND10HOME}/win32build/VS/asiolink-tests/Debug/run_unittests.exe

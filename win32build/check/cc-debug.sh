@@ -2,4 +2,4 @@
 echo
 echo cc-tests / Debug
 echo
-${BIND10HOME}/win32build/${VSVER}/cc-tests/Debug/run_unittests.exe
+${BIND10HOME}/win32build/VS/cc-tests/Debug/run_unittests.exe

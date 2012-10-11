@@ -2,4 +2,4 @@
 echo
 echo acl-tests / Debug
 echo
-${BIND10HOME}/win32build/${VSVER}/acl-tests/Debug/run_unittests.exe
+${BIND10HOME}/win32build/VS/acl-tests/Debug/run_unittests.exe

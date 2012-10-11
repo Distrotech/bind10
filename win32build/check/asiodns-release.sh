@@ -2,4 +2,4 @@
 echo
 echo asiodns-tests / Release
 echo
-${BIND10HOME}/win32build/${VSVER}/asiodns-tests/Release/run_unittests.exe
+${BIND10HOME}/win32build/VS/asiodns-tests/Release/run_unittests.exe

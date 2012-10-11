@@ -2,4 +2,4 @@
 echo
 echo cache-tests / Release
 echo
-${BIND10HOME}/win32build/${VSVER}/cache-tests/Release/run_unittests.exe
+${BIND10HOME}/win32build/VS/cache-tests/Release/run_unittests.exe

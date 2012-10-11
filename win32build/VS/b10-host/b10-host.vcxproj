@@ -1,0 +1,220 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7BA6A1D1-3C42-40B9-9336-342982DD408B}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>b10-host</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(Configuration)\</OutDir>
+    <TargetName>b10-host</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(Configuration)\</OutDir>
+    <TargetName>b10-host</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OutputFile>$(OutDir)b10-host.exe</OutputFile>
+      <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libb10-cryptolink.lib;libb10-dns++.lib;botan.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>cd ..\..\..\src\bin
+copy bind10\bind10_src.py.win32 bind10\bind10_src.py
+copy bind10\run_bind10.sh.win32 bind10\run_bind10.sh
+copy bind10\tests\bind10_test.py.win32 bind10\tests\bind10_test.py
+copy bindctl\bindctl_main.py.win32 bindctl\bindctl_main.py
+copy bindctl\run_bindctl.sh.win32 bindctl\run_bindctl.sh
+copy bindctl\tests\bindctl_test.win32 bindctl\tests\bindctl_test.sh
+copy cfgmgr\b10-cfgmgr.py.win32 cfgmgr\b10-cfgmgr.py
+copy cfgmgr\tests\b10-cfgmgr_test.py.win32 cfgmgr\tests\b10-cfgmgr_test.py
+copy ddns\ddns.py.win32 ddns\ddns.py
+copy loadzone\b10-loadzone.py.win32 loadzone\b10-loadzone.py
+copy loadzone\run_loadzone.sh.win32 loadzone\run_loadzone.sh
+copy loadzone\tests\correct\correct_test.sh.win32 loadzone\tests\correct\correct_test.sh
+copy loadzone\tests\error\error_test.sh.win32 loadzone\tests\error\error_test.sh
+copy msgq\msgq.py.win32 msgq\msgq.py
+copy msgq\run_msgq.sh.win32 msgq\run_msgq.sh
+copy msgq\tests\msgq_test.win32 msgq\tests\msgq_test.sh
+copy cmdctl\cmdctl.py.win32 cmdctl\cmdctl.py
+copy cmdctl\run_b10-cmdctl.sh.win32 cmdctl\run_b10-cmdctl.sh
+copy cmdctl\tests\cmdctl_test.win32 cmdctl\tests\cmdctl_test.sh
+copy xfrin\run_b10-xfrin.sh.win32 xfrin\run_b10-xfrin.sh
+copy xfrin\xfrin.py.win32 xfrin\xfrin.py
+copy xfrin\tests\xfrin_test.win32 xfrin\tests\xfrin_test.sh
+copy xfrout\run_b10-xfrout.sh.win32 xfrout\run_b10-xfrout.sh
+copy xfrout\xfrout.py.win32 xfrout\xfrout.py
+copy xfrout\tests\xfrout_test.py.win32 xfrout\tests\xfrout_test.py
+copy xfrout\tests\xfrout_test.win32 xfrout\tests\xfrout_test.sh
+copy usermgr\b10-cmdctl-usermgr.py.win32 usermgr\b10-cmdctl-usermgr.py
+copy usermgr\run_b10-cmdctl-usermgr.sh.win32 usermgr\run_b10-cmdctl-usermgr.sh
+copy zonemgr\run_b10-zonemgr.sh.win32 zonemgr\run_b10-zonemgr.sh
+copy zonemgr\zonemgr.py.win32 zonemgr\zonemgr.py
+copy zonemgr\tests\zonemgr_test.win32 zonemgr\tests\zonemgr_test.sh
+copy stats\stats.py.win32 stats\stats.py
+copy stats\stats_httpd.py.win32 stats\stats_httpd.py
+copy tests\process_rename_test.py.win32 tests\process_rename_test.py
+copy dbutil\dbutil.py.win32 dbutil\dbutil.py
+copy dbutil\run_dbutil.sh.win32 dbutil\run_dbutil.sh
+copy dbutil\tests\dbutil_test.sh.win32 dbutil\tests\dbutil_test.sh
+copy showtech\showtech.py.win32 showtech\showtech.py
+
+copy xfrout\xfrout.spec.pre.win32 xfrout\xfrout.spec
+copy zonemgr\zonemgr.spec.pre.win32 zonemgr\zonemgr.spec
+set PATH=%PATH%;c:\cygwin\bin
+bash -c "cat cmdctl/cmdctl.spec.pre.win32 | sed s,@SYSCONFDIR@,%BIND10PREFIX%/etc, &gt; cmdctl/cmdctl.spec"
+</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>set PATH=%PATH%;%BIND10HOME%/../log4cplus/$(Configuration);%BIND10HOME%/win32build/VS/$(Configuration)
+cd ..\..\..\src\bin
+..\..\win32build\VS\liblog_compiler\$(Configuration)\message.exe -d ..\lib\python\isc\log_messages\work -p bind10\bind10_messages.mes
+..\..\win32build\VS\liblog_compiler\$(Configuration)\message.exe -d ..\lib\python\isc\log_messages\work -p cmdctl\cmdctl_messages.mes
+..\..\win32build\VS\liblog_compiler\$(Configuration)\message.exe -d ..\lib\python\isc\log_messages\work -p dbutil\dbutil_messages.mes
+..\..\win32build\VS\liblog_compiler\$(Configuration)\message.exe -d ..\lib\python\isc\log_messages\work -p ddns\ddns_messages.mes
+..\..\win32build\VS\liblog_compiler\$(Configuration)\message.exe -d ..\lib\python\isc\log_messages\work -p stats\stats_messages.mes
+..\..\win32build\VS\liblog_compiler\$(Configuration)\message.exe -d ..\lib\python\isc\log_messages\work -p stats\stats_httpd_messages.mes
+..\..\win32build\VS\liblog_compiler\$(Configuration)\message.exe -d ..\lib\python\isc\log_messages\work -p xfrin\xfrin_messages.mes
+..\..\win32build\VS\liblog_compiler\$(Configuration)\message.exe -d ..\lib\python\isc\log_messages\work -p xfrout\xfrout_messages.mes
+..\..\win32build\VS\liblog_compiler\$(Configuration)\message.exe -d ..\lib\python\isc\log_messages\work -p zonemgr\zonemgr_messages.mes
+</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..;..\..\..\src\lib;..\..\..\src\lib\dns;%BOOST%;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <OutputFile>$(OutDir)b10-host.exe</OutputFile>
+      <AdditionalLibraryDirectories>..\$(Configuration);..\..\..\..\botan\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libb10-exceptions.lib;libb10-util.lib;libb10-cryptolink.lib;libb10-dns++.lib;botan.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>cd ..\..\..\src\bin
+copy bind10\bind10_src.py.win32 bind10\bind10_src.py
+copy bind10\run_bind10.sh.win32 bind10\run_bind10.sh
+copy bind10\tests\bind10_test.py.win32 bind10\tests\bind10_test.py
+copy bindctl\bindctl_main.py.win32 bindctl\bindctl_main.py
+copy bindctl\run_bindctl.sh.win32 bindctl\run_bindctl.sh
+copy bindctl\tests\bindctl_test.win32 bindctl\tests\bindctl_test.sh
+copy cfgmgr\b10-cfgmgr.py.win32 cfgmgr\b10-cfgmgr.py
+copy cfgmgr\tests\b10-cfgmgr_test.py.win32 cfgmgr\tests\b10-cfgmgr_test.py
+copy ddns\ddns.py.win32 ddns\ddns.py
+copy loadzone\b10-loadzone.py.win32 loadzone\b10-loadzone.py
+copy loadzone\run_loadzone.sh.win32 loadzone\run_loadzone.sh
+copy loadzone\tests\correct\correct_test.sh.win32 loadzone\tests\correct\correct_test.sh
+copy loadzone\tests\error\error_test.sh.win32 loadzone\tests\error\error_test.sh
+copy msgq\msgq.py.win32 msgq\msgq.py
+copy msgq\run_msgq.sh.win32 msgq\run_msgq.sh
+copy msgq\tests\msgq_test.win32 msgq\tests\msgq_test.sh
+copy cmdctl\cmdctl.py.win32 cmdctl\cmdctl.py
+copy cmdctl\run_b10-cmdctl.sh.win32 cmdctl\run_b10-cmdctl.sh
+copy cmdctl\tests\cmdctl_test.win32 cmdctl\tests\cmdctl_test.sh
+copy xfrin\run_b10-xfrin.sh.win32 xfrin\run_b10-xfrin.sh
+copy xfrin\xfrin.py.win32 xfrin\xfrin.py
+copy xfrin\tests\xfrin_test.win32 xfrin\tests\xfrin_test.sh
+copy xfrout\run_b10-xfrout.sh.win32 xfrout\run_b10-xfrout.sh
+copy xfrout\xfrout.py.win32 xfrout\xfrout.py
+copy xfrout\tests\xfrout_test.py.win32 xfrout\tests\xfrout_test.py
+copy xfrout\tests\xfrout_test.win32 xfrout\tests\xfrout_test.sh
+copy usermgr\b10-cmdctl-usermgr.py.win32 usermgr\b10-cmdctl-usermgr.py
+copy usermgr\run_b10-cmdctl-usermgr.sh.win32 usermgr\run_b10-cmdctl-usermgr.sh
+copy zonemgr\run_b10-zonemgr.sh.win32 zonemgr\run_b10-zonemgr.sh
+copy zonemgr\zonemgr.py.win32 zonemgr\zonemgr.py
+copy zonemgr\tests\zonemgr_test.win32 zonemgr\tests\zonemgr_test.sh
+copy stats\stats.py.win32 stats\stats.py
+copy stats\stats_httpd.py.win32 stats\stats_httpd.py
+copy tests\process_rename_test.py.win32 tests\process_rename_test.py
+copy dbutil\dbutil.py.win32 dbutil\dbutil.py
+copy dbutil\run_dbutil.sh.win32 dbutil\run_dbutil.sh
+copy dbutil\tests\dbutil_test.sh.win32 dbutil\tests\dbutil_test.sh
+copy showtech\showtech.py.win32 showtech\showtech.py
+
+copy xfrout\xfrout.spec.pre.win32 xfrout\xfrout.spec
+copy zonemgr\zonemgr.spec.pre.win32 zonemgr\zonemgr.spec
+set PATH=%PATH%;c:\cygwin\bin
+bash -c "cat cmdctl/cmdctl.spec.pre.win32 | sed s,@SYSCONFDIR@,%BIND10PREFIX%/etc, &gt; cmdctl/cmdctl.spec"
+</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>set PATH=%PATH%;%BIND10HOME%/../log4cplus/$(Configuration);%BIND10HOME%/win32build/VS/$(Configuration)
+cd ..\..\..\src\bin
+..\..\win32build\VS\liblog_compiler\$(Configuration)\message.exe -d ..\lib\python\isc\log_messages\work -p bind10\bind10_messages.mes
+..\..\win32build\VS\liblog_compiler\$(Configuration)\message.exe -d ..\lib\python\isc\log_messages\work -p cmdctl\cmdctl_messages.mes
+..\..\win32build\VS\liblog_compiler\$(Configuration)\message.exe -d ..\lib\python\isc\log_messages\work -p dbutil\dbutil_messages.mes
+..\..\win32build\VS\liblog_compiler\$(Configuration)\message.exe -d ..\lib\python\isc\log_messages\work -p ddns\ddns_messages.mes
+..\..\win32build\VS\liblog_compiler\$(Configuration)\message.exe -d ..\lib\python\isc\log_messages\work -p stats\stats_messages.mes
+..\..\win32build\VS\liblog_compiler\$(Configuration)\message.exe -d ..\lib\python\isc\log_messages\work -p stats\stats_httpd_messages.mes
+..\..\win32build\VS\liblog_compiler\$(Configuration)\message.exe -d ..\lib\python\isc\log_messages\work -p xfrin\xfrin_messages.mes
+..\..\win32build\VS\liblog_compiler\$(Configuration)\message.exe -d ..\lib\python\isc\log_messages\work -p xfrout\xfrout_messages.mes
+..\..\win32build\VS\liblog_compiler\$(Configuration)\message.exe -d ..\lib\python\isc\log_messages\work -p zonemgr\zonemgr_messages.mes
+</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\bin\host\host.cc" />
+    <ClCompile Include="..\..\getopt.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\getopt.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

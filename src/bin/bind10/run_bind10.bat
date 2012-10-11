@@ -15,7 +15,10 @@ rem FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
 rem NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
 rem WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-for /f %%p in ('c:\cygwin\bin\cygpath -w %BIND10HOME%') do set b10home=%%p
+pushd %CD%
+cd %BIND10HOME%
+set b10home=%CD%
+popd
 
 if "%VSCNF%"=="" set VSCNF=release
 

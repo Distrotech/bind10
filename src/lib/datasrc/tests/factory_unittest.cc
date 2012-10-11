@@ -82,14 +82,14 @@ TEST(FactoryTest, paths) {
 #else
 #ifndef _DEBUG
     pathtestHelper("no_such_file.so", error + builddir +
-                   "/win32build/VS2010/Release/no_such_file.so");
+                   "/win32build/VS/Release/no_such_file.so");
     pathtestHelper("no_such_file", error + builddir +
-                   "/win32build/VS2010/Release/no_such_file_ds.so");
+                   "/win32build/VS/Release/no_such_file_ds.so");
 #else
     pathtestHelper("no_such_file.so", error + builddir +
-                   "/win32build/VS2010/Debug/no_such_file.so");
+                   "/win32build/VS/Debug/no_such_file.so");
     pathtestHelper("no_such_file", error + builddir +
-                   "/win32build/VS2010/Debug/no_such_file_ds.so");
+                   "/win32build/VS/Debug/no_such_file_ds.so");
 #endif
 #endif
 
@@ -100,10 +100,10 @@ TEST(FactoryTest, paths) {
 #else
 #ifndef _DEBUG
     pathtestHelper("no_such_file.so.something", error + builddir +
-                   "/win32build/VS2010/Release/no_such_file.so.something_ds.so");
+                   "/win32build/VS/Release/no_such_file.so.something_ds.so");
 #else
     pathtestHelper("no_such_file.so.something", error + builddir +
-                   "/win32build/VS2010/Debug/no_such_file.so.something_ds.so");
+                   "/win32build/VS/Debug/no_such_file.so.something_ds.so");
 #endif
 #endif
     pathtestHelper("/no_such_file.so.something", error +
@@ -118,10 +118,10 @@ TEST(FactoryTest, paths) {
 #else
 #ifndef _DEBUG
     pathtestHelper("no_such_file.so.something", error + builddir +
-                   "/win32build/VS2010/Release/no_such_file.so.something_ds.so");
+                   "/win32build/VS/Release/no_such_file.so.something_ds.so");
 #else
     pathtestHelper("no_such_file.so.something", error + builddir +
-                   "/win32build/VS2010/Debug/no_such_file.so.something_ds.so");
+                   "/win32build/VS/Debug/no_such_file.so.something_ds.so");
 #endif
 #endif
 

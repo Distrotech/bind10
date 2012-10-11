@@ -2,4 +2,4 @@
 echo
 echo resolve-tests / Debug
 echo
-${BIND10HOME}/win32build/${VSVER}/resolve-tests/Debug/run_unittests.exe
+${BIND10HOME}/win32build/VS/resolve-tests/Debug/run_unittests.exe

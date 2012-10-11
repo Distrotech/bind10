@@ -76,10 +76,10 @@ getDataSourceLibFile(const std::string& type) {
 #else
 #ifndef _DEBUG
             lib_file = std::string(getenv("B10_FROM_BUILD")) +
-                       "/win32build/VS2010/Release/" + lib_file;
+                       "/win32build/VS/Release/" + lib_file;
 #else
             lib_file = std::string(getenv("B10_FROM_BUILD")) +
-                       "/win32build/VS2010/Debug/" + lib_file;
+                       "/win32build/VS/Debug/" + lib_file;
 #endif
 #endif
         } else {

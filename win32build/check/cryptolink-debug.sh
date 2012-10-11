@@ -2,4 +2,4 @@
 echo
 echo cryptolink-tests / Debug
 echo
-${BIND10HOME}/win32build/${VSVER}/cryptolink-tests/Debug/run_unittests.exe
+${BIND10HOME}/win32build/VS/cryptolink-tests/Debug/run_unittests.exe

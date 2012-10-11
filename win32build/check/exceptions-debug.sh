@@ -2,4 +2,4 @@
 echo
 echo exceptions-tests / Debug
 echo
-${BIND10HOME}/win32build/${VSVER}/exceptions-tests/Debug/run_unittests.exe
+${BIND10HOME}/win32build/VS/exceptions-tests/Debug/run_unittests.exe

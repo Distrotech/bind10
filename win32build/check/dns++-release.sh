@@ -2,7 +2,7 @@
 echo
 echo dns++-tests / Release
 echo
-${BIND10HOME}/win32build/${VSVER}/dns++-tests/Release/run_unittests.exe
+${BIND10HOME}/win32build/VS/dns++-tests/Release/run_unittests.exe
 if test $? -ne 0; then
     exit -1
 fi

@@ -2,4 +2,4 @@
 echo
 echo config-tests / Debug
 echo
-${BIND10HOME}/win32build/${VSVER}/config-tests/Debug/run_unittests.exe
+${BIND10HOME}/win32build/VS/config-tests/Debug/run_unittests.exe

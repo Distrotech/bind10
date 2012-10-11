@@ -2,4 +2,4 @@
 echo
 echo cc-tests / Release
 echo
-${BIND10HOME}/win32build/${VSVER}/cc-tests/Release/run_unittests.exe
+${BIND10HOME}/win32build/VS/cc-tests/Release/run_unittests.exe
