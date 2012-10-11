@@ -1,0 +1,303 @@
+What is needed:
+
+ - full IPv6 support (so at least Vista or Server 2008,
+  tested on Server 2008 x86 and Windows 7 x86_64)
+
+ - POSIX (aka Unix) environment for tar/git/...
+  (I use and recommend cygwin)
+
+ - Visual Studio C++ (versions 2008 and 2010 were tested,
+  (note older versions could fail to correctly compile,
+  cf. C4373 warning), 2010 express and 64 bit support
+  from the 7.1 SDK work too. VS 2012 support was added.)
+  Today the solution is for VS 2010 and can be upgraded to
+  VS 2012, both including the Express free version.
+  Note parallel build is not supported, i.e., Tools Option -
+  Projects and Solution - Build and Run - maximum number of
+  parallel project builds should be set to 1
+
+ - python >= 3.1 (I got Cpython 3.2 MSI from python.org,
+  note the pre-built python can give C++ runtime issue with
+  an incompatible Visual Studio, and botan wants a version 2
+  for configuration. Current python has no socket.inet_ntop /
+  socket.inet_pton or _d.lib, so I recommend to compile it)
+
+ - perl (the Windows native one)
+
+ - sqlite3 >= 3.3.9 (got the 3.7.6 prebuilds but the distrib
+  is needed to get/build the .h and .lib file) (note for the second
+  'lib /def:C:\path\to\sqlite3.def /out:C:\path\to\sqlite3.lib /machine:x86'
+  gives the file if not in the distrib or has a _ mismatch).
+  Needs the shell too, but the debug library is not really required
+  (i.e., it is optional to compile it)
+
+ - splite3 python DSO (included in the Python MSI and built when compiled)
+
+ - cmakefile (got the 2.8.4 .exe, can be used but see below)
+
+ - google test (aka gtest, got the 1.[56].0 sources but some recent
+  tests require >= 1.6.0)
+
+ - boost >= 1.35 (got the 1.44/1.47 setup from Boostpro, installed
+  Multithread and Multithread Debug, compile 1.51.0)
+
+ - setproctitle python module (in theory, consider to download
+  the Sysinternals suite with it)
+
+ - botan 1.10.x (compiled from sources to control things, i.e.,
+  tried to factorize the (in)convenience with gtest. Note its
+  config phase requires a python2. Tested with a 1.10.x too)
+
+ - log4cplus (compiled from sources in the same style...
+  Note WIN32 disables syslog support)
+
+ - xsltproc, for instance from http://www.zlatkovic.com/libxml.en.html,
+  or the Cygwin one, if you want to generate man files from xml.
+
+Environment variables (with examples, *please* note the separator):
+
+ - BOOST ->
+  C:\Program Files (x86)\boost\boost_1_47
+  C:\Boost\boost-1_51
+
+ - PYTHONDIR -> C:\Python32
+
+ - PYTHONVER -> 33
+
+ - BIND10HOME ->
+  c:/cygwin/home/dupont/bind10
+  c:/cygwin/home/fdupont/dev/bind10-trac2117
+
+ - BIND10PREFIX -> c:/Temp
+
+ - VSCNF -> unset or release (default) or debug
+
+ - VSPLT -> unset or win32 (default) or x64 (or TODO ...)
+
+ - BIND10_MSGQ_SOCKET (todo)
+
+How to compile google test:
+
+ - remove the /MD -> /MT line in the CMakeLists.txt, use cmake
+  (in theory but it doesn't work for me)
+
+ - *or* open the solution gtest[-md] in msvc (please note the rights
+  of files in this directory must be fixed before)
+
+ - change the project to build a DLL, define GTEST_CREATE_SHARED_LIBRARY
+  to 1 for DLLs (cf. the README), GTEST_LINKED_AS_SHARED_LIBRARY for apps,
+  put /W4 for Debug, add gtest.lib and gtest-md in linker for apps, etc
+
+ - please remember the same Visual Studio version must be used
+  for gtest and bind10
+
+ - msvc gives the gtestd.dll (in place of gtest.dll) for the debug version
+  so you have to fix this. IMHO the simplest is to put the right name files
+  as targets.
+
+ - with Visual Studio 2012 define _VARIADIC_MAX=10 each time gtest.h is
+  included
+
+How to compile botan:
+
+ - works well with a (second) Python in version 2.x installed
+
+ - reconfig the Debug (--enable-debug) Makefile to produce a botan.{dll,lib}
+
+ - Visual Studio 2012 changed the type of std::make_pair so it should be
+  no longer called with template arguments (i.e., <x,y>) but assigns a
+  a value of std::pair<x,y> type
+
+How to compile sqlite3:
+
+ - get the amalgamation file and the dll distrib for the .def
+
+ - compile sqlite3.c with SQLITE_ENABLE_COLUMN_METADATA and
+  SQLITE_ENABLE_RTREE flags
+
+How to compile python:
+
+ - install sqlite3 before (sqlite3 project needs 3 sqlite source files)
+
+ - solution file is in PCbuild/pcbuild.sln
+
+ - patch PC/pyconfig.h with a recent OS for Py_WINVER (BTW Win7 is 0x601)
+  and Py_NTDDI
+
+ - patch Modules/socketmodule.h with:
+
+#else /* MS_WINDOWS */
+# include <winsock2.h>
+# include <ws2tcpip.h>
+# undef CMSG_LEN
+/* VC6 is shipped with old platform headers, and does not have MSTcpIP.h
+ * Separate SDKs have all the functions we want, but older ones don't have
+ * any version information.
+ * I use SIO_GET_MULTICAST_FILTER to detect a decent SDK.
+ */
+# ifdef SIO_GET_MULTICAST_FILTER
+#  include <MSTcpIP.h> /* for SIO_RCVALL */
+#  define HAVE_ADDRINFO
+#  define HAVE_SOCKADDR_STORAGE
+#  define HAVE_GETADDRINFO
+#  define HAVE_GETNAMEINFO
+#  define HAVE_INET_NTOP
+#  define HAVE_INET_PTON
+#  define ENABLE_IPV6
+# else
+
+ - on Visual Studio 2012, optionaly update Tools/buildbot/build.bat
+  (but buildbots don't work for me)
+
+ - install with a layout similar to C:\Python2*
+
+How to compile log4cplus:
+
+ - use the Visual Studio solution file in msvc* directory
+  (not yet analyze what to do with project directory for Express)
+
+ - when got an error on std::bind1st, add #include <functional>
+
+ - remove the D for debug library (the Release/Debug switch is
+  controlled by the PATH, not by an alternate name) for the .dll
+  and the .lib in the Project file
+
+How to compile boost:
+
+ - *optional*
+
+ - consider --build-type=complete for .\b2
+
+ - x64 is set by address-model=64
+
+ - result should be *.hpp files under ${BOOST}/boost and *.lib files
+  under ${BOOST}/lib with -mt and -mt-gd variants
+
+Where to put things:
+
+ - <home>\bind10 for bind10 (BIND10HOME environment variable)
+
+ - <home>\gtest\include
+
+ - <home>\gtest\{Win32,x64}.{Debug,Release}\gtest.{dll,lib} and vc*0.*
+
+ - <home>\botan\include
+
+ - <home>\botan\{Win32,x64}.{Debug,Release}\botan.{dll,lib}
+
+ - <home>\sqlite3\include\sqlite3*.h
+
+ - <home>\sqlite3\{Win32,x64}.{Debug,Release}\sqlite3.{dll,lib} and vc1*0.*
+
+ - <home>\sqlite3\{Win32,x64}\bin\sqlite3.exe (aka sqlite3 shell)
+
+ - <home>\log4cplus\include
+
+ - <home>\log4cplus\{Win32,x64}.{Debug,Release}\log4cplus.{dll,lib}
+
+ - ${BOOST}/boost and ${BOOST}/lib (called by auto_link)
+
+ - ${PYTHONDIR} with python${PYTHONVER}{,_d}.{dll,lib} in ${PYTHONDIR}
+  (if you want copy the python3*.dll in a place in the PATH,
+  on Window7 64 bits it is SysWOW64 in place of System32 but it works
+  too by putting the directory of the DLL in the PATH. And of course
+  python.exe should be in the PATH too...
+
+How to compile:
+
+ - open win32build\VS\bind10.sln file with Visual Studio
+
+ - set the platform (Win32 (default) or x64)
+
+ - when needed fix the paths (\ becomes \\\ in grep/ed/etc)
+
+ - build
+
+ - partial or todo directory ports are marked
+
+Scripts:
+
+ - win32build\env*.{sh,bat} cygwin shell or Windows command scripts
+  to set the corresponding environment
+
+ - win32build\check\*.{sh,bat} cygwin shell or Windows command scripts
+  for automatic testings (aka "make check")
+
+Random notes (for porting new code):
+ - getopt() is *not* standard (got working getopt.{h,cc})
+ - inet_pton() requires >= Vista/2008
+ - forget lcov/pycoverage
+ - cmake?
+
+ - ifdefs: _WIN32 and _MSC_VER
+ - *no* <unistd.h> (or network includes)
+ - <sys/time.h> -> <time.h> alternative
+ - missing general defines -> include <config.h> in front
+ - missing less general defines -> conditionally include <winsock2.h>
+ - missing TCP/IP defines -> conditionally include <ws2tcpip.h>
+  and perhaps <mswsock> too *before* asio (SIO_UDP_CONNRESET,
+  a Microsoft extension, is in mswsock for instance)
+ - integer posix types -> include <stdint.h> (or <cstdint>)
+ - assignment with contants: standard private C4512 declaration
+  (to be revised into derived from notassignable)
+ - reuse_address is different in Windows
+ - missing namespace:
+  * error_code -> asio::error_code (both type and function)
+  * shared_ptr -> boost::shared_ptr
+   (all should be fixed now)
+ - *no* PF_UNIX (aka asio::local) sockets
+ - *no* fork() (but can use threads)
+ - unused variable in catch: simply remove it
+ - sleep() or nanosleep() -> Sleep()
+ - gettimeofday() -> GetSystemTimeAsFileTime() - SystemTimeToFileTime(epoch)
+ - underscored function names: _getid, _read, _write (caution: convert
+  the file handle before, for sockets WSAXxx calls), 
+ - defined misc names: IN, ERROR, NOERROR (done in config.h but used
+  in other system includes... undefining UNICODE can help too)
+ - different names: close -> closesocket (and error is INVALID_SOCKET
+  not < 0), errno -> WSAGetLastError()
+  (can use the asio socket_type too?)
+ - different declarations: send, recv, ...
+ - WSAStartup/WSACleanup in main()
+
+DLL specific:
+ - add dllmain.cc (it doesn't seem to be required anyway?)
+ - standard declaration trick in dll.h, included in all headers
+ - ISC_XXX_API for exported classes in headers, exported functions
+  and data (usually with extern for data) in headers and code files
+  (note it is possible to decorate only needed members/ctors/dtors,
+   and required in a few cases)
+ - ISC_XXX_EXPORT at the top of all code files
+ - nothing for the templates, already done for Python modules
+ - can be required to instantiate classes (cf. util/buffer.cc)
+ - DLLs should go to .../win32build/VSxxxx/{Release,Debug}
+  (greatly simplify the PATH environment variable, BTW settable on the
+   Computer property, Advanced stuff)
+ - Release and Debug DLLs MUST get different names (put a final 'd' on
+  Debug) or the system runtime will select the wrong DLL!
+ - define GTEST_LINKED_AS_SHARED_LIBRARY=1 for gtest DLL users
+
+Variable substitutions (aka @XXX@ -> YYY):
+ abs_builddir -> ${BIND10HOME}/<relative path>
+ abs_srcdir == abs_builddir
+ abs_top_builddir -> $BIND10HOME or its Cygwin value
+ abs_top_srcdir == abs_top_builddir
+ datadir -> ${datarootdir}
+ datarootdir -> ${prefix}/share
+ exec_prefix -> ${prefix}
+ libexecdir -> ${exec_prefix}
+ localstatedir -> ${prefix}/var
+ prefix -> $BIND10PREFIX aka /Temp (was /usr/local)
+ sysconfdir -> ${prefix}/etc
+ LOCALSTATEDIR -> ${prefix}/var (aka /Temp/var)
+ PACKAGE -> bind10-devel
+ PACKAGE_NAME == PACKAGE
+ PACKAGE_VERSION -> date '+%Y%m%d' from configure.ac AC_INIT(), here 20120817
+ PYTHON -> /usr/bin/python (ignored in #!)
+ PYTHONPATH -> real $PYTHONPATH env variable (unneeded in sys.path.append)
+ SYSCONFDIR -> ${sysconfdir} (aka /Temp/etc)
+
+require in $BIND10PREFIX:
+ ${BIND10PREFIX}/var ${BIND10PREFIX}/var/bind10-devel
+ ${BIND10PREFIX}/share ${BIND10PREFIX}/share/bind10-devel
+ ${BIND10PREFIX}/etc
