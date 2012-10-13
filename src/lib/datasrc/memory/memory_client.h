@@ -16,6 +16,7 @@
 #define DATASRC_MEMORY_CLIENT_H 1
 
 #include <util/memory_segment.h>
+#include <util/memory_segment_mmap.h>
 
 #include <datasrc/iterator.h>
 #include <datasrc/client.h>
@@ -62,6 +63,10 @@ public:
     /// It never throws an exception otherwise.
     InMemoryClient(util::MemorySegment& mem_sgmt,
                    isc::dns::RRClass rrclass);
+
+    InMemoryClient(util::MemorySegment& mem_sgmt,
+                   isc::dns::RRClass rrclass,
+                   const std::string& map_file);
 
     /// The destructor.
     ~InMemoryClient();
@@ -191,6 +196,7 @@ private:
     unsigned int zone_count_;
     ZoneTable* zone_table_;
     FileNameTree* file_name_tree_;
+    util::MemorySegmentMmap* mmap_sgmt_;
 };
 
 } // namespace memory

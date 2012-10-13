@@ -57,6 +57,15 @@ ConfigurableClientList::DataSourceInfo::DataSourceInfo(
     }
 }
 
+// Specific to mmap based memory data source
+ConfigurableClientList::DataSourceInfo::DataSourceInfo(
+    const RRClass& rrclass, MemorySegment& mem_sgmt,
+    const std::string& map_file) :
+    data_src_client_(NULL)
+{
+    cache_.reset(new InMemoryClient(mem_sgmt, rrclass, map_file));
+}
+
 const DataSourceClient*
 ConfigurableClientList::DataSourceInfo::getCacheClient() const {
     return (cache_.get());
@@ -99,21 +108,34 @@ ConfigurableClientList::configure(const ConstElementPtr& config,
                           "data source no " << i);
             }
             const string type(typeElem->stringValue());
-            ConstElementPtr paramConf(dconf->get("params"));
-            if (paramConf == ConstElementPtr()) {
-                paramConf.reset(new NullElement());
+            ConstElementPtr param_conf(dconf->get("params"));
+            if (param_conf == ConstElementPtr()) {
+                param_conf.reset(new NullElement());
             }
             const bool want_cache(allow_cache &&
                                   dconf->contains("cache-enable") &&
                                   dconf->get("cache-enable")->boolValue());
 
-            if (type == "MasterFiles") {
+            if (type == "MappedFile") {
+                if (!want_cache) {
+                    isc_throw(ConfigurationError, "The cache must be enabled "
+                              "for the MappedFile type");
+                }
+                if (!param_conf->contains("file")) {
+                    isc_throw(ConfigurationError, "Missing file name for "
+                              " the MappedFile type");
+                }
+                new_data_sources.push_back(
+                    DataSourceInfo(rrclass_, *mem_sgmt_,
+                                   param_conf->get("file")->stringValue()));
+            } else if (type == "MasterFiles") {
                 // In case the cache is not allowed, we just skip the master
                 // files (at least for now)
                 if (!allow_cache) {
-                    // We're not going to load these zones. Issue warnings about it.
+                    // We're not going to load these zones. Issue warnings
+                    // about it.
                     const map<string, ConstElementPtr>
-                        zones_files(paramConf->mapValue());
+                        zones_files(param_conf->mapValue());
                     for (map<string, ConstElementPtr>::const_iterator
                          it(zones_files.begin()); it != zones_files.end();
                          ++it) {
@@ -131,14 +153,14 @@ ConfigurableClientList::configure(const ConstElementPtr& config,
             } else {
                 // Ask the factory to create the data source for us
                 const DataSourcePair ds(this->getDataSourceClient(type,
-                                                                  paramConf));
+                                                                  param_conf));
                 // And put it into the vector
                 new_data_sources.push_back(DataSourceInfo(ds.first, ds.second,
                                                           want_cache, rrclass_,
                                                           *mem_sgmt_));
             }
 
-            if (want_cache) {
+            if (want_cache && type != "MappedFile") {
                 if (!dconf->contains("cache-zones") && type != "MasterFiles") {
                     isc_throw(isc::NotImplemented, "Auto-detection of zones "
                               "to cache is not yet implemented, supply "
@@ -151,7 +173,7 @@ ConfigurableClientList::configure(const ConstElementPtr& config,
                 vector<string> zones_origins;
                 if (type == "MasterFiles") {
                     const map<string, ConstElementPtr>
-                        zones_files(paramConf->mapValue());
+                        zones_files(param_conf->mapValue());
                     for (map<string, ConstElementPtr>::const_iterator
                          it(zones_files.begin()); it != zones_files.end();
                          ++it) {
@@ -174,7 +196,7 @@ ConfigurableClientList::configure(const ConstElementPtr& config,
                     if (type == "MasterFiles") {
                         try {
                             cache->load(origin,
-                                        paramConf->get(*it)->stringValue());
+                                        param_conf->get(*it)->stringValue());
                         } catch (const isc::dns::MasterLoadError& mle) {
                             LOG_ERROR(logger, DATASRC_MASTERLOAD_ERROR)
                                 .arg(mle.what());

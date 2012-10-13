@@ -23,6 +23,7 @@
 #include <exceptions/exceptions.h>
 
 #include <vector>
+#include <string>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/noncopyable.hpp>
@@ -302,6 +303,9 @@ public:
         DataSourceInfo(const dns::RRClass& rrclass,
                        util::MemorySegment& mem_sgmt,
                        bool has_cache = false);
+        DataSourceInfo(const dns::RRClass& rrclass,
+                       util::MemorySegment& mem_sgmt,
+                       const std::string& map_file);
         DataSourceInfo(DataSourceClient* data_src_client,
                        const DataSourceClientContainerPtr& container,
                        bool has_cache, const dns::RRClass& rrclass,

@@ -24,6 +24,7 @@
 #include <datasrc/memory/zone_data_loader.h>
 
 #include <util/memory_segment_local.h>
+#include <util/memory_segment_mmap.h>
 
 #include <datasrc/data_source.h>
 #include <datasrc/factory.h>
@@ -68,7 +69,8 @@ InMemoryClient::InMemoryClient(util::MemorySegment& mem_sgmt,
                                RRClass rrclass) :
     mem_sgmt_(mem_sgmt),
     rrclass_(rrclass),
-    zone_count_(0)
+    zone_count_(0),
+    mmap_sgmt_(NULL)
 {
     SegmentObjectHolder<ZoneTable, RRClass> holder(
         mem_sgmt_, ZoneTable::create(mem_sgmt_, rrclass), rrclass_);
@@ -78,11 +80,27 @@ InMemoryClient::InMemoryClient(util::MemorySegment& mem_sgmt,
     zone_table_ = holder.release();
 }
 
-InMemoryClient::~InMemoryClient() {
-    FileNameDeleter deleter;
-    FileNameTree::destroy(mem_sgmt_, file_name_tree_, deleter);
+InMemoryClient::InMemoryClient(util::MemorySegment& mem_sgmt,
+                               RRClass rrclass, const std::string& map_file) :
+    mem_sgmt_(mem_sgmt),
+    rrclass_(rrclass),
+    zone_count_(0),              // XXX
+    file_name_tree_(NULL),
+    mmap_sgmt_(new util::MemorySegmentMmap(map_file, false)) // read-only
+{
+    zone_table_ = static_cast<ZoneTable*>(
+        mmap_sgmt_->getNamedAddress("zone_table"));
+}
 
-    ZoneTable::destroy(mem_sgmt_, zone_table_, rrclass_);
+InMemoryClient::~InMemoryClient() {
+    if (mmap_sgmt_ == NULL) {
+        FileNameDeleter deleter;
+        FileNameTree::destroy(mem_sgmt_, file_name_tree_, deleter);
+        ZoneTable::destroy(mem_sgmt_, zone_table_, rrclass_);
+    } else {
+        // none of the above is necessary because we've not used mem_sgmt_.
+        delete mmap_sgmt_; // just unmap it, we shouldn't delete the content
+    }
 }
 
 result::Result
