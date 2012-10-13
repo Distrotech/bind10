@@ -26,14 +26,14 @@ namespace isc {
 namespace util {
 
 MemorySegmentMmap::MemorySegmentMmap(const std::string& filename,
-                                     bool create) :
+                                     bool create, size_t initial_size) :
         filename_(filename),
         base_sgmt_(NULL),
         allocated_size_(0)
 {
     if (create) {
         base_sgmt_ = new managed_mapped_file(open_or_create, filename_.c_str(),
-                                             INITIAL_SIZE);
+                                             initial_size);
     } else {
         base_sgmt_ = new managed_mapped_file(open_only, filename_.c_str());
     }

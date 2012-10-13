@@ -32,7 +32,8 @@ public:
     /// \brief Constructor
     ///
     /// Creates a local memory segment object
-    MemorySegmentMmap(const std::string& filename, bool create);
+    MemorySegmentMmap(const std::string& filename, bool create,
+                      size_t initial_size = INITIAL_SIZE_DEFAULT);
 
     /// \brief Destructor
     virtual ~MemorySegmentMmap();
@@ -71,7 +72,7 @@ public:
 private:
     const std::string filename_;
 
-    static const size_t INITIAL_SIZE = 32768; // 32KB
+    static const size_t INITIAL_SIZE_DEFAULT = 32768; // 32KB
     boost::interprocess::managed_mapped_file* base_sgmt_;
 
     // allocated_size_ can underflow, wrap around to max size_t (which
