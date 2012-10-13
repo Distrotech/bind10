@@ -16,6 +16,7 @@
 #include <exceptions/exceptions.h>
 
 #include <boost/interprocess/managed_mapped_file.hpp>
+#include <boost/interprocess/offset_ptr.hpp>
 
 #include <new>                  // for nothrow
 
@@ -27,7 +28,7 @@ namespace util {
 MemorySegmentMmap::MemorySegmentMmap(const std::string& filename,
                                      bool create) :
         filename_(filename),
-        base_sgmt_(NULL), 
+        base_sgmt_(NULL),
         allocated_size_(0)
 {
     if (create) {
@@ -90,6 +91,27 @@ MemorySegmentMmap::deallocate(void* ptr, size_t size) {
 bool
 MemorySegmentMmap::allMemoryDeallocated() const {
     return (base_sgmt_->all_memory_deallocated());
+}
+
+void
+MemorySegmentMmap::setNamedAddress(const char* name, void* addr) {
+    base_sgmt_->find_or_construct<offset_ptr<void> >(name)(addr);
+}
+
+void*
+MemorySegmentMmap::getNamedAddress(const char* name) {
+    offset_ptr<void>* storage =
+        base_sgmt_->find<offset_ptr<void> >(name).first;
+    if (storage != NULL) {
+        return (storage->get());
+    } else {
+        return (NULL);
+    }
+}
+
+void
+MemorySegmentMmap::clearNamedAddress(const char* name) {
+    base_sgmt_->destroy<offset_ptr<void> >(name);
 }
 
 } // namespace util

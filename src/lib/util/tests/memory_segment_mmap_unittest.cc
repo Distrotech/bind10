@@ -34,10 +34,12 @@ class MemorySegmentMmapTest : public ::testing::Test {
 protected:
     MemorySegmentMmapTest() {
         unlink(TEST_MMAP_FILE);
-        segment.reset(new MemorySegmentMmap(TEST_MMAP_FILE, true));
+        mmap_segment.reset(new MemorySegmentMmap(TEST_MMAP_FILE, true));
+        segment = mmap_segment.get();
     }
 
-    scoped_ptr<MemorySegment> segment;
+    scoped_ptr<MemorySegmentMmap> mmap_segment;
+    MemorySegment* segment;
 };
 
 TEST_F(MemorySegmentMmapTest, Local) {
@@ -45,6 +47,9 @@ TEST_F(MemorySegmentMmapTest, Local) {
     EXPECT_TRUE(segment->allMemoryDeallocated());
 
     void* ptr = segment->allocate(1024);
+    mmap_segment->setNamedAddress("testptr", ptr);
+    EXPECT_EQ(ptr, mmap_segment->getNamedAddress("testptr"));
+    mmap_segment->clearNamedAddress("testptr");
 
     // Now, we have an allocation:
     EXPECT_FALSE(segment->allMemoryDeallocated());
