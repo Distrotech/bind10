@@ -129,6 +129,7 @@ main(int argc, char* argv[]) {
         }
     } catch (const std::exception& ex) {
         std::cerr << "unexpected error: " << ex.what() << std::endl;
+        return (1);
     }
 
     return (0);
