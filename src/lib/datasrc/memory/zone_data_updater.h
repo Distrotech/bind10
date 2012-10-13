@@ -71,12 +71,15 @@ public:
        mem_sgmt_(mem_sgmt),
        rrclass_(rrclass),
        zone_name_(zone_name),
-       zone_data_(zone_data),
+       zone_data_(&zone_data),
        hash_(NULL)
-    {}
+    {
+        mem_sgmt_.setNamedAddress("updater_zone_data", zone_data_);
+    }
 
     /// The destructor.
     ~ZoneDataUpdater() {
+        mem_sgmt_.clearNamedAddress("updater_zone_data");
         delete hash_;
     }
 
@@ -164,7 +167,7 @@ private:
     util::MemorySegment& mem_sgmt_;
     const isc::dns::RRClass rrclass_;
     const isc::dns::Name& zone_name_;
-    ZoneData& zone_data_;
+    ZoneData* zone_data_;
     RdataEncoder encoder_;
     const isc::dns::NSEC3Hash* hash_;
 };

@@ -41,14 +41,14 @@ ZoneDataUpdater::addWildcards(const Name& name) {
             // Ensure a separate level exists for the "wildcarding"
             // name, and mark the node as "wild".
             ZoneNode* node;
-            zone_data_.insertName(mem_sgmt_, wname.split(1), &node);
+            zone_data_->insertName(mem_sgmt_, wname.split(1), &node);
             node->setFlag(ZoneData::WILDCARD_NODE);
 
             // Ensure a separate level exists for the wildcard name.
             // Note: for 'name' itself we do this later anyway, but the
             // overhead should be marginal because wildcard names should
             // be rare.
-            zone_data_.insertName(mem_sgmt_, wname, &node);
+            zone_data_->insertName(mem_sgmt_, wname, &node);
         }
     }
 }
@@ -204,7 +204,7 @@ ZoneDataUpdater::validate(const isc::dns::ConstRRsetPtr rrset) const {
 const NSEC3Hash*
 ZoneDataUpdater::getNSEC3Hash() {
     if (hash_ == NULL) {
-        NSEC3Data* nsec3_data = zone_data_.getNSEC3Data();
+        NSEC3Data* nsec3_data = zone_data_->getNSEC3Data();
         // This should never be NULL in this codepath.
         assert(nsec3_data != NULL);
 
@@ -225,11 +225,11 @@ ZoneDataUpdater::setupNSEC3(const ConstRRsetPtr rrset) {
         dynamic_cast<const T&>(
             rrset->getRdataIterator()->getCurrent());
 
-    NSEC3Data* nsec3_data = zone_data_.getNSEC3Data();
+    NSEC3Data* nsec3_data = zone_data_->getNSEC3Data();
     if (nsec3_data == NULL) {
         nsec3_data = NSEC3Data::create(mem_sgmt_, nsec3_rdata);
-        zone_data_.setNSEC3Data(nsec3_data);
-        zone_data_.setSigned(true);
+        zone_data_->setNSEC3Data(nsec3_data);
+        zone_data_->setSigned(true);
     } else {
         const NSEC3Hash* hash = getNSEC3Hash();
         if (!hash->match(nsec3_rdata)) {
@@ -245,7 +245,7 @@ ZoneDataUpdater::addNSEC3(const ConstRRsetPtr rrset, const ConstRRsetPtr rrsig)
 {
     setupNSEC3<generic::NSEC3>(rrset);
 
-    NSEC3Data* nsec3_data = zone_data_.getNSEC3Data();
+    NSEC3Data* nsec3_data = zone_data_->getNSEC3Data();
 
     ZoneNode* node;
     nsec3_data->insertName(mem_sgmt_, rrset->getName(), &node);
@@ -265,7 +265,7 @@ ZoneDataUpdater::addRdataSet(const ConstRRsetPtr rrset,
         addNSEC3(rrset, rrsig);
     } else {
         ZoneNode* node;
-        zone_data_.insertName(mem_sgmt_, rrset->getName(), &node);
+        zone_data_->insertName(mem_sgmt_, rrset->getName(), &node);
 
         RdataSet* rdataset_head = node->getData();
 
@@ -310,7 +310,7 @@ ZoneDataUpdater::addRdataSet(const ConstRRsetPtr rrset,
             // (conceptually "signed" is a broader notion but our
             // current zone finder implementation regards "signed" as
             // "NSEC signed")
-            zone_data_.setSigned(true);
+            zone_data_->setSigned(true);
         }
     }
 }
@@ -339,7 +339,20 @@ ZoneDataUpdater::add(const ConstRRsetPtr& rrset,
         addWildcards(rrset->getName());
     }
 
-    addRdataSet(rrset, sig_rrset);
+    try {
+        addRdataSet(rrset, sig_rrset);
+    } catch (const util::MemorySegment::SegmentGrown&) {
+        // If memory allocation failed due to SegmentGrown, zone_data_ may
+        // have been invalidated due to possible memory remapping.  So we
+        // refetch the address directly from the segment.
+        zone_data_ = static_cast<ZoneData*>(
+            mem_sgmt_.getNamedAddress("updater_zone_data"));
+
+        // In theory, even the second attempt could fail, but it should be
+        // very unlikely in practice.  Should that ever happen we propagate
+        // the exception and let the application decide the next step.
+        addRdataSet(rrset, sig_rrset);
+    }
 }
 
 } // namespace memory

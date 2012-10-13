@@ -169,8 +169,12 @@ loadZoneDataInternal(util::MemorySegment& mem_sgmt,
                      const Name& zone_name,
                      boost::function<void(LoadCallback)> rrset_installer)
 {
-    SegmentObjectHolder<ZoneData, RRClass> holder(
-        mem_sgmt, ZoneData::create(mem_sgmt, zone_name), rrclass);
+    ZoneData* zone_data = ZoneData::create(mem_sgmt, zone_name);
+    SegmentObjectHolder<ZoneData, RRClass> holder(mem_sgmt, zone_data,
+                                                  rrclass);
+    // Remember it in the segment in case it's invalidated in the middle of
+    // load due to remapping
+    mem_sgmt.setNamedAddress("loader_zone_data", zone_data);
 
     ZoneDataLoader loader(mem_sgmt, rrclass, zone_name, *holder.get());
     rrset_installer(boost::bind(&ZoneDataLoader::addFromLoad, &loader, _1));
@@ -195,7 +199,11 @@ loadZoneDataInternal(util::MemorySegment& mem_sgmt,
                   "Won't create an empty zone for: " << zone_name);
     }
 
-    return (holder.release());
+    zone_data = static_cast<ZoneData*>(
+        mem_sgmt.getNamedAddress("loader_zone_data"));
+    mem_sgmt.clearNamedAddress("loader_zone_data");
+    holder.release();
+    return (zone_data);
 }
 
 // A wrapper for dns::masterLoad used by loadZoneData() below.  Essentially it
