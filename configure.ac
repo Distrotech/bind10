@@ -1142,6 +1142,7 @@ AC_CONFIG_FILES([Makefile
                  src/bin/stats/tests/Makefile
                  src/bin/stats/tests/testdata/Makefile
                  src/bin/usermgr/Makefile
+		 src/bin/memmgr/Makefile
                  src/bin/tests/Makefile
                  src/lib/Makefile
                  src/lib/asiolink/Makefile
