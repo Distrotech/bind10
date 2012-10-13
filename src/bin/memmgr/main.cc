@@ -116,7 +116,7 @@ main(int argc, char* argv[]) {
         if (do_initialize) {
             unlink(mmap_file);
         }
-        MemorySegmentMmap mem_sgmt(mmap_file, do_initialize, 1024 * 1024);
+        MemorySegmentMmap mem_sgmt(mmap_file, do_initialize);
         ZoneTable* zone_table = getZoneTable(mem_sgmt, rrclass, do_initialize);
         assert(zone_table != NULL);
         ZoneData* zone_data = getZoneData(mem_sgmt, rrclass, zone_name,
