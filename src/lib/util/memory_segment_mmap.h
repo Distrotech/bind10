@@ -12,67 +12,75 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#ifndef __MEMORY_SEGMENT_H__
-#define __MEMORY_SEGMENT_H__
+#ifndef __MEMORY_SEGMENT_MMAP_H__
+#define __MEMORY_SEGMENT_MMAP_H__
 
-#include <exceptions/exceptions.h>
+#include <util/memory_segment.h>
 
-#include <stdlib.h>
+#include <boost/interprocess/managed_mapped_file.hpp>
 
 namespace isc {
 namespace util {
 
-/// \brief Memory Segment Class
+/// \brief malloc/free based Memory Segment class
 ///
-/// This class specifies an interface for allocating memory
-/// segments. This is an abstract class and a real
-/// implementation such as MemorySegmentLocal should be used
-/// in code.
-class MemorySegment {
+/// This class specifies a concrete implementation for a malloc/free
+/// based MemorySegment. Please see the MemorySegment class
+/// documentation for usage.
+class MemorySegmentMmap : public MemorySegment {
 public:
-    class SegmentGrown : public isc::Exception {
-    public:
-        SegmentGrown(const char* file, size_t line, const char* what) :
-            Exception(file, line, what)
-        {}
-    };
+    /// \brief Constructor
+    ///
+    /// Creates a local memory segment object
+    MemorySegmentMmap(const std::string& filename, bool create);
 
     /// \brief Destructor
-    virtual ~MemorySegment() {}
+    virtual ~MemorySegmentMmap();
 
     /// \brief Allocate/acquire a segment of memory. The source of the
-    /// memory is dependent on the implementation used.
+    /// memory is libc's malloc().
     ///
     /// Throws <code>std::bad_alloc</code> if the implementation cannot
     /// allocate the requested storage.
     ///
     /// \param size The size of the memory requested in bytes.
     /// \return Returns pointer to the memory allocated.
-    virtual void* allocate(size_t size) = 0;
+    virtual void* allocate(size_t size);
 
     /// \brief Free/release a segment of memory.
     ///
     /// This method may throw <code>isc::OutOfRange</code> if \c size is
-    /// not equal to the originally allocated size. \c size could be
-    /// used by some implementations such as a slice allocator, where
-    /// freeing memory also requires the size to be specified. We also
-    /// use this argument in some implementations to test if all allocated
-    /// memory was deallocated properly.
+    /// not equal to the originally allocated size.
     ///
     /// \param ptr Pointer to the block of memory to free/release. This
     /// should be equal to a value returned by <code>allocate()</code>.
     /// \param size The size of the memory to be freed in bytes. This
     /// should be equal to the number of bytes originally allocated.
-    virtual void deallocate(void* ptr, size_t size) = 0;
+    virtual void deallocate(void* ptr, size_t size);
 
     /// \brief Check if all allocated memory was deallocated.
     ///
     /// \return Returns <code>true</code> if all allocated memory was
     /// deallocated, <code>false</code> otherwise.
-    virtual bool allMemoryDeallocated() const = 0;
+    virtual bool allMemoryDeallocated() const;
+
+private:
+    const std::string filename_;
+
+    static const size_t INITIAL_SIZE = 32768; // 32KB
+    boost::interprocess::managed_mapped_file* base_sgmt_;
+
+    // allocated_size_ can underflow, wrap around to max size_t (which
+    // is unsigned). But because we only do a check against 0 and not a
+    // relation comparison, this is okay.
+    size_t allocated_size_;
 };
 
 } // namespace util
 } // namespace isc
 
-#endif // __MEMORY_SEGMENT_H__
+#endif // __MEMORY_SEGMENT_MMAP_H__
+
+// Local Variables:
+// mode: c++
+// End:
