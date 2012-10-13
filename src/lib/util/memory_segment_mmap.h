@@ -64,9 +64,9 @@ public:
     /// deallocated, <code>false</code> otherwise.
     virtual bool allMemoryDeallocated() const;
 
-    void* getNamedAddress(const char* name);
-    void setNamedAddress(const char* name, void* addr);
-    void clearNamedAddress(const char* name);
+    virtual void* getNamedAddress(const char* name);
+    virtual void setNamedAddress(const char* name, void* addr);
+    virtual void clearNamedAddress(const char* name);
 
 private:
     const std::string filename_;

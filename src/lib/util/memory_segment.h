@@ -70,6 +70,10 @@ public:
     /// \return Returns <code>true</code> if all allocated memory was
     /// deallocated, <code>false</code> otherwise.
     virtual bool allMemoryDeallocated() const = 0;
+
+    virtual void* getNamedAddress(const char*) { return (NULL); }
+    virtual void setNamedAddress(const char*, void*) {}
+    virtual void clearNamedAddress(const char*) {}
 };
 
 } // namespace util
