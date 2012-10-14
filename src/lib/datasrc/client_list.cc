@@ -172,6 +172,10 @@ ConfigurableClientList::configure(const ConstElementPtr& config,
                         // for remap command.
                         continue;
                     }
+                } else if (memmgr_mode_) {
+                    // memory manager doesn't have to care of locally loaded
+                    // cache
+                    continue;
                 }
 
                 // List the zones we are loading
