@@ -35,6 +35,11 @@ public:
     MemorySegmentMmap(const std::string& filename, bool create,
                       size_t initial_size = INITIAL_SIZE_DEFAULT);
 
+    /// \brief Constructor for read-only mode
+    ///
+    /// Creates a local memory segment object
+    MemorySegmentMmap(const std::string& filename);
+
     /// \brief Destructor
     virtual ~MemorySegmentMmap();
 

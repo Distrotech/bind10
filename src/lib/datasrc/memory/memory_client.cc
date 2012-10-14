@@ -365,7 +365,7 @@ InMemoryClient::remapFile(size_t serial) {
     const std::string full_fname = mmap_file_ + "." +
         boost::lexical_cast<std::string>(serial);
     util::MemorySegmentMmap* new_mem_sgmt =
-        new util::MemorySegmentMmap(full_fname, false);
+        new util::MemorySegmentMmap(full_fname);
     delete mmap_sgmt_;
     mmap_sgmt_ = new_mem_sgmt;
     zone_table_ = static_cast<ZoneTable*>(

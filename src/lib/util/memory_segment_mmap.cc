@@ -40,6 +40,13 @@ MemorySegmentMmap::MemorySegmentMmap(const std::string& filename,
     }
 }
 
+MemorySegmentMmap::MemorySegmentMmap(const std::string& filename) :
+    filename_(filename),
+    base_sgmt_(new managed_mapped_file(open_read_only, filename_.c_str())),
+    allocated_size_(0)
+{
+}
+
 MemorySegmentMmap::~MemorySegmentMmap() {
     delete base_sgmt_;
 }
@@ -59,10 +66,10 @@ MemorySegmentMmap::allocate(size_t size) {
         delete base_sgmt_;
         base_sgmt_ = NULL;
         // Increase the size so that the new size will be double the original
-        // size until it reaches 256MB (arbitrary choice).  After that we
-        // increase the size 256MB each time.
+        // size until it reaches 64MB (arbitrary choice).  After that we
+        // increase the size 64MB each time.
         const size_t new_size = std::min(prev_size * 2,
-                                         prev_size + 1024 * 1024 * 256);
+                                         prev_size + 1024 * 1024 * 64);
         if (!managed_mapped_file::grow(filename_.c_str(),
                                        new_size - prev_size)) {
             throw std::bad_alloc();
