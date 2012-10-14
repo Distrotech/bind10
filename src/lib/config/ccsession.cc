@@ -429,10 +429,8 @@ ModuleCCSession::startCheck() {
 ModuleCCSession::ModuleCCSession(
     const std::string& spec_file_name,
     isc::cc::AbstractSession& session,
-    isc::data::ConstElementPtr(*config_handler)(
-        isc::data::ConstElementPtr new_config),
-    isc::data::ConstElementPtr(*command_handler)(
-        const std::string& command, isc::data::ConstElementPtr args),
+    ConfigHandler config_handler,
+    CommandHandler command_handler,
     bool start_immediately,
     bool handle_logging
     ) :

@@ -184,13 +184,14 @@ public:
      * take care of logging configuration through the virtual Logging config
      * module. Defaults to true.
      */
+    typedef boost::function<isc::data::ConstElementPtr(
+        isc::data::ConstElementPtr)> ConfigHandler;
+    typedef boost::function<isc::data::ConstElementPtr(
+        const std::string&, isc::data::ConstElementPtr)> CommandHandler;
     ModuleCCSession(const std::string& spec_file_name,
                     isc::cc::AbstractSession& session,
-                    isc::data::ConstElementPtr(*config_handler)(
-                        isc::data::ConstElementPtr new_config) = NULL,
-                    isc::data::ConstElementPtr(*command_handler)(
-                        const std::string& command,
-                        isc::data::ConstElementPtr args) = NULL,
+                    ConfigHandler config_handler = ConfigHandler(),
+                    CommandHandler command_handler = CommandHandler(),
                     bool start_immediately = true,
                     bool handle_logging = true
                     );
@@ -507,11 +508,8 @@ private:
         const std::string& target_module,
         isc::data::ConstElementPtr arg) const;
 
-    isc::data::ConstElementPtr(*config_handler_)(
-        isc::data::ConstElementPtr new_config);
-    isc::data::ConstElementPtr(*command_handler_)(
-        const std::string& command,
-        isc::data::ConstElementPtr args);
+    ConfigHandler config_handler_;
+    CommandHandler command_handler_;
 
     std::map<std::string, ConfigData> remote_module_configs_;
     std::map<std::string, RemoteHandler> remote_module_handlers_;
