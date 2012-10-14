@@ -64,11 +64,13 @@ ConfigurableClientList::DataSourceInfo::getCacheClient() const {
     return (cache_.get());
 }
 
-ConfigurableClientList::ConfigurableClientList(const RRClass& rrclass) :
+ConfigurableClientList::ConfigurableClientList(const RRClass& rrclass,
+                                               bool memmgr_mode) :
     rrclass_(rrclass),
     mem_sgmt_(new util::MemorySegmentLocal),
     configuration_(new isc::data::ListElement),
-    allow_cache_(false)
+    allow_cache_(false),
+    memmgr_mode_(memmgr_mode)
 {}
 
 ConfigurableClientList::~ConfigurableClientList() {
@@ -164,8 +166,12 @@ ConfigurableClientList::configure(const ConstElementPtr& config,
                         dconf->get("mmap-file")->stringValue();
                     const shared_ptr<InMemoryClient> cache =
                         new_data_sources.back().cache_;
-                    cache->setMappedFile(mmap_file);
-                    continue;
+                    cache->setMappedFile(mmap_file, memmgr_mode_);
+                    if (!memmgr_mode_) {
+                        // Only memmgr has to actually load it; others wait
+                        // for remap command.
+                        continue;
+                    }
                 }
 
                 // List the zones we are loading

@@ -176,9 +176,9 @@ public:
     getJournalReader(const isc::dns::Name& zone, uint32_t begin_serial,
                      uint32_t end_serial) const;
 
-    void setMappedFile(const std::string& mmap_file);
+    void setMappedFile(const std::string& mmap_file, bool build);
     std::string getMappedFile() const;
-    void remapFile(size_t serial);
+    void remapFile(size_t version);
 
 private:
     // Some type aliases
@@ -187,7 +187,8 @@ private:
 
     // Common process for zone load. Registers filename internally and
     // adds the ZoneData to the ZoneTable.
-    result::Result loadInternal(const isc::dns::Name& zone_name,
+    result::Result loadInternal(util::MemorySegment& load_mem_sgmt,
+                                const isc::dns::Name& zone_name,
 				const std::string& filename,
 				ZoneData* zone_data);
 
@@ -198,6 +199,7 @@ private:
     FileNameTree* file_name_tree_;
     std::string mmap_file_;
     util::MemorySegmentMmap* mmap_sgmt_;
+    int mapped_file_version_; // current active version of mapped file
 };
 
 } // namespace memory

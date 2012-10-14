@@ -219,7 +219,8 @@ public:
     /// \brief Constructor
     ///
     /// \param rrclass For which class the list should work.
-    ConfigurableClientList(const isc::dns::RRClass& rrclass);
+    ConfigurableClientList(const isc::dns::RRClass& rrclass,
+                           bool memmgr_mode = false);
 
     /// \brief Destructor
     virtual ~ConfigurableClientList();
@@ -384,6 +385,8 @@ private:
 
     /// \brief The last set value of allow_cache.
     bool allow_cache_;
+
+    bool memmgr_mode_;
 
 protected:
     /// \brief The data sources held here.

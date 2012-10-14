@@ -86,7 +86,7 @@ configureDataSource(const ConstElementPtr& config) {
     const ConfigMap& map(config->mapValue());
     for (ConfigMap::const_iterator it(map.begin()); it != map.end(); ++it) {
         const RRClass rrclass(it->first);
-        ClientListPtr list(new ConfigurableClientList(rrclass));
+        ClientListPtr list(new ConfigurableClientList(rrclass, true));
 
         LOG_INFO(memmgr_logger, MEMMGR_CONFIGURE_DATASRC_START).arg(rrclass);
         list->configure(it->second, true);
