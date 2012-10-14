@@ -1295,6 +1295,7 @@ AC_OUTPUT([doc/version.ent
            src/bin/auth/spec_config.h.pre
            src/bin/dhcp4/spec_config.h.pre
            src/bin/dhcp6/spec_config.h.pre
+           src/bin/memmgr/spec_config.h.pre
            src/bin/tests/process_rename_test.py
            src/lib/config/tests/data_def_unittests_config.h
            src/lib/python/isc/config/tests/config_test

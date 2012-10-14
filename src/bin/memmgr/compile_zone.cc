@@ -65,7 +65,8 @@ getZoneData(MemorySegment& mem_sgmt, RRClass zone_class, const Name& zone_name,
 void
 usage() {
     std::cerr <<
-        "Usage: b10-memmgr [-c] [-d] [-h] [i] mmap_file zone_name zone_file\n"
+        "Usage: b10-compilezone [-c] [-d] [-h] [i] "
+        "mmap_file zone_name zone_file\n"
         "  -i initialize (existing file content will be destroyed)\n"
         "  -c RR class of the zones (default: IN)\n"
         "  -d Enable debug logging to stdout\n"
