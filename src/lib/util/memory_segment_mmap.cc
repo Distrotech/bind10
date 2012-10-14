@@ -18,6 +18,7 @@
 #include <boost/interprocess/managed_mapped_file.hpp>
 #include <boost/interprocess/offset_ptr.hpp>
 
+#include <algorithm>
 #include <new>                  // for nothrow
 
 using namespace boost::interprocess;
@@ -57,8 +58,13 @@ MemorySegmentMmap::allocate(size_t size) {
         const size_t prev_size = base_sgmt_->get_size();
         delete base_sgmt_;
         base_sgmt_ = NULL;
+        // Increase the size so that the new size will be double the original
+        // size until it reaches 256MB (arbitrary choice).  After that we
+        // increase the size 256MB each time.
+        const size_t new_size = std::min(prev_size * 2,
+                                         prev_size + 1024 * 1024 * 256);
         if (!managed_mapped_file::grow(filename_.c_str(),
-                                       prev_size * 2 - prev_size)) {
+                                       new_size - prev_size)) {
             throw std::bad_alloc();
         }
         base_sgmt_ = new managed_mapped_file(open_only, filename_.c_str());
