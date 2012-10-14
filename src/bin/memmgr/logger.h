@@ -17,6 +17,8 @@
 
 #include <log/macros.h>
 
+#include "memmgr_messages.h"
+
 namespace isc {
 namespace memmgr {
 

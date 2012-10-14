@@ -19,7 +19,6 @@
 #include "spec_config.h"
 #include "app_runner.h"
 #include "memmgr.h"
-#include "memmgr_messages.h"
 #include "logger.h"
 
 #include <stdexcept>
@@ -49,6 +48,8 @@ main(int, char**) {
         // Successfully initialized.
         LOG_INFO(memmgr_logger, MEMMGR_STARTED);
         app_runner.run();
+
+        LOG_INFO(memmgr_logger, MEMMGR_STOPPED);
     } catch (const std::exception& ex) {
         LOG_FATAL(memmgr_logger, MEMMGR_FAILED).arg(ex.what());
         return (1);

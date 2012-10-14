@@ -16,12 +16,15 @@
 
 #include <dns/rrclass.h>
 
+#include <log/logger_support.h>
+
 #include <cc/data.h>
 #include <config/ccsession.h>
 
 #include <datasrc/client_list.h>
 
 #include "memmgr.h"
+#include "logger.h"
 
 #include <boost/bind.hpp>
 
@@ -51,7 +54,12 @@ MemoryMgr::getCommandHandler() {
 
 std::vector<RemoteConfigInfo>
 MemoryMgr::getRemoteHandlers() {
-    return (std::vector<RemoteConfigInfo>());
+    std::vector<RemoteConfigInfo> remote_configs;
+    remote_configs.push_back(RemoteConfigInfo(
+                                 "data_sources",
+                                 boost::bind(&MemoryMgr::datasrcConfigHandler,
+                                             this, _1, _2, _3), false));
+    return (remote_configs);
 }
 
 ConstElementPtr
@@ -79,7 +87,10 @@ configureDataSource(const ConstElementPtr& config) {
     for (ConfigMap::const_iterator it(map.begin()); it != map.end(); ++it) {
         const RRClass rrclass(it->first);
         ClientListPtr list(new ConfigurableClientList(rrclass));
+
+        LOG_INFO(memmgr_logger, MEMMGR_CONFIGURE_DATASRC_START).arg(rrclass);
         list->configure(it->second, true);
+        LOG_INFO(memmgr_logger, MEMMGR_CONFIGURE_DATASRC_END).arg(rrclass);
         new_lists->insert(std::pair<dns::RRClass, ClientListPtr>(rrclass,
                                                                  list));
     }

@@ -34,13 +34,19 @@ using namespace isc::asiolink;
 using namespace isc::memmgr;
 using namespace isc::data;
 
+using std::vector;
+
+namespace {
+typedef vector<RemoteConfigInfo> RemoteConfigs;
+}
+
 namespace isc {
 namespace memmgr {
 
 AppRunner::AppRunner(const std::string& specfile,
                      AppConfigHandler config_handler,
                      AppCommandHandler command_handler,
-                     const std::vector<RemoteConfigInfo>& remote_configs) :
+                     const vector<RemoteConfigInfo>& remote_configs) :
     specfile_(specfile),
     app_config_handler_(config_handler), app_command_handler_(command_handler),
     remote_configs_(remote_configs),
@@ -64,7 +70,15 @@ AppRunner::initialize() {
 
     // Subscribe to remote configurations, performing initial local
     // configuration regarding remote ones.
-    ;
+    for (RemoteConfigs::const_iterator it = remote_configs_.begin();
+         it != remote_configs_.end();
+         ++it)
+    {
+        config_session_->addRemoteConfig(it->module_name,
+                                         boost::bind(&AppRunner::remoteHandler,
+                                                     this, _1, _2, _3),
+                                         it->spec_is_filename);
+    }
 
     // Start asynchronous event sessions.
     config_session_->start();
@@ -80,14 +94,29 @@ AppRunner::configHandler(ConstElementPtr /*new_config*/) {
     return (isc::config::createAnswer());
 }
 
+void
+AppRunner::remoteHandler(const std::string& module_name,
+                         isc::data::ConstElementPtr new_config,
+                         const ConfigData& config_data)
+{
+    for (RemoteConfigs::const_iterator it = remote_configs_.begin();
+         it != remote_configs_.end();
+         ++it)
+    {
+        if (it->module_name == module_name) {
+            it->handler(*config_session_, new_config, config_data);
+        }
+    }
+}
+
 ConstElementPtr
 AppRunner::commandHandler(const std::string& command,
                           ConstElementPtr /*args*/)
 {
     if (command == "shutdown") {
         // Invoke application specific shutdown handler
+        ;
 
-        typedef std::vector<RemoteConfigInfo> RemoteConfigs;
         for (RemoteConfigs::const_iterator it = remote_configs_.begin();
              it != remote_configs_.end();
              ++it) {

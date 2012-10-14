@@ -35,7 +35,7 @@ typedef boost::function<data::ConstElementPtr(
 typedef boost::function<data::ConstElementPtr(
     config::ModuleCCSession&, const std::string&, data::ConstElementPtr)>
 AppCommandHandler;
-typedef boost::function<void(config::ModuleCCSession&, const std::string&,
+typedef boost::function<void(config::ModuleCCSession&,
                              isc::data::ConstElementPtr,
                              const config::ConfigData&)> AppRemoteHandler;
 
@@ -46,9 +46,9 @@ struct RemoteConfigInfo {
         module_name(module_name_param), handler(handler_param),
         spec_is_filename(spec_is_filename_param)
     {}
-    const std::string module_name; 
-    const AppRemoteHandler handler;
-    const bool spec_is_filename;
+    std::string module_name; 
+    AppRemoteHandler handler;
+    bool spec_is_filename;
 };
 
 class AppRunner {
@@ -66,6 +66,9 @@ private:
     data::ConstElementPtr configHandler(data::ConstElementPtr new_config);
     data::ConstElementPtr commandHandler(const std::string& command,
                                          data::ConstElementPtr args);
+    void remoteHandler(const std::string& module_name,
+                       isc::data::ConstElementPtr new_config,
+                       const config::ConfigData& config_data);
 
 private:
     const std::string specfile_;

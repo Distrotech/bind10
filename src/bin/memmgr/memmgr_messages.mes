@@ -17,3 +17,9 @@ $NAMESPACE isc::memmgr
 % MEMMGR_FAILED memory manager failed: %1
 
 % MEMMGR_STARTED memoy manager started
+
+% MEMMGR_STOPPED memoy manager stopped
+
+% MEMMGR_CONFIGURE_DATASRC_START starting data source clients configuration for class %1
+
+% MEMMGR_CONFIGURE_DATASRC_END data source clients configuration completed for class %1
