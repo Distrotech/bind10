@@ -199,8 +199,11 @@ loadZoneDataInternal(util::MemorySegment& mem_sgmt,
                   "Won't create an empty zone for: " << zone_name);
     }
 
-    zone_data = static_cast<ZoneData*>(
+    ZoneData* zone_data_recovered = static_cast<ZoneData*>(
         mem_sgmt.getNamedAddress("loader_zone_data"));
+    if (zone_data_recovered != NULL) {
+        zone_data = zone_data_recovered;
+    }
     mem_sgmt.clearNamedAddress("loader_zone_data");
     holder.release();
     return (zone_data);
