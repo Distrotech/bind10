@@ -1,4 +1,5 @@
 AM_CPPFLAGS = -I$(top_srcdir)/src/lib -I$(top_builddir)/src/lib
+AM_CPPFLAGS += -I$(top_srcdir)/src/bin -I$(top_builddir)/src/bin
 AM_CPPFLAGS += $(BOOST_INCLUDES)
 
 AM_CXXFLAGS = $(B10_CXXFLAGS)
@@ -23,10 +24,14 @@ b10_compilezone_LDADD += $(top_builddir)/src/lib/datasrc/libb10-datasrc.la
 b10_compilezone_LDADD += $(top_builddir)/src/lib/log/libb10-log.la
 
 b10_memmgr_SOURCES = memmgr_main.cc
+b10_memmgr_SOURCES += app_runner.h app_runner.cc
+b10_memmgr_SOURCES += memmgr.h memmgr.cc
 b10_memmgr_SOURCES += logger.h logger.cc
 
 b10_memmgr_LDADD = $(top_builddir)/src/lib/dns/libb10-dns++.la
 b10_memmgr_LDADD += $(top_builddir)/src/lib/util/libb10-util.la
+b10_memmgr_LDADD += $(top_builddir)/src/lib/config/libb10-cfgclient.la
+b10_memmgr_LDADD += $(top_builddir)/src/lib/cc/libb10-cc.la
 b10_memmgr_LDADD += $(top_builddir)/src/lib/exceptions/libb10-exceptions.la
 b10_memmgr_LDADD += $(top_builddir)/src/lib/datasrc/libb10-datasrc.la
 b10_memmgr_LDADD += $(top_builddir)/src/lib/asiolink/libb10-asiolink.la
