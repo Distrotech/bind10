@@ -249,14 +249,14 @@ public:
         }
         const string file_base(file_base_elem->stringValue());
 
-        ConstElementPtr serial_elem = args->get("serial");
-        if (!serial_elem) {
-            isc_throw(AuthCommandError, "Serial is missing");
+        ConstElementPtr version_elem = args->get("version");
+        if (!version_elem) {
+            isc_throw(AuthCommandError, "Version is missing");
         }
-        const int serial =
-            boost::lexical_cast<int>(serial_elem->stringValue());
-        if (serial < 0) {
-            isc_throw(AuthCommandError, "Serial must not be negative");
+        const int version =
+            boost::lexical_cast<int>(version_elem->stringValue());
+        if (version < 0) {
+            isc_throw(AuthCommandError, "Version must not be negative");
         }
 
         isc::util::thread::Mutex::Locker locker(
@@ -267,7 +267,7 @@ public:
             isc_throw(AuthCommandError, "There's no client list for "
                       "class " << datasrc_class);
         }
-        list->remap(file_base, serial);
+        list->remap(file_base, version);
 
         return (createAnswer());
     }

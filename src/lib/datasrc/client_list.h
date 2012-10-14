@@ -290,7 +290,7 @@ public:
     ///      the original data source no longer contains the cached zone.
     ReloadResult reload(const dns::Name& zone);
 
-    void remap(const std::string& file_base, size_t serial);
+    void remap(const std::string& file_base, size_t version);
 
     /// \brief Implementation of the ClientList::find.
     virtual FindResult find(const dns::Name& zone,

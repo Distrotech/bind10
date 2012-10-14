@@ -398,14 +398,14 @@ ConfigurableClientList::reload(const Name& name) {
 }
 
 void
-ConfigurableClientList::remap(const std::string& file_base, size_t serial) {
+ConfigurableClientList::remap(const std::string& file_base, size_t version) {
     BOOST_FOREACH(const DataSourceInfo& info, data_sources_) {
         if (!info.cache_) {
             continue;
         }
         InMemoryClient* mem_client = info.cache_.get();
         if (mem_client->getMappedFile() == file_base) {
-            mem_client->remapFile(serial);
+            mem_client->remapFile(version);
         }
     }
 }

@@ -87,12 +87,11 @@ InMemoryClient::~InMemoryClient() {
         FileNameDeleter deleter;
         FileNameTree::destroy(mem_sgmt_, file_name_tree_, deleter);
     }
-    if (zone_table_ != NULL) {
+    if (mmap_sgmt_ != NULL) {
+        delete mmap_sgmt_; // just unmap it, we shouldn't delete the content
+    } else if (zone_table_ != NULL) {
         ZoneTable::destroy(mem_sgmt_, zone_table_, rrclass_);
     }
-
-    // none of the above is necessary because we've not used mem_sgmt_.
-    delete mmap_sgmt_; // just unmap it, we shouldn't delete the content
 }
 
 result::Result
