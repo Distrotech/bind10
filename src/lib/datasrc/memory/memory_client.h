@@ -64,10 +64,6 @@ public:
     InMemoryClient(util::MemorySegment& mem_sgmt,
                    isc::dns::RRClass rrclass);
 
-    InMemoryClient(util::MemorySegment& mem_sgmt,
-                   isc::dns::RRClass rrclass,
-                   const std::string& map_file);
-
     /// The destructor.
     ~InMemoryClient();
     //@}
@@ -180,6 +176,10 @@ public:
     getJournalReader(const isc::dns::Name& zone, uint32_t begin_serial,
                      uint32_t end_serial) const;
 
+    void setMappedFile(const std::string& mmap_file);
+    std::string getMappedFile() const;
+    void remapFile(size_t serial);
+
 private:
     // Some type aliases
     typedef DomainTree<std::string> FileNameTree;
@@ -196,6 +196,7 @@ private:
     unsigned int zone_count_;
     ZoneTable* zone_table_;
     FileNameTree* file_name_tree_;
+    std::string mmap_file_;
     util::MemorySegmentMmap* mmap_sgmt_;
 };
 

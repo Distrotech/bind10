@@ -34,6 +34,8 @@
 #include <dns/rdataclass.h>
 #include <dns/rrclass.h>
 
+#include <boost/lexical_cast.hpp>
+
 #include <algorithm>
 #include <utility>
 #include <cctype>
@@ -78,18 +80,6 @@ InMemoryClient::InMemoryClient(util::MemorySegment& mem_sgmt,
     file_name_tree_ = FileNameTree::create(mem_sgmt_, false);
 
     zone_table_ = holder.release();
-}
-
-InMemoryClient::InMemoryClient(util::MemorySegment& mem_sgmt,
-                               RRClass rrclass, const std::string& map_file) :
-    mem_sgmt_(mem_sgmt),
-    rrclass_(rrclass),
-    zone_count_(0),              // XXX
-    file_name_tree_(NULL),
-    mmap_sgmt_(new util::MemorySegmentMmap(map_file, false)) // read-only
-{
-    zone_table_ = static_cast<ZoneTable*>(
-        mmap_sgmt_->getNamedAddress("zone_table"));
 }
 
 InMemoryClient::~InMemoryClient() {
@@ -162,6 +152,10 @@ isc::datasrc::DataSourceClient::FindResult
 InMemoryClient::findZone(const isc::dns::Name& zone_name) const {
     LOG_DEBUG(logger, DBG_TRACE_DATA,
               DATASRC_MEMORY_MEM_FIND_ZONE).arg(zone_name);
+
+    if (zone_table_ == NULL) {
+        isc_throw(DataSourceError, "in-memory zone table is NULL");
+    }
 
     ZoneTable::FindResult result(zone_table_->findZone(zone_name));
 
@@ -346,6 +340,35 @@ InMemoryClient::getJournalReader(const isc::dns::Name&, uint32_t,
 {
     isc_throw(isc::NotImplemented, "Journaling isn't supported for "
               "in memory data source");
+}
+
+void
+InMemoryClient::setMappedFile(const std::string& mmap_file) {
+    mmap_file_ = mmap_file;
+    if (!mmap_file_.empty()) {
+        FileNameDeleter deleter;
+        FileNameTree::destroy(mem_sgmt_, file_name_tree_, deleter);
+        ZoneTable::destroy(mem_sgmt_, zone_table_, rrclass_);
+        file_name_tree_ = NULL;
+        zone_table_ = NULL;
+    }
+}
+
+std::string
+InMemoryClient::getMappedFile() const {
+    return (mmap_file_);
+}
+
+void
+InMemoryClient::remapFile(size_t serial) {
+    const std::string full_fname = mmap_file_ + "." +
+        boost::lexical_cast<std::string>(serial);
+    util::MemorySegmentMmap* new_mem_sgmt =
+        new util::MemorySegmentMmap(full_fname, false);
+    delete mmap_sgmt_;
+    mmap_sgmt_ = new_mem_sgmt;
+    zone_table_ = static_cast<ZoneTable*>(
+        new_mem_sgmt->getNamedAddress("zone_table"));
 }
 
 } // end of namespace memory

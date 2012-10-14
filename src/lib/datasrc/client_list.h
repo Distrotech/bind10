@@ -290,6 +290,8 @@ public:
     ///      the original data source no longer contains the cached zone.
     ReloadResult reload(const dns::Name& zone);
 
+    void remap(const std::string& file_base, size_t serial);
+
     /// \brief Implementation of the ClientList::find.
     virtual FindResult find(const dns::Name& zone,
                             bool want_exact_match = false,
@@ -303,9 +305,6 @@ public:
         DataSourceInfo(const dns::RRClass& rrclass,
                        util::MemorySegment& mem_sgmt,
                        bool has_cache = false);
-        DataSourceInfo(const dns::RRClass& rrclass,
-                       util::MemorySegment& mem_sgmt,
-                       const std::string& map_file);
         DataSourceInfo(DataSourceClient* data_src_client,
                        const DataSourceClientContainerPtr& container,
                        bool has_cache, const dns::RRClass& rrclass,

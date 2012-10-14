@@ -21,8 +21,10 @@
 #include "logger.h"
 #include <dns/masterload.h>
 
-#include <memory>
 #include <boost/foreach.hpp>
+
+#include <memory>
+#include <string>
 
 using namespace isc::data;
 using namespace isc::dns;
@@ -55,15 +57,6 @@ ConfigurableClientList::DataSourceInfo::DataSourceInfo(
     if (has_cache) {
         cache_.reset(new InMemoryClient(mem_sgmt, rrclass));
     }
-}
-
-// Specific to mmap based memory data source
-ConfigurableClientList::DataSourceInfo::DataSourceInfo(
-    const RRClass& rrclass, MemorySegment& mem_sgmt,
-    const std::string& map_file) :
-    data_src_client_(NULL)
-{
-    cache_.reset(new InMemoryClient(mem_sgmt, rrclass, map_file));
 }
 
 const DataSourceClient*
@@ -102,12 +95,12 @@ ConfigurableClientList::configure(const ConstElementPtr& config,
         for (; i < config->size(); ++i) {
             // Extract the parameters
             const ConstElementPtr dconf(config->get(i));
-            const ConstElementPtr typeElem(dconf->get("type"));
-            if (typeElem == ConstElementPtr()) {
+            const ConstElementPtr type_elem(dconf->get("type"));
+            if (type_elem == ConstElementPtr()) {
                 isc_throw(ConfigurationError, "Missing the type option in "
                           "data source no " << i);
             }
-            const string type(typeElem->stringValue());
+            const string type(type_elem->stringValue());
             ConstElementPtr param_conf(dconf->get("params"));
             if (param_conf == ConstElementPtr()) {
                 param_conf.reset(new NullElement());
@@ -116,19 +109,7 @@ ConfigurableClientList::configure(const ConstElementPtr& config,
                                   dconf->contains("cache-enable") &&
                                   dconf->get("cache-enable")->boolValue());
 
-            if (type == "MappedFile") {
-                if (!want_cache) {
-                    isc_throw(ConfigurationError, "The cache must be enabled "
-                              "for the MappedFile type");
-                }
-                if (!param_conf->contains("file")) {
-                    isc_throw(ConfigurationError, "Missing file name for "
-                              " the MappedFile type");
-                }
-                new_data_sources.push_back(
-                    DataSourceInfo(rrclass_, *mem_sgmt_,
-                                   param_conf->get("file")->stringValue()));
-            } else if (type == "MasterFiles") {
+            if (type == "MasterFiles") {
                 // In case the cache is not allowed, we just skip the master
                 // files (at least for now)
                 if (!allow_cache) {
@@ -160,13 +141,31 @@ ConfigurableClientList::configure(const ConstElementPtr& config,
                                                           *mem_sgmt_));
             }
 
-            if (want_cache && type != "MappedFile") {
+            if (want_cache) {
                 if (!dconf->contains("cache-zones") && type != "MasterFiles") {
                     isc_throw(isc::NotImplemented, "Auto-detection of zones "
                               "to cache is not yet implemented, supply "
                               "cache-zones parameter");
                     // TODO: Auto-detect list of all zones in the
                     // data source.
+                }
+
+                const ConstElementPtr sgmttype_elem =
+                    dconf->get("segment-type");
+                const string sgmttype = sgmttype_elem ?
+                    sgmttype_elem->stringValue() : "local";
+
+                if (sgmttype == "mmap") {
+                    if (!dconf->contains("mmap-file")) {
+                        isc_throw(ConfigurationError, "mmap type segment "
+                                  "requires mmap-file");
+                    }
+                    const string mmap_file =
+                        dconf->get("mmap-file")->stringValue();
+                    const shared_ptr<InMemoryClient> cache =
+                        new_data_sources.back().cache_;
+                    cache->setMappedFile(mmap_file);
+                    continue;
                 }
 
                 // List the zones we are loading
@@ -396,6 +395,19 @@ ConfigurableClientList::reload(const Name& name) {
         result.info->cache_->load(name, filename);
     }
     return (ZONE_RELOADED);
+}
+
+void
+ConfigurableClientList::remap(const std::string& file_base, size_t serial) {
+    BOOST_FOREACH(const DataSourceInfo& info, data_sources_) {
+        if (!info.cache_) {
+            continue;
+        }
+        InMemoryClient* mem_client = info.cache_.get();
+        if (mem_client->getMappedFile() == file_base) {
+            mem_client->remapFile(serial);
+        }
+    }
 }
 
 // NOTE: This function is not tested, it would be complicated. However, the

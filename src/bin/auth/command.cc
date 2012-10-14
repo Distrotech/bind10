@@ -25,6 +25,7 @@
 
 #include <string>
 
+#include <boost/lexical_cast.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -228,6 +229,50 @@ public:
     }
 };
 
+// Handle the "remapfile" command.
+class RemapFileCommand : public AuthCommand {
+public:
+    virtual ConstElementPtr exec(AuthSrv& server,
+                                 isc::data::ConstElementPtr args)
+    {
+        if (args == NULL) {
+            isc_throw(AuthCommandError, "Null argument");
+        }
+        ConstElementPtr class_elem = args->get("class");
+        const RRClass datasrc_class(class_elem ?
+                                    RRClass(class_elem->stringValue()) :
+                                    RRClass::IN());
+
+        ConstElementPtr file_base_elem = args->get("file_base");
+        if (!file_base_elem) {
+            isc_throw(AuthCommandError, "File base is missing");
+        }
+        const string file_base(file_base_elem->stringValue());
+
+        ConstElementPtr serial_elem = args->get("serial");
+        if (!serial_elem) {
+            isc_throw(AuthCommandError, "Serial is missing");
+        }
+        const int serial =
+            boost::lexical_cast<int>(serial_elem->stringValue());
+        if (serial < 0) {
+            isc_throw(AuthCommandError, "Serial must not be negative");
+        }
+
+        isc::util::thread::Mutex::Locker locker(
+            server.getDataSrcClientListMutex());
+        const boost::shared_ptr<isc::datasrc::ConfigurableClientList>
+            list(server.getDataSrcClientList(datasrc_class));
+        if (!list) {
+            isc_throw(AuthCommandError, "There's no client list for "
+                      "class " << datasrc_class);
+        }
+        list->remap(file_base, serial);
+
+        return (createAnswer());
+    }
+};
+
 // The factory of command objects.
 AuthCommand*
 createAuthCommand(const string& command_id) {
@@ -239,6 +284,8 @@ createAuthCommand(const string& command_id) {
         return (new GetStatsCommand());
     } else if (command_id == "loadzone") {
         return (new LoadZoneCommand());
+    } else if (command_id == "remapfile") {
+        return (new RemapFileCommand());
     } else if (command_id == "start_ddns_forwarder") {
         return (new StartDDNSForwarderCommand());
     } else if (command_id == "stop_ddns_forwarder") {
