@@ -83,10 +83,8 @@ InMemoryClient::InMemoryClient(util::MemorySegment& mem_sgmt,
 }
 
 InMemoryClient::~InMemoryClient() {
-    if (file_name_tree_ != NULL) {
-        FileNameDeleter deleter;
-        FileNameTree::destroy(mem_sgmt_, file_name_tree_, deleter);
-    }
+    FileNameDeleter deleter;
+    FileNameTree::destroy(mem_sgmt_, file_name_tree_, deleter);
     if (mmap_sgmt_ != NULL) {
         delete mmap_sgmt_; // just unmap it, we shouldn't delete the content
     } else if (zone_table_ != NULL) {
@@ -347,10 +345,7 @@ void
 InMemoryClient::setMappedFile(const std::string& mmap_file) {
     mmap_file_ = mmap_file;
     if (!mmap_file_.empty()) {
-        FileNameDeleter deleter;
-        FileNameTree::destroy(mem_sgmt_, file_name_tree_, deleter);
         ZoneTable::destroy(mem_sgmt_, zone_table_, rrclass_);
-        file_name_tree_ = NULL;
         zone_table_ = NULL;
     }
 }
