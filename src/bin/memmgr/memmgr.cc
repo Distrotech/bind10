@@ -107,7 +107,7 @@ MemoryMgr::commandHandler(ModuleCCSession& cc_session,
     }
     if (found->second->reload(origin) !=
         ConfigurableClientList::ZONE_RELOADED) {
-        isc_throw(isc::Unexpected, "zone reload failed");
+        isc_throw(isc::Unexpected, "zone reload failed, code");
     }
     LOG_INFO(memmgr_logger, MEMMGR_RELOAD_ZONE).arg(origin).arg(zone_class);
 
