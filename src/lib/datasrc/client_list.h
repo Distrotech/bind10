@@ -349,6 +349,17 @@ public:
     virtual DataSourcePair getDataSourceClient(const std::string& type,
                                                const data::ConstElementPtr&
                                                configuration);
+
+    struct MappedMemoryInfo {
+        MappedMemoryInfo(const std::string& base_file_name0,
+                         int version0) :
+            base_file_name(base_file_name0), version(version0)
+        {}
+        std::string base_file_name;
+        int version;
+    };
+    std::vector<MappedMemoryInfo> getMappedMemories() const;
+
 public:
     /// \brief Access to the data source clients.
     ///

@@ -26,7 +26,7 @@ namespace memmgr {
 
 class MemoryMgr {
 public:
-    MemoryMgr() : first_time_(true) {}
+    MemoryMgr();
     AppConfigHandler getConfigHandler();
     AppCommandHandler getCommandHandler();
     std::vector<RemoteConfigInfo> getRemoteHandlers();
@@ -40,9 +40,13 @@ private:
     void datasrcConfigHandler(config::ModuleCCSession& cc_session,
                               data::ConstElementPtr config,
                               const config::ConfigData&);
-    
-
     bool first_time_;
+
+    const std::string remapcmd_start;
+    const std::string remapcmd_filebase;
+    const std::string remapcmd_class;
+    const std::string remapcmd_version;
+    const std::string remapcmd_end;
 };
 
 } // namespace memmgr

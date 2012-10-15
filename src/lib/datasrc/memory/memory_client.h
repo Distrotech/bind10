@@ -179,6 +179,9 @@ public:
     void setMappedFile(const std::string& mmap_file, bool build);
     std::string getMappedFile() const;
     void remapFile(size_t version);
+    int getCurrentMapVersion() const {
+        return (mapped_file_version_);
+    }
 
 private:
     // Some type aliases

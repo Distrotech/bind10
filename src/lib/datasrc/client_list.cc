@@ -433,5 +433,22 @@ ConfigurableClientList::getDataSourceClient(const string& type,
     return (DataSourcePair(&container->getInstance(), container));
 }
 
+std::vector<ConfigurableClientList::MappedMemoryInfo>
+ConfigurableClientList:: getMappedMemories() const {
+    std::vector<MappedMemoryInfo> result;
+    BOOST_FOREACH(const DataSourceInfo& info, data_sources_) {
+        if (!info.cache_) {
+            continue;
+        }
+        InMemoryClient* mem_client = info.cache_.get();
+        const int version = mem_client->getCurrentMapVersion();
+        if (version >= 0) {
+            result.push_back(MappedMemoryInfo(mem_client->getMappedFile(),
+                                              version));
+        }
+    }
+
+    return (result);
+}
 }
 }

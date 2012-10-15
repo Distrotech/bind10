@@ -27,11 +27,18 @@
 #include "logger.h"
 
 #include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/foreach.hpp>
+
+#include <vector>
 
 using namespace isc::dns;
 using namespace isc::datasrc;
 using namespace isc::config;
 using namespace isc::data;
+
+using std::vector;
+using boost::lexical_cast;
 
 namespace {
 typedef std::map<RRClass, boost::shared_ptr<ConfigurableClientList> >
@@ -41,6 +48,15 @@ typedef boost::shared_ptr<DataSrcClientListsMap> DataSrcClientListsPtr;
 
 namespace isc {
 namespace memmgr {
+
+MemoryMgr::MemoryMgr() :
+    first_time_(true),
+    remapcmd_start("{\"command\": [\"remapfile\", {"),
+    remapcmd_filebase("\"file_base\": \""),
+    remapcmd_class("\", \"class\": \""),
+    remapcmd_version("\", \"version\": \""),
+    remapcmd_end("\"}]}")
+{}
 
 AppConfigHandler
 MemoryMgr::getConfigHandler() {
@@ -115,6 +131,37 @@ MemoryMgr::datasrcConfigHandler(ModuleCCSession& cc_session,
                 cc_session.getRemoteConfigValue("data_sources", "classes"));
         } else {
             lists = configureDataSource(config->get("classes"));
+        }
+
+        // Notify other modules (right now only Auth is hardcoded) of the
+        // mapped file info so that they can map it into memory.
+        for (DataSrcClientListsMap::const_iterator it = lists->begin();
+             it != lists->end();
+             ++it)
+        {
+            BOOST_FOREACH(ConfigurableClientList::MappedMemoryInfo info,
+                          it->second->getMappedMemories()) {
+                LOG_INFO(memmgr_logger, MEMMGR_NOTIFY_AUTH_REMAP)
+                    .arg(it->first);
+
+                ConstElementPtr remap_command = Element::fromJSON(
+                    remapcmd_start +
+                    remapcmd_filebase + info.base_file_name +
+                    remapcmd_class + it->first.toText() +
+                    remapcmd_version +
+                    lexical_cast<std::string>(info.version) +
+                    remapcmd_end);
+                const unsigned int seq =
+                    cc_session.groupSendMsg(remap_command, "Auth");
+                ConstElementPtr env, answer, parsed_answer;
+                cc_session.groupRecvMsg(env, answer, false, seq);
+                int rcode;
+                parsed_answer = parseAnswer(rcode, answer);
+                if (rcode != 0) {
+                    LOG_ERROR(memmgr_logger, MEMMGR_NOTIFY_AUTH_ERROR)
+                        .arg(parsed_answer->str());
+                }
+            }
         }
     }
 }
