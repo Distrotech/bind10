@@ -14,6 +14,9 @@
 
 #include <config.h>
 
+#include <exceptions/exceptions.h>
+
+#include <dns/name.h>
 #include <dns/rrclass.h>
 
 #include <log/logger_support.h>
@@ -39,12 +42,6 @@ using namespace isc::data;
 
 using std::vector;
 using boost::lexical_cast;
-
-namespace {
-typedef std::map<RRClass, boost::shared_ptr<ConfigurableClientList> >
-DataSrcClientListsMap;
-typedef boost::shared_ptr<DataSrcClientListsMap> DataSrcClientListsPtr;
-}
 
 namespace isc {
 namespace memmgr {
@@ -84,19 +81,43 @@ MemoryMgr::configHandler(ModuleCCSession&, ConstElementPtr) {
 }
 
 ConstElementPtr
-MemoryMgr::commandHandler(ModuleCCSession&, const std::string&,
-                          ConstElementPtr)
+MemoryMgr::commandHandler(ModuleCCSession& /*cc_session*/,
+                          const std::string& command, ConstElementPtr args)
 {
+    if (command != "loadzone") {
+        isc_throw(isc::BadValue, "unknown command: " << command);
+    }
+
+    ConstElementPtr class_elem = args->get("class");
+    const RRClass zone_class(class_elem ? RRClass(class_elem->stringValue()) :
+                             RRClass::IN());
+
+    ConstElementPtr origin_elem = args->get("origin");
+    if (!origin_elem) {
+        isc_throw(isc::BadValue, "Zone origin is missing");
+    }
+    const Name origin(origin_elem->stringValue());
+
+    DataSrcClientListsMap::iterator found =
+        datasrc_clients_map_->find(zone_class);
+    if (found == datasrc_clients_map_->end()) {
+        isc_throw(isc::BadValue,
+                  "No data source client is configured for class " <<
+                  zone_class);
+    }
+    //found.second->reload(origin);
+    LOG_INFO(memmgr_logger, MEMMGR_RELOAD_ZONE).arg(origin).arg(zone_class);
+
     return (createAnswer());
 }
 
 namespace {
-DataSrcClientListsPtr
+MemoryMgr::DataSrcClientListsPtr
 configureDataSource(const ConstElementPtr& config) {
     typedef std::map<std::string, ConstElementPtr> ConfigMap;
+    MemoryMgr::DataSrcClientListsPtr new_lists(
+        new MemoryMgr::DataSrcClientListsMap);
     typedef boost::shared_ptr<ConfigurableClientList> ClientListPtr;
-
-    DataSrcClientListsPtr new_lists(new DataSrcClientListsMap);
 
     // Go through the configuration and create corresponding list.
     const ConfigMap& map(config->mapValue());
@@ -132,6 +153,7 @@ MemoryMgr::datasrcConfigHandler(ModuleCCSession& cc_session,
         } else {
             lists = configureDataSource(config->get("classes"));
         }
+        datasrc_clients_map_ = lists;
 
         // Notify other modules (right now only Auth is hardcoded) of the
         // mapped file info so that they can map it into memory.

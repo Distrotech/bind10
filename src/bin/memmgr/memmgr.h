@@ -15,6 +15,8 @@
 #ifndef __MEMMGR_H
 #define __MEMMGR_H 1
 
+#include <dns/rrclass.h>
+
 #include <config/ccsession.h>
 
 #include <memmgr/app_runner.h>
@@ -26,6 +28,12 @@ namespace memmgr {
 
 class MemoryMgr {
 public:
+    typedef std::map<dns::RRClass,
+                     boost::shared_ptr<datasrc::ConfigurableClientList> >
+    DataSrcClientListsMap;
+    typedef boost::shared_ptr<DataSrcClientListsMap> DataSrcClientListsPtr;
+    DataSrcClientListsPtr datasrc_clients_map_;
+
     MemoryMgr();
     AppConfigHandler getConfigHandler();
     AppCommandHandler getCommandHandler();

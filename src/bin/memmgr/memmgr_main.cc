@@ -16,6 +16,8 @@
 
 #include <log/logger_support.h>
 
+#include <datasrc/client_list.h>
+
 #include "spec_config.h"
 #include "app_runner.h"
 #include "memmgr.h"

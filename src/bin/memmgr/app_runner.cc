@@ -110,13 +110,18 @@ AppRunner::remoteHandler(const std::string& module_name,
 }
 
 ConstElementPtr
-AppRunner::commandHandler(const std::string& command,
-                          ConstElementPtr /*args*/)
-{
-    if (command == "shutdown") {
-        // Invoke application specific shutdown handler
-        ;
+AppRunner::commandHandler(const std::string& command, ConstElementPtr args) {
+    ConstElementPtr answer = isc::config::createAnswer(); // default
 
+    // Invoke application specific handler
+    try {
+        answer = app_command_handler_(*config_session_, command, args);
+    } catch (const isc::Exception& ex) {
+        return (createAnswer(1, "Failed to perform " + command + " command: " +
+                             ex.what()));
+    }
+
+    if (command == "shutdown") {
         for (RemoteConfigs::const_iterator it = remote_configs_.begin();
              it != remote_configs_.end();
              ++it) {
@@ -128,9 +133,8 @@ AppRunner::commandHandler(const std::string& command,
         // Stop the loop
         io_service_->stop();
     }
-    return (isc::config::createAnswer());
+    return (answer);
 }
-
 
 }
 }

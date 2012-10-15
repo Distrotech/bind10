@@ -27,3 +27,5 @@ $NAMESPACE isc::memmgr
 % MEMMGR_NOTIFY_AUTH_REMAP notifying Auth of mapped file information for class: %1
 
 % MEMMGR_NOTIFY_AUTH_ERROR failed to notify Auth of mapped file information: %1
+
+% MEMMGR_RELOAD_ZONE reloaded zone %1/%2
