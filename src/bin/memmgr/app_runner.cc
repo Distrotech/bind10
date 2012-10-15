@@ -121,6 +121,8 @@ AppRunner::remoteHandler(const std::string& module_name,
 
 ConstElementPtr
 AppRunner::commandHandler(const std::string& command, ConstElementPtr args) {
+    LOG_INFO(memmgr_logger, APPRUNNER_COMMAND_HANDLER).arg(command);
+
     ConstElementPtr answer = isc::config::createAnswer(); // default
 
     // Invoke application specific handler

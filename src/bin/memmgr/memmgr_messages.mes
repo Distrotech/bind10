@@ -33,3 +33,5 @@ $NAMESPACE isc::memmgr
 % APPRUNNER_REMOTE_HANDLER_FAIL failed to complete remote configuration handler for module %1: %2
 
 % MEMMGR_COMMAND_RECEIVED received command: %1
+
+% APPRUNNER_COMMAND_HANDLER received command: %1

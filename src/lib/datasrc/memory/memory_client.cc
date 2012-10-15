@@ -237,7 +237,7 @@ InMemoryClient::loadNewMap(const isc::dns::Name& zone_name,
         ZoneData::destroy(*new_mem_sgmt, result.zone_data, rrclass_);
     }
 
-    // The create a new version of zone data, link it into the new table
+    // Then create a new version of zone data, link it into the new table.
     ZoneData* zone_data = loadZoneData(*new_mem_sgmt, rrclass_, zone_name,
                                        source);
     zone_table_ = new_zone_table;
