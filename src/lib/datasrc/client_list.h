@@ -274,7 +274,8 @@ public:
         CACHE_DISABLED,     ///< The cache is not enabled in this list.
         ZONE_NOT_CACHED,    ///< Zone is served directly, not from cache.
         ZONE_NOT_FOUND,     ///< Zone does not exist or not cached.
-        ZONE_RELOADED       ///< The zone was successfully reloaded.
+        ZONE_MAPPED,        ///< Zone is directly mapped to an on-disk image.
+        ZONE_RELOADED,      ///< The zone was successfully reloaded.
     };
 
     /// \brief Reloads a cached zone.

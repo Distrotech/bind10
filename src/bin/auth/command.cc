@@ -209,6 +209,10 @@ public:
                 LOG_DEBUG(auth_logger, DBG_AUTH_OPS, AUTH_LOAD_ZONE)
                     .arg(zone_class).arg(origin);
                 return (createAnswer());
+            case ConfigurableClientList::ZONE_MAPPED:
+                LOG_INFO(auth_logger, AUTH_LOAD_ZONE_SKIPPED)
+                    .arg(zone_class).arg(origin);
+                return (createAnswer());
             case ConfigurableClientList::ZONE_NOT_FOUND:
                 isc_throw(AuthCommandError, "Zone " << origin << "/" <<
                           zone_class << " was not found in any configured "

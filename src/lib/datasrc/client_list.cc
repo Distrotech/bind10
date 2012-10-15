@@ -386,6 +386,10 @@ ConfigurableClientList::reload(const Name& name) {
         return (ZONE_NOT_CACHED);
     }
     DataSourceClient* client(result.info->data_src_client_);
+    if (!memmgr_mode_ && !result.info->cache_->getMappedFile().empty()) {
+        // If it's mapped file, reload doesn't make sense except for memmgr
+        return (ZONE_MAPPED);
+    }
     if (client) {
         // Now do the final reload. If it does not exist in client,
         // DataSourceError is thrown, which is exactly the result what we
