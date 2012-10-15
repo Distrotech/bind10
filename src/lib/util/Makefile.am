@@ -8,7 +8,8 @@ AM_CPPFLAGS += -DLOCKFILE_DIR=\"${localstatedir}/${PACKAGE_NAME}\"
 AM_CXXFLAGS = $(B10_CXXFLAGS)
 
 lib_LTLIBRARIES = libb10-util.la
-libb10_util_la_SOURCES  = filename.h filename.cc
+libb10_util_la_SOURCES  = dll.h
+libb10_util_la_SOURCES += filename.h filename.cc
 libb10_util_la_SOURCES += locks.h lru_list.h
 libb10_util_la_SOURCES += strutil.h strutil.cc
 libb10_util_la_SOURCES += buffer.h io_utilities.h
