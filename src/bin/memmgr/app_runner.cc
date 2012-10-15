@@ -14,11 +14,14 @@
 
 #include <config.h>
 
+#include <exceptions/exceptions.h>
+
 #include <log/logger_support.h>
 
 #include <dns/rrclass.h>
 
 #include "app_runner.h"
+#include "logger.h"
 
 #include <boost/bind.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -99,13 +102,20 @@ AppRunner::remoteHandler(const std::string& module_name,
                          isc::data::ConstElementPtr new_config,
                          const ConfigData& config_data)
 {
-    for (RemoteConfigs::const_iterator it = remote_configs_.begin();
-         it != remote_configs_.end();
-         ++it)
-    {
-        if (it->module_name == module_name) {
-            it->handler(*config_session_, new_config, config_data);
+    try {
+        for (RemoteConfigs::const_iterator it = remote_configs_.begin();
+             it != remote_configs_.end();
+             ++it)
+        {
+            if (it->module_name == module_name) {
+                it->handler(*config_session_, new_config, config_data);
+            }
         }
+    } catch (const isc::Exception& ex) {
+        // XXX: remoteHandler doesn't allow propagating an exception, but
+        // we rather let it go through except for known ones.
+        LOG_ERROR(memmgr_logger, APPRUNNER_REMOTE_HANDLER_FAIL).
+            arg(module_name).arg(ex.what());
     }
 }
 

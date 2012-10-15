@@ -29,3 +29,5 @@ $NAMESPACE isc::memmgr
 % MEMMGR_NOTIFY_AUTH_ERROR failed to notify Auth of mapped file information: %1
 
 % MEMMGR_RELOAD_ZONE reloaded zone %1/%2
+
+% APPRUNNER_REMOTE_HANDLER_FAIL failed to complete remote configuration handler for module %1: %2
