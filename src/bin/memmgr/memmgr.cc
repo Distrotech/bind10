@@ -35,6 +35,8 @@
 
 #include <vector>
 
+#include <unistd.h>
+
 using namespace isc::dns;
 using namespace isc::datasrc;
 using namespace isc::config;
@@ -84,6 +86,8 @@ ConstElementPtr
 MemoryMgr::commandHandler(ModuleCCSession& cc_session,
                           const std::string& command, ConstElementPtr args)
 {
+    LOG_INFO(memmgr_logger, MEMMGR_COMMAND_RECEIVED).arg(command);
+
     if (command != "loadzone") {
         isc_throw(isc::BadValue, "unknown command: " << command);
     }
@@ -144,24 +148,25 @@ MemoryMgr::datasrcConfigHandler(ModuleCCSession& cc_session,
                                 ConstElementPtr config, const ConfigData&)
 {
     if (config->contains("classes")) {
-        DataSrcClientListsPtr lists;
-
         if (first_time_) {
             // HACK: The default is not passed to the handler in the first
             // callback. This one will get the default (or, current value).
             // Further updates will work the usual way.
             first_time_ = false;
-            lists = configureDataSource(
+            datasrc_clients_map_ = configureDataSource(
                 cc_session.getRemoteConfigValue("data_sources", "classes"));
+            // XXX: there seems to be subtle startup timing issue with Auth.
+            // sleeping is a naive, but easiest workaround.
+            sleep(3);
         } else {
-            lists = configureDataSource(config->get("classes"));
+            datasrc_clients_map_ = configureDataSource(config->get("classes"));
         }
-        datasrc_clients_map_ = lists;
 
         // Notify other modules (right now only Auth is hardcoded) of the
         // mapped file info so that they can map it into memory.
-        for (DataSrcClientListsMap::const_iterator it = lists->begin();
-             it != lists->end();
+        for (DataSrcClientListsMap::const_iterator it =
+                 datasrc_clients_map_->begin();
+             it != datasrc_clients_map_->end();
              ++it)
         {
             distributeNewVersion(cc_session, "Auth", it->first, it->second);
