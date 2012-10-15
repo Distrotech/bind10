@@ -240,7 +240,9 @@ InMemoryClient::loadNewMap(const isc::dns::Name& zone_name,
     // Then create a new version of zone data, link it into the new table.
     ZoneData* zone_data = loadZoneData(*new_mem_sgmt, rrclass_, zone_name,
                                        source);
-    zone_table_ = new_zone_table;
+    // Make sure we use the latest zone table address from the segment
+    zone_table_ = static_cast<ZoneTable*>(
+        new_mem_sgmt->getNamedAddress("zone_table"));
     const result::Result load_result =
         loadInternal(*new_mem_sgmt, zone_name, filename, zone_data);
 
