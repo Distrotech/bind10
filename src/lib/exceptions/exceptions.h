@@ -32,7 +32,7 @@ namespace isc {
 /// triggered.
 ///
 class B10_LIBEXCEPTIONS_API Exception :
-    isc::util::nonassignable, public std::exception {
+    public isc::util::nonassignable, public std::exception {
 public:
     ///
     /// \name Constructors and Destructor

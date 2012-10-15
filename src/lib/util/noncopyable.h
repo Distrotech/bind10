@@ -17,13 +17,11 @@
 #ifndef __NONCOPYABLE_
 #define __NONCOPYABLE_
 
-#include <util/dll.h>
-
 namespace isc {
 namespace util {
 namespace noncopyable_ {
 
-class B10_LIBUTIL_API noncopyable {
+class noncopyable {
 protected:
     noncopyable() {}
     ~noncopyable() {}
