@@ -157,7 +157,7 @@ MemoryMgr::datasrcConfigHandler(ModuleCCSession& cc_session,
                 cc_session.getRemoteConfigValue("data_sources", "classes"));
             // XXX: there seems to be subtle startup timing issue with Auth.
             // sleeping is a naive, but easiest workaround.
-            sleep(3);
+            sleep(2);
         } else {
             datasrc_clients_map_ = configureDataSource(config->get("classes"));
         }
@@ -194,13 +194,23 @@ MemoryMgr::distributeNewVersion(config::ModuleCCSession& cc_session,
             remapcmd_end);
         const unsigned int seq =
             cc_session.groupSendMsg(remap_command, remote_module);
-        ConstElementPtr env, answer, parsed_answer;
-        cc_session.groupRecvMsg(env, answer, false, seq);
-        int rcode;
-        parsed_answer = parseAnswer(rcode, answer);
-        if (rcode != 0) {
-            LOG_ERROR(memmgr_logger, MEMMGR_NOTIFY_AUTH_ERROR)
-                .arg(parsed_answer->str());
+
+        // XXX we don't know how many modules receive the message, so we
+        // need to repeat receiving responses until we see timeout.
+        bool keep_waiting = true;
+        while (keep_waiting) {
+            try {
+                ConstElementPtr env, answer, parsed_answer;
+                cc_session.groupRecvMsg(env, answer, false, seq);
+                int rcode;
+                parsed_answer = parseAnswer(rcode, answer);
+                if (rcode != 0) {
+                    LOG_ERROR(memmgr_logger, MEMMGR_NOTIFY_AUTH_ERROR)
+                        .arg(parsed_answer->str());
+                }
+            } catch (const cc::SessionTimeout&) {
+                keep_waiting = false;
+            }
         }
     }
 }
