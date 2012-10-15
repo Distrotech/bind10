@@ -394,7 +394,11 @@ ConfigurableClientList::reload(const Name& name) {
         if (!iterator) {
             isc_throw(isc::Unexpected, "Null iterator from " << name);
         }
-        result.info->cache_->load(name, *iterator);
+        if (memmgr_mode_) {
+            result.info->cache_->loadNewMap(name, *iterator);
+        } else {
+            result.info->cache_->load(name, *iterator);
+        }
     } else {
         // The MasterFiles special case
         const string filename(result.info->cache_->getFileName(name));
@@ -402,7 +406,11 @@ ConfigurableClientList::reload(const Name& name) {
             isc_throw(isc::Unexpected, "Confused about missing both filename "
                       "and data source");
         }
-        result.info->cache_->load(name, filename);
+        if (memmgr_mode_) {
+            result.info->cache_->loadNewMap(name, filename);
+        } else {
+            result.info->cache_->load(name, filename);
+        }
     }
     return (ZONE_RELOADED);
 }

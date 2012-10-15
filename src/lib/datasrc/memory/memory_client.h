@@ -125,6 +125,19 @@ public:
     result::Result load(const isc::dns::Name& zone_name,
                         ZoneIterator& iterator);
 
+    result::Result loadNewMap(const isc::dns::Name& zone_name,
+                              const std::string& filename);
+    result::Result loadNewMap(const isc::dns::Name& zone_name,
+                              ZoneIterator& iterator);
+
+private:
+    // helper backend of loadNewMap
+    template <typename SourceType>
+    result::Result loadNewMap(const isc::dns::Name& zone_name,
+                              SourceType source,
+                              const std::string& filename);
+
+public:
     /// Return the master file name of the zone
     ///
     /// This method returns the name of the zone's master file to be loaded.

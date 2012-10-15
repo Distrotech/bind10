@@ -105,7 +105,10 @@ MemoryMgr::commandHandler(ModuleCCSession& /*cc_session*/,
                   "No data source client is configured for class " <<
                   zone_class);
     }
-    //found.second->reload(origin);
+    if (found->second->reload(origin) !=
+        ConfigurableClientList::ZONE_RELOADED) {
+        isc_throw(isc::Unexpected, "zone reload failed");
+    }
     LOG_INFO(memmgr_logger, MEMMGR_RELOAD_ZONE).arg(origin).arg(zone_class);
 
     return (createAnswer());

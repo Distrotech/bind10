@@ -84,6 +84,8 @@ private:
     // is unsigned). But because we only do a check against 0 and not a
     // relation comparison, this is okay.
     size_t allocated_size_;
+
+    const bool create_mode_;
 };
 
 } // namespace util

@@ -30,10 +30,11 @@ MemorySegmentMmap::MemorySegmentMmap(const std::string& filename,
                                      bool create, size_t initial_size) :
         filename_(filename),
         base_sgmt_(NULL),
-        allocated_size_(0)
+        allocated_size_(0),
+        create_mode_(create)
 {
     if (create) {
-        base_sgmt_ = new managed_mapped_file(open_or_create, filename_.c_str(),
+        base_sgmt_ = new managed_mapped_file(create_only, filename_.c_str(),
                                              initial_size);
     } else {
         base_sgmt_ = new managed_mapped_file(open_only, filename_.c_str());
@@ -43,7 +44,8 @@ MemorySegmentMmap::MemorySegmentMmap(const std::string& filename,
 MemorySegmentMmap::MemorySegmentMmap(const std::string& filename) :
     filename_(filename),
     base_sgmt_(new managed_mapped_file(open_read_only, filename_.c_str())),
-    allocated_size_(0)
+    allocated_size_(0),
+    create_mode_(false)
 {
 }
 
@@ -80,7 +82,9 @@ MemorySegmentMmap::allocate(size_t size) {
                   << base_sgmt_->get_free_memory());
     }
 
-    allocated_size_ += size;
+    if (create_mode_) {
+        allocated_size_ += size;
+    }
     return (ptr);
 }
 
@@ -92,12 +96,13 @@ MemorySegmentMmap::deallocate(void* ptr, size_t size) {
         return;
     }
 
-    if (size > allocated_size_) {
-      isc_throw(OutOfRange, "Invalid size to deallocate: " << size
-                << "; currently allocated size: " << allocated_size_);
+    if (create_mode_) {
+        if (size > allocated_size_) {
+            isc_throw(OutOfRange, "Invalid size to deallocate: " << size
+                      << "; currently allocated size: " << allocated_size_);
+        }
+        allocated_size_ -= size;
     }
-
-    allocated_size_ -= size;
     base_sgmt_->deallocate(ptr);
 }
 

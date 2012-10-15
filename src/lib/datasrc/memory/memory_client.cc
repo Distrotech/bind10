@@ -40,6 +40,7 @@
 #include <utility>
 #include <cctype>
 #include <cassert>
+#include <fstream>
 
 #include <unistd.h>
 
@@ -198,6 +199,70 @@ InMemoryClient::load(const isc::dns::Name& zone_name, ZoneIterator& iterator) {
     ZoneData* zone_data = loadZoneData(mem_sgmt, rrclass_, zone_name,
                                        iterator);
     return (loadInternal(mem_sgmt, zone_name, string(), zone_data));
+}
+
+template <typename SourceType>
+result::Result
+InMemoryClient::loadNewMap(const isc::dns::Name& zone_name,
+                           SourceType source, const std::string& filename)
+{
+    if (mmap_sgmt_ == NULL) {
+        isc_throw(isc::InvalidParameter, "loadNewMap without mmap segment");
+    }
+
+    // Copy the current version of mapped file to a new one.
+    const std::string current_fname = mmap_file_ + "." +
+        boost::lexical_cast<std::string>(mapped_file_version_);
+    const int new_version = (mapped_file_version_ + 1) % 2; // 0=>1, 1=>0
+    const std::string new_fname = mmap_file_ + "." +
+        boost::lexical_cast<std::string>(new_version);
+    unlink(new_fname.c_str());
+    ifstream f_in(current_fname.c_str(), fstream::binary);
+    ofstream f_out(new_fname.c_str(), fstream::binary | fstream::trunc);
+    f_out << f_in.rdbuf();
+
+    // Create a new mapped memory segment in the non-create mode.
+    util::MemorySegmentMmap* new_mem_sgmt =
+        new util::MemorySegmentMmap(new_fname, false);
+    ZoneTable* new_zone_table = static_cast<ZoneTable*>(
+        new_mem_sgmt->getNamedAddress("zone_table"));
+
+    // Remove old version of zone data first.  This will be a bit more
+    // space efficient, but a bit more tricky.
+    ZoneData* empty_zone_data = ZoneData::create(*new_mem_sgmt, zone_name);
+    const ZoneTable::AddResult result(new_zone_table->addZone(
+                                          *new_mem_sgmt, rrclass_, zone_name,
+                                          empty_zone_data));
+    if (result.zone_data != NULL) {
+        ZoneData::destroy(*new_mem_sgmt, result.zone_data, rrclass_);
+    }
+
+    // The create a new version of zone data, link it into the new table
+    ZoneData* zone_data = loadZoneData(*new_mem_sgmt, rrclass_, zone_name,
+                                       source);
+    zone_table_ = new_zone_table;
+    const result::Result load_result =
+        loadInternal(*new_mem_sgmt, zone_name, filename, zone_data);
+
+    delete mmap_sgmt_;
+    mmap_sgmt_ = new_mem_sgmt;
+    mapped_file_version_ = new_version;
+
+    return (load_result);
+}
+
+result::Result
+InMemoryClient::loadNewMap(const isc::dns::Name& zone_name,
+                           const std::string& filename)
+{
+    return (loadNewMap(zone_name, filename, filename));
+}
+
+result::Result
+InMemoryClient::loadNewMap(const isc::dns::Name& zone_name,
+                           ZoneIterator& iterator)
+{
+    return (loadNewMap<ZoneIterator&>(zone_name, iterator, std::string()));
 }
 
 const std::string
