@@ -40,6 +40,8 @@ public:
     std::vector<RemoteConfigInfo> getRemoteHandlers();
 
 private:
+    typedef boost::shared_ptr<datasrc::ConfigurableClientList> ClientListPtr;
+
     data::ConstElementPtr configHandler(config::ModuleCCSession& cc_session,
                                         data::ConstElementPtr new_config);
     data::ConstElementPtr commandHandler(config::ModuleCCSession& cc_session,
@@ -48,6 +50,12 @@ private:
     void datasrcConfigHandler(config::ModuleCCSession& cc_session,
                               data::ConstElementPtr config,
                               const config::ConfigData&);
+    DataSrcClientListsPtr configureDataSource(
+        const data::ConstElementPtr& config);
+    void distributeNewVersion(config::ModuleCCSession& cc_session,
+                              const std::string& remote_module,
+                              const dns::RRClass& rrclass,
+                              ClientListPtr client_list);
     bool first_time_;
 
     const std::string remapcmd_start;

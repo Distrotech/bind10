@@ -81,7 +81,7 @@ MemoryMgr::configHandler(ModuleCCSession&, ConstElementPtr) {
 }
 
 ConstElementPtr
-MemoryMgr::commandHandler(ModuleCCSession& /*cc_session*/,
+MemoryMgr::commandHandler(ModuleCCSession& cc_session,
                           const std::string& command, ConstElementPtr args)
 {
     if (command != "loadzone") {
@@ -111,16 +111,17 @@ MemoryMgr::commandHandler(ModuleCCSession& /*cc_session*/,
     }
     LOG_INFO(memmgr_logger, MEMMGR_RELOAD_ZONE).arg(origin).arg(zone_class);
 
+    // For simplicity notify of all data source of the list.  in practice
+    // the effect should be the same in most cases.
+    distributeNewVersion(cc_session, "Auth", zone_class, found->second);
+
     return (createAnswer());
 }
 
-namespace {
 MemoryMgr::DataSrcClientListsPtr
-configureDataSource(const ConstElementPtr& config) {
+MemoryMgr::configureDataSource(const ConstElementPtr& config) {
     typedef std::map<std::string, ConstElementPtr> ConfigMap;
-    MemoryMgr::DataSrcClientListsPtr new_lists(
-        new MemoryMgr::DataSrcClientListsMap);
-    typedef boost::shared_ptr<ConfigurableClientList> ClientListPtr;
+    DataSrcClientListsPtr new_lists(new DataSrcClientListsMap);
 
     // Go through the configuration and create corresponding list.
     const ConfigMap& map(config->mapValue());
@@ -136,7 +137,6 @@ configureDataSource(const ConstElementPtr& config) {
     }
 
     return (new_lists);
-}
 }
 
 void
@@ -164,29 +164,38 @@ MemoryMgr::datasrcConfigHandler(ModuleCCSession& cc_session,
              it != lists->end();
              ++it)
         {
-            BOOST_FOREACH(ConfigurableClientList::MappedMemoryInfo info,
-                          it->second->getMappedMemories()) {
-                LOG_INFO(memmgr_logger, MEMMGR_NOTIFY_AUTH_REMAP)
-                    .arg(it->first);
+            distributeNewVersion(cc_session, "Auth", it->first, it->second);
+        }
+    }
+}
 
-                ConstElementPtr remap_command = Element::fromJSON(
-                    remapcmd_start +
-                    remapcmd_filebase + info.base_file_name +
-                    remapcmd_class + it->first.toText() +
-                    remapcmd_version +
-                    lexical_cast<std::string>(info.version) +
-                    remapcmd_end);
-                const unsigned int seq =
-                    cc_session.groupSendMsg(remap_command, "Auth");
-                ConstElementPtr env, answer, parsed_answer;
-                cc_session.groupRecvMsg(env, answer, false, seq);
-                int rcode;
-                parsed_answer = parseAnswer(rcode, answer);
-                if (rcode != 0) {
-                    LOG_ERROR(memmgr_logger, MEMMGR_NOTIFY_AUTH_ERROR)
-                        .arg(parsed_answer->str());
-                }
-            }
+void
+MemoryMgr::distributeNewVersion(config::ModuleCCSession& cc_session,
+                                const std::string& remote_module,
+                                const RRClass& rrclass,
+                                ClientListPtr client_list)
+{
+    BOOST_FOREACH(ConfigurableClientList::MappedMemoryInfo info,
+                  client_list->getMappedMemories()) {
+        LOG_INFO(memmgr_logger, MEMMGR_NOTIFY_AUTH_REMAP).arg(remote_module).
+            arg(rrclass);
+
+        ConstElementPtr remap_command = Element::fromJSON(
+            remapcmd_start +
+            remapcmd_filebase + info.base_file_name +
+            remapcmd_class + rrclass.toText() +
+            remapcmd_version +
+            lexical_cast<std::string>(info.version) +
+            remapcmd_end);
+        const unsigned int seq =
+            cc_session.groupSendMsg(remap_command, remote_module);
+        ConstElementPtr env, answer, parsed_answer;
+        cc_session.groupRecvMsg(env, answer, false, seq);
+        int rcode;
+        parsed_answer = parseAnswer(rcode, answer);
+        if (rcode != 0) {
+            LOG_ERROR(memmgr_logger, MEMMGR_NOTIFY_AUTH_ERROR)
+                .arg(parsed_answer->str());
         }
     }
 }

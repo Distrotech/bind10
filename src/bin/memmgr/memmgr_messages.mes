@@ -24,7 +24,7 @@ $NAMESPACE isc::memmgr
 
 % MEMMGR_CONFIGURE_DATASRC_END data source clients configuration completed for class %1
 
-% MEMMGR_NOTIFY_AUTH_REMAP notifying Auth of mapped file information for class: %1
+% MEMMGR_NOTIFY_AUTH_REMAP notifying %1 of mapped file information for class %2
 
 % MEMMGR_NOTIFY_AUTH_ERROR failed to notify Auth of mapped file information: %1
 
