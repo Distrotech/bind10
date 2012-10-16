@@ -35,6 +35,8 @@
 #include <dns/rrclass.h>
 
 #include <boost/lexical_cast.hpp>
+#include <boost/interprocess/file_mapping.hpp>
+#include <boost/interprocess/mapped_region.hpp>
 
 #include <algorithm>
 #include <utility>
@@ -48,6 +50,7 @@ using namespace std;
 using namespace isc::dns;
 using namespace isc::dns::rdata;
 using namespace isc::datasrc::memory;
+using namespace boost::interprocess;
 
 namespace isc {
 namespace datasrc {
@@ -201,6 +204,34 @@ InMemoryClient::load(const isc::dns::Name& zone_name, ZoneIterator& iterator) {
     return (loadInternal(mem_sgmt, zone_name, string(), zone_data));
 }
 
+namespace {
+void
+copyMappedImage(const char* const src_file, const char* const dst_file) {
+    file_mapping src_mapping(src_file, read_only);
+    mapped_region src_region(src_mapping, read_only);
+    const size_t src_size = src_region.get_size();
+
+    // Create the target file of the same size
+    {
+        file_mapping::remove(dst_file);
+        std::filebuf fbuf;
+        fbuf.open(dst_file, std::ios_base::in | std::ios_base::out
+                  | std::ios_base::trunc | std::ios_base::binary);
+        if (src_size > 0) {
+            fbuf.pubseekoff(src_size - 1, std::ios_base::beg);
+            fbuf.sputc(0);
+        }
+    }
+
+    // Copy the content of src to dst
+    file_mapping dst_mapping(dst_file, read_write);
+    mapped_region dst_region(dst_mapping, read_write);
+    assert(dst_region.get_size() >= src_size);
+    memcpy(dst_region.get_address(), src_region.get_address(), src_size);
+    dst_region.flush();
+}
+}
+
 template <typename SourceType>
 result::Result
 InMemoryClient::loadNewMap(const isc::dns::Name& zone_name,
@@ -216,10 +247,7 @@ InMemoryClient::loadNewMap(const isc::dns::Name& zone_name,
     const int new_version = (mapped_file_version_ + 1) % 2; // 0=>1, 1=>0
     const std::string new_fname = mmap_file_ + "." +
         boost::lexical_cast<std::string>(new_version);
-    unlink(new_fname.c_str());
-    ifstream f_in(current_fname.c_str(), fstream::binary);
-    ofstream f_out(new_fname.c_str(), fstream::binary | fstream::trunc);
-    f_out << f_in.rdbuf();
+    copyMappedImage(current_fname.c_str(), new_fname.c_str());
 
     // Create a new mapped memory segment in the non-create mode.
     util::MemorySegmentMmap* new_mem_sgmt =
