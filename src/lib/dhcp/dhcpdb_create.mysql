@@ -13,6 +13,21 @@
 # NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
 # WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+# This is the BIND 10 DHCP schema specification for MySQL.
+#
+# The schema is reasonably portable (with the exception of the engine
+# specification, which is MySQL-specific).  Minor changes might be needed for
+# other databases.
+
+# To create the schema, either type the command:
+#
+# mysql -u <user> -p <password> <database> < dhcpdb_create.mysql
+#
+# ... at the command prompt, or log in to the MySQL database and at the "mysql>"
+# prompt, issue the command:
+#
+# source dhcpdb_create.mysql
+
 # Holds the IPv4 leases.
 CREATE TABLE lease4 (
     address INT UNSIGNED UNIQUE NOT NULL,   # IPv4 address
@@ -28,15 +43,16 @@ CREATE TABLE lease6 (
     address BINARY(16) UNIQUE NOT NULL,     # IPv6 address
     hwaddr VARCHAR(20),                     # Hardware address
     client_id VARCHAR(128),                 # Client ID
-    lifetime INT UNSIGNED,                  # Length of the lease (seconds)
+    lease_time INT UNSIGNED,                # Length of the lease (seconds)
     expire TIMESTAMP,                       # Expiration time of the lease
     subnet_id INT UNSIGNED,                 # Subnet identification
+    pref_lifetime INT UNSIGNED,             # Preferred lifetime
     lease_type TINYINT,                     # Lease type
     iaid INT UNSIGNED,                      # IA ID
     prefix_len TINYINT UNSIGNED             # For IA_PD only
     ) ENGINE = INNODB;
 
-# ... and a definition of leasei6 types.  This table is a convenience for
+# ... and a definition of lease6 types.  This table is a convenience for
 # users of the database - if they want to view the lease table and use the
 # type names, they can join this table with the lease6 table
 CREATE TABLE lease6_types (
