@@ -15,15 +15,13 @@
 #ifndef DATASRC_CONFIG_H
 #define DATASRC_CONFIG_H
 
-#include "auth_srv.h"
-
 #include <cc/data.h>
 #include <datasrc/client_list.h>
 
 #include <boost/shared_ptr.hpp>
 
 #include <utility>
-#include <set>
+#include <map>
 
 /// \brief Configure data source client lists
 ///
@@ -73,7 +71,7 @@ configureDataSourceGeneric(const isc::data::ConstElementPtr& config) {
 
 /// \brief Concrete version of configureDataSource() for the
 ///     use with authoritative server implementation.
-AuthSrv::DataSrcClientListsPtr
+isc::datasrc::DataSrcClientListsPtr
 configureDataSource(const isc::data::ConstElementPtr& config);
 
 #endif  // DATASRC_CONFIG_H
