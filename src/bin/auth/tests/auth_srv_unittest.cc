@@ -304,7 +304,7 @@ TEST_F(AuthSrvTest, AXFRSuccess) {
 // not be able to verify it, returning BADKEY
 TEST_F(AuthSrvTest, TSIGSignedBadKey) {
     TSIGKey key("key:c2VjcmV0Cg==:hmac-sha1");
-    TSIGContext context(key);
+    TSIGContext context(key, isc::cryptolink::Sign);
     UnitTestUtil::createRequestMessage(request_message, opcode, default_qid,
                                        Name("version.bind"), RRClass::CH(),
                                        RRType::TXT());
@@ -338,7 +338,7 @@ TEST_F(AuthSrvTest, TSIGSignedBadKey) {
 // (with the same name). It should return BADSIG
 TEST_F(AuthSrvTest, TSIGBadSig) {
     TSIGKey key("key:c2VjcmV0Cg==:hmac-sha1");
-    TSIGContext context(key);
+    TSIGContext context(key, isc::cryptolink::Sign);
     UnitTestUtil::createRequestMessage(request_message, opcode, default_qid,
                                        Name("version.bind"), RRClass::CH(),
                                        RRType::TXT());
@@ -374,7 +374,7 @@ TEST_F(AuthSrvTest, TSIGBadSig) {
 // else.
 TEST_F(AuthSrvTest, TSIGCheckFirst) {
     TSIGKey key("key:c2VjcmV0Cg==:hmac-sha1");
-    TSIGContext context(key);
+    TSIGContext context(key, isc::cryptolink::Sign);
     // Pass a wrong opcode there. The server shouldn't know what to do
     // about it.
     UnitTestUtil::createRequestMessage(request_message, Opcode::RESERVED14(),
@@ -780,11 +780,11 @@ TEST_F(AuthSrvTest, TSIGSigned) {
     // Prepare key, the client message, etc
     updateBuiltin(server);
     const TSIGKey key("key:c2VjcmV0Cg==:hmac-sha1");
-    TSIGContext context(key);
+    TSIGContext context_sign(key, isc::cryptolink::Sign);
     UnitTestUtil::createRequestMessage(request_message, opcode, default_qid,
                                        Name("VERSION.BIND."), RRClass::CH(),
                                        RRType::TXT());
-    createRequestPacket(request_message, IPPROTO_UDP, &context);
+    createRequestPacket(request_message, IPPROTO_UDP, &context_sign);
 
     // Run the message through the server
     boost::shared_ptr<TSIGKeyRing> keyring(new TSIGKeyRing);
@@ -804,8 +804,9 @@ TEST_F(AuthSrvTest, TSIGSigned) {
 
     const TSIGRecord* tsig = m.getTSIGRecord();
     ASSERT_TRUE(tsig != NULL) << "Missing TSIG signature";
-    TSIGError error(context.verify(tsig, response_obuffer->getData(),
-                                   response_obuffer->getLength()));
+    TSIGContext context_verify(context_sign, isc::cryptolink::Verify);
+    TSIGError error(context_verify.verify(tsig, response_obuffer->getData(),
+                                          response_obuffer->getLength()));
     EXPECT_EQ(TSIGError::NOERROR(), error) <<
         "The server signed the response, but it doesn't seem to be valid";
 

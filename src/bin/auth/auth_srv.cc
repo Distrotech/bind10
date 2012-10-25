@@ -544,6 +544,7 @@ AuthSrv::processMessage(const IOMessage& io_message, Message& message,
     // The keyring can be null if we're in test
     if (impl_->keyring_ != NULL && tsig_record != NULL) {
         tsig_context.reset(new TSIGContext(tsig_record->getName(),
+                                           isc::cryptolink::Verify,
                                            tsig_record->getRdata().
                                                 getAlgorithm(),
                                            **impl_->keyring_));

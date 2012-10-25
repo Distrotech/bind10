@@ -59,10 +59,11 @@ getTSIGTime() {
 
 struct TSIGContext::TSIGContextImpl {
     TSIGContextImpl(const TSIGKey& key,
+                    const Operation operation,
                     TSIGError error = TSIGError::NOERROR()) :
         state_(INIT), key_(key), error_(error),
         previous_timesigned_(0), digest_len_(0),
-        last_sig_dist_(-1)
+        last_sig_dist_(-1), op_(operation)
     {
         if (error == TSIGError::NOERROR()) {
             // In normal (NOERROR) case, the key should be valid, and we
@@ -77,13 +78,32 @@ struct TSIGContext::TSIGContextImpl {
             try {
                 hmac_.reset(CryptoLink::getCryptoLink().createHMAC(
                                 key_.getSecret(), key_.getSecretLength(),
-                                key_.getAlgorithm()),
+                                operation, key_.getAlgorithm()),
                             deleteHMAC);
             } catch (const Exception&) {
                 return;
             }
             digest_len_ = hmac_->getOutputLength();
         }
+    }
+
+    // Copy constructor
+    TSIGContextImpl(const TSIGContextImpl& other,
+                    const Operation operation) :
+        state_(other.state_), key_(other.key_),
+        previous_digest_(other.previous_digest_), error_(other.error_),
+        previous_timesigned_(other.previous_timesigned_), digest_len_(0),
+        last_sig_dist_(-1), op_(operation)
+    {
+        try {
+            hmac_.reset(CryptoLink::getCryptoLink().createHMAC(
+                            key_.getSecret(), key_.getSecretLength(),
+                            operation, key_.getAlgorithm()),
+                        deleteHMAC);
+        } catch (const Exception&) {
+             return;
+        }
+        digest_len_ = hmac_->getOutputLength();
     }
 
     // This helper method is used from verify().  It's expected to be called
@@ -113,7 +133,7 @@ struct TSIGContext::TSIGContextImpl {
     // create a new one and return it.  In the former case, the ownership is
     // transferred to the caller; the stored HMAC will be reset after the
     // call.
-    HMACPtr createHMAC() {
+    HMACPtr createHMAC(const Operation operation) {
         if (hmac_) {
             HMACPtr ret = HMACPtr();
             ret.swap(hmac_);
@@ -121,7 +141,7 @@ struct TSIGContext::TSIGContextImpl {
         }
         return (HMACPtr(CryptoLink::getCryptoLink().createHMAC(
                             key_.getSecret(), key_.getSecretLength(),
-                            key_.getAlgorithm()),
+                            operation, key_.getAlgorithm()),
                         deleteHMAC));
     }
 
@@ -157,6 +177,8 @@ struct TSIGContext::TSIGContextImpl {
     // means the last message was signed. Special value -1 means there was no
     // signed message yet.
     int last_sig_dist_;
+    // Need for update()
+    const Operation op_;
 };
 
 void
@@ -259,11 +281,19 @@ TSIGContext::TSIGContextImpl::digestDNSMessage(HMACPtr hmac,
     hmac->update(msgptr, data_len - MESSAGE_HEADER_LEN);
 }
 
-TSIGContext::TSIGContext(const TSIGKey& key) : impl_(new TSIGContextImpl(key))
+TSIGContext::TSIGContext(const TSIGKey& key, const Operation operation) :
+   impl_(new TSIGContextImpl(key, operation))
 {
 }
 
-TSIGContext::TSIGContext(const Name& key_name, const Name& algorithm_name,
+TSIGContext::TSIGContext(const TSIGContext& other, const Operation operation) :
+   impl_(new TSIGContextImpl(*other.impl_, operation))
+{
+}
+
+TSIGContext::TSIGContext(const Name& key_name,
+                         const Operation operation,
+                         const Name& algorithm_name,
                          const TSIGKeyRing& keyring) : impl_(NULL)
 {
     const TSIGKeyRing::FindResult result(keyring.find(key_name,
@@ -274,9 +304,11 @@ TSIGContext::TSIGContext(const Name& key_name, const Name& algorithm_name,
         // be used in subsequent response with a TSIG indicating a BADKEY
         // error.
         impl_ = new TSIGContextImpl(TSIGKey(key_name, algorithm_name,
-                                            NULL, 0), TSIGError::BAD_KEY());
+                                            NULL, 0),
+                                    operation,
+                                    TSIGError::BAD_KEY());
     } else {
-        impl_ = new TSIGContextImpl(*result.key);
+        impl_ = new TSIGContextImpl(*result.key, operation);
     }
 }
 
@@ -367,7 +399,7 @@ TSIGContext::sign(const uint16_t qid, const void* const data,
         return (tsig);
     }
 
-    HMACPtr hmac(impl_->createHMAC());
+    HMACPtr hmac(impl_->createHMAC(Sign));
 
     // If the context has previous MAC (either the Request MAC or its own
     // previous MAC), digest it.
@@ -506,7 +538,7 @@ TSIGContext::verify(const TSIGRecord* const record, const void* const data,
         return (impl_->postVerifyUpdate(error, NULL, 0));
     }
 
-    HMACPtr hmac(impl_->createHMAC());
+    HMACPtr hmac(impl_->createHMAC(Verify));
 
     // If the context has previous MAC (either the Request MAC or its own
     // previous MAC), digest it.
@@ -555,7 +587,8 @@ TSIGContext::lastHadSignature() const {
 
 void
 TSIGContext::update(const void* const data, size_t len) {
-    HMACPtr hmac(impl_->createHMAC());
+    // Inherit the operation or fail
+    HMACPtr hmac(impl_->createHMAC(impl_->op_));
     // Use the previous digest and never use it again
     impl_->digestPreviousMAC(hmac);
     impl_->previous_digest_.clear();

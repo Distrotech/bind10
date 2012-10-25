@@ -604,7 +604,8 @@ class XfrinConnection(asyncore.dispatcher):
         self._tsig_ctx = None
         # tsig_ctx_creator is introduced to allow tests to use a mock class for
         # easier tests (in normal case we always use the default)
-        self._tsig_ctx_creator = lambda key : TSIGContext(key)
+        self._tsig_ctx_creator = \
+            lambda key : TSIGContext(key, TSIGContext.SIGN)
 
         # keep a record of this specific transfer to log on success
         # (time, rr/s, etc)

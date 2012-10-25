@@ -15,8 +15,6 @@
 #ifndef __TSIG_H
 #define __TSIG_H 1
 
-#include <boost/noncopyable.hpp>
-
 #include <exceptions/exceptions.h>
 
 #include <dns/tsigerror.h>
@@ -90,7 +88,8 @@ public:
 /// \code
 ///    // "renderer" is of MessageRenderer to render the message.
 ///    // (TSIGKey would be configured from config or command line in real app)
-///    TSIGContext ctx(TSIGKey("key.example:MSG6Ng=="));
+///    TSIGContext ctx(TSIGKey("key.example:MSG6Ng==",
+///                            isc::cryptolink::Verify));
 ///    Message message(Message::RENDER);
 ///    message.addQuestion(Question(Name("www.example.com"), RRClass::IN(),
 ///                                 RRType::A()));
@@ -130,7 +129,9 @@ public:
 ///
 ///    const TSIGRecord* tsig = message.getTSIGRecord();
 ///    if (tsig != NULL) {
-///        TSIGContext ctx(tsig->getName(), tsig->getRdata().getAlgorithm(),
+///        TSIGContext ctx(tsig->getName(),
+///                        isc::cryptolink::Verify,
+///                        tsig->getRdata().getAlgorithm(),
 ///                        keyring);
 ///        ctx.verify(tsig, data, data_len);
 ///
@@ -161,6 +162,7 @@ public:
 /// typical usage as described above.  But there is no strong technical
 /// reason why this class cannot be copyable.  If we see the need for it
 /// in future we may change the implementation on this point.
+/// Changed to support crypto operations, i.e., verify <-> sign.
 ///
 /// <b>Note to developers:</b>
 /// One basic design choice is to make the \c TSIGContext class is as
@@ -172,7 +174,7 @@ public:
 /// direct or indirect dependencies.  The interface of \c sign() that takes
 /// opaque data (instead of, e.g., a \c Message or \c MessageRenderer object)
 /// is therefore a deliberate design decision.
-class TSIGContext : boost::noncopyable {
+class TSIGContext {
 public:
     /// Internal state of context
     ///
@@ -198,14 +200,21 @@ public:
     /// \exception std::bad_alloc Resource allocation for internal data fails
     ///
     /// \param key The TSIG key to be used for TSIG sessions with this context.
-    explicit TSIGContext(const TSIGKey& key);
+    TSIGContext(const TSIGKey& key,
+                const isc::cryptolink::Operation operation);
 
     /// Constructor from key parameters and key ring.
-    TSIGContext(const Name& key_name, const Name& algorithm_name,
+    TSIGContext(const Name& key_name,
+                const isc::cryptolink::Operation operation,
+                const Name& algorithm_name,
                 const TSIGKeyRing& keyring);
 
     /// The destructor.
     ~TSIGContext();
+
+    /// Copy contructor.
+    TSIGContext(const TSIGContext& other,
+                const isc::cryptolink::Operation operation);
     //@}
 
     /// Sign a DNS message.

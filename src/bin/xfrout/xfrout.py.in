@@ -178,8 +178,10 @@ class XfroutSession():
                 setattr(self, "_%s" % k, v)
         self._handle()
 
-    def create_tsig_ctx(self, tsig_record, tsig_key_ring):
-        return TSIGContext(tsig_record.get_name(), tsig_record.get_rdata().get_algorithm(),
+    def create_tsig_ctx(self, tsig_record, operation, tsig_key_ring):
+        return TSIGContext(tsig_record.get_name(),
+                           operation,
+                           tsig_record.get_rdata().get_algorithm(),
                            tsig_key_ring)
 
     def _handle(self):
@@ -224,6 +226,7 @@ class XfroutSession():
         if tsig_record is not None:
             self._tsig_len = tsig_record.get_length()
             self._tsig_ctx = self.create_tsig_ctx(tsig_record,
+                                                  TSIGContext.VERIFY,
                                                   self._tsig_key_ring)
             tsig_error = self._tsig_ctx.verify(tsig_record, request_data)
             if tsig_error != TSIGError.NOERROR:

@@ -84,7 +84,11 @@ protected:
                     bogus_section(static_cast<Message::Section>(
                                       Message::SECTION_ADDITIONAL + 1)),
                     tsig_ctx(TSIGKey("www.example.com:"
-                                     "SFuWd/q99SzF8Yzd1QbB9g=="))
+                                     "SFuWd/q99SzF8Yzd1QbB9g=="),
+                             isc::cryptolink::Sign),
+                    tsig_verify_ctx(TSIGKey("www.example.com:"
+                                            "SFuWd/q99SzF8Yzd1QbB9g=="),
+                                    isc::cryptolink::Verify)
     {
         rrset_a = RRsetPtr(new RRset(test_name, RRClass::IN(),
                                      RRType::A(), RRTTL(3600)));
@@ -114,6 +118,7 @@ protected:
     RRsetPtr rrset_aaaa;        // AAAA RRset with one RDATA with RRSIG
     RRsetPtr rrset_rrsig;       // RRSIG for the AAAA RRset
     TSIGContext tsig_ctx;
+    TSIGContext tsig_verify_ctx;
     vector<unsigned char> received_data;
     vector<unsigned char> expected_data;
 
@@ -940,16 +945,17 @@ TEST_F(MessageTest, toWireTSIGTruncation) {
 
     factoryFromFile(message_parse, "message_fromWire17.wire");
     EXPECT_EQ(TSIGError::NOERROR(),
-              tsig_ctx.verify(message_parse.getTSIGRecord(),
-                              &received_data[0], received_data.size()));
+              tsig_verify_ctx.verify(message_parse.getTSIGRecord(),
+                                     &received_data[0], received_data.size()));
 
     message_render.setQid(0x22c2);
     vector<const char*> answer_data;
     answer_data.push_back(long_txt1);
     answer_data.push_back(long_txt2);
+    TSIGContext tsig_ctx_copy(tsig_verify_ctx, isc::cryptolink::Sign);
     {
         SCOPED_TRACE("Message sign with TSIG and TC bit on");
-        commonTSIGToWireCheck(message_render, renderer, tsig_ctx,
+        commonTSIGToWireCheck(message_render, renderer, tsig_ctx_copy,
                               "message_toWire4.wire",
                               QR_FLAG|AA_FLAG|RD_FLAG,
                               RRType::TXT(), &answer_data);
@@ -962,16 +968,17 @@ TEST_F(MessageTest, toWireTSIGTruncation2) {
     isc::util::detail::gettimeFunction = testGetTime<0x4e179212>;
     factoryFromFile(message_parse, "message_fromWire17.wire");
     EXPECT_EQ(TSIGError::NOERROR(),
-              tsig_ctx.verify(message_parse.getTSIGRecord(),
-                              &received_data[0], received_data.size()));
+              tsig_verify_ctx.verify(message_parse.getTSIGRecord(),
+                                     &received_data[0], received_data.size()));
 
     message_render.setQid(0x22c2);
     vector<const char*> answer_data;
     answer_data.push_back(long_txt1);
     answer_data.push_back(long_txt3);
+    TSIGContext tsig_ctx_copy(tsig_verify_ctx, isc::cryptolink::Sign);
     {
         SCOPED_TRACE("Message sign with TSIG and TC bit on (2)");
-        commonTSIGToWireCheck(message_render, renderer, tsig_ctx,
+        commonTSIGToWireCheck(message_render, renderer, tsig_ctx_copy,
                               "message_toWire4.wire",
                               QR_FLAG|AA_FLAG|RD_FLAG,
                               RRType::TXT(), &answer_data);
@@ -1017,16 +1024,17 @@ TEST_F(MessageTest, toWireTSIGNoTruncation) {
     isc::util::detail::gettimeFunction = testGetTime<0x4e17b38d>;
     factoryFromFile(message_parse, "message_fromWire18.wire");
     EXPECT_EQ(TSIGError::NOERROR(),
-              tsig_ctx.verify(message_parse.getTSIGRecord(),
-                              &received_data[0], received_data.size()));
+              tsig_verify_ctx.verify(message_parse.getTSIGRecord(),
+                                     &received_data[0], received_data.size()));
 
     message_render.setQid(0xd6e2);
     vector<const char*> answer_data;
     answer_data.push_back(long_txt1);
     answer_data.push_back(long_txt4);
+    TSIGContext tsig_ctx_copy(tsig_verify_ctx, isc::cryptolink::Sign);
     {
         SCOPED_TRACE("Message sign with TSIG, no truncation");
-        commonTSIGToWireCheck(message_render, renderer, tsig_ctx,
+        commonTSIGToWireCheck(message_render, renderer, tsig_ctx_copy,
                               "message_toWire5.wire",
                               QR_FLAG|AA_FLAG|RD_FLAG,
                               RRType::TXT(), &answer_data);

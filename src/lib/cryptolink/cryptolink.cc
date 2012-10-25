@@ -59,9 +59,10 @@ CryptoLink::initialize() {
 
 HMAC*
 CryptoLink::createHMAC(const void* secret, size_t secret_len,
+		       const Operation operation,
                        const HashAlgorithm hash_algorithm)
 {
-    return (new HMAC(secret, secret_len, hash_algorithm));
+    return (new HMAC(secret, secret_len, operation, hash_algorithm));
 }
 
 } // namespace cryptolink

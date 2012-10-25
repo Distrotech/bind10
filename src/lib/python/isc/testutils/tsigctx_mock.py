@@ -25,8 +25,8 @@ class MockTSIGContext(TSIGContext):
     TSIGError object.
     """
 
-    def __init__(self, tsig_key):
-        super().__init__(tsig_key)
+    def __init__(self, tsig_key, operation):
+        super().__init__(tsig_key, operation)
         self.error = None
         self.verify_called = 0  # number of verify() called
 

@@ -27,6 +27,13 @@
 namespace isc {
 namespace cryptolink {
 
+/// \brief Crypto operations (Verify or Sign)
+enum Operation {
+    UNKNOWN_OP = 0,     ///< To hide inheritance
+    Verify,             ///< Verify
+    Sign                ///< Sign  
+};
+
 /// \brief Hash algorithm identifiers
 enum HashAlgorithm {
     UNKNOWN_HASH = 0,   ///< This value can be used in conversion
@@ -68,6 +75,14 @@ public:
 class UnsupportedAlgorithm : public CryptoLinkError {
 public:
     UnsupportedAlgorithm(const char* file, size_t line, const char* what) :
+        CryptoLinkError(file, line, what) {}
+};
+
+/// This exception is thrown when a cryptographic action is requested
+/// with an incompatible context.
+class IncompatibleOperation : public CryptoLinkError {
+public:
+    IncompatibleOperation(const char* file, size_t line, const char* what) :
         CryptoLinkError(file, line, what) {}
 };
 
@@ -187,6 +202,7 @@ public:
     /// \param secret_len The length of the secret
     /// \param hash_algorithm The hash algorithm
     HMAC* createHMAC(const void* secret, size_t secret_len,
+                     const Operation operation,
                      const HashAlgorithm hash_algorithm);
 
 private:

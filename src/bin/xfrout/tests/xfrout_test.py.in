@@ -206,7 +206,7 @@ class TestXfroutSessionBase(unittest.TestCase):
         # This helper function creates a MockTSIGContext for a given key
         # and TSIG error to be used as a result of verify (normally faked
         # one)
-        mock_ctx = MockTSIGContext(TSIG_KEY)
+        mock_ctx = MockTSIGContext(TSIG_KEY, TSIGContext.SIGN)
         mock_ctx.error = error
         return mock_ctx
 
@@ -254,7 +254,7 @@ class TestXfroutSessionBase(unittest.TestCase):
 
         renderer = MessageRenderer()
         if with_tsig:
-            tsig_ctx = MockTSIGContext(TSIG_KEY)
+            tsig_ctx = MockTSIGContext(TSIG_KEY, TSIGContext.SIGN)
             msg.to_wire(renderer, tsig_ctx)
         else:
             msg.to_wire(renderer)

@@ -569,7 +569,7 @@ class TestXfrinIXFRAdd(TestXfrinState):
         # SOA RR whose serial is the current one means we are going to a new
         # difference, starting with removing that SOA.
         self.conn._diff.add_data(self.ns_rrset) # put some dummy change
-        self.conn._tsig_ctx = MockTSIGContext(TSIG_KEY)
+        self.conn._tsig_ctx = MockTSIGContext(TSIG_KEY, TSIGContext.VERIFY)
         self.conn._tsig_ctx.last_has_signature = lambda: False
         # First, push a starting SOA inside. This should be OK, nothing checked
         # yet.
@@ -748,13 +748,15 @@ class TestXfrinConnection(unittest.TestCase):
         # a valid XFR messages will follow.
 
         verify_ctx = None
+        tsig_ctx = None
         if self.soa_response_params['tsig']:
             # xfrin (currently) always uses TCP.  strip off the length field.
             query_data = self.conn.query_data[2:]
             query_message = Message(Message.PARSE)
             query_message.from_wire(query_data)
-            verify_ctx = TSIGContext(TSIG_KEY)
+            verify_ctx = TSIGContext(TSIG_KEY, TSIGContext.VERIFY)
             verify_ctx.verify(query_message.get_tsig_record(), query_data)
+            tsig_ctx=TSIGContext(verify_ctx, TSIGContext.SIGN)
 
         self.conn.reply_data = self.conn.create_response_data(
             bad_qid=self.soa_response_params['bad_qid'],
@@ -764,7 +766,7 @@ class TestXfrinConnection(unittest.TestCase):
             questions=self.soa_response_params['questions'],
             answers=self.soa_response_params['answers'],
             authorities=self.soa_response_params['authorities'],
-            tsig_ctx=verify_ctx)
+            tsig_ctx=tsig_ctx)
         if self.soa_response_params['axfr_after_soa'] != None:
             self.conn.response_generator = \
                 self.soa_response_params['axfr_after_soa']
@@ -818,7 +820,7 @@ class TestAXFR(TestXfrinConnection):
         # This helper function creates a MockTSIGContext for a given key
         # and TSIG error to be used as a result of verify (normally faked
         # one)
-        mock_ctx = MockTSIGContext(key)
+        mock_ctx = MockTSIGContext(key, TSIGContext.SIGN)
         mock_ctx.error = error
         if not has_last_signature:
             mock_ctx.last_has_signature = lambda: False
@@ -1434,7 +1436,7 @@ class TestAXFR(TestXfrinConnection):
         self.conn._tsig_key = TSIG_KEY
         self.conn._tsig_ctx_creator = \
             lambda key: self.__create_mock_tsig(key, None)
-        self.conn._tsig_ctx = MockTSIGContext(TSIG_KEY)
+        self.conn._tsig_ctx = MockTSIGContext(TSIG_KEY, TSIGContext.VERIFY)
         self.conn.response_generator = self._create_normal_response_data
         self.assertEqual(self.conn.do_xfrin(False), XFRIN_FAIL)
         self.assertEqual(1, self.conn._tsig_ctx.verify_called)
@@ -1462,14 +1464,16 @@ class TestAXFR(TestXfrinConnection):
     def test_do_xfrin_with_unexpected_tsig(self):
         # XFR request wasn't signed, but response includes TSIG.  Like BIND 9,
         # we reject that.
-        self.axfr_response_params['tsig_1st'] = TSIGContext(TSIG_KEY)
+        self.axfr_response_params['tsig_1st'] = \
+            TSIGContext(TSIG_KEY, TSIGContext.SIGN)
         self.conn.response_generator = self._create_normal_response_data
         self.assertEqual(self.conn.do_xfrin(False), XFRIN_FAIL)
 
     def test_do_xfrin_with_unexpected_tsig_for_second_message(self):
         # similar to the previous test, but the first message is normal.
         # the second one contains an unexpected TSIG.  should be rejected.
-        self.axfr_response_params['tsig_2nd'] = TSIGContext(TSIG_KEY)
+        self.axfr_response_params['tsig_2nd'] = \
+            TSIGContext(TSIG_KEY, TSIGContext.VERIFY)
         self.conn.response_generator = self._create_normal_response_data
         self.assertEqual(self.conn.do_xfrin(False), XFRIN_FAIL)
 

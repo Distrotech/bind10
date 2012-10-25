@@ -95,7 +95,7 @@ class MessageTest(unittest.TestCase):
         self.bogus_section = Message.SECTION_ADDITIONAL + 1
         self.bogus_below_section = Message.SECTION_QUESTION - 1
         self.tsig_key = TSIGKey("www.example.com:SFuWd/q99SzF8Yzd1QbB9g==")
-        self.tsig_ctx = TSIGContext(self.tsig_key)
+        self.tsig_ctx = TSIGContext(self.tsig_key, TSIGContext.SIGN)
 
     def tearDown(self):
         # reset any faked current time setting (it would affect other tests)
@@ -360,16 +360,16 @@ class MessageTest(unittest.TestCase):
         self.r.add_question(Question(Name("www.example.com"),
                                      RRClass("IN"), rrtype))
 
-    def __common_tsig_checks(self, expected_file):
+    def __common_tsig_checks(self, expected_file, tsigctx):
         renderer = MessageRenderer()
-        self.r.to_wire(renderer, self.tsig_ctx)
+        self.r.to_wire(renderer, tsigctx)
         self.assertEqual(read_wire_data(expected_file), renderer.get_data())
 
     def test_to_wire_with_tsig(self):
         fix_current_time(0x4da8877a)
         self.r.set_qid(0x2d65)
         self.__common_tsigmessage_setup()
-        self.__common_tsig_checks("message_toWire2.wire")
+        self.__common_tsig_checks("message_toWire2.wire", self.tsig_ctx)
 
     def test_to_wire_with_edns_tsig(self):
         fix_current_time(0x4db60d1f)
@@ -378,33 +378,35 @@ class MessageTest(unittest.TestCase):
         edns = EDNS()
         edns.set_udp_size(4096)
         self.r.set_edns(edns)
-        self.__common_tsig_checks("message_toWire3.wire")
+        self.__common_tsig_checks("message_toWire3.wire", self.tsig_ctx)
 
     def test_to_wire_tsig_truncation(self):
         fix_current_time(0x4e179212)
         data = factoryFromFile(self.p, "message_fromWire17.wire")
+        tsig_ctx_copy = TSIGContext(self.tsig_ctx, TSIGContext.VERIFY)
         self.assertEqual(TSIGError.NOERROR,
-                         self.tsig_ctx.verify(self.p.get_tsig_record(), data))
+                         tsig_ctx_copy.verify(self.p.get_tsig_record(), data))
         self.r.set_qid(0x22c2)
         self.__common_tsigmessage_setup([Message.HEADERFLAG_QR,
                                          Message.HEADERFLAG_AA,
                                          Message.HEADERFLAG_RD],
                                         RRType("TXT"),
                                         [LONG_TXT1, LONG_TXT2])
-        self.__common_tsig_checks("message_toWire4.wire")
+        self.__common_tsig_checks("message_toWire4.wire", tsig_ctx_copy)
 
     def test_to_wire_tsig_truncation2(self):
         fix_current_time(0x4e179212)
         data = factoryFromFile(self.p, "message_fromWire17.wire")
+        tsig_ctx_copy = TSIGContext(self.tsig_ctx, TSIGContext.VERIFY)
         self.assertEqual(TSIGError.NOERROR,
-                         self.tsig_ctx.verify(self.p.get_tsig_record(), data))
+                         tsig_ctx_copy.verify(self.p.get_tsig_record(), data))
         self.r.set_qid(0x22c2)
         self.__common_tsigmessage_setup([Message.HEADERFLAG_QR,
                                          Message.HEADERFLAG_AA,
                                          Message.HEADERFLAG_RD],
                                         RRType("TXT"),
                                         [LONG_TXT1, LONG_TXT3])
-        self.__common_tsig_checks("message_toWire4.wire")
+        self.__common_tsig_checks("message_toWire4.wire", tsig_ctx_copy)
 
     def test_to_wire_tsig_truncation3(self):
         self.r.set_opcode(Opcode.QUERY())
@@ -423,15 +425,16 @@ class MessageTest(unittest.TestCase):
     def test_to_wire_tsig_no_truncation(self):
         fix_current_time(0x4e17b38d)
         data = factoryFromFile(self.p, "message_fromWire18.wire")
+        tsig_ctx_copy = TSIGContext(self.tsig_ctx, TSIGContext.VERIFY)
         self.assertEqual(TSIGError.NOERROR,
-                         self.tsig_ctx.verify(self.p.get_tsig_record(), data))
+                         tsig_ctx_copy.verify(self.p.get_tsig_record(), data))
         self.r.set_qid(0xd6e2)
         self.__common_tsigmessage_setup([Message.HEADERFLAG_QR,
                                          Message.HEADERFLAG_AA,
                                          Message.HEADERFLAG_RD],
                                         RRType("TXT"),
                                         [LONG_TXT1, LONG_TXT4])
-        self.__common_tsig_checks("message_toWire5.wire")
+        self.__common_tsig_checks("message_toWire5.wire", tsig_ctx_copy)
 
     def test_to_wire_tsig_length_errors(self):
         renderer = MessageRenderer()

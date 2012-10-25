@@ -425,6 +425,7 @@ class DDNSServer:
         if tsig_record is None:
             return None
         tsig_ctx = TSIGContext(tsig_record.get_name(),
+                               TSIGContext.VERIFY,
                                tsig_record.get_rdata().get_algorithm(),
                                isc.server_common.tsig_keyring.get_keyring())
         tsig_error = tsig_ctx.verify(tsig_record, req_data)

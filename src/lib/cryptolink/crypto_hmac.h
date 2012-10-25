@@ -51,9 +51,11 @@ private:
     /// \param len The length of the secret
     /// \param hash_algorithm The hash algorithm
     HMAC(const void* secret, size_t secret_len,
+         const Operation operation,
          const HashAlgorithm hash_algorithm);
 
     friend HMAC* CryptoLink::createHMAC(const void*, size_t,
+                                        const Operation,
                                         const HashAlgorithm);
 
 public:

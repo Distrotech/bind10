@@ -47,6 +47,7 @@ using namespace isc::dns;
 using namespace isc::util;
 using namespace isc::util::encode;
 using namespace isc::dns::rdata;
+using namespace isc::cryptolink;
 using isc::UnitTestUtil;
 
 // See dnssectime.cc
@@ -70,12 +71,18 @@ testGetTime() {
 // update method.
 class TestTSIGContext : public TSIGContext {
 public:
-    TestTSIGContext(const TSIGKey& key) :
-        TSIGContext(key)
+    TestTSIGContext(const TSIGKey& key, const Operation operation) :
+        TSIGContext(key, operation)
     {}
-    TestTSIGContext(const Name& key_name, const Name& algorithm_name,
+    TestTSIGContext(const TSIGContext& other,
+                    const Operation operation) :
+        TSIGContext(other, operation)
+    {}
+    TestTSIGContext(const Name& key_name,
+                    const Operation operation,
+                    const Name& algorithm_name,
                     const TSIGKeyRing& keyring) :
-        TSIGContext(key_name, algorithm_name, keyring)
+        TSIGContext(key_name, operation, algorithm_name, keyring)
     {}
     void update(const void* const data, size_t len) {
         TSIGContext::update(data, len);
@@ -85,7 +92,8 @@ public:
 class TSIGTest : public ::testing::Test {
 protected:
     TSIGTest() :
-        tsig_ctx(NULL), qid(0x2d65), test_name("www.example.com"),
+        tsig_ctx(NULL), tsig_verify_ctx(NULL),
+        qid(0x2d65), test_name("www.example.com"),
         badkey_name("badkey.example.com"), test_class(RRClass::IN()),
         test_ttl(86400), message(Message::RENDER),
         dummy_data(1024, 0xdd),  // should be sufficiently large for all tests
@@ -102,11 +110,13 @@ protected:
         tsig_ctx.reset(new TestTSIGContext(TSIGKey(test_name,
                                                    TSIGKey::HMACMD5_NAME(),
                                                    &secret[0],
-                                                   secret.size())));
+                                                   secret.size()),
+                                           Sign));
         tsig_verify_ctx.reset(new TSIGContext(TSIGKey(test_name,
                                                       TSIGKey::HMACMD5_NAME(),
                                                       &secret[0],
-                                                      secret.size())));
+                                                      secret.size()),
+                                              Verify));
     }
     ~TSIGTest() {
         isc::util::detail::gettimeFunction = NULL;
@@ -266,7 +276,7 @@ TEST_F(TSIGTest, initialState) {
 TEST_F(TSIGTest, constructFromKeyRing) {
     // Construct a TSIG context with an empty key ring.  Key shouldn't be
     // found, and the BAD_KEY error should be recorded.
-    TSIGContext ctx1(test_name, TSIGKey::HMACMD5_NAME(), keyring);
+    TSIGContext ctx1(test_name, UNKNOWN_OP, TSIGKey::HMACMD5_NAME(), keyring);
     EXPECT_EQ(TSIGContext::INIT, ctx1.getState());
     EXPECT_EQ(TSIGError::BAD_KEY(), ctx1.getError());
 
@@ -274,23 +284,26 @@ TEST_F(TSIGTest, constructFromKeyRing) {
     // construct it again.  This time it should be constructed with a valid
     // key.
     keyring.add(TSIGKey(test_name, TSIGKey::HMACMD5_NAME(), NULL, 0));
-    TSIGContext ctx2(test_name, TSIGKey::HMACMD5_NAME(), keyring);
+    TSIGContext ctx2(test_name, UNKNOWN_OP, TSIGKey::HMACMD5_NAME(), keyring);
     EXPECT_EQ(TSIGContext::INIT, ctx2.getState());
     EXPECT_EQ(TSIGError::NOERROR(), ctx2.getError());
 
     // Similar to the first case except that the key ring isn't empty but
     // it doesn't contain a matching key.
-    TSIGContext ctx3(test_name, TSIGKey::HMACSHA1_NAME(), keyring);
+    TSIGContext ctx3(test_name, UNKNOWN_OP, TSIGKey::HMACSHA1_NAME(), keyring);
     EXPECT_EQ(TSIGContext::INIT, ctx3.getState());
     EXPECT_EQ(TSIGError::BAD_KEY(), ctx3.getError());
 
-    TSIGContext ctx4(Name("different-key.example"), TSIGKey::HMACMD5_NAME(),
+    TSIGContext ctx4(Name("different-key.example"),
+                     UNKNOWN_OP,
+                     TSIGKey::HMACMD5_NAME(),
                      keyring);
     EXPECT_EQ(TSIGContext::INIT, ctx4.getState());
     EXPECT_EQ(TSIGError::BAD_KEY(), ctx4.getError());
 
     // "Unknown" algorithm name will result in BADKEY, too.
-    TSIGContext ctx5(test_name, Name("unknown.algorithm"), keyring);
+    TSIGContext ctx5(test_name, UNKNOWN_OP,
+                     Name("unknown.algorithm"), keyring);
     EXPECT_EQ(TSIGContext::INIT, ctx5.getState());
     EXPECT_EQ(TSIGError::BAD_KEY(), ctx5.getError());
 }
@@ -323,7 +336,8 @@ TEST_F(TSIGTest, signUsingUpperCasedKeyName) {
 
     TSIGContext cap_ctx(TSIGKey(Name("WWW.EXAMPLE.COM"),
                                 TSIGKey::HMACMD5_NAME(),
-                                &secret[0], secret.size()));
+                                &secret[0], secret.size()),
+                        Sign);
 
     {
         SCOPED_TRACE("Sign test for query using non canonical key name");
@@ -339,7 +353,8 @@ TEST_F(TSIGTest, signUsingUpperCasedAlgorithmName) {
 
     TSIGContext cap_ctx(TSIGKey(test_name,
                                 Name("HMAC-md5.SIG-alg.REG.int"),
-                                &secret[0], secret.size()));
+                                &secret[0], secret.size()),
+                        Sign);
 
     {
         SCOPED_TRACE("Sign test for query using non canonical algorithm name");
@@ -380,20 +395,20 @@ TEST_F(TSIGTest, signBadData) {
 TEST_F(TSIGTest, verifyBadData) {
     // the data must at least hold the DNS message header and the specified
     // TSIG.
-    EXPECT_THROW(tsig_ctx->verify(&dummy_record, &dummy_data[0],
-                                  12 + dummy_record.getLength() - 1),
+    EXPECT_THROW(tsig_verify_ctx->verify(&dummy_record, &dummy_data[0],
+                                         12 + dummy_record.getLength() - 1),
                  InvalidParameter);
 
     // Still nothing verified
-    EXPECT_THROW(tsig_ctx->lastHadSignature(), TSIGContextError);
+    EXPECT_THROW(tsig_verify_ctx->lastHadSignature(), TSIGContextError);
 
     // And the data must not be NULL.
-    EXPECT_THROW(tsig_ctx->verify(&dummy_record, NULL,
-                                  12 + dummy_record.getLength()),
+    EXPECT_THROW(tsig_verify_ctx->verify(&dummy_record, NULL,
+                                         12 + dummy_record.getLength()),
                  InvalidParameter);
 
     // Still nothing verified
-    EXPECT_THROW(tsig_ctx->lastHadSignature(), TSIGContextError);
+    EXPECT_THROW(tsig_verify_ctx->lastHadSignature(), TSIGContextError);
 
 }
 
@@ -412,19 +427,20 @@ TEST_F(TSIGTest, signExceptionSafety) {
     commonVerifyChecks(*tsig_verify_ctx, &dummy_record, &dummy_data[0],
                        dummy_data.size(), TSIGError::BAD_KEY(),
                        TSIGContext::RECEIVED_REQUEST);
+    TSIGContext tsig_ctx_copy(*tsig_verify_ctx.get(), Sign);
 
     try {
         int dummydata;
         isc::util::unittests::force_throw_on_new = true;
         isc::util::unittests::throw_size_on_new = sizeof(TSIGRecord);
-        tsig_verify_ctx->sign(0, &dummydata, sizeof(dummydata));
+        tsig_ctx_copy.sign(0, &dummydata, sizeof(dummydata));
         isc::util::unittests::force_throw_on_new = false;
         ASSERT_FALSE(true) << "Expected throw on new, but it didn't happen";
     } catch (const std::bad_alloc&) {
         isc::util::unittests::force_throw_on_new = false;
 
         // sign() threw, so the state should still be RECEIVED_REQUEST
-        EXPECT_EQ(TSIGContext::RECEIVED_REQUEST, tsig_verify_ctx->getState());
+        EXPECT_EQ(TSIGContext::RECEIVED_REQUEST, tsig_ctx_copy.getState());
     }
     isc::util::unittests::force_throw_on_new = false;
 }
@@ -445,7 +461,7 @@ TEST_F(TSIGTest, signUsingHMACSHA1) {
     secret.clear();
     decodeBase64("MA+QDhXbyqUak+qnMFyTyEirzng=", secret);
     TSIGContext sha1_ctx(TSIGKey(test_name, TSIGKey::HMACSHA1_NAME(),
-                                 &secret[0], secret.size()));
+                                 &secret[0], secret.size()), Sign);
 
     const uint16_t sha1_qid = 0x0967;
     const uint8_t expected_mac[] = {
@@ -467,7 +483,7 @@ TEST_F(TSIGTest, signUsingHMACSHA224) {
     secret.clear();
     decodeBase64("MA+QDhXbyqUak+qnMFyTyEirzng=", secret);
     TSIGContext sha1_ctx(TSIGKey(test_name, TSIGKey::HMACSHA224_NAME(),
-                                 &secret[0], secret.size()));
+                                 &secret[0], secret.size()), Sign);
 
     const uint16_t sha1_qid = 0x0967;
     const uint8_t expected_mac[] = {
@@ -504,9 +520,10 @@ TEST_F(TSIGTest, verifyThenSignResponse) {
     }
 
     // Transform the original message to a response, then sign the response
-    // with the context of "verified state".
+    // with a copy of the context of "verified state".
+    TSIGContext tsig_ctx_copy(*tsig_verify_ctx.get(), Sign);
     ConstTSIGRecordPtr tsig = createMessageAndSign(qid, test_name,
-                                                   tsig_verify_ctx.get(),
+                                                   &tsig_ctx_copy,
                                                    QR_FLAG|AA_FLAG|RD_FLAG,
                                                    RRType::A(), "192.0.2.1");
     const uint8_t expected_mac[] = {
@@ -587,7 +604,8 @@ TEST_F(TSIGTest, signContinuation) {
     }
 
     // Create and sign the first response message
-    tsig = createMessageAndSign(axfr_qid, zone_name, tsig_verify_ctx.get(),
+    TSIGContext tsig_ctx_copy(*tsig_verify_ctx.get(), Sign);
+    tsig = createMessageAndSign(axfr_qid, zone_name, &tsig_ctx_copy,
                                 AA_FLAG|QR_FLAG, RRType::AXFR(),
                                 "ns.example.com. root.example.com. "
                                 "2011041503 7200 3600 2592000 1200",
@@ -596,9 +614,10 @@ TEST_F(TSIGTest, signContinuation) {
     // Then verify it at the requester side.
     received_data.clear();
     UnitTestUtil::readWireData("tsig_verify2.wire", received_data);
+    TSIGContext tsig_ctx_copy2(*tsig_ctx.get(), Verify);
     {
         SCOPED_TRACE("Verify first AXFR response");
-        commonVerifyChecks(*tsig_ctx, tsig.get(), &received_data[0],
+        commonVerifyChecks(tsig_ctx_copy2, tsig.get(), &received_data[0],
                            received_data.size(), TSIGError::NOERROR());
     }
 
@@ -609,7 +628,7 @@ TEST_F(TSIGTest, signContinuation) {
     };
     {
         SCOPED_TRACE("Sign test for continued response in TCP stream");
-        tsig = createMessageAndSign(axfr_qid, zone_name, tsig_verify_ctx.get(),
+        tsig = createMessageAndSign(axfr_qid, zone_name, &tsig_ctx_copy,
                                     AA_FLAG|QR_FLAG, RRType::AXFR(),
                                     "ns.example.com.", &RRType::NS(), false);
         commonSignChecks(tsig, axfr_qid, 0x4da8e951, expected_mac,
@@ -621,7 +640,7 @@ TEST_F(TSIGTest, signContinuation) {
     UnitTestUtil::readWireData("tsig_verify3.wire", received_data);
     {
         SCOPED_TRACE("Verify second AXFR response");
-        commonVerifyChecks(*tsig_ctx, tsig.get(), &received_data[0],
+        commonVerifyChecks(tsig_ctx_copy2, tsig.get(), &received_data[0],
                            received_data.size(), TSIGError::NOERROR());
     }
 }
@@ -657,7 +676,8 @@ TEST_F(TSIGTest, badtimeResponse) {
     }
 
     // make and sign a response in the context of TSIG error.
-    tsig = createMessageAndSign(test_qid, test_name, tsig_verify_ctx.get(),
+    TSIGContext tsig_ctx_copy(*tsig_verify_ctx.get(), Sign);
+    tsig = createMessageAndSign(test_qid, test_name, &tsig_ctx_copy,
                                 QR_FLAG, RRType::SOA(), NULL, NULL,
                                 true, Rcode::NOTAUTH());
     const uint8_t expected_otherdata[] = { 0, 0, 0x4d, 0xa8, 0xbe, 0x86 };
@@ -741,20 +761,22 @@ TEST_F(TSIGTest, badsigResponse) {
     // Try to sign a simple message with bogus secret.  It should fail
     // with BADSIG.
     createMessageFromFile("message_toWire2.wire");
-    TSIGContext bad_ctx(TSIGKey(test_name, TSIGKey::HMACMD5_NAME(),
-                                &dummy_data[0], dummy_data.size()));
+    TSIGContext bad_vrfy_ctx(TSIGKey(test_name, TSIGKey::HMACMD5_NAME(),
+                                     &dummy_data[0], dummy_data.size()),
+                             Verify);
     {
         SCOPED_TRACE("Verify resulting in BADSIG");
-        commonVerifyChecks(bad_ctx, message.getTSIGRecord(),
+        commonVerifyChecks(bad_vrfy_ctx, message.getTSIGRecord(),
                            &received_data[0], received_data.size(),
                            TSIGError::BAD_SIG(), TSIGContext::RECEIVED_REQUEST);
     }
 
     // Sign the same message (which doesn't matter for this test) with the
     // context of "checked state".
+    TSIGContext bad_sign_ctx(bad_vrfy_ctx, Sign);
     {
         SCOPED_TRACE("Sign test for response with BADSIG error");
-        commonSignChecks(createMessageAndSign(qid, test_name, &bad_ctx),
+        commonSignChecks(createMessageAndSign(qid, test_name, &bad_sign_ctx),
                          message.getQid(), 0x4da8877a, NULL, 0,
                          16);   // 16: BADSIG
     }
@@ -763,19 +785,22 @@ TEST_F(TSIGTest, badsigResponse) {
 TEST_F(TSIGTest, badkeyResponse) {
     // A similar test as badsigResponse but for BADKEY
     isc::util::detail::gettimeFunction = testGetTime<0x4da8877a>;
-    tsig_ctx.reset(new TestTSIGContext(badkey_name, TSIGKey::HMACMD5_NAME(),
+    tsig_ctx.reset(new TestTSIGContext(badkey_name, Sign,
+                                       TSIGKey::HMACMD5_NAME(),
                                        keyring));
+    TSIGContext tsig_ctx_copy(*tsig_ctx.get(), Verify);
     {
         SCOPED_TRACE("Verify resulting in BADKEY");
-        commonVerifyChecks(*tsig_ctx, &dummy_record, &dummy_data[0],
+        commonVerifyChecks(tsig_ctx_copy, &dummy_record, &dummy_data[0],
                            dummy_data.size(), TSIGError::BAD_KEY(),
                            TSIGContext::RECEIVED_REQUEST);
     }
 
+    TSIGContext tsig_ctx_copy2(tsig_ctx_copy, Sign);
     {
         SCOPED_TRACE("Sign test for response with BADKEY error");
         ConstTSIGRecordPtr sig = createMessageAndSign(qid, test_name,
-                                                      tsig_ctx.get());
+                                                      &tsig_ctx_copy2);
         EXPECT_EQ(badkey_name, sig->getName());
         commonSignChecks(sig, qid, 0x4da8877a, NULL, 0, 17);   // 17: BADKEY
     }
@@ -784,9 +809,10 @@ TEST_F(TSIGTest, badkeyResponse) {
 TEST_F(TSIGTest, badkeyForResponse) {
     // "BADKEY" case for a response to a signed message
     createMessageAndSign(qid, test_name, tsig_ctx.get());
+    TSIGContext tsig_ctx_copy(*tsig_ctx.get(), Verify);
     {
         SCOPED_TRACE("Verify a response resulting in BADKEY");
-        commonVerifyChecks(*tsig_ctx, &dummy_record, &dummy_data[0],
+        commonVerifyChecks(tsig_ctx_copy, &dummy_record, &dummy_data[0],
                            dummy_data.size(), TSIGError::BAD_KEY(),
                            TSIGContext::SENT_REQUEST);
     }
@@ -797,9 +823,10 @@ TEST_F(TSIGTest, badkeyForResponse) {
                                             0x4da8877a,
                                             TSIGContext::DEFAULT_FUDGE,
                                             0, NULL, qid, 0, 0, NULL));
+    TSIGContext tsig_ctx_copy2(*tsig_ctx.get(), Verify);
     {
         SCOPED_TRACE("Verify a response resulting in BADKEY due to bad alg");
-        commonVerifyChecks(*tsig_ctx, &dummy_record2, &dummy_data[0],
+        commonVerifyChecks(tsig_ctx_copy2, &dummy_record2, &dummy_data[0],
                            dummy_data.size(), TSIGError::BAD_KEY(),
                            TSIGContext::SENT_REQUEST);
     }
@@ -815,9 +842,10 @@ TEST_F(TSIGTest, badsigThenValidate) {
     createMessageAndSign(qid, test_name, tsig_ctx.get());
 
     createMessageFromFile("tsig_verify4.wire");
+    TSIGContext tsig_ctx_copy(*tsig_ctx.get(), Verify);
     {
         SCOPED_TRACE("Verify a response that should fail due to BADSIG");
-        commonVerifyChecks(*tsig_ctx, message.getTSIGRecord(),
+        commonVerifyChecks(tsig_ctx_copy, message.getTSIGRecord(),
                            &received_data[0], received_data.size(),
                            TSIGError::BAD_SIG(), TSIGContext::SENT_REQUEST);
     }
@@ -825,7 +853,7 @@ TEST_F(TSIGTest, badsigThenValidate) {
     createMessageFromFile("tsig_verify5.wire");
     {
         SCOPED_TRACE("Verify a response after a BADSIG failure");
-        commonVerifyChecks(*tsig_ctx, message.getTSIGRecord(),
+        commonVerifyChecks(tsig_ctx_copy, message.getTSIGRecord(),
                            &received_data[0], received_data.size(),
                            TSIGError::NOERROR(),
                            TSIGContext::VERIFIED_RESPONSE);
@@ -839,9 +867,10 @@ TEST_F(TSIGTest, nosigThenValidate) {
 
     createMessageAndSign(qid, test_name, tsig_ctx.get());
 
+    TSIGContext tsig_ctx_copy(*tsig_ctx.get(), Verify);
     {
         SCOPED_TRACE("Verify a response without TSIG that should exist");
-        commonVerifyChecks(*tsig_ctx, NULL, &dummy_data[0],
+        commonVerifyChecks(tsig_ctx_copy, NULL, &dummy_data[0],
                            dummy_data.size(), TSIGError::FORMERR(),
                            TSIGContext::SENT_REQUEST, true);
     }
@@ -849,7 +878,7 @@ TEST_F(TSIGTest, nosigThenValidate) {
     createMessageFromFile("tsig_verify5.wire");
     {
         SCOPED_TRACE("Verify a response after a FORMERR failure");
-        commonVerifyChecks(*tsig_ctx, message.getTSIGRecord(),
+        commonVerifyChecks(tsig_ctx_copy, message.getTSIGRecord(),
                            &received_data[0], received_data.size(),
                            TSIGError::NOERROR(),
                            TSIGContext::VERIFIED_RESPONSE);
@@ -862,12 +891,13 @@ TEST_F(TSIGTest, badtimeThenValidate) {
 
     ConstTSIGRecordPtr tsig = createMessageAndSign(qid, test_name,
                                                    tsig_ctx.get());
+    TSIGContext tsig_ctx_copy(*tsig_ctx.get(), Verify);
 
     // "advance the clock" and try validating, which should fail due to BADTIME
     isc::util::detail::gettimeFunction = testGetTime<0x4da8877a + 600>;
     {
         SCOPED_TRACE("Verify resulting in BADTIME due to expired SIG");
-        commonVerifyChecks(*tsig_ctx, tsig.get(), &dummy_data[0],
+        commonVerifyChecks(tsig_ctx_copy, tsig.get(), &dummy_data[0],
                            dummy_data.size(), TSIGError::BAD_TIME(),
                            TSIGContext::SENT_REQUEST);
     }
@@ -877,7 +907,7 @@ TEST_F(TSIGTest, badtimeThenValidate) {
     createMessageFromFile("tsig_verify5.wire");
     {
         SCOPED_TRACE("Verify a response after a BADTIME failure");
-        commonVerifyChecks(*tsig_ctx, message.getTSIGRecord(),
+        commonVerifyChecks(tsig_ctx_copy, message.getTSIGRecord(),
                            &received_data[0], received_data.size(),
                            TSIGError::NOERROR(),
                            TSIGContext::VERIFIED_RESPONSE);
@@ -918,15 +948,17 @@ TEST_F(TSIGTest, verifyAfterSendResponse) {
     tsig_verify_ctx->verify(message.getTSIGRecord(), &received_data[0],
                             received_data.size());
     EXPECT_EQ(TSIGContext::RECEIVED_REQUEST, tsig_verify_ctx->getState());
-    createMessageAndSign(qid, test_name, tsig_verify_ctx.get(),
+    TSIGContext tsig_ctx_copy(*tsig_verify_ctx.get(), Sign);
+    createMessageAndSign(qid, test_name, &tsig_ctx_copy,
                          QR_FLAG|AA_FLAG|RD_FLAG, RRType::A(), "192.0.2.1");
-    EXPECT_EQ(TSIGContext::SENT_RESPONSE, tsig_verify_ctx->getState());
+    EXPECT_EQ(TSIGContext::SENT_RESPONSE, tsig_ctx_copy.getState());
 
     // Now trying further verification.
     createMessageFromFile("message_toWire2.wire");
-    EXPECT_THROW(tsig_verify_ctx->verify(message.getTSIGRecord(),
-                                         &received_data[0],
-                                         received_data.size()),
+    TSIGContext tsig_ctx_copy2(tsig_ctx_copy, Verify);
+    EXPECT_THROW(tsig_ctx_copy2.verify(message.getTSIGRecord(),
+                                       &received_data[0],
+                                       received_data.size()),
                  TSIGContextError);
 }
 
@@ -939,12 +971,14 @@ TEST_F(TSIGTest, signAfterVerified) {
     isc::util::detail::gettimeFunction = testGetTime<0x4da8877a>;
     createMessageAndSign(qid, test_name, tsig_ctx.get());
     createMessageFromFile("tsig_verify5.wire");
-    tsig_ctx->verify(message.getTSIGRecord(), &received_data[0],
-                     received_data.size());
-    EXPECT_EQ(TSIGContext::VERIFIED_RESPONSE, tsig_ctx->getState());
+    TSIGContext tsig_ctx_copy(*tsig_ctx.get(), Verify);
+    tsig_ctx_copy.verify(message.getTSIGRecord(), &received_data[0],
+                         received_data.size());
+    EXPECT_EQ(TSIGContext::VERIFIED_RESPONSE, tsig_ctx_copy.getState());
 
     // Now trying further signing.
-    EXPECT_THROW(createMessageAndSign(qid, test_name, tsig_ctx.get()),
+    TSIGContext tsig_ctx_copy2(tsig_ctx_copy, Sign);
+    EXPECT_THROW(createMessageAndSign(qid, test_name, &tsig_ctx_copy2),
                  TSIGContextError);
 }
 
@@ -975,67 +1009,77 @@ TEST_F(TSIGTest, getTSIGLength) {
     // hmac-sha1: n2=11, x=20
     tsig_ctx.reset(new TestTSIGContext(TSIGKey(test_name,
                                                TSIGKey::HMACSHA1_NAME(),
-                                               &dummy_data[0], 20)));
+                                               &dummy_data[0], 20),
+                                       Sign));
     EXPECT_EQ(74, tsig_ctx->getTSIGLength());
 
     // hmac-sha256: n2=13, x=32
     tsig_ctx.reset(new TestTSIGContext(TSIGKey(test_name,
                                                TSIGKey::HMACSHA256_NAME(),
-                                               &dummy_data[0], 32)));
+                                               &dummy_data[0], 32),
+                                       Sign));
     EXPECT_EQ(88, tsig_ctx->getTSIGLength());
 
     // hmac-sha224: n2=13, x=28
     tsig_ctx.reset(new TestTSIGContext(TSIGKey(test_name,
                                                TSIGKey::HMACSHA224_NAME(),
-                                               &dummy_data[0], 28)));
+                                               &dummy_data[0], 28),
+                                       Sign));
     EXPECT_EQ(84, tsig_ctx->getTSIGLength());
 
     // hmac-sha384: n2=13, x=48
     tsig_ctx.reset(new TestTSIGContext(TSIGKey(test_name,
                                                TSIGKey::HMACSHA384_NAME(),
-                                               &dummy_data[0], 48)));
+                                               &dummy_data[0], 48),
+                                       Sign));
     EXPECT_EQ(104, tsig_ctx->getTSIGLength());
 
     // hmac-sha512: n2=13, x=64
     tsig_ctx.reset(new TestTSIGContext(TSIGKey(test_name,
                                                TSIGKey::HMACSHA512_NAME(),
-                                               &dummy_data[0], 64)));
+                                               &dummy_data[0], 64),
+                                       Sign));
     EXPECT_EQ(120, tsig_ctx->getTSIGLength());
 
     // bad key case: n1=len(badkey.example.com)=20, n2=26, x=0
-    tsig_ctx.reset(new TestTSIGContext(badkey_name, TSIGKey::HMACMD5_NAME(),
+    tsig_ctx.reset(new TestTSIGContext(badkey_name,
+                                       Sign,
+                                       TSIGKey::HMACMD5_NAME(),
                                        keyring));
     EXPECT_EQ(72, tsig_ctx->getTSIGLength());
 
     // bad sig case: n1=17, n2=26, x=0
     isc::util::detail::gettimeFunction = testGetTime<0x4da8877a>;
     createMessageFromFile("message_toWire2.wire");
-    tsig_ctx.reset(new TestTSIGContext(TSIGKey(test_name,
-                                               TSIGKey::HMACMD5_NAME(),
-                                               &dummy_data[0],
-                                               dummy_data.size())));
+    tsig_verify_ctx.reset(new TestTSIGContext(TSIGKey(test_name,
+                                                      TSIGKey::HMACMD5_NAME(),
+                                                      &dummy_data[0],
+                                                      dummy_data.size()),
+                                              Verify));
     {
         SCOPED_TRACE("Verify resulting in BADSIG");
-        commonVerifyChecks(*tsig_ctx, message.getTSIGRecord(),
+        commonVerifyChecks(*tsig_verify_ctx, message.getTSIGRecord(),
                            &received_data[0], received_data.size(),
-                           TSIGError::BAD_SIG(), TSIGContext::RECEIVED_REQUEST);
+                           TSIGError::BAD_SIG(),
+                           TSIGContext::RECEIVED_REQUEST);
     }
-    EXPECT_EQ(69, tsig_ctx->getTSIGLength());
+    EXPECT_EQ(69, tsig_verify_ctx->getTSIGLength());
 
     // bad time case: n1=17, n2=26, x=16, y=6
     isc::util::detail::gettimeFunction = testGetTime<0x4da8877a - 1000>;
-    tsig_ctx.reset(new TestTSIGContext(TSIGKey(test_name,
-                                               TSIGKey::HMACMD5_NAME(),
-                                               &dummy_data[0],
-                                               dummy_data.size())));
+    tsig_verify_ctx.reset(new TestTSIGContext(TSIGKey(test_name,
+                                                      TSIGKey::HMACMD5_NAME(),
+                                                      &dummy_data[0],
+                                                      dummy_data.size()),
+                                              Verify));
     {
         SCOPED_TRACE("Verify resulting in BADTIME");
-        commonVerifyChecks(*tsig_ctx, message.getTSIGRecord(),
+        commonVerifyChecks(*tsig_verify_ctx, message.getTSIGRecord(),
                            &received_data[0], received_data.size(),
                            TSIGError::BAD_TIME(),
                            TSIGContext::RECEIVED_REQUEST);
     }
-    EXPECT_EQ(91, tsig_ctx->getTSIGLength());
+    EXPECT_EQ(91, tsig_verify_ctx->getTSIGLength());
 }
 
 // Verify a stream of multiple messages. Some of them have a signature omitted.
@@ -1049,11 +1093,15 @@ TEST_F(TSIGTest, verifyMulti) {
     {
         SCOPED_TRACE("Query");
         ConstTSIGRecordPtr tsig = createMessageAndSign(1234, test_name,
-                                                       tsig_verify_ctx.get());
-        commonVerifyChecks(*tsig_ctx, tsig.get(),
+                                                       tsig_ctx.get());
+        commonVerifyChecks(*tsig_verify_ctx, tsig.get(),
                            renderer.getData(), renderer.getLength(),
                            TSIGError(Rcode::NOERROR()),
                            TSIGContext::RECEIVED_REQUEST);
+        TSIGContext tsig_ctx_copy(*tsig_ctx.get(), Verify);
+        TestTSIGContext tsig_ctx_copy2(*tsig_verify_ctx.get(), Sign);
+        tsig_ctx.reset(new TestTSIGContext(tsig_ctx_copy2, Sign));
+        tsig_verify_ctx.reset(new TSIGContext(tsig_ctx_copy, Verify));
     }
 
     {

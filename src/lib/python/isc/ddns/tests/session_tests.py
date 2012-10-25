@@ -53,7 +53,7 @@ def create_update_msg(zones=[TEST_ZONE_RECORD], prerequisites=[],
 
     renderer = MessageRenderer()
     if tsig_key is not None:
-        msg.to_wire(renderer, TSIGContext(tsig_key))
+        msg.to_wire(renderer, TSIGContext(tsig_key, TSIGContext.SIGN))
     else:
         msg.to_wire(renderer)
 

@@ -101,8 +101,30 @@ TSIGContext_init(s_TSIGContext* self, PyObject* args) {
     try {
         // "From key" constructor
         const PyObject* tsigkey_obj;
-        if (PyArg_ParseTuple(args, "O!", &tsigkey_type, &tsigkey_obj)) {
-            self->cppobj = new TSIGContext(PyTSIGKey_ToTSIGKey(tsigkey_obj));
+        int op;
+
+        if (PyArg_ParseTuple(args, "O!i", &tsigkey_type, &tsigkey_obj, &op)) {
+            if ((op != isc::cryptolink::Verify) &&
+                (op != isc::cryptolink::Sign)) {
+                goto badop;
+            }
+            self->cppobj =
+                new TSIGContext(PyTSIGKey_ToTSIGKey(tsigkey_obj),
+                                static_cast<isc::cryptolink::Operation>(op));
+            return (0);
+        }
+
+        // "From context" copy constructor
+        PyObject* tsigcontext_obj;
+        if (PyArg_ParseTuple(args, "O!i", &tsigcontext_type,
+                             &tsigcontext_obj, &op)) {
+            if ((op != isc::cryptolink::Verify) &&
+                (op != isc::cryptolink::Sign)) {
+                goto badop;
+            }
+            self->cppobj =
+                new TSIGContext(PyTSIGContext_ToTSIGContext(tsigcontext_obj),
+                                static_cast<isc::cryptolink::Operation>(op));
             return (0);
         }
 
@@ -111,10 +133,15 @@ TSIGContext_init(s_TSIGContext* self, PyObject* args) {
         const PyObject* keyname_obj;
         const PyObject* algname_obj;
         const PyObject* keyring_obj;
-        if (PyArg_ParseTuple(args, "O!O!O!", &name_type, &keyname_obj,
+        if (PyArg_ParseTuple(args, "O!iO!O!", &name_type, &keyname_obj, &op,
                              &name_type, &algname_obj, &tsigkeyring_type,
                              &keyring_obj)) {
+            if ((op != isc::cryptolink::Verify) &&
+                (op != isc::cryptolink::Sign)) {
+                goto badop;
+            }
             self->cppobj = new TSIGContext(PyName_ToName(keyname_obj),
+                                           static_cast<isc::cryptolink::Operation>(op),
                                            PyName_ToName(algname_obj),
                                            PyTSIGKeyRing_ToTSIGKeyRing(keyring_obj));
             return (0);
@@ -133,6 +160,11 @@ TSIGContext_init(s_TSIGContext* self, PyObject* args) {
     PyErr_SetString(PyExc_TypeError,
                     "Invalid arguments to TSIGContext constructor");
 
+    return (-1);
+
+badop:
+    PyErr_SetString(po_IscException, 
+                    "VERIFY or SIGN required in constructing TSIGContext");
     return (-1);
 }
 

@@ -65,7 +65,10 @@ namespace cryptolink {
 class HMACImpl {
 public:
     explicit HMACImpl(const void* secret, size_t secret_len,
-                      const HashAlgorithm hash_algorithm) {
+                      const Operation operation,
+                      const HashAlgorithm hash_algorithm) :
+        op_(operation)
+    {
         Botan::HashFunction* hash;
         try {
             hash = Botan::get_hash(
@@ -130,6 +133,10 @@ public:
     }
 
     void update(const void* data, const size_t len) {
+        if ((op_ != Verify) && (op_ != Sign)) {
+            isc_throw(isc::cryptolink::IncompatibleOperation,
+                      "Verify or Sign required");
+        }
         try {
             hmac_->update(static_cast<const Botan::byte*>(data), len);
         } catch (const Botan::Exception& exc) {
@@ -138,6 +145,10 @@ public:
     }
 
     void sign(isc::util::OutputBuffer& result, size_t len) {
+        if (op_ != Sign) {
+             isc_throw(isc::cryptolink::IncompatibleOperation,
+                       "Sign required");
+	}
         try {
             Botan::SecureVector<Botan::byte> b_result(hmac_->final());
 
@@ -151,6 +162,10 @@ public:
     }
 
     void sign(void* result, size_t len) {
+        if (op_ != Sign) {
+             isc_throw(isc::cryptolink::IncompatibleOperation,
+                       "Sign required");
+	}
         try {
             Botan::SecureVector<Botan::byte> b_result(hmac_->final());
             size_t output_size = getOutputLength();
@@ -164,6 +179,10 @@ public:
     }
 
     std::vector<uint8_t> sign(size_t len) {
+        if (op_ != Sign) {
+             isc_throw(isc::cryptolink::IncompatibleOperation,
+                       "Sign required");
+	}
         try {
             Botan::SecureVector<Botan::byte> b_result(hmac_->final());
             if (len == 0 || len > b_result.size()) {
@@ -178,6 +197,10 @@ public:
 
 
     bool verify(const void* sig, size_t len) {
+        if (op_ != Verify) {
+             isc_throw(isc::cryptolink::IncompatibleOperation,
+                       "Verify required");
+	}
         // Botan's verify_mac checks if len matches the output_length,
         // which causes it to fail for truncated signatures, so we do
         // the check ourselves
@@ -205,12 +228,14 @@ public:
 
 private:
     boost::scoped_ptr<Botan::HMAC> hmac_;
+    const Operation op_;
 };
 
 HMAC::HMAC(const void* secret, size_t secret_length,
+           const Operation operation,
            const HashAlgorithm hash_algorithm)
 {
-    impl_ = new HMACImpl(secret, secret_length, hash_algorithm);
+    impl_ = new HMACImpl(secret, secret_length, operation, hash_algorithm);
 }
 
 HMAC::~HMAC() {
@@ -255,6 +280,7 @@ signHMAC(const void* data, const size_t data_len, const void* secret,
     boost::scoped_ptr<HMAC> hmac(
         CryptoLink::getCryptoLink().createHMAC(secret,
                                                secret_len,
+                                               Sign,
                                                hash_algorithm));
     hmac->update(data, data_len);
     hmac->sign(result, len);
@@ -269,6 +295,7 @@ verifyHMAC(const void* data, const size_t data_len, const void* secret,
     boost::scoped_ptr<HMAC> hmac(
         CryptoLink::getCryptoLink().createHMAC(secret,
                                                secret_len,
+                                               Verify,
                                                hash_algorithm));
     hmac->update(data, data_len);
     return (hmac->verify(sig, sig_len));

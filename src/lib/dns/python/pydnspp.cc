@@ -690,6 +690,11 @@ initModulePart_TSIGContext(PyObject* mod) {
 
         installClassVariable(tsigcontext_type, "DEFAULT_FUDGE",
                              Py_BuildValue("H", TSIGContext::DEFAULT_FUDGE));
+
+        installClassVariable(tsigcontext_type, "VERIFY",
+                             Py_BuildValue("I", isc::cryptolink::Verify));
+        installClassVariable(tsigcontext_type, "SIGN",
+                             Py_BuildValue("I", isc::cryptolink::Sign));
     } catch (const std::exception& ex) {
         const std::string ex_what =
             "Unexpected failure in TSIGContext initialization: " +

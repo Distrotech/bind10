@@ -976,7 +976,10 @@ class TestDDNSSession(unittest.TestCase):
 
         server_addr = TEST_SERVER6 if ipv6 else TEST_SERVER4
         client_addr = TEST_CLIENT6 if ipv6 else TEST_CLIENT4
-        tsig = TSIGContext(tsig_key) if tsig_key is not None else None
+        if tsig_key is None:
+            tsig = None
+        else:
+            tsig = TSIGContext(tsig_key, TSIGContext.SIGN)
         rcode = Rcode.NOERROR() if result == UPDATE_SUCCESS else Rcode.REFUSED()
         has_response = (result != UPDATE_DROP)
 

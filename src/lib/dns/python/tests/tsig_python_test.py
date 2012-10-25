@@ -35,8 +35,8 @@ class TSIGContextTest(unittest.TestCase):
         fix_current_time(None)
         self.qid = 0x2d65
         self.test_name = Name("www.example.com")
-        self.tsig_ctx = TSIGContext(self.tsig_key)
-        self.tsig_verify_ctx = TSIGContext(self.tsig_key)
+        self.tsig_ctx = TSIGContext(self.tsig_key, TSIGContext.SIGN)
+        self.tsig_verify_ctx = TSIGContext(self.tsig_key, TSIGContext.VERIFY)
         self.keyring = TSIGKeyRing()
         self.message = Message(Message.RENDER)
         self.renderer = MessageRenderer()
@@ -45,7 +45,8 @@ class TSIGContextTest(unittest.TestCase):
         self.secret = base64.b64decode(b"SFuWd/q99SzF8Yzd1QbB9g==")
         self.tsig_ctx = TSIGContext(TSIGKey(self.test_name,
                                             TSIGKey.HMACMD5_NAME,
-                                            self.secret))
+                                            self.secret),
+                                            TSIGContext.SIGN)
         self.badkey_name = Name("badkey.example.com")
         self.dummy_record = TSIGRecord(self.badkey_name,
                                        TSIG("hmac-md5.sig-alg.reg.int. " + \
@@ -142,7 +143,8 @@ class TSIGContextTest(unittest.TestCase):
     def test_from_keyring(self):
         # Construct a TSIG context with an empty key ring.  Key shouldn't be
         # found, and the BAD_KEY error should be recorded.
-        ctx = TSIGContext(self.test_name, TSIGKey.HMACMD5_NAME, self.keyring)
+        ctx = TSIGContext(self.test_name, TSIGContext.SIGN,
+                          TSIGKey.HMACMD5_NAME, self.keyring)
         self.assertEqual(TSIGContext.STATE_INIT, ctx.get_state())
         self.assertEqual(TSIGError.BAD_KEY, ctx.get_error())
         # check get_error() doesn't cause ref leak.  Note: we can't
@@ -154,24 +156,26 @@ class TSIGContextTest(unittest.TestCase):
         # construct it again.  This time it should be constructed with a valid
         # key.
         self.keyring.add(TSIGKey(self.test_name, TSIGKey.HMACMD5_NAME, b""))
-        ctx = TSIGContext(self.test_name, TSIGKey.HMACMD5_NAME, self.keyring)
+        ctx = TSIGContext(self.test_name, TSIGContext.SIGN,
+                          TSIGKey.HMACMD5_NAME, self.keyring)
         self.assertEqual(TSIGContext.STATE_INIT, ctx.get_state())
         self.assertEqual(TSIGError.NOERROR, ctx.get_error())
 
         # Similar to the first case except that the key ring isn't empty but
         # it doesn't contain a matching key.
-        ctx = TSIGContext(self.test_name, TSIGKey.HMACSHA1_NAME, self.keyring)
+        ctx = TSIGContext(self.test_name, TSIGContext.SIGN,
+                          TSIGKey.HMACSHA1_NAME, self.keyring)
         self.assertEqual(TSIGContext.STATE_INIT, ctx.get_state())
         self.assertEqual(TSIGError.BAD_KEY, ctx.get_error())
 
-        ctx = TSIGContext(Name("different-key.example"),
+        ctx = TSIGContext(Name("different-key.example"), TSIGContext.SIGN,
                           TSIGKey.HMACMD5_NAME, self.keyring)
         self.assertEqual(TSIGContext.STATE_INIT, ctx.get_state())
         self.assertEqual(TSIGError.BAD_KEY, ctx.get_error())
 
         # "Unknown" algorithm name will result in BADKEY, too.
-        ctx = TSIGContext(self.test_name, Name("unknown.algorithm"),
-                          self.keyring)
+        ctx = TSIGContext(self.test_name, TSIGContext.SIGN,
+                          Name("unknown.algorithm"), self.keyring)
         self.assertEqual(TSIGContext.STATE_INIT, ctx.get_state())
         self.assertEqual(TSIGError.BAD_KEY, ctx.get_error())
 
@@ -188,7 +192,8 @@ class TSIGContextTest(unittest.TestCase):
     def test_sign_using_uppercase_keyname(self):
         fix_current_time(0x4da8877a)
         cap_ctx = TSIGContext(TSIGKey(Name("WWW.EXAMPLE.COM"),
-                                      TSIGKey.HMACMD5_NAME, self.secret))
+                                      TSIGKey.HMACMD5_NAME, self.secret),
+                              TSIGContext.SIGN)
         tsig = self.createMessageAndSign(self.qid, self.test_name, cap_ctx)
         self.commonSignChecks(tsig, self.qid, 0x4da8877a, COMMON_EXPECTED_MAC)
 
@@ -197,7 +202,8 @@ class TSIGContextTest(unittest.TestCase):
         fix_current_time(0x4da8877a)
         cap_ctx = TSIGContext(TSIGKey(self.test_name,
                                       Name("HMAC-md5.SIG-alg.REG.int"),
-                                      self.secret))
+                                      self.secret),
+                              TSIGContext.SIGN)
         tsig = self.createMessageAndSign(self.qid, self.test_name, cap_ctx)
         self.commonSignChecks(tsig, self.qid, 0x4da8877a, COMMON_EXPECTED_MAC)
 
@@ -221,15 +227,17 @@ class TSIGContextTest(unittest.TestCase):
         # the data must at least hold the DNS message header and the specified
         # TSIG.
         bad_len = 12 + self.dummy_record.get_length() - 1
-        self.assertRaises(InvalidParameter, self.tsig_ctx.verify,
+        self.assertRaises(InvalidParameter, self.tsig_verify_ctx.verify,
                           self.dummy_record, DUMMY_DATA[:bad_len])
 
     def test_sign_using_hmacsha1(self):
         fix_current_time(0x4dae7d5f)
 
         secret = base64.b64decode(b"MA+QDhXbyqUak+qnMFyTyEirzng=")
-        sha1_ctx = TSIGContext(TSIGKey(self.test_name, TSIGKey.HMACSHA1_NAME,
-                                       secret))
+        sha1_ctx = TSIGContext(TSIGKey(self.test_name,
+                                       TSIGKey.HMACSHA1_NAME,
+                                       secret),
+                               TSIGContext.SIGN)
         qid = 0x0967
         expected_mac = b"\x41\x53\x40\xc7\xda\xf8\x24\xed\x68\x4e\xe5\x86" + \
             b"\xf7\xb5\xa6\x7a\x2f\xeb\xc0\xd3"
@@ -246,8 +254,9 @@ class TSIGContextTest(unittest.TestCase):
                                 self.received_data, TSIGError.NOERROR,
                                 TSIGContext.STATE_RECEIVED_REQUEST)
 
+        tsig_ctx_copy = TSIGContext(self.tsig_verify_ctx, TSIGContext.SIGN)
         tsig = self.createMessageAndSign(self.qid, self.test_name,
-                                         self.tsig_verify_ctx,
+                                         tsig_ctx_copy,
                                          QR_FLAG|AA_FLAG|RD_FLAG,
                                          RRType.A(), "192.0.2.1")
 
@@ -287,28 +296,30 @@ class TSIGContextTest(unittest.TestCase):
                                 TSIGError.NOERROR,
                                 TSIGContext.STATE_RECEIVED_REQUEST)
 
+        tsig_ctx_copy = TSIGContext(self.tsig_verify_ctx, TSIGContext.SIGN)
         tsig = self.createMessageAndSign(axfr_qid, zone_name,
-                                         self.tsig_verify_ctx,
+                                         tsig_ctx_copy,
                                          AA_FLAG|QR_FLAG, RRType.AXFR(),
                                          "ns.example.com. root.example.com." +\
                                          " 2011041503 7200 3600 2592000 1200",
                                          RRType.SOA())
 
         received_data = read_wire_data("tsig_verify2.wire")
-        self.commonVerifyChecks(self.tsig_ctx, tsig, received_data,
+        tsig_ctx_copy2 = TSIGContext(self.tsig_ctx, TSIGContext.VERIFY)
+        self.commonVerifyChecks(tsig_ctx_copy2, tsig, received_data,
                                 TSIGError.NOERROR)
 
         expected_mac = b"\x10\x24\x58\xf7\xf6\x2d\xdd\x7d\x63\x8d\x74" +\
             b"\x60\x34\x13\x09\x68"
         tsig = self.createMessageAndSign(axfr_qid, zone_name,
-                                         self.tsig_verify_ctx,
+                                         tsig_ctx_copy,
                                          AA_FLAG|QR_FLAG, RRType.AXFR(),
                                          "ns.example.com.", RRType.NS(),
                                          False)
         self.commonSignChecks(tsig, axfr_qid, 0x4da8e951, expected_mac)
 
         received_data = read_wire_data("tsig_verify3.wire")
-        self.commonVerifyChecks(self.tsig_ctx, tsig, received_data,
+        self.commonVerifyChecks(tsig_ctx_copy2, tsig, received_data,
                                 TSIGError.NOERROR)
 
     def test_badtime_response(self):
@@ -326,8 +337,9 @@ class TSIGContextTest(unittest.TestCase):
                                 TSIGContext.STATE_RECEIVED_REQUEST)
 
         # make and sign a response in the context of TSIG error.
+        tsig_ctx_copy = TSIGContext(self.tsig_verify_ctx, TSIGContext.SIGN)
         tsig = self.createMessageAndSign(test_qid, self.test_name,
-                                         self.tsig_verify_ctx,
+                                         tsig_ctx_copy,
                                          QR_FLAG, RRType.SOA(), None, None,
                                          True, Rcode.NOTAUTH())
 
@@ -397,35 +409,42 @@ class TSIGContextTest(unittest.TestCase):
         # Try to sign a simple message with bogus secret.  It should fail
         # with BADSIG.
         self.createMessageFromFile("message_toWire2.wire")
-        bad_ctx = TSIGContext(TSIGKey(self.test_name, TSIGKey.HMACMD5_NAME,
-                                      DUMMY_DATA))
-        self.commonVerifyChecks(bad_ctx, self.message.get_tsig_record(),
+        bad_vrfy_ctx = TSIGContext(TSIGKey(self.test_name,
+                                           TSIGKey.HMACMD5_NAME,
+                                           DUMMY_DATA),
+                                   TSIGContext.VERIFY)
+        self.commonVerifyChecks(bad_vrfy_ctx, self.message.get_tsig_record(),
                                 self.received_data, TSIGError.BAD_SIG,
                                 TSIGContext.STATE_RECEIVED_REQUEST)
 
         # Sign the same message (which doesn't matter for this test) with the
         # context of "checked state".
-        tsig = self.createMessageAndSign(self.qid, self.test_name, bad_ctx)
+        bad_sign_ctx = TSIGContext(bad_vrfy_ctx, TSIGContext.SIGN)
+        tsig = self.createMessageAndSign(self.qid, self.test_name,
+                                         bad_sign_ctx)
         self.commonSignChecks(tsig, self.message.get_qid(), 0x4da8877a, None,
                               16)   # 16: BADSIG
 
     def test_badkey_response(self):
         # A similar test as badsigResponse but for BADKEY
         fix_current_time(0x4da8877a)
-        tsig_ctx = TSIGContext(self.badkey_name, TSIGKey.HMACMD5_NAME,
-                               self.keyring)
-        self.commonVerifyChecks(tsig_ctx, self.dummy_record, DUMMY_DATA,
-                                TSIGError.BAD_KEY,
+        tsig_vrfy_ctx = TSIGContext(self.badkey_name, TSIGContext.VERIFY,
+                                    TSIGKey.HMACMD5_NAME, self.keyring)
+        self.commonVerifyChecks(tsig_vrfy_ctx, self.dummy_record,
+                                DUMMY_DATA, TSIGError.BAD_KEY,
                                 TSIGContext.STATE_RECEIVED_REQUEST)
 
-        sig = self.createMessageAndSign(self.qid, self.test_name, tsig_ctx)
+        tsig_sign_ctx = TSIGContext(tsig_vrfy_ctx, TSIGContext.SIGN)
+        sig = self.createMessageAndSign(self.qid, self.test_name,
+                                        tsig_sign_ctx)
         self.assertEqual(self.badkey_name, sig.get_name())
         self.commonSignChecks(sig, self.qid, 0x4da8877a, None, 17) # 17: BADKEY
 
     def test_badkey_for_response(self):
         # "BADKEY" case for a response to a signed message
         self.createMessageAndSign(self.qid, self.test_name, self.tsig_ctx)
-        self.commonVerifyChecks(self.tsig_ctx, self.dummy_record, DUMMY_DATA,
+        tsig_ctx_copy = TSIGContext(self.tsig_ctx, TSIGContext.VERIFY)
+        self.commonVerifyChecks(tsig_ctx_copy, self.dummy_record, DUMMY_DATA,
                                 TSIGError.BAD_KEY,
                                 TSIGContext.STATE_SENT_REQUEST)
 
@@ -433,7 +452,7 @@ class TSIGContextTest(unittest.TestCase):
         dummy_record = TSIGRecord(self.test_name,
                                   TSIG("hmac-sha1. 1302890362 300 0 "
                                        "11621 0 0"))
-        self.commonVerifyChecks(self.tsig_ctx, dummy_record, DUMMY_DATA,
+        self.commonVerifyChecks(tsig_ctx_copy, dummy_record, DUMMY_DATA,
                                 TSIGError.BAD_KEY,
                                 TSIGContext.STATE_SENT_REQUEST)
 
@@ -446,12 +465,13 @@ class TSIGContextTest(unittest.TestCase):
         self.createMessageAndSign(self.qid, self.test_name, self.tsig_ctx)
         self.createMessageFromFile("tsig_verify4.wire")
 
-        self.commonVerifyChecks(self.tsig_ctx, self.message.get_tsig_record(),
+        tsig_ctx_copy = TSIGContext(self.tsig_ctx, TSIGContext.VERIFY)
+        self.commonVerifyChecks(tsig_ctx_copy, self.message.get_tsig_record(),
                                 self.received_data, TSIGError.BAD_SIG,
                                 TSIGContext.STATE_SENT_REQUEST)
 
         self.createMessageFromFile("tsig_verify5.wire")
-        self.commonVerifyChecks(self.tsig_ctx, self.message.get_tsig_record(),
+        self.commonVerifyChecks(tsig_ctx_copy, self.message.get_tsig_record(),
                                 self.received_data, TSIGError.NOERROR,
                                 TSIGContext.STATE_VERIFIED_RESPONSE)
 
@@ -461,12 +481,13 @@ class TSIGContextTest(unittest.TestCase):
         fix_current_time(0x4da8877a)
         self.createMessageAndSign(self.qid, self.test_name, self.tsig_ctx)
 
-        self.commonVerifyChecks(self.tsig_ctx, None, DUMMY_DATA,
+        tsig_ctx_copy = TSIGContext(self.tsig_ctx, TSIGContext.VERIFY)
+        self.commonVerifyChecks(tsig_ctx_copy, None, DUMMY_DATA,
                            TSIGError.FORMERR, TSIGContext.STATE_SENT_REQUEST,
                            True)
 
         self.createMessageFromFile("tsig_verify5.wire")
-        self.commonVerifyChecks(self.tsig_ctx, self.message.get_tsig_record(),
+        self.commonVerifyChecks(tsig_ctx_copy, self.message.get_tsig_record(),
                                 self.received_data, TSIGError.NOERROR,
                                 TSIGContext.STATE_VERIFIED_RESPONSE)
 
@@ -479,13 +500,14 @@ class TSIGContextTest(unittest.TestCase):
         # "advance the clock" and try validating, which should fail due to
         # BADTIME
         fix_current_time(0x4da8877a + 600)
-        self.commonVerifyChecks(self.tsig_ctx, tsig, DUMMY_DATA,
+        tsig_ctx_copy = TSIGContext(self.tsig_ctx, TSIGContext.VERIFY)
+        self.commonVerifyChecks(tsig_ctx_copy, tsig, DUMMY_DATA,
                            TSIGError.BAD_TIME, TSIGContext.STATE_SENT_REQUEST)
 
         # revert the clock again.
         fix_current_time(0x4da8877a)
         self.createMessageFromFile("tsig_verify5.wire")
-        self.commonVerifyChecks(self.tsig_ctx, self.message.get_tsig_record(),
+        self.commonVerifyChecks(tsig_ctx_copy, self.message.get_tsig_record(),
                                 self.received_data, TSIGError.NOERROR,
                                 TSIGContext.STATE_VERIFIED_RESPONSE)
 
@@ -520,16 +542,18 @@ class TSIGContextTest(unittest.TestCase):
                                     self.received_data)
         self.assertEqual(TSIGContext.STATE_RECEIVED_REQUEST,
                          self.tsig_verify_ctx.get_state())
+        tsig_ctx_copy = TSIGContext(self.tsig_verify_ctx, TSIGContext.SIGN)
         self.createMessageAndSign(self.qid, self.test_name,
-                                  self.tsig_verify_ctx,
+                                  tsig_ctx_copy,
                                   QR_FLAG|AA_FLAG|RD_FLAG, RRType.A(),
                                   "192.0.2.1")
         self.assertEqual(TSIGContext.STATE_SENT_RESPONSE,
-                         self.tsig_verify_ctx.get_state())
+                         tsig_ctx_copy.get_state())
 
         # Now trying further verification.
         self.createMessageFromFile("message_toWire2.wire")
-        self.assertRaises(TSIGContextError, self.tsig_verify_ctx.verify,
+        tsig_ctx_copy2 = TSIGContext(tsig_ctx_copy, TSIGContext.VERIFY)
+        self.assertRaises(TSIGContextError, tsig_ctx_copy2.verify,
                           self.message.get_tsig_record(), self.received_data)
 
     # Likewise, once the context verifies a response, it shouldn't for
@@ -539,14 +563,16 @@ class TSIGContextTest(unittest.TestCase):
 
         self.createMessageAndSign(self.qid, self.test_name, self.tsig_ctx)
         self.createMessageFromFile("tsig_verify5.wire")
-        self.tsig_ctx.verify(self.message.get_tsig_record(),
+        tsig_ctx_copy = TSIGContext(self.tsig_ctx, TSIGContext.VERIFY)
+        tsig_ctx_copy.verify(self.message.get_tsig_record(),
                              self.received_data)
         self.assertEqual(TSIGContext.STATE_VERIFIED_RESPONSE,
-                         self.tsig_ctx.get_state())
+                         tsig_ctx_copy.get_state())
 
         # Now trying further signing.
+        tsig_ctx_copy2 = TSIGContext(tsig_ctx_copy, TSIGContext.SIGN)
         self.assertRaises(TSIGContextError, self.createMessageAndSign,
-                          self.qid, self.test_name, self.tsig_ctx)
+                          self.qid, self.test_name, tsig_ctx_copy2)
 
     # Too short MAC should be rejected.
     # Note: when we implement RFC4635-based checks, the error code will
