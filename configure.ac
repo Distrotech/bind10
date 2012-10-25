@@ -542,194 +542,64 @@ AC_DEFUN([ACX_CHECK_PROG_NONCACHE], [
     IFS="$IFS_SAVED"
 ])
 
-# Botan helper test function
-# Tries to compile a botan program, given the output of the given
-# config tool
-# Arguments:
-# - name of tool (checked for path), must support --libs and --cflags
-# - fixed argument(s) for tool
-# - action if successful
-AC_DEFUN([ACX_TRY_BOTAN_TOOL], [
-    TOOL=$1
-    TOOL_ARG=$2
-    BOTAN_TOOL=""
-    ACX_CHECK_PROG_NONCACHE([BOTAN_TOOL], [${TOOL}])
-    AC_MSG_CHECKING([usability of ${TOOL} ${TOOL_ARG}])
-    if test "$BOTAN_TOOL" != "" ; then
-        if test -x ${BOTAN_TOOL}; then
-            BOTAN_LIBS=`$BOTAN_TOOL $TOOL_ARG --libs`
-            LIBS_SAVED=${LIBS}
-            LIBS="$LIBS $BOTAN_LIBS"
-            BOTAN_INCLUDES=`$BOTAN_TOOL $TOOL_ARG --cflags`
-            CPPFLAGS_SAVED=${CPPFLAGS}
-            CPPFLAGS="$BOTAN_INCLUDES $CPPFLAGS"
-            #AC_MSG_RESULT([found])
-            AC_LINK_IFELSE(
-                [AC_LANG_PROGRAM([#include <botan/botan.h>
-                                  #include <botan/hash.h>
-                                 ],
-                                 [using namespace Botan;
-                                  LibraryInitializer::initialize();
-                                  HashFunction *h = get_hash("MD5");
-                                 ])],
-                [ AC_MSG_RESULT([ok])
-                  $3
-                ],
-                [ AC_MSG_RESULT([not usable]) ]
-            )
-            LIBS=${LIBS_SAVED}
-            CPPFLAGS=${CPPFLAGS_SAVED}
-        else
-            AC_MSG_RESULT([not executable])
-        fi
-    else
-        AC_MSG_RESULT([not found])
-    fi
-    BOTAN_TOOL=""
-    AC_SUBST(BOTAN_TOOL)
-    ]
-)
+# Check for OpenSSL
+# From bind 9
 
-# Check for Botan
-#
-# Unless --with-botan-config is given, we first try to find these config
-# scripts ourselves. Unfortunately, on some systems, these scripts do not
-# provide the correct implementation, so for each script found, we try
-# a compilation test (ACX_TRY_BOTAN_TOOL). If none are found, or none of
-# them work, we see if pkg-config is available. If so, we try the several
-# potential pkg-config .pc files. Again, on some systems, these can return
-# incorrect information as well, so the try-compile test is repeated for
-# each.
-#
-# If a working config script or pkgconfig file is found, we then munge its
-# output for use in our Makefiles, and to make sure it works, another header
-# and compilation test is done (this should also check whether we can compile
-# against botan should neither -config scripts nor pkgconfig data exist).
-#
-botan_config="yes"
-AC_ARG_WITH([botan-config],
-  AC_HELP_STRING([--with-botan-config=PATH],
-    [specify the path to the botan-config script]),
-    [botan_config="$withval"])
-if test "${botan_config}" = "no" ; then
-    AC_MSG_ERROR([Need botan for libcryptolink])
+AC_MSG_CHECKING(for OpenSSL library)
+AC_ARG_WITH([openssl],
+            [AS_HELP_STRING([--with-openssl=PATH], [OpenSSL location])],
+            [use_openssl="$withval"],
+            [use_openssl="auto"])
+
+if test "$use_openssl" = "yes"; then
+    use_openssl = "auto"
 fi
-if test "${botan_config}" != "yes" ; then
-    if test -x "${botan_config}" ; then
-        if test -d "${botan_config}" ; then
-            AC_MSG_ERROR([${botan_config} is a directory])
-        else
-            BOTAN_CONFIG="${botan_config}"
+if test "$use_openssl" = "auto"; then
+    for d in /usr /usr/local /usr/local/ssl /usr/pkg /usr/sfw; do
+        if test -f $d/include/openssl/opensslv.h; then
+            use_openssl=$d; break
         fi
-    else
-        AC_MSG_ERROR([--with-botan-config should point to a botan-config program and not a directory (${botan_config})])
-    fi
+    done
+fi
+if test "$use_openssl" = "no"; then
+    AC_MSG_ERROR([OpenSSL is required])
+fi
+if test "$use_openssl" = "auto"; then
+    AC_MSG_ERROR([OpenSSL auto detection failed])
+fi
+if ! test -f "$use_openssl"/include/openssl/opensslv.h; then
+    AC_MSG_ERROR([OpenSSL not found at $use_openssl])
+fi
+if test "$use_openssl" = "/usr"; then
+    OPENSSL_INCLUDES=""
+    OPENSSL_LIBS="-lcrypto"
 else
-    BOTAN_CONFIG=""
-    # first try several possible names of the config script
-    # (botan-config-1.8 is there just in case, the official name change
-    # came later)
-    BOTAN_CONFIG_VERSIONS="botan-config-1.10 botan-config-1.9 botan-config-1.8 botan-config"
-    for botan_config in $BOTAN_CONFIG_VERSIONS; do
-        ACX_TRY_BOTAN_TOOL([$botan_config],,
-                           [ BOTAN_CONFIG="$botan_config"  ]
-                          )
-        if test "$BOTAN_CONFIG" != "" ; then
-            break
-        fi
-    done
-    if test "$BOTAN_CONFIG" = "" ; then
-        AC_PATH_PROG([PKG_CONFIG], [pkg-config])
-        if test "$PKG_CONFIG" != "" ; then
-            # Ok so no script found, see if pkg-config knows of it.
-            # Unfortunately, the botan.pc files also have their minor version
-            # in their name, so we need to try them one by one
-            BOTAN_VERSIONS="botan-1.10 botan-1.9 botan-1.8"
-            for version in $BOTAN_VERSIONS; do
-                ACX_TRY_BOTAN_TOOL([pkg-config], ["$version --silence-errors"],
-                                   [ BOTAN_CONFIG="$PKG_CONFIG $version" ]
-                                  )
-            if test "$BOTAN_CONFIG" != "" ; then
-                break
+    OPENSSL_INCLUDES="-I$use_openssl/include"
+    case $host in
+        *-solaris*)
+            OPENSSL_LIBS="-L$use_openssl/lib -R$use_openssl/lib -lcrypto"
+            ;;
+        *-hp-hpux*)
+            OPENSSL_LIBS="-L$use_openssl/lib -Wl,+b: -lcrypto"
+            ;;
+        *-apple-darwin*)
+            if test -f "$use_openssl/lib/libcrypto.dylib"; then
+                OPENSSL_LIBS="-L$use_openssl/lib -lcrypto"
+            else
+                OPENSSL_LIBS="$use_openssl/lib/libcrypto.a"
             fi
-            done
-        fi
-    fi
+            ;;
+        *)
+            OPENSSL_LIBS="-L$use_openssl/lib -lcrypto"
+            ;;
+    esac
 fi
+#OPENSSL_LDFLAGS="-ldl"
+OPENSSL_LDFLAGS=""
 
-if test "x${BOTAN_CONFIG}" != "x"
-then
-    BOTAN_LIBS=`${BOTAN_CONFIG} --libs`
-    BOTAN_INCLUDES=`${BOTAN_CONFIG} --cflags`
-
-    # We expect botan-config --libs to contain -L<path_to_libbotan>, but
-    # this is not always the case.  As a heuristics workaround we add
-    # -L`botan-config --prefix/lib` in this case (if not present already).
-    # Same for BOTAN_INCLUDES (but using include instead of lib) below.
-    if [ ${BOTAN_CONFIG} --prefix >/dev/null 2>&1 ] ; then
-        echo ${BOTAN_LIBS} | grep -- -L > /dev/null || \
-            BOTAN_LIBS="-L`${BOTAN_CONFIG} --prefix`/lib ${BOTAN_LIBS}"
-        echo ${BOTAN_INCLUDES} | grep -- -I > /dev/null || \
-            BOTAN_INCLUDES="-I`${BOTAN_CONFIG} --prefix`/include ${BOTAN_INCLUDES}"
-    fi
-fi
-# botan-config script (and the way we call pkg-config) returns -L and -l
-# as one string, but we need them in separate values
-BOTAN_LDFLAGS=
-BOTAN_NEWLIBS=
-for flag in ${BOTAN_LIBS}; do
-    BOTAN_LDFLAGS="${BOTAN_LDFLAGS} `echo $flag | sed -ne '/^\(\-L\)/p'`"
-    BOTAN_LIBS="${BOTAN_LIBS} `echo $flag | sed -ne '/^\(\-l\)/p'`"
-done
-
-# See python_rpath for some info on why we do this
-if test $rpath_flag != no; then
-    BOTAN_RPATH=
-    for flag in ${BOTAN_LIBS}; do
-            BOTAN_RPATH="${BOTAN_RPATH} `echo $flag | sed -ne "s/^\(\-L\)/${rpath_flag}/p"`"
-    done
-AC_SUBST(BOTAN_RPATH)
-
-# According to the libtool manual, it should be sufficient if we
-# specify the "-R libdir" in our wrapper library of botan (no other
-# programs will need libbotan directly); "libdir" should be added to
-# the program's binary image.  But we've seen in our build environments
-# that (some versions of?) libtool doesn't propagate -R as documented,
-# and it caused a linker error at run time.  To work around this, we
-# also add the rpath to the global LDFLAGS.
-    LDFLAGS="$BOTAN_RPATH $LDFLAGS"
-fi
-
-AC_SUBST(BOTAN_LDFLAGS)
-AC_SUBST(BOTAN_LIBS)
-AC_SUBST(BOTAN_INCLUDES)
-
-# Even though chances are high we already performed a real compilation check
-# in the search for the right (pkg)config data, we try again here, to
-# be sure.
-CPPFLAGS_SAVED=$CPPFLAGS
-CPPFLAGS="$BOTAN_INCLUDES $CPPFLAGS"
-LIBS_SAVED="$LIBS"
-LIBS="$LIBS $BOTAN_LIBS"
-AC_CHECK_HEADERS([botan/botan.h],,AC_MSG_ERROR([Missing required header files.]))
-AC_LINK_IFELSE(
-        [AC_LANG_PROGRAM([#include <botan/botan.h>
-                          #include <botan/hash.h>
-                         ],
-                         [using namespace Botan;
-                          LibraryInitializer::initialize();
-                          HashFunction *h = get_hash("MD5");
-                         ])],
-        [AC_MSG_RESULT([checking for Botan library... yes])],
-        [AC_MSG_RESULT([checking for Botan library... no])
-         AC_MSG_ERROR([Needs Botan library 1.8 or higher. On some systems,
-         the botan package has a few missing dependencies (libbz2 and
-         libgmp), if libbotan has been installed and you see this error,
-         try upgrading to a higher version of botan or installing libbz2
-         and libgmp.])]
-)
-CPPFLAGS=$CPPFLAGS_SAVED
-LIBS=$LIBS_SAVED
+AC_MSG_RESULT([Using OpenSSL from $use_openssl/lib and $use_openssl/include])
+AC_SUBST(OPENSSL_INCLUDES)
+AC_SUBST(OPENSSL_LIBS)
 
 # Check for log4cplus
 log4cplus_path="yes"
@@ -1409,9 +1279,8 @@ dnl includes too
                  ${PYTHON_LDFLAGS}
                  ${PYTHON_LIB}
   Boost:         ${BOOST_INCLUDES}
-  Botan:         ${BOTAN_INCLUDES}
-                 ${BOTAN_LDFLAGS}
-                 ${BOTAN_LIBS}
+  OpenSSL:       ${OPENSSL_INCLUDES}
+                 ${OPENSSL_LIBS}
   Log4cplus:     ${LOG4CPLUS_INCLUDES}
                  ${LOG4CPLUS_LIBS}
   SQLite:        $SQLITE_CFLAGS

@@ -66,7 +66,7 @@ report-cpp-coverage:
 			c++/4.4\*/ext/\* \
 			c++/4.4\*/\*-\*/bits/\* \
 			boost/\* \
-			botan/\* \
+			openssl/\* \
 			ext/asio/\* \
 			ext/coroutine/\* \
 			gtest/\* \

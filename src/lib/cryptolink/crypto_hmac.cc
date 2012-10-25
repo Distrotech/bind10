@@ -17,47 +17,42 @@
 
 #include <boost/scoped_ptr.hpp>
 
-#include <botan/version.h>
-#include <botan/botan.h>
-#include <botan/hmac.h>
-#include <botan/hash.h>
-#include <botan/types.h>
+#include <openssl/hmac.h>
 
 #include <cstring>
 
 namespace {
-const char*
-getBotanHashAlgorithmName(isc::cryptolink::HashAlgorithm algorithm) {
+const EVP_MD*
+getOpenSSLHashAlgorithm(isc::cryptolink::HashAlgorithm algorithm) {
     switch (algorithm) {
     case isc::cryptolink::MD5:
-        return ("MD5");
+        return (EVP_md5());
         break;
     case isc::cryptolink::SHA1:
-        return ("SHA-1");
+        return (EVP_sha1());
         break;
     case isc::cryptolink::SHA256:
-        return ("SHA-256");
+        return (EVP_sha256());
         break;
     case isc::cryptolink::SHA224:
-        return ("SHA-224");
+        return (EVP_sha224());
         break;
     case isc::cryptolink::SHA384:
-        return ("SHA-384");
+        return (EVP_sha384());
         break;
     case isc::cryptolink::SHA512:
-        return ("SHA-512");
+        return (EVP_sha512());
         break;
     case isc::cryptolink::UNKNOWN_HASH:
-        return ("Unknown");
+        return (0);
         break;
     }
     // compiler should have prevented us to reach this, since we have
     // no default. But we need a return value anyway
-    return ("Unknown");
+    return (0);
 }
 
 } // local namespace
-
 
 namespace isc {
 namespace cryptolink {
@@ -66,145 +61,83 @@ class HMACImpl {
 public:
     explicit HMACImpl(const void* secret, size_t secret_len,
                       const HashAlgorithm hash_algorithm) {
-        Botan::HashFunction* hash;
-        try {
-            hash = Botan::get_hash(
-                getBotanHashAlgorithmName(hash_algorithm));
-        } catch (const Botan::Algorithm_Not_Found&) {
-            isc_throw(isc::cryptolink::UnsupportedAlgorithm,
+        const EVP_MD* algo = getOpenSSLHashAlgorithm(hash_algorithm);
+        if (algo == 0) {
+            isc_throw(UnsupportedAlgorithm,
                       "Unknown hash algorithm: " <<
                       static_cast<int>(hash_algorithm));
-        } catch (const Botan::Exception& exc) {
-            isc_throw(isc::cryptolink::LibraryError, exc.what());
+        }
+        if (secret_len == 0) {
+            isc_throw(BadKey, "Bad HMAC secret length: 0");
         }
 
-        hmac_.reset(new Botan::HMAC(hash));
+        md_.reset(new HMAC_CTX);
+        HMAC_CTX_init(md_.get());
 
-        // If the key length is larger than the block size, we hash the
-        // key itself first.
-        try {
-            // use a temp var so we don't have blocks spanning
-            // preprocessor directives
-#if BOTAN_VERSION_CODE >= BOTAN_VERSION_CODE_FOR(1,9,0)
-            size_t block_length = hash->hash_block_size();
-#elif BOTAN_VERSION_CODE >= BOTAN_VERSION_CODE_FOR(1,8,0)
-            size_t block_length = hash->HASH_BLOCK_SIZE;
-#else
-#error "Unsupported Botan version (need 1.8 or higher)"
-            // added to suppress irrelevant compiler errors
-            size_t block_length = 0;
-#endif
-            if (secret_len > block_length) {
-                Botan::SecureVector<Botan::byte> hashed_key =
-                    hash->process(static_cast<const Botan::byte*>(secret),
-                                  secret_len);
-                hmac_->set_key(hashed_key.begin(), hashed_key.size());
-            } else {
-                // Botan 1.8 considers len 0 a bad key. 1.9 does not,
-                // but we won't accept it anyway, and fail early
-                if (secret_len == 0) {
-                    isc_throw(BadKey, "Bad HMAC secret length: 0");
-                }
-                hmac_->set_key(static_cast<const Botan::byte*>(secret),
-                               secret_len);
-            }
-        } catch (const Botan::Invalid_Key_Length& ikl) {
-            isc_throw(BadKey, ikl.what());
-        } catch (const Botan::Exception& exc) {
-            isc_throw(isc::cryptolink::LibraryError, exc.what());
-        }
+        HMAC_Init_ex(md_.get(), secret,
+                     static_cast<int>(secret_len),
+                     algo, NULL);
     }
 
-    ~HMACImpl() { }
+  ~HMACImpl() { if (md_) HMAC_CTX_cleanup(md_.get()); }
 
     size_t getOutputLength() const {
-#if BOTAN_VERSION_CODE >= BOTAN_VERSION_CODE_FOR(1,9,0)
-        return (hmac_->output_length());
-#elif BOTAN_VERSION_CODE >= BOTAN_VERSION_CODE_FOR(1,8,0)
-        return (hmac_->OUTPUT_LENGTH);
-#else
-#error "Unsupported Botan version (need 1.8 or higher)"
-        // added to suppress irrelevant compiler errors
-        return 0;
-#endif
+        int size = HMAC_size(md_.get());
+        if (size < 0) {
+            isc_throw(isc::cryptolink::LibraryError, "EVP_MD_CTX_size");
+        }
+        return (static_cast<size_t>(size));
     }
 
     void update(const void* data, const size_t len) {
-        try {
-            hmac_->update(static_cast<const Botan::byte*>(data), len);
-        } catch (const Botan::Exception& exc) {
-            isc_throw(isc::cryptolink::LibraryError, exc.what());
-        }
+        HMAC_Update(md_.get(), static_cast<const unsigned char*>(data), len);
     }
 
     void sign(isc::util::OutputBuffer& result, size_t len) {
-        try {
-            Botan::SecureVector<Botan::byte> b_result(hmac_->final());
-
-            if (len == 0 || len > b_result.size()) {
-                len = b_result.size();
-            }
-            result.writeData(b_result.begin(), len);
-        } catch (const Botan::Exception& exc) {
-            isc_throw(isc::cryptolink::LibraryError, exc.what());
+        size_t size = getOutputLength();
+        std::vector<unsigned char> digest(size);
+        HMAC_Final(md_.get(), &digest[0], NULL);
+        if (len == 0 || len > size) {
+            len = size;
         }
+        result.writeData(&digest[0], len);
     }
 
     void sign(void* result, size_t len) {
-        try {
-            Botan::SecureVector<Botan::byte> b_result(hmac_->final());
-            size_t output_size = getOutputLength();
-            if (output_size > len) {
-                output_size = len;
-            }
-            std::memcpy(result, b_result.begin(), output_size);
-        } catch (const Botan::Exception& exc) {
-            isc_throw(isc::cryptolink::LibraryError, exc.what());
+        size_t size = getOutputLength();
+        std::vector<unsigned char> digest(size);
+        HMAC_Final(md_.get(), &digest[0], NULL);
+        if (len > size) {
+            len = size;
         }
+        std::memcpy(result, &digest[0], len);
     }
 
     std::vector<uint8_t> sign(size_t len) {
-        try {
-            Botan::SecureVector<Botan::byte> b_result(hmac_->final());
-            if (len == 0 || len > b_result.size()) {
-                return (std::vector<uint8_t>(b_result.begin(), b_result.end()));
-            } else {
-                return (std::vector<uint8_t>(b_result.begin(), &b_result[len]));
-            }
-        } catch (const Botan::Exception& exc) {
-            isc_throw(isc::cryptolink::LibraryError, exc.what());
+        size_t size = getOutputLength();
+        std::vector<unsigned char> digest(size);
+        HMAC_Final(md_.get(), &digest[0], NULL);
+        if (len != 0 && len < size) {
+            digest.resize(len);
         }
+        return (std::vector<uint8_t>(digest.begin(), digest.end()));
     }
 
-
     bool verify(const void* sig, size_t len) {
-        // Botan's verify_mac checks if len matches the output_length,
-        // which causes it to fail for truncated signatures, so we do
-        // the check ourselves
-        // SEE BELOW FOR TEMPORARY CHANGE
-        try {
-            Botan::SecureVector<Botan::byte> our_mac = hmac_->final();
-            if (len < getOutputLength()) {
-                // Currently we don't support truncated signature in TSIG (see
-                // #920).  To avoid validating too short signature accidently,
-                // we enforce the standard signature size for the moment.
-                // Once we support truncation correctly, this if-clause should
-                // (and the capitalized comment above) be removed.
-                return (false);
-            }
-            if (len == 0 || len > getOutputLength()) {
-                len = getOutputLength();
-            }
-            return (Botan::same_mem(&our_mac[0],
-                                    static_cast<const unsigned char*>(sig),
-                                    len));
-        } catch (const Botan::Exception& exc) {
-            isc_throw(isc::cryptolink::LibraryError, exc.what());
+        size_t size = getOutputLength();
+        if (len != 0 && len < size / 2) {
+            return (false);
         }
+        std::vector<unsigned char> digest(size);
+        HMAC_Final(md_.get(), &digest[0], NULL);
+        if (len == 0 || len > size) {
+            len = size;
+        }
+        return (std::memcmp(&digest[0], sig, len) == 0);
     }
 
 private:
-    boost::scoped_ptr<Botan::HMAC> hmac_;
+    boost::scoped_ptr<HMAC_CTX> md_;
 };
 
 HMAC::HMAC(const void* secret, size_t secret_length,

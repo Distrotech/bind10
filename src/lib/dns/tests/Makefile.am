@@ -69,16 +69,12 @@ run_unittests_SOURCES += tsigrecord_unittest.cc
 run_unittests_SOURCES += character_string_unittest.cc
 run_unittests_SOURCES += run_unittests.cc
 run_unittests_CPPFLAGS = $(AM_CPPFLAGS) $(GTEST_INCLUDES)
-# We shouldn't need to include BOTAN_LIBS here, but there
-# is one test system where the path for GTEST_LDFLAGS contains
-# an older version of botan, and somehow that version gets
-# linked if we don't
-run_unittests_LDFLAGS = $(BOTAN_LDFLAGS) $(GTEST_LDFLAGS) $(AM_LDFLAGS)
+run_unittests_LDFLAGS = $(OPENSSL_LDFLAGS) $(GTEST_LDFLAGS) $(AM_LDFLAGS)
 run_unittests_LDADD = $(top_builddir)/src/lib/dns/libb10-dns++.la
 run_unittests_LDADD += $(top_builddir)/src/lib/util/libb10-util.la
 run_unittests_LDADD += $(top_builddir)/src/lib/util/unittests/libutil_unittests.la
 run_unittests_LDADD += $(top_builddir)/src/lib/exceptions/libb10-exceptions.la
-run_unittests_LDADD += $(BOTAN_LIBS) $(GTEST_LDADD)
+run_unittests_LDADD += $(GTEST_LDADD)
 endif
 
 noinst_PROGRAMS = $(TESTS)

@@ -15,15 +15,12 @@
 #include <cryptolink/cryptolink.h>
 #include <cryptolink/crypto_hmac.h>
 
-#include <botan/botan.h>
-
 namespace isc {
 namespace cryptolink {
 
-// For Botan, we use the CryptoLink class object in RAII style
+// For OpenSSL, we use the CryptoLink class object in RAII style
 class CryptoLinkImpl {
-private:
-    Botan::LibraryInitializer botan_init_;
+    // empty class
 };
 
 CryptoLink::~CryptoLink() {
@@ -51,8 +48,8 @@ CryptoLink::initialize() {
     if (c.impl_ == NULL) {
         try {
             c.impl_ = new CryptoLinkImpl();
-        } catch (const Botan::Exception& ex) {
-            isc_throw(InitializationError, ex.what());
+        } catch (...) {
+            isc_throw(InitializationError, "");
         }
     }
 }

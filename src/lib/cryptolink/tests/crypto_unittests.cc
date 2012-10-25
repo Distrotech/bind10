@@ -243,6 +243,18 @@ TEST(CryptoLinkTest, HMAC_MD5_RFC2202_SIGN) {
                                        0x79 };
     doHMACTest(data4, secret4, 25, MD5, hmac_expected4, 16);
 
+    const uint8_t secret5[] = { 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c,
+                                0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c,
+                                0x0c, 0x0c, 0x0c, 0x0c };
+    const uint8_t hmac_expected5[] = { 0x56, 0x46, 0x1e, 0xf2, 0x34,
+                                       0x2e, 0xdc, 0x00, 0xf9, 0xba,
+                                       0xb9, 0x95, 0x69, 0x0e, 0xfd,
+                                       0x4c };
+    doHMACTest("Test With Truncation", secret5, 16, MD5,
+               hmac_expected5, 16);
+    doHMACTest("Test With Truncation", secret5, 16, MD5,
+               hmac_expected5, 12);
+
     const uint8_t hmac_expected6[] = { 0x6b, 0x1a, 0xb7, 0xfe, 0x4b,
                                        0xd7, 0xbf, 0x8f, 0x0b, 0x62,
                                        0xe6, 0xce, 0x61, 0xb9, 0xd0,
@@ -257,21 +269,6 @@ TEST(CryptoLinkTest, HMAC_MD5_RFC2202_SIGN) {
     doHMACTest("Test Using Larger Than Block-Size Key and Larger Than "
                "One Block-Size Data",
                std::string(80, 0xaa).c_str(), 80, MD5, hmac_expected7, 16);
-}
-
-// Temporarily disabled
-TEST(CryptoLinkTest, DISABLED_HMAC_MD5_RFC2202_SIGN_TRUNCATED) {
-    const uint8_t secret5[] = { 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c,
-                                0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c,
-                                0x0c, 0x0c, 0x0c, 0x0c };
-    const uint8_t hmac_expected5[] = { 0x56, 0x46, 0x1e, 0xf2, 0x34,
-                                       0x2e, 0xdc, 0x00, 0xf9, 0xba,
-                                       0xb9, 0x95, 0x69, 0x0e, 0xfd,
-                                       0x4c };
-    doHMACTest("Test With Truncation", secret5, 16, MD5,
-               hmac_expected5, 16);
-    doHMACTest("Test With Truncation", secret5, 16, MD5,
-               hmac_expected5, 12);
 }
 
 //
@@ -315,6 +312,19 @@ TEST(CryptoLinkTest, HMAC_SHA1_RFC2202_SIGN) {
                                        0x6c, 0x2d, 0x72, 0x35, 0xda };
     doHMACTest(std::string(50, 0xcd), secret4, 25, SHA1, hmac_expected4, 20);
 
+    const uint8_t secret5[] = { 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c,
+                                0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c,
+                                0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c,
+                                0x0c, 0x0c };
+    const uint8_t hmac_expected5[] = { 0x4c, 0x1a, 0x03, 0x42, 0x4b,
+                                       0x55, 0xe0, 0x7f, 0xe7, 0xf2,
+                                       0x7b, 0xe1, 0xd5, 0x8b, 0xb9,
+                                       0x32, 0x4a, 0x9a, 0x5a, 0x04 };
+    doHMACTest("Test With Truncation", secret5, 20, SHA1,
+               hmac_expected5, 20);
+    doHMACTest("Test With Truncation", secret5, 20, SHA1,
+               hmac_expected5, 12);
+
     const uint8_t hmac_expected6[] = { 0xaa, 0x4a, 0xe5, 0xe1, 0x52,
                                        0x72, 0xd0, 0x0e, 0x95, 0x70,
                                        0x56, 0x37, 0xce, 0x8a, 0x3b,
@@ -329,22 +339,6 @@ TEST(CryptoLinkTest, HMAC_SHA1_RFC2202_SIGN) {
     doHMACTest("Test Using Larger Than Block-Size Key and Larger Than "
                "One Block-Size Data",
                std::string(80, 0xaa).c_str(), 80, SHA1, hmac_expected7, 20);
-}
-
-// Temporarily disabled
-TEST(CryptoLinkTest, DISABLED_HMAC_SHA1_RFC2202_SIGN_TRUNCATED) {
-    const uint8_t secret5[] = { 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c,
-                                0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c,
-                                0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c,
-                                0x0c, 0x0c };
-    const uint8_t hmac_expected5[] = { 0x4c, 0x1a, 0x03, 0x42, 0x4b,
-                                       0x55, 0xe0, 0x7f, 0xe7, 0xf2,
-                                       0x7b, 0xe1, 0xd5, 0x8b, 0xb9,
-                                       0x32, 0x4a, 0x9a, 0x5a, 0x04 };
-    doHMACTest("Test With Truncation", secret5, 20, SHA1,
-               hmac_expected5, 20);
-    doHMACTest("Test With Truncation", secret5, 20, SHA1,
-               hmac_expected5, 12);
 }
 
 //
@@ -505,7 +499,7 @@ TEST(CryptoLinkTest, HMAC_SHA512_RFC4231_SIGN) {
     doRFC4231Tests(SHA512, hmac_expected_list);
 }
 
-TEST(CryptoLinkTest, DISABLED_HMAC_SHA256_RFC2202_SIGN_TRUNCATED) {
+TEST(CryptoLinkTest, HMAC_SHA256_RFC2202_SIGN_TRUNCATED) {
     const uint8_t secret5[] = { 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c,
                                 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c,
                                 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c,
