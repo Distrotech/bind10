@@ -52,6 +52,60 @@ getOpenSSLHashAlgorithm(isc::cryptolink::HashAlgorithm algorithm) {
     return (0);
 }
 
+template<typename T>
+struct SecBuf {
+public:
+    typedef typename std::vector<T>::iterator iterator;
+
+    typedef typename std::vector<T>::const_iterator const_iterator;
+
+    explicit SecBuf() : vec_(std::vector<T>()) {}
+
+    explicit SecBuf(size_t n, const T& value = T()) :
+        vec_(std::vector<T>(n, value))
+    {}
+
+    SecBuf(iterator first, iterator last) :
+        vec_(std::vector<T>(first, last))
+    {}
+
+    SecBuf(const_iterator first, const_iterator last) :
+        vec_(std::vector<T>(first, last))
+    {}
+
+    SecBuf(const std::vector<T>& x) : vec_(x) {}
+
+    ~SecBuf() {
+        std::memset(&vec_[0], 0, vec_.capacity() * sizeof(T));
+    };
+
+    iterator begin() { return (vec_.begin()); };
+
+    const_iterator begin() const { return (vec_.begin()); };
+
+    iterator end() { return (vec_.end()); };
+
+    const_iterator end() const { return (vec_.end()); };
+
+    size_t size() const { return (vec_.size()); };
+
+    void resize(size_t sz) { vec_.resize(sz); };
+
+    SecBuf& operator=(const SecBuf& x) {
+        if (&x != *this) {
+            vec_ = x.vec_;
+        }
+        return (*this);
+    };
+
+    T& operator[](size_t n) { return (vec_[n]); };
+
+    const T& operator[](size_t n) const { return (vec_[n]); };
+
+private:
+    std::vector<T> vec_;
+};
+
 } // local namespace
 
 namespace isc {
@@ -95,7 +149,7 @@ public:
 
     void sign(isc::util::OutputBuffer& result, size_t len) {
         size_t size = getOutputLength();
-        std::vector<unsigned char> digest(size);
+        SecBuf<unsigned char> digest(size);
         HMAC_Final(md_.get(), &digest[0], NULL);
         if (len == 0 || len > size) {
             len = size;
@@ -105,7 +159,7 @@ public:
 
     void sign(void* result, size_t len) {
         size_t size = getOutputLength();
-        std::vector<unsigned char> digest(size);
+        SecBuf<unsigned char> digest(size);
         HMAC_Final(md_.get(), &digest[0], NULL);
         if (len > size) {
             len = size;
@@ -115,7 +169,7 @@ public:
 
     std::vector<uint8_t> sign(size_t len) {
         size_t size = getOutputLength();
-        std::vector<unsigned char> digest(size);
+        SecBuf<unsigned char> digest(size);
         HMAC_Final(md_.get(), &digest[0], NULL);
         if (len != 0 && len < size) {
             digest.resize(len);
@@ -128,7 +182,7 @@ public:
         if (len != 0 && len < size / 2) {
             return (false);
         }
-        std::vector<unsigned char> digest(size);
+        SecBuf<unsigned char> digest(size);
         HMAC_Final(md_.get(), &digest[0], NULL);
         if (len == 0 || len > size) {
             len = size;
