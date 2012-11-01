@@ -390,7 +390,8 @@ public:
                               MutexType* map_mutex
         ) :
         command_queue_(command_queue), cond_(cond), queue_mutex_(queue_mutex),
-        clients_map_(clients_map), map_mutex_(map_mutex)
+        clients_map_(clients_map), map_mutex_(map_mutex),
+        auth_logger_(auth_logger.getName().c_str())
     {}
 
     /// \brief The main loop.
@@ -461,6 +462,8 @@ private:
     MutexType* queue_mutex_;
     datasrc::ClientListMapPtr* clients_map_;
     MutexType* map_mutex_;
+    // Thread needs a separate instance of the logger
+    isc::log::Logger auth_logger_;
 };
 
 // Shortcut typedef for normal use
@@ -524,7 +527,7 @@ DataSrcClientsBuilderBase<MutexType, CondVarType>::handleCommand(
     const boost::array<const char*, NUM_COMMANDS> command_desc = {
         {"NOOP", "RECONFIGURE", "LOADZONE", "SHUTDOWN"}
     };
-    LOG_DEBUG(auth_logger, DBGLVL_TRACE_BASIC,
+    LOG_DEBUG(auth_logger_, DBGLVL_TRACE_BASIC,
               AUTH_DATASRC_CLIENTS_BUILDER_COMMAND).arg(command_desc.at(cid));
     switch (command.first) {
     case RECONFIGURE:
@@ -587,7 +590,7 @@ DataSrcClientsBuilderBase<MutexType, CondVarType>::doLoadZone(
             typename MutexType::Locker locker(*map_mutex_);
             zwriter->install();
         }
-        LOG_DEBUG(auth_logger, DBG_AUTH_OPS,
+        LOG_DEBUG(auth_logger_, DBG_AUTH_OPS,
                   AUTH_DATASRC_CLIENTS_BUILDER_LOAD_ZONE)
             .arg(origin).arg(rrclass);
 
