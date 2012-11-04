@@ -500,12 +500,13 @@ public:
     //@}
 
 protected:
-    mutable unsigned int refcount_;
     virtual void destroy() const {
         delete this;
     }
 
 private:
+    mutable unsigned int refcount_;
+
     friend void intrusive_ptr_add_ref(const AbstractRRset* foo);
     friend void intrusive_ptr_release(const AbstractRRset* foo);
 };
