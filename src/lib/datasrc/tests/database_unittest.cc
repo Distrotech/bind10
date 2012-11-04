@@ -1193,9 +1193,9 @@ public:
      */
     void checkZoneFinder(const DataSourceClient::FindResult& zone) {
         ASSERT_NE(ZoneFinderPtr(), zone.zone_finder) << "No zone finder";
-        boost::shared_ptr<DatabaseClient::Finder> finder(
+        boost::intrusive_ptr<DatabaseClient::Finder> finder(
             dynamic_pointer_cast<DatabaseClient::Finder>(zone.zone_finder));
-        ASSERT_NE(boost::shared_ptr<DatabaseClient::Finder>(), finder) <<
+        ASSERT_NE(boost::intrusive_ptr<DatabaseClient::Finder>(), finder) <<
             "Wrong type of finder";
         if (is_mock_) {
             EXPECT_EQ(READONLY_ZONE_ID, finder->zone_id());
@@ -1203,10 +1203,10 @@ public:
         EXPECT_EQ(current_accessor_, &finder->getAccessor());
     }
 
-    boost::shared_ptr<DatabaseClient::Finder> getFinder() {
+    boost::intrusive_ptr<DatabaseClient::Finder> getFinder() {
         DataSourceClient::FindResult zone(client_->findZone(zname_));
         EXPECT_EQ(result::SUCCESS, zone.code);
-        boost::shared_ptr<DatabaseClient::Finder> finder(
+        boost::intrusive_ptr<DatabaseClient::Finder> finder(
             dynamic_pointer_cast<DatabaseClient::Finder>(zone.zone_finder));
         if (is_mock_) {
             EXPECT_EQ(READONLY_ZONE_ID, finder->zone_id());
@@ -1297,7 +1297,7 @@ public:
     const std::string database_name_;
 
     // The zone finder of the test zone commonly used in various tests.
-    boost::shared_ptr<DatabaseClient::Finder> finder_;
+    boost::intrusive_ptr<DatabaseClient::Finder> finder_;
 
     // Some shortcut variables for commonly used test parameters
     const Name zname_; // the zone name stored in the test data source
@@ -1835,7 +1835,7 @@ TEST_F(MockDatabaseClientTest, ttldiff_separate_rrs) {
 }
 
 TYPED_TEST(DatabaseClientTest, find) {
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
 
     this->expected_rdatas_.clear();
     this->expected_sig_rdatas_.clear();
@@ -2075,7 +2075,7 @@ TYPED_TEST(DatabaseClientTest, find) {
 
 TYPED_TEST(DatabaseClientTest, findOutOfZone) {
     // If the query name is out-of-zone it should result in an exception
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
     vector<ConstRRsetPtr> target;
 
     // Superdomain
@@ -2101,7 +2101,7 @@ TYPED_TEST(DatabaseClientTest, findOutOfZone) {
 }
 
 TYPED_TEST(DatabaseClientTest, findDelegation) {
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
 
     // The apex should not be considered delegation point and we can access
     // data
@@ -2234,7 +2234,7 @@ TYPED_TEST(DatabaseClientTest, findDS) {
     // should be ignored and it should be treated just like normal
     // authoritative data.
 
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
 
     // DS exists at the delegation point.  It should be returned with result
     // code of SUCCESS.
@@ -2272,7 +2272,7 @@ TYPED_TEST(DatabaseClientTest, findDS) {
 }
 
 TYPED_TEST(DatabaseClientTest, emptyDomain) {
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
 
     // This domain doesn't exist, but a subdomain of it does.
     // Therefore we should pretend the domain is there, but contains no RRsets
@@ -2284,7 +2284,7 @@ TYPED_TEST(DatabaseClientTest, emptyDomain) {
 // Glue-OK mode. Just go through NS delegations down (but not through
 // DNAME) and pretend it is not there.
 TYPED_TEST(DatabaseClientTest, glueOK) {
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
 
     this->expected_rdatas_.clear();
     this->expected_sig_rdatas_.clear();
@@ -2345,7 +2345,7 @@ TYPED_TEST(DatabaseClientTest, glueOK) {
 }
 
 TYPED_TEST(DatabaseClientTest, wildcard) {
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
 
     // First, simple wildcard match
     // Check also that the RRSIG is added from the wildcard (not modified)
@@ -2517,7 +2517,7 @@ TYPED_TEST(DatabaseClientTest, wildcard) {
 TYPED_TEST(DatabaseClientTest, noWildcard) {
     // Tests with the NO_WILDCARD flag.
 
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
 
     // This would match *.wild.example.org, but with NO_WILDCARD should
     // result in NXDOMAIN.
@@ -2582,7 +2582,7 @@ TYPED_TEST(DatabaseClientTest, noWildcard) {
 TYPED_TEST(DatabaseClientTest, NXRRSET_NSEC) {
     // The domain exists, but doesn't have this RRType
     // So we should get its NSEC
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
 
     this->expected_rdatas_.push_back("www2.example.org. A AAAA NSEC RRSIG");
     this->expected_sig_rdatas_.push_back("NSEC 5 3 3600 20000101000000 "
@@ -2602,7 +2602,7 @@ TYPED_TEST(DatabaseClientTest, wildcardNXRRSET_NSEC) {
     //
     // The user will have to query us again to get the correct
     // answer (eg. prove there's not an exact match)
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
 
     this->expected_rdatas_.push_back("cancel.here.wild.example.org. A NSEC "
                                      "RRSIG");
@@ -2780,7 +2780,7 @@ TYPED_TEST(DatabaseClientTest, dnssecResultFlags) {
 
 TYPED_TEST(DatabaseClientTest, NXDOMAIN_NSEC) {
     // The domain doesn't exist, so we must get the right NSEC
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
     this->expected_rdatas_.push_back("www2.example.org. A AAAA NSEC RRSIG");
     this->expected_sig_rdatas_.push_back("NSEC 5 3 3600 20000101000000 "
                                          "20000201000000 12345 example.org. "
@@ -2818,7 +2818,7 @@ TYPED_TEST(DatabaseClientTest, NXDOMAIN_NSEC) {
 
 TYPED_TEST(DatabaseClientTest, emptyNonterminalNSEC) {
     // Same as NXDOMAIN_NSEC, but with empty non-terminal
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
 
     this->expected_rdatas_.push_back("empty.nonterminal.example.org. NSEC");
     doFindTest(*finder, isc::dns::Name("nonterminal.example.org."),
@@ -2851,7 +2851,7 @@ TYPED_TEST(DatabaseClientTest, findRRSIGsWithoutDNSSEC) {
     // Trying to find RRSIG records directly should work even if
     // FIND_DNSSEC flag is not specified.
 
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
     ConstZoneFinderContextPtr result =
         finder->find(isc::dns::Name("signed1.example.org."), RRType::RRSIG());
 
@@ -2879,7 +2879,7 @@ TYPED_TEST(DatabaseClientTest, findRRSIGsWithoutDNSSEC) {
 // Test the findAll method.
 TYPED_TEST(DatabaseClientTest, getAll) {
     // The domain doesn't exist, so we must get the right NSEC
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
 
     // It should act the same on the "failures"
     std::vector<ConstRRsetPtr> target;
@@ -2972,7 +2972,7 @@ TYPED_TEST(DatabaseClientTest, getOrigin) {
     DataSourceClient::FindResult
         zone(this->client_->findZone(Name("example.org")));
     ASSERT_EQ(result::SUCCESS, zone.code);
-    boost::shared_ptr<DatabaseClient::Finder> finder(
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(
         dynamic_pointer_cast<DatabaseClient::Finder>(zone.zone_finder));
     if (this->is_mock_) {
         EXPECT_EQ(READONLY_ZONE_ID, finder->zone_id());
@@ -3014,7 +3014,7 @@ TYPED_TEST(DatabaseClientTest, updaterFinder) {
 
 TYPED_TEST(DatabaseClientTest, flushZone) {
     // A simple update case: flush the entire zone
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
 
     // Before update, the name exists.
     EXPECT_EQ(ZoneFinder::SUCCESS, finder->find(this->qname_,
@@ -3223,7 +3223,7 @@ TYPED_TEST(DatabaseClientTest, addDeleteNSEC3AndRRSIGToZone) {
 
 TYPED_TEST(DatabaseClientTest, addRRsetToCurrentZone) {
     // Similar to the previous test, but not replacing the existing data.
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
 
     this->updater_ = this->client_->getUpdater(this->zname_, false);
     this->updater_->addRRset(*this->rrset_);
@@ -3380,7 +3380,7 @@ TYPED_TEST(DatabaseClientTest, addRRsetWithRRSIG) {
 }
 
 TYPED_TEST(DatabaseClientTest, deleteRRset) {
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
 
     this->rrset_.reset(new RRset(this->qname_, this->qclass_, this->qtype_,
                                  this->rrttl_));
@@ -3652,7 +3652,7 @@ TYPED_TEST(DatabaseClientTest, compoundUpdate) {
 
     // Commit the changes, confirm the entire changes applied.
     this->updater_->commit();
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
     this->expected_rdatas_.clear();
     this->expected_rdatas_.push_back("192.0.2.2");
     this->expected_rdatas_.push_back("192.0.2.1");
@@ -3668,7 +3668,7 @@ TYPED_TEST(DatabaseClientTest, compoundUpdate) {
 }
 
 TYPED_TEST(DatabaseClientTest, invalidRdata) {
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
 
     EXPECT_THROW(finder->find(Name("invalidrdata.example.org."),
                               RRType::A()),
@@ -3679,7 +3679,7 @@ TYPED_TEST(DatabaseClientTest, invalidRdata) {
 }
 
 TEST_F(MockDatabaseClientTest, missingNSEC) {
-    boost::shared_ptr<DatabaseClient::Finder> finder(this->getFinder());
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(this->getFinder());
 
     /*
      * FIXME: For now, we can't really distinguish this bogus input
@@ -4079,7 +4079,7 @@ TYPED_TEST(DatabaseClientTest, findNSEC3) {
     const DataSourceClient::FindResult
         zone(this->client_->findZone(Name("example.org")));
     ASSERT_EQ(result::SUCCESS, zone.code);
-    boost::shared_ptr<DatabaseClient::Finder> finder(
+    boost::intrusive_ptr<DatabaseClient::Finder> finder(
         dynamic_pointer_cast<DatabaseClient::Finder>(zone.zone_finder));
 
     // It'll complain if there is no NSEC3PARAM yet

@@ -196,6 +196,7 @@ private:
     const isc::dns::RRClass rrclass_;
     unsigned int zone_count_;
     FileNameTree* file_name_tree_;
+    mutable boost::pool<> finder_pool_;
     mutable boost::pool<> rrset_pool_;
     boost::scoped_ptr<boost::pool<> > finder_context_pool_;
 };

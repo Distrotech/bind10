@@ -712,7 +712,30 @@ public:
     virtual FindNSEC3Result
     findNSEC3(const isc::dns::Name& name, bool recursive) = 0;
     //@}
+
+protected:
+    virtual void destroy() const {
+        delete this;
+    }
+
+private:
+    mutable unsigned int refcount_;
+
+    friend void intrusive_ptr_add_ref(const ZoneFinder* foo);
+    friend void intrusive_ptr_release(const ZoneFinder* foo);
 };
+
+inline void
+intrusive_ptr_add_ref(const ZoneFinder* finder) {
+    ++finder->refcount_;
+}
+
+inline void
+intrusive_ptr_release(const ZoneFinder* finder) {
+    if (--finder->refcount_ == 0) {
+        finder->destroy();
+    }
+}
 
 /// \brief Operator to combine FindOptions
 ///
@@ -740,10 +763,10 @@ inline ZoneFinder::FindResultFlags operator |(
 }
 
 /// \brief A pointer-like type pointing to a \c ZoneFinder object.
-typedef boost::shared_ptr<ZoneFinder> ZoneFinderPtr;
+typedef boost::intrusive_ptr<ZoneFinder> ZoneFinderPtr;
 
 /// \brief A pointer-like type pointing to an immutable \c ZoneFinder object.
-typedef boost::shared_ptr<const ZoneFinder> ConstZoneFinderPtr;
+typedef boost::intrusive_ptr<const ZoneFinder> ConstZoneFinderPtr;
 
 /// \brief A pointer-like type pointing to a \c ZoneFinder::Context object.
 typedef boost::intrusive_ptr<ZoneFinder::Context> ZoneFinderContextPtr;

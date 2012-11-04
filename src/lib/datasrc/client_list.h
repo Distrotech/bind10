@@ -19,6 +19,7 @@
 
 #include <dns/name.h>
 #include <dns/rrclass.h>
+#include <datasrc/zone.h>
 #include <cc/data.h>
 #include <exceptions/exceptions.h>
 #include "memory/zone_table_segment.h"
@@ -31,8 +32,6 @@
 namespace isc {
 namespace datasrc {
 
-class ZoneFinder;
-typedef boost::shared_ptr<ZoneFinder> ZoneFinderPtr;
 class DataSourceClient;
 typedef boost::shared_ptr<DataSourceClient> DataSourceClientPtr;
 class DataSourceClientContainer;

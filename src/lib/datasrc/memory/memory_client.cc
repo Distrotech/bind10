@@ -74,6 +74,7 @@ InMemoryClient::InMemoryClient(shared_ptr<ZoneTableSegment> ztable_segment,
     zone_count_(0),
     file_name_tree_(FileNameTree::create(
                         ztable_segment_->getMemorySegment(), false)),
+    finder_pool_(sizeof(InMemoryZoneFinder), 1),
     rrset_pool_(sizeof(TreeNodeRRset), 128, 6400),
     finder_context_pool_(InMemoryZoneFinder::createContextPool())
 {}
@@ -149,14 +150,18 @@ InMemoryClient::findZone(const isc::dns::Name& zone_name) const {
     const ZoneTable* zone_table = ztable_segment_->getHeader().getTable();
     const ZoneTable::FindResult result(zone_table->findZone(zone_name));
 
-    ZoneFinderPtr finder;
     if (result.code != result::NOTFOUND) {
-        finder.reset(new InMemoryZoneFinder(*result.zone_data, getClass(),
-                                            rrset_pool_,
-                                            *finder_context_pool_));
+        void* p = finder_pool_.malloc();
+        return (DataSourceClient::FindResult(
+                    result.code,
+                    new(p) InMemoryZoneFinder(*result.zone_data,
+                                              getClass(),
+                                              &finder_pool_,
+                                              rrset_pool_,
+                                              *finder_context_pool_)));
     }
 
-    return (DataSourceClient::FindResult(result.code, finder));
+    return (DataSourceClient::FindResult(result.code, ZoneFinderPtr()));
 }
 
 const ZoneData*

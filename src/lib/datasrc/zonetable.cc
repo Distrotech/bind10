@@ -71,7 +71,8 @@ struct ZoneTable::ZoneTableImpl {
 
         // Is it empty? We either just created it or it might be nonterminal
         if (node->isEmpty()) {
-            node->setData(zone);
+            // XXX type mismatch
+            //node->setData(zone);
             return (result::SUCCESS);
         } else { // There's something there already
             return (result::EXIST);
@@ -104,7 +105,9 @@ struct ZoneTable::ZoneTableImpl {
         // Can Not Happen (remember, NOTFOUND is handled)
         assert(node);
 
-        return (FindResult(my_result, node->getData()));
+        // XXX: type mismatch, doesn't work
+        //return (FindResult(my_result, node->getData()));
+        return (FindResult(result::NOTFOUND, ZoneFinderPtr()));
     }
 };
 

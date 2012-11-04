@@ -996,6 +996,13 @@ InMemoryZoneFinder::getOrigin() const {
     return (Name(buffer));
 }
 
+void
+InMemoryZoneFinder::destroy() const {
+    boost::pool<>* pool = pool_;
+    this->~InMemoryZoneFinder();
+    pool->free(const_cast<void*>(static_cast<const void*>(this)));
+}
+
 boost::pool<>*
 InMemoryZoneFinder::createContextPool() {
     return (new boost::pool<>(sizeof(InMemoryZoneFinder::Context), 2));

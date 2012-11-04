@@ -24,6 +24,7 @@
 
 #include <boost/foreach.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/intrusive_ptr.hpp>
 
 #include <string>
 
@@ -221,7 +222,7 @@ applyConfig(isc::datasrc::InMemoryClient& client,
                       ex.what());
         }
 
-        boost::shared_ptr<InMemoryZoneFinder> zone_finder(imzf);
+        boost::intrusive_ptr<InMemoryZoneFinder> zone_finder(imzf);
         const result::Result result = client.addZone(zone_finder);
         if (result == result::EXIST) {
             isc_throw(InMemoryConfigError, "zone "<< origin->str()

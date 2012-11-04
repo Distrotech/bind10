@@ -154,7 +154,7 @@ TEST_F(InMemoryClientTest, add_find_Zone) {
 
 TEST_F(InMemoryClientTest, iterator) {
     // Just some preparations of data
-    boost::shared_ptr<InMemoryZoneFinder>
+    boost::intrusive_ptr<InMemoryZoneFinder>
         zone(new InMemoryZoneFinder(RRClass::IN(), Name("a")));
     RRsetPtr aRRsetA(new RRset(Name("a"), RRClass::IN(), RRType::A(),
                                   RRTTL(300)));
@@ -201,7 +201,7 @@ TEST_F(InMemoryClientTest, iterator) {
 TEST_F(InMemoryClientTest, iterator_separate_rrs) {
     // Exactly the same tests as for iterator, but now with separate_rrs = true
     // For the one that returns actual data, the AAAA should now be split up
-    boost::shared_ptr<InMemoryZoneFinder>
+    boost::intrusive_ptr<InMemoryZoneFinder>
         zone(new InMemoryZoneFinder(RRClass::IN(), Name("a")));
     RRsetPtr aRRsetA(new RRset(Name("a"), RRClass::IN(), RRType::A(),
                                   RRTTL(300)));

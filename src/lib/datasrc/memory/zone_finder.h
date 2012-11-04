@@ -52,10 +52,12 @@ public:
     /// \param rrclass The RR class of the zone
     InMemoryZoneFinder(const ZoneData& zone_data,
                        const isc::dns::RRClass& rrclass,
+                       boost::pool<>* pool,
                        boost::pool<>& rrset_pool,
                        boost::pool<>& context_pool)
         : zone_data_(zone_data),
           rrclass_(rrclass),
+          pool_(pool),
           rrset_pool_(rrset_pool),
           context_pool_(context_pool)
     {}
@@ -92,6 +94,9 @@ public:
 
     static boost::pool<>* createContextPool();
 
+protected:
+    virtual void destroy() const;
+
 private:
     /// \brief In-memory version of finder context.
     ///
@@ -110,6 +115,7 @@ private:
 
     const ZoneData& zone_data_;
     const isc::dns::RRClass rrclass_;
+    boost::pool<>* pool_;
     boost::pool<>& rrset_pool_;
     boost::pool<>& context_pool_;
 };

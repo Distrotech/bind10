@@ -18,6 +18,8 @@
 #include <cc/data.h>
 #include <dns/rrclass.h>
 
+#include <boost/intrusive_ptr.hpp>
+
 #include <memory>
 #include <exception>
 
@@ -35,7 +37,7 @@ createInstance(ConstElementPtr config, string& error) {
         // Create the data source
         auto_ptr<InMemoryClient> client(new InMemoryClient());
         // Hardcode the origin and class
-        shared_ptr<InMemoryZoneFinder>
+        boost::intrusive_ptr<InMemoryZoneFinder>
             finder(new InMemoryZoneFinder(RRClass::CH(), Name("BIND")));
         // Fill it with data
         const string path(config->stringValue());

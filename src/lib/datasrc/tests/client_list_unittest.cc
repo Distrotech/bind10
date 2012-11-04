@@ -316,7 +316,7 @@ public:
         EXPECT_NE(shared_ptr<ClientList::FindResult::LifeKeeper>(),
                   result.life_keeper_);
         if (from_cache) {
-            EXPECT_NE(shared_ptr<InMemoryZoneFinder>(),
+            EXPECT_NE(boost::intrusive_ptr<InMemoryZoneFinder>(),
                       boost::dynamic_pointer_cast<InMemoryZoneFinder>(
                           result.finder_)) << "Finder is not from cache";
             EXPECT_TRUE(NULL !=
