@@ -73,7 +73,8 @@ InMemoryClient::InMemoryClient(shared_ptr<ZoneTableSegment> ztable_segment,
     rrclass_(rrclass),
     zone_count_(0),
     file_name_tree_(FileNameTree::create(
-        ztable_segment_->getMemorySegment(), false))
+                        ztable_segment_->getMemorySegment(), false)),
+    rrset_pool_(sizeof(TreeNodeRRset), 128, 6400)
 {}
 
 InMemoryClient::~InMemoryClient() {
@@ -149,7 +150,8 @@ InMemoryClient::findZone(const isc::dns::Name& zone_name) const {
 
     ZoneFinderPtr finder;
     if (result.code != result::NOTFOUND) {
-        finder.reset(new InMemoryZoneFinder(*result.zone_data, getClass()));
+        finder.reset(new InMemoryZoneFinder(*result.zone_data, getClass(),
+                                            rrset_pool_));
     }
 
     return (DataSourceClient::FindResult(result.code, finder));

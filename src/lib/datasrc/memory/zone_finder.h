@@ -23,6 +23,8 @@
 #include <dns/rrset.h>
 #include <dns/rrtype.h>
 
+#include <boost/pool/pool.hpp>
+
 #include <string>
 
 namespace isc {
@@ -49,9 +51,11 @@ public:
     /// \param zone_data The ZoneData containing the zone.
     /// \param rrclass The RR class of the zone
     InMemoryZoneFinder(const ZoneData& zone_data,
-                       const isc::dns::RRClass& rrclass) :
-        zone_data_(zone_data),
-        rrclass_(rrclass)
+                       const isc::dns::RRClass& rrclass,
+                       boost::pool<>& rrset_pool)
+        : zone_data_(zone_data),
+          rrclass_(rrclass),
+          rrset_pool_(rrset_pool)
     {}
 
     /// \brief Find an RRset in the datasource
@@ -96,11 +100,13 @@ private:
         const isc::dns::Name& name,
         const isc::dns::RRType& type,
         std::vector<isc::dns::ConstRRsetPtr>* target,
+        boost::pool<>& rrset_pool,
         const FindOptions options =
         FIND_DEFAULT);
 
     const ZoneData& zone_data_;
     const isc::dns::RRClass rrclass_;
+    boost::pool<>& rrset_pool_;
 };
 
 } // namespace memory

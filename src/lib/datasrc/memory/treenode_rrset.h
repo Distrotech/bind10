@@ -30,6 +30,7 @@
 
 #include <boost/noncopyable.hpp>
 #include <boost/intrusive_ptr.hpp>
+#include <boost/pool/pool.hpp>
 
 #include <string>
 
@@ -113,7 +114,17 @@ public:
                   const RdataSet* rdataset, bool dnssec_ok) :
         node_(node), rdataset_(rdataset),
         rrsig_count_(rdataset_->getSigRdataCount()), rrclass_(rrclass),
-        dnssec_ok_(dnssec_ok), name_(NULL), realname_(NULL), ttl_(NULL)
+        dnssec_ok_(dnssec_ok), name_(NULL), realname_(NULL), ttl_(NULL),
+        pool_(NULL)
+    {}
+
+    TreeNodeRRset(const dns::RRClass& rrclass, const ZoneNode* node,
+                  const RdataSet* rdataset, bool dnssec_ok,
+                  boost::pool<>* pool) :
+        node_(node), rdataset_(rdataset),
+        rrsig_count_(rdataset_->getSigRdataCount()), rrclass_(rrclass),
+        dnssec_ok_(dnssec_ok), name_(NULL), realname_(NULL), ttl_(NULL),
+        pool_(pool)
     {}
 
     /// \brief Constructor for wildcard-expanded owner name.
@@ -134,7 +145,16 @@ public:
         node_(node), rdataset_(rdataset),
         rrsig_count_(rdataset_->getSigRdataCount()), rrclass_(rrclass),
         dnssec_ok_(dnssec_ok), name_(NULL), realname_(new dns::Name(realname)),
-	ttl_(NULL)
+	ttl_(NULL), pool_(NULL)
+    {}
+
+    TreeNodeRRset(const dns::Name& realname, const dns::RRClass& rrclass,
+                  const ZoneNode* node, const RdataSet* rdataset,
+                  bool dnssec_ok, boost::pool<>* pool) :
+        node_(node), rdataset_(rdataset),
+        rrsig_count_(rdataset_->getSigRdataCount()), rrclass_(rrclass),
+        dnssec_ok_(dnssec_ok), name_(NULL), realname_(new dns::Name(realname)),
+	ttl_(NULL), pool_(pool)
     {}
 
     virtual ~TreeNodeRRset() {
@@ -260,6 +280,7 @@ private:
     mutable dns::Name* name_;
     const dns::Name* const realname_;
     mutable dns::RRTTL* ttl_;
+    boost::pool<>* pool_;
 };
 
 typedef boost::intrusive_ptr<TreeNodeRRset> TreeNodeRRsetPtr;

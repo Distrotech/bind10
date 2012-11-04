@@ -23,6 +23,7 @@
 #include <datasrc/memory/zone_data.h>
 
 #include <boost/shared_ptr.hpp>
+#include <boost/pool/pool.hpp>
 
 #include <string>
 
@@ -194,6 +195,7 @@ private:
     const isc::dns::RRClass rrclass_;
     unsigned int zone_count_;
     FileNameTree* file_name_tree_;
+    mutable boost::pool<> rrset_pool_;
 };
 
 } // namespace memory

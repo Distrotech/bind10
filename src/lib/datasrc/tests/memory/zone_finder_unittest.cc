@@ -23,12 +23,14 @@
 #include "../../tests/faked_nsec3.h"
 
 #include <datasrc/memory/zone_finder.h>
+#include <datasrc/memory/treenode_rrset.h>
 #include <datasrc/memory/zone_data_updater.h>
 #include <datasrc/memory/rdata_serialization.h>
 #include <datasrc/data_source.h>
 #include <testutils/dnsmessage_test.h>
 
 #include <boost/foreach.hpp>
+#include <boost/pool/pool.hpp>
 
 #include <gtest/gtest.h>
 
@@ -106,7 +108,8 @@ public:
         class_(RRClass::IN()),
         origin_("example.org"),
         zone_data_(ZoneData::create(mem_sgmt_, origin_)),
-        zone_finder_(*zone_data_, class_),
+        rrset_pool_(sizeof(TreeNodeRRset)),
+        zone_finder_(*zone_data_, class_, rrset_pool_),
         updater_(mem_sgmt_, class_, origin_, *zone_data_)
     {
         // Build test RRsets.  Below, we construct an RRset for
@@ -202,6 +205,7 @@ public:
     // The zone finder to torture by tests
     MemorySegmentTest mem_sgmt_;
     memory::ZoneData* zone_data_;
+    boost::pool<> rrset_pool_;
     memory::InMemoryZoneFinder zone_finder_;
     ZoneDataUpdater updater_;
 

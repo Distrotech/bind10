@@ -28,6 +28,7 @@
 #include "rdata_serialization.h"
 
 #include <boost/bind.hpp>
+#include <boost/pool/pool.hpp>
 
 #include <cassert>
 #include <string>
@@ -364,7 +365,14 @@ TreeNodeRRset::isSameKind(const AbstractRRset& abs_other) const {
 
 void
 TreeNodeRRset::destroy() const {
-    delete this;
+    if (pool_ != NULL) {
+        const void* p = this;
+        boost::pool<>* pool = pool_;
+        this->~TreeNodeRRset();
+        pool->free(const_cast<void*>(p));
+    } else {
+        delete this;
+    }
 }
 
 } // namespace memory
