@@ -58,14 +58,14 @@ public:
         RRClass getClass() const {
             isc_throw(isc::NotImplemented, "Not implemented");
         }
-        shared_ptr<Context> find(const Name&, const RRType&,
-                                 const FindOptions)
+        ZoneFinderContextPtr find(const Name&, const RRType&,
+                                  const FindOptions)
         {
             isc_throw(isc::NotImplemented, "Not implemented");
         }
-        shared_ptr<Context> findAll(const Name&,
-                                    vector<ConstRRsetPtr>&,
-                                    const FindOptions)
+        ZoneFinderContextPtr findAll(const Name&,
+                                     vector<ConstRRsetPtr>&,
+                                     const FindOptions)
         {
             isc_throw(isc::NotImplemented, "Not implemented");
         }

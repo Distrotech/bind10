@@ -21,6 +21,8 @@
 
 #include <datasrc/result.h>
 
+#include <boost/intrusive_ptr.hpp>
+
 #include <utility>
 #include <vector>
 
@@ -186,7 +188,7 @@ public:
         /// \param result The result of the find() call.
         Context(FindOptions options, const ResultContext& result) :
             code(result.code), rrset(result.rrset),
-            flags_(result.flags), options_(options)
+            flags_(result.flags), options_(options), refcount_(0)
         {}
 
         /// \brief The destructor.
@@ -315,6 +317,17 @@ public:
         const FindResultFlags flags_;
     protected:
         const FindOptions options_;
+
+    protected:
+        virtual void destroy() const {
+            delete this;
+        }
+
+    private:
+        mutable unsigned int refcount_;
+
+        friend void intrusive_ptr_add_ref(const Context* foo);
+        friend void intrusive_ptr_release(const Context* foo);
     };
 
     /// \brief Generic ZoneFinder context that works for all implementations.
@@ -572,10 +585,10 @@ public:
     /// \param options The search options.
     /// \return A \c FindContext object enclosing the search result
     ///         (see above).
-    virtual boost::shared_ptr<Context> find(const isc::dns::Name& name,
-                                            const isc::dns::RRType& type,
-                                            const FindOptions options
-                                            = FIND_DEFAULT) = 0;
+    virtual boost::intrusive_ptr<Context> find(const isc::dns::Name& name,
+                                               const isc::dns::RRType& type,
+                                               const FindOptions options
+                                               = FIND_DEFAULT) = 0;
 
     ///
     /// \brief Finds all RRsets in the given name.
@@ -593,7 +606,7 @@ public:
     /// \param target the successfull result is returned through this
     /// \param options \see find, parameter options
     /// \return \see find and it's result
-    virtual boost::shared_ptr<Context> findAll(
+    virtual boost::intrusive_ptr<Context> findAll(
         const isc::dns::Name& name,
         std::vector<isc::dns::ConstRRsetPtr> &target,
         const FindOptions options = FIND_DEFAULT) = 0;
@@ -733,11 +746,23 @@ typedef boost::shared_ptr<ZoneFinder> ZoneFinderPtr;
 typedef boost::shared_ptr<const ZoneFinder> ConstZoneFinderPtr;
 
 /// \brief A pointer-like type pointing to a \c ZoneFinder::Context object.
-typedef boost::shared_ptr<ZoneFinder::Context> ZoneFinderContextPtr;
+typedef boost::intrusive_ptr<ZoneFinder::Context> ZoneFinderContextPtr;
 
 /// \brief A pointer-like type pointing to an immutable
 /// \c ZoneFinder::Context object.
-typedef boost::shared_ptr<ZoneFinder::Context> ConstZoneFinderContextPtr;
+typedef boost::intrusive_ptr<ZoneFinder::Context> ConstZoneFinderContextPtr;
+
+inline void
+intrusive_ptr_add_ref(const ZoneFinder::Context* context) {
+    ++context->refcount_;
+}
+
+inline void
+intrusive_ptr_release(const ZoneFinder::Context* context) {
+    if (--context->refcount_ == 0) {
+        context->destroy();
+    }
+}
 
 /// The base class to make updates to a single zone.
 ///

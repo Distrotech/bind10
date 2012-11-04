@@ -52,14 +52,16 @@ public:
     /// \param rrclass The RR class of the zone
     InMemoryZoneFinder(const ZoneData& zone_data,
                        const isc::dns::RRClass& rrclass,
-                       boost::pool<>& rrset_pool)
+                       boost::pool<>& rrset_pool,
+                       boost::pool<>& context_pool)
         : zone_data_(zone_data),
           rrclass_(rrclass),
-          rrset_pool_(rrset_pool)
+          rrset_pool_(rrset_pool),
+          context_pool_(context_pool)
     {}
 
     /// \brief Find an RRset in the datasource
-    virtual boost::shared_ptr<ZoneFinder::Context> find(
+    virtual ZoneFinderContextPtr find(
         const isc::dns::Name& name,
         const isc::dns::RRType& type,
         const FindOptions options = FIND_DEFAULT);
@@ -69,7 +71,7 @@ public:
     /// It acts the same as find, just that when the correct node is found,
     /// all the RRsets are filled into the target parameter instead of being
     /// returned by the result.
-    virtual boost::shared_ptr<ZoneFinder::Context> findAll(
+    virtual ZoneFinderContextPtr findAll(
         const isc::dns::Name& name,
         std::vector<isc::dns::ConstRRsetPtr>& target,
         const FindOptions options = FIND_DEFAULT);
@@ -87,6 +89,8 @@ public:
     virtual isc::dns::RRClass getClass() const {
         return (rrclass_);
     }
+
+    static boost::pool<>* createContextPool();
 
 private:
     /// \brief In-memory version of finder context.
@@ -107,6 +111,7 @@ private:
     const ZoneData& zone_data_;
     const isc::dns::RRClass rrclass_;
     boost::pool<>& rrset_pool_;
+    boost::pool<>& context_pool_;
 };
 
 } // namespace memory

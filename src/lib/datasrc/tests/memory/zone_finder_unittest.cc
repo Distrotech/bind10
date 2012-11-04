@@ -109,7 +109,8 @@ public:
         origin_("example.org"),
         zone_data_(ZoneData::create(mem_sgmt_, origin_)),
         rrset_pool_(sizeof(TreeNodeRRset)),
-        zone_finder_(*zone_data_, class_, rrset_pool_),
+        context_pool_(memory::InMemoryZoneFinder::createContextPool()),
+        zone_finder_(*zone_data_, class_, rrset_pool_, *context_pool_),
         updater_(mem_sgmt_, class_, origin_, *zone_data_)
     {
         // Build test RRsets.  Below, we construct an RRset for
@@ -206,6 +207,7 @@ public:
     MemorySegmentTest mem_sgmt_;
     memory::ZoneData* zone_data_;
     boost::pool<> rrset_pool_;
+    boost::shared_ptr<boost::pool<> > context_pool_;
     memory::InMemoryZoneFinder zone_finder_;
     ZoneDataUpdater updater_;
 

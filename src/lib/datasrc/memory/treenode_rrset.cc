@@ -366,10 +366,9 @@ TreeNodeRRset::isSameKind(const AbstractRRset& abs_other) const {
 void
 TreeNodeRRset::destroy() const {
     if (pool_ != NULL) {
-        const void* p = this;
         boost::pool<>* pool = pool_;
         this->~TreeNodeRRset();
-        pool->free(const_cast<void*>(p));
+        pool->free(const_cast<void*>(static_cast<const void*>(this)));
     } else {
         delete this;
     }

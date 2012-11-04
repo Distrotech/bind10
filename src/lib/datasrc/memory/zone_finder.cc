@@ -50,7 +50,7 @@ typedef boost::pool<> RRsetPool;
 
 namespace internal {
 
-// Specialized version of ZoneFinder::ResultContext, which  holds objects
+// Specialized version of ZoneFinder::ResultContext, which holds objects
 // related to find() results using internal representations of the in-memory
 // data source implementation.
 class ZoneFinderResultContext {
@@ -548,13 +548,15 @@ FindNodeResult findNode(const ZoneData& zone_data,
 class InMemoryZoneFinder::Context : public ZoneFinder::Context {
 public:
     Context(InMemoryZoneFinder& finder, ZoneFinder::FindOptions options,
-            const RRClass& rrclass, const ZoneFinderResultContext& result) :
+            const RRClass& rrclass, const ZoneFinderResultContext& result,
+            boost::pool<>* pool) :
         ZoneFinder::Context(options, ResultContext(result.code, result.rrset,
                                                    result.flags)),
         finder_(finder), // NOTE: when entire #2283 is done we won't need this
         rrclass_(rrclass), zone_data_(result.zone_data),
         found_node_(result.found_node),
-        found_rdset_(result.found_rdset)
+        found_rdset_(result.found_rdset),
+        pool_(pool)
     {}
 
 protected:
@@ -585,6 +587,12 @@ protected:
                                          options_);
             }
         }
+    }
+
+    void destroy() const {
+        boost::pool<>* pool = pool_;
+        this->~Context();
+        pool->free(const_cast<void*>(static_cast<const void*>(this)));
     }
 
 private:
@@ -655,6 +663,7 @@ private:
     const ZoneData* const zone_data_;
     const ZoneNode* const found_node_;
     const RdataSet* const found_rdset_;
+    boost::pool<>* pool_;
 };
 
 void
@@ -714,27 +723,33 @@ InMemoryZoneFinder::Context::findAdditional(
     }
 }
 
-boost::shared_ptr<ZoneFinder::Context>
+ZoneFinderContextPtr
 InMemoryZoneFinder::find(const isc::dns::Name& name,
                 const isc::dns::RRType& type,
                 const FindOptions options)
 {
-    return (ZoneFinderContextPtr(new Context(*this, options, rrclass_,
-                                             findInternal(name, type,
-                                                          NULL, rrset_pool_,
-                                                          options))));
+    void* p = context_pool_.malloc();
+    return (ZoneFinderContextPtr(new(p)
+                                 Context(*this, options, rrclass_,
+                                         findInternal(name, type,
+                                                      NULL, rrset_pool_,
+                                                      options),
+                                         &context_pool_)));
 }
 
-boost::shared_ptr<ZoneFinder::Context>
+ZoneFinderContextPtr
 InMemoryZoneFinder::findAll(const isc::dns::Name& name,
         std::vector<isc::dns::ConstRRsetPtr>& target,
         const FindOptions options)
 {
-    return (ZoneFinderContextPtr(new Context(*this, options, rrclass_,
+    void* p = context_pool_.malloc();
+    return (ZoneFinderContextPtr(new(p)
+                                 Context(*this, options, rrclass_,
                                              findInternal(name,
                                                           RRType::ANY(),
                                                           &target, rrset_pool_,
-                                                          options))));
+                                                          options),
+                                         &context_pool_)));
 }
 
 ZoneFinderResultContext
@@ -979,6 +994,11 @@ InMemoryZoneFinder::getOrigin() const {
 
     util::InputBuffer buffer(data, data_len);
     return (Name(buffer));
+}
+
+boost::pool<>*
+InMemoryZoneFinder::createContextPool() {
+    return (new boost::pool<>(sizeof(InMemoryZoneFinder::Context), 2));
 }
 
 } // namespace memory

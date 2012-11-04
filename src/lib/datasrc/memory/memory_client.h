@@ -23,6 +23,7 @@
 #include <datasrc/memory/zone_data.h>
 
 #include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <boost/pool/pool.hpp>
 
 #include <string>
@@ -196,6 +197,7 @@ private:
     unsigned int zone_count_;
     FileNameTree* file_name_tree_;
     mutable boost::pool<> rrset_pool_;
+    boost::scoped_ptr<boost::pool<> > finder_context_pool_;
 };
 
 } // namespace memory
