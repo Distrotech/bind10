@@ -49,6 +49,18 @@ using namespace isc::dns::rdata;
 using boost::scoped_ptr;
 
 namespace isc {
+
+namespace dns {               // we need to define in isc::dns for ADL
+// XXX: quick hack :this causes memory leak.
+void
+intrusive_ptr_add_ref(map<RRType, boost::intrusive_ptr<const datasrc::internal::RBNodeRRset> >*) {
+}
+
+void
+intrusive_ptr_release(map<RRType, boost::intrusive_ptr<const datasrc::internal::RBNodeRRset> >*) {
+}
+}
+
 namespace datasrc {
 
 using namespace internal;
@@ -76,7 +88,8 @@ typedef boost::intrusive_ptr<const internal::RBNodeRRset> ConstRBNodeRRsetPtr;
  */
 typedef map<RRType, ConstRBNodeRRsetPtr> Domain;
 typedef Domain::value_type DomainPair;
-typedef boost::shared_ptr<Domain> DomainPtr;
+typedef boost::intrusive_ptr<Domain> DomainPtr;
+
 // The tree stores domains
 typedef RBTree<Domain> DomainTree;
 typedef RBNode<Domain> DomainNode;
@@ -289,8 +302,8 @@ ZoneData::getClosestNSEC(RBTreeNodeChain<Domain>& node_path,
     while ((prev_node = domains_.previousNode(node_path)) != NULL) {
         if (!prev_node->isEmpty()) {
             const Domain::const_iterator found =
-                prev_node->getData()->find(RRType::NSEC());
-            if (found != prev_node->getData()->end()) {
+                prev_node->getData2()->find(RRType::NSEC());
+            if (found != prev_node->getData2()->end()) {
                 return (found->second);
             }
         }
@@ -337,9 +350,9 @@ bool cutCallback(const DomainNode& node, FindState* state) {
     // DNAME and NS coexist in the apex. DNAME is the one to notice,
     // the NS is authoritative, not delegation (corner case explicitly
     // allowed by section 3 of 2672)
-    const Domain::const_iterator found_dname(node.getData()->find(
+    const Domain::const_iterator found_dname(node.getData2()->find(
                                                  RRType::DNAME()));
-    if (found_dname != node.getData()->end()) {
+    if (found_dname != node.getData2()->end()) {
         LOG_DEBUG(logger, DBG_TRACE_DETAILED, DATASRC_MEM_DNAME_ENCOUNTERED);
         state->dname_node_ = &node;
         state->rrset_ = found_dname->second;
@@ -353,8 +366,8 @@ bool cutCallback(const DomainNode& node, FindState* state) {
     }
 
     // Look for NS
-    const Domain::const_iterator found_ns(node.getData()->find(RRType::NS()));
-    if (found_ns != node.getData()->end()) {
+    const Domain::const_iterator found_ns(node.getData2()->find(RRType::NS()));
+    if (found_ns != node.getData2()->end()) {
         // We perform callback check only for the highest zone cut in the
         // rare case of nested zone cuts.
         if (state->zonecut_node_ != NULL) {
@@ -816,7 +829,7 @@ protected:
                           "Invalid call to in-memory getAdditional: caller's "
                           "bug or broken zone");
             }
-            BOOST_FOREACH(const DomainPair& dom_it, *found_node_->getData()) {
+            BOOST_FOREACH(const DomainPair& dom_it, *found_node_->getData2()) {
                 getAdditionalForRRset(*dom_it.second, requested_types,
                                       result, options_);
             }
@@ -853,8 +866,8 @@ private:
                 additional.node_->getFlag(domain_flag::WILD_EXPANDED);
             BOOST_FOREACH(const RRType& rrtype, requested_types) {
                 Domain::const_iterator found =
-                    additional.node_->getData()->find(rrtype);
-                if (found != additional.node_->getData()->end()) {
+                    additional.node_->getData2()->find(rrtype);
+                if (found != additional.node_->getData2()->end()) {
                     // If the additional node was generated as a result of
                     // wildcard expansion, we return the underlying RRset,
                     // in case the caller has the same RRset but as a result
@@ -1105,13 +1118,13 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
         if (covered != RRType::NSEC3()) {
             DomainNode* node = NULL;
             if (zone_data.domains_.find(sig_rrset->getName(), &node) !=
-                DomainTree::EXACTMATCH || node == NULL || !node->getData()) {
+                DomainTree::EXACTMATCH || node == NULL || !node->getData2()) {
                 isc_throw(AddError,
                           "RRSIG is being added, but no RR to be covered: "
                           << sig_rrset->getName());
             }
-            const Domain::const_iterator it = node->getData()->find(covered);
-            if (it != node->getData()->end()) {
+            const Domain::const_iterator it = node->getData2()->find(covered);
+            if (it != node->getData2()->end()) {
                 covered_rrset = it->second;
             }
         } else {
@@ -1249,7 +1262,7 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
             domain.reset(new Domain);
             node->setData(domain);
         } else { // Get existing one
-            domain = node->getData();
+            domain = node->getData2();
         }
 
         // Checks related to the surrounding data.
@@ -1337,8 +1350,8 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
         if (zone_data_->nsec_signed_ &&
             (options & ZoneFinder::FIND_DNSSEC) != 0) {
             const Domain::const_iterator found =
-                node.getData()->find(RRType::NSEC());
-            if (found != node.getData()->end()) {
+                node.getData2()->find(RRType::NSEC());
+            if (found != node.getData2()->end()) {
                 return (found->second);
             }
         }
@@ -1415,8 +1428,8 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
         // be considered in-zone lookup.
         if (node->getFlag(DomainNode::FLAG_CALLBACK) &&
             node != zone_data_->origin_data_ && type != RRType::DS()) {
-            found = node->getData()->find(RRType::NS());
-            if (found != node->getData()->end()) {
+            found = node->getData2()->find(RRType::NS());
+            if (found != node->getData2()->end()) {
                 LOG_DEBUG(logger, DBG_TRACE_DATA,
                           DATASRC_MEM_EXACT_DELEGATION).arg(name);
                 return (createFindResult(DELEGATION,
@@ -1426,10 +1439,10 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
         }
 
         // handle type any query
-        if (target != NULL && !node->getData()->empty()) {
+        if (target != NULL && !node->getData2()->empty()) {
             // Empty domain will be handled as NXRRSET by normal processing
-            for (found = node->getData()->begin();
-                 found != node->getData()->end(); ++found)
+            for (found = node->getData2()->begin();
+                 found != node->getData2()->end(); ++found)
             {
                 target->push_back(prepareRRset(name, found->second, rename,
                                                options));
@@ -1440,8 +1453,8 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
                                      node));
         }
 
-        found = node->getData()->find(type);
-        if (found != node->getData()->end()) {
+        found = node->getData2()->find(type);
+        if (found != node->getData2()->end()) {
             // Good, it is here
             LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_SUCCESS).arg(name).
                 arg(type);
@@ -1451,8 +1464,8 @@ struct InMemoryZoneFinder::InMemoryZoneFinderImpl {
                                      rename));
         } else {
             // Next, try CNAME.
-            found = node->getData()->find(RRType::CNAME());
-            if (found != node->getData()->end()) {
+            found = node->getData2()->find(RRType::CNAME());
+            if (found != node->getData2()->end()) {
                 LOG_DEBUG(logger, DBG_TRACE_DATA, DATASRC_MEM_CNAME).arg(name);
                 return (createFindResult(CNAME,
                                           prepareRRset(name, found->second,
@@ -1653,7 +1666,7 @@ addAdditional(RBNodeRRset* rrset, ZoneData* zone_data,
         assert(node != NULL);
         if ((result.flags & ZoneData::FindNodeResult::FIND_ZONECUT) != 0 ||
             (node->getFlag(DomainNode::FLAG_CALLBACK) &&
-             node->getData()->find(RRType::NS()) != node->getData()->end())) {
+             node->getData2()->find(RRType::NS()) != node->getData2()->end())) {
             // The node is under or at a zone cut; mark it as a glue.
             node->setFlag(domain_flag::GLUE);
         }
@@ -1678,7 +1691,7 @@ addAdditional(RBNodeRRset* rrset, ZoneData* zone_data,
                 // addWildAdditional() can get an exactmatch for this name.
                 DomainPtr dst_domain(new Domain);
                 if (!node->isEmpty()) {
-                    for_each(node->getData()->begin(), node->getData()->end(),
+                    for_each(node->getData2()->begin(), node->getData2()->end(),
                              boost::bind(convertAndInsert, _1, dst_domain,
                                          &name));
                 }
@@ -1754,8 +1767,8 @@ InMemoryZoneFinder::InMemoryZoneFinderImpl::load(
         // process only adds new nodes (and their data), so this assertion
         // should hold.
         assert(tmp->origin_data_ != NULL && !tmp->origin_data_->isEmpty());
-        if (tmp->origin_data_->getData()->find(RRType::NSEC3PARAM()) ==
-            tmp->origin_data_->getData()->end()) {
+        if (tmp->origin_data_->getData2()->find(RRType::NSEC3PARAM()) ==
+            tmp->origin_data_->getData2()->end()) {
             LOG_WARN(logger, DATASRC_MEM_NO_NSEC3PARAM).
                 arg(origin_).arg(zone_class_);
         }
@@ -1930,9 +1943,9 @@ public:
                       "In-memory zone corrupted, missing origin node");
         }
         // Initialize the iterator if there's somewhere to point to
-        if (node_ != NULL && node_->getData() != DomainPtr()) {
-            dom_iterator_ = node_->getData()->begin();
-            if (separate_rrs_ && dom_iterator_ != node_->getData()->end()) {
+        if (node_ != NULL && node_->getData2() != DomainPtr()) {
+            dom_iterator_ = node_->getData2()->begin();
+            if (separate_rrs_ && dom_iterator_ != node_->getData2()->end()) {
                 rdata_iterator_ = dom_iterator_->second->getRdataIterator();
             }
         }
@@ -1947,13 +1960,13 @@ public:
          * If it is NULL, we run out of nodes. If it is empty, it doesn't
          * contain any RRsets. If we are at the end, just get to next one.
          */
-        while (node_ != NULL && (node_->getData() == DomainPtr() ||
-                                 dom_iterator_ == node_->getData()->end())) {
+        while (node_ != NULL && (node_->getData2() == DomainPtr() ||
+                                 dom_iterator_ == node_->getData2()->end())) {
             node_ = tree_.nextNode(chain_);
             // If there's a node, initialize the iterator and check next time
             // if the map is empty or not
-            if (node_ != NULL && node_->getData() != NULL) {
-                dom_iterator_ = node_->getData()->begin();
+            if (node_ != NULL && node_->getData2() != NULL) {
+                dom_iterator_ = node_->getData2()->begin();
                 // New RRset, so get a new rdata iterator
                 if (separate_rrs_) {
                     rdata_iterator_ = dom_iterator_->second->getRdataIterator();
@@ -1980,7 +1993,7 @@ public:
                 ++dom_iterator_;
                 // New RRset, so get a new rdata iterator, but only if this
                 // was not the final RRset in the chain
-                if (dom_iterator_ != node_->getData()->end()) {
+                if (dom_iterator_ != node_->getData2()->end()) {
                     rdata_iterator_ = dom_iterator_->second->getRdataIterator();
                 }
             }

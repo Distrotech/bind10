@@ -58,26 +58,36 @@ const size_t Name::MAX_LABELS;
  */
 
 namespace {
+
+struct IntWrapper {
+    IntWrapper(int val) : val_(val) {}
+    int val_;
+};
+
+inline void
+intrusive_ptr_release(IntWrapper *) {
+}
+
 class TreeHolder {
 public:
-    TreeHolder(util::MemorySegment& mem_sgmt, RBTree<int>* tree) :
+    TreeHolder(util::MemorySegment& mem_sgmt, RBTree<IntWrapper>* tree) :
         mem_sgmt_(mem_sgmt), tree_(tree)
     {}
     ~TreeHolder() {
-        RBTree<int>::destroy(mem_sgmt_, tree_);
+        RBTree<IntWrapper>::destroy(mem_sgmt_, tree_);
     }
-    RBTree<int>* get() { return (tree_); }
+    RBTree<IntWrapper>* get() { return (tree_); }
 private:
     util::MemorySegment& mem_sgmt_;
-    RBTree<int>* tree_;
+    RBTree<IntWrapper>* tree_;
 };
 
 class RBTreeTest : public::testing::Test {
 protected:
     RBTreeTest() :
-        rbtree_holder_(mem_sgmt_, RBTree<int>::create(mem_sgmt_)),
+        rbtree_holder_(mem_sgmt_, RBTree<IntWrapper>::create(mem_sgmt_)),
         rbtree_expose_empty_node_holder_(mem_sgmt_,
-                                         RBTree<int>::create(mem_sgmt_, true)),
+                                         RBTree<IntWrapper>::create(mem_sgmt_, true)),
         rbtree(*rbtree_holder_.get()),
         rbtree_expose_empty_node(*rbtree_expose_empty_node_holder_.get()),
         crbtnode(NULL)
@@ -88,11 +98,11 @@ protected:
         int name_count = sizeof(domain_names) / sizeof(domain_names[0]);
         for (int i = 0; i < name_count; ++i) {
             rbtree.insert(mem_sgmt_, Name(domain_names[i]), &rbtnode);
-            rbtnode->setData(RBNode<int>::NodeDataPtr(new int(i + 1)));
+            rbtnode->setData(RBNode<IntWrapper>::NodeDataPtr(new IntWrapper(i + 1)));
 
             rbtree_expose_empty_node.insert(mem_sgmt_, Name(domain_names[i]),
                                             &rbtnode);
-            rbtnode->setData(RBNode<int>::NodeDataPtr(new int(i + 1)));
+            rbtnode->setData(RBNode<IntWrapper>::NodeDataPtr(new IntWrapper(i + 1)));
 
         }
     }
@@ -100,10 +110,10 @@ protected:
     util::MemorySegmentLocal mem_sgmt_;
     TreeHolder rbtree_holder_;
     TreeHolder rbtree_expose_empty_node_holder_;
-    RBTree<int>& rbtree;
-    RBTree<int>& rbtree_expose_empty_node;
-    RBNode<int>* rbtnode;
-    const RBNode<int>* crbtnode;
+    RBTree<IntWrapper>& rbtree;
+    RBTree<IntWrapper>& rbtree_expose_empty_node;
+    RBNode<IntWrapper>* rbtnode;
+    const RBNode<IntWrapper>* crbtnode;
     uint8_t buf[LabelSequence::MAX_SERIALIZED_LENGTH];
 };
 
@@ -117,97 +127,97 @@ TEST_F(RBTreeTest, nodeCount) {
 }
 
 TEST_F(RBTreeTest, setGetData) {
-    rbtnode->setData(RBNode<int>::NodeDataPtr(new int(11)));
-    EXPECT_EQ(11, *(rbtnode->getData()));
+    rbtnode->setData(RBNode<IntWrapper>::NodeDataPtr(new IntWrapper(11)));
+    EXPECT_EQ(11, rbtnode->getData()->val_);
 }
 
 TEST_F(RBTreeTest, insertNames) {
-    EXPECT_EQ(RBTree<int>::ALREADYEXISTS, rbtree.insert(mem_sgmt_,
+    EXPECT_EQ(RBTree<IntWrapper>::ALREADYEXISTS, rbtree.insert(mem_sgmt_,
                                                         Name("d.e.f"),
                                                         &rbtnode));
     EXPECT_EQ(Name("d.e.f"), rbtnode->getName());
     EXPECT_EQ(15, rbtree.getNodeCount());
 
     // insert not exist node
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_, Name("0"),
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_, Name("0"),
                                                   &rbtnode));
     EXPECT_EQ(Name("0"), rbtnode->getName());
     EXPECT_EQ(16, rbtree.getNodeCount());
 
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_,
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_,
                                                   Name("example.com"),
                                                   &rbtnode));
     EXPECT_EQ(17, rbtree.getNodeCount());
-    rbtnode->setData(RBNode<int>::NodeDataPtr(new int(12)));
+    rbtnode->setData(RBNode<IntWrapper>::NodeDataPtr(new IntWrapper(12)));
 
     // return ALREADYEXISTS, since node "example.com" already has
     // been explicitly inserted
-    EXPECT_EQ(RBTree<int>::ALREADYEXISTS, rbtree.insert(mem_sgmt_,
+    EXPECT_EQ(RBTree<IntWrapper>::ALREADYEXISTS, rbtree.insert(mem_sgmt_,
                                                         Name("example.com"),
                                                         &rbtnode));
     EXPECT_EQ(17, rbtree.getNodeCount());
 
     // split the node "d.e.f"
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_, Name("k.e.f"),
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_, Name("k.e.f"),
                                                   &rbtnode));
     EXPECT_EQ(Name("k"), rbtnode->getName());
     EXPECT_EQ(19, rbtree.getNodeCount());
 
     // split the node "g.h"
-    EXPECT_EQ(RBTree<int>::ALREADYEXISTS, rbtree.insert(mem_sgmt_, Name("h"),
+    EXPECT_EQ(RBTree<IntWrapper>::ALREADYEXISTS, rbtree.insert(mem_sgmt_, Name("h"),
                                                         &rbtnode));
     EXPECT_EQ(Name("h"), rbtnode->getName());
     EXPECT_EQ(20, rbtree.getNodeCount());
 
     // add child domain
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_,
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_,
                                                   Name("m.p.w.y.d.e.f"),
                                                   &rbtnode));
     EXPECT_EQ(Name("m"), rbtnode->getName());
     EXPECT_EQ(21, rbtree.getNodeCount());
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_,
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_,
                                                   Name("n.p.w.y.d.e.f"),
                                                   &rbtnode));
     EXPECT_EQ(Name("n"), rbtnode->getName());
     EXPECT_EQ(22, rbtree.getNodeCount());
 
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_, Name("l.a"),
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_, Name("l.a"),
                                                   &rbtnode));
     EXPECT_EQ(Name("l"), rbtnode->getName());
     EXPECT_EQ(23, rbtree.getNodeCount());
 
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_, Name("r.d.e.f"),
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_, Name("r.d.e.f"),
                                                   &rbtnode));
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_, Name("s.d.e.f"),
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_, Name("s.d.e.f"),
                                                   &rbtnode));
     EXPECT_EQ(25, rbtree.getNodeCount());
 
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_,
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_,
                                                   Name("h.w.y.d.e.f"),
                                                   &rbtnode));
 
     // add more nodes one by one to cover leftRotate and rightRotate
-    EXPECT_EQ(RBTree<int>::ALREADYEXISTS, rbtree.insert(mem_sgmt_, Name("f"),
+    EXPECT_EQ(RBTree<IntWrapper>::ALREADYEXISTS, rbtree.insert(mem_sgmt_, Name("f"),
                                                         &rbtnode));
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_, Name("m"),
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_, Name("m"),
                                                   &rbtnode));
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_, Name("nm"),
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_, Name("nm"),
                                                   &rbtnode));
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_, Name("om"),
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_, Name("om"),
                                                   &rbtnode));
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_, Name("k"),
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_, Name("k"),
                                                   &rbtnode));
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_, Name("l"),
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_, Name("l"),
                                                   &rbtnode));
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_, Name("fe"),
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_, Name("fe"),
                                                   &rbtnode));
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_, Name("ge"),
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_, Name("ge"),
                                                   &rbtnode));
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_, Name("i"),
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_, Name("i"),
                                                   &rbtnode));
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_, Name("ae"),
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_, Name("ae"),
                                                   &rbtnode));
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_, Name("n"),
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_, Name("n"),
                                                   &rbtnode));
 }
 
@@ -217,40 +227,40 @@ TEST_F(RBTreeTest, subTreeRoot) {
     // that when a node was fissioned, FLAG_SUBTREE_ROOT was not being
     // copied correctly.
 
-    EXPECT_EQ(RBTree<int>::ALREADYEXISTS,
+    EXPECT_EQ(RBTree<IntWrapper>::ALREADYEXISTS,
               rbtree_expose_empty_node.insert(mem_sgmt_, Name("d.e.f"),
                                               &rbtnode));
-    EXPECT_EQ(RBTree<int>::SUCCESS,
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS,
               rbtree_expose_empty_node.insert(mem_sgmt_, Name("0"),
                                               &rbtnode));
-    EXPECT_EQ(RBTree<int>::SUCCESS,
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS,
               rbtree_expose_empty_node.insert(mem_sgmt_, Name("example.com"),
                                               &rbtnode));
-    EXPECT_EQ(RBTree<int>::ALREADYEXISTS,
+    EXPECT_EQ(RBTree<IntWrapper>::ALREADYEXISTS,
               rbtree_expose_empty_node.insert(mem_sgmt_, Name("example.com"),
                                               &rbtnode));
-    EXPECT_EQ(RBTree<int>::SUCCESS,
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS,
               rbtree_expose_empty_node.insert(mem_sgmt_, Name("k.e.f"),
                                               &rbtnode));
 
     // "g.h" is not a subtree root
-    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
               rbtree_expose_empty_node.find(Name("g.h"), &rbtnode));
-    EXPECT_FALSE(rbtnode->getFlag(RBNode<int>::FLAG_SUBTREE_ROOT));
+    EXPECT_FALSE(rbtnode->getFlag(RBNode<IntWrapper>::FLAG_SUBTREE_ROOT));
 
     // fission the node "g.h"
-    EXPECT_EQ(RBTree<int>::ALREADYEXISTS,
+    EXPECT_EQ(RBTree<IntWrapper>::ALREADYEXISTS,
               rbtree_expose_empty_node.insert(mem_sgmt_, Name("h"),
                                               &rbtnode));
 
     // the node "h" (h.down_ -> "g") should not be a subtree root. "g"
     // should be a subtree root.
-    EXPECT_FALSE(rbtnode->getFlag(RBNode<int>::FLAG_SUBTREE_ROOT));
+    EXPECT_FALSE(rbtnode->getFlag(RBNode<IntWrapper>::FLAG_SUBTREE_ROOT));
 
     // "g.h" should be a subtree root now.
-    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
               rbtree_expose_empty_node.find(Name("g.h"), &rbtnode));
-    EXPECT_TRUE(rbtnode->getFlag(RBNode<int>::FLAG_SUBTREE_ROOT));
+    EXPECT_TRUE(rbtnode->getFlag(RBNode<IntWrapper>::FLAG_SUBTREE_ROOT));
 }
 
 TEST_F(RBTreeTest, additionalNodeFission) {
@@ -259,64 +269,64 @@ TEST_F(RBTreeTest, additionalNodeFission) {
     // are not covered by other tests.
 
     // Insert "t.0" (which becomes the left child of its parent)
-    EXPECT_EQ(RBTree<int>::SUCCESS,
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS,
               rbtree_expose_empty_node.insert(mem_sgmt_, Name("t.0"),
                                               &rbtnode));
 
     // "t.0" is not a subtree root
-    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
               rbtree_expose_empty_node.find(Name("t.0"), &rbtnode));
-    EXPECT_FALSE(rbtnode->getFlag(RBNode<int>::FLAG_SUBTREE_ROOT));
+    EXPECT_FALSE(rbtnode->getFlag(RBNode<IntWrapper>::FLAG_SUBTREE_ROOT));
 
     // fission the node "t.0"
-    EXPECT_EQ(RBTree<int>::ALREADYEXISTS,
+    EXPECT_EQ(RBTree<IntWrapper>::ALREADYEXISTS,
               rbtree_expose_empty_node.insert(mem_sgmt_, Name("0"),
                                               &rbtnode));
 
     // the node "0" ("0".down_ -> "t") should not be a subtree root. "t"
     // should be a subtree root.
-    EXPECT_FALSE(rbtnode->getFlag(RBNode<int>::FLAG_SUBTREE_ROOT));
+    EXPECT_FALSE(rbtnode->getFlag(RBNode<IntWrapper>::FLAG_SUBTREE_ROOT));
 
     // "t.0" should be a subtree root now.
-    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
               rbtree_expose_empty_node.find(Name("t.0"), &rbtnode));
-    EXPECT_TRUE(rbtnode->getFlag(RBNode<int>::FLAG_SUBTREE_ROOT));
+    EXPECT_TRUE(rbtnode->getFlag(RBNode<IntWrapper>::FLAG_SUBTREE_ROOT));
 }
 
 TEST_F(RBTreeTest, findName) {
     // find const rbtnode
     // exact match
-    EXPECT_EQ(RBTree<int>::EXACTMATCH, rbtree.find(Name("a"), &crbtnode));
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH, rbtree.find(Name("a"), &crbtnode));
     EXPECT_EQ(Name("a"), crbtnode->getName());
 
     // not found
-    EXPECT_EQ(RBTree<int>::NOTFOUND, rbtree.find(Name("d.e.f"), &crbtnode));
-    EXPECT_EQ(RBTree<int>::NOTFOUND, rbtree.find(Name("y.d.e.f"), &crbtnode));
-    EXPECT_EQ(RBTree<int>::NOTFOUND, rbtree.find(Name("x"), &crbtnode));
-    EXPECT_EQ(RBTree<int>::NOTFOUND, rbtree.find(Name("m.n"), &crbtnode));
+    EXPECT_EQ(RBTree<IntWrapper>::NOTFOUND, rbtree.find(Name("d.e.f"), &crbtnode));
+    EXPECT_EQ(RBTree<IntWrapper>::NOTFOUND, rbtree.find(Name("y.d.e.f"), &crbtnode));
+    EXPECT_EQ(RBTree<IntWrapper>::NOTFOUND, rbtree.find(Name("x"), &crbtnode));
+    EXPECT_EQ(RBTree<IntWrapper>::NOTFOUND, rbtree.find(Name("m.n"), &crbtnode));
 
     // if we expose empty node, we can get the empty node created during insert
-    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
               rbtree_expose_empty_node.find(Name("d.e.f"), &crbtnode));
-    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
               rbtree_expose_empty_node.find(Name("w.y.d.e.f"), &crbtnode));
 
     // partial match
-    EXPECT_EQ(RBTree<int>::PARTIALMATCH, rbtree.find(Name("m.b"), &crbtnode));
+    EXPECT_EQ(RBTree<IntWrapper>::PARTIALMATCH, rbtree.find(Name("m.b"), &crbtnode));
     EXPECT_EQ(Name("b"), crbtnode->getName());
-    EXPECT_EQ(RBTree<int>::PARTIALMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::PARTIALMATCH,
               rbtree_expose_empty_node.find(Name("m.d.e.f"), &crbtnode));
 
     // find rbtnode
-    EXPECT_EQ(RBTree<int>::EXACTMATCH, rbtree.find(Name("q.w.y.d.e.f"),
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH, rbtree.find(Name("q.w.y.d.e.f"),
                                                    &rbtnode));
     EXPECT_EQ(Name("q"), rbtnode->getName());
 }
 
 TEST_F(RBTreeTest, findError) {
     // For the version that takes a node chain, the chain must be empty.
-    RBTreeNodeChain<int> chain;
-    EXPECT_EQ(RBTree<int>::EXACTMATCH, rbtree.find(Name("a"), &crbtnode,
+    RBTreeNodeChain<IntWrapper> chain;
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH, rbtree.find(Name("a"), &crbtnode,
                                                    chain));
     // trying to reuse the same chain.  it should result in an exception.
     EXPECT_THROW(rbtree.find(Name("a"), &crbtnode, chain),
@@ -324,94 +334,94 @@ TEST_F(RBTreeTest, findError) {
 }
 
 TEST_F(RBTreeTest, flags) {
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt_,
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt_,
                                                   Name("flags.example"),
                                                   &rbtnode));
 
     // by default, flags are all off
-    EXPECT_FALSE(rbtnode->getFlag(RBNode<int>::FLAG_CALLBACK));
+    EXPECT_FALSE(rbtnode->getFlag(RBNode<IntWrapper>::FLAG_CALLBACK));
 
     // set operation, by default it enables the flag
-    rbtnode->setFlag(RBNode<int>::FLAG_CALLBACK);
-    EXPECT_TRUE(rbtnode->getFlag(RBNode<int>::FLAG_CALLBACK));
+    rbtnode->setFlag(RBNode<IntWrapper>::FLAG_CALLBACK);
+    EXPECT_TRUE(rbtnode->getFlag(RBNode<IntWrapper>::FLAG_CALLBACK));
 
     // try disable the flag explicitly
-    rbtnode->setFlag(RBNode<int>::FLAG_CALLBACK, false);
-    EXPECT_FALSE(rbtnode->getFlag(RBNode<int>::FLAG_CALLBACK));
+    rbtnode->setFlag(RBNode<IntWrapper>::FLAG_CALLBACK, false);
+    EXPECT_FALSE(rbtnode->getFlag(RBNode<IntWrapper>::FLAG_CALLBACK));
 
     // try enable the flag explicitly
-    rbtnode->setFlag(RBNode<int>::FLAG_CALLBACK, true);
-    EXPECT_TRUE(rbtnode->getFlag(RBNode<int>::FLAG_CALLBACK));
+    rbtnode->setFlag(RBNode<IntWrapper>::FLAG_CALLBACK, true);
+    EXPECT_TRUE(rbtnode->getFlag(RBNode<IntWrapper>::FLAG_CALLBACK));
 
     // setting an unknown flag will trigger an exception
-    EXPECT_THROW(rbtnode->setFlag(static_cast<RBNode<int>::Flags>(2), true),
+    EXPECT_THROW(rbtnode->setFlag(static_cast<RBNode<IntWrapper>::Flags>(2), true),
                  isc::InvalidParameter);
 }
 
 bool
-testCallback(const RBNode<int>&, bool* callback_checker) {
+testCallback(const RBNode<IntWrapper>&, bool* callback_checker) {
     *callback_checker = true;
     return (false);
 }
 
 template <typename T>
 void
-performCallbackTest(RBTree<int>& rbtree,
+performCallbackTest(RBTree<IntWrapper>& rbtree,
                     util::MemorySegmentLocal& mem_sgmt,
                     const T& name_called,
                     const T& name_not_called)
 {
-    RBNode<int>* rbtnode;
-    const RBNode<int>* crbtnode;
+    RBNode<IntWrapper>* rbtnode;
+    const RBNode<IntWrapper>* crbtnode;
 
     // by default callback isn't enabled
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt,
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt,
                                                   Name("callback.example"),
                                                   &rbtnode));
-    rbtnode->setData(RBNode<int>::NodeDataPtr(new int(1)));
-    EXPECT_FALSE(rbtnode->getFlag(RBNode<int>::FLAG_CALLBACK));
+    rbtnode->setData(RBNode<IntWrapper>::NodeDataPtr(new IntWrapper(1)));
+    EXPECT_FALSE(rbtnode->getFlag(RBNode<IntWrapper>::FLAG_CALLBACK));
 
     // enable/re-disable callback
-    rbtnode->setFlag(RBNode<int>::FLAG_CALLBACK);
-    EXPECT_TRUE(rbtnode->getFlag(RBNode<int>::FLAG_CALLBACK));
-    rbtnode->setFlag(RBNode<int>::FLAG_CALLBACK, false);
-    EXPECT_FALSE(rbtnode->getFlag(RBNode<int>::FLAG_CALLBACK));
+    rbtnode->setFlag(RBNode<IntWrapper>::FLAG_CALLBACK);
+    EXPECT_TRUE(rbtnode->getFlag(RBNode<IntWrapper>::FLAG_CALLBACK));
+    rbtnode->setFlag(RBNode<IntWrapper>::FLAG_CALLBACK, false);
+    EXPECT_FALSE(rbtnode->getFlag(RBNode<IntWrapper>::FLAG_CALLBACK));
 
     // enable again for subsequent tests
-    rbtnode->setFlag(RBNode<int>::FLAG_CALLBACK);
+    rbtnode->setFlag(RBNode<IntWrapper>::FLAG_CALLBACK);
     // add more levels below and above the callback node for partial match.
-    RBNode<int>* subrbtnode;
-    EXPECT_EQ(RBTree<int>::SUCCESS, rbtree.insert(mem_sgmt,
+    RBNode<IntWrapper>* subrbtnode;
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, rbtree.insert(mem_sgmt,
                                                   Name("sub.callback.example"),
                                                   &subrbtnode));
-    subrbtnode->setData(RBNode<int>::NodeDataPtr(new int(2)));
-    RBNode<int>* parentrbtnode;
-    EXPECT_EQ(RBTree<int>::ALREADYEXISTS, rbtree.insert(mem_sgmt,
+    subrbtnode->setData(RBNode<IntWrapper>::NodeDataPtr(new IntWrapper(2)));
+    RBNode<IntWrapper>* parentrbtnode;
+    EXPECT_EQ(RBTree<IntWrapper>::ALREADYEXISTS, rbtree.insert(mem_sgmt,
                                                         Name("example"),
                                                         &parentrbtnode));
     // the child/parent nodes shouldn't "inherit" the callback flag.
     // "rbtnode" may be invalid due to the insertion, so we need to re-find
     // it.
-    EXPECT_EQ(RBTree<int>::EXACTMATCH, rbtree.find(Name("callback.example"),
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH, rbtree.find(Name("callback.example"),
                                                    &rbtnode));
-    EXPECT_TRUE(rbtnode->getFlag(RBNode<int>::FLAG_CALLBACK));
-    EXPECT_FALSE(subrbtnode->getFlag(RBNode<int>::FLAG_CALLBACK));
-    EXPECT_FALSE(parentrbtnode->getFlag(RBNode<int>::FLAG_CALLBACK));
+    EXPECT_TRUE(rbtnode->getFlag(RBNode<IntWrapper>::FLAG_CALLBACK));
+    EXPECT_FALSE(subrbtnode->getFlag(RBNode<IntWrapper>::FLAG_CALLBACK));
+    EXPECT_FALSE(parentrbtnode->getFlag(RBNode<IntWrapper>::FLAG_CALLBACK));
 
     // check if the callback is called from find()
-    RBTreeNodeChain<int> node_path1;
+    RBTreeNodeChain<IntWrapper> node_path1;
     bool callback_called = false;
-    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
               rbtree.find(name_called, &crbtnode, node_path1,
                           testCallback, &callback_called));
     EXPECT_TRUE(callback_called);
 
     // enable callback at the parent node, but it doesn't have data so
     // the callback shouldn't be called.
-    RBTreeNodeChain<int> node_path2;
-    parentrbtnode->setFlag(RBNode<int>::FLAG_CALLBACK);
+    RBTreeNodeChain<IntWrapper> node_path2;
+    parentrbtnode->setFlag(RBNode<IntWrapper>::FLAG_CALLBACK);
     callback_called = false;
-    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
               rbtree.find(name_not_called, &crbtnode, node_path2,
                           testCallback, &callback_called));
     EXPECT_FALSE(callback_called);
@@ -434,19 +444,19 @@ TEST_F(RBTreeTest, callbackLabelSequence) {
 }
 
 TEST_F(RBTreeTest, chainLevel) {
-    RBTreeNodeChain<int> chain;
+    RBTreeNodeChain<IntWrapper> chain;
 
     // by default there should be no level in the chain.
     EXPECT_EQ(0, chain.getLevelCount());
 
     // insert one node to the tree and find it.  there should be exactly
     // one level in the chain.
-    TreeHolder tree_holder(mem_sgmt_, RBTree<int>::create(mem_sgmt_, true));
-    RBTree<int>& tree(*tree_holder.get());
+    TreeHolder tree_holder(mem_sgmt_, RBTree<IntWrapper>::create(mem_sgmt_, true));
+    RBTree<IntWrapper>& tree(*tree_holder.get());
     Name node_name(Name::ROOT_NAME());
-    EXPECT_EQ(RBTree<int>::SUCCESS, tree.insert(mem_sgmt_, node_name,
+    EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, tree.insert(mem_sgmt_, node_name,
                                                 &rbtnode));
-    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
               tree.find(node_name, &crbtnode, chain));
     EXPECT_EQ(1, chain.getLevelCount());
 
@@ -472,10 +482,10 @@ TEST_F(RBTreeTest, chainLevel) {
      */
     for (unsigned int i = 2; i <= Name::MAX_LABELS; ++i) {
         node_name = Name("a.").concatenate(node_name);
-        EXPECT_EQ(RBTree<int>::SUCCESS, tree.insert(mem_sgmt_, node_name,
+        EXPECT_EQ(RBTree<IntWrapper>::SUCCESS, tree.insert(mem_sgmt_, node_name,
                                                     &rbtnode));
-        RBTreeNodeChain<int> found_chain;
-        EXPECT_EQ(RBTree<int>::EXACTMATCH,
+        RBTreeNodeChain<IntWrapper> found_chain;
+        EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
                   tree.find(node_name, &crbtnode, found_chain));
         EXPECT_EQ(i, found_chain.getLevelCount());
 
@@ -495,7 +505,7 @@ TEST_F(RBTreeTest, chainLevel) {
 
 TEST_F(RBTreeTest, getAbsoluteNameError) {
     // an empty chain isn't allowed.
-    RBTreeNodeChain<int> chain;
+    RBTreeNodeChain<IntWrapper> chain;
     EXPECT_THROW(chain.getAbsoluteName(), BadValue);
 }
 
@@ -531,19 +541,19 @@ const char* const upper_node_names[] = {
     ".", "g.h", "g.h"};
 
 TEST_F(RBTreeTest, getUpperNode) {
-    RBTreeNodeChain<int> node_path;
-    const RBNode<int>* node = NULL;
-    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+    RBTreeNodeChain<IntWrapper> node_path;
+    const RBNode<IntWrapper>* node = NULL;
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
               rbtree_expose_empty_node.find(Name(names[0]),
                                             &node,
                                             node_path));
     for (int i = 0; i < name_count; ++i) {
         EXPECT_NE(static_cast<void*>(NULL), node);
 
-        const RBNode<int>* upper_node = node->getUpperNode();
+        const RBNode<IntWrapper>* upper_node = node->getUpperNode();
         if (upper_node_names[i] != NULL) {
-            const RBNode<int>* upper_node2 = NULL;
-            EXPECT_EQ(RBTree<int>::EXACTMATCH,
+            const RBNode<IntWrapper>* upper_node2 = NULL;
+            EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
                       rbtree_expose_empty_node.find(Name(upper_node_names[i]),
                                                     &upper_node2));
             EXPECT_NE(static_cast<void*>(NULL), upper_node2);
@@ -560,9 +570,9 @@ TEST_F(RBTreeTest, getUpperNode) {
 }
 
 TEST_F(RBTreeTest, nextNode) {
-    RBTreeNodeChain<int> node_path;
-    const RBNode<int>* node = NULL;
-    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+    RBTreeNodeChain<IntWrapper> node_path;
+    const RBNode<IntWrapper>* node = NULL;
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
               rbtree.find(Name(names[0]), &node, node_path));
     for (int i = 0; i < name_count; ++i) {
         EXPECT_NE(static_cast<void*>(NULL), node);
@@ -588,8 +598,8 @@ TEST_F(RBTreeTest, nextNode) {
 //   (true is for finds that return no match, false for the ones that return
 //   match)
 void
-previousWalk(RBTree<int>& rbtree, const RBNode<int>* node,
-             RBTreeNodeChain<int>& node_path, size_t chain_length,
+previousWalk(RBTree<IntWrapper>& rbtree, const RBNode<IntWrapper>* node,
+             RBTreeNodeChain<IntWrapper>& node_path, size_t chain_length,
              bool skip_first)
 {
     if (skip_first) {
@@ -605,10 +615,10 @@ previousWalk(RBTree<int>& rbtree, const RBNode<int>* node,
         // (that it really returns the correct corresponding node)
         //
         // The "empty" nodes can not be found
-        if (node->getData()) {
-            const RBNode<int>* node2(NULL);
-            RBTreeNodeChain<int> node_path2;
-            EXPECT_EQ(RBTree<int>::EXACTMATCH,
+        if (node->getData2()) {
+            const RBNode<IntWrapper>* node2(NULL);
+            RBTreeNodeChain<IntWrapper> node_path2;
+            EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
                       rbtree.find(Name(names[i - 1]), &node2, node_path2));
             EXPECT_EQ(node, node2);
         }
@@ -632,13 +642,13 @@ previousWalk(RBTree<int>& rbtree, const RBNode<int>* node,
 // Check the previousNode
 TEST_F(RBTreeTest, previousNode) {
     // First, iterate the whole tree from the end to the beginning.
-    RBTreeNodeChain<int> node_path;
+    RBTreeNodeChain<IntWrapper> node_path;
     EXPECT_THROW(rbtree.previousNode(node_path), isc::BadValue) <<
         "Throw before a search was done on the path";
-    const RBNode<int>* node(NULL);
+    const RBNode<IntWrapper>* node(NULL);
     {
         SCOPED_TRACE("Iterate through");
-        EXPECT_EQ(RBTree<int>::EXACTMATCH,
+        EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
                   rbtree.find(Name(names[name_count - 1]), &node, node_path));
         previousWalk(rbtree, node, node_path, name_count, false);
         node = NULL;
@@ -648,7 +658,7 @@ TEST_F(RBTreeTest, previousNode) {
     {
         SCOPED_TRACE("Iterate from the middle");
         // Now, start somewhere in the middle, but within the real node.
-        EXPECT_EQ(RBTree<int>::EXACTMATCH,
+        EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
                   rbtree.find(Name(names[4]), &node, node_path));
         previousWalk(rbtree, node, node_path, 5, false);
         node = NULL;
@@ -659,7 +669,7 @@ TEST_F(RBTreeTest, previousNode) {
         SCOPED_TRACE("Start at the first");
         // If we start at the lowest (which is "a"), we get to the beginning
         // right away.
-        EXPECT_EQ(RBTree<int>::EXACTMATCH,
+        EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
                   rbtree.find(Name(names[0]), &node, node_path));
         EXPECT_NE(static_cast<void*>(NULL), node);
         node = rbtree.previousNode(node_path);
@@ -673,7 +683,7 @@ TEST_F(RBTreeTest, previousNode) {
         SCOPED_TRACE("Start before the first");
         // If we start before the lowest (. < 0. < a.), we should not get a
         // node.  Its previous node should be the root.
-        EXPECT_EQ(RBTree<int>::NOTFOUND,
+        EXPECT_EQ(RBTree<IntWrapper>::NOTFOUND,
                   rbtree.find<void*>(Name("0"), &node, node_path, NULL, NULL));
         EXPECT_EQ(static_cast<void*>(NULL), node);
         node = rbtree.previousNode(node_path);
@@ -685,7 +695,7 @@ TEST_F(RBTreeTest, previousNode) {
 
     {
         SCOPED_TRACE("Start after the last");
-        EXPECT_EQ(RBTree<int>::NOTFOUND,
+        EXPECT_EQ(RBTree<IntWrapper>::NOTFOUND,
                   rbtree.find(Name("z"), &node, node_path));
         previousWalk(rbtree, node, node_path, name_count, true);
         node = NULL;
@@ -697,7 +707,7 @@ TEST_F(RBTreeTest, previousNode) {
         // We exit a leaf by going down. We should start by the one
         // we exited - 'c' (actually, we should get it by the find, as partial
         // match).
-        EXPECT_EQ(RBTree<int>::PARTIALMATCH,
+        EXPECT_EQ(RBTree<IntWrapper>::PARTIALMATCH,
                   rbtree.find(Name("b.c"), &node, node_path));
         previousWalk(rbtree, node, node_path, 3, false);
         node = NULL;
@@ -711,7 +721,7 @@ TEST_F(RBTreeTest, previousNode) {
 
         // The d.e.f is empty node, so it is hidden by find. Therefore NOTFOUND
         // and not PARTIALMATCH.
-        EXPECT_EQ(RBTree<int>::NOTFOUND,
+        EXPECT_EQ(RBTree<IntWrapper>::NOTFOUND,
                   rbtree.find(Name("xy.d.e.f"), &node, node_path));
         previousWalk(rbtree, node, node_path, 5, true);
         node = NULL;
@@ -725,7 +735,7 @@ TEST_F(RBTreeTest, previousNode) {
 
         // The d.e.f is empty node, so it is hidden by find. Therefore NOTFOUND
         // and not PARTIALMATCH.
-        EXPECT_EQ(RBTree<int>::NOTFOUND,
+        EXPECT_EQ(RBTree<IntWrapper>::NOTFOUND,
                   rbtree.find(Name("yz.d.e.f"), &node, node_path));
         previousWalk(rbtree, node, node_path, 9, true);
         node = NULL;
@@ -739,7 +749,7 @@ TEST_F(RBTreeTest, previousNode) {
 
         // 'g.h' is an empty node, so we get a NOTFOUND and not
         // PARTIALMATCH.
-        EXPECT_EQ(RBTree<int>::NOTFOUND,
+        EXPECT_EQ(RBTree<IntWrapper>::NOTFOUND,
                   rbtree.find(Name("x.h"), &node, node_path));
         // 'g.h' is the COMMONANCESTOR.
         EXPECT_EQ(node_path.getLastComparedNode()->getName(), Name("g.h"));
@@ -758,7 +768,7 @@ TEST_F(RBTreeTest, previousNode) {
         SCOPED_TRACE("Start inside a wrong node");
         // The d.e.f is a single node, but we want only part of it. We
         // should start iterating before it.
-        EXPECT_EQ(RBTree<int>::NOTFOUND,
+        EXPECT_EQ(RBTree<IntWrapper>::NOTFOUND,
                   rbtree.find(Name("e.f"), &node, node_path));
         previousWalk(rbtree, node, node_path, 3, true);
         node = NULL;
@@ -768,9 +778,9 @@ TEST_F(RBTreeTest, previousNode) {
     {
         SCOPED_TRACE("Lookup in empty tree");
         // Just check it doesn't crash, etc.
-        TreeHolder tree_holder(mem_sgmt_, RBTree<int>::create(mem_sgmt_));
-        RBTree<int>& empty_tree(*tree_holder.get());
-        EXPECT_EQ(RBTree<int>::NOTFOUND,
+        TreeHolder tree_holder(mem_sgmt_, RBTree<IntWrapper>::create(mem_sgmt_));
+        RBTree<IntWrapper>& empty_tree(*tree_holder.get());
+        EXPECT_EQ(RBTree<IntWrapper>::NOTFOUND,
                   empty_tree.find(Name("x"), &node, node_path));
         EXPECT_EQ(static_cast<void*>(NULL), node);
         EXPECT_EQ(static_cast<void*>(NULL),
@@ -782,13 +792,13 @@ TEST_F(RBTreeTest, previousNode) {
 
 TEST_F(RBTreeTest, nextNodeError) {
     // Empty chain for nextNode() is invalid.
-    RBTreeNodeChain<int> chain;
+    RBTreeNodeChain<IntWrapper> chain;
     EXPECT_THROW(rbtree.nextNode(chain), BadValue);
 }
 
 // A helper function for getLastComparedNode() below.
 void
-comparisonChecks(const RBTreeNodeChain<int>& chain,
+comparisonChecks(const RBTreeNodeChain<IntWrapper>& chain,
                  int expected_order, int expected_common_labels,
                  NameComparisonResult::NameRelation expected_reln)
 {
@@ -806,24 +816,24 @@ comparisonChecks(const RBTreeNodeChain<int>& chain,
 }
 
 TEST_F(RBTreeTest, getLastComparedNode) {
-    RBTree<int>& tree = rbtree_expose_empty_node; // use the "empty OK" mode
-    RBTreeNodeChain<int> chain;
+    RBTree<IntWrapper>& tree = rbtree_expose_empty_node; // use the "empty OK" mode
+    RBTreeNodeChain<IntWrapper> chain;
 
     // initially there should be no 'last compared'.
     EXPECT_EQ(static_cast<void*>(NULL), chain.getLastComparedNode());
 
     // A search for an empty tree should result in no 'last compared', too.
-    TreeHolder tree_holder(mem_sgmt_, RBTree<int>::create(mem_sgmt_));
-    RBTree<int>& empty_tree(*tree_holder.get());
-    EXPECT_EQ(RBTree<int>::NOTFOUND,
+    TreeHolder tree_holder(mem_sgmt_, RBTree<IntWrapper>::create(mem_sgmt_));
+    RBTree<IntWrapper>& empty_tree(*tree_holder.get());
+    EXPECT_EQ(RBTree<IntWrapper>::NOTFOUND,
               empty_tree.find(Name("a"), &crbtnode, chain));
     EXPECT_EQ(static_cast<void*>(NULL), chain.getLastComparedNode());
     chain.clear();
 
-    const RBNode<int>* expected_node = NULL;
+    const RBNode<IntWrapper>* expected_node = NULL;
 
     // Exact match case.  The returned node should be last compared.
-    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
               tree.find(Name("x.d.e.f"), &expected_node, chain));
     EXPECT_EQ(expected_node, chain.getLastComparedNode());
     // 1 = # labels of "x" (note: excluding ".")
@@ -832,9 +842,9 @@ TEST_F(RBTreeTest, getLastComparedNode) {
 
     // Partial match, search stopped at the matching node, which should be
     // the last compared node.
-    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
               tree.find(Name("k.g.h"), &expected_node));
-    EXPECT_EQ(RBTree<int>::PARTIALMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::PARTIALMATCH,
               tree.find(Name("x.k.g.h"), &crbtnode, chain));
     EXPECT_EQ(expected_node, chain.getLastComparedNode());
     // k.g.h < x.k.g.h, 1 = # labels of "k"
@@ -843,9 +853,9 @@ TEST_F(RBTreeTest, getLastComparedNode) {
 
     // Partial match, search stopped in the subtree below the matching node
     // after following a left branch.
-    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
               tree.find(Name("x.d.e.f"), &expected_node));
-    EXPECT_EQ(RBTree<int>::PARTIALMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::PARTIALMATCH,
               tree.find(Name("a.d.e.f"), &crbtnode, chain));
     EXPECT_EQ(expected_node, chain.getLastComparedNode());
     // a < x, no common labels
@@ -854,9 +864,9 @@ TEST_F(RBTreeTest, getLastComparedNode) {
 
     // Partial match, search stopped in the subtree below the matching node
     // after following a right branch.
-    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
               tree.find(Name("z.d.e.f"), &expected_node));
-    EXPECT_EQ(RBTree<int>::PARTIALMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::PARTIALMATCH,
               tree.find(Name("zz.d.e.f"), &crbtnode, chain));
     EXPECT_EQ(expected_node, chain.getLastComparedNode());
     // zz > z, no common label
@@ -865,9 +875,9 @@ TEST_F(RBTreeTest, getLastComparedNode) {
 
     // Partial match, search stopped at a node for a super domain of the
     // search name in the subtree below the matching node.
-    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
               tree.find(Name("w.y.d.e.f"), &expected_node));
-    EXPECT_EQ(RBTree<int>::PARTIALMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::PARTIALMATCH,
               tree.find(Name("y.d.e.f"), &crbtnode, chain));
     EXPECT_EQ(expected_node, chain.getLastComparedNode());
     // y < w.y, 1 = # labels of "y"
@@ -877,7 +887,7 @@ TEST_F(RBTreeTest, getLastComparedNode) {
     // Partial match, search stopped at a node that share a common ancestor
     // with the search name in the subtree below the matching node.
     // (the expected node is the same as the previous case)
-    EXPECT_EQ(RBTree<int>::PARTIALMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::PARTIALMATCH,
               tree.find(Name("z.y.d.e.f"), &crbtnode, chain));
     EXPECT_EQ(expected_node, chain.getLastComparedNode());
     // z.y > w.y, 1 = # labels of "y"
@@ -886,8 +896,8 @@ TEST_F(RBTreeTest, getLastComparedNode) {
 
     // Search stops in the highest level (under ".") after following a left
     // branch. (find() still returns PARTIALMATCH due to the top level ".")
-    EXPECT_EQ(RBTree<int>::EXACTMATCH, tree.find(Name("c"), &expected_node));
-    EXPECT_EQ(RBTree<int>::PARTIALMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH, tree.find(Name("c"), &expected_node));
+    EXPECT_EQ(RBTree<IntWrapper>::PARTIALMATCH,
               tree.find(Name("bb"), &crbtnode, chain));
     EXPECT_EQ(expected_node, chain.getLastComparedNode());
     // bb < c, no common label
@@ -896,7 +906,7 @@ TEST_F(RBTreeTest, getLastComparedNode) {
 
     // Search stops in the highest level (under ".") after following a right
     // branch. (the expected node is the same as the previous case)
-    EXPECT_EQ(RBTree<int>::PARTIALMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::PARTIALMATCH,
               tree.find(Name("d"), &crbtnode, chain));
     EXPECT_EQ(expected_node, chain.getLastComparedNode());
     // d > c, no common label
@@ -965,9 +975,9 @@ TEST_F(RBTreeTest, swap) {
     size_t count1(rbtree.getNodeCount());
 
     // Create second one and store state
-    TreeHolder tree_holder(mem_sgmt_, RBTree<int>::create(mem_sgmt_));
-    RBTree<int>& tree2(*tree_holder.get());
-    RBNode<int>* node;
+    TreeHolder tree_holder(mem_sgmt_, RBTree<IntWrapper>::create(mem_sgmt_));
+    RBTree<IntWrapper>& tree2(*tree_holder.get());
+    RBNode<IntWrapper>* node;
     tree2.insert(mem_sgmt_, Name("second"), &node);
     std::ostringstream str2;
     tree2.dumpTree(str2);
@@ -992,41 +1002,41 @@ TEST_F(RBTreeTest, swap) {
 // any domain names should be considered a subdomain of it), so it makes
 // sense to test cases with the root zone explicitly.
 TEST_F(RBTreeTest, root) {
-    TreeHolder tree_holder(mem_sgmt_, RBTree<int>::create(mem_sgmt_));
-    RBTree<int>& root(*tree_holder.get());
+    TreeHolder tree_holder(mem_sgmt_, RBTree<IntWrapper>::create(mem_sgmt_));
+    RBTree<IntWrapper>& root(*tree_holder.get());
     root.insert(mem_sgmt_, Name::ROOT_NAME(), &rbtnode);
-    rbtnode->setData(RBNode<int>::NodeDataPtr(new int(1)));
+    rbtnode->setData(RBNode<IntWrapper>::NodeDataPtr(new IntWrapper(1)));
 
-    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
               root.find(Name::ROOT_NAME(), &crbtnode));
     EXPECT_EQ(rbtnode, crbtnode);
-    EXPECT_EQ(RBTree<int>::PARTIALMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::PARTIALMATCH,
               root.find(Name("example.com"), &crbtnode));
     EXPECT_EQ(rbtnode, crbtnode);
 
     // Insert a new name that better matches the query name.  find() should
     // find the better one.
     root.insert(mem_sgmt_, Name("com"), &rbtnode);
-    rbtnode->setData(RBNode<int>::NodeDataPtr(new int(2)));
-    EXPECT_EQ(RBTree<int>::PARTIALMATCH,
+    rbtnode->setData(RBNode<IntWrapper>::NodeDataPtr(new IntWrapper(2)));
+    EXPECT_EQ(RBTree<IntWrapper>::PARTIALMATCH,
               root.find(Name("example.com"), &crbtnode));
     EXPECT_EQ(rbtnode, crbtnode);
 
     // Perform the same tests for the tree that allows matching against empty
     // nodes.
     TreeHolder tree_holder_emptyok(mem_sgmt_,
-                                   RBTree<int>::create(mem_sgmt_, true));
-    RBTree<int>& root_emptyok(*tree_holder_emptyok.get());
+                                   RBTree<IntWrapper>::create(mem_sgmt_, true));
+    RBTree<IntWrapper>& root_emptyok(*tree_holder_emptyok.get());
     root_emptyok.insert(mem_sgmt_, Name::ROOT_NAME(), &rbtnode);
-    EXPECT_EQ(RBTree<int>::EXACTMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH,
               root_emptyok.find(Name::ROOT_NAME(), &crbtnode));
     EXPECT_EQ(rbtnode, crbtnode);
-    EXPECT_EQ(RBTree<int>::PARTIALMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::PARTIALMATCH,
               root_emptyok.find(Name("example.com"), &crbtnode));
     EXPECT_EQ(rbtnode, crbtnode);
 
     root.insert(mem_sgmt_, Name("com"), &rbtnode);
-    EXPECT_EQ(RBTree<int>::PARTIALMATCH,
+    EXPECT_EQ(RBTree<IntWrapper>::PARTIALMATCH,
               root.find(Name("example.com"), &crbtnode));
     EXPECT_EQ(rbtnode, crbtnode);
 }
@@ -1044,7 +1054,7 @@ TEST_F(RBTreeTest, getAbsoluteLabels) {
 
     const int name_count = sizeof(domain_names) / sizeof(domain_names[0]);
     for (int i = 0; i < name_count; ++i) {
-        EXPECT_EQ(RBTree<int>::EXACTMATCH, rbtree.find(Name(domain_names[i]),
+        EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH, rbtree.find(Name(domain_names[i]),
                   &crbtnode));
 
         // First make sure the names themselves are not absolute
@@ -1061,9 +1071,9 @@ TEST_F(RBTreeTest, getAbsoluteLabels) {
     // Explicitly add and find a root node, to see that getAbsoluteLabels
     // also works when getLabels() already returns an absolute LabelSequence
     rbtree.insert(mem_sgmt_, Name("."), &rbtnode);
-    rbtnode->setData(RBNode<int>::NodeDataPtr(new int(1)));
+    rbtnode->setData(RBNode<IntWrapper>::NodeDataPtr(new IntWrapper(1)));
 
-    EXPECT_EQ(RBTree<int>::EXACTMATCH, rbtree.find(Name("."), &crbtnode));
+    EXPECT_EQ(RBTree<IntWrapper>::EXACTMATCH, rbtree.find(Name("."), &crbtnode));
 
     EXPECT_TRUE(crbtnode->getLabels().isAbsolute());
     EXPECT_EQ(".", crbtnode->getLabels().toText());

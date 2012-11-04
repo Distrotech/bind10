@@ -162,6 +162,7 @@ private:
 public:
     /// \brief Alias for shared pointer to the data.
     typedef boost::shared_ptr<T> NodeDataPtr;
+    typedef boost::intrusive_ptr<T> NodeDataIntrusivePtr;
 
     /// Node flags.
     ///
@@ -248,18 +249,24 @@ public:
     /// \brief Return the data stored in this node.
     const NodeDataPtr& getData() const { return (data_); }
 
+    NodeDataIntrusivePtr& getData2() { return (data2_); }
+    /// \brief Return the data stored in this node.
+    const NodeDataIntrusivePtr& getData2() const { return (data2_); }
+
     /// \brief return whether the node has related data.
     ///
     /// There can be empty nodes inside the RBTree. They are usually the
     /// non-terminal domains, but it is possible (yet probably meaningless)
     /// empty nodes anywhere.
-    bool isEmpty() const { return (data_.get() == NULL); }
+    bool isEmpty() const { return (data_.get() == NULL &&
+                                   data2_.get() == NULL); }
     //@}
 
     /// \name Setter functions.
     //@{
     /// \brief Set the data stored in the node.
     void setData(const NodeDataPtr& data) { data_ = data; }
+    void setData(const NodeDataIntrusivePtr& data) { data2_ = data; }
     //@}
 
     /// \name Node flag manipulation methods
@@ -453,6 +460,7 @@ private:
 
     /// \brief Data stored here.
     NodeDataPtr       data_;
+    NodeDataIntrusivePtr       data2_;
 
     /// \brief The subdomain tree.
     ///
