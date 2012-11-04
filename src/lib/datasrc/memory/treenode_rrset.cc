@@ -362,6 +362,11 @@ TreeNodeRRset::isSameKind(const AbstractRRset& abs_other) const {
     return (AbstractRRset::isSameKind(abs_other));
 }
 
+void
+TreeNodeRRset::destroy() const {
+    delete this;
+}
+
 } // namespace memory
 } // namespace datasrc
 } // datasrc isc

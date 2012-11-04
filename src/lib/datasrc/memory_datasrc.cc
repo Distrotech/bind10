@@ -32,6 +32,7 @@
 
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/intrusive_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
@@ -59,8 +60,8 @@ namespace {
 typedef boost::function<void(ConstRRsetPtr)> LoadCallback;
 
 // RRset specified for this implementation
-typedef boost::shared_ptr<internal::RBNodeRRset> RBNodeRRsetPtr;
-typedef boost::shared_ptr<const internal::RBNodeRRset> ConstRBNodeRRsetPtr;
+typedef boost::intrusive_ptr<internal::RBNodeRRset> RBNodeRRsetPtr;
+typedef boost::intrusive_ptr<const internal::RBNodeRRset> ConstRBNodeRRsetPtr;
 
 /*
  * Each domain consists of some RRsets. They will be looked up by the

@@ -123,7 +123,7 @@ private:
     std::string entry_name_; // The entry name for this rrset entry.
     time_t expire_time_;     // Expiration time of rrset.
     RRsetTrustLevel trust_level_; // RRset trustworthiness.
-    boost::shared_ptr<isc::dns::RRset> rrset_;
+    dns::RRsetPtr rrset_;
     HashKey hash_key_;       // RRsetEntry hash key
 };
 

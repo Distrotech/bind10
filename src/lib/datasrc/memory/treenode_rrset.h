@@ -29,6 +29,7 @@
 #include <datasrc/memory/rdataset.h>
 
 #include <boost/noncopyable.hpp>
+#include <boost/intrusive_ptr.hpp>
 
 #include <string>
 
@@ -230,6 +231,9 @@ public:
     /// node; if they are different they cannot be of the same kind.
     virtual bool isSameKind(const dns::AbstractRRset& abs_other) const;
 
+protected:
+    virtual void destroy() const;
+
 private:
     dns::RdataIteratorPtr getSigRdataIterator() const;
 
@@ -258,7 +262,7 @@ private:
     mutable dns::RRTTL* ttl_;
 };
 
-typedef boost::shared_ptr<TreeNodeRRset> TreeNodeRRsetPtr;
+typedef boost::intrusive_ptr<TreeNodeRRset> TreeNodeRRsetPtr;
 
 } // namespace memory
 } // namespace datasrc

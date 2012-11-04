@@ -19,6 +19,7 @@
 #include <string>
 
 #include <boost/shared_ptr.hpp>
+#include <boost/intrusive_ptr.hpp>
 
 #include <exceptions/exceptions.h>
 
@@ -58,14 +59,14 @@ class RRset;
 ///
 /// This type is commonly used as an argument of various functions defined
 /// in this library in order to handle RRsets in a polymorphic manner.
-typedef boost::shared_ptr<AbstractRRset> RRsetPtr;
+typedef boost::intrusive_ptr<AbstractRRset> RRsetPtr;
 
 /// \brief A pointer-like type pointing to an (immutable) \c RRset
 /// object.
 ///
 /// This type is commonly used as an argument of various functions defined
 /// in this library in order to handle RRsets in a polymorphic manner.
-typedef boost::shared_ptr<const AbstractRRset> ConstRRsetPtr;
+typedef boost::intrusive_ptr<const AbstractRRset> ConstRRsetPtr;
 
 /// \brief A pointer-like type point to an \c RdataIterator object.
 typedef boost::shared_ptr<RdataIterator> RdataIteratorPtr;
@@ -174,7 +175,7 @@ protected:
     ///
     /// This is intentionally defined as \c protected as this base class should
     /// never be instantiated (except as part of a derived class).
-    AbstractRRset() {}
+    AbstractRRset() : refcount_(0) {}
 public:
     /// The destructor.
     virtual ~AbstractRRset() {}
@@ -498,7 +499,28 @@ public:
     virtual bool isSameKind(const AbstractRRset& other) const;
     //@}
 
+protected:
+    mutable unsigned int refcount_;
+    virtual void destroy() const {
+        delete this;
+    }
+
+private:
+    friend void intrusive_ptr_add_ref(const AbstractRRset* foo);
+    friend void intrusive_ptr_release(const AbstractRRset* foo);
 };
+
+inline void
+intrusive_ptr_add_ref(const AbstractRRset* rrset) {
+    ++rrset->refcount_;
+}
+
+inline void
+intrusive_ptr_release(const AbstractRRset* rrset) {
+    if (--rrset->refcount_ == 0) {
+        rrset->destroy();
+    }
+}
 
 /// \brief The \c RdataIterator class is an abstract base class that
 /// provides an interface for accessing RDATA objects stored in an RRset.

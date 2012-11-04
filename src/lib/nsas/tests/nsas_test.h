@@ -219,7 +219,7 @@ static const std::string MIXED_EXAMPLE_CO_UK("EXAmple.co.uk.");
 
 class TestWithRdata : public ::testing::Test {
 protected:
-    typedef boost::shared_ptr<RRset> RRsetPtr;
+    //typedef boost::shared_ptr<RRset> RRsetPtr;
     /// \brief Constructor
     ///
     /// Initializes the RRsets used in the tests.  The RRsets themselves have to
