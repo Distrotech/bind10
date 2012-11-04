@@ -92,6 +92,9 @@ protected:
                                                         53210)))
     {}
 public:
+    ~QueryBenchMark() {
+        query_message_.clear(Message::PARSE);
+    }
     unsigned int run() {
         BenchQueries::const_iterator query;
         const BenchQueries::const_iterator query_end = queries_.end();
