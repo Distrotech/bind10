@@ -655,15 +655,14 @@ class TestStatsHttpd(unittest.TestCase):
         # set the signal handler for deadlock
         self.sig_handler = SignalHandler(self.fail)
         self.base = BaseModules()
-        self.stats_server = ThreadingServerManager(MyStats)
-        self.stats_server.run()
         # checking IPv6 enabled on this platform
         self.ipv6_enabled = is_ipv6_enabled()
 
     def tearDown(self):
         if hasattr(self, "stats_httpd"):
             self.stats_httpd.stop()
-        self.stats_server.shutdown()
+        if hasattr(self, "stats_server"):
+            self.stats_server.shutdown()
         self.base.shutdown()
         # reset the signal handler
         self.sig_handler.reset()
@@ -718,6 +717,9 @@ class TestStatsHttpd(unittest.TestCase):
         self.assertEqual(self.stats_httpd.close_mccs(), None)
 
     def test_mccs(self):
+        # need to startup the stats server only in this test
+        self.stats_server = ThreadingServerManager(MyStats)
+        self.stats_server.run()
         self.stats_httpd = MyStatsHttpd(get_availaddr())
         self.assertIsNotNone(self.stats_httpd.mccs.get_socket())
         self.assertTrue(
