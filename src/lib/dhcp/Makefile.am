@@ -34,26 +34,29 @@ libb10_dhcp___la_SOURCES += pkt6.cc pkt6.h
 libb10_dhcp___la_SOURCES += pkt4.cc pkt4.h
 libb10_dhcp___la_SOURCES += duid.cc duid.h
 
-libb10_dhcpsrv_la_SOURCES  = cfgmgr.cc cfgmgr.h
-libb10_dhcpsrv_la_SOURCES += pool.cc pool.h
-libb10_dhcpsrv_la_SOURCES += subnet.cc subnet.h
-libb10_dhcpsrv_la_SOURCES += triplet.h
-libb10_dhcpsrv_la_SOURCES += lease_mgr.cc lease_mgr.h
-libb10_dhcpsrv_la_SOURCES += addr_utilities.cc addr_utilities.h
-libb10_dhcpsrv_la_SOURCES += alloc_engine.cc alloc_engine.h
-libb10_dhcpsrv_la_CXXFLAGS = $(AM_CXXFLAGS)
-libb10_dhcpsrv_la_CPPFLAGS = $(AM_CPPFLAGS) $(LOG4CPLUS_INCLUDES)
-libb10_dhcpsrv_la_LIBADD   = $(top_builddir)/src/lib/asiolink/libb10-asiolink.la
-libb10_dhcpsrv_la_LIBADD  += $(top_builddir)/src/lib/util/libb10-util.la
-libb10_dhcpsrv_la_LDFLAGS  = -no-undefined -version-info 2:0:0
-
-EXTRA_DIST  = README
-
 libb10_dhcp___la_CXXFLAGS = $(AM_CXXFLAGS)
 libb10_dhcp___la_CPPFLAGS = $(AM_CPPFLAGS) $(LOG4CPLUS_INCLUDES)
 libb10_dhcp___la_LIBADD   = $(top_builddir)/src/lib/asiolink/libb10-asiolink.la
 libb10_dhcp___la_LIBADD  += $(top_builddir)/src/lib/util/libb10-util.la
 libb10_dhcp___la_LDFLAGS  = -no-undefined -version-info 2:0:0
+
+libb10_dhcpsrv_la_SOURCES  = cfgmgr.cc cfgmgr.h
+libb10_dhcpsrv_la_SOURCES += pool.cc pool.h
+libb10_dhcpsrv_la_SOURCES += subnet.cc subnet.h
+libb10_dhcpsrv_la_SOURCES += triplet.h
+libb10_dhcpsrv_la_SOURCES += lease_mgr.cc lease_mgr.h
+libb10_dhcpsrv_la_SOURCES += memfile_lease_mgr.cc memfile_lease_mgr.h
+
+libb10_dhcpsrv_la_SOURCES += addr_utilities.cc addr_utilities.h
+libb10_dhcpsrv_la_SOURCES += alloc_engine.cc alloc_engine.h
+libb10_dhcpsrv_la_CXXFLAGS = $(AM_CXXFLAGS)
+libb10_dhcpsrv_la_CPPFLAGS = $(AM_CPPFLAGS) $(LOG4CPLUS_INCLUDES)
+libb10_dhcpsrv_la_LIBADD   = $(top_builddir)/src/lib/dhcp/libb10-dhcp++.la
+libb10_dhcpsrv_la_LIBADD  += $(top_builddir)/src/lib/asiolink/libb10-asiolink.la
+libb10_dhcpsrv_la_LIBADD  += $(top_builddir)/src/lib/util/libb10-util.la
+libb10_dhcpsrv_la_LDFLAGS  = -no-undefined -version-info 2:0:0
+
+EXTRA_DIST  = README
 
 if USE_CLANGPP
 # Disable unused parameter warning caused by some of the

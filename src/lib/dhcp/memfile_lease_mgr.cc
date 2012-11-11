@@ -12,6 +12,7 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <iostream>
 #include "memfile_lease_mgr.h"
 
 using namespace isc::dhcp;
@@ -19,6 +20,9 @@ using namespace isc::dhcp::test;
 
 Memfile_LeaseMgr::Memfile_LeaseMgr(const std::string& dbconfig)
     : LeaseMgr(dbconfig) {
+    std::cout << "Warning: Using memfile database backend. It is usable for" << std::endl;
+    std::cout << "Warning: limited testing only. File support not implemented yet." << std::endl;
+    std::cout << "Warning: Leases will be lost after restart." << std::endl;
 }
 
 Memfile_LeaseMgr::~Memfile_LeaseMgr() {
@@ -78,9 +82,16 @@ Lease6Collection Memfile_LeaseMgr::getLease6(const DUID& , uint32_t ) const {
     return (Lease6Collection());
 }
 
-Lease6Ptr Memfile_LeaseMgr::getLease6(const DUID&, uint32_t,
-                                      SubnetID) const {
-
+Lease6Ptr Memfile_LeaseMgr::getLease6(const DUID& duid, uint32_t iaid,
+                                      SubnetID subnet_id) const {
+    /// @todo: Slow, naive implementation. Write it using additional indexes
+    for (Lease6Storage::iterator l = storage6_.begin(); l != storage6_.end(); ++l) {
+        if ( (*((*l)->duid_) == duid) &&
+             ( (*l)->iaid_ == iaid) &&
+             ( (*l)->subnet_id_ == subnet_id)) {
+            return (*l);
+        }
+    }
     return (Lease6Ptr());
 }
 
