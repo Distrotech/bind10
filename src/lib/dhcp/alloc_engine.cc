@@ -13,6 +13,7 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <alloc_engine.h>
+#include <lease_mgr_factory.h>
 #include <string.h>
 
 #include <cstring>
@@ -172,7 +173,7 @@ AllocEngine::allocateAddress6(const Subnet6Ptr& subnet,
     }
 
     // check if there's existing lease for that subnet/duid/iaid combination.
-    Lease6Ptr existing = LeaseMgr::instance().getLease6(*duid, iaid, subnet->getID());
+    Lease6Ptr existing = LeaseMgrFactory::instance().getLease6(*duid, iaid, subnet->getID());
     if (existing) {
         // we have a lease already. This is a returning client, probably after
         // his reboot.
@@ -181,7 +182,7 @@ AllocEngine::allocateAddress6(const Subnet6Ptr& subnet,
 
     // check if the hint is in pool and is available
     if (subnet->inPool(hint)) {
-        existing = LeaseMgr::instance().getLease6(hint);
+        existing = LeaseMgrFactory::instance().getLease6(hint);
         if (!existing) {
             /// @todo: check if the hint is reserved once we have host support
             /// implemented
@@ -205,7 +206,7 @@ AllocEngine::allocateAddress6(const Subnet6Ptr& subnet,
         /// @todo: check if the address is reserved once we have host support
         /// implemented
 
-        Lease6Ptr existing = LeaseMgr::instance().getLease6(candidate);
+        Lease6Ptr existing = LeaseMgrFactory::instance().getLease6(candidate);
         // there's no existing lease for selected candidate, so it is
         // free. Let's allocate it.
         if (!existing) {
@@ -241,7 +242,7 @@ Lease6Ptr AllocEngine::createLease(const Subnet6Ptr& subnet,
 
     if (!fake_allocation) {
         // That is a real (REQUEST) allocation
-        bool status = LeaseMgr::instance().addLease(lease);
+        bool status = LeaseMgrFactory::instance().addLease(lease);
 
         if (status) {
 
@@ -258,7 +259,7 @@ Lease6Ptr AllocEngine::createLease(const Subnet6Ptr& subnet,
 
         // It is for advertise only. We should not insert the lease into LeaseMgr,
         // but rather check that we could have inserted it.
-        Lease6Ptr existing = LeaseMgr::instance().getLease6(addr);
+        Lease6Ptr existing = LeaseMgrFactory::instance().getLease6(addr);
         if (!existing) {
             return (lease);
         } else {

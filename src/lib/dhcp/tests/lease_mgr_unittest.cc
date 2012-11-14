@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2011-2012 Internet Systems Consortium, Inc. ("ISC")
 //
 // Permission to use, copy, modify, and/or distribute this software for any
 // purpose with or without fee is hereby granted, provided that the above
@@ -16,16 +16,208 @@
 #include <iostream>
 #include <sstream>
 #include <gtest/gtest.h>
+
 #include <asiolink/io_address.h>
 #include <dhcp/lease_mgr.h>
-#include <dhcp/duid.h>
-#include <dhcp/memfile_lease_mgr.h>
 
 using namespace std;
 using namespace isc;
 using namespace isc::asiolink;
 using namespace isc::dhcp;
-using namespace isc::dhcp::test; // Memfile_LeaseMgr
+
+// This is a concrete implementation of a Lease database.  It does not do
+// anything useful and is used for abstract LeaseMgr class testing.
+class ConcreteLeaseMgr : public LeaseMgr {
+public:
+
+    /// @brief The sole lease manager constructor
+    ///
+    /// dbconfig is a generic way of passing parameters. Parameters
+    /// are passed in the "name=value" format, separated by spaces.
+    /// Values may be enclosed in double quotes, if needed.
+    ///
+    /// @param parameters A data structure relating keywords and values
+    ///        concerned with the database.
+    ConcreteLeaseMgr(const LeaseMgr::ParameterMap& parameters)
+        : LeaseMgr(parameters)
+    {}
+
+    /// @brief Destructor
+    virtual ~ConcreteLeaseMgr()
+    {}
+
+    /// @brief Adds an IPv4 lease.
+    ///
+    /// @param lease lease to be added
+    virtual bool addLease(const Lease4Ptr&) {
+        return (false);
+    }
+
+    /// @brief Adds an IPv6 lease.
+    ///
+    /// @param lease lease to be added
+    virtual bool addLease(const Lease6Ptr&) {
+        return (false);
+    }
+
+    /// @brief Returns existing IPv4 lease for specified IPv4 address.
+    ///
+    /// @param addr address of the searched lease
+    ///
+    /// @return smart pointer to the lease (or NULL if a lease is not found)
+    virtual Lease4Ptr getLease4(const isc::asiolink::IOAddress&) const {
+        return (Lease4Ptr());
+    }
+
+    /// @brief Returns existing IPv4 lease for specific address and subnet
+    /// @param addr address of the searched lease
+    /// @param subnet_id ID of the subnet the lease must belong to
+    ///
+    /// @return smart pointer to the lease (or NULL if a lease is not found)
+    virtual Lease4Ptr getLease4(const isc::asiolink::IOAddress&,
+                                SubnetID) const {
+        return (Lease4Ptr());
+    }
+
+    /// @brief Returns existing IPv4 leases for specified hardware address.
+    ///
+    /// Although in the usual case there will be only one lease, for mobile
+    /// clients or clients with multiple static/fixed/reserved leases there
+    /// can be more than one. Thus return type is a container, not a single
+    /// pointer.
+    ///
+    /// @param hwaddr hardware address of the client
+    ///
+    /// @return lease collection
+    virtual Lease4Collection getLease4(const HWAddr&) const {
+        return (Lease4Collection());
+    }
+
+    /// @brief Returns existing IPv4 leases for specified hardware address
+    ///        and a subnet
+    ///
+    /// There can be at most one lease for a given HW address in a single
+    /// pool, so this method with either return a single lease or NULL.
+    ///
+    /// @param hwaddr hardware address of the client
+    /// @param subnet_id identifier of the subnet that lease must belong to
+    ///
+    /// @return a pointer to the lease (or NULL if a lease is not found)
+    virtual Lease4Ptr getLease4(const HWAddr&, SubnetID) const {
+        return (Lease4Ptr());
+    }
+
+    /// @brief Returns existing IPv4 lease for specified client-id
+    ///
+    /// @param clientid client identifier
+    ///
+    /// @return lease collection
+    virtual Lease4Collection getLease4(const ClientId&) const {
+        return (Lease4Collection());
+    }
+
+    /// @brief Returns existing IPv4 lease for specified client-id
+    ///
+    /// There can be at most one lease for a given HW address in a single
+    /// pool, so this method with either return a single lease or NULL.
+    ///
+    /// @param clientid client identifier
+    /// @param subnet_id identifier of the subnet that lease must belong to
+    ///
+    /// @return a pointer to the lease (or NULL if a lease is not found)
+    virtual Lease4Ptr getLease4(const ClientId&, SubnetID) const {
+        return (Lease4Ptr());
+    }
+
+    /// @brief Returns existing IPv6 lease for a given IPv6 address.
+    ///
+    /// @param addr address of the searched lease
+    ///
+    /// @return smart pointer to the lease (or NULL if a lease is not found)
+    Lease6Ptr getLease6(const isc::asiolink::IOAddress&) const {
+        return (Lease6Ptr());
+    }
+
+    /// @brief Returns existing IPv6 lease for a given DUID+IA combination
+    ///
+    /// @param duid client DUID
+    /// @param iaid IA identifier
+    ///
+    /// @return collection of IPv6 leases
+    Lease6Collection getLease6(const DUID&, uint32_t) const {
+        return (Lease6Collection());
+    }
+
+    /// @brief Returns existing IPv6 lease for a given DUID+IA combination
+    ///
+    /// @param duid client DUID
+    /// @param iaid IA identifier
+    /// @param subnet_id identifier of the subnet the lease must belong to
+    ///
+    /// @return smart pointer to the lease (or NULL if a lease is not found)
+    Lease6Ptr getLease6(const DUID&, uint32_t, SubnetID) const {
+        return (Lease6Ptr());
+    }
+
+    /// @brief Updates IPv4 lease.
+    ///
+    /// @param lease4 The lease to be updated.
+    ///
+    /// If no such lease is present, an exception will be thrown.
+    void updateLease4(const Lease4Ptr&) {}
+
+    /// @brief Updates IPv4 lease.
+    ///
+    /// @param lease4 The lease to be updated.
+    ///
+    /// If no such lease is present, an exception will be thrown.
+    void updateLease6(const Lease6Ptr&) {}
+
+    /// @brief Deletes a lease.
+    ///
+    /// @param addr IPv4 address of the lease to be deleted.
+    ///
+    /// @return true if deletion was successful, false if no such lease exists
+    bool deleteLease4(const isc::asiolink::IOAddress&) {
+        return (false);
+    }
+
+    /// @brief Deletes a lease.
+    ///
+    /// @param addr IPv4 address of the lease to be deleted.
+    ///
+    /// @return true if deletion was successful, false if no such lease exists
+    bool deleteLease6(const isc::asiolink::IOAddress&) {
+        return (false);
+    }
+
+    /// @brief Returns backend name.
+    ///
+    /// Each backend have specific name, e.g. "mysql" or "sqlite".
+    std::string getName() const {
+        return (std::string("concrete"));
+    }
+
+    /// @brief Returns description of the backend.
+    ///
+    /// This description may be multiline text that describes the backend.
+    std::string getDescription() const {
+        return (std::string("This is a dummy concrete backend implementation."));
+    }
+
+    /// @brief Returns backend version.
+    std::pair<uint32_t, uint32_t> getVersion() const {
+        return (make_pair(uint32_t(0), uint32_t(0)));
+    }
+
+    /// @brief Commit transactions
+    void commit() {
+    }
+
+    /// @brief Rollback transactions
+    void rollback() {
+    }
+};
 
 namespace {
 // empty class for now, but may be extended once Addr6 becomes bigger
@@ -37,127 +229,25 @@ public:
 
 // This test checks if the LeaseMgr can be instantiated and that it
 // parses parameters string properly.
-TEST_F(LeaseMgrTest, constructor) {
+TEST_F(LeaseMgrTest, getParameter) {
 
-    // should not throw any exceptions here
-    Memfile_LeaseMgr * leaseMgr = new Memfile_LeaseMgr("");
-    delete leaseMgr;
+    LeaseMgr::ParameterMap pmap;
+    pmap[std::string("param1")] = std::string("value1");
+    pmap[std::string("param2")] = std::string("value2");
+    ConcreteLeaseMgr leasemgr(pmap);
 
-    leaseMgr = new Memfile_LeaseMgr("param1=value1 param2=value2");
-
-    EXPECT_EQ("value1", leaseMgr->getParameter("param1"));
-    EXPECT_EQ("value2", leaseMgr->getParameter("param2"));
-    EXPECT_THROW(leaseMgr->getParameter("param3"), BadValue);
-
-    delete leaseMgr;
+    EXPECT_EQ("value1", leasemgr.getParameter("param1"));
+    EXPECT_EQ("value2", leasemgr.getParameter("param2"));
+    EXPECT_THROW(leasemgr.getParameter("param3"), BadValue);
 }
 
 // There's no point in calling any other methods in LeaseMgr, as they
-// are purely virtual, so we would only call Memfile_LeaseMgr methods.
-// Those methods are just stubs that does not return anything.
-// It seems likely that we will need to extend the memfile code for
-// allocation engine tests, so we may implement tests that call
-// Memfile_LeaseMgr methods then.
+// are purely virtual, so we would only call ConcreteLeaseMgr methods.
+// Those methods are just stubs that do not return anything.
 
-TEST_F(LeaseMgrTest, addGetDelete) {
-    Memfile_LeaseMgr * leaseMgr = new Memfile_LeaseMgr("");
-
-    IOAddress addr("2001:db8:1::456");
-
-    uint8_t llt[] = {0, 1, 2, 3, 4, 5, 6, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf};
-    DuidPtr duid(new DUID(llt, sizeof(llt)));
-
-    uint32_t iaid = 7; // just a number
-
-    SubnetID subnet_id = 8; // just another number
-
-    Lease6Ptr lease(new Lease6(Lease6::LEASE_IA_NA, addr,
-                               duid, iaid, 100, 200, 50, 80,
-                               subnet_id));
-
-    EXPECT_TRUE(leaseMgr->addLease(lease));
-
-    // should not be allowed to add a second lease with the same address
-    EXPECT_FALSE(leaseMgr->addLease(lease));
-
-    Lease6Ptr x = leaseMgr->getLease6(IOAddress("2001:db8:1::234"));
-    EXPECT_EQ(Lease6Ptr(), x);
-
-    x = leaseMgr->getLease6(IOAddress("2001:db8:1::456"));
-    ASSERT_TRUE(x);
-
-    EXPECT_EQ(x->addr_.toText(), addr.toText());
-    EXPECT_TRUE(*x->duid_ == *duid);
-    EXPECT_EQ(x->iaid_, iaid);
-    EXPECT_EQ(x->subnet_id_, subnet_id);
-
-    // These are not important from lease management perspective, but
-    // let's check them anyway.
-    EXPECT_EQ(x->type_, Lease6::LEASE_IA_NA);
-    EXPECT_EQ(x->preferred_lft_, 100);
-    EXPECT_EQ(x->valid_lft_, 200);
-    EXPECT_EQ(x->t1_, 50);
-    EXPECT_EQ(x->t2_, 80);
-
-    // Test getLease6(duid, iaid, subnet_id) - positive case
-    Lease6Ptr y = leaseMgr->getLease6(*duid, iaid, subnet_id);
-    ASSERT_TRUE(y);
-    EXPECT_TRUE(*y->duid_ == *duid);
-    EXPECT_EQ(y->iaid_, iaid);
-    EXPECT_EQ(y->addr_.toText(), addr.toText());
-
-    // Test getLease6(duid, iaid, subnet_id) - wrong iaid
-    uint32_t invalid_iaid = 9; // no such iaid
-    y = leaseMgr->getLease6(*duid, invalid_iaid, subnet_id);
-    EXPECT_FALSE(y);
-
-    uint32_t invalid_subnet_id = 999;
-    y = leaseMgr->getLease6(*duid, iaid, invalid_subnet_id);
-    EXPECT_FALSE(y);
-
-    // truncated duid
-    DuidPtr invalid_duid(new DUID(llt, sizeof(llt) - 1));
-    y = leaseMgr->getLease6(*invalid_duid, iaid, subnet_id);
-    EXPECT_FALSE(y);
-
-    // should return false - there's no such address
-    EXPECT_FALSE(leaseMgr->deleteLease6(IOAddress("2001:db8:1::789")));
-
-    // this one should succeed
-    EXPECT_TRUE(leaseMgr->deleteLease6(IOAddress("2001:db8:1::456")));
-
-    // after the lease is deleted, it should really be gone
-    x = leaseMgr->getLease6(IOAddress("2001:db8:1::456"));
-    EXPECT_EQ(Lease6Ptr(), x);
-
-    delete leaseMgr;
-}
-
-// This test checks there that leaseMgr is really a singleton and that
-// no more than one can be created.
-TEST_F(LeaseMgrTest, singleton) {
-    Memfile_LeaseMgr* leaseMgr1 = NULL;
-    Memfile_LeaseMgr* leaseMgr2 = NULL;
-
-    EXPECT_THROW(LeaseMgr::instance(), InvalidOperation);
-
-    EXPECT_NO_THROW( leaseMgr1 = new Memfile_LeaseMgr("") );
-
-    EXPECT_NO_THROW(LeaseMgr::instance());
-
-    // There can be only one instance of any LeaseMgr derived
-    // objects instantiated at any time.
-    ASSERT_THROW(leaseMgr2 = new Memfile_LeaseMgr(""), InvalidOperation);
-
-    delete leaseMgr1;
-
-    ASSERT_NO_THROW(leaseMgr2 = new Memfile_LeaseMgr("") );
-
-    delete leaseMgr2;
-}
-
+// Lease6 is also defined in lease_mgr.h, so is tested in this file as well.
 // This test checks if the Lease6 structure can be instantiated correctly
-TEST(Lease6, ctor) {
+TEST(Lease6, Lease6Constructor) {
 
     IOAddress addr("2001:db8:1::456");
 
@@ -187,5 +277,4 @@ TEST(Lease6, ctor) {
                             DuidPtr(), iaid, 100, 200, 50, 80,
                             subnet_id), InvalidOperation);
 }
-
 }; // end of anonymous namespace

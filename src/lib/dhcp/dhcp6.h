@@ -191,4 +191,4 @@ extern const int dhcpv6_type_name_max;
 #define IRT_DEFAULT     86400
 #define IRT_MINIMUM     600
 
-#endif
+#endif /* DHCP6_H */

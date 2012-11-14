@@ -27,6 +27,7 @@
 #include <dhcp/dhcp6.h>
 #include <dhcp/duid.h>
 #include <dhcp/lease_mgr.h>
+#include <dhcp/lease_mgr_factory.h>
 #include <dhcp/option.h>
 #include <dhcp/option6_addrlst.h>
 #include <dhcp/option6_ia.h>
@@ -166,7 +167,7 @@ public:
                          boost::shared_ptr<Option6IAAddr> addr) {
         boost::shared_ptr<Option6IA> ia = boost::dynamic_pointer_cast<Option6IA>(ia_na);
 
-        Lease6Ptr lease = LeaseMgr::instance().getLease6(addr->getAddress());
+        Lease6Ptr lease = LeaseMgrFactory::instance().getLease6(addr->getAddress());
         if (!lease) {
             cout << "Lease for " << addr->getAddress().toText()
                  << " not found in the database backend.";
@@ -673,7 +674,7 @@ TEST_F(Dhcpv6SrvTest, RequestBasic) {
     // check that the lease is really in the database
     Lease6Ptr l = checkLease(duid_, reply->getOption(D6O_IA_NA), addr);
     EXPECT_TRUE(l);
-    LeaseMgr::instance().deleteLease6(addr->getAddress());
+    LeaseMgrFactory::instance().deleteLease6(addr->getAddress());
 }
 
 // This test checks that the server is offering different addresses to different
