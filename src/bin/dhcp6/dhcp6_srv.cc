@@ -14,32 +14,31 @@
 
 #include <config.h>
 
-#include <stdlib.h>
-#include <time.h>
-
 #include <asiolink/io_address.h>
-#include <dhcp6/dhcp6_log.h>
-#include <dhcp6/dhcp6_srv.h>
 #include <dhcp/dhcp6.h>
+#include <dhcp/duid.h>
 #include <dhcp/iface_mgr.h>
 #include <dhcp/libdhcp++.h>
 #include <dhcp/option6_addrlst.h>
-#include <dhcp/option6_iaaddr.h>
 #include <dhcp/option6_ia.h>
+#include <dhcp/option6_iaaddr.h>
+#include <dhcp/option6_iaaddr.h>
 #include <dhcp/option6_int_array.h>
 #include <dhcp/pkt6.h>
-#include <dhcp/subnet.h>
-#include <dhcp/cfgmgr.h>
+#include <dhcp6/dhcp6_log.h>
+#include <dhcp6/dhcp6_srv.h>
+#include <dhcpsrv/cfgmgr.h>
+#include <dhcpsrv/lease_mgr.h>
+#include <dhcpsrv/lease_mgr_factory.h>
+#include <dhcpsrv/subnet.h>
 #include <exceptions/exceptions.h>
 #include <util/io_utilities.h>
 #include <util/range_utilities.h>
-#include <dhcp/duid.h>
-#include <dhcp/lease_mgr.h>
-#include <dhcp/lease_mgr_factory.h>
-#include <dhcp/cfgmgr.h>
-#include <dhcp/option6_iaaddr.h>
 
 #include <boost/foreach.hpp>
+
+#include <stdlib.h>
+#include <time.h>
 
 using namespace isc;
 using namespace isc::asiolink;
@@ -80,6 +79,7 @@ Dhcpv6Srv::Dhcpv6Srv(uint16_t port, const char* dbconfig)
         // Instantiate LeaseMgr
         LeaseMgrFactory::create(dbconfig);
         LOG_INFO(dhcp6_logger, DHCP6_DB_BACKEND_STARTED)
+            .arg(LeaseMgrFactory::instance().getType())
             .arg(LeaseMgrFactory::instance().getName());
 
         // Instantiate allocation engine
