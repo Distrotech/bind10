@@ -36,7 +36,31 @@ fi
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
 
+# Checks for Python
+m4_define([_AM_PYTHON_INTERPRETER_LIST],
+          [python python3.3 python3.2 python3.1 python3])
+AC_ARG_WITH([pythonpath],
+AC_HELP_STRING([--with-pythonpath=PATH],
+  [specify an absolute path to python executable when automatic version check (incorrectly) fails]),
+  [python_path="$withval"], [python_path="auto"])
+if test "$python_path" = auto; then
+	AM_PATH_PYTHON([3.1])
+else
+	# Older versions of automake can't handle python3 well.  This is an
+	# in-house workaround for them.
+	PYTHON=$python_path
+	AC_SUBST(PYTHON)
+	PYTHON_VERSION=[`$PYTHON -c "import sys; sys.stdout.write(sys.version[:3])"`]
+	if test `echo "$PYTHON_VERSION >= 3.1" | bc` != 1 ; then
+		AC_MSG_ERROR(["Python version too old: $PYTHON_VERSION, need 3.1 or higher"])
+	fi
+	AC_SUBST(PYTHON_VERSION)
+	PYTHONPATH='${exec_prefix}/lib/python'$PYTHON_VERSION'/site-packages'
+	AC_SUBST(PYTHONPATH)
+fi
+
 AC_CONFIG_FILES([Makefile
-                 host/Makefile])
+                 host/Makefile
+                 host/host.py])
 
 AC_OUTPUT

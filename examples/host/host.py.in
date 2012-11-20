@@ -1,0 +1,199 @@
+#!@PYTHON@
+
+# Copyright (C) 2012  Internet Systems Consortium.
+#
+# Permission to use, copy, modify, and distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND INTERNET SYSTEMS CONSORTIUM
+# DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL
+# INTERNET SYSTEMS CONSORTIUM BE LIABLE FOR ANY SPECIAL, DIRECT,
+# INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
+# FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+# NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+# WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+import sys; sys.path.append ('@PYTHONPATH@')
+
+import getopt
+import time
+import socket
+import bind10_config
+from isc.dns import *
+
+def host_lookup(name, dns_class, type, any,
+                sock, sendsa, verbose, recursive_bit):
+    """doing the lookup itself"""
+    msg = Message(Message.RENDER)
+
+    # does this matter?
+    msg.set_qid(0)
+
+    # TODO: add switch for this
+    msg.set_opcode(Opcode.QUERY())
+    msg.set_rcode(Rcode.NOERROR())
+    if recursive_bit:
+        msg.set_header_flag(Message.HEADERFLAG_RD)
+
+    if any:
+        type = RRType.ANY()
+    msg.add_question(Question(Name(name), dns_class, type))
+
+    renderer = MessageRenderer()
+    msg.to_wire(renderer)
+
+    if verbose:
+        before_time = time.time()
+
+    try:
+        sock.sendto(renderer.get_data(), sendsa)
+    except OSError:
+        print('failed to send request', file=sys.stderr)
+        return
+
+    try:
+        (recvbuf, recvsa) = sock.recvfrom(4096)
+    except OSError:
+        print('failed to receive response', file=sys.stderr)
+        return
+
+    try:
+        rmsg = Message(Message.PARSE)
+        rmsg.from_wire(recvbuf)
+        if not verbose:
+            description = ''
+            for rrset in rmsg.get_section(Message.SECTION_ANSWER):
+                if rrset.get_type() == RRType.A():
+                    description = 'has address'
+                elif rrset.get_type() == RRType.AAAA():
+                    description = 'has IPv6 address'
+                elif rrset.get_type() == RRType.MX():
+                    description = 'mail is handled by'
+                elif rrset.get_type() == RRType.TXT():
+                    description = 'descriptive text'
+                else:
+                    description = 'RR(' + rrset.get_type().to_text() + ')'
+
+                for rdata in rrset.get_rdata():
+                    print(name, description, rdata.to_text())
+        else:
+            after_time = time.time()
+
+            # HEADER and QUESTION, ANSWER, AUTHORITY, and ADDITIONAL
+            print(rmsg.to_text())
+
+            elapsed_time = int((after_time - before_time) * 1000.)
+
+            # TODO: if NXDOMAIN, host(1) doesn't show HEADER
+            # Host hsdjkfhksjhdfkj not found: 3(NXDOMAIN)
+            # TODO: test if NXDOMAIN
+
+            print('Received', len(recvbuf), 'bytes in', elapsed_time, 'ms')
+            # TODO: " bytes from 127.0.0.1#53 in 0 ms
+
+    # TODO: handle InvalidRRClass
+    # TODO: handle invalid type exception
+    except Exception as ex:
+        print('parse failed for', name + '/' + type.to_text() + ':', ex,
+              file=sys.stderr)
+    except:
+        print('parse failed for', name + '/' + type.to_text(),
+              file=sys.stderr)
+
+    return False
+
+def usage():
+    """print usage"""
+    print('Usage: host.py [-adrv] [-c class] [-p port] [-t type]',
+          'hostname [server]')
+    sys.exit(1)
+
+def main():
+    """main/entry point"""
+
+    # not set, so A, AAAA, MX 
+    dns_type = None
+    server = '127.0.0.1'
+    server_port = 53
+    dns_class = RRClass.IN()
+    verbose = False
+    dns_any = False
+    recursive_bit = True
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'ac:dp:rt:v')
+    except getopt.GetoptError as ex:
+        print(str(ex))
+        usage()
+
+    for option, arg in opts:
+        if option == '-a':
+            dns_any = True
+            verbose = True
+        elif option == '-c':
+            dns_class = RRClass(arg)
+        # p for port is a non-standard switch
+        elif option == '-p':
+            server_port = int(arg)
+        elif option == '-r':
+            recursive_bit = False
+        elif option == '-t':
+            dns_type = RRType(arg)
+        # debug and verbose are equivalent
+        elif (option == '-d') or (option == '-v'):
+            verbose = True
+        else:
+            print('unhandled option', option)
+            usage()
+
+    if len(args) == 0:
+        usage()
+    elif len(args) >= 2:
+        server = args[1]
+
+    try:
+        res = socket.getaddrinfo(server, server_port, type=socket.SOCK_DGRAM)
+    except OSError:
+        print('address/port conversion for',
+              server + ':' + server_port,
+              'failed',
+              file=sys.stderr)
+        raise
+
+    af, socktype, proto, cname, sendsa = res[0]
+    if verbose:
+        print('Trying "' + args[0] + '"')
+        # this is only output the first time
+        print('Using domain server:')
+        print('Name:', server)
+        # TODO: I guess I have to do a lookup to get that address and aliases
+        # too
+        # print('Address:', address) # '#', port
+        # print('Aliases:', server)
+
+    try:
+        sock = socket.socket(af, socktype, proto)
+    except OSError:
+        print('failed to open socket', file=sys.stderr)
+        return
+
+    if dns_type is None:
+        host_lookup(args[0], dns_class, RRType.A(), dns_any,
+                    sock, sendsa, verbose, recursive_bit)
+        # TODO: don't do next if A doesn't exist
+        host_lookup(args[0], dns_class, RRType.AAAA(), dns_any,
+                    sock, sendsa, verbose, recursive_bit)
+        host_lookup(args[0], dns_class, RRType.MX(), dns_any,
+                    sock, sendsa, verbose, recursive_bit)
+    else:
+        # -t overrides -a, regardless of order
+        host_lookup(args[0], dns_class, dns_type, False,
+                    sock, sendsa, verbose, recursive_bit)
+
+    sock.close()
+    sys.exit(0)
+
+if __name__ == '__main__':
+    main()
