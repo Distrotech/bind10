@@ -57,7 +57,7 @@ Element::toWire(std::ostream& ss) const {
 }
 
 bool
-Element::getValue(long int&) const {
+Element::getValue(int64_t&) const {
     return (false);
 }
 
@@ -87,7 +87,7 @@ Element::getValue(std::map<std::string, ConstElementPtr>&) const {
 }
 
 bool
-Element::setValue(const long int) {
+Element::setValue(const int64_t) {
     return (false);
 }
 
@@ -205,7 +205,7 @@ Element::create() {
 }
 
 ElementPtr
-Element::create(const long int i) {
+Element::create(const int64_t i) {
     return (ElementPtr(new IntElement(i)));
 }
 
@@ -390,14 +390,14 @@ number_from_stringstream(std::istream &in, int& pos) {
 // value is larger than an int can handle)
 ElementPtr
 from_stringstream_number(std::istream &in, int &pos) {
-    long int i = 0;
+    int64_t i = 0;
     double d = 0.0;
     bool is_double = false;
     char *endptr;
 
     std::string number = number_from_stringstream(in, pos);
 
-    i = strtol(number.c_str(), &endptr, 10);
+    i = strtoll(number.c_str(), &endptr, 10);
     if (*endptr != '\0') {
         d = strtod(number.c_str(), &endptr);
         is_double = true;

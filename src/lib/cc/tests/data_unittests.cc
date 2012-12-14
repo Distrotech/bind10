@@ -91,6 +91,7 @@ TEST(Element, from_and_to_json) {
     sv.push_back("-1");
     sv.push_back("-1.234");
     sv.push_back("-123.456");
+    sv.push_back("4294967296"); // greater than UINT_MAX
 
     BOOST_FOREACH(const std::string& s, sv) {
         // test << operator, which uses Element::str()
@@ -169,14 +170,13 @@ TEST(Element, from_and_to_json) {
     EXPECT_THROW(Element::fromJSON("-1.1e12345678901234567890")->str(), JSONError);
     EXPECT_THROW(Element::fromJSON("1e12345678901234567890")->str(), JSONError);
     EXPECT_THROW(Element::fromJSON("1e50000")->str(), JSONError);
-
 }
 
 template <typename T>
 void
 testGetValueInt() {
     T el;
-    long int i;
+    int64_t i;
     double d;
     bool b;
     std::string s;
@@ -203,7 +203,7 @@ template <typename T>
 void
 testGetValueDouble() {
     T el;
-    long int i;
+    int64_t i;
     double d;
     bool b;
     std::string s;
@@ -230,7 +230,7 @@ template <typename T>
 void
 testGetValueBool() {
     T el;
-    long int i;
+    int64_t i;
     double d;
     bool b;
     std::string s;
@@ -257,7 +257,7 @@ template <typename T>
 void
 testGetValueString() {
     T el;
-    long int i;
+    int64_t i;
     double d;
     bool b;
     std::string s;
@@ -284,7 +284,7 @@ template <typename T>
 void
 testGetValueList() {
     T el;
-    long int i;
+    int64_t i;
     double d;
     bool b;
     std::string s;
@@ -311,7 +311,7 @@ template <typename T>
 void
 testGetValueMap() {
     T el;
-    long int i;
+    int64_t i;
     double d;
     bool b;
     std::string s;
@@ -339,7 +339,7 @@ TEST(Element, create_and_value_throws) {
     // incorrect type is requested
     ElementPtr el;
     ConstElementPtr cel;
-    long int i = 0;
+    int64_t i = 0;
     double d = 0.0;
     bool b = false;
     std::string s("asdf");
@@ -453,6 +453,15 @@ TEST(Element, create_and_value_throws) {
     el = Element::createMap();
     EXPECT_NO_THROW(el->set("foo", Element::create("bar")));
     EXPECT_EQ("{ \"foo\": \"bar\" }", el->str());
+}
+
+TEST(Element, longLongInt) {
+    // Check integers larger than UINT_MAX
+    ElementPtr el(Element::create(4294967296));
+    EXPECT_EQ(4294967296, el->intValue());
+
+    EXPECT_EQ("4294967296", Element::fromJSON("+4294967296")->str());
+    EXPECT_EQ(4294967296, Element::fromJSON("+4294967296")->intValue());
 }
 
 // Helper for escape check; it puts the given string in a StringElement,
