@@ -1,4 +1,4 @@
-// Copyright (C) 2012 Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2012-2013 Internet Systems Consortium, Inc. ("ISC")
 //
 // Permission to use, copy, modify, and/or distribute this software for any
 // purpose with or without fee is hereby granted, provided that the above
@@ -210,22 +210,10 @@ OptionDefinition::sanityCheckUniverse(const Option::Universe expected_universe,
 void
 OptionDefinition::validate() const {
 
-    using namespace boost::algorithm;
-
     std::ostringstream err_str;
 
-    // Allowed characters in the option name are: lower or
-    // upper case letters, digits, underscores and hyphens.
-    // Empty option spaces are not allowed.
-    if (!all(name_, boost::is_from_range('a', 'z') ||
-             boost::is_from_range('A', 'Z') ||
-             boost::is_digit() ||
-             boost::is_any_of(std::string("-_"))) ||
-        name_.empty() ||
-        // Hyphens and underscores are not allowed at the beginning
-        // and at the end of the option name.
-        all(find_head(name_, 1), boost::is_any_of(std::string("-_"))) ||
-        all(find_tail(name_, 1), boost::is_any_of(std::string("-_")))) {
+    // Option name must be valid.
+    if (!OptionDefinition::validateName(name_)) {
         err_str << "invalid option name '" << name_ << "'";
 
     } else if (type_ >= OPT_UNKNOWN_TYPE) {
@@ -289,6 +277,28 @@ OptionDefinition::validate() const {
     if (!err_str.str().empty()) {
         isc_throw(MalformedOptionDefinition, err_str.str());
     }
+}
+
+bool
+OptionDefinition::validateName(const std::string& option_name) {
+
+    using namespace boost::algorithm;
+
+    // Allowed characters in the option name are: lower or
+    // upper case letters, digits, underscores and hyphens.
+    // Empty option names are not allowed.
+    if (!all(option_name, boost::is_from_range('a', 'z') ||
+             boost::is_from_range('A', 'Z') ||
+             boost::is_digit() ||
+             boost::is_any_of(std::string("-_"))) ||
+        option_name.empty() ||
+        // Hyphens and underscores are not allowed at the beginning
+        // and at the end of the option name.
+        all(find_head(option_name, 1), boost::is_any_of(std::string("-_"))) ||
+        all(find_tail(option_name, 1), boost::is_any_of(std::string("-_")))) {
+        return (false);
+    }
+    return (true);
 }
 
 bool

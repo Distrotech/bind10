@@ -743,6 +743,42 @@ TEST_F(OptionDefinitionTest, uint32Tokenized) {
     // @todo Add more cases for DHCPv4
 }
 
+// The purpose of this test is to verify that the definition for option
+// that comprises a single FQDN value can be created and that this
+// definition can be used to create an option with FQDN.
+TEST_F(OptionDefinitionTest, fqdnTokenized) {
+
+    const uint16_t opt_code = 100;
+
+    // Create option definition.
+    OptionDefinition opt_def("OPTION_FQDN", opt_code, "fqdn");
+
+    // The multiple values can be added but only the first one
+    // is taken. The other one is ignored.
+    std::vector<std::string> values;
+    values.push_back("example.com");
+    values.push_back("foo.example.com.");
+    // Create the option.
+    OptionPtr option_v6;
+    EXPECT_NO_THROW(
+        option_v6 = opt_def.optionFactory(Option::V6, opt_code, values);
+    );
+    // Check that it has been successfully created.
+    ASSERT_TRUE(option_v6);
+    ASSERT_TRUE(typeid(*option_v6) == typeid(OptionCustom));
+    boost::shared_ptr<OptionCustom> option_cast_v6 =
+        boost::static_pointer_cast<OptionCustom>(option_v6);
+    ASSERT_TRUE(option_cast_v6);
+    // It should comprise single FQDN.
+    std::string fqdn;
+    // Get the FQDN using index 0 (the first available).
+    ASSERT_NO_THROW(fqdn = option_cast_v6->readFqdn(0));
+    EXPECT_EQ("example.com.", fqdn);
+    // Attempt to get another FQDN (using index 1) should
+    // result in error.
+    EXPECT_THROW(option_cast_v6->readFqdn(1), isc::OutOfRange);
+}
+
 // The purpose of this test is to verify that definition for option that
 // comprises array of uint16 values can be created and that this definition
 // can be used to create option with an array of uint16 values.
@@ -890,6 +926,43 @@ TEST_F(OptionDefinitionTest, uint32ArrayTokenized) {
     EXPECT_EQ(7, values[1]);
     EXPECT_EQ(256, values[2]);
     EXPECT_EQ(1111, values[3]);
+}
+
+// The purpose of this test is to verify that the definition of option
+// comprising an array of FQDNs can be created and that this definition
+// can be used to create the instance of this option.
+TEST_F(OptionDefinitionTest, fqdnArrayTokenized) {
+
+    const uint16_t opt_code = 100;
+
+    // Create a definition of an option that comprises an array
+    // of FQDNs.
+    OptionDefinition opt_def("OPTION_FQDN_ARRAY", opt_code, "fqdn",
+                             true);
+
+    // Add two FQDNs.
+    std::vector<std::string> values;
+    values.push_back("example.com");
+    values.push_back("foo.example.com.");
+    // Create the instance of the option with two FQDNs.
+    OptionPtr option_v6;
+    EXPECT_NO_THROW(
+        option_v6 = opt_def.optionFactory(Option::V6, opt_code, values);
+    );
+    // Check if option has been successfully created.
+    ASSERT_TRUE(option_v6);
+    // It has the expected type: OptionCustom.
+    ASSERT_TRUE(typeid(*option_v6) == typeid(OptionCustom));
+    boost::shared_ptr<OptionCustom> option_cast_v6 =
+        boost::static_pointer_cast<OptionCustom>(option_v6);
+    ASSERT_TRUE(option_cast_v6);
+    // Get the FQDNs and validate them.
+    std::string fqdn;
+    ASSERT_NO_THROW(fqdn = option_cast_v6->readFqdn(0));
+    EXPECT_EQ("example.com.", fqdn);
+    std::string fqdn2;
+    ASSERT_NO_THROW(fqdn2 = option_cast_v6->readFqdn(1));
+    EXPECT_EQ("foo.example.com.", fqdn2);
 }
 
 // The purpose of this test is to verify that the definition can be created

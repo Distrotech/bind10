@@ -212,6 +212,17 @@ public:
     /// @throw MalformedOptionDefinition option definition is invalid.
     void validate() const;
 
+    /// @brief Check if the option name is valid.
+    ///
+    /// This function checks the the specified option name
+    /// conforms to the following rules: characters in the
+    /// option name are: lower or upper case letters,
+    /// digits, underscores and hyphens. Empty strings are
+    /// not allowed.
+    ///
+    /// @return true if option name is valid.
+    static bool validateName(const std::string& option_name);
+
     /// @brief Check if specified format is IA_NA option format.
     ///
     /// @return true if specified format is IA_NA option format.

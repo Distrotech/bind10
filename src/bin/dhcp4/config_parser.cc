@@ -758,14 +758,14 @@ private:
         // Check that the option name has been specified, is non-empty and does not
         // contain spaces.
         std::string option_name = getParam<std::string>("name", string_values_);
-        if (option_name.empty()) {
+        if (!OptionDefinition::validateName(option_name)) {
             isc_throw(DhcpConfigError, "name of the option with code '"
-                      << option_code << "' is empty");
-        } else if (option_name.find(" ") != std::string::npos) {
-            isc_throw(DhcpConfigError, "invalid option name '" << option_name
-                      << "', space character is not allowed");
+                      << option_code << "' is invalid: '"
+                      << option_name << "'");
         }
 
+        // Check that the option name has been specified and that it is
+        // valid.
         std::string option_space = getParam<std::string>("space", string_values_);
         if (!OptionSpace::validateName(option_space)) {
             isc_throw(DhcpConfigError, "invalid option space name '"

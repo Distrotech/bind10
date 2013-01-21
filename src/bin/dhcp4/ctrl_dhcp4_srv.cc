@@ -97,7 +97,7 @@ ControlledDhcpv4Srv::dhcp4ConfigHandler(ConstElementPtr new_config) {
         // Merge an existing and new configuration.
         isc::data::merge(merged_config, new_config);
         LOG_DEBUG(dhcp4_logger, DBG_DHCP4_COMMAND, DHCP4_CONFIG_UPDATE)
-            .arg(full_config->str());
+            .arg(merged_config->str());
     }
 
     // Configure the server.
@@ -153,7 +153,7 @@ void ControlledDhcpv4Srv::establishSession() {
               .arg(specfile);
     cc_session_ = new Session(io_service_.get_io_service());
     // Create a session with the dummy configuration handler.
-    // Dumy configuration handler is internally invoked by the
+    // Dummy configuration handler is internally invoked by the
     // constructor and on success the constructor updates
     // the current session with the configuration that had been
     // commited in the previous session. If we did not install
@@ -164,10 +164,10 @@ void ControlledDhcpv4Srv::establishSession() {
                                           dhcp4CommandHandler, false);
     config_session_->start();
 
-    // We initially create ModuleCCSession() without configHandler, as
-    // the session module is too eager to send partial configuration.
-    // We want to get the full configuration, so we explicitly call
-    // getFullConfig() and then pass it to our configHandler.
+    // Replace the pointer to the dummy configuration handler that we
+    // passed in the ModuleCCSession constructor with the pointer
+    // to the actual config handler that will be parsing future
+    // changes to the configuration.
     config_session_->setConfigHandler(dhcp4ConfigHandler);
 
     try {

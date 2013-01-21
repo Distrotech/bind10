@@ -84,9 +84,10 @@ Option::check() {
 }
 
 void Option::pack(isc::util::OutputBuffer& buf) {
-    // Write a header.
+    // Write a header (protocol dependent:
+    // 2 bytes for DHCPv4 and 4 for DHCPv6)
     packHeader(buf);
-    // Write data.
+    // Write data (the same for both protocols).
     if (!data_.empty()) {
         buf.writeData(&data_[0], data_.size());
     }

@@ -156,13 +156,7 @@ public:
 
     /// @brief Writes option in wire-format to a buffer.
     ///
-    /// Writes option in wire-format to buffer, returns pointer to first unused
-    /// byte after stored option (that is useful for writing options one after
-    /// another).
-    ///
     /// @param buf pointer to a buffer
-    ///
-    /// @throw BadValue Universe of the option is neither V4 nor V6.
     virtual void pack(isc::util::OutputBuffer& buf);
 
     /// @brief Parses received buffer.
