@@ -794,6 +794,8 @@ private:
                       << option_name << "'");
         }
 
+        // Check that the option space name has been specified and that
+        // it is valid.
         std::string option_space = getParam<std::string>("space", string_values_);
         if (!OptionSpace::validateName(option_space)) {
             isc_throw(DhcpConfigError, "invalid option space name '"

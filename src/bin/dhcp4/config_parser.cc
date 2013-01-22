@@ -755,8 +755,7 @@ private:
                       << "', it must not exceed '"
                       << std::numeric_limits<uint8_t>::max() << "'");
         }
-        // Check that the option name has been specified, is non-empty and does not
-        // contain spaces.
+        // Check that the option name has been specified and that it is valid.
         std::string option_name = getParam<std::string>("name", string_values_);
         if (!OptionDefinition::validateName(option_name)) {
             isc_throw(DhcpConfigError, "name of the option with code '"
@@ -764,7 +763,7 @@ private:
                       << option_name << "'");
         }
 
-        // Check that the option name has been specified and that it is
+        // Check that the option space name has been specified and that it is
         // valid.
         std::string option_space = getParam<std::string>("space", string_values_);
         if (!OptionSpace::validateName(option_space)) {
