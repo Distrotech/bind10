@@ -16,9 +16,12 @@ DISTCHECK_CONFIGURE_FLAGS = --disable-install-configurations
 # Use same --with-gtest flag if set
 DISTCHECK_CONFIGURE_FLAGS += $(DISTCHECK_GTEST_CONFIGURE_FLAG)
 
-dist_doc_DATA = AUTHORS COPYING ChangeLog README
+dist_doc_DATA = AUTHORS COPYING ChangeLog NEWS README
 
-.PHONY: check-valgrind check-valgrind-suppress
+.PHONY: check-valgrind check-valgrind-suppress ChangeLog
+
+ChangeLog:
+	$(GENERATE_CHANGELOG_CMD)
 
 install-exec-hook:
 	-@echo -e "\033[1;33m" # switch to yellow color text

@@ -9,6 +9,8 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])dnl be backward compatible
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4macros])
 
+ISC_GIT_CHANGELOG
+
 # Checks for programs.
 AC_PROG_CXX
 
@@ -843,14 +845,14 @@ AX_BOOST_FOR_BIND10
 # Boost offset_ptr is required in one library and not optional right now, so
 # we unconditionally fail here if it doesn't work.
 if test "$BOOST_OFFSET_PTR_FAILURE" = "yes"; then
-    AC_MSG_ERROR([Failed to compile a required header file.  Try upgrading Boost to 1.44 or higher (when using clang++) or specifying --without-werror.  See the ChangeLog entry for Trac no. 2147 for more details.])
+    AC_MSG_ERROR([Failed to compile a required header file.  Try upgrading Boost to 1.44 or higher (when using clang++) or specifying --without-werror.  See the NEWS entry for Trac no. 2147 for more details.])
 fi
 
 # There's a known bug in FreeBSD ports for Boost that would trigger a false
 # warning in build with g++ and -Werror (we exclude clang++ explicitly to
 # avoid unexpected false positives).
 if test "$BOOST_NUMERIC_CAST_WOULDFAIL" = "yes" -a X"$werror_ok" = X1 -a $CLANGPP = "no"; then
-    AC_MSG_ERROR([Failed to compile a required header file.  If you are using FreeBSD and Boost installed via ports, retry with specifying --without-werror.  See the ChangeLog entry for Trac no. 1991 for more details.])
+    AC_MSG_ERROR([Failed to compile a required header file.  If you are using FreeBSD and Boost installed via ports, retry with specifying --without-werror.  See the NEWS entry for Trac no. 1991 for more details.])
 fi
 
 # Add some default CPP flags needed for Boost, identified by the AX macro.
