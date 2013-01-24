@@ -123,6 +123,6 @@ TEST_F(Rdata_MX_Test, compare) {
     EXPECT_LT(0, large2.compare(small2));
 
     // comparison attempt between incompatible RR types should be rejected
-    EXPECT_THROW(rdata_mx.compare(*rdata_nomatch), bad_cast); 
+    EXPECT_THROW(rdata_mx.compare(*rdata_nomatch), bad_cast);
 }
 }
