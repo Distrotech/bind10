@@ -93,8 +93,19 @@ AppRunner::run() {
 }
 
 ConstElementPtr
-AppRunner::configHandler(ConstElementPtr /*new_config*/) {
-    return (isc::config::createAnswer());
+AppRunner::configHandler(ConstElementPtr new_config) {
+    ConstElementPtr answer = isc::config::createAnswer();
+    try {
+        if (new_config) {
+            answer = app_config_handler_(config_session_.get(), new_config);
+        }
+    } catch (const isc::Exception& ex) {
+        LOG_ERROR(logger, APPRUNNER_CONFIG_HANDLER_FAIL).arg(ex.what());
+        return (createAnswer(1,
+                             std::string("Failed to update configuration: ") +
+                             ex.what()));
+    }
+    return (answer);
 }
 
 void

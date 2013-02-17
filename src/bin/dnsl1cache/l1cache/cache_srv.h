@@ -15,6 +15,8 @@
 #ifndef __CACHE_SRV_H
 #define __CACHE_SRV_H 1
 
+#include <exceptions/exceptions.h>
+
 #include <dns/rrclass.h>
 
 #include <config/ccsession.h>
@@ -26,6 +28,12 @@
 namespace isc {
 namespace dnsl1cache {
 
+class DNSCacheSrvError : public Exception {
+public:
+    DNSCacheSrvError(const char* file, size_t line, const char* what) :
+        Exception(file, line, what) {}
+};
+
 class DNSCacheSrv {
 public:
     DNSCacheSrv();
@@ -34,11 +42,12 @@ public:
     std::vector<RemoteConfigInfo> getRemoteHandlers();
 
 private:
-    data::ConstElementPtr configHandler(config::ModuleCCSession& cc_session,
+    data::ConstElementPtr configHandler(config::ModuleCCSession* cc_session,
                                         data::ConstElementPtr new_config);
     data::ConstElementPtr commandHandler(config::ModuleCCSession& cc_session,
                                          const std::string& command,
                                          data::ConstElementPtr args);
+    void installCache(const char* cahce_file);
 };
 
 } // namespace dnsl1cache

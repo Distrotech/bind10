@@ -31,7 +31,7 @@ namespace isc {
 namespace dnsl1cache {
 
 typedef boost::function<data::ConstElementPtr(
-    config::ModuleCCSession&, data::ConstElementPtr)> AppConfigHandler;
+    config::ModuleCCSession*, data::ConstElementPtr)> AppConfigHandler;
 typedef boost::function<data::ConstElementPtr(
     config::ModuleCCSession&, const std::string&, data::ConstElementPtr)>
 AppCommandHandler;

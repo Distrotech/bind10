@@ -2,7 +2,14 @@
   "module_spec": {
     "module_name": "DNSL1Cache",
     "module_description": "Ultra-fast DNS cache (only) server",
-    "config_data": [],
+    "config_data": [
+      {
+        "item_name": "cache_file",
+        "item_type": "string",
+        "item_optional": true,
+        "item_default": ""
+      }
+    ],
     "commands": [
       {
         "command_name": "shutdown",

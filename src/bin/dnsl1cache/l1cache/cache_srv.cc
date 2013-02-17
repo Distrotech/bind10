@@ -30,6 +30,9 @@
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
 
+#include <fstream>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include <unistd.h>
@@ -62,7 +65,13 @@ DNSCacheSrv::getRemoteHandlers() {
 }
 
 ConstElementPtr
-DNSCacheSrv::configHandler(ModuleCCSession&, ConstElementPtr) {
+DNSCacheSrv::configHandler(ModuleCCSession*, ConstElementPtr new_config) {
+    typedef std::pair<std::string, ConstElementPtr> ConfigPair;
+    BOOST_FOREACH(ConfigPair config_pair, new_config->mapValue()) {
+        if (config_pair.first == "cache_file") {
+            installCache(config_pair.second->stringValue().c_str());
+        }
+    }
     return (createAnswer());
 }
 
@@ -74,6 +83,22 @@ DNSCacheSrv::commandHandler(ModuleCCSession& /*cc_session*/,
     LOG_INFO(logger, DNSL1CACHE_COMMAND_RECEIVED).arg(command);
 
     return (createAnswer());
+}
+
+void
+DNSCacheSrv::installCache(const char* cache_file) {
+    LOG_INFO(logger, DNSL1CACHE_INSTALLING_CACHE).arg(cache_file);
+    if (cache_file[0] == '\0') {
+        return;                 // "purge cache", not implemented yet
+    }
+
+    std::ifstream ifs(cache_file);
+    if (!ifs.good()) {
+        isc_throw(DNSCacheSrvError, "failed to open cache file");
+    }
+    while (ifs.good()) {
+    }
+    LOG_INFO(logger, DNSL1CACHE_CACHE_INSTALLED);
 }
 
 }

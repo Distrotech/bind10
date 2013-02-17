@@ -20,8 +20,14 @@ $NAMESPACE isc::dnsl1cache
 
 % DNSL1CACHE_STOPPED stopped
 
+% APPRUNNER_CONFIG_HANDLER_FAIL failed to apply new configuration: %1
+
 % APPRUNNER_REMOTE_HANDLER_FAIL failed to complete remote configuration handler for module %1: %2
 
 % DNSL1CACHE_COMMAND_RECEIVED received command: %1
 
 % APPRUNNER_COMMAND_HANDLER received command: %1
+
+% DNSL1CACHE_INSTALLING_CACHE installing DNS cache from file: %1
+
+% DNSL1CACHE_CACHE_INSTALLED DNS cache installation completed
