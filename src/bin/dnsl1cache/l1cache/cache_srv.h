@@ -12,8 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#ifndef __CACHE_SRV_H
-#define __CACHE_SRV_H 1
+#ifndef CACHE_SRV_H
+#define CACHE_SRV_H 1
 
 #include <exceptions/exceptions.h>
 
@@ -52,7 +52,7 @@ private:
 
 } // namespace dnsl1cache
 } // namespace isc
-#endif // __CACHE_SRV_H
+#endif // CACHE_SRV_H
 
 // Local Variables:
 // mode: c++

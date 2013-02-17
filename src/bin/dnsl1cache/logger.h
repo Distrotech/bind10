@@ -12,8 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#ifndef __DNSL1CACHE_LOGGER__H
-#define __DNSL1CACHE_LOGGER__H
+#ifndef DNSL1CACHE_LOGGER__H
+#define DNSL1CACHE_LOGGER__H
 
 #include <log/macros.h>
 
@@ -27,7 +27,7 @@ extern isc::log::Logger logger;
 } // namespace dnsl1cache
 } // namespace isc
 
-#endif // __DNSL1CACHE_LOGGER__H
+#endif // DNSL1CACHE_LOGGER__H
 
 // Local Variables:
 // mode: c++

@@ -12,8 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-#ifndef __DNSL1CACHE_APP_RUNNER_H
-#define __DNSL1CACHE_APP_RUNNER_H 1
+#ifndef DNSL1CACHE_APP_RUNNER_H
+#define DNSL1CACHE_APP_RUNNER_H 1
 
 #include <cc/session.h>
 #include <cc/data.h>
@@ -82,7 +82,7 @@ private:
 
 } // namespace dnsl1cache
 } // namespace isc
-#endif // __DNSL1CACHE_APP_RUNNER_H
+#endif // DNSL1CACHE_APP_RUNNER_H
 
 // Local Variables:
 // mode: c++
