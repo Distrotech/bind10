@@ -1203,6 +1203,10 @@ AC_CONFIG_FILES([Makefile
                  src/bin/stats/tests/testdata/Makefile
                  src/bin/usermgr/Makefile
                  src/bin/tests/Makefile
+                 src/bin/dnsl1cache/Makefile
+                 src/bin/dnsl1cache/log/Makefile
+                 src/bin/dnsl1cache/l1cache/Makefile
+                 src/bin/dnsl1cache/l1cache/benchmarks/Makefile
                  src/lib/Makefile
                  src/lib/asiolink/Makefile
                  src/lib/asiolink/tests/Makefile
@@ -1361,6 +1365,7 @@ AC_OUTPUT([doc/version.ent
            src/bin/auth/tests/testdata/example-nsec3.zone
            src/bin/dhcp4/spec_config.h.pre
            src/bin/dhcp6/spec_config.h.pre
+           src/bin/dnsl1cache/spec_config.h.pre
            src/bin/tests/process_rename_test.py
            src/lib/config/tests/data_def_unittests_config.h
            src/lib/python/isc/config/tests/config_test
