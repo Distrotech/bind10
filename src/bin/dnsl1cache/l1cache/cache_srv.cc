@@ -25,6 +25,7 @@
 #include <config/ccsession.h>
 
 #include <dnsl1cache/l1cache/cache_srv.h>
+#include <dnsl1cache/l1cache/l1hash.h>
 #include <dnsl1cache/logger.h>
 
 #include <boost/bind.hpp>
@@ -91,13 +92,7 @@ DNSCacheSrv::installCache(const char* cache_file) {
     if (cache_file[0] == '\0') {
         return;                 // "purge cache", not implemented yet
     }
-
-    std::ifstream ifs(cache_file);
-    if (!ifs.good()) {
-        isc_throw(DNSCacheSrvError, "failed to open cache file");
-    }
-    while (ifs.good()) {
-    }
+    cache_table_.reset(new DNSL1HashTable(cache_file));
     LOG_INFO(logger, DNSL1CACHE_CACHE_INSTALLED);
 }
 

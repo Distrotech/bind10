@@ -22,6 +22,9 @@
 #include <config/ccsession.h>
 
 #include <dnsl1cache/app_runner.h>
+#include <dnsl1cache/l1cache/l1hash.h>
+
+#include <boost/scoped_ptr.hpp>
 
 #include <vector>
 
@@ -48,6 +51,8 @@ private:
                                          const std::string& command,
                                          data::ConstElementPtr args);
     void installCache(const char* cahce_file);
+
+    boost::scoped_ptr<DNSL1HashTable> cache_table_;
 };
 
 } // namespace dnsl1cache

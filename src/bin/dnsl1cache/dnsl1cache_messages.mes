@@ -31,3 +31,5 @@ $NAMESPACE isc::dnsl1cache
 % DNSL1CACHE_INSTALLING_CACHE installing DNS cache from file: %1
 
 % DNSL1CACHE_CACHE_INSTALLED DNS cache installation completed
+
+% DNSL1CACHE_CACHE_TABLE_CREATED DNS cache table created with %1 entries

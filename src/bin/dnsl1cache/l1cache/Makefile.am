@@ -11,4 +11,5 @@ CLEANFILES = *.gcno *.gcda
 noinst_LTLIBRARIES = libl1cache.la
 
 libl1cache_la_SOURCES = cache_srv.cc cache_srv.h
+libl1cache_la_SOURCES += l1hash.cc l1hash.h
 libl1cache_la_SOURCES += message_handler.cc
