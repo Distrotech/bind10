@@ -121,6 +121,9 @@ public:
     /// \param buf external buffer to store this labelsequence's data in
     LabelSequence(const LabelSequence& src, uint8_t buf[MAX_SERIALIZED_LENGTH]);
 
+    LabelSequence(util::InputBuffer& buffer,
+                  uint8_t buf[MAX_SERIALIZED_LENGTH]);
+
     /// \brief Copy constructor.
     ///
     /// \note The associated data MUST remain in scope during the lifetime

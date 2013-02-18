@@ -16,6 +16,8 @@
 #include <dns/name_internal.h>
 #include <exceptions/exceptions.h>
 
+#include <util/buffer.h>
+
 #include <boost/functional/hash.hpp>
 
 #include <cstring>
@@ -72,6 +74,35 @@ LabelSequence::LabelSequence(const LabelSequence& src,
     offsets_ = &buf[Name::MAX_WIRE];
 }
 
+LabelSequence::LabelSequence(util::InputBuffer& buffer,
+                             uint8_t buf[MAX_SERIALIZED_LENGTH]) :
+    first_label_(0)
+{
+    uint8_t* bp = buf;
+    const uint8_t* const ep = buf + MAX_SERIALIZED_LENGTH;
+    const size_t beg_pos = buffer.getPosition();
+
+    size_t offset = 0;
+    while (true) {
+        *bp++ = offset;
+        const uint8_t label_len = buffer.readUint8();
+        if (label_len == 0) {
+            break;
+        }
+        offset += 1 + label_len;
+        if (offset > 255) {
+            isc_throw(BadValue, "Broken LabelSequence data");
+        }
+        buffer.setPosition(beg_pos + offset);
+    }
+    last_label_ = (bp - buf) - 1;
+    const size_t nlen = offset + 1;
+    buffer.setPosition(beg_pos);
+    buffer.readData(bp, nlen);
+    data_ = bp;
+    offsets_ = buf;
+    assert(bp + nlen <= ep);
+}
 
 const uint8_t*
 LabelSequence::getData(size_t *len) const {
