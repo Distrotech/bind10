@@ -45,6 +45,8 @@ main(int, char**) {
         AppRunner app_runner(specfile, cache_srv.getConfigHandler(),
                              cache_srv.getCommandHandler(),
                              cache_srv.getRemoteHandlers());
+        cache_srv.initialize(app_runner.getIOService(),
+                             app_runner.getCCSession());
         app_runner.initialize();
 
         // Successfully initialized.

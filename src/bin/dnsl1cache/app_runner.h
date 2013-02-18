@@ -62,6 +62,14 @@ public:
     /// Start main event loop
     void run();
 
+    cc::AbstractSession& getCCSession() {
+        return (*cc_session_);
+    }
+
+    asiolink::IOService& getIOService() {
+        return (*io_service_);
+    }
+
 private:
     data::ConstElementPtr configHandler(data::ConstElementPtr new_config);
     data::ConstElementPtr commandHandler(const std::string& command,

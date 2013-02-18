@@ -14,7 +14,13 @@
 
 #include <config.h>
 
+#include <dnsl1cache/l1cache/cache_srv.h>
+#include <dnsl1cache/l1cache/l1hash.h>
+#include <dnsl1cache/logger.h>
+
 #include <exceptions/exceptions.h>
+
+#include <util/buffer.h>
 
 #include <dns/name.h>
 #include <dns/rrclass.h>
@@ -24,9 +30,13 @@
 #include <cc/data.h>
 #include <config/ccsession.h>
 
-#include <dnsl1cache/l1cache/cache_srv.h>
-#include <dnsl1cache/l1cache/l1hash.h>
-#include <dnsl1cache/logger.h>
+#include <server_common/socket_request.h>
+#include <server_common/portconfig.h>
+
+#include <asiolink/asiolink.h>
+
+#include <asiodns/dns_lookup.h>
+#include <asiodns/dns_service.h>
 
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
@@ -41,14 +51,56 @@
 using namespace isc::dns;
 using namespace isc::config;
 using namespace isc::data;
+using namespace isc::asiolink;
+using namespace isc::asiodns;
 
 using std::vector;
+using isc::cc::AbstractSession;
+using isc::server_common::portconfig::parseAddresses;
+using isc::server_common::portconfig::installListenAddresses;
 
 namespace isc {
 namespace dnsl1cache {
 
-DNSCacheSrv::DNSCacheSrv()
-{}
+namespace {
+// This is a derived class of \c DNSLookup, to serve as a
+// callback in the asiolink module.  It calls
+// AuthSrv::processMessage() on a single DNS message.
+class MessageLookup : public asiodns::DNSLookup {
+public:
+    MessageLookup(MessageHandler& msg_handler) : msg_handler_(msg_handler) {}
+    virtual void operator()(const IOMessage& io_message,
+                            MessagePtr message,
+                            MessagePtr, // Not used here
+                            util::OutputBufferPtr buffer,
+                            asiodns::DNSServer* server) const
+    {
+        msg_handler_.process(io_message, *message, *buffer, server);
+    }
+private:
+    MessageHandler& msg_handler_;
+};
+
+class MessageAnswer : public asiodns::DNSAnswer {
+public:
+    MessageAnswer() {}
+    virtual void operator()(const IOMessage&, MessagePtr,
+                            MessagePtr, util::OutputBufferPtr) const
+    {}
+};
+}
+
+DNSCacheSrv::DNSCacheSrv() {}
+
+void
+DNSCacheSrv::initialize(IOService& io_service, AbstractSession& session) {
+    isc::server_common::initSocketRequestor(session, "b10-dnsl1cache");
+
+    dns_lookup_.reset(new MessageLookup(msg_handler_));
+    dns_answer_.reset(new MessageAnswer);
+    dns_service_.reset(new DNSService(io_service, NULL, dns_lookup_.get(),
+                                      dns_answer_.get()));
+}
 
 AppConfigHandler
 DNSCacheSrv::getConfigHandler() {
@@ -71,6 +123,11 @@ DNSCacheSrv::configHandler(ModuleCCSession*, ConstElementPtr new_config) {
     BOOST_FOREACH(ConfigPair config_pair, new_config->mapValue()) {
         if (config_pair.first == "cache_file") {
             installCache(config_pair.second->stringValue().c_str());
+        } else if (config_pair.first == "listen_on") {
+            installListenAddresses(parseAddresses(
+                                       config_pair.second, "listen_on"),
+                                   listen_addresses_, *dns_service_,
+                                   DNSService::SERVER_SYNC_OK);
         }
     }
     return (createAnswer());

@@ -41,33 +41,6 @@ using isc::asiodns::DNSServer;
 namespace isc {
 namespace dnsl1cache {
 
-#if 0
-// This is a derived class of \c DNSLookup, to serve as a
-// callback in the asiolink module.  It calls
-// AuthSrv::processMessage() on a single DNS message.
-class MessageLookup : public DNSLookup {
-public:
-    MessageLookup() {}
-    virtual void operator()(const IOMessage& io_message,
-                            MessagePtr message,
-                            MessagePtr, // Not used here
-                            OutputBufferPtr buffer,
-                            DNSServer* server) const
-    {
-        server_->processMessage(io_message, *message, *buffer, server);
-    }
-private:
-    * server_;
-};
-
-class MessageAnswer : public DNSAnswer {
-public:
-    virtual void operator()(const IOMessage&, MessagePtr,
-                            MessagePtr, OutputBufferPtr) const
-    {}
-};
-#endif
-
 class MessageHandler::MessageHandlerImpl {
 public:
     MessageHandlerImpl() : cache_table_(NULL) {}

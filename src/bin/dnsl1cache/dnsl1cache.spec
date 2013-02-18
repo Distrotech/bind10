@@ -8,6 +8,41 @@
         "item_type": "string",
         "item_optional": true,
         "item_default": ""
+      },
+      {
+        "item_name": "listen_on",
+        "item_type": "list",
+        "item_optional": false,
+        "item_default": [
+          {
+            "address": "::",
+            "port": 53
+          },
+          {
+            "address": "0.0.0.0",
+            "port": 53
+          }
+        ],
+        "list_item_spec": {
+          "item_name": "address",
+          "item_type": "map",
+          "item_optional": false,
+          "item_default": {},
+          "map_item_spec": [
+            {
+              "item_name": "address",
+              "item_type": "string",
+              "item_optional": false,
+              "item_default": "::1"
+            },
+            {
+              "item_name": "port",
+              "item_type": "integer",
+              "item_optional": false,
+              "item_default": 53
+            }
+          ]
+        }
       }
     ],
     "commands": [

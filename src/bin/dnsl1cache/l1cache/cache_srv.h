@@ -19,11 +19,21 @@
 
 #include <dns/rrclass.h>
 
+#include <cc/session.h>
+
 #include <config/ccsession.h>
 
 #include <dnsl1cache/app_runner.h>
 #include <dnsl1cache/l1cache/l1hash.h>
 #include <dnsl1cache/l1cache/message_handler.h>
+
+#include <asiolink/asiolink.h>
+
+#include <asiodns/dns_lookup.h>
+#include <asiodns/dns_answer.h>
+#include <asiodns/dns_service.h>
+
+#include <server_common/portconfig.h>
 
 #include <boost/scoped_ptr.hpp>
 
@@ -44,6 +54,8 @@ public:
     AppConfigHandler getConfigHandler();
     AppCommandHandler getCommandHandler();
     std::vector<RemoteConfigInfo> getRemoteHandlers();
+    void initialize(asiolink::IOService& io_service,
+                    cc::AbstractSession& session);
 
 private:
     data::ConstElementPtr configHandler(config::ModuleCCSession* cc_session,
@@ -54,6 +66,10 @@ private:
     void installCache(const char* cahce_file);
 
     boost::scoped_ptr<DNSL1HashTable> cache_table_;
+    boost::scoped_ptr<asiodns::DNSServiceBase> dns_service_;
+    server_common::portconfig::AddressList listen_addresses_;
+    boost::scoped_ptr<asiodns::DNSLookup> dns_lookup_;
+    boost::scoped_ptr<asiodns::DNSAnswer> dns_answer_;
     MessageHandler msg_handler_;
 };
 
