@@ -187,7 +187,9 @@ DNSL1HashTable::DNSL1HashTable(const char* cache_file) {
 
         void* p = std::malloc(entry_len);
         DNSL1HashEntry* entry =
-            new(p) DNSL1HashEntry(qtype, ans_count, soa_count, 0, rcode,
+            new(p) DNSL1HashEntry(qtype, ans_count, soa_count, 0,
+                                  rcode == Rcode::NXRRSET() ?
+                                  Rcode::NOERROR() : rcode,
                                   data_len,
                                   86400,   // dummy TTL for experiment
                                   std::time(NULL));
