@@ -33,3 +33,9 @@ $NAMESPACE isc::dnsl1cache
 % DNSL1CACHE_CACHE_INSTALLED DNS cache installation completed
 
 % DNSL1CACHE_CACHE_TABLE_CREATED DNS cache table created with %1 entries
+
+% DNSL1CACHE_RESPONSE_RECEIVED received response message, ignoring
+
+% DNSL1CACHE_HEADER_PARSE_FAIL unable to parse header in received DNS packet: %1
+
+% DNSL1CACHE_RECEIVED_QUERY received query %1/%2/%3

@@ -23,6 +23,7 @@
 
 #include <dnsl1cache/app_runner.h>
 #include <dnsl1cache/l1cache/l1hash.h>
+#include <dnsl1cache/l1cache/message_handler.h>
 
 #include <boost/scoped_ptr.hpp>
 
@@ -53,6 +54,7 @@ private:
     void installCache(const char* cahce_file);
 
     boost::scoped_ptr<DNSL1HashTable> cache_table_;
+    MessageHandler msg_handler_;
 };
 
 } // namespace dnsl1cache

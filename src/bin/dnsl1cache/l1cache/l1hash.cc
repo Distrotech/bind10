@@ -109,7 +109,7 @@ public:
             const size_t pos = renderer_.getLength();
             renderer_.skip(sizeof(uint16_t));
             rditer->getCurrent().toWire(renderer_);
-            renderer_.writeUint16At(renderer_.getLength() - pos, pos);
+            renderer_.writeUint16At(renderer_.getLength() - pos - 2, pos);
 
             if (ans_count_ > 0) {
                 --ans_count_;
@@ -201,10 +201,27 @@ DNSL1HashTable::DNSL1HashTable(const char* cache_file) {
             creator.renderer_.getData());
         std::memcpy(entry->getDataBuf(offsetp), dp + creator.offset0_,
                     data_len);
+        assert(labels == LabelSequence(entry->getNameBuf()));
         ++entry_count;
     }
 
     LOG_INFO(logger, DNSL1CACHE_CACHE_TABLE_CREATED).arg(entry_count);
+}
+
+DNSL1HashEntry*
+DNSL1HashTable::find(const LabelSequence& labels, const RRType& type) {
+    EntryList& entries =
+        entry_buckets_[getQueryHash(labels, type) % N_BUCKETS];
+    EntryList::iterator iter_end = entries.end();
+    for (EntryList::iterator iter = entries.begin(); iter != iter_end;
+         ++iter) {
+        DNSL1HashEntry* entry = *iter;
+        if (entry->rrtype_ == type &&
+            LabelSequence(entry->getNameBuf()) == labels) {
+            return (entry);
+        }
+    }
+    return (NULL);
 }
 
 }

@@ -90,9 +90,11 @@ void
 DNSCacheSrv::installCache(const char* cache_file) {
     LOG_INFO(logger, DNSL1CACHE_INSTALLING_CACHE).arg(cache_file);
     if (cache_file[0] == '\0') {
-        return;                 // "purge cache", not implemented yet
+        cache_table_.reset();
+    } else {
+        cache_table_.reset(new DNSL1HashTable(cache_file));
     }
-    cache_table_.reset(new DNSL1HashTable(cache_file));
+    msg_handler_.setCache(cache_table_.get());
     LOG_INFO(logger, DNSL1CACHE_CACHE_INSTALLED);
 }
 

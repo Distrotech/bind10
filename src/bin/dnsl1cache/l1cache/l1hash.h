@@ -17,6 +17,7 @@
 
 #include <exceptions/exceptions.h>
 
+#include <dns/dns_fwd.h>
 #include <dns/rcode.h>
 #include <dns/rrtype.h>
 #include <dns/rrttl.h>
@@ -59,7 +60,7 @@ public:
         return (this + 1);
     }
     uint16_t* getOffsetBuf(size_t namebuf_len) {
-        const size_t padded_nbuf_len = (namebuf_len + 1) & 2;
+        const size_t padded_nbuf_len = (namebuf_len + 1) & ~1;
         return (static_cast<uint16_t*>(getNameBuf()) +
                 (padded_nbuf_len >> 1));
     }
@@ -77,6 +78,8 @@ public:
 class DNSL1HashTable {
 public:
     explicit DNSL1HashTable(const char* cache_file);
+    DNSL1HashEntry* find(const dns::LabelSequence& labels,
+                         const dns::RRType& type);
 
 private:
     static const size_t N_BUCKETS = 10000;
