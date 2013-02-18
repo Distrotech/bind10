@@ -142,15 +142,9 @@ SyncUDPServer::handleRead(const asio::error_code& ec, const size_t length) {
     if (done_) {
         // Good, there's an answer.
         // Call the answer callback to render it.
-        (*answer_callback_)(message, query_, answer_, output_buffer_);
-
-        if (stopped_) {
-            return;
-        }
-
         asio::error_code ec;
-        socket_->send_to(asio::buffer(output_buffer_->getData(),
-                                      output_buffer_->getLength()),
+        socket_->send_to(asio::const_buffers_1(output_buffer_->getData(),
+                                               output_buffer_->getLength()),
                          sender_, 0, ec);
         if (ec) {
             LOG_ERROR(logger, ASIODNS_UDP_SYNC_SEND_FAIL).
