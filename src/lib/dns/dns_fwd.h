@@ -27,6 +27,7 @@ namespace dns {
 
 class EDNS;
 class Name;
+class LabelSequence;
 class MasterLoader;
 class MasterLoaderCallbacks;
 class Message;
