@@ -100,19 +100,6 @@ SyncUDPServer::handleRead(const asio::error_code& ec, const size_t length) {
     UDPSocket<DummyIOCallback> socket(*socket_);
     UDPEndpoint endpoint(sender_);
     IOMessage message(data_, length, socket, endpoint);
-    if (checkin_callback_ != NULL) {
-        (*checkin_callback_)(message);
-        if (stopped_) {
-            return;
-        }
-    }
-
-    // If we don't have a DNS Lookup provider, there's no point in
-    // continuing; we exit the coroutine permanently.
-    if (lookup_callback_ == NULL) {
-        scheduleRead();
-        return;
-    }
 
     // Make sure the buffers are fresh.  Note that we don't touch query_
     // because it's supposed to be cleared in lookup_callback_.  We should
@@ -121,7 +108,6 @@ SyncUDPServer::handleRead(const asio::error_code& ec, const size_t length) {
     // implementation should be careful that it's the responsibility of
     // the callback implementation.  See also #2239).
     output_buffer_->clear();
-    answer_->clear(isc::dns::Message::RENDER);
 
     // Mark that we don't have an answer yet.
     done_ = false;
@@ -133,10 +119,6 @@ SyncUDPServer::handleRead(const asio::error_code& ec, const size_t length) {
     if (!resume_called_) {
         isc_throw(isc::Unexpected,
                   "No resume called from the lookup callback");
-    }
-
-    if (stopped_) {
-        return;
     }
 
     if (done_) {
