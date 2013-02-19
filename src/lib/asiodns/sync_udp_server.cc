@@ -56,6 +56,8 @@ SyncUDPServer::SyncUDPServer(asio::io_service& io_service, const int fd,
         socket_.reset(new asio::ip::udp::socket(io_service));
         socket_->assign(af == AF_INET6 ? asio::ip::udp::v6() :
                         asio::ip::udp::v4(), fd);
+        asio::socket_base::non_blocking_io command(true);
+        socket_->io_control(command);
     } catch (const std::exception& exception) {
         // Whatever the thing throws, it is something from ASIO and we
         // convert it
@@ -65,13 +67,14 @@ SyncUDPServer::SyncUDPServer(asio::io_service& io_service, const int fd,
 
 void
 SyncUDPServer::scheduleRead() {
-    socket_->async_receive_from(asio::buffer(data_, MAX_LENGTH), sender_,
+    socket_->async_receive_from(asio::mutable_buffers_1(data_, MAX_LENGTH),
+                                sender_,
                                 boost::bind(&SyncUDPServer::handleRead, this,
                                             _1, _2));
 }
 
 void
-SyncUDPServer::handleRead(const asio::error_code& ec, const size_t length) {
+SyncUDPServer::handleRead(const asio::error_code& ec, size_t length) {
     // Abort on fatal errors
     if (ec) {
         using namespace asio::error;
@@ -91,47 +94,69 @@ SyncUDPServer::handleRead(const asio::error_code& ec, const size_t length) {
     // XXX: This is taken (and ported) from UDPSocket class. What the hell does
     // it really mean?
 
-    // The UDP socket class has been extended with asynchronous functions
-    // and takes as a template parameter a completion callback class.  As
-    // UDPServer does not use these extended functions (only those defined
-    // in the IOSocket base class) - but needs a UDPSocket to get hold of
-    // the underlying Boost UDP socket - DummyIOCallback is used.  This
-    // provides the appropriate operator() but is otherwise functionless.
-    UDPSocket<DummyIOCallback> socket(*socket_);
-    UDPEndpoint endpoint(sender_);
-    IOMessage message(data_, length, socket, endpoint);
+    int count = 0;
+    asio::error_code ec2;
+    while (true) {
+        // The UDP socket class has been extended with asynchronous functions
+        // and takes as a template parameter a completion callback class.  As
+        // UDPServer does not use these extended functions (only those defined
+        // in the IOSocket base class) - but needs a UDPSocket to get hold of
+        // the underlying Boost UDP socket - DummyIOCallback is used.  This
+        // provides the appropriate operator() but is otherwise functionless.
+        UDPSocket<DummyIOCallback> socket(*socket_);
+        UDPEndpoint endpoint(sender_);
+        IOMessage message(data_, length, socket, endpoint);
 
-    // Make sure the buffers are fresh.  Note that we don't touch query_
-    // because it's supposed to be cleared in lookup_callback_.  We should
-    // eventually even remove this member variable (and remove it from
-    // the lookup_callback_ interface, but until then, any callback
-    // implementation should be careful that it's the responsibility of
-    // the callback implementation.  See also #2239).
-    output_buffer_->clear();
+        // Make sure the buffers are fresh.  Note that we don't touch query_
+        // because it's supposed to be cleared in lookup_callback_.  We should
+        // eventually even remove this member variable (and remove it from
+        // the lookup_callback_ interface, but until then, any callback
+        // implementation should be careful that it's the responsibility of
+        // the callback implementation.  See also #2239).
+        output_buffer_->clear();
 
-    // Mark that we don't have an answer yet.
-    done_ = false;
-    resume_called_ = false;
+        // Mark that we don't have an answer yet.
+        done_ = false;
+        resume_called_ = false;
 
-    // Call the actual lookup
-    (*lookup_callback_)(message, query_, answer_, output_buffer_, this);
+        // Call the actual lookup
+        (*lookup_callback_)(message, query_, answer_, output_buffer_, this);
 
-    if (!resume_called_) {
-        isc_throw(isc::Unexpected,
-                  "No resume called from the lookup callback");
-    }
+        if (!resume_called_) {
+            isc_throw(isc::Unexpected,
+                      "No resume called from the lookup callback");
+        }
 
-    if (done_) {
-        // Good, there's an answer.
-        // Call the answer callback to render it.
-        asio::error_code ec;
-        socket_->send_to(asio::const_buffers_1(output_buffer_->getData(),
-                                               output_buffer_->getLength()),
-                         sender_, 0, ec);
-        if (ec) {
-            LOG_ERROR(logger, ASIODNS_UDP_SYNC_SEND_FAIL).
-                      arg(sender_.address().to_string()).
-                      arg(ec.message());
+        if (done_) {
+            // Good, there's an answer.
+            // Call the answer callback to render it.
+            asio::error_code ec;
+            socket_->send_to(asio::const_buffers_1(
+                                 output_buffer_->getData(),
+                                 output_buffer_->getLength()),
+                             sender_, 0, ec);
+            if (ec) {
+                LOG_ERROR(logger, ASIODNS_UDP_SYNC_SEND_FAIL).
+                    arg(sender_.address().to_string()).arg(ec.message());
+            }
+        }
+        if (++count == 10) {
+            break;
+        }
+
+        length = socket_->receive_from(asio::mutable_buffers_1(data_,
+                                                               MAX_LENGTH),
+                                       sender_, 0, ec2);
+        if (ec2) {
+            using namespace asio::error;
+            if (ec2.value() != would_block && ec2.value() != try_again &&
+                ec2.value() != interrupted) {
+                return;
+            }
+        }
+        if (ec2 || length == 0) {
+            scheduleRead();
+            return;
         }
     }
 
