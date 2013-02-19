@@ -32,6 +32,8 @@
 
 #include <asiodns/dns_server.h>
 
+#include <ctime>
+
 using namespace isc::dns;
 using isc::asiolink::IOMessage;
 using isc::util::OutputBuffer;
@@ -45,17 +47,26 @@ class MessageHandler::MessageHandlerImpl {
 public:
     MessageHandlerImpl() : cache_table_(NULL) {}
     void process(const IOMessage& io_message, Message& message,
-                 OutputBuffer& buffer, DNSServer* server);
+                 OutputBuffer& buffer, DNSServer* server, std::time_t now);
 
     DNSL1HashTable* cache_table_;
 private:
     uint8_t labels_buf_[LabelSequence::MAX_SERIALIZED_LENGTH];
 };
 
+inline uint32_t
+ntohUint32(const uint8_t* cp) {
+    return ((static_cast<uint32_t>(cp[0]) << 24) |
+            (static_cast<uint32_t>(cp[1]) << 16) |
+            (static_cast<uint32_t>(cp[2]) << 8) |
+            (static_cast<uint32_t>(cp[3])));
+}
+
 void
 MessageHandler::MessageHandlerImpl::process(
     const IOMessage& io_message, Message& message,
-    OutputBuffer& buffer, DNSServer* server)
+    OutputBuffer& buffer, DNSServer* server,
+    std::time_t now)
 {
     InputBuffer request_buffer(io_message.getData(), io_message.getDataSize());
 
@@ -120,17 +131,36 @@ MessageHandler::MessageHandlerImpl::process(
     buffer.writeUint16(entry->nscount_);
     buffer.writeUint16(entry->adcount_);
 
-    // Render Question section.  We know we don't have to compress.
+    // Render Question section.  We know we don't have to compress it.
     size_t nlen;
     const uint8_t* ndata = qry_labels.getData(&nlen);
     buffer.writeData(ndata, nlen);
     qtype.toWire(buffer);
     qclass.toWire(buffer);
 
+    // Adjust TTLs, if necessary.
+    uint16_t* offp =
+        entry->getOffsetBuf(qry_labels.getSerializedLength());
+    uint8_t* dp = static_cast<uint8_t*>(entry->getDataBuf(offp));
+    uint8_t* const dp_beg = dp;
+    const std::time_t elapsed = now - entry->last_used_time_;
+    if (elapsed > 0) {
+        entry->last_used_time_ = now;
+        const size_t rr_count = entry->ancount_ + entry->nscount_ +
+            entry->adcount_;
+        for (size_t i = 0; i < rr_count; ++i) {
+             // skip TYPE AND CLASS
+            uint8_t* ttlp = dp_beg + offp[i * 2 + 1] + 4;
+            const uint32_t ttl_val = ntohUint32(ttlp) - elapsed;
+            *ttlp++ = ((ttl_val & 0xff000000) >> 24);
+            *ttlp++ = ((ttl_val & 0x00ff0000) >> 16);
+            *ttlp++ = ((ttl_val & 0x0000ff00) >> 8);
+            *ttlp = (ttl_val & 0x000000ff);
+        }
+    }
+
     // Copy rest of the data.  Names are already compressed.
-    buffer.writeData(entry->getDataBuf(entry->getOffsetBuf(
-                                           qry_labels.getSerializedLength())),
-                     entry->data_len_);
+    buffer.writeData(dp_beg, entry->data_len_);
     server->resume(true);
 }
 
@@ -144,9 +174,9 @@ MessageHandler::~MessageHandler() {
 void
 MessageHandler::process(const asiolink::IOMessage& io_message,
                         dns::Message& message, util::OutputBuffer& buffer,
-                        asiodns::DNSServer* server)
+                        asiodns::DNSServer* server, std::time_t now)
 {
-    impl_->process(io_message, message, buffer, server);
+    impl_->process(io_message, message, buffer, server, now);
 }
 
 void

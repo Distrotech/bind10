@@ -35,8 +35,10 @@
 #include <asiolink/asiolink.h>
 
 #include <boost/shared_ptr.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <cstdlib>
+#include <ctime>
 #include <iostream>
 #include <vector>
 
@@ -72,7 +74,7 @@ private:
 public:
     QueryBenchMark(DNSL1HashTable* cache_table, const BenchQueries& queries,
                    Message& query_message, OutputBuffer& buffer,
-                   bool debug) :
+                   bool debug, size_t expected_rate) :
         msg_handler_(new MessageHandler),
         queries_(queries),
         query_message_(query_message),
@@ -82,7 +84,8 @@ public:
         dummy_endpoint(IOEndpointPtr(IOEndpoint::create(IPPROTO_UDP,
                                                         IOAddress("192.0.2.1"),
                                                         53210))),
-        debug_(debug)
+        debug_(debug), now_(std::time(NULL)), total_count_(0),
+        expected_rate_(expected_rate)
     {
         msg_handler_->setCache(cache_table);
     }
@@ -96,8 +99,12 @@ public:
                                  *dummy_endpoint);
             query_message_.clear(Message::PARSE);
             buffer_.clear();
+            if (++total_count_ == expected_rate_) {
+                ++now_;
+                total_count_ = 0;
+            }
             msg_handler_->process(io_message, query_message_, buffer_,
-                                  &server);
+                                  &server, now_);
 
             if (debug_) {
                 response_message_->clear(Message::PARSE);
@@ -119,17 +126,23 @@ private:
     IOSocket& dummy_socket;
     IOEndpointPtr dummy_endpoint;
     const bool debug_;
+    std::time_t now_;
+    size_t total_count_;
+    const size_t expected_rate_;
 };
 
 const int ITERATION_DEFAULT = 1;
+const size_t EXPECTED_RATE_DEFAULT = 50000;
 
 void
 usage() {
-    std::cerr << "Usage: query_bench [-d] [-n iterations] "
+    std::cerr << "Usage: query_bench [-d] [-n iterations] [-r expected rate] "
         "cache_file query_datafile\n"
         "  -d Enable debug logging to stdout\n"
         "  -n Number of iterations per test case (default: "
               << ITERATION_DEFAULT << ")\n"
+        "  -r Expected query rate/s, adjust TTL update frequency (default: "
+              << EXPECTED_RATE_DEFAULT << ")\n"
         "  cache_file: cache data\n"
         "  query_datafile: queryperf style input data"
               << std::endl;
@@ -141,14 +154,18 @@ int
 main(int argc, char* argv[]) {
     int ch;
     int iteration = ITERATION_DEFAULT;
+    size_t expected_rate = EXPECTED_RATE_DEFAULT;
     bool debug_log = false;
-    while ((ch = getopt(argc, argv, "dn:")) != -1) {
+    while ((ch = getopt(argc, argv, "dn:r:")) != -1) {
         switch (ch) {
         case 'n':
             iteration = atoi(optarg);
             break;
         case 'd':
             debug_log = true;
+            break;
+        case 'r':
+            expected_rate = boost::lexical_cast<size_t>(optarg);
             break;
         default:
             usage();
@@ -182,7 +199,8 @@ main(int argc, char* argv[]) {
         DNSL1HashTable cache_table(cache_file);
         BenchMark<QueryBenchMark>(iteration,
                                   QueryBenchMark(&cache_table, queries,
-                                                 message, buffer, debug_log));
+                                                 message, buffer, debug_log,
+                                                 expected_rate));
     } catch (const std::exception& ex) {
         cout << "Test unexpectedly failed: " << ex.what() << endl;
         return (1);

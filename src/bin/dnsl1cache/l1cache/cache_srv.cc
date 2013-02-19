@@ -41,6 +41,7 @@
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
 
+#include <ctime>
 #include <fstream>
 #include <string>
 #include <utility>
@@ -75,7 +76,8 @@ public:
                             util::OutputBufferPtr buffer,
                             asiodns::DNSServer* server) const
     {
-        msg_handler_.process(io_message, *message, *buffer, server);
+        msg_handler_.process(io_message, *message, *buffer, server,
+                             std::time(NULL));
     }
 private:
     MessageHandler& msg_handler_;

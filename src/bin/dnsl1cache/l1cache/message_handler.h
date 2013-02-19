@@ -22,6 +22,8 @@
 
 #include <boost/noncopyable.hpp>
 
+#include <ctime>
+
 namespace isc {
 namespace dnsl1cache {
 
@@ -34,7 +36,7 @@ public:
 
     void process(const asiolink::IOMessage& io_message,
                  dns::Message& message, util::OutputBuffer& buffer,
-                 asiodns::DNSServer* server);
+                 asiodns::DNSServer* server, std::time_t now);
     void setCache(DNSL1HashTable* cache_table);
 
 private:
