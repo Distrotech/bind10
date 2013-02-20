@@ -97,9 +97,7 @@ LabelSequence::LabelSequence(util::InputBuffer& buffer,
     }
     last_label_ = (bp - buf) - 1;
     const size_t nlen = offset + 1;
-    buffer.setPosition(beg_pos);
-    buffer.readData(bp, nlen);
-    data_ = bp;
+    data_ = static_cast<const uint8_t*>(buffer.getData()) + beg_pos;
     offsets_ = buf;
     assert(bp + nlen <= ep);
 }

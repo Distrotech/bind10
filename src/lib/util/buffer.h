@@ -108,6 +108,8 @@ public:
     size_t getLength() const { return (len_); }
     /// \brief Return the current read position.
     size_t getPosition() const { return (position_); }
+
+    const void* getData() const { return (data_); }
     //@}
 
     ///
