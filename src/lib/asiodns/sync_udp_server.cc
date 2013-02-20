@@ -77,7 +77,9 @@ SyncUDPServer::scheduleRead() {
 }
 
 void
-SyncUDPServer::handleRead(const asio::error_code& ec, size_t length) {
+SyncUDPServer::handleRead(const asio::error_code& ec0, size_t length) {
+    asio::error_code ec = ec0;
+
     // Abort on fatal errors
     if (ec) {
         using namespace asio::error;
@@ -98,7 +100,6 @@ SyncUDPServer::handleRead(const asio::error_code& ec, size_t length) {
     // it really mean?
 
     int count = 0;
-    asio::error_code ec2;
     while (true) {
         // The UDP socket class has been extended with asynchronous functions
         // and takes as a template parameter a completion callback class.  As
@@ -137,7 +138,6 @@ SyncUDPServer::handleRead(const asio::error_code& ec, size_t length) {
         if (done_) {
             // Good, there's an answer.
             // Call the answer callback to render it.
-            asio::error_code ec;
             if (!buffers_) {    // normal send
                 socket_->send_to(asio::const_buffers_1(
                                      output_buffer_->getData(),
@@ -166,15 +166,15 @@ SyncUDPServer::handleRead(const asio::error_code& ec, size_t length) {
 
         length = socket_->receive_from(asio::mutable_buffers_1(data_,
                                                                MAX_LENGTH),
-                                       sender_, 0, ec2);
-        if (ec2) {
+                                       sender_, 0, ec);
+        if (ec) {
             using namespace asio::error;
-            if (ec2.value() != would_block && ec2.value() != try_again &&
-                ec2.value() != interrupted) {
+            if (ec.value() != would_block && ec.value() != try_again &&
+                ec.value() != interrupted) {
                 return;
             }
         }
-        if (ec2 || length == 0) {
+        if (ec || length == 0) {
             scheduleRead();
             return;
         }
