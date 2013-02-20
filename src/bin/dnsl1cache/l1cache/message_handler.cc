@@ -33,12 +33,15 @@
 #include <asiodns/dns_server.h>
 
 #include <ctime>
+#include <vector>
+#include <utility>
 
 using namespace isc::dns;
 using isc::asiolink::IOMessage;
 using isc::util::OutputBuffer;
 using isc::util::InputBuffer;
 using isc::asiodns::DNSServer;
+using isc::asiodns::DNSLookup;
 
 namespace isc {
 namespace dnsl1cache {
@@ -47,7 +50,8 @@ class MessageHandler::MessageHandlerImpl {
 public:
     MessageHandlerImpl() : cache_table_(NULL) {}
     void process(const IOMessage& io_message, Message& message,
-                 OutputBuffer& buffer, DNSServer* server, std::time_t now);
+                 OutputBuffer& buffer, DNSServer* server, std::time_t now,
+                 std::vector<DNSLookup::Buffer>* buffers);
 
     DNSL1HashTable* cache_table_;
 private:
@@ -66,7 +70,7 @@ void
 MessageHandler::MessageHandlerImpl::process(
     const IOMessage& io_message, Message& message,
     OutputBuffer& buffer, DNSServer* server,
-    std::time_t now)
+    std::time_t now, std::vector<asiodns::DNSLookup::Buffer>* buffers)
 {
     InputBuffer request_buffer(io_message.getData(), io_message.getDataSize());
 
@@ -130,13 +134,22 @@ MessageHandler::MessageHandlerImpl::process(
     buffer.writeUint16(entry->ancount_);
     buffer.writeUint16(entry->nscount_);
     buffer.writeUint16(entry->adcount_);
+    if (buffers) {
+        buffers->push_back(DNSLookup::Buffer(buffer.getData(), 12));
+    }
 
     // Render Question section.  We know we don't have to compress it.
     size_t nlen;
     const uint8_t* ndata = qry_labels.getData(&nlen);
-    buffer.writeData(ndata, nlen);
-    qtype.toWire(buffer);
-    qclass.toWire(buffer);
+    if (buffers) {
+        const uint8_t* question =
+            static_cast<const uint8_t*>(io_message.getData()) + 12;
+        buffers->push_back(DNSLookup::Buffer(question, nlen + 4));
+    } else {
+        buffer.writeData(ndata, nlen);
+        qtype.toWire(buffer);
+        qclass.toWire(buffer);
+    }
 
     // Adjust TTLs, if necessary.
     uint16_t* offp =
@@ -160,7 +173,12 @@ MessageHandler::MessageHandlerImpl::process(
     }
 
     // Copy rest of the data.  Names are already compressed.
-    buffer.writeData(dp_beg, entry->data_len_);
+    if (buffers) {
+        buffers->push_back(DNSLookup::Buffer(dp_beg, entry->data_len_));
+    } else {
+        buffer.writeData(dp_beg, entry->data_len_);
+    }
+
     server->resume(true);
 }
 
@@ -174,9 +192,10 @@ MessageHandler::~MessageHandler() {
 void
 MessageHandler::process(const asiolink::IOMessage& io_message,
                         dns::Message& message, util::OutputBuffer& buffer,
-                        asiodns::DNSServer* server, std::time_t now)
+                        asiodns::DNSServer* server, std::time_t now,
+                        std::vector<asiodns::DNSLookup::Buffer>* buffers)
 {
-    impl_->process(io_message, message, buffer, server, now);
+    impl_->process(io_message, message, buffer, server, now, buffers);
 }
 
 void

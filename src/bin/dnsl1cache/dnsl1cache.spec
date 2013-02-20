@@ -10,6 +10,12 @@
         "item_default": ""
       },
       {
+        "item_name": "enable_scatter_send",
+        "item_type": "boolean",
+        "item_optional": true,
+        "item_default": True
+      },
+      {
         "item_name": "listen_on",
         "item_type": "list",
         "item_optional": false,

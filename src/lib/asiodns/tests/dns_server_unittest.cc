@@ -27,6 +27,7 @@
 #include <cstring>
 #include <cerrno>
 #include <csignal>
+#include <vector>
 #include <unistd.h> //for alarm
 
 #include <boost/shared_ptr.hpp>
@@ -118,10 +119,10 @@ public:
         allow_resume_(true)
     { }
     void operator()(const IOMessage& io_message,
-            isc::dns::MessagePtr message,
-            isc::dns::MessagePtr answer_message,
-            isc::util::OutputBufferPtr buffer,
-            DNSServer* server) const {
+                    isc::dns::MessagePtr message,
+                    isc::dns::MessagePtr answer_message,
+                    isc::util::OutputBufferPtr buffer,
+                    DNSServer* server, std::vector<Buffer>*) const {
         stopServer();
         if (allow_resume_) {
             server->resume(true);

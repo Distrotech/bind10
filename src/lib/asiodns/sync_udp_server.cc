@@ -40,12 +40,15 @@ namespace asiodns {
 
 SyncUDPServer::SyncUDPServer(asio::io_service& io_service, const int fd,
                              const int af, asiolink::SimpleCallback* checkin,
-                             DNSLookup* lookup, DNSAnswer* answer) :
+                             DNSLookup* lookup, DNSAnswer* answer,
+                             DNSServiceBase::ServerFlag options) :
     output_buffer_(new isc::util::OutputBuffer(0)),
     query_(new isc::dns::Message(isc::dns::Message::PARSE)),
     answer_(new isc::dns::Message(isc::dns::Message::RENDER)),
     io_(io_service), checkin_callback_(checkin), lookup_callback_(lookup),
-    answer_callback_(answer), stopped_(false)
+    answer_callback_(answer), stopped_(false),
+    buffers_((options & DNSServiceBase::SCATTER_WRITE) != 0 ?
+             &buffers_placeholder_ : NULL)
 {
     if (af != AF_INET && af != AF_INET6) {
         isc_throw(InvalidParameter, "Address family must be either AF_INET "
@@ -120,7 +123,11 @@ SyncUDPServer::handleRead(const asio::error_code& ec, size_t length) {
         resume_called_ = false;
 
         // Call the actual lookup
-        (*lookup_callback_)(message, query_, answer_, output_buffer_, this);
+        if (buffers_) {
+            buffers_->clear();
+        }
+        (*lookup_callback_)(message, query_, answer_, output_buffer_, this,
+                            buffers_);
 
         if (!resume_called_) {
             isc_throw(isc::Unexpected,
@@ -131,10 +138,23 @@ SyncUDPServer::handleRead(const asio::error_code& ec, size_t length) {
             // Good, there's an answer.
             // Call the answer callback to render it.
             asio::error_code ec;
-            socket_->send_to(asio::const_buffers_1(
-                                 output_buffer_->getData(),
-                                 output_buffer_->getLength()),
-                             sender_, 0, ec);
+            if (!buffers_) {    // normal send
+                socket_->send_to(asio::const_buffers_1(
+                                     output_buffer_->getData(),
+                                     output_buffer_->getLength()),
+                                 sender_, 0, ec);
+            } else {            // scatter send
+                asio_buffers_.clear();
+                vector<DNSLookup::Buffer>::const_iterator iter =
+                    buffers_->begin();
+                vector<DNSLookup::Buffer>::const_iterator const iter_end =
+                    buffers_->end();
+                for (; iter != iter_end; ++iter) {
+                    asio_buffers_.push_back(asio::buffer(iter->first,
+                                                         iter->second));
+                }
+                socket_->send_to(asio_buffers_, sender_, 0, ec);
+            }
             if (ec) {
                 LOG_ERROR(logger, ASIODNS_UDP_SYNC_SEND_FAIL).
                     arg(sender_.address().to_string()).arg(ec.message());

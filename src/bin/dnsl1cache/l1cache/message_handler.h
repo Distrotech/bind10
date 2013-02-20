@@ -19,6 +19,7 @@
 #include <dns/dns_fwd.h>
 #include <asiolink/asiolink.h>
 #include <asiodns/dns_server.h>
+#include <asiodns/dns_lookup.h>
 
 #include <boost/noncopyable.hpp>
 
@@ -36,7 +37,8 @@ public:
 
     void process(const asiolink::IOMessage& io_message,
                  dns::Message& message, util::OutputBuffer& buffer,
-                 asiodns::DNSServer* server, std::time_t now);
+                 asiodns::DNSServer* server, std::time_t now,
+                 std::vector<asiodns::DNSLookup::Buffer>* buffers);
     void setCache(DNSL1HashTable* cache_table);
 
 private:

@@ -183,7 +183,7 @@ struct UDPServer::Data {
 /// and lets it handle the initialization.
 UDPServer::UDPServer(io_service& io_service, int fd, int af,
                      SimpleCallback* checkin, DNSLookup* lookup,
-                     DNSAnswer* answer) :
+                     DNSAnswer* answer, DNSServiceBase::ServerFlag) :
     data_(new Data(io_service, fd, af, checkin, lookup, answer))
 { }
 

@@ -20,6 +20,9 @@
 #include <dns/message.h>
 #include <util/buffer.h>
 
+#include <utility>
+#include <vector>
+
 namespace isc {
 namespace asiodns {
 
@@ -57,6 +60,8 @@ protected:
 public:
     /// \brief The destructor
     virtual ~DNSLookup() {}
+
+    typedef std::pair<const void*, size_t> Buffer;
     //@}
     /// \brief The function operator
     ///
@@ -74,9 +79,10 @@ public:
                             isc::dns::MessagePtr message,
                             isc::dns::MessagePtr answer_message,
                             isc::util::OutputBufferPtr buffer,
-                            DNSServer* server) const
+                            DNSServer* server,
+                            std::vector<Buffer>* buffers = NULL) const
     {
-        (*self_)(io_message, message, answer_message, buffer, server);
+        (*self_)(io_message, message, answer_message, buffer, server, buffers);
     }
 private:
     DNSLookup* self_;

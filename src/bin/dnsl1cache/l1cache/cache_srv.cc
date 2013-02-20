@@ -74,10 +74,12 @@ public:
                             MessagePtr message,
                             MessagePtr, // Not used here
                             util::OutputBufferPtr buffer,
-                            asiodns::DNSServer* server) const
+                            asiodns::DNSServer* server,
+                            std::vector<asiodns::DNSLookup::Buffer>* buffers)
+        const
     {
         msg_handler_.process(io_message, *message, *buffer, server,
-                             std::time(NULL));
+                             std::time(NULL), buffers);
     }
 private:
     MessageHandler& msg_handler_;
@@ -122,15 +124,26 @@ DNSCacheSrv::getRemoteHandlers() {
 ConstElementPtr
 DNSCacheSrv::configHandler(ModuleCCSession*, ConstElementPtr new_config) {
     typedef std::pair<std::string, ConstElementPtr> ConfigPair;
+    bool scatter_send = true;
+    ConstElementPtr listen_addrs;
     BOOST_FOREACH(ConfigPair config_pair, new_config->mapValue()) {
         if (config_pair.first == "cache_file") {
             installCache(config_pair.second->stringValue().c_str());
+        } else if (config_pair.first == "enable_scatter_send") {
+            scatter_send = config_pair.second->boolValue();
+            LOG_INFO(logger, DNSL1CACHE_SRV_SEND_MODE).
+                arg(scatter_send ? "true" : "false");
         } else if (config_pair.first == "listen_on") {
-            installListenAddresses(parseAddresses(
-                                       config_pair.second, "listen_on"),
-                                   listen_addresses_, *dns_service_,
-                                   DNSService::SERVER_SYNC_OK);
+            listen_addrs = config_pair.second;
         }
+    }
+
+    if (listen_addrs) {
+        installListenAddresses(parseAddresses(listen_addrs, "listen_on"),
+                               listen_addresses_, *dns_service_,
+                               scatter_send ? (DNSService::SERVER_SYNC_OK |
+                                               DNSService::SCATTER_WRITE) :
+                               DNSService::SERVER_SYNC_OK);
     }
     return (createAnswer());
 }

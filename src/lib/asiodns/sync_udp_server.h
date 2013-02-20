@@ -22,6 +22,7 @@
 #include "dns_answer.h"
 #include "dns_lookup.h"
 #include "dns_server.h"
+#include "dns_service.h"
 
 #include <dns/message.h>
 #include <asiolink/simple_callback.h>
@@ -31,6 +32,7 @@
 #include <boost/noncopyable.hpp>
 
 #include <stdint.h>
+#include <vector>
 
 namespace isc {
 namespace asiodns {
@@ -54,7 +56,9 @@ public:
     ///     fd is not a valid descriptor.
     SyncUDPServer(asio::io_service& io_service, const int fd, const int af,
                   isc::asiolink::SimpleCallback* checkin = NULL,
-                  DNSLookup* lookup = NULL, DNSAnswer* answer = NULL);
+                  DNSLookup* lookup = NULL, DNSAnswer* answer = NULL,
+                  DNSServiceBase::ServerFlag options =
+                  DNSServiceBase::SERVER_DEFAULT);
 
     /// \brief Start the SyncUDPServer.
     ///
@@ -132,6 +136,11 @@ private:
     // This turns true when the server stops. Allows for not sending the
     // answer after we closed the socket.
     bool stopped_;
+
+    // For scatter-send
+    std::vector<asio::const_buffer> asio_buffers_;
+    std::vector<DNSLookup::Buffer>* buffers_;
+    std::vector<DNSLookup::Buffer> buffers_placeholder_;
 
     // Auxiliary functions
 

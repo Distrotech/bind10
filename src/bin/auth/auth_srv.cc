@@ -344,7 +344,8 @@ public:
                             MessagePtr message,
                             MessagePtr, // Not used here
                             OutputBufferPtr buffer,
-                            DNSServer* server) const
+                            DNSServer* server,
+                            std::vector<DNSLookup::Buffer>*) const
     {
         // Keep a holder on the message, so that it is automatically
         // cleared if processMessage() is done

@@ -23,6 +23,7 @@
 #include <asiodns/dns_answer.h>
 #include <asiodns/dns_lookup.h>
 #include <asiodns/dns_server.h>
+#include <asiodns/dns_service.h>
 
 #include <coroutine.h>
 
@@ -51,7 +52,9 @@ public:
     ///     fd is not a valid descriptor.
     UDPServer(asio::io_service& io_service, int fd, int af,
               isc::asiolink::SimpleCallback* checkin = NULL,
-              DNSLookup* lookup = NULL, DNSAnswer* answer = NULL);
+              DNSLookup* lookup = NULL, DNSAnswer* answer = NULL,
+              DNSServiceBase::ServerFlag options =
+              DNSServiceBase::SERVER_DEFAULT);
 
     /// \brief The function operator
     void operator()(asio::error_code ec = asio::error_code(),

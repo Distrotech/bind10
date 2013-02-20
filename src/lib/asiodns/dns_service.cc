@@ -55,9 +55,13 @@ public:
     DNSAnswer* answer_;
     size_t tcp_recv_timeout_;
 
-    template<class Ptr, class Server> void addServerFromFD(int fd, int af) {
+    template<class Ptr, class Server> void addServerFromFD(
+        int fd, int af,
+        DNSServiceBase::ServerFlag options =
+        DNSServiceBase::SERVER_DEFAULT)
+    {
         Ptr server(new Server(io_service_.get_io_service(), fd, af, checkin_,
-                              lookup_, answer_));
+                              lookup_, answer_, options));
         server->setTCPRecvTimeout(tcp_recv_timeout_);
         (*server)();
         servers_.push_back(server);
@@ -96,7 +100,7 @@ void DNSService::addServerUDPFromFD(int fd, int af, ServerFlag options) {
     }
     if ((options & SERVER_SYNC_OK) != 0) {
         impl_->addServerFromFD<DNSServiceImpl::SyncUDPServerPtr,
-            SyncUDPServer>(fd, af);
+            SyncUDPServer>(fd, af, options);
     } else {
         impl_->addServerFromFD<DNSServiceImpl::UDPServerPtr, UDPServer>(
             fd, af);

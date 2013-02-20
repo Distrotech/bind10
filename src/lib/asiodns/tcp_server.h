@@ -25,6 +25,7 @@
 #include <asiolink/asiolink.h>
 #include <coroutine.h>
 #include "dns_server.h"
+#include "dns_service.h"
 #include "dns_lookup.h"
 #include "dns_answer.h"
 
@@ -49,7 +50,9 @@ public:
     ///     fd is not a valid descriptor or it can't be listened on.
     TCPServer(asio::io_service& io_service, int fd, int af,
               const isc::asiolink::SimpleCallback* checkin = NULL,
-              const DNSLookup* lookup = NULL, const DNSAnswer* answer = NULL);
+              const DNSLookup* lookup = NULL, const DNSAnswer* answer = NULL,
+              DNSServiceBase::ServerFlag options =
+              DNSServiceBase::SERVER_DEFAULT);
 
     void operator()(asio::error_code ec = asio::error_code(),
                     size_t length = 0);

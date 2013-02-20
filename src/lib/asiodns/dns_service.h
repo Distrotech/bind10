@@ -60,7 +60,7 @@ public:
     /// class.
     enum ServerFlag {
         SERVER_DEFAULT = 0, ///< The default flag (no particular property)
-        SERVER_SYNC_OK = 1 ///< The server can act in the "synchronous" mode.
+        SERVER_SYNC_OK = 1,///< The server can act in the "synchronous" mode.
                            ///< In this mode, the client ensures that the
                            ///< lookup provider always completes the query
                            ///< process and it immediately releases the
@@ -73,6 +73,7 @@ public:
                            ///< synchronous mode; it's up to the server
                            ///< implementation whether it exploits the
                            ///< information given by the client.
+        SCATTER_WRITE = 2
     };
 
 public:
@@ -102,6 +103,13 @@ public:
     virtual asiolink::IOService& getIOService() = 0;
 };
 
+inline DNSServiceBase::ServerFlag operator|(DNSServiceBase::ServerFlag a,
+                                            DNSServiceBase::ServerFlag b)
+{
+    return (static_cast<DNSServiceBase::ServerFlag>(static_cast<unsigned>(a) |
+                                                    static_cast<unsigned>(b)));
+}
+
 /// \brief Handle DNS Queries
 ///
 /// DNSService is the service that handles DNS queries and answers with
@@ -124,7 +132,7 @@ private:
     // Bit or'ed all defined \c ServerFlag values.  Used internally for
     // compatibility check.  Note that this doesn't have to be used by
     // applications, and doesn't have to be defined in the "base" class.
-    static const unsigned int SERVER_DEFINED_FLAGS = 1;
+    static const unsigned int SERVER_DEFINED_FLAGS = 3;
 
 public:
     /// \brief The constructor without any servers.

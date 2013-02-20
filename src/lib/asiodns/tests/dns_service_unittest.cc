@@ -31,6 +31,7 @@
 
 #include <unistd.h>
 #include <netdb.h>
+#include <vector>
 
 using namespace isc::asiolink;
 using namespace isc::asiodns;
@@ -54,7 +55,7 @@ public:
     {}
     void operator()(const IOMessage&, isc::dns::MessagePtr,
                     isc::dns::MessagePtr, isc::util::OutputBufferPtr buffer,
-                    DNSServer* server) const
+                    DNSServer* server, std::vector<Buffer>*) const
     {
         server->resume(false);
         if (*first_buffer_ == NULL) {

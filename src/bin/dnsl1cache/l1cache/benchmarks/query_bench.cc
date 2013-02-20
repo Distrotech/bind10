@@ -32,6 +32,7 @@
 #include <util/unittests/mock_socketsession.h>
 
 #include <asiodns/dns_server.h>
+#include <asiodns/dns_lookup.h>
 #include <asiolink/asiolink.h>
 
 #include <boost/shared_ptr.hpp>
@@ -74,7 +75,7 @@ private:
 public:
     QueryBenchMark(DNSL1HashTable* cache_table, const BenchQueries& queries,
                    Message& query_message, OutputBuffer& buffer,
-                   bool debug, size_t expected_rate) :
+                   bool debug, size_t expected_rate, bool use_scatter_send) :
         msg_handler_(new MessageHandler),
         queries_(queries),
         query_message_(query_message),
@@ -85,7 +86,8 @@ public:
                                                         IOAddress("192.0.2.1"),
                                                         53210))),
         debug_(debug), now_(std::time(NULL)), total_count_(0),
-        expected_rate_(expected_rate)
+        expected_rate_(expected_rate),
+        buffers_(use_scatter_send ? &buffers_storage_ : NULL)
     {
         msg_handler_->setCache(cache_table);
     }
@@ -103,8 +105,11 @@ public:
                 ++now_;
                 total_count_ = 0;
             }
+            if (buffers_) {
+                buffers_->clear();
+            }
             msg_handler_->process(io_message, query_message_, buffer_,
-                                  &server, now_);
+                                  &server, now_, buffers_);
 
             if (debug_) {
                 response_message_->clear(Message::PARSE);
@@ -129,6 +134,8 @@ private:
     std::time_t now_;
     size_t total_count_;
     const size_t expected_rate_;
+    std::vector<isc::asiodns::DNSLookup::Buffer> buffers_storage_;
+    std::vector<isc::asiodns::DNSLookup::Buffer>* buffers_;
 };
 
 const int ITERATION_DEFAULT = 1;
@@ -143,6 +150,7 @@ usage() {
               << ITERATION_DEFAULT << ")\n"
         "  -r Expected query rate/s, adjust TTL update frequency (default: "
               << EXPECTED_RATE_DEFAULT << ")\n"
+        "  -s Emulate scatter-send mode\n"
         "  cache_file: cache data\n"
         "  query_datafile: queryperf style input data"
               << std::endl;
@@ -156,7 +164,8 @@ main(int argc, char* argv[]) {
     int iteration = ITERATION_DEFAULT;
     size_t expected_rate = EXPECTED_RATE_DEFAULT;
     bool debug_log = false;
-    while ((ch = getopt(argc, argv, "dn:r:")) != -1) {
+    bool use_scatter_send = false;
+    while ((ch = getopt(argc, argv, "dn:r:s")) != -1) {
         switch (ch) {
         case 'n':
             iteration = atoi(optarg);
@@ -166,6 +175,9 @@ main(int argc, char* argv[]) {
             break;
         case 'r':
             expected_rate = boost::lexical_cast<size_t>(optarg);
+            break;
+        case 's':
+            use_scatter_send = true;
             break;
         default:
             usage();
@@ -200,7 +212,8 @@ main(int argc, char* argv[]) {
         BenchMark<QueryBenchMark>(iteration,
                                   QueryBenchMark(&cache_table, queries,
                                                  message, buffer, debug_log,
-                                                 expected_rate));
+                                                 expected_rate,
+                                                 use_scatter_send));
     } catch (const std::exception& ex) {
         cout << "Test unexpectedly failed: " << ex.what() << endl;
         return (1);

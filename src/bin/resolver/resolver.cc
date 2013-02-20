@@ -270,7 +270,8 @@ public:
                             MessagePtr query_message,
                             MessagePtr answer_message,
                             OutputBufferPtr buffer,
-                            DNSServer* server) const
+                            DNSServer* server,
+                            std::vector<DNSLookup::Buffer>*) const
     {
         server_->processMessage(io_message, query_message,
                                 answer_message, buffer, server);

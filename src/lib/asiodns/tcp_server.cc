@@ -50,7 +50,7 @@ namespace asiodns {
 TCPServer::TCPServer(io_service& io_service, int fd, int af,
                      const SimpleCallback* checkin,
                      const DNSLookup* lookup,
-                     const DNSAnswer* answer) :
+                     const DNSAnswer* answer, DNSServiceBase::ServerFlag) :
     io_(io_service), done_(false),
     checkin_callback_(checkin), lookup_callback_(lookup),
     answer_callback_(answer)
