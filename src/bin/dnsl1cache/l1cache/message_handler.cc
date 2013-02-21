@@ -300,7 +300,13 @@ MessageHandler::process(const asiolink::IOMessage& io_message,
                         asiodns::DNSServer* server, std::time_t now,
                         std::vector<asiodns::DNSLookup::Buffer>* buffers)
 {
-    impl_->process(io_message, message, buffer, server, now, buffers);
+    try {
+        impl_->process(io_message, message, buffer, server, now, buffers);
+    } catch (const Exception& ex) {
+        LOG_DEBUG(logger, DBGLVL_COMMAND_DATA, DNSL1CACHE_MESSAGE_PROCESS_FAIL)
+                  .arg(ex.what());
+        server->resume(false);
+    }
 }
 
 void
