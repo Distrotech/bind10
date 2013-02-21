@@ -24,6 +24,7 @@
 
 #include <dns/name.h>
 #include <dns/rrclass.h>
+#include <dns/rrttl.h>
 
 #include <log/logger_support.h>
 
@@ -135,10 +136,16 @@ ConstElementPtr
 DNSCacheSrv::configHandler(ModuleCCSession*, ConstElementPtr new_config) {
     typedef std::pair<std::string, ConstElementPtr> ConfigPair;
     bool scatter_send = true;
+    bool cache_file_available = false;
+    std::string cache_file;
     ConstElementPtr listen_addrs;
+    RRTTL min_ttl(0);
     BOOST_FOREACH(ConfigPair config_pair, new_config->mapValue()) {
         if (config_pair.first == "cache_file") {
-            installCache(config_pair.second->stringValue().c_str());
+            cache_file_available = true;
+            cache_file = config_pair.second->stringValue();
+        } else if (config_pair.first == "min_ttl") {
+            min_ttl = RRTTL(config_pair.second->intValue());
         } else if (config_pair.first == "enable_scatter_send") {
             scatter_send = config_pair.second->boolValue();
             LOG_INFO(logger, DNSL1CACHE_SRV_SEND_MODE).
@@ -153,6 +160,9 @@ DNSCacheSrv::configHandler(ModuleCCSession*, ConstElementPtr new_config) {
         }
     }
 
+    if (cache_file_available) {
+        installCache(cache_file.c_str(), min_ttl);
+    }
     if (listen_addrs) {
         installListenAddresses(parseAddresses(listen_addrs, "listen_on"),
                                listen_addresses_, *dns_service_,
@@ -174,12 +184,12 @@ DNSCacheSrv::commandHandler(ModuleCCSession& /*cc_session*/,
 }
 
 void
-DNSCacheSrv::installCache(const char* cache_file) {
+DNSCacheSrv::installCache(const char* cache_file, const RRTTL& min_ttl) {
     LOG_INFO(logger, DNSL1CACHE_INSTALLING_CACHE).arg(cache_file);
     if (cache_file[0] == '\0') {
         cache_table_.reset();
     } else {
-        cache_table_.reset(new DNSL1HashTable(cache_file));
+        cache_table_.reset(new DNSL1HashTable(cache_file, min_ttl));
     }
     msg_handler_.setCache(cache_table_.get());
     LOG_INFO(logger, DNSL1CACHE_CACHE_INSTALLED);

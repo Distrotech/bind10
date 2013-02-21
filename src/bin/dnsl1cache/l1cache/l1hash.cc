@@ -17,14 +17,19 @@
 #include <dnsl1cache/l1cache/l1hash.h>
 #include <dnsl1cache/logger.h>
 
+#include <util/buffer.h>
+
 #include <log/logger_support.h>
 
 #include <dns/name.h>
 #include <dns/labelsequence.h>
 #include <dns/rrclass.h>
+#include <dns/rdataclass.h>
+#include <dns/rdata.h>
 #include <dns/rrtype.h>
 #include <dns/rcode.h>
 #include <dns/rrset.h>
+#include <dns/rrttl.h>
 #include <dns/messagerenderer.h>
 #include <dns/rrcollator.h>
 #include <dns/master_loader.h>
@@ -41,6 +46,7 @@
 #include <sstream>
 
 using namespace isc::dns;
+using namespace isc::dns::rdata;
 
 namespace isc {
 namespace dnsl1cache {
@@ -65,7 +71,8 @@ loadError(const std::string&, size_t, const std::string& reason) {
 namespace {
 class CacheDataCreater {
 public:
-    CacheDataCreater() : rotatable_(false) {}
+    CacheDataCreater(const RRTTL& min_ttl) :
+        rotatable_(false), min_ttl_(min_ttl), obuffer_(0) {}
     void start(const Name& qname, const RRType& qtype, const RRClass& qclass,
                size_t ans_count, size_t soa_count)
     {
@@ -88,7 +95,34 @@ public:
             isc_throw(DNSL1HashError, "broken cache data");
         }
     }
-    void addRRset(const RRsetPtr& rrset) {
+    ConstRRsetPtr adjustTTL(const RRsetPtr& rrset) {
+        if (rrset->getTTL() < min_ttl_) {
+            rrset->setTTL(min_ttl_);
+        }
+        if (rrset->getType() == RRType::SOA()) {
+            assert(rrset->getRdataCount() == 1);
+            const generic::SOA soa_rdata =
+                dynamic_cast<const generic::SOA&>(
+                    rrset->getRdataIterator()->getCurrent());
+            if (RRTTL(soa_rdata.getMinimum()) < min_ttl_) {
+                RRsetPtr soa(new RRset(rrset->getName(), rrset->getClass(),
+                                       rrset->getType(), rrset->getTTL()));
+                obuffer_.clear();
+                soa_rdata.toWire(obuffer_);
+                obuffer_.trim(4);
+                obuffer_.writeUint32(min_ttl_.getValue());
+
+                util::InputBuffer ib(obuffer_.getData(), obuffer_.getLength());
+                soa->addRdata(createRdata(RRType::SOA(), rrset->getClass(),
+                                          ib, obuffer_.getLength()));
+                return (soa);
+            }
+        }
+        return (rrset);
+    }
+    void addRRset(const RRsetPtr& rrset0) {
+        ConstRRsetPtr rrset = adjustTTL(rrset0);
+
         if (ans_count_ > 0) {
             assert(rrset->getRdataCount() <= ans_count_);
         } else if (soa_count_ > 0) {
@@ -139,18 +173,20 @@ public:
     size_t offset0_; // offset to the pointer immediately after question
     bool rotatable_;
 private:
+    const RRTTL min_ttl_;
+    util::OutputBuffer obuffer_;
     size_t ans_count_;
     size_t soa_count_;
 };
 }
 
-DNSL1HashTable::DNSL1HashTable(const char* cache_file) {
+DNSL1HashTable::DNSL1HashTable(const char* cache_file, const RRTTL& min_ttl) {
     std::ifstream ifs(cache_file);
     if (!ifs.good()) {
         isc_throw(DNSL1HashError, "failed to open cache file");
     }
 
-    CacheDataCreater creator;
+    CacheDataCreater creator(min_ttl);
     RRCollator collator(boost::bind(&CacheDataCreater::addRRset, &creator,
                                     _1));
     MasterLoader loader(ifs, Name::ROOT_NAME(), RRClass::IN(),

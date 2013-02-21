@@ -83,7 +83,8 @@ public:
 
 class DNSL1HashTable {
 public:
-    explicit DNSL1HashTable(const char* cache_file);
+    explicit DNSL1HashTable(const char* cache_file,
+                            const dns::RRTTL& min_ttl = dns::RRTTL(0));
     DNSL1HashEntry* find(const dns::LabelSequence& labels,
                          const dns::RRType& type);
 

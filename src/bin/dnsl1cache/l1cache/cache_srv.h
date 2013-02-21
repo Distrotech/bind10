@@ -17,7 +17,7 @@
 
 #include <exceptions/exceptions.h>
 
-#include <dns/rrclass.h>
+#include <dns/dns_fwd.h>
 
 #include <cc/session.h>
 
@@ -65,7 +65,7 @@ private:
     data::ConstElementPtr commandHandler(config::ModuleCCSession& cc_session,
                                          const std::string& command,
                                          data::ConstElementPtr args);
-    void installCache(const char* cahce_file);
+    void installCache(const char* cahce_file, const dns::RRTTL& min_ttl);
     void updateClock();
 
     boost::scoped_ptr<DNSL1HashTable> cache_table_;

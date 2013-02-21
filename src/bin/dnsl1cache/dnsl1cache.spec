@@ -16,6 +16,12 @@
         "item_default": true
       },
       {
+        "item_name": "min_ttl",
+        "item_type": "integer",
+        "item_optional": true,
+        "item_default": 0
+      },
+      {
         "item_name": "enable_rr_rotation",
         "item_type": "boolean",
         "item_optional": true,
