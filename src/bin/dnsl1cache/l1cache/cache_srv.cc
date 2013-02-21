@@ -69,7 +69,9 @@ namespace {
 // AuthSrv::processMessage() on a single DNS message.
 class MessageLookup : public asiodns::DNSLookup {
 public:
-    MessageLookup(MessageHandler& msg_handler) : msg_handler_(msg_handler) {}
+    MessageLookup(MessageHandler& msg_handler, const std::time_t& now) :
+        msg_handler_(msg_handler), now_(now)
+    {}
     virtual void operator()(const IOMessage& io_message,
                             MessagePtr message,
                             MessagePtr, // Not used here
@@ -79,10 +81,11 @@ public:
         const
     {
         msg_handler_.process(io_message, *message, *buffer, server,
-                             std::time(NULL), buffers);
+                             now_, buffers);
     }
 private:
     MessageHandler& msg_handler_;
+    const std::time_t& now_;
 };
 
 class MessageAnswer : public asiodns::DNSAnswer {
@@ -94,16 +97,23 @@ public:
 };
 }
 
-DNSCacheSrv::DNSCacheSrv() {}
+DNSCacheSrv::DNSCacheSrv() : now_(std::time(NULL)) {}
+
+void
+DNSCacheSrv::updateClock() {
+    now_ = std::time(NULL);
+}
 
 void
 DNSCacheSrv::initialize(IOService& io_service, AbstractSession& session) {
     isc::server_common::initSocketRequestor(session, "b10-dnsl1cache");
 
-    dns_lookup_.reset(new MessageLookup(msg_handler_));
+    dns_lookup_.reset(new MessageLookup(msg_handler_, now_));
     dns_answer_.reset(new MessageAnswer);
     dns_service_.reset(new DNSService(io_service, NULL, dns_lookup_.get(),
                                       dns_answer_.get()));
+    clock_timer_.reset(new IntervalTimer(io_service));
+    clock_timer_->setup(boost::bind(&DNSCacheSrv::updateClock, this), 1000);
 }
 
 AppConfigHandler

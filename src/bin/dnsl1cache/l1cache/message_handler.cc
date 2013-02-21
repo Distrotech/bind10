@@ -169,6 +169,7 @@ MessageHandler::MessageHandlerImpl::process(
     const uint16_t data_len = (entry->data_len_ & DNSL1HashEntry::MASK_OFFSET);
     size_t cur_data_len = 0;
     const uint8_t* cur_data_beg = dp_beg;
+    uint32_t ttl_val;
     if (elapsed > 0 || do_rotate) {
         const size_t rr_count = entry->ancount_ + entry->nscount_ +
             entry->adcount_;
@@ -176,7 +177,7 @@ MessageHandler::MessageHandlerImpl::process(
             if (elapsed > 0) {
                 // skip TYPE AND CLASS
                 uint8_t* ttlp = dp_beg + offp[i * 2 + 1] + 4;
-                const uint32_t ttl_val = ntohUint32(ttlp) - elapsed;
+                ttl_val = ntohUint32(ttlp) - elapsed;
                 *ttlp++ = ((ttl_val & 0xff000000) >> 24);
                 *ttlp++ = ((ttl_val & 0x00ff0000) >> 16);
                 *ttlp++ = ((ttl_val & 0x0000ff00) >> 8);
@@ -218,6 +219,16 @@ MessageHandler::MessageHandlerImpl::process(
                               (offp[i * 2] & DNSL1HashEntry::MASK_OFFSET));
                 // Determine the shift count
                 const size_t n_rrs = i - beg_rr;
+                if (elapsed > 0) {
+                    for (size_t j = 1; j < n_rrs; ++j) {
+                        uint8_t* ttlp =
+                            dp_beg + offp[(j + beg_rr) * 2 + 1] + 4;
+                        *ttlp++ = ((ttl_val & 0xff000000) >> 24);
+                        *ttlp++ = ((ttl_val & 0x00ff0000) >> 16);
+                        *ttlp++ = ((ttl_val & 0x0000ff00) >> 8);
+                        *ttlp = (ttl_val & 0x000000ff);
+                    }
+                }
                 if ((rotate_count_ % n_rrs) == 0) {
                     // A bit of optimization: no need to rotate in this case.
                     const uint8_t* d =

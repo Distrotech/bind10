@@ -28,6 +28,7 @@
 #include <dnsl1cache/l1cache/message_handler.h>
 
 #include <asiolink/asiolink.h>
+#include <asiolink/interval_timer.h>
 
 #include <asiodns/dns_lookup.h>
 #include <asiodns/dns_answer.h>
@@ -37,6 +38,7 @@
 
 #include <boost/scoped_ptr.hpp>
 
+#include <ctime>
 #include <vector>
 
 namespace isc {
@@ -64,12 +66,15 @@ private:
                                          const std::string& command,
                                          data::ConstElementPtr args);
     void installCache(const char* cahce_file);
+    void updateClock();
 
     boost::scoped_ptr<DNSL1HashTable> cache_table_;
     boost::scoped_ptr<asiodns::DNSServiceBase> dns_service_;
     server_common::portconfig::AddressList listen_addresses_;
     boost::scoped_ptr<asiodns::DNSLookup> dns_lookup_;
     boost::scoped_ptr<asiodns::DNSAnswer> dns_answer_;
+    boost::scoped_ptr<asiolink::IntervalTimer> clock_timer_;
+    std::time_t now_;
     MessageHandler msg_handler_;
 };
 
