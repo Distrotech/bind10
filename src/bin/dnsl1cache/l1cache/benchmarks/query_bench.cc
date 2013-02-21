@@ -75,7 +75,8 @@ private:
 public:
     QueryBenchMark(DNSL1HashTable* cache_table, const BenchQueries& queries,
                    Message& query_message, OutputBuffer& buffer,
-                   bool debug, size_t expected_rate, bool use_scatter_send) :
+                   bool debug, size_t expected_rate, bool do_rotate,
+                   bool use_scatter_send) :
         msg_handler_(new MessageHandler),
         queries_(queries),
         query_message_(query_message),
@@ -90,6 +91,7 @@ public:
         buffers_(use_scatter_send ? &buffers_storage_ : NULL)
     {
         msg_handler_->setCache(cache_table);
+        msg_handler_->setRRRotation(do_rotate);
     }
 public:
     unsigned int run() {
@@ -144,12 +146,13 @@ const size_t EXPECTED_RATE_DEFAULT = 50000;
 void
 usage() {
     std::cerr << "Usage: query_bench [-d] [-n iterations] [-r expected rate] "
-        "cache_file query_datafile\n"
+        "[-R] cache_file query_datafile\n"
         "  -d Enable debug logging to stdout\n"
         "  -n Number of iterations per test case (default: "
               << ITERATION_DEFAULT << ")\n"
         "  -r Expected query rate/s, adjust TTL update frequency (default: "
               << EXPECTED_RATE_DEFAULT << ")\n"
+        "  -R rotate answers\n"
         "  -s Emulate scatter-send mode\n"
         "  cache_file: cache data\n"
         "  query_datafile: queryperf style input data"
@@ -165,7 +168,8 @@ main(int argc, char* argv[]) {
     size_t expected_rate = EXPECTED_RATE_DEFAULT;
     bool debug_log = false;
     bool use_scatter_send = false;
-    while ((ch = getopt(argc, argv, "dn:r:s")) != -1) {
+    bool do_rotate = false;
+    while ((ch = getopt(argc, argv, "dn:r:Rs")) != -1) {
         switch (ch) {
         case 'n':
             iteration = atoi(optarg);
@@ -175,6 +179,9 @@ main(int argc, char* argv[]) {
             break;
         case 'r':
             expected_rate = boost::lexical_cast<size_t>(optarg);
+            break;
+        case 'R':
+            do_rotate = true;
             break;
         case 's':
             use_scatter_send = true;
@@ -212,7 +219,7 @@ main(int argc, char* argv[]) {
         BenchMark<QueryBenchMark>(iteration,
                                   QueryBenchMark(&cache_table, queries,
                                                  message, buffer, debug_log,
-                                                 expected_rate,
+                                                 expected_rate, do_rotate,
                                                  use_scatter_send));
     } catch (const std::exception& ex) {
         cout << "Test unexpectedly failed: " << ex.what() << endl;

@@ -40,6 +40,7 @@ public:
                  asiodns::DNSServer* server, std::time_t now,
                  std::vector<asiodns::DNSLookup::Buffer>* buffers);
     void setCache(DNSL1HashTable* cache_table);
+    void setRRRotation(bool enable);
 
 private:
     class MessageHandlerImpl;

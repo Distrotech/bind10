@@ -36,7 +36,6 @@ public:
         Exception(file, line, what) {}
 };
 
-
 class DNSL1HashEntry {
 public:
     DNSL1HashEntry(const dns::RRType& rrtype, uint16_t ancount,
@@ -72,6 +71,13 @@ public:
     // owner name: serialized LabelSequence
     // (possible padding)
     // const uint16_t offsets_[]; encoded offset info for RRs
+    //   1-bit: Begin of a new RRset
+    //   1-bit: whether the type is rotatable
+    //  14-bit: offset to the owner name
+    //  16-bit: offset to the RR type field (following owner name)
+    static const uint16_t FLAG_START_RRSET = 0x8000;
+    static const uint16_t FLAG_ROTATABLE = 0x4000;
+    static const uint16_t MASK_OFFSET = 0x3fff;
     // RR data
 };
 

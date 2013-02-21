@@ -48,14 +48,18 @@ namespace dnsl1cache {
 
 class MessageHandler::MessageHandlerImpl {
 public:
-    MessageHandlerImpl() : cache_table_(NULL) {}
+    MessageHandlerImpl() :
+        cache_table_(NULL), rotate_rr_(false), rotate_count_(0)
+    {}
     void process(const IOMessage& io_message, Message& message,
                  OutputBuffer& buffer, DNSServer* server, std::time_t now,
                  std::vector<DNSLookup::Buffer>* buffers);
 
     DNSL1HashTable* cache_table_;
+    bool rotate_rr_;
 private:
     uint8_t labels_buf_[LabelSequence::MAX_SERIALIZED_LENGTH];
+    size_t rotate_count_;       // for RR rotation
 };
 
 inline uint32_t
@@ -102,8 +106,6 @@ MessageHandler::MessageHandlerImpl::process(
     }
 
     const LabelSequence qry_labels(request_buffer, labels_buf_);
-    //const Name qname(request_buffer);
-    //const LabelSequence qry_labels(qname);
     const RRType qtype(request_buffer);
     const RRClass qclass(request_buffer);
     LOG_DEBUG(logger, DBGLVL_TRACE_DETAIL, DNSL1CACHE_RECEIVED_QUERY).
@@ -159,24 +161,127 @@ MessageHandler::MessageHandlerImpl::process(
     const std::time_t elapsed = now - entry->last_used_time_;
     if (elapsed > 0) {
         entry->last_used_time_ = now;
+    }
+
+    const bool do_rotate =
+        (rotate_rr_ &&
+         (entry->data_len_ & DNSL1HashEntry::FLAG_ROTATABLE) != 0);
+    const uint16_t data_len = (entry->data_len_ & DNSL1HashEntry::MASK_OFFSET);
+    size_t cur_data_len = 0;
+    const uint8_t* cur_data_beg = dp_beg;
+    if (elapsed > 0 || do_rotate) {
         const size_t rr_count = entry->ancount_ + entry->nscount_ +
             entry->adcount_;
         for (size_t i = 0; i < rr_count; ++i) {
-             // skip TYPE AND CLASS
-            uint8_t* ttlp = dp_beg + offp[i * 2 + 1] + 4;
-            const uint32_t ttl_val = ntohUint32(ttlp) - elapsed;
-            *ttlp++ = ((ttl_val & 0xff000000) >> 24);
-            *ttlp++ = ((ttl_val & 0x00ff0000) >> 16);
-            *ttlp++ = ((ttl_val & 0x0000ff00) >> 8);
-            *ttlp = (ttl_val & 0x000000ff);
+            if (elapsed > 0) {
+                // skip TYPE AND CLASS
+                uint8_t* ttlp = dp_beg + offp[i * 2 + 1] + 4;
+                const uint32_t ttl_val = ntohUint32(ttlp) - elapsed;
+                *ttlp++ = ((ttl_val & 0xff000000) >> 24);
+                *ttlp++ = ((ttl_val & 0x00ff0000) >> 16);
+                *ttlp++ = ((ttl_val & 0x0000ff00) >> 8);
+                *ttlp = (ttl_val & 0x000000ff);
+            }
+            if (do_rotate) {
+                const bool rotate_start =
+                    ((offp[i * 2] & (DNSL1HashEntry::FLAG_START_RRSET |
+                                     DNSL1HashEntry::FLAG_ROTATABLE)) ==
+                     (DNSL1HashEntry::FLAG_START_RRSET |
+                      DNSL1HashEntry::FLAG_ROTATABLE));
+                if (!rotate_start) {
+                    const uint8_t* next_off =
+                        dp_beg + ((i == rr_count - 1) ? data_len :
+                                  (offp[(i + 1) * 2] &
+                                   DNSL1HashEntry::MASK_OFFSET));
+                    cur_data_len = next_off - cur_data_beg;
+                    continue;
+                }
+                // Flush the data so far
+                if (cur_data_len > 0) {
+                    if (buffers) {
+                        buffers->push_back(DNSLookup::Buffer(cur_data_beg,
+                                                             cur_data_len));
+                    } else {
+                        buffer.writeData(cur_data_beg, cur_data_len);
+                    }
+                }
+
+                // Do rotate write
+                // First, identify the beginning of next RRset (or end of data)
+                const size_t beg_rr = i; // remember the current index
+                while (++i < rr_count &&
+                       (offp[i * 2] & DNSL1HashEntry::FLAG_START_RRSET) == 0) {
+                    ;
+                }
+                const uint8_t* next_off =
+                    dp_beg + ((i == rr_count) ? data_len :
+                              (offp[i * 2] & DNSL1HashEntry::MASK_OFFSET));
+                // Determine the shift count
+                const size_t n_rrs = i - beg_rr;
+                if ((rotate_count_ % n_rrs) == 0) {
+                    // A bit of optimization: no need to rotate in this case.
+                    const uint8_t* d =
+                        dp_beg + (offp[beg_rr * 2] &
+                                  DNSL1HashEntry::MASK_OFFSET);
+                    if (buffers) {
+                        buffers->push_back(DNSLookup::Buffer(d, next_off - d));
+                    } else {
+                        buffer.writeData(d, next_off - d);
+                    }
+                    cur_data_beg = next_off;
+                    cur_data_len = 0;
+                    continue;
+                }
+                for (size_t j = 0; j < n_rrs; ++j) {
+                    // Identify the length of the owner name field
+                    const size_t noff =
+                        (offp[(beg_rr + j) * 2] & DNSL1HashEntry::MASK_OFFSET);
+                    const size_t nlen = offp[(beg_rr + j) * 2 + 1] - noff;
+
+                    // Identify the position and length of the rest of the data
+                    // (rotated)
+                    const size_t data_idx = (j + rotate_count_) % n_rrs;
+                    const uint8_t* rdp =
+                        dp_beg + offp[(beg_rr + data_idx) * 2 + 1];
+                    const uint8_t* rdp_end =
+                        (data_idx == n_rrs - 1) ? next_off :
+                        dp_beg +
+                        (offp[(beg_rr + data_idx + 1) * 2] &
+                         DNSL1HashEntry::MASK_OFFSET);
+
+                    if (buffers) {
+                        buffers->push_back(DNSLookup::Buffer(dp_beg + noff,
+                                                             nlen));
+                        buffers->push_back(DNSLookup::Buffer(
+                                               rdp, rdp_end - rdp));
+                    } else {
+                        buffer.writeData(dp_beg + noff, nlen);
+                        buffer.writeData(rdp, rdp_end - rdp);
+                    }
+                }
+
+                cur_data_beg = next_off;
+                cur_data_len = 0;
+            }
+        }
+    }
+    if (cur_data_len > 0) {
+        if (buffers) {
+            buffers->push_back(DNSLookup::Buffer(cur_data_beg, cur_data_len));
+        } else {
+            buffer.writeData(cur_data_beg, cur_data_len);
         }
     }
 
     // Copy rest of the data.  Names are already compressed.
-    if (buffers) {
-        buffers->push_back(DNSLookup::Buffer(dp_beg, entry->data_len_));
+    if (do_rotate) {
+        ++rotate_count_;
     } else {
-        buffer.writeData(dp_beg, entry->data_len_);
+        if (buffers) {
+            buffers->push_back(DNSLookup::Buffer(dp_beg, data_len));
+        } else {
+            buffer.writeData(dp_beg, data_len);
+        }
     }
 
     server->resume(true);
@@ -201,6 +306,11 @@ MessageHandler::process(const asiolink::IOMessage& io_message,
 void
 MessageHandler::setCache(DNSL1HashTable* cache_table) {
     impl_->cache_table_ = cache_table;
+}
+
+void
+MessageHandler::setRRRotation(bool enable) {
+    impl_->rotate_rr_ = enable;
 }
 
 }

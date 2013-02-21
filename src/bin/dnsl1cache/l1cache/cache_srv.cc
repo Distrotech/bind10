@@ -133,6 +133,11 @@ DNSCacheSrv::configHandler(ModuleCCSession*, ConstElementPtr new_config) {
             scatter_send = config_pair.second->boolValue();
             LOG_INFO(logger, DNSL1CACHE_SRV_SEND_MODE).
                 arg(scatter_send ? "true" : "false");
+        } else if (config_pair.first == "enable_rr_rotation") {
+            const bool rr_rotation = config_pair.second->boolValue();
+            LOG_INFO(logger, DNSL1CACHE_SRV_RR_ROTATATION).
+                arg(rr_rotation ? "enable" : "disable");
+            msg_handler_.setRRRotation(rr_rotation);
         } else if (config_pair.first == "listen_on") {
             listen_addrs = config_pair.second;
         }

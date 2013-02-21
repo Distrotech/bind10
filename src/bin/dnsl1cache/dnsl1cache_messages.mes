@@ -41,3 +41,5 @@ $NAMESPACE isc::dnsl1cache
 % DNSL1CACHE_RECEIVED_QUERY received query %1/%2/%3
 
 % DNSL1CACHE_SRV_SEND_MODE set the UDP scatter send mode to %1
+
+% DNSL1CACHE_SRV_RR_ROTATATION %1 RR rotation

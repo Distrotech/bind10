@@ -65,7 +65,7 @@ loadError(const std::string&, size_t, const std::string& reason) {
 namespace {
 class CacheDataCreater {
 public:
-    CacheDataCreater() {}
+    CacheDataCreater() : rotatable_(false) {}
     void start(const Name& qname, const RRType& qtype, const RRClass& qclass,
                size_t ans_count, size_t soa_count)
     {
@@ -81,6 +81,7 @@ public:
         ans_count_ = ans_count;
         soa_count_ = soa_count;
         offsets_.clear();
+        rotatable_ = false;
     }
     void end() {                // consistency check
         if (ans_count_ != 0 || soa_count_ != 0) {
@@ -95,11 +96,26 @@ public:
         } else {
             assert(false);
         }
+        const bool rotatable = ((rrset->getType() == RRType::A() ||
+                                 rrset->getType() == RRType::AAAA()) &&
+                                rrset->getRdataCount() > 1 &&
+                                ans_count_ > 0);
+        if (rotatable) {
+            rotatable_ = true;
+        }
+        bool first = true;
         for (RdataIteratorPtr rditer = rrset->getRdataIterator();
              !rditer->isLast();
              rditer->next())
         {
-            offsets_.push_back(renderer_.getLength() - offset0_);
+            const uint16_t offset = renderer_.getLength() - offset0_;
+            const uint16_t rotate_flag =
+                (rotatable ? DNSL1HashEntry::FLAG_ROTATABLE : 0);
+            const uint16_t start_flag =
+                (first ? DNSL1HashEntry::FLAG_START_RRSET : 0);
+            assert(offset <= DNSL1HashEntry::MASK_OFFSET);
+            offsets_.push_back(offset | rotate_flag | start_flag);
+            first = false;
             renderer_.writeName(rrset->getName());
 
             offsets_.push_back(renderer_.getLength() - offset0_);
@@ -121,6 +137,7 @@ public:
     MessageRenderer renderer_;
     std::vector<uint16_t> offsets_;
     size_t offset0_; // offset to the pointer immediately after question
+    bool rotatable_;
 private:
     size_t ans_count_;
     size_t soa_count_;
@@ -180,8 +197,11 @@ DNSL1HashTable::DNSL1HashTable(const char* cache_file) {
         const LabelSequence labels(qname);
         const size_t name_buflen =
             (labels.getSerializedLength() + 1) & ~1; // include padding
-        const size_t data_len =
-            creator.renderer_.getLength() - creator.offset0_;
+        assert(creator.renderer_.getLength() - creator.offset0_ <=
+               DNSL1HashEntry::MASK_OFFSET);
+        const uint16_t data_len =
+            ((creator.renderer_.getLength() - creator.offset0_) |
+             (creator.rotatable_ ? DNSL1HashEntry::FLAG_ROTATABLE : 0));
         const size_t entry_len = sizeof(DNSL1HashEntry) + name_buflen +
             sizeof(uint16_t) * creator.offsets_.size() + data_len;
 

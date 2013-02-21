@@ -13,7 +13,13 @@
         "item_name": "enable_scatter_send",
         "item_type": "boolean",
         "item_optional": true,
-        "item_default": True
+        "item_default": true
+      },
+      {
+        "item_name": "enable_rr_rotation",
+        "item_type": "boolean",
+        "item_optional": true,
+        "item_default": false
       },
       {
         "item_name": "listen_on",
