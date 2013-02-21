@@ -1,3 +1,8 @@
+5XX.	[bug]		tomek
+	b10-dhcp4: Reapplied fix for trac #2702 (see ChangeLog entry
+	570) after failed merge. Implemented additional unit-tests.
+	(Trac #2722, git TBD)
+
 581.	[func]*		y-aharen
 	Added statistics items in b10-auth based on
 	http://bind10.isc.org/wiki/StatisticsItems. Qtype counters are

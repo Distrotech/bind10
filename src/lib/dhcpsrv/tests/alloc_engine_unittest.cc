@@ -961,6 +961,39 @@ TEST_F(AllocEngine4Test, renewLease4) {
 
     // Now check that the lease in LeaseMgr has the same parameters
     detailCompareLease(lease, from_mgr);
+
+    // Now check that the lease can be obtained by getLease4(hwaddr, subnet-id)
+    from_mgr = LeaseMgrFactory::instance().getLease4(*hwaddr_, subnet_->getID());
+    detailCompareLease(lease, from_mgr);
+}
+
+// This test checks if the allocation engine is robust enough
+// to not fall over when bogus parameters are passed
+TEST_F(AllocEngine4Test, negative) {
+    boost::scoped_ptr<AllocEngine> engine;
+    ASSERT_NO_THROW(engine.reset(new AllocEngine(AllocEngine::ALLOC_ITERATIVE, 100)));
+    ASSERT_TRUE(engine);
+
+    Lease4Ptr lease;
+
+    // HWAddr must be present - it is information about received packet
+    EXPECT_NO_THROW(lease = engine->allocateAddress4(subnet_, clientid_,
+                            HWAddrPtr(), IOAddress("0.0.0.0"), true));
+    // Must not allocate any lease if HWAddr is missing
+    EXPECT_FALSE(lease);
+
+    // Subnet must be selected. Otherwise we don't know from which pool
+    // allocate something.
+    EXPECT_NO_THROW(lease = engine->allocateAddress4(SubnetPtr(), clientid_,
+                            hwaddr_, IOAddress("0.0.0.0"), true));
+    // Must not allocate any lease if subnet is not specified
+    EXPECT_FALSE(lease);
+
+    // No client-id is a valid case
+    EXPECT_NO_THROW(lease = engine->allocateAddress4(subnet_, ClientIdPtr(), hwaddr_,
+                                                     IOAddress("0.0.0.0"), true));
+    // Should allocate something this time
+    EXPECT_TRUE(lease);
 }
 
 }; // end of anonymous namespace

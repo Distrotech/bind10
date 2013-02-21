@@ -284,6 +284,14 @@ AllocEngine::allocateAddress4(const SubnetPtr& subnet,
             isc_throw(InvalidOperation, "No allocator selected");
         }
 
+        if (!hwaddr) {
+            isc_throw(BadValue, "HWAddr passed to allocateAddress4() can't be NULL");
+        }
+
+        if (!subnet) {
+            isc_throw(BadValue, "Subnet must be specified");
+        }
+
         // Check if there's existing lease for that subnet/clientid/hwaddr combination.
         Lease4Ptr existing = LeaseMgrFactory::instance().getLease4(*hwaddr, subnet->getID());
         if (existing) {
