@@ -34,7 +34,7 @@ main(int, char**) {
     try {
         // Initialize logging.
         isc::log::initLogger("b10-dnsl1cache", isc::log::INFO,
-                             isc::log::MAX_DEBUG_LEVEL, NULL);
+                             isc::log::MAX_DEBUG_LEVEL, NULL, true);
 
         DNSCacheSrv cache_srv;
 
