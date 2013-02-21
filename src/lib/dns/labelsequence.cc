@@ -90,7 +90,7 @@ LabelSequence::LabelSequence(util::InputBuffer& buffer,
             break;
         }
         offset += 1 + label_len;
-        if (offset > 255) {
+        if (offset > Name::MAX_WIRE || label_len > Name::MAX_LABELS) {
             isc_throw(BadValue, "Broken LabelSequence data");
         }
         buffer.setPosition(beg_pos + offset);
