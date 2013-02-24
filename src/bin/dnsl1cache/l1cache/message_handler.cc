@@ -178,7 +178,7 @@ MessageHandler::MessageHandlerImpl::process(
     const uint16_t data_len = (entry->data_len_ & DNSL1HashEntry::MASK_OFFSET);
     size_t cur_data_len = 0;
     const uint8_t* cur_data_beg = dp_beg;
-    uint32_t ttl_val;
+    uint32_t ttl_val = 0;
     if (elapsed > 0 || do_rotate) {
         const size_t rr_count = entry->ancount_ + entry->nscount_ +
             entry->adcount_;
