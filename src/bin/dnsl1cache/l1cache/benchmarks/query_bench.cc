@@ -86,8 +86,8 @@ public:
     QueryBenchMark(DNSL1HashTable* cache_table, const BenchQueries& queries,
                    Message& query_message, OutputBuffer& buffer,
                    bool debug, size_t expected_rate, bool do_rotate,
-                   bool use_scatter_send, int sock, const sockaddr* sa,
-                   socklen_t salen) :
+                   bool use_scatter_send, size_t response_size, int sock,
+                   const sockaddr* sa, socklen_t salen) :
         msg_handler_(new MessageHandler),
         queries_(queries),
         query_message_(query_message),
@@ -100,12 +100,14 @@ public:
         debug_(debug), now_(std::time(NULL)), total_count_(0),
         expected_rate_(expected_rate),
         buffers_(use_scatter_send ? &buffers_storage_ : NULL),
-        sock_(sock), sa_(sa), salen_(salen)
+        sock_(sock), sa_(sa), salen_(salen), response_size_(response_size)
     {
+        assert(response_size < sizeof(buf_));
         msg_handler_->setCache(cache_table);
         msg_handler_->setRRRotation(do_rotate);
         std::memset(&mh_, 0, sizeof(mh_));
         mh_.msg_iov = iov_;
+
     }
 public:
     unsigned int run() {
@@ -130,8 +132,17 @@ public:
                          static_cast<sockaddr*>(static_cast<void*>(&ss_)),
                          &salen);
             }
-            msg_handler_->process(io_message, query_message_, buffer_,
-                                  &server, now_, buffers_);
+            if (response_size_ > 0) {
+                if (buffers_) {
+                    buffers_->push_back(isc::asiodns::DNSLookup::Buffer(
+                                            buf_, response_size_));
+                } else {
+                    buffer_.writeData(buf_, response_size_);
+                }
+            } else {
+                msg_handler_->process(io_message, query_message_, buffer_,
+                                      &server, now_, buffers_);
+            }
             if (sock_ != -1) {
                 if (buffers_) {
                     mh_.msg_name = const_cast<sockaddr*>(sa_);
@@ -182,6 +193,7 @@ private:
     struct sockaddr_storage ss_;
     const sockaddr* const sa_;
     const socklen_t salen_;
+    const size_t response_size_;
 };
 
 class BenchmarkError : public isc::Exception {
@@ -251,7 +263,7 @@ const char* const SERVER_PORT_DEFAULT = "5300";
 void
 usage() {
     std::cerr << "Usage: query_bench [-a address] [-d] [-n iterations] [-N] "
-        "[-r expected rate] [-p port] [-P port] [-R] "
+        "[-r expected rate] [-p port] [-P port] [-R] [-s] [-S size]"
         "cache_file query_datafile\n"
         "  -a Specify the 'client' address when -N is specified (default: "
               << CLIENT_ADDRESS_DEFAULT << ")\n"
@@ -267,6 +279,7 @@ usage() {
               << EXPECTED_RATE_DEFAULT << ")\n"
         "  -R rotate answers\n"
         "  -s Emulate scatter-send mode\n"
+        "  -S Response size: if specified with -N, skip cache lookup\n"
         "  cache_file: cache data\n"
         "  query_datafile: queryperf style input data"
               << std::endl;
@@ -283,10 +296,11 @@ main(int argc, char* argv[]) {
     bool use_scatter_send = false;
     bool do_rotate = false;
     bool use_netio = false;
+    size_t response_size = 0;
     const char* client_addr = CLIENT_ADDRESS_DEFAULT;
     const char* client_port = CLIENT_PORT_DEFAULT;
     const char* server_port = SERVER_PORT_DEFAULT;
-    while ((ch = getopt(argc, argv, "a:dn:Nr:p:P:Rs")) != -1) {
+    while ((ch = getopt(argc, argv, "a:dn:Nr:p:P:RsS:")) != -1) {
         switch (ch) {
         case 'a':
             client_addr = optarg;
@@ -314,6 +328,9 @@ main(int argc, char* argv[]) {
             break;
         case 's':
             use_scatter_send = true;
+            break;
+        case 'S':
+            response_size = boost::lexical_cast<size_t>(optarg);
             break;
         default:
             usage();
@@ -359,8 +376,8 @@ main(int argc, char* argv[]) {
                                   QueryBenchMark(&cache_table, queries,
                                                  message, buffer, debug_log,
                                                  expected_rate, do_rotate,
-                                                 use_scatter_send, s, sa,
-                                                 salen));
+                                                 use_scatter_send,
+                                                 response_size, s, sa, salen));
     } catch (const std::exception& ex) {
         cout << "Test unexpectedly failed: " << ex.what() << endl;
         return (1);
