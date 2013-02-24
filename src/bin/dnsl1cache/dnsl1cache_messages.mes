@@ -32,7 +32,7 @@ $NAMESPACE isc::dnsl1cache
 
 % DNSL1CACHE_CACHE_INSTALLED DNS cache installation completed
 
-% DNSL1CACHE_CACHE_TABLE_CREATED DNS cache table created with %1 entries
+% DNSL1CACHE_CACHE_TABLE_CREATED DNS cache table created with %1 entries, average message size=%2, max bucket size=%3
 
 % DNSL1CACHE_RESPONSE_RECEIVED received response message, ignoring
 

@@ -72,7 +72,9 @@ namespace {
 class CacheDataCreater {
 public:
     CacheDataCreater(const RRTTL& min_ttl) :
-        rotatable_(false), min_ttl_(min_ttl), obuffer_(0) {}
+        rotatable_(false), total_msg_size_(0), min_ttl_(min_ttl), obuffer_(0)
+    {}
+
     void start(const Name& qname, const RRType& qtype, const RRClass& qclass,
                size_t ans_count, size_t soa_count)
     {
@@ -94,6 +96,7 @@ public:
         if (ans_count_ != 0 || soa_count_ != 0) {
             isc_throw(DNSL1HashError, "broken cache data");
         }
+        total_msg_size_ += renderer_.getLength();
     }
     ConstRRsetPtr adjustTTL(const RRsetPtr& rrset) {
         if (rrset->getTTL() < min_ttl_) {
@@ -172,6 +175,7 @@ public:
     std::vector<uint16_t> offsets_;
     size_t offset0_; // offset to the pointer immediately after question
     bool rotatable_;
+    size_t total_msg_size_;
 private:
     const RRTTL min_ttl_;
     util::OutputBuffer obuffer_;
@@ -196,6 +200,7 @@ DNSL1HashTable::DNSL1HashTable(const char* cache_file, const RRTTL& min_ttl) {
     std::string line, qname_str, qclass_str, qtype_str;
     size_t rcode_code, ans_count, soa_count;
     size_t entry_count = 0;
+    size_t max_bucket_size = 0;
     while (ifs.good()) {
         line.clear();
         std::getline(ifs, line);
@@ -251,6 +256,9 @@ DNSL1HashTable::DNSL1HashTable(const char* cache_file, const RRTTL& min_ttl) {
                                   std::time(NULL));
         entry_buckets_[getQueryHash(labels, qtype) % N_BUCKETS].
             push_back(entry);
+        max_bucket_size = std::max(
+            entry_buckets_[getQueryHash(labels, qtype) % N_BUCKETS].size(),
+            max_bucket_size);
         labels.serialize(entry->getNameBuf(), name_buflen);
         void* offsetp = entry->getOffsetBuf(name_buflen);
         std::memcpy(offsetp, &creator.offsets_[0],
@@ -262,8 +270,9 @@ DNSL1HashTable::DNSL1HashTable(const char* cache_file, const RRTTL& min_ttl) {
         assert(labels == LabelSequence(entry->getNameBuf()));
         ++entry_count;
     }
-
-    LOG_INFO(logger, DNSL1CACHE_CACHE_TABLE_CREATED).arg(entry_count);
+    LOG_INFO(logger, DNSL1CACHE_CACHE_TABLE_CREATED).arg(entry_count).
+        arg(entry_count > 0 ? creator.total_msg_size_ / entry_count : 0).
+        arg(max_bucket_size);
 }
 
 DNSL1HashEntry*
