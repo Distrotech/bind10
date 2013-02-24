@@ -49,7 +49,8 @@ namespace dnsl1cache {
 class MessageHandler::MessageHandlerImpl {
 public:
     MessageHandlerImpl() :
-        cache_table_(NULL), rotate_rr_(false), rotate_count_(0)
+        cache_table_(NULL), rotate_rr_(false), rotate_count_(0),
+        enable_query_log_(logger.isDebugEnabled(DBGLVL_TRACE_DETAIL))
     {}
     void process(const IOMessage& io_message, Message& message,
                  OutputBuffer& buffer, DNSServer* server, std::time_t now,
@@ -57,9 +58,16 @@ public:
 
     DNSL1HashTable* cache_table_;
     bool rotate_rr_;
+    void queryLog(const LabelSequence& qry_labels, const RRClass& qclass,
+                  const RRType& qtype)
+    {
+        LOG_DEBUG(logger, DBGLVL_TRACE_DETAIL, DNSL1CACHE_RECEIVED_QUERY).
+            arg(qry_labels).arg(qclass).arg(qtype);
+    }
 private:
     uint8_t labels_buf_[LabelSequence::MAX_SERIALIZED_LENGTH];
     size_t rotate_count_;       // for RR rotation
+    const bool enable_query_log_;
 };
 
 inline uint32_t
@@ -106,12 +114,13 @@ MessageHandler::MessageHandlerImpl::process(
     }
 
     const LabelSequence qry_labels(request_buffer, labels_buf_);
-    const RRType qtype(request_buffer);
-    const RRClass qclass(request_buffer);
-    LOG_DEBUG(logger, DBGLVL_TRACE_DETAIL, DNSL1CACHE_RECEIVED_QUERY).
-        arg(qry_labels).arg(qclass).arg(qtype);
+    const RRType qtype(request_buffer.readUint16());
+    const RRClass qclass(request_buffer.readUint16());
+    if (enable_query_log_) {
+        queryLog(qry_labels, qclass, qtype);
+    }
     if (qclass != RRClass::IN()) {
-        isc_throw(Unexpected, "experimental assumption failure");
+        throw std::runtime_error("experimental assumption failure");
     }
 
     if (cache_table_ == NULL) {
@@ -122,8 +131,8 @@ MessageHandler::MessageHandlerImpl::process(
 
     DNSL1HashEntry* entry = cache_table_->find(qry_labels, qtype);
     if (entry == NULL) {
-        isc_throw(Unexpected, "cache entry not found: experimental assumption "
-                  "failure: " << qry_labels << "/" << qtype);
+        throw std::runtime_error(
+            "cache entry not found: experimental assumption");
     }
 
     // Copy the part of DNS header (we know qdcount is 1 here)
@@ -294,8 +303,6 @@ MessageHandler::MessageHandlerImpl::process(
             buffer.writeData(dp_beg, data_len);
         }
     }
-
-    server->resume(true);
 }
 
 MessageHandler::MessageHandler() : impl_(new MessageHandlerImpl)
