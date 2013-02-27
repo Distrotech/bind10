@@ -1180,6 +1180,7 @@ AC_CONFIG_FILES([Makefile
                  src/bin/auth/tests/Makefile
                  src/bin/auth/tests/testdata/Makefile
                  src/bin/auth/benchmarks/Makefile
+                 src/bin/receptionist/Makefile
                  src/bin/ddns/Makefile
                  src/bin/ddns/tests/Makefile
                  src/bin/dhcp6/Makefile
