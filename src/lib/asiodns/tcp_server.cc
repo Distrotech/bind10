@@ -125,6 +125,9 @@ TCPServer::operator()(asio::error_code ec, size_t length) {
             /// will continue listening for DNS connections while the
             /// handles the one that has just arrived.
             CORO_FORK io_.post(TCPServer(*this));
+            if (is_parent()) { // Just a single connection, for testing
+                return;
+            }
         } while (is_parent());
 
         /// Instantiate the data buffer that will be used by the
@@ -132,6 +135,7 @@ TCPServer::operator()(asio::error_code ec, size_t length) {
         data_.reset(new char[MAX_LENGTH]);
 
         /// Start a timer to drop the connection if it is idle
+        /*
         if (*tcp_recv_timeout_ > 0) {
             timeout_.reset(new asio::deadline_timer(io_));
             timeout_->expires_from_now(
@@ -139,6 +143,9 @@ TCPServer::operator()(asio::error_code ec, size_t length) {
             timeout_->async_wait(boost::bind(&do_timeout, boost::ref(*socket_),
                                  asio::placeholders::error));
         }
+        */
+
+        READ_NEXT:
 
         /// Read the message, in two parts.  First, the message length:
         CORO_YIELD async_read(*socket_, asio::buffer(data_.get(),
@@ -152,7 +159,7 @@ TCPServer::operator()(asio::error_code ec, size_t length) {
         /// to allow inline variable declarations.)
         CORO_YIELD {
             InputBuffer dnsbuffer(data_.get(), length);
-            uint16_t msglen = dnsbuffer.readUint16();
+            msglen = dnsbuffer.readUint32();
             async_read(*socket_, asio::buffer(data_.get(), msglen), *this);
         }
 
@@ -183,57 +190,57 @@ TCPServer::operator()(asio::error_code ec, size_t length) {
         // the underlying Boost TCP socket - DummyIOCallback is used.  This
         // provides the appropriate operator() but is otherwise functionless.
         iosock_.reset(new TCPSocket<DummyIOCallback>(*socket_));
-        io_message_.reset(new IOMessage(data_.get(), length, *iosock_, *peer_));
+        wholedata_.reset(new InputBuffer(data_.get(), msglen));
+        wholeoutput_.reset(new OutputBuffer(2));
 
-        // Perform any necessary operations prior to processing the incoming
-        // packet (e.g., checking for queued configuration messages).
-        //
-        // (XXX: it may be a performance issue to have this called for
-        // every single incoming packet; we may wish to throttle it somehow
-        // in the future.)
-        if (checkin_callback_ != NULL) {
-            (*checkin_callback_)(*io_message_);
+        while (wholedata_->getPosition() < wholedata_->getLength()) {
+            {
+                uint16_t dnslen = wholedata_->readUint16();
+                msgdata_.reset(new uint8_t[dnslen]);
+                wholedata_->readData(msgdata_.get(), dnslen);
+                singlemsg_.reset(new InputBuffer(msgdata_.get(), dnslen));
+                io_message_.reset(new IOMessage(singlemsg_.get(), dnslen, *iosock_, *peer_));
+            }
+
+            // Perform any necessary operations prior to processing the incoming
+            // packet (e.g., checking for queued configuration messages).
+            //
+            // (XXX: it may be a performance issue to have this called for
+            // every single incoming packet; we may wish to throttle it somehow
+            // in the future.)
+            if (checkin_callback_ != NULL) {
+                (*checkin_callback_)(*io_message_);
+            }
+
+            // Reset or instantiate objects that will be needed by the
+            // DNS lookup and the write call.
+            respbuf_.reset(new OutputBuffer(0));
+            query_message_.reset(new Message(Message::PARSE));
+            answer_message_.reset(new Message(Message::RENDER));
+
+            // Schedule a DNS lookup, and yield.  When the lookup is
+            // finished, the coroutine will resume immediately after
+            // this point.
+            CORO_YIELD io_.post(AsyncLookup<TCPServer>(*this));
+
+            // The 'done_' flag indicates whether we have an answer
+            // to send back.  If not, check next message.
+            if (!done_) {
+                continue;
+            }
+
+            // Call the DNS answer provider to render the answer into
+            // wire format
+            (*answer_callback_)(*io_message_, query_message_,
+                                answer_message_, respbuf_);
+
+            wholeoutput_->writeUint16(respbuf_->getLength());
+            wholeoutput_->writeData(respbuf_->getData(), respbuf_->getLength());
         }
 
-        // If we don't have a DNS Lookup provider, there's no point in
-        // continuing; we exit the coroutine permanently.
-        if (lookup_callback_ == NULL) {
-            socket_->close();
-            CORO_YIELD return;
-        }
-
-        // Reset or instantiate objects that will be needed by the
-        // DNS lookup and the write call.
-        respbuf_.reset(new OutputBuffer(0));
-        query_message_.reset(new Message(Message::PARSE));
-        answer_message_.reset(new Message(Message::RENDER));
-
-        // Schedule a DNS lookup, and yield.  When the lookup is
-        // finished, the coroutine will resume immediately after
-        // this point.
-        CORO_YIELD io_.post(AsyncLookup<TCPServer>(*this));
-
-        // The 'done_' flag indicates whether we have an answer
-        // to send back.  If not, exit the coroutine permanently.
-        if (!done_) {
-            // TODO: should we keep the connection open for a short time
-            // to see if new requests come in?
-            socket_->close();
-            CORO_YIELD return;
-        }
-
-        if (ec) {
-            CORO_YIELD return;
-        }
-        // Call the DNS answer provider to render the answer into
-        // wire format
-        (*answer_callback_)(*io_message_, query_message_,
-                            answer_message_, respbuf_);
-
-        // Set up the response, beginning with two length bytes.
-        lenbuf.writeUint16(respbuf_->getLength());
+        lenbuf.writeUint32(wholedata_->getLength());
         bufs[0] = buffer(lenbuf.getData(), lenbuf.getLength());
-        bufs[1] = buffer(respbuf_->getData(), respbuf_->getLength());
+        bufs[1] = buffer(wholeoutput_->getData(), wholeoutput_->getLength());
 
         // Begin an asynchronous send, and then yield.  When the
         // send completes, we will resume immediately after this point
@@ -241,12 +248,7 @@ TCPServer::operator()(asio::error_code ec, size_t length) {
         // will simply exit at that time).
         CORO_YIELD async_write(*socket_, bufs, *this);
 
-        // All done, cancel the timeout timer
-        timeout_->cancel();
-
-        // TODO: should we keep the connection open for a short time
-        // to see if new requests come in?
-        socket_->close();
+        goto READ_NEXT;
     }
 }
 

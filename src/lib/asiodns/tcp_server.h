@@ -72,8 +72,8 @@ public:
     }
 
 private:
-    enum { MAX_LENGTH = 65535 };
-    static const size_t TCP_MESSAGE_LENGTHSIZE = 2;
+    enum { MAX_LENGTH = 65535000 }; // For 1000 messages
+    static const size_t TCP_MESSAGE_LENGTHSIZE = 4;
 
     // The ASIO service object
     asio::io_service& io_;
@@ -102,6 +102,11 @@ private:
     // An ASIO acceptor object to handle new connections.  Created in
     // the constructor.
     boost::shared_ptr<asio::ip::tcp::acceptor> acceptor_;
+
+    boost::shared_array<uint8_t> msgdata_;
+    boost::shared_ptr<isc::util::InputBuffer> singlemsg_, wholedata_;
+    boost::shared_ptr<isc::util::OutputBuffer> wholeoutput_;
+    size_t msglen;
 
     // Socket used to for listen for queries.  Created in the
     // constructor and stored in a shared_ptr because socket objects
