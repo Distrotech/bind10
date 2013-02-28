@@ -23,11 +23,11 @@ namespace {
 const uint16_t listen_port = 5310;
 const uint16_t up_port = 5311;
 const uint16_t answer_port = 5312;
-const size_t conn_count = 1;
+const size_t conn_count = 4;
 const size_t event_cnt = 10;
 const size_t buffer_size = 6553600;
 const size_t msg_size = 65536;
-const size_t maxmsg_count = 50;
+const size_t maxmsg_count = 10;
 
 struct epoll_handler {
     void (*handler)(size_t param);
@@ -40,8 +40,8 @@ int udp_socket;
 struct epoll_handler udp_handler = { udp_ready, 0 };
 uint8_t udp_buffer[buffer_size * conn_count];
 size_t udp_buff_pos = 0;
-struct mmsghdr out_headers[maxmsg_count * conn_count];
-struct iovec out_vectors[maxmsg_count * conn_count];
+struct mmsghdr out_headers[maxmsg_count * conn_count * 10];
+struct iovec out_vectors[maxmsg_count * conn_count * 10];
 size_t out_hdrpos = 0;
 
 struct upconn {
@@ -98,6 +98,7 @@ void upstream_ready(size_t index) {
         pos += msg_len;
         out_hdrpos ++;
     }
+    udp_buff_pos += length;
 }
 
 }
@@ -115,7 +116,7 @@ int main() {
     // to pass the answer to the reply.
     udp_headers[0].msg_hdr.msg_name = &remote_addr;
     udp_headers[0].msg_hdr.msg_namelen = sizeof remote_addr;
-    for (size_t i = 0; i < maxmsg_count * conn_count; i ++) {
+    for (size_t i = 0; i < maxmsg_count * conn_count * 10; i ++) {
         out_headers[i].msg_hdr.msg_iovlen = 1;
         out_headers[i].msg_hdr.msg_iov = &out_vectors[i];
         out_headers[i].msg_hdr.msg_namelen = sizeof remote_addr;
@@ -160,7 +161,7 @@ int main() {
         }
         // Send all read data
         for (size_t i = 0; i < conn_count; i ++) {
-            if (conns[i].buff_size == 4)
+            if (conns[i].buff_size < 300)
                 continue;
             uint32_t size = htonl(conns[i].buff_size - 4);
             memcpy(conns[i].buff, &size, 4);
