@@ -160,6 +160,7 @@ TCPServer::operator()(asio::error_code ec, size_t length) {
         CORO_YIELD {
             InputBuffer dnsbuffer(data_.get(), length);
             msglen = dnsbuffer.readUint32();
+            LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, ASIODNS_BATCH_SIZE).arg(msglen);
             async_read(*socket_, asio::buffer(data_.get(), msglen), *this);
         }
 
@@ -196,10 +197,10 @@ TCPServer::operator()(asio::error_code ec, size_t length) {
         while (wholedata_->getPosition() < wholedata_->getLength()) {
             {
                 uint16_t dnslen = wholedata_->readUint16();
+                LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, ASIODNS_MSG_SIZE).arg(dnslen);
                 msgdata_.reset(new uint8_t[dnslen]);
                 wholedata_->readData(msgdata_.get(), dnslen);
-                singlemsg_.reset(new InputBuffer(msgdata_.get(), dnslen));
-                io_message_.reset(new IOMessage(singlemsg_.get(), dnslen, *iosock_, *peer_));
+                io_message_.reset(new IOMessage(msgdata_.get(), dnslen, *iosock_, *peer_));
             }
 
             // Perform any necessary operations prior to processing the incoming
@@ -221,7 +222,9 @@ TCPServer::operator()(asio::error_code ec, size_t length) {
             // Schedule a DNS lookup, and yield.  When the lookup is
             // finished, the coroutine will resume immediately after
             // this point.
+            LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, ASIODNS_BEFORE_YIELD);
             CORO_YIELD io_.post(AsyncLookup<TCPServer>(*this));
+            LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, ASIODNS_AFTER_YIELD);
 
             // The 'done_' flag indicates whether we have an answer
             // to send back.  If not, check next message.

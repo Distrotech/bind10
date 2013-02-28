@@ -78,3 +78,11 @@ please submit a bug report.
 An internal error indicating that the termination method of the resolver's
 upstream fetch class was called with an unknown result code (which is
 given in the message).  Please submit a bug report.
+
+% ASIODNS_BATCH_SIZE Batch size %1 bytes
+
+% ASIODNS_MSG_SIZE Message size %1 bytes
+
+% ASIODNS_BEFORE_YIELD Before
+
+% ASIODNS_AFTER_YIELD After

@@ -22,7 +22,7 @@ namespace {
 // Configuration constants
 const uint16_t listen_port = 5310;
 const uint16_t up_port = 5311;
-const size_t conn_count = 4;
+const size_t conn_count = 1;
 const size_t event_cnt = 10;
 const size_t buffer_size = 6553600;
 const size_t msg_size = 65536;
@@ -66,6 +66,7 @@ void udp_ready(size_t) {
     int result;
     CHECK(result = recvmmsg(udp_socket, udp_headers, maxmsg_count, MSG_DONTWAIT, NULL));
     for (size_t i = 0; i < result; i ++) {
+        printf("Adding message of size %u\n", udp_headers[i].msg_len);
         size_t upstream = random() % conn_count;
         uint16_t len = htons(udp_headers[i].msg_len);
         memcpy(conns[upstream].buff + conns[upstream].buff_size, &len, 2);
@@ -130,6 +131,7 @@ int main() {
         for (size_t i = 0; i < conn_count; i ++) {
             if (conns[i].buff_size == 4)
                 continue;
+            printf("Sending batch of %zu bytes\n", conns[i].buff_size - 4);
             uint32_t size = htonl(conns[i].buff_size - 4);
             memcpy(conns[i].buff, &size, 4);
             size_t pos = 0;
