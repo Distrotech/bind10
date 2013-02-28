@@ -887,8 +887,7 @@ void
 AuthSrv::setListenAddresses(const AddressList& addresses) {
     // For UDP servers we specify the "SYNC_OK" option because in our usage
     // it can act in the synchronous mode.
-    installListenAddresses(addresses, impl_->listen_addresses_, *dnss_,
-                           DNSService::SERVER_SYNC_OK);
+    installListenAddresses(addresses, impl_->listen_addresses_, *dnss_);
 }
 
 void
