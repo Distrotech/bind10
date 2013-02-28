@@ -22,6 +22,7 @@ namespace {
 // Configuration constants
 const uint16_t listen_port = 5310;
 const uint16_t up_port = 5311;
+const uint16_t answer_port = 5312;
 const size_t conn_count = 1;
 const size_t event_cnt = 10;
 const size_t buffer_size = 6553600;
@@ -37,6 +38,11 @@ void udp_ready(size_t);
 
 int udp_socket;
 struct epoll_handler udp_handler = { udp_ready, 0 };
+uint8_t udp_buffer[buffer_size * conn_count];
+size_t udp_buff_pos = 0;
+struct mmsghdr out_headers[maxmsg_count * conn_count];
+struct iovec out_vectors[maxmsg_count * conn_count];
+size_t out_hdrpos = 0;
 
 struct upconn {
     int sock;
@@ -61,12 +67,12 @@ check(int ecode, const char *what, size_t line) {
 uint8_t udp_buffers[maxmsg_count][msg_size];
 struct mmsghdr udp_headers[maxmsg_count];
 struct iovec udp_vectors[maxmsg_count];
+struct sockaddr_in6 remote_addr;
 
 void udp_ready(size_t) {
     int result;
     CHECK(result = recvmmsg(udp_socket, udp_headers, maxmsg_count, MSG_DONTWAIT, NULL));
     for (size_t i = 0; i < result; i ++) {
-        printf("Adding message of size %u\n", udp_headers[i].msg_len);
         size_t upstream = random() % conn_count;
         uint16_t len = htons(udp_headers[i].msg_len);
         memcpy(conns[upstream].buff + conns[upstream].buff_size, &len, 2);
@@ -76,8 +82,22 @@ void udp_ready(size_t) {
     }
 }
 
-void upstream_ready(size_t) {
-    abort(); // Not yet
+void upstream_ready(size_t index) {
+    uint32_t length;
+    CHECK(recv(conns[index].sock, &length, sizeof length, MSG_WAITALL));
+    length = ntohl(length);
+    CHECK(recv(conns[index].sock, udp_buffer + udp_buff_pos, length, MSG_WAITALL));
+    size_t pos = 0;
+    while (pos < length) {
+        uint16_t msg_len;
+        memcpy(&msg_len, udp_buffer + udp_buff_pos + pos, 2);
+        msg_len = ntohs(msg_len);
+        pos += 2;
+        out_headers[out_hdrpos].msg_hdr.msg_iov[0].iov_base = udp_buffer + udp_buff_pos + pos;
+        out_headers[out_hdrpos].msg_hdr.msg_iov[0].iov_len = msg_len;
+        pos += msg_len;
+        out_hdrpos ++;
+    }
 }
 
 }
@@ -91,6 +111,16 @@ int main() {
         udp_vectors[i].iov_base = udp_buffers[i];
         udp_vectors[i].iov_len = msg_size;
     }
+    // We expect all the queries to come from the same source. This is a trick
+    // to pass the answer to the reply.
+    udp_headers[0].msg_hdr.msg_name = &remote_addr;
+    udp_headers[0].msg_hdr.msg_namelen = sizeof remote_addr;
+    for (size_t i = 0; i < maxmsg_count * conn_count; i ++) {
+        out_headers[i].msg_hdr.msg_iovlen = 1;
+        out_headers[i].msg_hdr.msg_iov = &out_vectors[i];
+        out_headers[i].msg_hdr.msg_namelen = sizeof remote_addr;
+        out_headers[i].msg_hdr.msg_name = &remote_addr;
+    }
     // Initialize epoll
     CHECK(epoll_socket = epoll_create(10));
     // Initialize the listening UDP socket
@@ -101,6 +131,7 @@ int main() {
     addr.sin6_port = htons(listen_port);
     addr.sin6_addr = in6addr_any;
     CHECK(bind(udp_socket, (const struct sockaddr *) &addr, sizeof addr));
+    addr.sin6_port = htons(answer_port);
     struct epoll_event event;
     event.events = EPOLLIN;
     event.data.ptr = &udp_handler;
@@ -131,7 +162,6 @@ int main() {
         for (size_t i = 0; i < conn_count; i ++) {
             if (conns[i].buff_size == 4)
                 continue;
-            printf("Sending batch of %zu bytes\n", conns[i].buff_size - 4);
             uint32_t size = htonl(conns[i].buff_size - 4);
             memcpy(conns[i].buff, &size, 4);
             size_t pos = 0;
@@ -142,5 +172,13 @@ int main() {
             }
             conns[i].buff_size = 4;
         }
+        size_t pos = 0;
+        ssize_t result;
+        while (pos < out_hdrpos) {
+            CHECK(result = sendmmsg(udp_socket, out_headers + pos, out_hdrpos - pos, 0));
+            pos += result;
+        }
+        out_hdrpos = 0;
+        udp_buff_pos = 0;
     }
 }

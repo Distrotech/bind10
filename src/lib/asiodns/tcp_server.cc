@@ -237,11 +237,13 @@ TCPServer::operator()(asio::error_code ec, size_t length) {
             (*answer_callback_)(*io_message_, query_message_,
                                 answer_message_, respbuf_);
 
+            LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, ASIODNS_MSG_LENGTH).arg(respbuf_->getLength());
             wholeoutput_->writeUint16(respbuf_->getLength());
             wholeoutput_->writeData(respbuf_->getData(), respbuf_->getLength());
         }
 
-        lenbuf.writeUint32(wholedata_->getLength());
+        lenbuf.writeUint32(wholeoutput_->getLength());
+        LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, ASIODNS_TOTAL_LENGTH).arg(wholeoutput_->getLength());
         bufs[0] = buffer(lenbuf.getData(), lenbuf.getLength());
         bufs[1] = buffer(wholeoutput_->getData(), wholeoutput_->getLength());
 

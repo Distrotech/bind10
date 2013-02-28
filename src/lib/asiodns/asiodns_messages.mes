@@ -85,4 +85,8 @@ given in the message).  Please submit a bug report.
 
 % ASIODNS_BEFORE_YIELD Before
 
+% ASIODNS_TOTAL_LENGTH Send of total length %1 bytes
+
+% ASIODNS_MSG_LENGTH Msg of length %1 bytes to send
+
 % ASIODNS_AFTER_YIELD After
