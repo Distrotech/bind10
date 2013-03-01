@@ -912,7 +912,7 @@ class XfrinConnection(asyncore.dispatcher):
 
         try:
             # increment SOA queries in progress
-            counter.inc('soa_in_progress')
+            self._counters.inc('soa_in_progress')
             self._send_query(RRType.SOA)
             # count soaoutv4 or soaoutv6 requests
             self._counters.inc('zones', self._zone_name.to_text(),
@@ -920,7 +920,7 @@ class XfrinConnection(asyncore.dispatcher):
             data_len = self._get_request_response(2)
         finally:
             # decrement SOA queries in progress
-            counter.dec_soa_in_progress()
+            self._counters.dec('soa_in_progress')
         msg_len = socket.htons(struct.unpack('H', data_len)[0])
         soa_response = self._get_request_response(msg_len)
         msg = Message(Message.PARSE)
@@ -964,18 +964,19 @@ class XfrinConnection(asyncore.dispatcher):
                                        'time_to_' + req_str.lower())
             try:
                 # increment deferred xfers
-                getattr(counter, 'inc_%s_deferred' % req_str.lower())()
+                self._counters.inc(req_str.lower() + '_deferred')
                 logger.info(XFRIN_XFR_TRANSFER_STARTED, req_str, self.zone_str())
                 self._send_query(self._request_type)
             finally:
                 # decrement deferred xfers
-                getattr(counter, 'dec_%s_deferred' % req_str.lower())()
+                self._counters.dec(req_str.lower() + '_deferred')
             # count xfer requests for statistics
             self._counters.inc('zones', self._zone_name.to_text(),
                                req_str.lower() + 'req' +
                                self.get_ipver_str())
             # increment xfers running
-            getattr(counter, 'inc_%s_running' % req_str.lower())()
+            self._counters.inc(req_str.lower() + '_running')
+
             self.__state = XfrinInitialSOA()
             self._handle_xfrin_responses()
             # Depending what data was found, we log different status reports
@@ -1051,7 +1052,7 @@ class XfrinConnection(asyncore.dispatcher):
                 # count failed xfer requests
                 self._counters.inc('zones', self._zone_name.to_text(), 'xfrfail')
             # decrement xfers running
-            getattr(counter, 'dec_%s_running' % req_str.lower())()
+            self._counters.dec(req_str.lower() + '_running')
 
         return ret
 
