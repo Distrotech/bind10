@@ -276,7 +276,7 @@
           }
         },
         "item_title": "Socket",
-        "item_description": "Socket",
+        "item_description": "A directory name of socket statistics",
         "map_item_spec": [
           {
             "item_name": "ipv4",
@@ -294,7 +294,7 @@
               }
             },
             "item_title": "IPv4",
-            "item_description": "IPv4",
+            "item_description": "A directory name of IPv4 statistics",
             "map_item_spec": [
               {
                 "item_name": "tcp",
@@ -310,7 +310,7 @@
                   "recverr": 0
                 },
                 "item_title": "TCP",
-                "item_description": "TCP/IP",
+                "item_description": "A directory name of TCP statistics",
                 "map_item_spec": [
                   {
                     "item_name": "open",
@@ -388,7 +388,7 @@
               }
             },
             "item_title": "IPv6",
-            "item_description": "IPv6",
+            "item_description": "A directory name of IPv6 statistics",
             "map_item_spec": [
               {
                 "item_name": "tcp",
@@ -404,7 +404,7 @@
                   "recverr": 0
                 },
                 "item_title": "TCP",
-                "item_description": "TCP/IP",
+                "item_description": "A directory name of TCP statistics",
                 "map_item_spec": [
                   {
                     "item_name": "open",
