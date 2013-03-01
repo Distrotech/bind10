@@ -621,13 +621,11 @@ class XfrinConnection(asyncore.dispatcher):
         try:
             ret = super().create_socket(family, type)
             # count open
-            getattr(counter,
-                    'inc_ip%ssocket_open' % self.get_ipver_str(family))()
+            self._counters.inc('socket', 'ip' + self.get_ipver_str(family), 'tcp', 'open')
             return ret
         except:
             # count openfail
-            getattr(counter,
-                    'inc_ip%ssocket_openfail' % self.get_ipver_str(family))()
+            self._counters.inc('socket', 'ip' + self.get_ipver_str(family), 'tcp', 'openfail')
             raise
 
     def close(self):
@@ -635,8 +633,7 @@ class XfrinConnection(asyncore.dispatcher):
         statistics counter close"""
         ret = super().close()
         # count close
-        getattr(counter,
-                'inc_ip%ssocket_close' % self.get_ipver_str())()
+        self._counters.inc('socket', 'ip' + self.get_ipver_str(), 'tcp', 'close')
         return ret
 
     def connect(self, address):
@@ -645,13 +642,11 @@ class XfrinConnection(asyncore.dispatcher):
         try:
             ret = super().connect(address)
             # count conn
-            getattr(counter,
-                    'inc_ip%ssocket_conn' % self.get_ipver_str())()
+            self._counters.inc('socket', 'ip' + self.get_ipver_str(), 'tcp', 'conn')
             return ret
         except:
             # count connfail
-            getattr(counter,
-                    'inc_ip%ssocket_connfail' % self.get_ipver_str())()
+            self._counters.inc('socket', 'ip' + self.get_ipver_str(), 'tcp', 'connfail')
             raise
 
     def send(self, data):
@@ -661,8 +656,7 @@ class XfrinConnection(asyncore.dispatcher):
             return super().send(data)
         except:
             # count senderr
-            getattr(counter,
-                    'inc_ip%ssocket_senderr' % self.get_ipver_str())()
+            self._counters.inc('socket', 'ip' + self.get_ipver_str(), 'tcp', 'senderr')
             raise
 
     def recv(self, buffer_size):
@@ -672,8 +666,7 @@ class XfrinConnection(asyncore.dispatcher):
             return super().recv(buffer_size)
         except:
             # count recverr
-            getattr(counter,
-                    'inc_ip%ssocket_recverr' % self.get_ipver_str())()
+            self._counters.inc('socket', 'ip' + self.get_ipver_str(), 'tcp', 'recverr')
             raise
 
     def init_socket(self):

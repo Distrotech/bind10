@@ -3308,67 +3308,67 @@ class TestXfrinTransferStats(unittest.TestCase):
 class TestXfrinConnectionSocketCounter(unittest.TestCase):
 
     def setUp(self):
-        counter.clear_counters()
         self.conn = XfrinConnection(
             None, TEST_ZONE_NAME, None, MockDataSourceClient(), None,
             TEST_MASTER_IPV4_ADDRINFO, None)
+        self.conn._counters.clear_all()
         def raise_expception(*arg): raise Exception
         self.raise_expception = raise_expception
 
     def tearDown(self):
-        counter.clear_counters()
+        self.conn._counters.clear_all()
 
     def test_open(self):
         self.assertRaises(isc.cc.data.DataNotFoundError,
-                          counter.get_ipv4socket_open)
+                          self.conn._counters.get, 'socket', 'ipv4', 'tcp', 'open')
         self.assertRaises(isc.cc.data.DataNotFoundError,
-                          counter.get_ipv6socket_open)
+                          self.conn._counters.get, 'socket', 'ipv6', 'tcp', 'open')
         self.conn.create_socket(TEST_MASTER_IPV4_ADDRINFO[0],
                                 TEST_MASTER_IPV4_ADDRINFO[1])
         self.conn.create_socket(TEST_MASTER_IPV6_ADDRINFO[0],
                                 TEST_MASTER_IPV6_ADDRINFO[1])
-        self.assertEqual(counter.get_ipv4socket_open(), 1)
-        self.assertEqual(counter.get_ipv6socket_open(), 1)
+        self.assertEqual(1, self.conn._counters.get('socket', 'ipv4', 'tcp', 'open'))
+        self.assertEqual(1, self.conn._counters.get('socket', 'ipv6', 'tcp', 'open'))
 
     def test_openfail(self):
         self.assertRaises(isc.cc.data.DataNotFoundError,
-                          counter.get_ipv4socket_openfail)
+                          self.conn._counters.get, 'socket', 'ipv4', 'tcp', 'openfail')
         self.assertRaises(isc.cc.data.DataNotFoundError,
-                          counter.get_ipv6socket_openfail)
+                          self.conn._counters.get, 'socket', 'ipv6', 'tcp', 'openfail')
         orig_create_socket = xfrin.asyncore.dispatcher.create_socket
         xfrin.asyncore.dispatcher.create_socket = self.raise_expception
         self.assertRaises(Exception, self.conn.create_socket,
                           TEST_MASTER_IPV4_ADDRINFO[0],
                           TEST_MASTER_IPV4_ADDRINFO[1])
-        self.assertEqual(counter.get_ipv4socket_openfail(), 1)
+        self.assertEqual(1, self.conn._counters.get('socket', 'ipv4', 'tcp', 'openfail'))
         self.assertRaises(Exception, self.conn.create_socket,
                           TEST_MASTER_IPV6_ADDRINFO[0],
                           TEST_MASTER_IPV6_ADDRINFO[1])
-        self.assertEqual(counter.get_ipv6socket_openfail(), 1)
+        self.assertEqual(1, self.conn._counters.get('socket', 'ipv6', 'tcp', 'openfail'))
         xfrin.asyncore.dispatcher.create_socket = orig_create_socket
 
     def test_close(self):
         self.assertRaises(isc.cc.data.DataNotFoundError,
-                          counter.get_ipv4socket_close)
+                          self.conn._counters.get, 'socket', 'ipv4', 'tcp', 'close')
         self.assertRaises(isc.cc.data.DataNotFoundError,
-                          counter.get_ipv6socket_close)
+                          self.conn._counters.get, 'socket', 'ipv6', 'tcp', 'close')
         orig_socket_close = xfrin.asyncore.dispatcher.close
         xfrin.asyncore.dispatcher.close = lambda x: None
         class FakeSocket(): pass
         self.conn.socket = FakeSocket()
         self.conn.socket.family = socket.AF_INET
         self.conn.close()
-        self.assertEqual(counter.get_ipv4socket_close(), 1)
+        self.assertEqual(1, self.conn._counters.get('socket', 'ipv4', 'tcp', 'close'))
         self.conn.socket.family = socket.AF_INET6
         self.conn.close()
-        self.assertEqual(counter.get_ipv6socket_close(), 1)
+        self.assertEqual(1, self.conn._counters.get('socket', 'ipv6', 'tcp', 'close'))
         xfrin.asyncore.dispatcher.close = orig_socket_close
 
     def test_conn(self):
         self.assertRaises(isc.cc.data.DataNotFoundError,
-                          counter.get_ipv4socket_conn)
+                          self.conn._counters.get, 'socket', 'ipv4', 'tcp', 'conn')
         self.assertRaises(isc.cc.data.DataNotFoundError,
-                          counter.get_ipv6socket_conn)
+                          self.conn._counters.get, 'socket', 'ipv6', 'tcp', 'conn')
         orig_socket_connect = xfrin.asyncore.dispatcher.connect
         xfrin.asyncore.dispatcher.connect = lambda *a: None
         class FakeSocket(): pass
@@ -3377,15 +3377,15 @@ class TestXfrinConnectionSocketCounter(unittest.TestCase):
         self.conn.connect(TEST_MASTER_IPV4_ADDRINFO[2])
         self.conn.socket.family = socket.AF_INET6
         self.conn.connect(TEST_MASTER_IPV6_ADDRINFO[2])
-        self.assertEqual(counter.get_ipv4socket_conn(), 1)
-        self.assertEqual(counter.get_ipv6socket_conn(), 1)
+        self.assertEqual(1, self.conn._counters.get('socket', 'ipv4', 'tcp', 'conn'))
+        self.assertEqual(1, self.conn._counters.get('socket', 'ipv6', 'tcp', 'conn'))
         xfrin.asyncore.dispatcher.connect = orig_socket_connect
 
     def test_connfail(self):
         self.assertRaises(isc.cc.data.DataNotFoundError,
-                          counter.get_ipv4socket_connfail)
+                          self.conn._counters.get, 'socket', 'ipv4', 'tcp', 'connfail')
         self.assertRaises(isc.cc.data.DataNotFoundError,
-                          counter.get_ipv6socket_connfail)
+                          self.conn._counters.get, 'socket', 'ipv6', 'tcp', 'connfail')
         orig_socket_connect = xfrin.asyncore.dispatcher.connect
         xfrin.asyncore.dispatcher.connect = self.raise_expception
         class FakeSocket(): pass
@@ -3393,45 +3393,45 @@ class TestXfrinConnectionSocketCounter(unittest.TestCase):
         self.conn.socket.family = socket.AF_INET
         self.assertRaises(Exception, self.conn.connect,
                           TEST_MASTER_IPV4_ADDRINFO[2])
-        self.assertEqual(counter.get_ipv4socket_connfail(), 1)
+        self.assertEqual(1, self.conn._counters.get('socket', 'ipv4', 'tcp', 'connfail'))
         self.conn.socket.family = socket.AF_INET6
         self.assertRaises(Exception, self.conn.connect,
                           TEST_MASTER_IPV6_ADDRINFO[2])
-        self.assertEqual(counter.get_ipv6socket_connfail(), 1)
+        self.assertEqual(1, self.conn._counters.get('socket', 'ipv6', 'tcp', 'connfail'))
         xfrin.asyncore.dispatcher.connect = orig_socket_connect
 
     def test_senderr(self):
         self.assertRaises(isc.cc.data.DataNotFoundError,
-                          counter.get_ipv4socket_senderr)
+                          self.conn._counters.get, 'socket', 'ipv4', 'tcp', 'senderr')
         self.assertRaises(isc.cc.data.DataNotFoundError,
-                          counter.get_ipv6socket_senderr)
+                          self.conn._counters.get, 'socket', 'ipv6', 'tcp', 'senderr')
         orig_socket_send = xfrin.asyncore.dispatcher.send
         xfrin.asyncore.dispatcher.send = self.raise_expception
         class FakeSocket(): pass
         self.conn.socket = FakeSocket()
         self.conn.socket.family = socket.AF_INET
         self.assertRaises(Exception, self.conn.send, None)
-        self.assertEqual(counter.get_ipv4socket_senderr(), 1)
+        self.assertEqual(1, self.conn._counters.get('socket', 'ipv4', 'tcp', 'senderr'))
         self.conn.socket.family = socket.AF_INET6
         self.assertRaises(Exception, self.conn.send, None)
-        self.assertEqual(counter.get_ipv6socket_senderr(), 1)
+        self.assertEqual(1, self.conn._counters.get('socket', 'ipv6', 'tcp', 'senderr'))
         xfrin.asyncore.dispatcher.send = orig_socket_send
 
     def test_recverr(self):
         self.assertRaises(isc.cc.data.DataNotFoundError,
-                          counter.get_ipv4socket_recverr)
+                          self.conn._counters.get, 'socket', 'ipv4', 'tcp', 'recverr')
         self.assertRaises(isc.cc.data.DataNotFoundError,
-                          counter.get_ipv6socket_recverr)
+                          self.conn._counters.get, 'socket', 'ipv6', 'tcp', 'recverr')
         orig_socket_recv = xfrin.asyncore.dispatcher.recv
         xfrin.asyncore.dispatcher.recv = self.raise_expception
         class FakeSocket(): pass
         self.conn.socket = FakeSocket()
         self.conn.socket.family = socket.AF_INET
         self.assertRaises(Exception, self.conn.recv, None)
-        self.assertEqual(counter.get_ipv4socket_recverr(), 1)
+        self.assertEqual(1, self.conn._counters.get('socket', 'ipv4', 'tcp', 'recverr'))
         self.conn.socket.family = socket.AF_INET6
         self.assertRaises(Exception, self.conn.recv, None)
-        self.assertEqual(counter.get_ipv6socket_recverr(), 1)
+        self.assertEqual(1, self.conn._counters.get('socket', 'ipv6', 'tcp', 'recverr'))
         xfrin.asyncore.dispatcher.recv = orig_socket_recv
 
 if __name__== "__main__":
