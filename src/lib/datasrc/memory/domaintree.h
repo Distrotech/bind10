@@ -175,20 +175,12 @@ public:
     /// internal implementation, but applications are expected to use
     /// each flag separately via the enum definitions.
     ///
-    /// The AVL balance factor is a value between -2 and 2 (inclusive)
-    /// that is associated with every node in the AVL tree. It is stored
-    /// in three flag bits after addition with 3.  So it has the range 1
-    /// to 5 (inclusive).
-    ///
     /// All (settable) flags are off by default; they must be explicitly
     /// set to on by the \c setFlag() method.
     enum Flags {
         FLAG_CALLBACK = 1, ///< Callback enabled. See \ref callback
         FLAG_RESERVED1 = 2, ///< Was used for RBTree color, now reserved.
         FLAG_SUBTREE_ROOT = 4, ///< Set if the node is the root of a subtree
-        FLAG_AVL_BALANCE0 = 8, ///< Bit 0 of AVL balance factor
-        FLAG_AVL_BALANCE1 = 16, ///< Bit 1 of AVL balance factor
-        FLAG_AVL_BALANCE2 = 32, ///< Bit 2 of AVL balance factor
         FLAG_USER1 = 0x400000U, ///< Application specific flag
         FLAG_USER2 = 0x200000U, ///< Application specific flag
         FLAG_USER3 = 0x100000U, ///< Application specific flag
@@ -351,69 +343,36 @@ private:
     /// Return if callback is enabled at the node.
     //@}
 
-    /// \brief returns the serialized balance factor as stored in flags.
-    ///
-    /// \return a value between 1 and 5 (inclusive).
-    int getBalanceFromFlags() const {
-        return ((flags_ >> 3) & 0b111);
-    }
-
-    /// \brief Serializes the balance factor and stores it into flags.
-    ///
-    /// \param balance a value between 1 and 5 (inclusive).
-    void setBalanceToFlags(int balance) {
-        assert((balance >= 1) && (balance <= 5));
-
-        // clear the existing flags first
-        flags_ &= ~(FLAG_AVL_BALANCE2 |
-                    FLAG_AVL_BALANCE1 |
-                    FLAG_AVL_BALANCE0);
-
-        // set the new flags.
-        flags_ |= (balance << 3);
-    }
-
     /// \brief returns the balance factor of the AVL tree node.
     ///
     /// \return a value between -2 and 2 (inclusive).
-    int getBalance() const {
-        // balance is stored in flags in the range 1 to 5 (inclusive).
-        const int balance = getBalanceFromFlags();
-
-        // Map it to the range -2 to 2 (inclusive).
-        return (balance - 3);
+    inline int getBalance() const {
+        return (balance_);
     }
 
     /// \brief Sets the balance factor of the AVL tree node.
     ///
     /// \param balance a value between -2 and 2 (inclusive).
-    void setBalance(int balance) {
+    inline void setBalance(int balance) {
         assert((balance >= -2) && (balance <= 2));
 
-        // Map it to the range 1 to 5 (inclusive).
-        setBalanceToFlags(balance + 3);
+        balance_ = static_cast<int8_t>(balance);
     }
 
     /// \brief increments the balance factor of the AVL tree node.
-    void incBalance() {
-        // balance is stored in flags in the range 1 to 5 (inclusive).
-        const int balance = getBalanceFromFlags();
-
+    inline void incBalance() {
         // This should always be true in our code when the AVL tree is
         // correctly implemented.
-        assert(balance < 5);
-        setBalanceToFlags(balance + 1);
+        assert(balance_ < 2);
+        ++balance_;
     }
 
     /// \brief decrements the balance factor of the AVL tree node.
-    void decBalance() {
-        // balance is stored in flags in the range 1 to 5 (inclusive).
-        const int balance = getBalanceFromFlags();
-
+    inline void decBalance() {
         // This should always be true in our code when the AVL tree is
         // correctly implemented.
-        assert(balance > 1);
-        setBalanceToFlags(balance - 1);
+        assert(balance_ > -2);
+        --balance_;
     }
 
     void setSubTreeRoot(bool root) {
@@ -574,6 +533,11 @@ private:
     uint32_t flags_ : 23;          // largest flag being 0x400000
     BOOST_STATIC_ASSERT((1 << 23) > FLAG_MAX); // assumption check
 
+    /// \brief The balance factor of the AVL tree node.
+    ///
+    /// This holds values between -2 and 2 (inclusive).
+    int8_t balance_;
+
     const uint32_t labels_capacity_ : 9; // size for labelseq; range is 0..511
     // Make sure the reserved space for labels_capacity_ is sufficiently
     // large.  In effect, we use the knowledge of the implementation of the
@@ -591,9 +555,8 @@ DomainTreeNode<T>::DomainTreeNode(size_t labels_capacity) :
     right_(NULL),
     down_(NULL),
     data_(NULL),
-    // Initialize the AVL balance factor bit flags to 0b11
-    // (corresponding to serialized 0).
-    flags_(FLAG_AVL_BALANCE1 | FLAG_AVL_BALANCE0 | FLAG_SUBTREE_ROOT),
+    flags_(FLAG_SUBTREE_ROOT),
+    balance_(0),
     labels_capacity_(labels_capacity)
 {
 }
