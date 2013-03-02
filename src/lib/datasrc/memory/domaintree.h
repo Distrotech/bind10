@@ -55,9 +55,9 @@ class DomainTree;
 /// reason, the constructor (and the allocator, see below) is private.
 ///
 /// It serves three roles. One is to keep structure of the \c DomainTree
-/// as a red-black tree. For that purpose, it has left, right and parent
-/// pointers and color member. These are private and accessed only from
-/// within the tree.
+/// as an AVL tree. For that purpose, it has left and right pointers and
+/// balance factor. These are private and accessed only from within the
+/// tree.
 ///
 /// The second one is to store data for one domain name. The data
 /// related functions can be used to access and set the data.
@@ -175,12 +175,20 @@ public:
     /// internal implementation, but applications are expected to use
     /// each flag separately via the enum definitions.
     ///
+    /// The AVL balance factor is a value between -2 and 2 (inclusive)
+    /// that is associated with every node in the AVL tree. It is stored
+    /// in three flag bits after addition with 3.  So it has the range 1
+    /// to 5 (inclusive).
+    ///
     /// All (settable) flags are off by default; they must be explicitly
     /// set to on by the \c setFlag() method.
     enum Flags {
         FLAG_CALLBACK = 1, ///< Callback enabled. See \ref callback
-        FLAG_RED = 2, ///< Node color; 1 if node is red, 0 if node is black.
+        FLAG_RESERVED1 = 2, ///< Was used for RBTree color, now reserved.
         FLAG_SUBTREE_ROOT = 4, ///< Set if the node is the root of a subtree
+        FLAG_AVL_BALANCE0 = 8, ///< Bit 0 of AVL balance factor
+        FLAG_AVL_BALANCE1 = 16, ///< Bit 1 of AVL balance factor
+        FLAG_AVL_BALANCE2 = 32, ///< Bit 2 of AVL balance factor
         FLAG_USER1 = 0x400000U, ///< Application specific flag
         FLAG_USER2 = 0x200000U, ///< Application specific flag
         FLAG_USER3 = 0x100000U, ///< Application specific flag
@@ -343,26 +351,69 @@ private:
     /// Return if callback is enabled at the node.
     //@}
 
-
-    /// \brief Define node color
-    enum DomainTreeNodeColor {BLACK, RED};
-
-    /// \brief Returns the color of this node
-    DomainTreeNodeColor getColor() const {
-        if ((flags_ & FLAG_RED) != 0) {
-            return (RED);
-        } else {
-            return (BLACK);
-        }
+    /// \brief returns the serialized balance factor as stored in flags.
+    ///
+    /// \return a value between 1 and 5 (inclusive).
+    int getBalanceFromFlags() const {
+        return ((flags_ >> 3) & 0b111);
     }
 
-    /// \brief Sets the color of this node
-    void setColor(const DomainTreeNodeColor color) {
-        if (color == RED) {
-            flags_ |= FLAG_RED;
-        } else {
-            flags_ &= ~FLAG_RED;
-        }
+    /// \brief Serializes the balance factor and stores it into flags.
+    ///
+    /// \param balance a value between 1 and 5 (inclusive).
+    void setBalanceToFlags(int balance) {
+        assert((balance >= 1) && (balance <= 5));
+
+        // clear the existing flags first
+        flags_ &= ~(FLAG_AVL_BALANCE2 |
+                    FLAG_AVL_BALANCE1 |
+                    FLAG_AVL_BALANCE0);
+
+        // set the new flags.
+        flags_ |= (balance << 3);
+    }
+
+    /// \brief returns the balance factor of the AVL tree node.
+    ///
+    /// \return a value between -2 and 2 (inclusive).
+    int getBalance() const {
+        // balance is stored in flags in the range 1 to 5 (inclusive).
+        const int balance = getBalanceFromFlags();
+
+        // Map it to the range -2 to 2 (inclusive).
+        return (balance - 3);
+    }
+
+    /// \brief Sets the balance factor of the AVL tree node.
+    ///
+    /// \param balance a value between -2 and 2 (inclusive).
+    void setBalance(int balance) {
+        assert((balance >= -2) && (balance <= 2));
+
+        // Map it to the range 1 to 5 (inclusive).
+        setBalanceToFlags(balance + 3);
+    }
+
+    /// \brief increments the balance factor of the AVL tree node.
+    void incBalance() {
+        // balance is stored in flags in the range 1 to 5 (inclusive).
+        const int balance = getBalanceFromFlags();
+
+        // This should always be true in our code when the AVL tree is
+        // correctly implemented.
+        assert(balance < 5);
+        setBalanceToFlags(balance + 1);
+    }
+
+    /// \brief decrements the balance factor of the AVL tree node.
+    void decBalance() {
+        // balance is stored in flags in the range 1 to 5 (inclusive).
+        const int balance = getBalanceFromFlags();
+
+        // This should always be true in our code when the AVL tree is
+        // correctly implemented.
+        assert(balance > 1);
+        setBalanceToFlags(balance - 1);
     }
 
     void setSubTreeRoot(bool root) {
@@ -454,7 +505,7 @@ private:
                           DomainTreeNode<T>::*right)
         const;
 
-    /// \name Data to maintain the rbtree structure.
+    /// \name Data to maintain the AVL structure.
     ///
     /// We keep them as offset pointers. This is part of a future plan, when we
     /// want to share the image of the tree between multiple processes.
@@ -540,7 +591,9 @@ DomainTreeNode<T>::DomainTreeNode(size_t labels_capacity) :
     right_(NULL),
     down_(NULL),
     data_(NULL),
-    flags_(FLAG_RED | FLAG_SUBTREE_ROOT),
+    // Initialize the AVL balance factor bit flags to 0b11
+    // (corresponding to serialized 0).
+    flags_(FLAG_AVL_BALANCE1 | FLAG_AVL_BALANCE0 | FLAG_SUBTREE_ROOT),
     labels_capacity_(labels_capacity)
 {
 }
@@ -866,7 +919,7 @@ private:
  *      It can be used to store the domains in one zone, for example.
  *
  * DomainTree is a generic map from domain names to any kind of
- * data. Internally, it uses a red-black tree. However, it isn't one
+ * data. Internally, it uses an AVL tree. However, it isn't one
  * tree containing everything.  Subdomains are trees, so this structure
  * is recursive - trees inside trees.  But, from the interface point of
  * view, it is opaque data structure.
@@ -881,9 +934,9 @@ private:
  * The DomainTree will call that object with all the data in the tree so that
  * the application complete the cleanup about the remaining data.
  *
- *  \c DomainTree splits the domain space into hierarchy red black trees; nodes
+ *  \c DomainTree splits the domain space into hierarchy AVL trees; nodes
  * in one tree has the same base name. The benefit of this struct is that:
- *  - Enhances the query performance compared with one big flat red black tree.
+ *  - Enhances the query performance compared with one big flat AVL tree.
  *  - Decreases the memory footprint, as it doesn't store the suffix labels
  *      multiple times.
  *
@@ -1356,13 +1409,11 @@ private:
     insertRebalance(typename DomainTreeNode<T>::DomainTreeNodePtr* root,
                     DomainTreeNode<T>* node);
 
-    DomainTreeNode<T>*
-    rightRotate(typename DomainTreeNode<T>::DomainTreeNodePtr* root,
-                DomainTreeNode<T>* node);
+    DomainTreeNode<T>* fixBalance(DomainTreeNode<T>* node);
 
-    DomainTreeNode<T>*
-    leftRotate(typename DomainTreeNode<T>::DomainTreeNodePtr* root,
-               DomainTreeNode<T>* node);
+    DomainTreeNode<T>* rightRotate(DomainTreeNode<T>* node);
+
+    DomainTreeNode<T>* leftRotate(DomainTreeNode<T>* node);
     //@}
 
     /// \name Helper functions
@@ -1790,18 +1841,20 @@ DomainTree<T>::insert(util::MemorySegment& mem_sgmt,
     node->parent_ = parent;
     if (parent == NULL) {
         *current_root = node;
-        // node is the new root of sub tree, so its init color is BLACK
-        node->setColor(DomainTreeNode<T>::BLACK);
         node->setSubTreeRoot(true);
         node->parent_ = up_node;
     } else if (order < 0) {
         node->setSubTreeRoot(false);
         parent->left_ = node;
+        parent->decBalance();
+        insertRebalance(current_root, parent);
     } else {
         node->setSubTreeRoot(false);
         parent->right_ = node;
+        parent->incBalance();
+        insertRebalance(current_root, parent);
     }
-    insertRebalance(current_root, node);
+
     if (new_node != NULL) {
         *new_node = node;
     }
@@ -1865,10 +1918,6 @@ DomainTree<T>::nodeFission(util::MemorySegment& mem_sgmt,
     node.left_ = NULL;
     node.right_ = NULL;
 
-    // set color of both nodes; the initial subtree node color is BLACK
-    up_node->setColor(node.getColor());
-    node.setColor(DomainTreeNode<T>::BLACK);
-
     // set the subtree root flag of both nodes
     up_node->setSubTreeRoot(node.isSubTreeRoot());
     node.setSubTreeRoot(true);
@@ -1883,63 +1932,62 @@ DomainTree<T>::insertRebalance
     (typename DomainTreeNode<T>::DomainTreeNodePtr* root,
      DomainTreeNode<T>* node)
 {
-    DomainTreeNode<T>* uncle;
-    DomainTreeNode<T>* parent;
-    while (node != (*root).get() &&
-           ((parent = node->getParent())->getColor()) ==
-           DomainTreeNode<T>::RED) {
-        // Here, node->parent_ is not NULL and it is also red, so
-        // node->parent_->parent_ is also not NULL.
-        if (parent == parent->getParent()->getLeft()) {
-            uncle = parent->getParent()->getRight();
+    while (true) {
+        DomainTreeNode<T>* parent = node->getParent();
+        const bool is_left = ((parent != NULL) && (node == parent->getLeft()));
+	const bool was_root = (node == (*root).get());
 
-            if (uncle != NULL && uncle->getColor() ==
-                DomainTreeNode<T>::RED) {
-                parent->setColor(DomainTreeNode<T>::BLACK);
-                uncle->setColor(DomainTreeNode<T>::BLACK);
-                parent->getParent()->setColor(DomainTreeNode<T>::RED);
-                node = parent->getParent();
-            } else {
-                if (node == parent->getRight()) {
-                    node = parent;
-                    leftRotate(root, node);
-                    parent = node->getParent();
-                }
-                parent->setColor(DomainTreeNode<T>::BLACK);
-                parent->getParent()->setColor(DomainTreeNode<T>::RED);
-                rightRotate(root, parent->getParent());
-            }
-        } else {
-            uncle = parent->getParent()->getLeft();
+        if ((node->getBalance() < -1) ||
+            (node->getBalance() > 1)) {
 
-            if (uncle != NULL && uncle->getColor() ==
-                DomainTreeNode<T>::RED) {
-                parent->setColor(DomainTreeNode<T>::BLACK);
-                uncle->setColor(DomainTreeNode<T>::BLACK);
-                parent->getParent()->setColor(DomainTreeNode<T>::RED);
-                node = parent->getParent();
+            node = fixBalance(node);
+            if (was_root) {
+                *root = node;
+            } else if (is_left) {
+                parent->left_ = node;
             } else {
-                if (node == parent->getLeft()) {
-                    node = parent;
-                    rightRotate(root, node);
-                    parent = node->getParent();
-                }
-                parent->setColor(DomainTreeNode<T>::BLACK);
-                parent->getParent()->setColor(DomainTreeNode<T>::RED);
-                leftRotate(root, parent->getParent());
+                parent->right_ = node;
             }
         }
+
+        if (was_root || (node->getBalance() == 0)) {
+            break;
+        }
+
+        if (is_left) {
+            parent->decBalance();
+        } else {
+            parent->incBalance();
+        }
+
+        node = parent;
     }
-
-    (*root)->setColor(DomainTreeNode<T>::BLACK);
 }
-
 
 template <typename T>
 DomainTreeNode<T>*
-DomainTree<T>::leftRotate
-    (typename DomainTreeNode<T>::DomainTreeNodePtr* root,
-     DomainTreeNode<T>* node)
+DomainTree<T>::fixBalance(DomainTreeNode<T>* node)
+{
+    if (node->getBalance() < -1) {
+        DomainTreeNode<T>* left = node->getLeft();
+        if (left->getBalance() > 0) {
+            node->left_ = leftRotate(left);
+        }
+        node = rightRotate(node);
+    } else if (node->getBalance() > 1) {
+        DomainTreeNode<T>* right = node->getRight();
+        if (right->getBalance() < 0) {
+            node->right_ = rightRotate(right);
+        }
+        node = leftRotate(node);
+    }
+
+    return (node);
+}
+
+template <typename T>
+DomainTreeNode<T>*
+DomainTree<T>::leftRotate(DomainTreeNode<T>* node)
 {
     DomainTreeNode<T>* const right = node->getRight();
     DomainTreeNode<T>* const rleft = right->getLeft();
@@ -1960,20 +2008,36 @@ DomainTree<T>::leftRotate
         }
     } else {
         right->setSubTreeRoot(true);
-        *root = right;
     }
 
     right->left_ = node;
     node->parent_ = right;
     node->setSubTreeRoot(false);
-    return (node);
+
+    const int node_balance = node->getBalance();
+    const int right_balance = right->getBalance();
+    if (right_balance <= 0) {
+        if (node_balance >= 1) {
+            right->decBalance();
+        } else {
+            right->setBalance(node_balance + right_balance - 2);
+        }
+        node->decBalance();
+    } else {
+        if (node_balance > right_balance) {
+            right->decBalance();
+        } else {
+            right->setBalance(node_balance - 2);
+        }
+        node->setBalance(node_balance - right_balance - 1);
+    }
+
+    return (right);
 }
 
 template <typename T>
 DomainTreeNode<T>*
-DomainTree<T>::rightRotate
-    (typename DomainTreeNode<T>::DomainTreeNodePtr* root,
-     DomainTreeNode<T>* node)
+DomainTree<T>::rightRotate(DomainTreeNode<T>* node)
 {
     DomainTreeNode<T>* const left = node->getLeft();
     DomainTreeNode<T>* const lright = left->getRight();
@@ -1994,13 +2058,30 @@ DomainTree<T>::rightRotate
         }
     } else {
         left->setSubTreeRoot(true);
-        *root = left;
     }
     left->right_ = node;
     node->parent_ = left;
     node->setSubTreeRoot(false);
 
-    return (node);
+    const int node_balance = node->getBalance();
+    const int left_balance = left->getBalance();
+    if (left_balance <= 0) {
+        if (left_balance > node_balance) {
+            left->incBalance();
+        } else {
+            left->setBalance(node_balance + 2);
+        }
+        node->setBalance(node_balance - left_balance + 1);
+    } else {
+        if (node_balance > -1) {
+            left->incBalance();
+        } else {
+            left->setBalance(node_balance + left_balance + 2);
+        }
+        node->incBalance();
+    }
+
+    return (left);
 }
 
 
@@ -2025,9 +2106,7 @@ DomainTree<T>::dumpTreeHelper(std::ostream& os,
     }
 
     indent(os, depth);
-    os << node->getLabels() << " ("
-       << ((node->getColor() == DomainTreeNode<T>::BLACK) ? "black" : "red")
-       << ")";
+    os << node->getLabels() << " (balance=" << node->getBalance() << ")";
     if (node->isEmpty()) {
         os << " [invisible]";
     }
@@ -2084,17 +2163,12 @@ DomainTree<T>::dumpDotHelper(std::ostream& os,
 
     os << "node" << *nodecount <<
           "[label = \"<f0> |<f1> " << node->getLabels() <<
+          " (b=" << node->getBalance() << ")" <<
           "|<f2>";
     if (show_pointers) {
         os << "|<f3> n=" << node << "|<f4> p=" << node->getParent();
     }
-    os << "\"] [";
-
-    if (node->getColor() == DomainTreeNode<T>::RED) {
-        os << "color=red";
-    } else {
-        os << "color=black";
-    }
+    os << "\"] [color=black";
 
     if (node->isSubTreeRoot()) {
         os << ",penwidth=3";
