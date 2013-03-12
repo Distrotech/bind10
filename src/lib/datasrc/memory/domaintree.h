@@ -347,6 +347,13 @@ private:
     /// \brief Define node color
     enum DomainTreeNodeColor {BLACK, RED};
 
+    static bool isRed(const DomainTreeNode<T>* node) {
+        return (node && node->getColor() == RED);
+    }
+    static bool isBlack(const DomainTreeNode<T>* node) {
+        return (!node || node->getColor() == BLACK);
+    }
+
     /// \brief Returns the color of this node
     DomainTreeNodeColor getColor() const {
         if ((flags_ & FLAG_RED) != 0) {
@@ -389,6 +396,7 @@ private:
     ///
     /// This method never throws an exception.
     const DomainTreeNode<T>* getSubTreeRoot() const;
+    DomainTreeNode<T>* getSubTreeRoot();
 
 public:
     /// \brief returns the parent of the root of its subtree
@@ -400,6 +408,7 @@ public:
     ///
     /// This method never throws an exception.
     const DomainTreeNode<T>* getUpperNode() const;
+    DomainTreeNode<T>* getUpperNode();
 
     /// \brief return the next node which is bigger than current node
     /// in the same subtree
@@ -564,8 +573,28 @@ DomainTreeNode<T>::getSubTreeRoot() const {
 }
 
 template <typename T>
+DomainTreeNode<T>*
+DomainTreeNode<T>::getSubTreeRoot() {
+    DomainTreeNode<T>* current = this;
+
+    // current would never be equal to NULL here (in a correct tree
+    // implementation)
+    while (!current->isSubTreeRoot()) {
+        current = current->getParent();
+    }
+
+    return (current);
+}
+
+template <typename T>
 const DomainTreeNode<T>*
 DomainTreeNode<T>::getUpperNode() const {
+    return (getSubTreeRoot()->getParent());
+}
+
+template <typename T>
+DomainTreeNode<T>*
+DomainTreeNode<T>::getUpperNode() {
     return (getSubTreeRoot()->getParent());
 }
 
@@ -1091,6 +1120,14 @@ public:
         return (ret);
     }
 
+    Result find(const isc::dns::Name& name,
+                DomainTreeNode<T>** node) {
+        const DomainTreeNode<T>* const_node = NULL;
+        const Result ret = find(name, &const_node);
+        *node = const_cast<DomainTreeNode<T>*>(const_node);
+        return (ret);
+    }
+
     /// \brief Simple find, with node_path tracking
     ///
     /// Acts as described in the \ref find section.
@@ -1324,6 +1361,12 @@ public:
     ///     added.
     Result insert(util::MemorySegment& mem_sgmt, const isc::dns::Name& name,
                   DomainTreeNode<T>** inserted_node);
+
+    template <typename DataDeleter>
+    void deleteNode(util::MemorySegment& mem_sgmt,
+                    DomainTreeNode<T>* node_to_del, DataDeleter deleter);
+    void deleteFromLevel(DomainTreeNode<T>* node_to_del,
+                         typename DomainTreeNode<T>::DomainTreeNodePtr* rootp);
 
     /// \brief Delete all tree nodes.
     ///
@@ -1808,6 +1851,200 @@ DomainTree<T>::insert(util::MemorySegment& mem_sgmt,
 
     ++node_count_;
     return (SUCCESS);
+}
+
+template <typename T>
+template <typename DataDeleter>
+void
+DomainTree<T>::deleteNode(util::MemorySegment& mem_sgmt,
+                          DomainTreeNode<T>* node_to_del,
+                          DataDeleter deleter)
+{
+    if (node_to_del->getDown()) {
+        deleter(node_to_del->data_.get());
+        node_to_del->data_ = 0;
+        return;
+    }
+
+    DomainTreeNode<T>* parent = node_to_del->getUpperNode();
+    deleteFromLevel(node_to_del, parent ? &parent->down_ : &root_);
+    deleter(node_to_del->data_.get());
+    DomainTreeNode<T>::destroy(mem_sgmt, node_to_del);
+    --node_count_;
+}
+
+template <typename T>
+void
+DomainTree<T>::deleteFromLevel(
+    DomainTreeNode<T>* node_to_del,
+    typename DomainTreeNode<T>::DomainTreeNodePtr* rootp)
+{
+    const typename DomainTreeNode<T>::DomainTreeNodeColor BLACK =
+        DomainTreeNode<T>::BLACK;
+    const typename DomainTreeNode<T>::DomainTreeNodeColor RED =
+        DomainTreeNode<T>::RED;
+
+    assert((node_to_del->isSubTreeRoot() && (*rootp).get() == node_to_del) ||
+           (!node_to_del->isSubTreeRoot() &&
+            (node_to_del->getParent()->getLeft() == node_to_del ||
+             node_to_del->getParent()->getRight() == node_to_del)));
+
+    DomainTreeNode<T>* child = NULL;
+
+    if (node_to_del->getLeft() == NULL) {
+        if (node_to_del->getRight() == NULL) {
+            if (node_to_del->isSubTreeRoot()) {
+                *rootp = NULL;
+                return;
+            }
+        } else {
+            child = node_to_del->getRight();
+        }
+    } else if (node_to_del->getRight() == NULL) {
+        child = node_to_del->getLeft();
+    } else {
+        DomainTreeNode<T>* successor = node_to_del->getRight();
+        while (successor->getLeft()) {
+            successor = successor->getLeft();
+        }
+        if (successor->getRight()) {
+            child = successor->getRight();
+        }
+
+        DomainTreeNode<T>* tmp_parent = successor->getParent();
+        DomainTreeNode<T>* tmp_right = successor->getRight();
+        const typename DomainTreeNode<T>::DomainTreeNodeColor tmp_color =
+            successor->getColor();
+
+        if (node_to_del->isSubTreeRoot()) {
+            *rootp = successor;
+            successor->setSubTreeRoot(true);
+            node_to_del->setSubTreeRoot(false);
+        } else {
+            if (node_to_del->getParent()->getLeft() == node_to_del) {
+                node_to_del->getParent()->left_ = successor;
+            } else {
+                node_to_del->getParent()->right_ = successor;
+            }
+        }
+
+        successor->parent_ = node_to_del->getParent();
+        successor->left_ = node_to_del->getLeft();
+        successor->right_ = node_to_del->getRight();
+        successor->setColor(node_to_del->getColor());
+
+        if (successor->getLeft()) {
+            successor->getLeft()->parent_ = successor;
+        }
+        if (successor->getRight() != successor) {
+            successor->getRight()->parent_ = successor;
+        }
+
+        assert(!node_to_del->isSubTreeRoot());
+
+        if (tmp_parent == node_to_del) {
+            successor->right_ = node_to_del;
+            node_to_del->parent_ = successor;
+        } else {
+            tmp_parent->left_ = node_to_del;
+            node_to_del->parent_ = tmp_parent;
+        }
+
+        node_to_del->left_ = NULL;
+        node_to_del->right_ = tmp_right;
+        node_to_del->setColor(tmp_color);
+    }
+
+    if (!node_to_del->isSubTreeRoot()) {
+        if (node_to_del->getParent()->getLeft() == node_to_del) {
+            node_to_del->getParent()->left_ = child;
+        } else {
+            node_to_del->getParent()->right_ = child;
+        }
+        if (child) {
+            child->parent_ = node_to_del->getParent();
+        }
+    } else {
+        *rootp = child;
+        child->setSubTreeRoot(true);
+        child->parent_ = node_to_del->getParent();
+    }
+
+    if (DomainTreeNode<T>::isBlack(node_to_del)) {
+        DomainTreeNode<T>* parent = node_to_del->getParent();
+
+        while (child != rootp->get() && DomainTreeNode<T>::isBlack(child)) {
+            assert(child == NULL || !child->isSubTreeRoot());
+
+            if (parent->getLeft() == child) {
+                DomainTreeNode<T>* sibling = parent->getRight();
+
+                if (DomainTreeNode<T>::isRed(sibling)) {
+                    sibling->setColor(BLACK);
+                    parent->setColor(RED);
+                    leftRotate(rootp, parent);
+                    sibling = parent->getRight();
+                }
+
+                assert(sibling);
+
+                if (DomainTreeNode<T>::isBlack(sibling->getLeft()) &&
+                    DomainTreeNode<T>::isBlack(sibling->getRight())) {
+                    sibling->setColor(RED);
+                    child = parent;
+                } else {
+                    if (DomainTreeNode<T>::isBlack(sibling->getRight())) {
+                        sibling->getLeft()->setColor(BLACK);
+                        sibling->setColor(RED);
+                        rightRotate(rootp, sibling);
+                        sibling = parent->getRight();
+                    }
+
+                    sibling->setColor(parent->getColor());
+                    parent->setColor(BLACK);
+                    assert(sibling->getRight());
+                    sibling->getRight()->setColor(BLACK);
+                    leftRotate(rootp, parent);
+                    child = rootp->get();
+                }
+            } else {
+                DomainTreeNode<T>* sibling = parent->getLeft();
+                if (DomainTreeNode<T>::isRed(sibling)) {
+                    sibling->setColor(BLACK);
+                    parent->setColor(RED);
+                    rightRotate(rootp, parent);
+                    sibling = parent->getLeft();
+                }
+
+                assert(sibling);
+
+                if (DomainTreeNode<T>::isBlack(sibling->getLeft()) &&
+                    DomainTreeNode<T>::isBlack(sibling->getRight())) {
+                    sibling->setColor(RED);
+                    child = parent;
+                } else {
+                    if (DomainTreeNode<T>::isBlack(sibling->getLeft())) {
+                        sibling->getRight()->setColor(BLACK);
+                        sibling->setColor(RED);
+                        leftRotate(rootp, sibling);
+                        sibling = parent->getLeft();
+                    }
+
+                    sibling->setColor(parent->getColor());
+                    parent->setColor(BLACK);
+                    assert(sibling->getLeft());
+                    sibling->getLeft()->setColor(BLACK);
+                    rightRotate(rootp, parent);
+                    child = rootp->get();
+                }
+            }
+            parent = child->getParent();
+        }
+
+        if (DomainTreeNode<T>::isRed(child)) {
+            child->setColor(BLACK);
+        }
+    }
 }
 
 template <typename T>

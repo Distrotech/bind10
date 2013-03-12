@@ -126,6 +126,22 @@ TEST_F(DomainTreeTest, nodeCount) {
     EXPECT_EQ(0, dtree.getNodeCount());
 }
 
+TEST_F(DomainTreeTest, deleteNode) {
+    const char* const domain_names[] = { // arbitrarily shuffled
+        "q.w.y.d.e.f", "k.g.h",
+        "c", "b", "x.d.e.f", "z.d.e.f", "i.g.h", "a",
+        "j.z.d.e.f", "p.w.y.d.e.f", "g.h", "o.w.y.d.e.f"};
+    const int name_count = sizeof(domain_names) / sizeof(domain_names[0]);
+    for (int i = 0; i < name_count; ++i) {
+        EXPECT_EQ(TestDomainTree::EXACTMATCH,
+                  dtree.find(Name(domain_names[i]), &dtnode));
+        ASSERT_TRUE(dtnode);
+        dtree.deleteNode(mem_sgmt_, dtnode, deleteData);
+        EXPECT_NE(TestDomainTree::EXACTMATCH,
+                  dtree.find(Name(domain_names[i]), &dtnode));
+    }
+}
+
 TEST_F(DomainTreeTest, setGetData) {
     // set new data to an existing node.  It should have some data.
     int* newdata = new int(11);
