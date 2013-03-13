@@ -237,7 +237,10 @@ def main():
     (options, args) = parser.parse_args()
 
     usermgr = UserManager(options, args)
-    return usermgr.run()
+    result = usermgr.run()
+    if result == BAD_ARGUMENTS:
+        parser.print_usage()
+    return result
 
 if __name__ == '__main__':
     sys.exit(main())
