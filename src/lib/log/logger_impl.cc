@@ -18,6 +18,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <boost/lexical_cast.hpp>
 #include <boost/static_assert.hpp>
 
@@ -134,6 +135,7 @@ LoggerImpl::outputRaw(const Severity& severity, const string& message) {
 
     if (!locker.lock()) {
         LOG4CPLUS_ERROR(logger_, "Unable to lock logger lockfile");
+        abort();
     }
 
     switch (severity) {
