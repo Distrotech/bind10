@@ -73,6 +73,21 @@ InterprocessSyncFile::do_lock(int cmd, short l_type) {
                       "Unable to use interprocess sync lockfile ("
                       << std::strerror(errno) << "): " << lockfile_path);
         }
+
+        int flags = fcntl(fd_, F_GETFD);
+        if (flags == -1) {
+            isc_throw(InterprocessSyncFileError,
+                      "Unable to get flags on interprocess sync lockfile ("
+                      << std::strerror(errno) << "): " << lockfile_path);
+        }
+
+        flags |= FD_CLOEXEC;
+        int ret = fcntl(fd_, F_SETFD, flags);
+        if (ret == -1) {
+            isc_throw(InterprocessSyncFileError,
+                      "Unable to set flags on interprocess sync lockfile ("
+                      << std::strerror(errno) << "): " << lockfile_path);
+        }
     }
 
     struct flock lock;
