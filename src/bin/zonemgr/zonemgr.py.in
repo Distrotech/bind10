@@ -667,7 +667,14 @@ class Zonemgr:
         self.running = True
         try:
             while not self._shutdown_event.is_set():
-                self._module_cc.check_command(False)
+                fileno = self._module_cc.get_socket().fileno()
+                try:
+                    (reads, _, _) = select.select([fileno], [], [])
+                except select.error as se:
+                    if se.args[0] != errno.EINTR:
+                        raise
+                if fileno in reads:
+                    self._module_cc.check_command(True)
         finally:
             self._module_cc.send_stopping()
 
