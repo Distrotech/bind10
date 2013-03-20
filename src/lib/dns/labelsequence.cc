@@ -73,16 +73,15 @@ LabelSequence::LabelSequence(const LabelSequence& src,
 }
 
 const LabelSequence&
-LabelSequence::operator=(const LabelSequence& ls)
-{
+LabelSequence::operator=(const LabelSequence& ls) {
     if (this == &ls) {
         return (*this);
     }
-    if ((this->data_ != ls.data_) || (this->offsets_ != ls.offsets_)) {
+    if ((data_ != ls.data_) || (offsets_ != ls.offsets_)) {
         isc_throw(BadValue, "Illegal LabelSequence assignment");
     }
-    this->first_label_ = ls.first_label_;
-    this->last_label_ = ls.last_label_;
+    first_label_ = ls.first_label_;
+    last_label_ = ls.last_label_;
     return (*this);
 }
 
