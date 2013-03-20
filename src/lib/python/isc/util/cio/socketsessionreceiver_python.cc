@@ -32,6 +32,7 @@
 
 #include <util/python/pycppwrapper_util.h>
 
+#include <util/nonassignable.h>
 #include <util/io/socketsession.h>
 
 #include "socketsession_python.h"

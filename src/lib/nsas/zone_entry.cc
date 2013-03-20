@@ -20,12 +20,16 @@
 #include "address_request_callback.h"
 #include "nameserver_entry.h"
 
-#include <algorithm>
-#include <boost/foreach.hpp>
-#include <boost/bind.hpp>
+#include <util/nonassignable.h>
+
 #include <dns/rrttl.h>
 #include <dns/rcode.h>
 #include <dns/rdataclass.h>
+
+#include <boost/foreach.hpp>
+#include <boost/bind.hpp>
+
+#include <algorithm>
 
 using namespace std;
 

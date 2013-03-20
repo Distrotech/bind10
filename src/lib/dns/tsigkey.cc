@@ -23,6 +23,7 @@
 
 #include <dns/name.h>
 #include <util/encode/base64.h>
+#include <util/nonassignable.h>
 #include <dns/tsigkey.h>
 
 using namespace std;

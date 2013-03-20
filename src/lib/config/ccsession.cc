@@ -31,6 +31,8 @@
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
 
+#include <util/nonassignable.h>
+
 #include <cc/data.h>
 #include <config/module_spec.h>
 #include <cc/session.h>

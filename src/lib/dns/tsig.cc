@@ -25,6 +25,7 @@
 
 #include <util/buffer.h>
 #include <util/time_utilities.h>
+#include <util/nonassignable.h>
 
 #include <dns/rdataclass.h>
 #include <dns/rrclass.h>
