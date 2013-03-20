@@ -14,8 +14,8 @@
 
 /// From boost/noncopyable.hpp
 
-#ifndef __NONASSIGNABLE_
-#define __NONASSIGNABLE_
+#ifndef UTIL_NONASSIGNABLE
+#define UTIL_NONASSIGNABLE
 
 namespace isc {
 namespace util {
@@ -37,4 +37,4 @@ typedef nonassignable_::nonassignable nonassignable;
 } // namespace util
 } // namespace isc
 
-#endif // __NONASSIGNABLE_
+#endif // UTIL_NONASSIGNABLE

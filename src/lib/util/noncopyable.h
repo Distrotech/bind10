@@ -14,8 +14,8 @@
 
 /// From boost/noncopyable.hpp
 
-#ifndef __NONCOPYABLE_
-#define __NONCOPYABLE_
+#ifndef UTIL_NONCOPYABLE
+#define UTIL_NONCOPYABLE
 
 namespace isc {
 namespace util {
@@ -38,4 +38,4 @@ typedef noncopyable_::noncopyable noncopyable;
 } // namespace util
 } // namespace isc
 
-#endif // __NONCOPYABLE_
+#endif // UTIL_NONCOPYABLE
