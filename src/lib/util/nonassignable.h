@@ -12,14 +12,18 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
-/// From boost/noncopyable.hpp
+// This implementation is a trivial variation of boost::noncopyable.
+//
+//  (C) Copyright Beman Dawes 1999-2003. Distributed under the Boost
+//  Software License, Version 1.0. (See accompanying file
+//  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #ifndef UTIL_NONASSIGNABLE
 #define UTIL_NONASSIGNABLE
 
 namespace isc {
 namespace util {
-namespace nonassignable_ {
+namespace nonassignable_ {      // protection from unintended ADL
 
 class nonassignable {
 protected:
