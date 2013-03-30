@@ -179,18 +179,21 @@ double dsumsq = 0.;				/* square delay sum */
 int edns0;				/* EDNS0 DO flag */
 int ipversion = 0;			/* IP version */
 int rate;				/* rate in connections per second */
+int noreport;				/* disable auto reporting */
 int report;				/* delay between two reports */
 uint32_t range;				/* randomization range */
 uint32_t maxrandom;			/* maximum random value */
 int basecnt;				/* base count */
 char *base[2];				/* bases */
-int numreq;				/* number of exchange */
+int gotnumreq = -1;			/* numreq[0] was set */
+int numreq[2];				/* number of exchanges */
 int period;				/* test period */
-double losttime = 1.;			/* time after a request is lost  */
-int maxdrop;				/* maximum number of lost requests */
-double maxpdrop = 0.;			/* maximum percentage */
+int gotlosttime = -1;			/* losttime[0] was set */
+double losttime[2] = {.5, 1.};		/* delay for a time out  */
+int gotmaxloss = -1;			/* max{p}loss[0] was set */
+int maxloss[2];				/* maximum number of losses */
+double maxploss[2] = {0., 0.};		/* maximum percentage */
 char *localname;			/* local address or interface */
-int preload;				/* preload exchanges */
 int aggressivity = 1;			/* back to back exchanges */
 int seeded;				/* is a seed provided */
 unsigned int seed;			/* randomization seed */
@@ -488,7 +491,7 @@ flushconnect(void)
 		/* check for a timed-out connection */
 		waited = now.tv_sec - x->ts0.tv_sec;
 		waited += (now.tv_nsec - x->ts0.tv_nsec) / 1e9;
-		if (waited < losttime)
+		if (waited < losttime[0])
 			return;
 		/* garbage collect timed-out connections */
 		ISC_REMOVE(xconnl, x);
@@ -699,7 +702,7 @@ flushrecv(void)
 		/* check for a timed-out exchange */
 		waited = now.tv_sec - x->ts2.tv_sec;
 		waited += (now.tv_nsec - x->ts2.tv_nsec) / 1e9;
-		if (waited < losttime)
+		if (waited < losttime[1])
 			return;
 		/* garbage collect timed-out exchange */
 		ISC_REMOVE(xsentl, x);
@@ -1036,7 +1039,7 @@ getlocaladdr(void)
 
 /*
  * intermediate reporting
- * (note: an in-transit packet can be reported as dropped)
+ * (note: an in-transit packet can be reported as lost)
  */
 
 void
@@ -1105,13 +1108,12 @@ void
 usage(void)
 {
 	fprintf(stderr, "%s",
-"perftcpdns [-hvX0] [-4|-6] [-r<rate>] [-t<report>] [-n<num-request>]\n"
-"    [-p<test-period>] [-d<drop-time>] [-D<max-drop>] [-l<local-addr>]\n"
-"    [-P<preload>] [-a<aggressivity>] [-s<seed>] [-M<memory>]\n"
-"    [-T<template-file>] [-O<random-offset] [-x<diagnostic-selector>]\n"
-"    [server]\n"
+"perftcpdns [-hvX0] [-4|-6] [-r<rate>] [-t<report>] [-p<test-period>]\n"
+"    [-n<num-request>]* [-d<lost-time>]* [-D<max-loss>]*\n"
+"    [-l<local-addr>] [-a<aggressivity>] [-s<seed>] [-M<memory>]\n"
+"    [-T<template-file>] [-x<diagnostic-selector>] server\n"
 "\f\n"
-"The [server] argument is the name/address of the DNS server to contact.\n"
+"The server argument is the name/address of the DNS server to contact.\n"
 "\n"
 "Options:\n"
 "-0: Add EDNS0 option with DO flag.\n"
@@ -1119,21 +1121,20 @@ usage(void)
 "-6: TCP/IPv6 operation. This is incompatible with the -4 option.\n"
 "-a<aggressivity>: When the target sending rate is not yet reached,\n"
 "    control how many connections are initiated before the next pause.\n"
-"-d<drop-time>: Specify the time after which a query is treated as\n"
-"    having been lost.  The value is given in seconds and may contain a\n"
-"    fractional component.  The default is 1 second.\n"
+"-d<lost-time>: Specify the time after which a connection or a query is\n"
+"    treated as having been lost. The value is given in seconds and\n"
+"    may contain a fractional component. The default is 1 second.\n"
 "-h: Print this help.\n"
 "-l<local-addr>: Specify the local hostname/address to use when\n"
-"     communicating with the server.\n"
+"    communicating with the server.\n"
 "-M<memory>: Size of the tables (default 60000)\n"
-"-O<random-offset>: Offset of the last octet to randomize in the template.\n"
-"-P<preload>: Initiate first <preload> exchanges back to back at startup.\n"
 "-r<rate>: Initiate <rate> TCP DNS connections per second.  A periodic\n"
 "    report is generated showing the number of exchanges which were not\n"
 "    completed, as well as the average response latency.  The program\n"
 "    continues until interrupted, at which point a final report is\n"
 "    generated.\n"
 "-s<seed>: Specify the seed for randomization, making it repeatable.\n"
+"-t<report>: Delay in seconds between two periodic reports.\n"
 "-T<template-file>: The name of a file containing the template to use\n"
 "    as a stream of hexadecimal digits.\n"
 "-v: Report the version number of this program.\n"
@@ -1147,14 +1148,12 @@ usage(void)
 "   * 'i': print rate processing details\n"
 "   * 'T': when finished, print templates\n"
 "\n"
-"The remaining options are used only in conjunction with -r:\n"
-"\n"
-"-D<max-drop>: Abort the test if more than <max-drop> requests have\n"
-"    been dropped.  Use -D0 to abort if even a single request has been\n"
-"    dropped.  If <max-drop> includes the suffix '%', it specifies a\n"
-"    maximum percentage of requests that may be dropped before abort.\n"
-"    In this case, testing of the threshold begins after 10 requests\n"
-"    have been expected to be received.\n"
+"Stopping conditions:\n"
+"-D<max-loss>: Abort the test if more than <max-loss> connections or\n"
+"   queries have been lost.  If <max-loss> includes the suffix '%', it\n"
+"   specifies a maximum percentage of losses before stopping.\n"
+"   In this case, testing of the threshold begins after 10\n"
+"   connections/responses have been expected to be accepted/received.\n"
 "-n<num-request>: Initiate <num-request> transactions.  No report is\n"
 "    generated until all transactions have been initiated/waited-for,\n"
 "    after which a report is generated and the program terminates.\n"
@@ -1162,7 +1161,6 @@ usage(void)
 "    specified in the same manner as -d.  This can be used as an\n"
 "    alternative to -n, or both options can be given, in which case the\n"
 "    testing is completed when either limit is reached.\n"
-"-t<report>: Delay in seconds between two periodic reports.\n"
 "\n"
 "Errors:\n"
 "- locallimit: reached to local system limits when sending a message.\n"
@@ -1199,10 +1197,11 @@ main(const int argc, char * const argv[])
 	int opt, flags = 0, ret, i;
 	long long r;
 	char *pc;
+	double d;
 	extern char *optarg;
 	extern int optind;
 
-#define OPTIONS	"hv460XM:r:t:R:b:n:p:d:D:l:P:a:s:T:O:x:"
+#define OPTIONS	"hv460XM:r:t:R:b:n:p:d:D:l:a:s:T:O:x:"
 
 	/* decode options */
 	while ((opt = getopt(argc, argv, OPTIONS)) != -1)
@@ -1301,8 +1300,16 @@ main(const int argc, char * const argv[])
 		break;
 
 	case 'n':
-		numreq = atoi(optarg);
-		if (numreq <= 0) {
+		noreport = 1;
+		gotnumreq++;
+		if (gotnumreq > 1) {
+			fprintf(stderr, "too many num-request's\n");
+			usage();
+			exit(2);
+		}
+		numreq[gotnumreq] = atoi(optarg);
+		if ((numreq[gotnumreq] < 0) ||
+		    ((numreq[gotnumreq] == 0) && (gotnumreq == 1))) {
 			fprintf(stderr,
 				"num-request must be a positive integer\n");
 			usage();
@@ -1311,6 +1318,7 @@ main(const int argc, char * const argv[])
 		break;
 
 	case 'p':
+		noreport = 1;
 		period = atoi(optarg);
 		if (period <= 0) {
 			fprintf(stderr,
@@ -1321,49 +1329,58 @@ main(const int argc, char * const argv[])
 		break;
 
 	case 'd':
-		losttime = atof(optarg);
-		if (losttime <= 0.) {
-			fprintf(stderr,
-				"drop-time must be a positive number\n");
+		gotlosttime++;
+		if (gotlosttime > 1) {
+			fprintf(stderr, "too many lost-time's\n");
 			usage();
 			exit(2);
 		}
+		d = atof(optarg);
+		if ((d < 0.) || ((d == 0.) && (gotlosttime == 1))) {
+			fprintf(stderr,
+				"lost-time must be a positive number\n");
+			usage();
+			exit(2);
+		}
+		if (d > 0.)
+			losttime[gotlosttime] = d;
 		break;
 
 	case 'D':
+		noreport = 1;
+		gotmaxloss++;
+		if (gotmaxloss > 1) {
+			fprintf(stderr, "too many max-loss's\n");
+			usage();
+			exit(2);
+		}
 		pc = strchr(optarg, '%');
 		if (pc != NULL) {
 			*pc = '\0';
-			maxpdrop = atof(optarg);
-			if ((maxpdrop <= 0) || (maxpdrop >= 100)) {
+			maxploss[gotmaxloss] = atof(optarg);
+			if ((maxploss[gotmaxloss] < 0) ||
+			    (maxploss[gotmaxloss] >= 100)) {
 				fprintf(stderr,
-					"invalid drop-time percentage\n");
+					"invalid max-loss percentage\n");
 				usage();
 				exit(2);
 			}
-			break;
-		}
-		maxdrop = atoi(optarg);
-		if (maxdrop <= 0) {
-			fprintf(stderr,
-				"max-drop must be a positive integer\n");
-			usage();
-			exit(2);
+		} else {
+			maxloss[gotmaxloss] = atoi(optarg);
+			if ((maxloss[gotmaxloss] < 0) ||
+			    ((maxloss[gotmaxloss] == 0) &&
+			     (gotmaxloss == 1))) {
+				fprintf(stderr,
+					"max-loss must be a "
+					"positive integer\n");
+				usage();
+				exit(2);
+			}
 		}
 		break;
 
 	case 'l':
 		localname = optarg;
-		break;
-
-	case 'P':
-		preload = atoi(optarg);
-		if (preload < 0) {
-			fprintf(stderr,
-				"preload must not be a negative integer\n");
-			usage();
-			exit(2);
-		}
 		break;
 
 	case 'a':
@@ -1416,6 +1433,8 @@ main(const int argc, char * const argv[])
 		rate = 100;
 	if (xlast == 0)
 		xlast = 60000;
+	if (noreport == 0)
+		report = 1;
 
 	/* when required, print the internal view of the command line */
 	if ((diags != NULL) && (strchr(diags, 'a') != NULL)) {
@@ -1436,17 +1455,37 @@ main(const int argc, char * const argv[])
 		if (basecnt != 0)
 			for (i = 0; i < basecnt; i++)
 				printf(" base[%d]='%s'", i, base[i]);
-		if (numreq != 0)
-			printf(" num-request=%d", numreq);
+		if (gotnumreq >= 0) {
+			if ((numreq[0] == 0) && (numreq[1] != 0))
+				printf(" num-request=*,%d", numreq[1]);
+			if ((numreq[0] != 0) && (numreq[1] == 0))
+				printf(" num-request=%d,*", numreq[0]);
+			if ((numreq[0] != 0) && (numreq[1] != 0))
+				printf(" num-request=%d,%d",
+				       numreq[0], numreq[1]);
+		}
 		if (period != 0)
 			printf(" test-period=%d", period);
-		printf(" drop-time=%g", losttime);
-		if (maxdrop != 0)
-			printf(" max-drop=%d", maxdrop);
-		if (maxpdrop != 0.)
-			printf(" max-drop=%2.2f%%", maxpdrop);
-		if (preload != 0)
-			printf(" preload=%d", preload);
+		printf(" lost-time=%g,%g", losttime[0], losttime[1]);
+		if (gotmaxloss == 0) {
+			if (maxloss[0] != 0)
+				printf(" max-loss=%d,*", maxloss[0]);
+			if (maxploss[0] != 0.)
+				printf(" max-loss=%2.2f%%,*", maxploss[0]);
+		} else if (gotmaxloss == 1) {
+			if (maxloss[0] != 0)
+				printf(" max-loss=%d,", maxloss[0]);
+			else if (maxploss[0] != 0.)
+				printf(" max-loss=%2.2f%%,", maxploss[0]);
+			else
+				printf(" max-loss=*,");
+			if (maxloss[1] != 0)
+				printf("%d", maxloss[1]);
+			else if (maxploss[1] != 0.)
+				printf("%2.2f%%", maxploss[1]);
+			else
+				printf("*");
+		}
 		printf(" aggressivity=%d", aggressivity);
 		if (seeded)
 			printf(" seed=%u", seed);
@@ -1551,33 +1590,6 @@ main(const int argc, char * const argv[])
 	if (seeded == 0)
 		seed = (unsigned int) (boot.tv_sec + boot.tv_nsec);
 	srandom(seed);
-
-	/* preload the server with at least one connection */
-	compconn = preload + 1;
-	for (i = 0; i <= preload; i++) {
-		if (ipversion == 4)
-			ret = connect4();
-		else
-			ret = connect6();
-		if (ret < 0) {
-			/* failure at the first connection is fatal */
-			if (i == 0) {
-				fprintf(stderr,
-					"initial connect failed: %s\n",
-					strerror(-ret));
-				exit(1);
-			}
-			if ((ret == -EAGAIN) ||
-			    (ret == -EWOULDBLOCK) ||
-			    (ret == -ENOBUFS) ||
-			    (ret == -ENOMEM))
-				locallimit++;
-			fprintf(stderr,
-				"preload connect failed: %s\n",
-				strerror(-ret));
-			break;
-		}
-	}
 
 	/* required only before the interrupted flag check */
 	(void) signal(SIGINT, interrupt);
@@ -1690,22 +1702,44 @@ main(const int argc, char * const argv[])
 			continue;
 
 		/* check receive loop exit conditions */
-		if ((numreq != 0) && ((int) xscount >= numreq)) {
+		if ((numreq[0] != 0) && ((int) xccount >= numreq[0])) {
 			if ((diags != NULL) && (strchr(diags, 'e') != NULL))
-				printf("reached num-request\n");
+				printf("reached num-connection\n");
 			break;
 		}
-		if ((maxdrop != 0) &&
-		    ((int) (xscount - xrcount) > maxdrop)) {
+		if ((numreq[1] != 0) && ((int) xscount >= numreq[1])) {
 			if ((diags != NULL) && (strchr(diags, 'e') != NULL))
-				printf("reached max-drop (absolute)\n");
+				printf("reached num-query\n");
 			break;
 		}
-		if ((maxpdrop != 0.) &&
+		if ((maxloss[0] != 0) &&
+		    ((int) (xccount - xscount) > maxloss[0])) {
+			if ((diags != NULL) && (strchr(diags, 'e') != NULL))
+				printf("reached max-loss "
+				       "(connection/absolute)\n");
+			break;
+		}
+		if ((maxloss[1] != 0) &&
+		    ((int) (xscount - xrcount) > maxloss[1])) {
+			if ((diags != NULL) && (strchr(diags, 'e') != NULL))
+				printf("reached max-loss "
+				       "(query/absolute)\n");
+			break;
+		}
+		if ((maxploss[0] != 0.) &&
+		    (xccount > 10) &&
+		    (((100. * (xccount - xscount)) / xccount) > maxploss[1])) {
+			if ((diags != NULL) && (strchr(diags, 'e') != NULL))
+				printf("reached max-loss "
+				       "(connection/percent)\n");
+			break;
+		}
+		if ((maxploss[1] != 0.) &&
 		    (xscount > 10) &&
-		    (((100. * (xscount - xrcount)) / xscount) > maxpdrop)) {
+		    (((100. * (xscount - xrcount)) / xscount) > maxploss[1])) {
 			if ((diags != NULL) && (strchr(diags, 'e') != NULL))
-				printf("reached max-drop (percent)\n");
+				printf("reached max-loss "
+				       "(query/percent)\n");
 			break;
 		}
 
