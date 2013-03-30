@@ -35,6 +35,32 @@
  *  - the receiving thread gets by epoll sockets with a pending
  *   response, receives responses, timeouts unanswered queries,
  *   and recycles (by closing them) all sockets.
+ *
+ * Rate computation details:
+ *  - the target rate is in query+response per second.
+ *  - rating is done by the connecting thread.
+ *  - of course the tool is always late so the target rate is never
+ *   reached. BTW there is no attempt to internally adjust the
+ *   effective rate to the target one: this must be by tuning
+ *   the rate related parameters, first the -r<rate> itself.
+ *  - at the beginning of the connecting thread iteration loop
+ *   (second "loops" counter) the date of the due (aka next) connect()
+ *   call is computed from the last one with 101% of the rate.
+ *  - the due date is compared with the current date (aka now).
+ *  - if the due is before, lateconn counter is incremented, else
+ *   the thread sleeps for the difference,
+ *  - the next step is to reget the current , if it is still
+ *   before the due date (e.g., because the sleep was interrupted)
+ *   the first shortwait counter is incremented.
+ *  - if it is after (common case) the number of connect calls is
+ *   computed from the difference between now and due divided by rate,
+ *   rounded to the next number,
+ *  - this number of connect() calls is bounded by the -a<aggressivity>
+ *   parameter to avoid too many back to back new connection attempts.
+ *  - the compconn counter is incremented, errors (other than EINPROGRESS
+ *   from not blocking connect()) are printed. When an error is
+ *   related to a local limit (e.g., EMFILE, EADDRNOTAVAIL or the
+ *   internal ENOMEM) the locallimit counter is incremented.
  */
 
 #ifdef __linux__
