@@ -14,26 +14,49 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+/*
+ * TCP DNS perf tool
+ *
+ * main parameters are -r<rate> and <server>
+ * standard options are 4|6 (IPv4|IPv6), rate computations, terminaisons,
+ * EDNS0, NOERROR|NXDOMAIN, template (for your own query), diags,
+ * and alternate port.
+ *
+ * To help to crush kernels (unfortunately both client and server :-)
+ * this version of the tool is multi-threaded:
+ *  - the master thread inits, monitors the activity each millisecond,
+ *   and report results when finished
+ *  - the connecting thread computes the date of the next connection,
+ *   creates a socket, makes it non blocking, binds it if wanted,
+ *   connects it and pushes it on the output epoll queue
+ *  - the sending thread gets by epoll connected sockets, timeouts
+ *   embryonic connections, sends queries and pushes sockets on
+ *   the input epoll queue
+ *  - the receiving thread gets by epoll sockets with a pending
+ *   response, receives responses, timeouts unanswered queries,
+ *   and recycles (by closing them) all sockets.
+ */
+
 #ifdef __linux__
 #define _GNU_SOURCE
 #endif
 
 #include <sys/types.h>
 #include <sys/epoll.h>
+#include <sys/prctl.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 
-#include <net/if.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <ifaddrs.h>
 #include <math.h>
 #include <netdb.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -154,6 +177,7 @@ int xready, *xreadyl;				/* connected list */
 int xsent, *xsentl;				/* sent list */
 int xfree, *xfreel;				/* free list */
 int xused;					/* next to be used list */
+pthread_mutex_t mtxconn, mtxsent, mtxfree;	/* mutexes */
 uint64_t xccount;				/* connected counters */
 uint64_t xscount;				/* sent counters */
 uint64_t xrcount;				/* received counters */
@@ -163,7 +187,8 @@ uint64_t xrcount;				/* received counters */
  */
 
 uint64_t recverr, tooshort, locallimit;		/* error counters */
-uint64_t loops, lateconn, compconn, shortwait;	/* rate stats */
+uint64_t loops[4], shortwait[3];		/* rate stats */
+uint64_t lateconn, compconn;			/* rate stats (cont) */
 uint64_t badconn, collconn, badsent, collsent;	/* rate stats (cont) */
 uint64_t badid, notresp;			/* bad response counters */
 uint64_t rcodes[NS_RCODE_LAST + 1];		/* rcode counters */
@@ -189,12 +214,12 @@ int gotnumreq = -1;			/* numreq[0] was set */
 int numreq[2];				/* number of exchanges */
 int period;				/* test period */
 int gotlosttime = -1;			/* losttime[0] was set */
-double losttime[2] = {.5, 1.};		/* delay for a time out  */
+double losttime[2] = {.5, 1.};		/* delay for a timeout  */
 int gotmaxloss = -1;			/* max{p}loss[0] was set */
 int maxloss[2];				/* maximum number of losses */
 double maxploss[2] = {0., 0.};		/* maximum percentage */
 char *localname;			/* local address or interface */
-int aggressivity = 1;			/* back to back exchanges */
+int aggressivity = 1;			/* back to back connections */
 int seeded;				/* is a seed provided */
 unsigned int seed;			/* randomization seed */
 char *templatefile;			/* template file name */
@@ -207,15 +232,16 @@ int ixann;				/* ixann NXDOMAIN */
  * global variables
  */
 
-int locbind;
 struct sockaddr_storage localaddr;	/* local socket address */
 struct sockaddr_storage serveraddr;	/* server socket address */
+in_port_t port = 53;			/* server socket port */
 
-int epoll_fd;				/* epoll file descriptor */
+int epoll_ifd, epoll_ofd;		/* epoll file descriptors */
 #ifndef EVENTS_CNT
 #define EVENTS_CNT	16
 #endif
-struct epoll_event events[EVENTS_CNT];	/* polled events */
+struct epoll_event ievents[EVENTS_CNT];	/* polled input events */
+struct epoll_event oevents[EVENTS_CNT];	/* polled output events */
 int interrupted, fatal;			/* to finish flags */
 
 uint8_t obuf[4098], ibuf[4098];		/* I/O buffers */
@@ -236,6 +262,12 @@ uint8_t template_query[4096];
 size_t random_query;
 
 /*
+ * threads
+ */
+
+pthread_t master, connector, sender, receiver;
+
+/*
  * initialize data structures handling exchanges
  */
 
@@ -249,9 +281,21 @@ inits(void)
 	ISC_INIT(xsent, xsentl);
 	ISC_INIT(xfree, xfreel);
 
-	epoll_fd = epoll_create(EVENTS_CNT);
-	if (epoll_fd < 0) {
-		perror("epoll_create");
+	if ((pthread_mutex_init(&mtxconn, NULL) != 0) ||
+	    (pthread_mutex_init(&mtxsent, NULL) != 0) ||
+	    (pthread_mutex_init(&mtxfree, NULL) != 0)) {
+		fprintf(stderr, "pthread_mutex_init failed\n");
+		exit(1);
+	}
+
+	epoll_ifd = epoll_create(EVENTS_CNT);
+	if (epoll_ifd < 0) {
+		perror("epoll_create(input)");
+		exit(1);
+	}
+	epoll_ofd = epoll_create(EVENTS_CNT);
+	if (epoll_ofd < 0) {
+		perror("epoll_create(output)");
 		exit(1);
 	}
 
@@ -478,6 +522,7 @@ flushconnect(void)
 	if (clock_gettime(CLOCK_REALTIME, &now) < 0) {
 		perror("clock_gettime(flushconnect)");
 		fatal = 1;
+		(void) pthread_kill(master, SIGTERM);
 		return;
 	}
 
@@ -494,12 +539,36 @@ flushconnect(void)
 		if (waited < losttime[0])
 			return;
 		/* garbage collect timed-out connections */
+		if (pthread_mutex_lock(&mtxconn) != 0) {
+			fprintf(stderr, "pthread_mutex_lock(flushconnect)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return;
+		}
 		ISC_REMOVE(xconnl, x);
+		if (pthread_mutex_unlock(&mtxconn) != 0) {
+			fprintf(stderr, "pthread_mutex_unlock(flushconnect)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return;
+		}
 		(void) close(x->sock);
 		x->sock = -1;
 		collconn++;
+		if (pthread_mutex_lock(&mtxfree) != 0) {
+			fprintf(stderr, "pthread_mutex_lock(flushconnect)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return;
+		}
 		x->state = X_FREE;
 		ISC_INSERT(xfree, xfreel, x);
+		if (pthread_mutex_unlock(&mtxfree) != 0) {
+			fprintf(stderr, "pthread_mutex_unlock(flushconnect)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return;
+		}
 	}
 }
 
@@ -515,22 +584,48 @@ pollconnect(int topoll)
 	socklen_t len = sizeof(int);
 
 	for (evn = 0; evn < topoll; evn++) {
-		idx = events[evn].data.fd;
+		idx = oevents[evn].data.fd;
 		x = xlist + idx;
 		if (x->state != X_CONN)
 			continue;
-		if (events[evn].events == 0)
+		if (oevents[evn].events == 0)
 			continue;
+		if (pthread_mutex_lock(&mtxconn) != 0) {
+			fprintf(stderr, "pthread_mutex_lock(pollconnect)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return;
+		}
 		ISC_REMOVE(xconnl, x);
-		events[evn].events = 0;
+		if (pthread_mutex_unlock(&mtxconn) != 0) {
+			fprintf(stderr, "pthread_mutex_unlock(pollconnect)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return;
+		}
+		oevents[evn].events = 0;
 		if ((getsockopt(x->sock, SOL_SOCKET, SO_ERROR,
 				&err, &len) < 0) ||
 		    (err != 0)) {
 			(void) close(x->sock);
 			x->sock = -1;
 			badconn++;
+			if (pthread_mutex_lock(&mtxfree) != 0) {
+				fprintf(stderr,
+					"pthread_mutex_lock(pollconnect)");
+				fatal = 1;
+				(void) pthread_kill(master, SIGTERM);
+				return;
+			}
 			x->state = X_FREE;
 			ISC_INSERT(xfree, xfreel, x);
+			if (pthread_mutex_unlock(&mtxfree) != 0) {
+				fprintf(stderr,
+					"pthread_mutex_unlock(pollconnect)");
+				fatal = 1;
+				(void) pthread_kill(master, SIGTERM);
+				return;
+			}
 			continue;
 		}
 		x->state = X_READY;
@@ -563,6 +658,7 @@ sendquery(struct exchange *x)
 	if (ret < 0) {
 		perror("clock_gettime(send)");
 		fatal = 1;
+		(void) pthread_kill(master, SIGTERM);
 		return -errno;
 	}
 	ret = send(x->sock, obuf, length_query + 2, 0);
@@ -595,16 +691,43 @@ pollsend(void)
 			(void) close(x->sock);
 			x->sock = -1;
 			badsent++;
+			if (pthread_mutex_lock(&mtxfree) != 0) {
+				fprintf(stderr,
+					"pthread_mutex_lock(pollsend)");
+				fatal = 1;
+				(void) pthread_kill(master, SIGTERM);
+				return;
+			}
 			x->state = X_FREE;
 			ISC_INSERT(xfree, xfreel, x);
+			if (pthread_mutex_unlock(&mtxfree) != 0) {
+				fprintf(stderr,
+					"pthread_mutex_unlock(pollsend)");
+				fatal = 1;
+				(void) pthread_kill(master, SIGTERM);
+				return;
+			}
 			continue;
 		}
 		xscount++;
+		if (pthread_mutex_lock(&mtxsent) != 0) {
+			fprintf(stderr, "pthread_mutex_lock(pollsend)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return;
+		}
 		x->state = X_SENT;
 		ISC_INSERT(xsent, xsentl, x);
-		if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, x->sock, &ev) < 0) {
-			perror("epoll_fd");
+		if (pthread_mutex_unlock(&mtxsent) != 0) {
+			fprintf(stderr, "pthread_mutex_unlock(pollsend)");
 			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return;
+		}
+		if (epoll_ctl(epoll_ifd, EPOLL_CTL_ADD, x->sock, &ev) < 0) {
+			perror("epoll_ctl(add input)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
 			return;
 		}
 	}
@@ -626,12 +749,14 @@ receiveresp(struct exchange *x)
 	if (cc < 0) {
 		if ((errno == EAGAIN) ||
 		    (errno == EWOULDBLOCK) ||
-		    (errno == EINTR)) {
+		    (errno == EINTR) ||
+		    (errno == ECONNRESET)) {
 			recverr++;
 			return;
 		}
 		perror("recv");
 		fatal = 1;
+		(void) pthread_kill(master, SIGTERM);
 		return;
 	}
 	/* enforce a reasonable length */
@@ -654,6 +779,7 @@ receiveresp(struct exchange *x)
 	if (clock_gettime(CLOCK_REALTIME, &now) < 0) {
 		perror("clock_gettime(receive)");
 		fatal = 1;
+		(void) pthread_kill(master, SIGTERM);
 		return;
 	}
 	/* got it: update stats */
@@ -689,6 +815,7 @@ flushrecv(void)
 	if (clock_gettime(CLOCK_REALTIME, &now) < 0) {
 		perror("clock_gettime(receive)");
 		fatal = 1;
+		(void) pthread_kill(master, SIGTERM);
 		return;
 	}
 
@@ -705,12 +832,36 @@ flushrecv(void)
 		if (waited < losttime[1])
 			return;
 		/* garbage collect timed-out exchange */
+		if (pthread_mutex_lock(&mtxsent) != 0) {
+			fprintf(stderr, "pthread_mutex_lock(flushrecv)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return;
+		}
 		ISC_REMOVE(xsentl, x);
+		if (pthread_mutex_unlock(&mtxsent) != 0) {
+			fprintf(stderr, "pthread_mutex_unlock(flushrecv)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return;
+		}
 		(void) close(x->sock);
 		x->sock = -1;
 		collsent++;
+		if (pthread_mutex_lock(&mtxfree) != 0) {
+			fprintf(stderr, "pthread_mutex_lock(flushrecv)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return;
+		}
 		x->state = X_FREE;
 		ISC_INSERT(xfree, xfreel, x);
+		if (pthread_mutex_unlock(&mtxfree) != 0) {
+			fprintf(stderr, "pthread_mutex_unlock(flushrecv)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return;
+		}
 	}
 }
 
@@ -725,19 +876,43 @@ pollrecv(int topoll)
 	int evn, idx;
 
 	for (evn = 0; evn < topoll; evn++) {
-		idx = events[evn].data.fd;
+		idx = ievents[evn].data.fd;
 		x = xlist + idx;
 		if (x->state != X_SENT)
 			continue;
-		if (events[evn].events == 0)
+		if (ievents[evn].events == 0)
 			continue;
+		if (pthread_mutex_lock(&mtxsent) != 0) {
+			fprintf(stderr, "pthread_mutex_lock(pollrecv)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return;
+		}
 		ISC_REMOVE(xsentl, x);
+		if (pthread_mutex_unlock(&mtxsent) != 0) {
+			fprintf(stderr, "pthread_mutex_unlock(pollrecv)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return;
+		}
 		receiveresp(x);
-		events[evn].events = 0;
+		ievents[evn].events = 0;
 		(void) close(x->sock);
 		x->sock = -1;
+		if (pthread_mutex_lock(&mtxfree) != 0) {
+			fprintf(stderr, "pthread_mutex_lock(pollrecv)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return;
+		}
 		x->state = X_FREE;
 		ISC_INSERT(xfree, xfreel, x);
+		if (pthread_mutex_unlock(&mtxfree) != 0) {
+			fprintf(stderr, "pthread_mutex_unlock(pollrecv)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return;
+		}
 	}
 }
 
@@ -768,7 +943,7 @@ getsock4(void)
 	}
 
 	/* bind if wanted */
-	if (locbind) {
+	if (localname != NULL) {
 		if (bind(sock,
 			 (struct sockaddr *) &localaddr,
 			 sizeof(struct sockaddr_in)) < 0) {
@@ -797,7 +972,7 @@ int
 connect4(void)
 {
 	struct exchange *x;
-	ssize_t ret;
+	int ret;
 	int idx;
 	struct epoll_event ev;
 
@@ -805,13 +980,28 @@ connect4(void)
 	if (ret < 0) {
 		perror("clock_gettime(connect)");
 		fatal = 1;
+		(void) pthread_kill(master, SIGTERM);
 		return -errno;
 	}
 
 	if (xfree >= 0) {
 		idx = xfree;
 		x = xlist + idx;
+		ret = pthread_mutex_lock(&mtxfree);
+		if (ret != 0) {
+			fprintf(stderr, "pthread_mutex_lock(connect4)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return -ret;
+		}
 		ISC_REMOVE(xfreel, x);
+		ret = pthread_mutex_unlock(&mtxfree);
+		if (ret != 0) {
+			fprintf(stderr, "pthread_mutex_unlock(connect4)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return -ret;
+		}
 	} else if (xused < xlast) {
 		idx = xused;
 		x = xlist + idx;
@@ -829,16 +1019,48 @@ connect4(void)
 	x->ts0 = last;
 	x->sock = getsock4();
 	if (x->sock < 0) {
+		int result = x->sock;
+
+		x->sock = -1;
+		ret = pthread_mutex_lock(&mtxfree);
+		if (ret != 0) {
+			fprintf(stderr, "pthread_mutex_lock(connect4)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return -ret;
+		}
 		ISC_INSERT(xfree, xfreel, x);
-		return x->sock;
+		ret = pthread_mutex_unlock(&mtxfree);
+		if (ret != 0) {
+			fprintf(stderr, "pthread_mutex_unlock(connect4)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return -ret;
+		}
+		return result;
+	}
+	ret = pthread_mutex_lock(&mtxconn);
+	if (ret != 0) {
+		fprintf(stderr, "pthread_mutex_lock(connect4)");
+		fatal = 1;
+		(void) pthread_kill(master, SIGTERM);
+		return -ret;
 	}
 	x->state = X_CONN;
 	ISC_INSERT(xconn, xconnl, x);
+	ret = pthread_mutex_unlock(&mtxconn);
+	if (ret != 0) {
+		fprintf(stderr, "pthread_mutex_unlock(connect4)");
+		fatal = 1;
+		(void) pthread_kill(master, SIGTERM);
+		return -ret;
+	}
 	ev.events = EPOLLOUT | EPOLLET | EPOLLONESHOT;
 	ev.data.fd = idx;
-	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, x->sock, &ev) < 0) {
-		perror("epoll_ctl");
+	if (epoll_ctl(epoll_ofd, EPOLL_CTL_ADD, x->sock, &ev) < 0) {
+		perror("epoll_ctl(add output)");
 		fatal = 1;
+		(void) pthread_kill(master, SIGTERM);
 		return -errno;
 	}
 	x->order = xccount++;
@@ -877,7 +1099,7 @@ getsock6(void)
 	}
 
 	/* bind if wanted */
-	if (locbind) {
+	if (localname != NULL) {
 		if (bind(sock,
 			 (struct sockaddr *) &localaddr,
 			 sizeof(struct sockaddr_in6)) < 0) {
@@ -906,7 +1128,7 @@ int
 connect6(void)
 {
 	struct exchange *x;
-	ssize_t ret;
+	int ret;
 	int idx;
 	struct epoll_event ev;
 
@@ -914,13 +1136,28 @@ connect6(void)
 	if (ret < 0) {
 		perror("clock_gettime(connect)");
 		fatal = 1;
+		(void) pthread_kill(master, SIGTERM);
 		return -errno;
 	}
 
 	if (xfree >= 0) {
 		idx = xfree;
 		x = xlist + idx;
+		ret = pthread_mutex_lock(&mtxfree);
+		if (ret != 0) {
+			fprintf(stderr, "pthread_mutex_lock(connect6)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return -ret;
+		}
 		ISC_REMOVE(xfreel, x);
+		ret = pthread_mutex_unlock(&mtxfree);
+		if (ret != 0) {
+			fprintf(stderr, "pthread_mutex_unlock(connect6)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return -ret;
+		}
 	} else if (xused < xlast) {
 		idx = xused;
 		x = xlist + idx;
@@ -935,16 +1172,48 @@ connect6(void)
 	x->ts0 = last;
 	x->sock = getsock6();
 	if (x->sock < 0) {
+		int result = x->sock;
+
+		x->sock = -1;
+		ret = pthread_mutex_lock(&mtxfree);
+		if (ret != 0) {
+			fprintf(stderr, "pthread_mutex_lock(connect6)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return -ret;
+		}
 		ISC_INSERT(xfree, xfreel, x);
-		return x->sock;
+		ret = pthread_mutex_unlock(&mtxfree);
+		if (ret != 0) {
+			fprintf(stderr, "pthread_mutex_unlock(connect6)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			return -ret;
+		}
+		return result;
+	}
+	ret = pthread_mutex_lock(&mtxconn);
+	if (ret != 0) {
+		fprintf(stderr, "pthread_mutex_lock(connect6)");
+		fatal = 1;
+		(void) pthread_kill(master, SIGTERM);
+		return -ret;
 	}
 	x->state = X_CONN;
 	ISC_INSERT(xconn, xconnl, x);
+	ret = pthread_mutex_unlock(&mtxconn);
+	if (ret != 0) {
+		fprintf(stderr, "pthread_mutex_unlock(connect6)");
+		fatal = 1;
+		(void) pthread_kill(master, SIGTERM);
+		return -ret;
+	}
 	ev.events = EPOLLOUT | EPOLLET | EPOLLONESHOT;
 	ev.data.fd = idx;
-	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, x->sock, &ev) < 0) {
-		perror("epoll_ctl");
+	if (epoll_ctl(epoll_ofd, EPOLL_CTL_ADD, x->sock, &ev) < 0) {
+		perror("epoll_ctl(add output)");
 		fatal = 1;
+		(void) pthread_kill(master, SIGTERM);
 		return -errno;
 	}
 	x->order = xccount++;
@@ -957,6 +1226,254 @@ connect6(void)
 }
 
 /*
+ * connector working routine
+ */
+
+void *
+connecting(void *dummy)
+{
+	struct timespec now, ts;
+	int ret;
+	int i;
+	char name[16];
+
+	dummy = dummy;
+
+	/* set conn-name */
+	memset(name, 0, sizeof(name));
+	ret = prctl(PR_GET_NAME, name, 0, 0, 0);
+	if (ret < 0)
+		perror("prctl(PR_GET_NAME)");
+	else {
+		memmove(name + 5, name, 11);
+		memcpy(name, "conn-", 5);
+		ret = prctl(PR_SET_NAME, name, 0, 0, 0);
+		if (ret < 0)
+			perror("prctl(PR_SET_NAME");
+	}
+
+	for (;;) {
+		if (fatal)
+			break;
+
+		loops[1]++;
+
+		/* compute the delay for the next connection */
+		if (clock_gettime(CLOCK_REALTIME, &now) < 0) {
+			perror("clock_gettime(connecting)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			break;
+		}
+
+		due = last;
+		if (rate == 1)
+			due.tv_sec += 1;
+		else
+			due.tv_nsec += 1010000000 / rate;
+		while (due.tv_nsec >= 1000000000) {
+			due.tv_sec += 1;
+			due.tv_nsec -= 1000000000;
+		}
+		ts = due;
+		ts.tv_sec -= now.tv_sec;
+		ts.tv_nsec -= now.tv_nsec;
+		while (ts.tv_nsec < 0) {
+			ts.tv_sec -= 1;
+			ts.tv_nsec += 1000000000;
+		}
+		/* the connection was already due? */
+		if (ts.tv_sec < 0) {
+			ts.tv_sec = ts.tv_nsec = 0;
+			lateconn++;
+		} else {
+			/* wait until */
+			ret = clock_nanosleep(CLOCK_REALTIME, 0, &ts, NULL);
+			if (ret < 0) {
+				if (errno == EINTR)
+					continue;
+				perror("clock_nanosleep");
+				fatal = 1;
+				(void) pthread_kill(master, SIGTERM);
+				break;
+			}
+		}
+
+		/* compute how many connections to open */
+		if (clock_gettime(CLOCK_REALTIME, &now) < 0) {
+			perror("clock_gettime(connecting)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			break;
+		}
+
+		if ((now.tv_sec > due.tv_sec) ||
+		    ((now.tv_sec == due.tv_sec) &&
+		     (now.tv_nsec >= due.tv_nsec))) {
+			double toconnect;
+
+			toconnect = (now.tv_nsec - due.tv_nsec) / 1e9;
+			toconnect += now.tv_sec - due.tv_sec;
+			toconnect *= rate;
+			toconnect++;
+			if (toconnect > (double) aggressivity)
+				i = aggressivity;
+			else
+				i = (int) toconnect;
+			compconn += i;
+			/* open connections */
+			while (i-- > 0) {
+				if (ipversion == 4)
+					ret = connect4();
+				else
+					ret = connect6();
+				if (ret < 0) {
+					if ((ret == -EAGAIN) ||
+					    (ret == -EWOULDBLOCK) ||
+					    (ret == -ENOBUFS) ||
+					    (ret == -ENFILE) ||
+					    (ret == -EMFILE) ||
+					    (ret == -EADDRNOTAVAIL) ||
+					    (ret == -ENOMEM))
+						locallimit++;
+					fprintf(stderr,
+						"connect: %s\n",
+						strerror(-ret));
+					break;
+				}
+			}
+		} else
+			/* there was no connection to open */
+			shortwait[0]++;
+	}
+
+	return NULL;
+}
+
+/*
+ * sender working routine
+ */
+
+void *
+sending(void *dummy)
+{
+	int ret;
+	int nfds;
+	char name[16];
+
+	dummy = dummy;
+
+	/* set send-name */
+	memset(name, 0, sizeof(name));
+	ret = prctl(PR_GET_NAME, name, 0, 0, 0);
+	if (ret < 0)
+		perror("prctl(PR_GET_NAME)");
+	else {
+		memmove(name + 5, name, 11);
+		memcpy(name, "send-", 5);
+		ret = prctl(PR_SET_NAME, name, 0, 0, 0);
+		if (ret < 0)
+			perror("prctl(PR_SET_NAME");
+	}
+
+	for (;;) {
+		if (fatal)
+			break;
+
+		loops[2]++;
+
+		/* epoll_wait() */
+		memset(oevents, 0, sizeof(oevents));
+		nfds = epoll_wait(epoll_ofd, oevents, EVENTS_CNT, 1);
+		if (nfds < 0) {
+			if (errno == EINTR)
+				continue;
+			perror("epoll_wait(output)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			break;
+		}
+
+		/* connection(s) to finish */
+		if (nfds == 0)
+			shortwait[1]++;
+		else
+			pollconnect(nfds);
+		if (fatal)
+			break;
+		flushconnect();
+		if (fatal)
+			break;
+
+		/* packet(s) to send */
+		pollsend();
+		if (fatal)
+			break;
+	}
+
+	return NULL;
+}
+
+/*
+ * receiver working routine
+ */
+
+void *
+receiving(void *dummy)
+{
+	int ret;
+	int nfds;
+	char name[16];
+
+	dummy = dummy;
+
+	/* set recv-name */
+	memset(name, 0, sizeof(name));
+	ret = prctl(PR_GET_NAME, name, 0, 0, 0);
+	if (ret < 0)
+		perror("prctl(PR_GET_NAME)");
+	else {
+		memmove(name + 5, name, 11);
+		memcpy(name, "recv-", 5);
+		ret = prctl(PR_SET_NAME, name, 0, 0, 0);
+		if (ret < 0)
+			perror("prctl(PR_SET_NAME");
+	}
+
+	for (;;) {
+		if (fatal)
+			break;
+
+		loops[3]++;
+
+		/* epoll_wait() */
+		memset(ievents, 0, sizeof(ievents));
+		nfds = epoll_wait(epoll_ifd, ievents, EVENTS_CNT, 1);
+		if (nfds < 0) {
+			if (errno == EINTR)
+				continue;
+			perror("epoll_wait(input)");
+			fatal = 1;
+			(void) pthread_kill(master, SIGTERM);
+			break;
+		}
+
+		/* packet(s) to receive */
+		if (nfds == 0)
+			shortwait[2]++;
+		else
+			pollrecv(nfds);
+		if (fatal)
+			break;
+		flushrecv();
+		if (fatal)
+			break;
+	}
+
+	return NULL;
+}
+
+/*
  * get the server socket address from the command line:
  *  - flags: inherited from main, 0 or AI_NUMERICHOST (for literals)
  */
@@ -965,22 +1482,18 @@ void
 getserveraddr(const int flags)
 {
 	struct addrinfo hints, *res;
-	char *service;
 	int ret;
 
 	memset(&hints, 0, sizeof(hints));
-	if (ipversion == 4) {
+	if (ipversion == 4)
 		hints.ai_family = AF_INET;
-		service = "53";
-	} else {
+	else
 		hints.ai_family = AF_INET6;
-		service = "53";
-	}
 	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_ADDRCONFIG | AI_NUMERICSERV | flags;
+	hints.ai_flags = AI_ADDRCONFIG | flags;
 	hints.ai_protocol = IPPROTO_TCP;
 	
-	ret = getaddrinfo(servername, service, &hints, &res);
+	ret = getaddrinfo(servername, NULL, &hints, &res);
 	if (ret != 0) {
 		fprintf(stderr, "bad server=%s: %s\n",
 			servername, gai_strerror(ret));
@@ -992,6 +1505,10 @@ getserveraddr(const int flags)
 	}
 	memcpy(&serveraddr, res->ai_addr, res->ai_addrlen);
 	freeaddrinfo(res);
+	if (ipversion == 4)
+		((struct sockaddr_in *)&serveraddr)->sin_port = htons(port);
+	else
+		((struct sockaddr_in6 *)&serveraddr)->sin6_port = htons(port);
 }
 
 /*
@@ -1002,22 +1519,18 @@ void
 getlocaladdr(void)
 {
 	struct addrinfo hints, *res;
-	char *service;
 	int ret;
 
 	memset(&hints, 0, sizeof(hints));
-	if (ipversion == 4) {
+	if (ipversion == 4)
 		hints.ai_family = AF_INET;
-		service = "53";
-	} else {
+	else
 		hints.ai_family = AF_INET6;
-		service = "53";
-	}
 	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_ADDRCONFIG | AI_NUMERICSERV;
+	hints.ai_flags = AI_ADDRCONFIG;
 	hints.ai_protocol = IPPROTO_TCP;
 	
-	ret = getaddrinfo(localname, service, &hints, &res);
+	ret = getaddrinfo(localname, NULL, &hints, &res);
 	if (ret != 0) {
 		fprintf(stderr,
 			"bad -l<local-addr=%s>: %s\n",
@@ -1034,7 +1547,6 @@ getlocaladdr(void)
 	}
 	memcpy(&localaddr, res->ai_addr, res->ai_addrlen);
 	freeaddrinfo(res);
-	return;
 }
 
 /*
@@ -1091,6 +1603,17 @@ interrupt(int sig)
 }
 
 /*
+ * SIGTERM handler
+ */
+
+void
+terminate(int sig)
+{
+	sig = sig;
+	fatal = 1;
+}
+
+/*
  * '-v' handler
  */
 
@@ -1111,7 +1634,7 @@ usage(void)
 "perftcpdns [-hvX0] [-4|-6] [-r<rate>] [-t<report>] [-p<test-period>]\n"
 "    [-n<num-request>]* [-d<lost-time>]* [-D<max-loss>]*\n"
 "    [-l<local-addr>] [-a<aggressivity>] [-s<seed>] [-M<memory>]\n"
-"    [-T<template-file>] [-x<diagnostic-selector>] server\n"
+"    [-T<template-file>] [-x<diagnostic-selector>] [-P<port>] server\n"
 "\f\n"
 "The server argument is the name/address of the DNS server to contact.\n"
 "\n"
@@ -1128,6 +1651,7 @@ usage(void)
 "-l<local-addr>: Specify the local hostname/address to use when\n"
 "    communicating with the server.\n"
 "-M<memory>: Size of the tables (default 60000)\n"
+"-P<port>: Specify an alternate (i.e., not 53) port\n"
 "-r<rate>: Initiate <rate> TCP DNS connections per second.  A periodic\n"
 "    report is generated showing the number of exchanges which were not\n"
 "    completed, as well as the average response latency.  The program\n"
@@ -1173,10 +1697,10 @@ usage(void)
 "- badid: the id mismatches between the query and the response\n"
 "- notresp: doesn't receive a response\n"
 "Rate stats:\n"
-"- loops: number of main loop iterations\n"
+"- loops: number of thread loop iterations\n"
+"- shortwait: no direct activity in a thread iteration\n"
 "- compconn: computed number of connect() calls\n"
 "- lateconn: connect() already dued when computing delay to the next one\n"
-"- shortwait: no connect() to perform at the end of current iteration\n"
 "\n"
 "Exit status:\n"
 "The exit status is:\n"
@@ -1201,7 +1725,7 @@ main(const int argc, char * const argv[])
 	extern char *optarg;
 	extern int optind;
 
-#define OPTIONS	"hv460XM:r:t:R:b:n:p:d:D:l:a:s:T:O:x:"
+#define OPTIONS	"hv460XM:r:t:R:b:n:p:d:D:l:a:s:T:O:x:P:"
 
 	/* decode options */
 	while ((opt = getopt(argc, argv, OPTIONS)) != -1)
@@ -1421,6 +1945,17 @@ main(const int argc, char * const argv[])
 		diags = optarg;
 		break;
 
+	case 'P':
+		i = atoi(optarg);
+		if ((i <= 0) || (i > 65535)) {
+			fprintf(stderr,
+				"port must be a positive short integer\n");
+			usage();
+			exit(2);
+		}
+		port = (in_port_t) i;
+		break;
+
 	default:
 		usage();
 		exit(2);
@@ -1593,12 +2128,29 @@ main(const int argc, char * const argv[])
 
 	/* required only before the interrupted flag check */
 	(void) signal(SIGINT, interrupt);
+	(void) signal(SIGTERM, terminate);
+
+	/* threads */
+	master = pthread_self();
+	ret = pthread_create(&connector, NULL, connecting, NULL);
+	if (ret != 0) {
+		fprintf(stderr, "pthread_create: %s\n", strerror(ret));
+		exit(1);
+	}
+	ret = pthread_create(&sender, NULL, sending, NULL);
+	if (ret != 0) {
+		fprintf(stderr, "pthread_create: %s\n", strerror(ret));
+		exit(1);
+	}
+	ret = pthread_create(&receiver, NULL, receiving, NULL);
+	if (ret != 0) {
+		fprintf(stderr, "pthread_create: %s\n", strerror(ret));
+		exit(1);
+	}
 
 	/* main loop */
 	for (;;) {
 		struct timespec now, ts;
-		fd_set rfds;
-		int nfds;
 
 		/* immediate loop exit conditions */
 		if (interrupted) {
@@ -1612,7 +2164,7 @@ main(const int argc, char * const argv[])
 			break;
 		}
 
-		loops++;
+		loops[0]++;
 
 		/* get the date and use it */
 		if (clock_gettime(CLOCK_REALTIME, &now) < 0) {
@@ -1633,73 +2185,6 @@ main(const int argc, char * const argv[])
 		     ((dreport.tv_sec == now.tv_sec) &&
 		      (dreport.tv_nsec < now.tv_nsec))))
 			reporting();
-
-		/* compute the delay for the next connection */
-		due = last;
-		if (rate == 1)
-			due.tv_sec += 1;
-		else
-			due.tv_nsec += 1010000000 / rate;
-		while (due.tv_nsec >= 1000000000) {
-			due.tv_sec += 1;
-			due.tv_nsec -= 1000000000;
-		}
-		ts = due;
-		ts.tv_sec -= now.tv_sec;
-		ts.tv_nsec -= now.tv_nsec;
-		while (ts.tv_nsec < 0) {
-			ts.tv_sec -= 1;
-			ts.tv_nsec += 1000000000;
-		}
-		/* the connection was already due? */
-		if (ts.tv_sec < 0) {
-			ts.tv_sec = ts.tv_nsec = 0;
-			lateconn++;
-		}
-
-		/* pselect() */
-		FD_ZERO(&rfds);
-		FD_SET(epoll_fd, &rfds);
-		ret = pselect(epoll_fd + 1, &rfds, NULL, NULL, &ts, NULL);
-		if (ret < 0) {
-			if (errno == EINTR)
-				continue;
-			perror("pselect");
-			fatal = 1;
-			continue;
-		}
-			
-		/* epoll_wait() */
-		memset(events, 0, sizeof(events));
-		nfds = epoll_wait(epoll_fd, events, EVENTS_CNT, 0);
-		if (nfds < 0) {
-			if (errno == EINTR)
-				continue;
-			perror("epoll");
-			fatal = 1;
-			continue;
-		}
-
-		/* connection(s) to finish */
-		pollconnect(nfds);
-		if (fatal)
-			continue;
-		flushconnect();
-		if (fatal)
-			continue;
-
-		/* packet(s) to receive */
-		pollrecv(nfds);
-		if (fatal)
-			continue;
-		flushrecv();
-		if (fatal)
-			continue;
-
-		/* packet(s) to send */
-		pollsend();
-		if (fatal)
-			continue;
 
 		/* check receive loop exit conditions */
 		if ((numreq[0] != 0) && ((int) xccount >= numreq[0])) {
@@ -1743,67 +2228,41 @@ main(const int argc, char * const argv[])
 			break;
 		}
 
-		/* compute how many connections to open */
-		if (clock_gettime(CLOCK_REALTIME, &now) < 0) {
-			perror("clock_gettime(now2)");
-			fatal = 1;
-			continue;
-		}
-		if ((now.tv_sec > due.tv_sec) ||
-		    ((now.tv_sec == due.tv_sec) &&
-		     (now.tv_nsec >= due.tv_nsec))) {
-			double toconnect;
-
-			toconnect = (now.tv_nsec - due.tv_nsec) / 1e9;
-			toconnect += now.tv_sec - due.tv_sec;
-			toconnect *= rate;
-			toconnect++;
-			if (toconnect > (double) aggressivity)
-				i = aggressivity;
-			else
-				i = (int) toconnect;
-			compconn += i;
-			/* open connections */
-			while (i-- > 0) {
-				if (ipversion == 4)
-					ret = connect4();
-				else
-					ret = connect6();
-				if (ret < 0) {
-					if ((ret == -EAGAIN) ||
-					    (ret == -EWOULDBLOCK) ||
-					    (ret == -ENOBUFS) ||
-					    (ret == -ENOMEM))
-						locallimit++;
-					fprintf(stderr,
-						"connect: %s\n",
-						strerror(-ret));
-					break;
-				}
-			}
-		} else
-			/* there was no connection to open */
-			shortwait++;
+		/* waiting 1ms */
+		memset(&ts, 0, sizeof(ts));
+		ts.tv_nsec = 1000000;
+		(void) clock_nanosleep(CLOCK_REALTIME, 0, &ts, NULL);
 	}
 
 	/* after main loop: finished */
 	if (clock_gettime(CLOCK_REALTIME, &finished) < 0)
 		perror("clock_gettime(finished)");
 
+	/* threads */
+	(void) pthread_cancel(connector);
+	(void) pthread_cancel(sender);
+	(void) pthread_cancel(receiver);
+
 	/* main statictics */
-	printf("connect: %llu, sent: %llu, received: %llu "
-	       "(embryonics: %lld, drops: %lld)\n",
+	printf("connect: %llu, sent: %llu, received: %llu\n",
 	       (unsigned long long) xccount,
 	       (unsigned long long) xscount,
-	       (unsigned long long) xrcount,
+	       (unsigned long long) xrcount);
+	printf("embryonics: %lld (%.1f%%)\n",
 	       (long long) (xccount - xscount),
-	       (long long) (xscount - xrcount));
+	       (100. * (xccount - xscount)) / xccount);
+	printf("drops: %lld (%.1f%%)\n",
+	       (long long) (xscount - xrcount),
+	       (100. * (xscount - xrcount)) / xscount);
+	printf("total losses: %lld (%.1f%%)\n",
+	       (long long) (xccount - xrcount),
+	       (100. * (xccount - xrcount)) / xccount);
 	printf("local limits: %llu, bad connects: %llu, "
-	       "connect time outs: %llu\n",
+	       "connect timeouts: %llu\n",
 	       (unsigned long long) locallimit,
 	       (unsigned long long) badconn,
 	       (unsigned long long) collconn);
-	printf("bad sends: %llu, bad recvs: %llu, recv time outs: %llu\n",
+	printf("bad sends: %llu, bad recvs: %llu, recv timeouts: %llu\n",
 	       (unsigned long long) badsent,
 	       (unsigned long long) recverr,
 	       (unsigned long long) collsent);
@@ -1822,24 +2281,33 @@ main(const int argc, char * const argv[])
 	       (unsigned long long) rcodes[NS_RCODE_REFUSED],
 	       (unsigned long long) rcodes[NS_RCODE_LAST]);
 
-	/* print the rate */
+	/* print the rates */
 	if (finished.tv_sec != 0) {
-		double dall, erate;
+		double dall, erate[3];
 
 		dall = (finished.tv_nsec - boot.tv_nsec) / 1e9;
 		dall += finished.tv_sec - boot.tv_sec;
-		erate = xrcount / dall;
-		printf("rate: %f (expected %d)\n", erate, rate);
+		erate[0] = xccount / dall;
+		erate[1] = xscount / dall;
+		erate[2] = xrcount / dall;
+		printf("rates: %.0f,%.0f,%.0f (target %d)\n",
+		       erate[0], erate[1], erate[2], rate);
 	}
 
 	/* rate processing instrumentation */
 	if ((diags != NULL) && (strchr(diags, 'i') != NULL)) {
-		printf("loops: %llu, compconn: %llu, "
-		       "lateconn: %llu, shortwait: %llu\n",
-		       (unsigned long long) loops,
+		printf("loops: %llu,%llu,%llu,%llu\n",
+		       (unsigned long long) loops[0],
+		       (unsigned long long) loops[1],
+		       (unsigned long long) loops[2],
+		       (unsigned long long) loops[3]);
+		printf("shortwait: %llu,%llu,%llu\n",
+		       (unsigned long long) shortwait[0],
+		       (unsigned long long) shortwait[1],
+		       (unsigned long long) shortwait[2]);
+		printf("compconn: %llu, lateconn: %llu\n",
 		       (unsigned long long) compconn,
-		       (unsigned long long) lateconn,
-		       (unsigned long long) shortwait);
+		       (unsigned long long) lateconn);
 		printf("badconn: %llu, collconn: %llu, "
 		       "recverr: %llu, collsent: %llu\n",
 		       (unsigned long long) badconn,
@@ -1884,7 +2352,7 @@ main(const int argc, char * const argv[])
 	/* compute the exit code (and exit) */
 	if (fatal)
 		exit(1);
-	else if (xscount == xrcount)
+	else if ((xccount == xscount) && (xscount == xrcount))
 		exit(0);
 	else
 		exit(3);
