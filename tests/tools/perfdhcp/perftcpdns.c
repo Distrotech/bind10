@@ -20,7 +20,7 @@
  * main parameters are -r<rate> and <server>
  * standard options are 4|6 (IPv4|IPv6), rate computations, terminaisons,
  * EDNS0, NOERROR|NXDOMAIN, template (for your own query), diags,
- * and alternate port.
+ * alternate port and UDP version.
  *
  * To help to crush kernels (unfortunately both client and server :-)
  * this version of the tool is multi-threaded:
@@ -253,6 +253,7 @@ int rndoffset = -1;			/* template offset (random) */
 char *diags;				/* diagnostic selectors */
 char *servername;			/* server */
 int ixann;				/* ixann NXDOMAIN */
+int udp;				/* use UDP in place of TCP */
 
 /*
  * global variables
@@ -667,16 +668,24 @@ int
 sendquery(struct exchange *x)
 {
 	ssize_t ret;
+	size_t off;
 
-	obuf[0] = length_query >> 8;
-	obuf[1]= length_query & 0xff;
-	memcpy(obuf + 2, template_query, length_query);
+	if (udp)
+		off = 0;
+	else {
+		off = 2;
+		/* message length */
+		obuf[0] = length_query >> 8;
+		obuf[1]= length_query & 0xff;
+	}
+	/* message from template */
+	memcpy(obuf + off, template_query, length_query);
 	/* ID */
-	memcpy(obuf + 2 + NS_OFF_ID, &x->id, 2);
+	memcpy(obuf + off + NS_OFF_ID, &x->id, 2);
 #if 0
 	/* random */
 	if (random_query > 0)
-		x->rnd = randomize(random_query + 2, x->rnd);
+		x->rnd = randomize(random_query + off, x->rnd);
 #endif
 	/* timestamp */
 	errno = 0;
@@ -687,8 +696,8 @@ sendquery(struct exchange *x)
 		(void) pthread_kill(master, SIGTERM);
 		return -errno;
 	}
-	ret = send(x->sock, obuf, length_query + 2, 0);
-	if (ret == (ssize_t) length_query + 2)
+	ret = send(x->sock, obuf, length_query + off, 0);
+	if (ret == (ssize_t) length_query + off)
 		return 0;
 	return -errno;
 }	
@@ -768,6 +777,7 @@ receiveresp(struct exchange *x)
 {
 	struct timespec now;
 	ssize_t cc;
+	size_t off;
 	uint16_t v;
 	double delta;
 
@@ -785,18 +795,22 @@ receiveresp(struct exchange *x)
 		(void) pthread_kill(master, SIGTERM);
 		return;
 	}
+	if (udp)
+		off = 0;
+	else
+		off = 2;
 	/* enforce a reasonable length */
-	if (cc < (ssize_t) length_query + 2) {
+	if (cc < (ssize_t) length_query + off) {
 		tooshort++;
 		return;
 	}
 	/* must match the ID */
-	if (memcmp(ibuf + 2 + NS_OFF_ID, &x->id, 2) != 0) {
+	if (memcmp(ibuf + off + NS_OFF_ID, &x->id, 2) != 0) {
 		badid++;
 		return;
 	}
 	/* must be a response */
-	memcpy(&v, ibuf + 2 + NS_OFF_FLAGS, 2);
+	memcpy(&v, ibuf + off + NS_OFF_FLAGS, 2);
 	v = ntohs(v);
 	if ((v & NS_FLAG_QR) == 0) {
 		notresp++;
@@ -953,7 +967,10 @@ getsock4(void)
 	int flags;
 
 	errno = 0;
-	sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (udp)
+		sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	else
+		sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sock < 0)
 		return -errno;
 
@@ -1109,7 +1126,10 @@ getsock6(void)
 	int flags;
 
 	errno = 0;
-	sock = socket(PF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	if (udp)
+		sock = socket(PF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+	else
+		sock = socket(PF_INET6, SOCK_STREAM, IPPROTO_TCP);
 	if (sock < 0)
 		return -errno;
 
@@ -1515,9 +1535,14 @@ getserveraddr(const int flags)
 		hints.ai_family = AF_INET;
 	else
 		hints.ai_family = AF_INET6;
-	hints.ai_socktype = SOCK_STREAM;
+	if (udp) {
+		hints.ai_socktype = SOCK_DGRAM;
+		hints.ai_protocol = IPPROTO_UDP;
+	} else {
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_protocol = IPPROTO_TCP;
+	}
 	hints.ai_flags = AI_ADDRCONFIG | flags;
-	hints.ai_protocol = IPPROTO_TCP;
 	
 	ret = getaddrinfo(servername, NULL, &hints, &res);
 	if (ret != 0) {
@@ -1552,9 +1577,14 @@ getlocaladdr(void)
 		hints.ai_family = AF_INET;
 	else
 		hints.ai_family = AF_INET6;
-	hints.ai_socktype = SOCK_STREAM;
+	if (udp) {
+		hints.ai_socktype = SOCK_DGRAM;
+		hints.ai_protocol = IPPROTO_UDP;
+	} else {
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_protocol = IPPROTO_TCP;
+	}
 	hints.ai_flags = AI_ADDRCONFIG;
-	hints.ai_protocol = IPPROTO_TCP;
 	
 	ret = getaddrinfo(localname, NULL, &hints, &res);
 	if (ret != 0) {
@@ -1657,7 +1687,7 @@ void
 usage(void)
 {
 	fprintf(stderr, "%s",
-"perftcpdns [-hvX0] [-4|-6] [-r<rate>] [-t<report>] [-p<test-period>]\n"
+"perftcpdns [-huvX0] [-4|-6] [-r<rate>] [-t<report>] [-p<test-period>]\n"
 "    [-n<num-request>]* [-d<lost-time>]* [-D<max-loss>]*\n"
 "    [-l<local-addr>] [-a<aggressivity>] [-s<seed>] [-M<memory>]\n"
 "    [-T<template-file>] [-x<diagnostic-selector>] [-P<port>] server\n"
@@ -1687,6 +1717,7 @@ usage(void)
 "-t<report>: Delay in seconds between two periodic reports.\n"
 "-T<template-file>: The name of a file containing the template to use\n"
 "    as a stream of hexadecimal digits.\n"
+"-u: Use UDP in place of TCP.\n"
 "-v: Report the version number of this program.\n"
 "-X: change default template to get NXDOMAIN responses.\n"
 "-x<diagnostic-selector>: Include extended diagnostics in the output.\n"
@@ -1751,7 +1782,7 @@ main(const int argc, char * const argv[])
 	extern char *optarg;
 	extern int optind;
 
-#define OPTIONS	"hv460XM:r:t:R:b:n:p:d:D:l:a:s:T:O:x:P:"
+#define OPTIONS	"hv46u0XM:r:t:R:b:n:p:d:D:l:a:s:T:O:x:P:"
 
 	/* decode options */
 	while ((opt = getopt(argc, argv, OPTIONS)) != -1)
@@ -1759,6 +1790,10 @@ main(const int argc, char * const argv[])
 	case 'h':
 		usage();
 		exit(0);
+
+	case 'u':
+		udp = 1;
+		break;
 
 	case 'v':
 		version();
@@ -1999,6 +2034,8 @@ main(const int argc, char * const argv[])
 
 	/* when required, print the internal view of the command line */
 	if ((diags != NULL) && (strchr(diags, 'a') != NULL)) {
+		if (udp)
+			printf("UDP ");
 		printf("IPv%d", ipversion);
 		printf(" rate=%d", rate);
 		if (edns0 != 0)
