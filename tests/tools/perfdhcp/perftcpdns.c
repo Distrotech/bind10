@@ -20,7 +20,7 @@
  * main parameters are -r<rate> and <server>
  * standard options are 4|6 (IPv4|IPv6), rate computations, terminaisons,
  * EDNS0, NOERROR|NXDOMAIN, template (for your own query), diags,
- * alternate port and UDP version.
+ * alternate server port and UDP version.
  *
  * To help to crush kernels (unfortunately both client and server :-)
  * this version of the tool is multi-threaded:
@@ -254,6 +254,7 @@ char *diags;				/* diagnostic selectors */
 char *servername;			/* server */
 int ixann;				/* ixann NXDOMAIN */
 int udp;				/* use UDP in place of TCP */
+int minport, maxport, curport;		/* port range */
 
 /*
  * global variables
@@ -697,7 +698,7 @@ sendquery(struct exchange *x)
 		return -errno;
 	}
 	ret = send(x->sock, obuf, length_query + off, 0);
-	if (ret == (ssize_t) length_query + off)
+	if ((size_t) ret == length_query + off)
 		return 0;
 	return -errno;
 }	
@@ -800,7 +801,7 @@ receiveresp(struct exchange *x)
 	else
 		off = 2;
 	/* enforce a reasonable length */
-	if (cc < (ssize_t) length_query + off) {
+	if ((size_t) cc < length_query + off) {
 		tooshort++;
 		return;
 	}
@@ -987,6 +988,15 @@ getsock4(void)
 
 	/* bind if wanted */
 	if (localname != NULL) {
+		if (curport) {
+			struct sockaddr_in *l4;
+
+			l4 = (struct sockaddr_in *) &localaddr;
+			l4->sin_port = htons((uint16_t) curport);
+			curport++;
+			if (curport > maxport)
+				curport = minport;
+		}
 		if (bind(sock,
 			 (struct sockaddr *) &localaddr,
 			 sizeof(struct sockaddr_in)) < 0) {
@@ -1146,6 +1156,15 @@ getsock6(void)
 
 	/* bind if wanted */
 	if (localname != NULL) {
+		if (curport) {
+			struct sockaddr_in6 *l6;
+
+			l6 = (struct sockaddr_in6 *) &localaddr;
+			l6->sin6_port = htons((uint16_t) curport);
+			curport++;
+			if (curport > maxport)
+				curport = minport;
+		}
 		if (bind(sock,
 			 (struct sockaddr *) &localaddr,
 			 sizeof(struct sockaddr_in6)) < 0) {
@@ -1688,9 +1707,9 @@ usage(void)
 {
 	fprintf(stderr, "%s",
 "perftcpdns [-huvX0] [-4|-6] [-r<rate>] [-t<report>] [-p<test-period>]\n"
-"    [-n<num-request>]* [-d<lost-time>]* [-D<max-loss>]*\n"
-"    [-l<local-addr>] [-a<aggressivity>] [-s<seed>] [-M<memory>]\n"
-"    [-T<template-file>] [-x<diagnostic-selector>] [-P<port>] server\n"
+"    [-n<num-request>]* [-d<lost-time>]* [-D<max-loss>]* [-T<template-file>]\n"
+"    [-l<local-addr>] [-L<local-port>]* [-a<aggressivity>] [-s<seed>]\n"
+"    [-M<memory>] [-x<diagnostic-selector>] [-P<port>] server\n"
 "\f\n"
 "The server argument is the name/address of the DNS server to contact.\n"
 "\n"
@@ -1706,6 +1725,7 @@ usage(void)
 "-h: Print this help.\n"
 "-l<local-addr>: Specify the local hostname/address to use when\n"
 "    communicating with the server.\n"
+"-L<local-port>: Specify the (minimal and maximal) local port number\n"
 "-M<memory>: Size of the tables (default 60000)\n"
 "-P<port>: Specify an alternate (i.e., not 53) port\n"
 "-r<rate>: Initiate <rate> TCP DNS connections per second.  A periodic\n"
@@ -1782,7 +1802,7 @@ main(const int argc, char * const argv[])
 	extern char *optarg;
 	extern int optind;
 
-#define OPTIONS	"hv46u0XM:r:t:R:b:n:p:d:D:l:a:s:T:O:x:P:"
+#define OPTIONS	"hv46u0XM:r:t:R:b:n:p:d:D:l:L:a:s:T:O:x:P:"
 
 	/* decode options */
 	while ((opt = getopt(argc, argv, OPTIONS)) != -1)
@@ -1968,6 +1988,25 @@ main(const int argc, char * const argv[])
 		localname = optarg;
 		break;
 
+	case 'L':
+		i = atoi(optarg);
+		if ((i <= 0) || (i >65535)) {
+			fprintf(stderr,
+				"local-port must be a small positive integer\n");
+			usage();
+			exit(2);
+		}
+		if (maxport != 0) {
+			fprintf(stderr, "too many local-port's\n");
+			usage();
+			exit(2);
+		}
+		if (curport == 0)
+			minport = curport = i;
+		else
+			maxport = i;
+		break;
+
 	case 'a':
 		aggressivity = atoi(optarg);
 		if (aggressivity <= 0) {
@@ -2031,6 +2070,8 @@ main(const int argc, char * const argv[])
 		xlast = 60000;
 	if (noreport == 0)
 		report = 1;
+	if ((curport != 0) && (maxport == 0))
+		maxport = 65535;
 
 	/* when required, print the internal view of the command line */
 	if ((diags != NULL) && (strchr(diags, 'a') != NULL)) {
@@ -2097,6 +2138,14 @@ main(const int argc, char * const argv[])
 		printf("\n");
 	}
 
+	/* check local address options */
+	if ((localname == NULL) && (curport != 0)) {
+		fprintf(stderr,
+			"-l<local-addr> must be set to use -L<local-port>\n");
+		usage();
+		exit(2);
+	}
+
 	/* check template file options */
 	if ((templatefile == NULL) && (rndoffset >= 0)) {
 		fprintf(stderr,
@@ -2128,8 +2177,13 @@ main(const int argc, char * const argv[])
 	if (localname != NULL) {
 		/* given */
 		getlocaladdr();
-		if ((diags != NULL) && (strchr(diags, 'a') != NULL))
-			printf("local-addr='%s'\n", localname);
+		if ((diags != NULL) && (strchr(diags, 'a') != NULL)) {
+			printf("local-addr='%s'", localname);
+			if (curport != 0)
+				printf(" local-port='%d..%d'",
+				       minport, maxport);
+			printf("\n");
+		}
 	}
 
 	/* get the server socket address */
