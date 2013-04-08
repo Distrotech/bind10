@@ -20,6 +20,7 @@
 #endif
 
 #include <asiolink/simple_callback.h>
+#include <asiolink/io_service.h>
 #include <asiodns/dns_answer.h>
 #include <asiodns/dns_lookup.h>
 #include <asiodns/dns_server.h>
@@ -40,7 +41,7 @@ namespace asiodns {
 class UDPServer : public virtual DNSServer, public virtual coroutine {
 public:
     /// \brief Constructor
-    /// \param io_service the asio::io_service to work with
+    /// \param io_service the asiolink::IOService to work with
     /// \param fd the file descriptor of opened UDP socket
     /// \param af address family, either AF_INET or AF_INET6
     /// \param checkin the callbackprovider for non-DNS events
@@ -49,7 +50,7 @@ public:
     /// \throw isc::InvalidParameter if af is neither AF_INET nor AF_INET6
     /// \throw isc::asiolink::IOError when a low-level error happens, like the
     ///     fd is not a valid descriptor.
-    UDPServer(asio::io_service& io_service, int fd, int af,
+    UDPServer(isc::asiolink::IOService& ioservice, int fd, int af,
               isc::asiolink::SimpleCallback* checkin = NULL,
               DNSLookup* lookup = NULL, DNSAnswer* answer = NULL);
 

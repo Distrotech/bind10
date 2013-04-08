@@ -38,9 +38,10 @@ using namespace isc::asiolink;
 namespace isc {
 namespace asiodns {
 
-SyncUDPServer::SyncUDPServer(asio::io_service& io_service, const int fd,
+SyncUDPServer::SyncUDPServer(IOService& io_service, const int fd,
                              const int af, asiolink::SimpleCallback* checkin,
                              DNSLookup* lookup, DNSAnswer* answer) :
+    io_(io_service),
     output_buffer_(new isc::util::OutputBuffer(0)),
     query_(new isc::dns::Message(isc::dns::Message::PARSE)),
     answer_(new isc::dns::Message(isc::dns::Message::RENDER)),
@@ -53,7 +54,7 @@ SyncUDPServer::SyncUDPServer(asio::io_service& io_service, const int fd,
     }
     LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, ASIODNS_FD_ADD_UDP).arg(fd);
     try {
-        socket_.reset(new asio::ip::udp::socket(io_service));
+        socket_.reset(new asio::ip::udp::socket(io_service.get_io_service()));
         socket_->assign(af == AF_INET6 ? asio::ip::udp::v6() :
                         asio::ip::udp::v4(), fd);
     } catch (const std::exception& exception) {

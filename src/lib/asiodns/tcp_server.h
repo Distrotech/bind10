@@ -23,6 +23,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <asiolink/asiolink.h>
+#include <asiolink/asiolink.h>
 #include <coroutine.h>
 #include "dns_server.h"
 #include "dns_lookup.h"
@@ -38,7 +39,7 @@ namespace asiodns {
 class TCPServer : public virtual DNSServer, public virtual coroutine {
 public:
     /// \brief Constructor
-    /// \param io_service the asio::io_service to work with
+    /// \param io_service the isc::asiolink::IOService to work with
     /// \param fd the file descriptor of opened TCP socket
     /// \param af address family of the socket, either AF_INET or AF_INET6
     /// \param checkin the callbackprovider for non-DNS events
@@ -47,7 +48,7 @@ public:
     /// \throw isc::InvalidParameter if af is neither AF_INET nor AF_INET6
     /// \throw isc::asiolink::IOError when a low-level error happens, like the
     ///     fd is not a valid descriptor or it can't be listened on.
-    TCPServer(asio::io_service& io_service, int fd, int af,
+    TCPServer(isc::asiolink::IOService& io_service, int fd, int af,
               const isc::asiolink::SimpleCallback* checkin = NULL,
               const DNSLookup* lookup = NULL, const DNSAnswer* answer = NULL);
 
@@ -75,8 +76,8 @@ private:
     enum { MAX_LENGTH = 65535 };
     static const size_t TCP_MESSAGE_LENGTHSIZE = 2;
 
-    // The ASIO service object
-    asio::io_service& io_;
+    // The asiolink service object
+    isc::asiolink::IOService& io_;
 
     // Class member variables which are dynamic, and changes to which
     // need to accessible from both sides of a coroutine fork or from

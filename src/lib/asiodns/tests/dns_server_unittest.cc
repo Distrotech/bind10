@@ -154,10 +154,10 @@ class SimpleAnswer : public DNSAnswer, public ServerStopper {
 class SimpleClient : public ServerStopper {
     public:
     static const size_t MAX_DATA_LEN = 256;
-    SimpleClient(asio::io_service& service,
+    SimpleClient(IOService& service,
                  unsigned int wait_server_time_out)
     {
-        wait_for_response_timer_.reset(new deadline_timer(service));
+        wait_for_response_timer_.reset(new deadline_timer(service.get_io_service()));
         received_data_ = new char[MAX_DATA_LEN];
         received_data_len_ = 0;
         wait_server_time_out_ = wait_server_time_out;
@@ -216,11 +216,11 @@ class UDPClient : public SimpleClient {
     //After 1 second without feedback client will stop wait
     static const unsigned int SERVER_TIME_OUT = 1;
 
-    UDPClient(asio::io_service& service, const ip::udp::endpoint& server) :
+    UDPClient(IOService& service, const ip::udp::endpoint& server) :
         SimpleClient(service, SERVER_TIME_OUT)
     {
         server_ = server;
-        socket_.reset(new ip::udp::socket(service));
+        socket_.reset(new ip::udp::socket(service.get_io_service()));
         socket_->open(ip::udp::v6());
     }
 
@@ -257,12 +257,12 @@ class TCPClient : public SimpleClient {
     // after 2 seconds without feedback client will stop wait,
     // this includes connect, send message and recevice message
     static const unsigned int SERVER_TIME_OUT = 2;
-    TCPClient(asio::io_service& service, const ip::tcp::endpoint& server)
+    TCPClient(IOService& service, const ip::tcp::endpoint& server)
         : SimpleClient(service, SERVER_TIME_OUT),
           send_data_delay_(0), send_data_len_delay_(0)
     {
         server_ = server;
-        socket_.reset(new ip::tcp::socket(service));
+        socket_.reset(new ip::tcp::socket(service.get_io_service()));
         socket_->open(ip::tcp::v6());
     }
 
@@ -350,6 +350,7 @@ template<class UDPServerClass>
 class DNSServerTestBase : public::testing::Test {
     protected:
         DNSServerTestBase() :
+            service(false),
             server_address_(ip::address::from_string(server_ip)),
             checker_(new DummyChecker()),
             lookup_(new DummyLookup()),
@@ -401,7 +402,7 @@ class DNSServerTestBase : public::testing::Test {
             current_service = &service;
             alarm(IO_SERVICE_TIME_OUT);
             service.run();
-            service.reset();
+            service.get_io_service().reset();
             //cancel scheduled alarm
             alarm(0);
             std::signal(SIGALRM, prev_handler);
@@ -418,7 +419,7 @@ class DNSServerTestBase : public::testing::Test {
             return (!io_service_is_time_out);
         }
 
-        asio::io_service service;
+        IOService service;
         const ip::address server_address_;
         DummyChecker* const checker_;
         DummyLookup*  const lookup_;
@@ -430,7 +431,7 @@ class DNSServerTestBase : public::testing::Test {
 
         // To access them in signal handle function, the following
         // variables have to be static.
-        static asio::io_service* current_service;
+        static IOService* current_service;
         static bool io_service_is_time_out;
 };
 
@@ -509,7 +510,7 @@ TYPED_TEST_CASE(DNSServerTestBase, UDPServerTypes);
 template<class UDPServerClass>
 bool DNSServerTestBase<UDPServerClass>::io_service_is_time_out = false;
 template<class UDPServerClass>
-asio::io_service* DNSServerTestBase<UDPServerClass>::current_service(NULL);
+IOService* DNSServerTestBase<UDPServerClass>::current_service(NULL);
 
 // Test whether server stopped successfully after client get response
 // client will send query and start to wait for response, once client

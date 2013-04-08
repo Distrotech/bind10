@@ -47,7 +47,7 @@ namespace asiodns {
 /// The following functions implement the \c TCPServer class.
 ///
 /// The constructor
-TCPServer::TCPServer(io_service& io_service, int fd, int af,
+TCPServer::TCPServer(IOService& io_service, int fd, int af,
                      const SimpleCallback* checkin,
                      const DNSLookup* lookup,
                      const DNSAnswer* answer) :
@@ -62,7 +62,7 @@ TCPServer::TCPServer(io_service& io_service, int fd, int af,
     LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, ASIODNS_FD_ADD_TCP).arg(fd);
 
     try {
-        acceptor_.reset(new tcp::acceptor(io_service));
+        acceptor_.reset(new tcp::acceptor(io_service.get_io_service()));
         acceptor_->assign(af == AF_INET6 ? tcp::v6() : tcp::v4(), fd);
         acceptor_->listen();
     } catch (const std::exception& exception) {
@@ -124,7 +124,7 @@ TCPServer::operator()(asio::error_code ec, size_t length) {
             /// scheduling it on the ASIO service queue.  The parent
             /// will continue listening for DNS connections while the
             /// handles the one that has just arrived.
-            CORO_FORK io_.post(TCPServer(*this));
+            CORO_FORK io_.get_io_service().post(TCPServer(*this));
         } while (is_parent());
 
         /// Instantiate the data buffer that will be used by the
@@ -133,7 +133,7 @@ TCPServer::operator()(asio::error_code ec, size_t length) {
 
         /// Start a timer to drop the connection if it is idle
         if (*tcp_recv_timeout_ > 0) {
-            timeout_.reset(new asio::deadline_timer(io_));
+            timeout_.reset(new asio::deadline_timer(io_.get_io_service()));
             timeout_->expires_from_now(
                 boost::posix_time::milliseconds(*tcp_recv_timeout_));
             timeout_->async_wait(boost::bind(&do_timeout, boost::ref(*socket_),
@@ -211,7 +211,7 @@ TCPServer::operator()(asio::error_code ec, size_t length) {
         // Schedule a DNS lookup, and yield.  When the lookup is
         // finished, the coroutine will resume immediately after
         // this point.
-        CORO_YIELD io_.post(AsyncLookup<TCPServer>(*this));
+        CORO_YIELD io_.get_io_service().post(AsyncLookup<TCPServer>(*this));
 
         // The 'done_' flag indicates whether we have an answer
         // to send back.  If not, exit the coroutine permanently.
@@ -275,7 +275,7 @@ void TCPServer::stop() {
 void
 TCPServer::resume(const bool done) {
     done_ = done;
-    io_.post(*this);
+    io_.get_io_service().post(*this);
 }
 
 } // namespace asiodns

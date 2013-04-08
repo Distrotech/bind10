@@ -59,7 +59,7 @@ struct UDPServer::Data {
      * query, it will only hold parameters until we wait for the
      * first packet. But we do initialize the socket in here.
      */
-    Data(io_service& io_service, const ip::address& addr, const uint16_t port,
+    Data(IOService& io_service, const ip::address& addr, const uint16_t port,
         SimpleCallback* checkin, DNSLookup* lookup, DNSAnswer* answer) :
         io_(io_service), bytes_(0), done_(false),
         checkin_callback_(checkin),lookup_callback_(lookup),
@@ -68,14 +68,14 @@ struct UDPServer::Data {
         // We must use different instantiations for v4 and v6;
         // otherwise ASIO will bind to both
         udp proto = addr.is_v4() ? udp::v4() : udp::v6();
-        socket_.reset(new udp::socket(io_service, proto));
+        socket_.reset(new udp::socket(io_service.get_io_service(), proto));
         socket_->set_option(socket_base::reuse_address(true));
         if (addr.is_v6()) {
             socket_->set_option(asio::ip::v6_only(true));
         }
         socket_->bind(udp::endpoint(addr, port));
     }
-    Data(io_service& io_service, int fd, int af, SimpleCallback* checkin,
+    Data(IOService& io_service, int fd, int af, SimpleCallback* checkin,
          DNSLookup* lookup, DNSAnswer* answer) :
          io_(io_service), bytes_(0), done_(false),
          checkin_callback_(checkin),lookup_callback_(lookup),
@@ -87,7 +87,7 @@ struct UDPServer::Data {
         }
         LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, ASIODNS_FD_ADD_UDP).arg(fd);
         try {
-            socket_.reset(new udp::socket(io_service));
+            socket_.reset(new udp::socket(io_service.get_io_service()));
             socket_->assign(af == AF_INET6 ? udp::v6() : udp::v4(), fd);
         } catch (const std::exception& exception) {
             // Whatever the thing throws, it is something from ASIO and we
@@ -116,7 +116,7 @@ struct UDPServer::Data {
     }
 
     // The ASIO service object
-    asio::io_service& io_;
+    IOService& io_;
 
     // Class member variables which are dynamic, and changes to which
     // need to accessible from both sides of a coroutine fork or from
@@ -181,7 +181,7 @@ struct UDPServer::Data {
 ///
 /// The constructor. It just creates new internal state object
 /// and lets it handle the initialization.
-UDPServer::UDPServer(io_service& io_service, int fd, int af,
+UDPServer::UDPServer(IOService& io_service, int fd, int af,
                      SimpleCallback* checkin, DNSLookup* lookup,
                      DNSAnswer* answer) :
     data_(new Data(io_service, fd, af, checkin, lookup, answer))
@@ -236,7 +236,7 @@ UDPServer::operator()(asio::error_code ec, size_t length) {
              * Actually, both of the coroutines will be a copy of this
              * one, but that's just internal implementation detail.
              */
-            CORO_FORK data_->io_.post(UDPServer(*this));
+            CORO_FORK data_->io_.get_io_service().post(UDPServer(*this));
         } while (is_parent());
 
         // Create an \c IOMessage object to store the query.
@@ -282,7 +282,7 @@ UDPServer::operator()(asio::error_code ec, size_t length) {
         // Schedule a DNS lookup, and yield.  When the lookup is
         // finished, the coroutine will resume immediately after
         // this point.
-        CORO_YIELD data_->io_.post(AsyncLookup<UDPServer>(*this));
+        CORO_YIELD data_->io_.get_io_service().post(AsyncLookup<UDPServer>(*this));
 
         // The 'done_' flag indicates whether we have an answer
         // to send back.  If not, exit the coroutine permanently.
@@ -339,7 +339,7 @@ UDPServer::stop() {
 void
 UDPServer::resume(const bool done) {
     data_->done_ = done;
-    data_->io_.post(*this);
+    data_->io_.get_io_service().post(*this);
 }
 
 } // namespace asiodns

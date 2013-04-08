@@ -25,6 +25,7 @@
 
 #include <dns/message.h>
 #include <asiolink/simple_callback.h>
+#include <asiolink/io_service.h>
 #include <util/buffer.h>
 #include <exceptions/exceptions.h>
 
@@ -43,7 +44,7 @@ namespace asiodns {
 class SyncUDPServer : public DNSServer, public boost::noncopyable {
 public:
     /// \brief Constructor
-    /// \param io_service the asio::io_service to work with
+    /// \param io_service the asiolink::IOService to work with
     /// \param fd the file descriptor of opened UDP socket
     /// \param af address family, either AF_INET or AF_INET6
     /// \param checkin the callbackprovider for non-DNS events
@@ -52,7 +53,7 @@ public:
     /// \throw isc::InvalidParameter if af is neither AF_INET nor AF_INET6
     /// \throw isc::asiolink::IOError when a low-level error happens, like the
     ///     fd is not a valid descriptor.
-    SyncUDPServer(asio::io_service& io_service, const int fd, const int af,
+    SyncUDPServer(isc::asiolink::IOService& io_service, const int fd, const int af,
                   isc::asiolink::SimpleCallback* checkin = NULL,
                   DNSLookup* lookup = NULL, DNSAnswer* answer = NULL);
 
@@ -102,6 +103,10 @@ public:
     virtual DNSServer* clone() {
         isc_throw(Unexpected, "SyncUDPServer can't be cloned.");
     }
+
+    // The asiolink service object
+    isc::asiolink::IOService& io_;
+
 private:
     // Internal state & buffers. We don't use the PIMPL idiom, as this class
     // isn't usually used directly anyway.

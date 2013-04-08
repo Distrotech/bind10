@@ -30,9 +30,13 @@ class IOServiceImpl;
 class IOService {
     ///
     /// \name Constructors and Destructor
+    /// If \c alwaysBlock is unspecified or specified as true,
+    /// run() always blocks.
     ///
     /// Note: The copy constructor and the assignment operator are
     /// intentionally defined as private, making this class non-copyable.
+    ///
+    /// \param alwaysBlock specifies run() always blocks or not.
     //@{
 private:
     IOService(const IOService& source);
@@ -40,6 +44,7 @@ private:
 public:
     /// \brief The constructor
     IOService();
+    IOService(bool alwaysBlock);
     /// \brief The destructor.
     ~IOService();
     //@}

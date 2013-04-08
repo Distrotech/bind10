@@ -30,10 +30,13 @@ private:
     IOServiceImpl& operator=(const IOService& source);
 public:
     /// \brief The constructor
-    IOServiceImpl() :
-        io_service_(),
-        work_(io_service_)
-    {};
+    IOServiceImpl(bool alwaysBlock) :
+      io_service_()
+    {
+        if (alwaysBlock) {
+            work_ = new asio::io_service::work(io_service_);
+        }
+    };
     /// \brief The destructor.
     ~IOServiceImpl() {};
     //@}
@@ -65,11 +68,15 @@ public:
     asio::io_service& get_io_service() { return io_service_; };
 private:
     asio::io_service io_service_;
-    asio::io_service::work work_;
+    asio::io_service::work* work_;
 };
 
+IOService::IOService(bool alwaysBlock) {
+    io_impl_ = new IOServiceImpl(alwaysBlock);
+}
+
 IOService::IOService() {
-    io_impl_ = new IOServiceImpl();
+    io_impl_ = new IOServiceImpl(true);
 }
 
 IOService::~IOService() {

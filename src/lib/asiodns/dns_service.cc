@@ -56,7 +56,7 @@ public:
     size_t tcp_recv_timeout_;
 
     template<class Ptr, class Server> void addServerFromFD(int fd, int af) {
-        Ptr server(new Server(io_service_.get_io_service(), fd, af, checkin_,
+        Ptr server(new Server(io_service_, fd, af, checkin_,
                               lookup_, answer_));
         server->setTCPRecvTimeout(tcp_recv_timeout_);
         (*server)();
