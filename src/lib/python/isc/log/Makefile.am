@@ -17,6 +17,7 @@ log_la_LDFLAGS += -module -avoid-version
 log_la_LIBADD = $(top_builddir)/src/lib/log/libb10-log.la
 log_la_LIBADD += $(top_builddir)/src/lib/cc/libb10-cc.la
 log_la_LIBADD += $(top_builddir)/src/lib/config/libb10-cfgclient.la
+log_la_LIBADD += $(top_builddir)/src/lib/asiolink/libb10-asiolink.la
 log_la_LIBADD += $(top_builddir)/src/lib/exceptions/libb10-exceptions.la
 log_la_LIBADD += $(PYTHON_LIB)
 

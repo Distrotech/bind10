@@ -28,6 +28,7 @@ datasrc_la_LDFLAGS = $(PYTHON_LDFLAGS)
 datasrc_la_LDFLAGS += -module -avoid-version
 datasrc_la_LIBADD = $(top_builddir)/src/lib/datasrc/libb10-datasrc.la
 datasrc_la_LIBADD += $(top_builddir)/src/lib/cc/libb10-cc.la
+datasrc_la_LIBADD += $(top_builddir)/src/lib/asiolink/libb10-asiolink.la
 datasrc_la_LIBADD += $(top_builddir)/src/lib/dns/python/libb10-pydnspp.la
 datasrc_la_LIBADD += $(PYTHON_LIB)
 

@@ -221,7 +221,7 @@ main(int argc, char* argv[]) {
         resolver->setDNSService(dns_service);
         LOG_DEBUG(resolver_logger, RESOLVER_DBG_INIT, RESOLVER_SERVICE_CREATED);
 
-        cc_session = new Session(io_service.get_io_service());
+        cc_session = new Session(io_service);
         isc::server_common::initSocketRequestor(*cc_session, RESOLVER_NAME);
 
         // We delay starting listening to new commands/config just before we

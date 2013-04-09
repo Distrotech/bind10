@@ -19,6 +19,8 @@
 // XXX: the ASIO header must be included before others.  See session.cc.
 #include <asio.hpp>
 
+#include <asiolink/io_service.h>
+
 #include <cc/session.h>
 #include <cc/data.h>
 #include <cc/tests/session_unittests_config.h>
@@ -43,7 +45,7 @@ using isc::data::Element;
 namespace {
 
 TEST(AsioSession, establish) {
-    asio::io_service io_service_;
+    isc::asiolink::IOService io_service_;
     Session sess(io_service_);
 
     // can't return socket descriptor before session is established
@@ -71,11 +73,11 @@ TEST(AsioSession, establish) {
 class TestDomainSocket {
 
 public:
-    TestDomainSocket(asio::io_service& io_service, const char* file) :
+    TestDomainSocket(isc::asiolink::IOService& io_service, const char* file) :
         io_service_(io_service),
         ep_(file),
-        acceptor_(io_service_, ep_),
-        socket_(io_service_)
+        acceptor_(io_service_.get_io_service(), ep_),
+        socket_(io_service_.get_io_service())
     {
         acceptor_.async_accept(socket_,
                                boost::bind(&TestDomainSocket::acceptHandler,
@@ -121,7 +123,7 @@ public:
     }
 
 private:
-    asio::io_service& io_service_;
+    isc::asiolink::IOService& io_service_;
     asio::local::stream_protocol::endpoint ep_;
     asio::local::stream_protocol::acceptor acceptor_;
     asio::local::stream_protocol::socket socket_;
@@ -135,7 +137,7 @@ typedef pair<ConstElementPtr, ConstElementPtr> SentMessage;
 // methods so we can examine the rest without relying on real network IO
 class TestSession : public Session {
 public:
-    TestSession(asio::io_service& ioservice) :
+    TestSession(isc::asiolink::IOService& ioservice) :
         Session(ioservice)
     {}
     // Get first message previously sent by sendmsg and remove it from the
@@ -162,7 +164,7 @@ private:
 
 class SessionTest : public ::testing::Test {
 protected:
-    SessionTest() : sess(my_io_service), work(my_io_service) {
+    SessionTest() : sess(my_io_service), work(my_io_service.get_io_service()) {
         // The TestDomainSocket is held as a 'new'-ed pointer,
         // so we can call unlink() first.
         unlink(BIND10_TEST_SOCKET_FILE);
@@ -213,7 +215,7 @@ public:
     }
 
 protected:
-    asio::io_service my_io_service;
+    isc::asiolink::IOService my_io_service;
     TestDomainSocket* tds;
     TestSession sess;
     // Keep run() from stopping right away by informing it it has work to do
@@ -272,7 +274,7 @@ TEST_F(SessionTest, run_with_handler) {
     tds->sendmsg(env, msg);
 
 
-    size_t count = my_io_service.run();
+    size_t count = my_io_service.get_io_service().run();
     ASSERT_EQ(2, count);
 }
 

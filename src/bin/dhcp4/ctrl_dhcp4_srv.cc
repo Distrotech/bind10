@@ -151,7 +151,7 @@ void ControlledDhcpv4Srv::establishSession() {
 
     LOG_DEBUG(dhcp4_logger, DBG_DHCP4_START, DHCP4_CCSESSION_STARTING)
               .arg(specfile);
-    cc_session_ = new Session(io_service_.get_io_service());
+    cc_session_ = new Session(io_service_);
     // Create a session with the dummy configuration handler.
     // Dumy configuration handler is internally invoked by the
     // constructor and on success the constructor updates

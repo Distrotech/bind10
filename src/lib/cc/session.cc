@@ -30,6 +30,8 @@
 #include <asio/deadline_timer.hpp>
 #include <asio/system_error.hpp>
 
+#include <asiolink/io_service.h>
+
 #include <cc/data.h>
 #include <cc/session.h>
 
@@ -53,7 +55,7 @@ using namespace isc::data;
 
 // some of the asio names conflict with socket API system calls
 // (e.g. write(2)) so we don't import the entire asio namespace.
-using asio::io_service;
+using isc::asiolink::IOService;
 
 namespace {
 /// \brief Sets the given Optional 'result' to the given error code
@@ -73,9 +75,9 @@ namespace cc {
 
 class SessionImpl {
 public:
-    SessionImpl(io_service& io_service) :
+    SessionImpl(isc::asiolink::IOService& io_service) :
         sequence_(-1), queue_(Element::createList()),
-        io_service_(io_service), socket_(io_service_), data_length_(0),
+        io_service_(io_service), socket_(io_service_.get_io_service()), data_length_(0),
         timeout_(MSGQ_DEFAULT_TIMEOUT)
     {}
     void establish(const char& socket_file);
@@ -99,7 +101,7 @@ private:
                       size_t bytes_transferred);
 
 private:
-    io_service& io_service_;
+    IOService& io_service_;
     asio::local::stream_protocol::socket socket_;
     uint32_t data_length_;
     boost::function<void()> user_handler_;
@@ -265,7 +267,7 @@ SessionImpl::getSocketDesc() {
     return socket_.native();
 }
 
-Session::Session(asio::io_service& io_service) :
+Session::Session(IOService& io_service) :
     impl_(new SessionImpl(io_service))
 {}
 

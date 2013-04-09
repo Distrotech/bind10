@@ -15,6 +15,8 @@
 #ifndef ISC_SESSION_H
 #define ISC_SESSION_H 1
 
+#include <asiolink/io_service.h>
+
 #include <cc/data.h>
 #include <cc/session_config.h>
 #include <cc/proto_defs.h>
@@ -24,10 +26,6 @@
 #include <string>
 
 #include <boost/function.hpp>
-
-namespace asio {
-class io_service;
-}
 
 namespace isc {
     namespace cc {
@@ -120,7 +118,7 @@ namespace isc {
             Session& operator=(const Session& source);
 
         public:
-            Session(asio::io_service& ioservice);
+            Session(isc::asiolink::IOService& ioservice);
             virtual ~Session();
 
             virtual void startRead(boost::function<void()> read_callback);

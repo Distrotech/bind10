@@ -182,7 +182,7 @@ main(int argc, char* argv[]) {
         auth_server->setDNSService(dns_service);
         LOG_DEBUG(auth_logger, DBG_AUTH_START, AUTH_DNS_SERVICES_CREATED);
 
-        cc_session.reset(new Session(io_service.get_io_service()));
+        cc_session.reset(new Session(io_service));
         LOG_DEBUG(auth_logger, DBG_AUTH_START, AUTH_CONFIG_CHANNEL_CREATED);
         // Initialize the Socket Requestor
         isc::server_common::initSocketRequestor(*cc_session, AUTH_NAME);
@@ -199,7 +199,7 @@ main(int argc, char* argv[]) {
                                                  my_command_handler, false));
         LOG_DEBUG(auth_logger, DBG_AUTH_START, AUTH_CONFIG_CHANNEL_ESTABLISHED);
 
-        xfrin_session.reset(new Session(io_service.get_io_service()));
+        xfrin_session.reset(new Session(io_service));
         LOG_DEBUG(auth_logger, DBG_AUTH_START, AUTH_XFRIN_CHANNEL_CREATED);
         xfrin_session->establish(NULL);
         xfrin_session_established = true;
