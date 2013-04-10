@@ -28,6 +28,7 @@
 #include <asiolink/dummy_io_cb.h>
 #include <asiolink/udp_endpoint.h>
 #include <asiolink/udp_socket.h>
+#include <asiolink/io_service_counter.h>
 #include "udp_server.h"
 #include "logger.h"
 
@@ -86,6 +87,7 @@ struct UDPServer::Data {
                       "or AF_INET6, not " << af);
         }
         LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, ASIODNS_FD_ADD_UDP).arg(fd);
+        io_.ioservice_counter_.inc(IOSERVICE_FD_ADD_UDP);
         try {
             socket_.reset(new udp::socket(io_service.get_io_service()));
             socket_->assign(af == AF_INET6 ? udp::v6() : udp::v4(), fd);

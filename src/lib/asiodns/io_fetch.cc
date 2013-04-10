@@ -30,6 +30,7 @@
 #include <asiolink/io_asio_socket.h>
 #include <asiolink/io_endpoint.h>
 #include <asiolink/io_service.h>
+#include <asiolink/io_service_counter.h>
 #include <asiolink/tcp_endpoint.h>
 #include <asiolink/tcp_socket.h>
 #include <asiolink/udp_endpoint.h>
@@ -76,6 +77,7 @@ struct IOFetchData {
     // actually instantiated depends on whether the fetch is over UDP or TCP,
     // which is not known until construction of the IOFetch.  Use of a shared
     // pointer here is merely to ensure deletion when the data object is deleted.
+    asiolink::IOService&        ioservice_;
     boost::scoped_ptr<IOAsioSocket<IOFetch> > socket;
                                              ///< Socket to use for I/O
     boost::scoped_ptr<IOEndpoint> remote_snd;///< Where the fetch is sent
@@ -123,6 +125,7 @@ struct IOFetchData {
         const IOAddress& address, uint16_t port, OutputBufferPtr& buff,
         IOFetch::Callback* cb, int wait)
         :
+        ioservice_(service),
         socket((proto == IOFetch::UDP) ?
             static_cast<IOAsioSocket<IOFetch>*>(
                 new UDPSocket<IOFetch>(service)) :
@@ -280,6 +283,7 @@ IOFetch::operator()(asio::error_code ec, size_t length) {
         data_->origin = ASIODNS_OPEN_SOCKET;
         if (data_->socket->isOpenSynchronous()) {
             data_->socket->open(data_->remote_snd.get(), *this);
+            data_->ioservice_.ioservice_counter_.inc(IOSERVICE_TCP_OPEN);
         } else {
             CORO_YIELD data_->socket->open(data_->remote_snd.get(), *this);
         }
@@ -360,12 +364,14 @@ IOFetch::stop(Result result) {
         data_->stopped = true;
         switch (result) {
             case TIME_OUT:
+                data_->ioservice_.ioservice_counter_.inc(IOSERVICE_READ_TIMEOUT);
                 LOG_DEBUG(logger, DBG_COMMON, ASIODNS_READ_TIMEOUT).
                     arg(data_->remote_snd->getAddress().toText()).
                     arg(data_->remote_snd->getPort());
                 break;
 
             case SUCCESS:
+                data_->ioservice_.ioservice_counter_.inc(IOSERVICE_FETCH_COMPLETED);
                 LOG_DEBUG(logger, DBG_ALL, ASIODNS_FETCH_COMPLETED).
                     arg(data_->remote_rcv->getAddress().toText()).
                     arg(data_->remote_rcv->getPort());
@@ -375,12 +381,14 @@ IOFetch::stop(Result result) {
                 // Fetch has been stopped for some other reason.  This is
                 // allowed but as it is unusual it is logged, but with a lower
                 // debug level than a timeout (which is totally normal).
+                data_->ioservice_.ioservice_counter_.inc(IOSERVICE_FETCH_STOPPED);
                 LOG_DEBUG(logger, DBG_IMPORTANT, ASIODNS_FETCH_STOPPED).
                     arg(data_->remote_snd->getAddress().toText()).
                     arg(data_->remote_snd->getPort());
                 break;
 
             default:
+                data_->ioservice_.ioservice_counter_.inc(IOSERVICE_UNKNOWN_RESULT);
                 LOG_ERROR(logger, ASIODNS_UNKNOWN_RESULT).
                     arg(data_->remote_snd->getAddress().toText()).
                     arg(data_->remote_snd->getPort());
@@ -410,6 +418,15 @@ void IOFetch::logIOFailure(asio::error_code ec) {
            (data_->origin == ASIODNS_READ_DATA) ||
            (data_->origin == ASIODNS_UNKNOWN_ORIGIN));
 
+    if (data_->origin == ASIODNS_OPEN_SOCKET) {
+        data_->ioservice_.ioservice_counter_.inc(IOSERVICE_SOCKET_OPEN_ERROR);
+    } else if (data_->origin == ASIODNS_SEND_DATA) {
+        data_->ioservice_.ioservice_counter_.inc(IOSERVICE_SEND_DATA_ERROR);
+    } else if (data_->origin == ASIODNS_READ_DATA) {
+        data_->ioservice_.ioservice_counter_.inc(IOSERVICE_READ_DATA_ERROR);
+    } else if (data_->origin == ASIODNS_UNKNOWN_ORIGIN) {
+        data_->ioservice_.ioservice_counter_.inc(IOSERVICE_UNKNOWN_ORIGIN);
+    } 
     static const char* PROTOCOL[2] = {"TCP", "UDP"};
     LOG_ERROR(logger, data_->origin).arg(ec.value()).
         arg((data_->remote_snd->getProtocol() == IPPROTO_TCP) ?

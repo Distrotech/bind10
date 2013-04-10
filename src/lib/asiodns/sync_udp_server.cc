@@ -23,6 +23,7 @@
 #include <asiolink/dummy_io_cb.h>
 #include <asiolink/udp_endpoint.h>
 #include <asiolink/udp_socket.h>
+#include <asiolink/io_service_counter.h>
 
 #include <boost/bind.hpp>
 
@@ -52,6 +53,7 @@ SyncUDPServer::SyncUDPServer(IOService& io_service, const int fd,
         isc_throw(InvalidParameter, "Address family must be either AF_INET "
                   "or AF_INET6, not " << af);
     }
+    io_service.ioservice_counter_.inc(IOSERVICE_FD_ADD_UDP);
     LOG_DEBUG(logger, DBGLVL_TRACE_BASIC, ASIODNS_FD_ADD_UDP).arg(fd);
     try {
         socket_.reset(new asio::ip::udp::socket(io_service.get_io_service()));

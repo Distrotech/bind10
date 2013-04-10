@@ -23,7 +23,6 @@
 #include <boost/shared_ptr.hpp>
 
 #include <asiolink/asiolink.h>
-#include <asiolink/asiolink.h>
 #include <coroutine.h>
 #include "dns_server.h"
 #include "dns_lookup.h"

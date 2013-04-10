@@ -20,6 +20,7 @@
 // See the description of the namespace below.
 
 #include <asiolink/io_service.h>
+#include <asiolink/io_service_counter.h>
 #include <asiolink/simple_callback.h>
 #include <asiolink/interval_timer.h>
 

@@ -20,6 +20,8 @@
 
 #include <asio.hpp>
 #include <asiolink/io_service.h>
+#include <asiolink/io_service_counter.h>
+#include <statistics/counter.h>
 
 namespace isc {
 namespace asiolink {
@@ -71,11 +73,15 @@ private:
     asio::io_service::work* work_;
 };
 
-IOService::IOService(bool alwaysBlock) {
+IOService::IOService(bool alwaysBlock):
+ioservice_counter_(IOSERVICE_COUNTER_TYPES)
+{
     io_impl_ = new IOServiceImpl(alwaysBlock);
 }
 
-IOService::IOService() {
+IOService::IOService():
+ioservice_counter_(IOSERVICE_COUNTER_TYPES)
+{
     io_impl_ = new IOServiceImpl(true);
 }
 

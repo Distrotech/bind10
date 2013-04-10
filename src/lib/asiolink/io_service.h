@@ -15,6 +15,8 @@
 #ifndef ASIOLINK_IO_SERVICE_H
 #define ASIOLINK_IO_SERVICE_H 1
 
+#include <statistics/counter.h>
+
 namespace asio {
     class io_service;
 }
@@ -74,6 +76,8 @@ public:
     /// It will eventually be removed once the wrapper interface is
     /// generalized.
     asio::io_service& get_io_service();
+
+    isc::statistics::Counter ioservice_counter_;
 
 private:
     IOServiceImpl* io_impl_;
