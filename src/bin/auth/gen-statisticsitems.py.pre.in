@@ -309,9 +309,12 @@ def generate_cxx(itemsfile, ccfile, utfile, def_mtime):
         for item in items:
             item_spec = '    { "' + item['name'] + '", '
             if item['child'] is None:
-                item_spec += 'NULL, ' + item['index']
-                msg_counter_types.append('    ' + item['index'] + ',    ' +
-                                         '///< ' + item['description'])
+                if (item['index'])[0:1] == '*':
+                    item_spec += 'NULL, !!' + (item['index'])[1:]
+                else:
+                    item_spec += 'NULL, !!!' + item['index']
+                    msg_counter_types.append('    ' + item['index'] + ',    ' +
+                                             '///< ' + item['description'])
             else:
                 item_spec += item['index'] + ', NOT_ITEM'
                 child_head = 'const struct CounterSpec ' + \

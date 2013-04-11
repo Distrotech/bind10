@@ -317,7 +317,7 @@ AuthSrvImpl::AuthSrvImpl(AbstractXfroutClient& xfrout_client,
                          BaseSocketSessionForwarder& ddns_forwarder) :
     config_session_(NULL),
     xfrin_session_(NULL),
-    counters_(),
+    counters_(io_service_),
     keyring_(NULL),
     ddns_base_forwarder_(ddns_forwarder),
     ddns_forwarder_(NULL),

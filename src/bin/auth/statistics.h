@@ -1,4 +1,4 @@
-// Copyright (C) 2010  Internet Systems Consortium, Inc. ("ISC")
+
 //
 // Permission to use, copy, modify, and/or distribute this software for any
 // purpose with or without fee is hereby granted, provided that the above
@@ -21,6 +21,8 @@
 #include <dns/opcode.h>
 
 #include <statistics/counter.h>
+
+#include <asiolink/io_service.h>
 
 #include <boost/noncopyable.hpp>
 #include <boost/optional.hpp>
@@ -257,6 +259,7 @@ class Counters : boost::noncopyable {
 private:
     // counter for DNS message attributes
     isc::statistics::Counter server_msg_counter_;
+    isc::asiolink::IOService& io_service_;
     void incRequest(const MessageAttributes& msgattrs);
     void incResponse(const MessageAttributes& msgattrs,
                      const isc::dns::Message& response);
@@ -279,7 +282,7 @@ public:
     ///
     /// This constructor is mostly exception free. But it may still throw
     /// a standard exception if memory allocation fails inside the method.
-    Counters();
+    Counters(asiolink::IOService& io_service);
 
     /// \brief Increment counters according to the parameters.
     ///

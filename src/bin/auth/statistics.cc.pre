@@ -18,6 +18,9 @@
 
 #include <cc/data.h>
 
+#include <asiolink/io_service.h>
+#include <asiolink/io_service_counter.h>
+
 #include <dns/message.h>
 #include <dns/opcode.h>
 #include <dns/rcode.h>
@@ -30,6 +33,7 @@ using namespace isc::dns;
 using namespace isc::auth;
 using namespace isc::statistics;
 using namespace isc::auth::statistics;
+using namespace isc::asiolink;
 
 namespace {
 
@@ -113,8 +117,9 @@ const int rcode_to_msgcounter[] = {
 const size_t num_rcode_to_msgcounter =
     sizeof(rcode_to_msgcounter) / sizeof(rcode_to_msgcounter[0]);
 
-Counters::Counters() :
-    server_msg_counter_(MSG_COUNTER_TYPES)
+Counters::Counters(asiolink::IOService& io_service) :
+    server_msg_counter_(MSG_COUNTER_TYPES),
+    io_service_(io_service)
 {}
 
 void
@@ -266,8 +271,15 @@ Counters::get() const {
     item_tree->set("zones", zones);
 
     isc::data::ElementPtr server = Element::createMap();
-    fillNodes(server_msg_counter_, msg_counter_tree, server);
     zones->set("_SERVER_", server);
+
+    isc::data::ElementPtr dns = Element::createMap();
+    fillNodes(server_msg_counter_, statistics_dns, dns);
+    server->set("dns", dns);
+
+    isc::data::ElementPtr ioservice = Element::createMap();
+    fillNodes(io_service_.ioservice_counter_, statistics_ioservice, ioservice);
+    server->set("ioservice", dns);
 
     return (item_tree);
 }

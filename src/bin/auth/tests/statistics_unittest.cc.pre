@@ -24,6 +24,9 @@
 
 #include <cc/data.h>
 
+#include <asiolink/io_service.h>
+#include <asiolink/io_service_counter.h>
+
 #include <auth/statistics.h>
 #include <auth/statistics_items.h>
 
@@ -42,14 +45,17 @@ using namespace isc::dns;
 using namespace isc::data;
 using namespace isc::auth::statistics;
 using namespace isc::auth::unittest;
+using namespace isc::asiolink;
 
 namespace {
 
 // ### STATISTICS ITEMS DEFINITION ###
 
+class IOService io_service_;
+
 class CountersTest : public ::testing::Test {
 protected:
-    CountersTest() : counters() {}
+    CountersTest() : counters(io_service_) {}
     ~CountersTest() {}
     Counters counters;
 };

@@ -1,3 +1,4 @@
+dns	statistics_dns	DNS statistics	=
 request	msg_counter_request		Request statistics	=
 	v4		MSG_REQUEST_IPV4	Number of IPv4 requests received by the b10-auth server.
 	v6		MSG_REQUEST_IPV6	Number of IPv6 requests received by the b10-auth server.
@@ -46,3 +47,21 @@ rcode		msg_counter_rcode	Rcode statistics	=
 	badvers		MSG_RCODE_BADVERS	Number of requests received by the b10-auth server resulted in RCODE = 16 (BADVERS).
 	other		MSG_RCODE_OTHER		Number of requests received by the b10-auth server resulted in other RCODEs.
 	;
+;
+ioservice	statistics_ioservice	IOService statistics	=
+fd_add_tcp	*IOSERVICE_FD_ADD_TCP	Number of adding a new TCP server
+fd_add_udp	*IOSERVICE_FD_ADD_UDP	Number of adding a new UDP server
+fetch_completed	*IOSERVICE_FETCH_COMPLETED	Number of upstream fetch has now completed
+fetch_stopped	*IOSERVICE_FETCH_STOPPED	Number of upstream fetch has been stopped
+socket_open_error	*IOSERVICE_SOCKET_OPEN_ERROR	Number of errors opening socket
+read_data_error	*IOSERVICE_READ_DATA_ERROR	Number of errors reading data
+read_timeout	*IOSERVICE_READ_TIMEOUT	Number of receive timeouts
+send_data_error	*IOSERVICE_SEND_DATA_ERROR	Number of erroes sending data
+unknown_origin	*IOSERVICE_UNKNOWN_ORIGIN	Number of unknown origin errors for ASIO
+unknown_result	*IOSERVICE_UNKNOWN_RESULT	Number of unknown results
+ipv4_tcp_accept	*IOSERVICE_IPV4_TCP_ACCEPT	Number of IPv4 TCP accepts
+ipv6_tcp_accept	*IOSERVICE_IPV6_TCP_ACCEPT	Number of IPv6 TCP accepts
+ipv4_tcp_acceptfail	*IOSERVICE_IPV4_TCP_ACCEPTFAIL	Number of IPv4 TCP acceptfails
+ipv6_tcp_acceptfail	*IOSERVICE_IPV6_TCP_ACCEPTFAIL	Number of IPv6 TCP acceptfails
+tcp_open	*IOSERVICE_TCP_OPEN	Number of TCP opens
+;
