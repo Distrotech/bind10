@@ -76,11 +76,19 @@ protected:
         pickAddress(const SubnetPtr& subnet, const DuidPtr& duid,
                     const isc::asiolink::IOAddress& hint) = 0;
 
+        Allocator(Pool6::Pool6Type lease_type)
+            :lease_type_(lease_type) {
+        }
+
         /// @brief virtual destructor
         virtual ~Allocator() {
         }
     protected:
+
+        Pool6::Pool6Type lease_type_;
     };
+
+    typedef boost::shared_ptr<Allocator> AllocatorPtr;
 
     /// @brief Address/prefix allocator that iterates over all addresses
     ///
@@ -88,13 +96,16 @@ protected:
     /// a pool iteratively, one after another. Once the last address is reached,
     /// it starts allocating from the beginning of the first pool (i.e. it loops
     /// over).
+    ///
+    /// This allocator supports IPv4 address, IPv6 addresses and IPv6 Prefix Delegation
     class IterativeAllocator : public Allocator {
     public:
 
         /// @brief default constructor
         ///
         /// Does not do anything
-        IterativeAllocator();
+        /// @param type - specifies allocation type
+        IterativeAllocator(Pool6::Pool6Type type);
 
         /// @brief returns the next address from pools in a subnet
         ///
@@ -106,12 +117,30 @@ protected:
             pickAddress(const SubnetPtr& subnet,
                         const DuidPtr& duid,
                         const isc::asiolink::IOAddress& hint);
+
+        /// @brief returns the next address from pools in a subnet
+        ///
+        /// @param subnet next address will be returned from pool of that subnet
+        /// @param duid Client's DUID (ignored)
+        /// @param hint client's hint (ignored)
+        /// @return the next address
+        virtual isc::asiolink::IOAddress
+            pickPrefix(const Subnet6Ptr& subnet,
+                       const DuidPtr& duid,
+                       const isc::asiolink::IOAddress& hint);
+
     private:
 
-        /// @brief returns an address by one
+        /// @brief returns an address increased by one
         /// @param addr address to be increased
         /// @return address increased by one
         isc::asiolink::IOAddress increaseAddress(const isc::asiolink::IOAddress& addr);
+
+        /// @brief returns the next prefix
+        /// @param addr address to be increased
+        /// @return address increased by one
+        isc::asiolink::IOAddress increasePrefix(const isc::asiolink::IOAddress& addr,
+                                                uint8_t prefix_len);
 
     };
 
@@ -122,7 +151,7 @@ protected:
     public:
 
         /// @brief default constructor (does nothing)
-        HashedAllocator();
+        HashedAllocator(Pool6::Pool6Type lease_type);
 
         /// @brief returns an address based on hash calculated from client's DUID.
         ///
@@ -144,7 +173,7 @@ protected:
     public:
 
         /// @brief default constructor (does nothing)
-        RandomAllocator();
+        RandomAllocator(Pool6::Pool6Type lease_type);
 
         /// @brief returns an random address from pool of specified subnet
         ///
@@ -237,11 +266,14 @@ protected:
     ///        an address for SOLICIT that is not really allocated (true)
     /// @return Allocated IPv6 lease (or NULL if allocation failed)
     Lease6Ptr
-    allocateAddress6(const Subnet6Ptr& subnet,
+    allocateAddress6(Pool6::Pool6Type lease_type,
+                     const Subnet6Ptr& subnet,
                      const DuidPtr& duid,
                      uint32_t iaid,
                      const isc::asiolink::IOAddress& hint,
                      bool fake_allocation);
+
+    static Lease6::LeaseType poolTypeToLeaseType(Pool6::Pool6Type type);
 
     /// @brief Destructor. Used during DHCPv6 service shutdown.
     virtual ~AllocEngine();
@@ -280,7 +312,8 @@ private:
     ///        an address for SOLICIT that is not really allocated (true)
     /// @return allocated lease (or NULL in the unlikely case of the lease just
     ///        becomed unavailable)
-    Lease6Ptr createLease6(const Subnet6Ptr& subnet, const DuidPtr& duid,
+    Lease6Ptr createLease6(Pool6::Pool6Type lease_type,
+                           const Subnet6Ptr& subnet, const DuidPtr& duid,
                            uint32_t iaid, const isc::asiolink::IOAddress& addr,
                            bool fake_allocation = false);
 
@@ -317,12 +350,15 @@ private:
     ///        an address for SOLICIT that is not really allocated (true)
     /// @return refreshed lease
     /// @throw BadValue if trying to recycle lease that is still valid
-    Lease6Ptr reuseExpiredLease(Lease6Ptr& expired, const Subnet6Ptr& subnet,
+    Lease6Ptr reuseExpiredLease(Pool6::Pool6Type lease_type,
+                                Lease6Ptr& expired, const Subnet6Ptr& subnet,
                                 const DuidPtr& duid, uint32_t iaid,
                                 bool fake_allocation = false);
 
     /// @brief a pointer to currently used allocator
-    boost::shared_ptr<Allocator> allocator_;
+    AllocatorPtr allocator_ia_; // both v4 and IA_NA in v6
+    AllocatorPtr allocator_ta_;
+    AllocatorPtr allocator_pd_;
 
     /// @brief number of attempts before we give up lease allocation (0=unlimited)
     unsigned int attempts_;

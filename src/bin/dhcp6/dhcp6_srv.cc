@@ -22,7 +22,7 @@
 #include <dhcp/option6_addrlst.h>
 #include <dhcp/option6_ia.h>
 #include <dhcp/option6_iaaddr.h>
-#include <dhcp/option6_iaaddr.h>
+#include <dhcp/option6_iaprefix.h>
 #include <dhcp/option_custom.h>
 #include <dhcp/option_int_array.h>
 #include <dhcp/pkt6.h>
@@ -599,6 +599,13 @@ Dhcpv6Srv::assignLeases(const Pkt6Ptr& question, Pkt6Ptr& answer) {
             }
             break;
         }
+        case D6O_IA_PD: {
+            OptionPtr answer_opt = assignIA_PD(subnet, duid, question,
+                                   boost::dynamic_pointer_cast<Option6IA>(opt->second));
+            if (answer_opt) {
+                answer->addOption(answer_opt);
+            }
+        }
         default:
             break;
         }
@@ -621,7 +628,8 @@ Dhcpv6Srv::assignIA_NA(const Subnet6Ptr& subnet, const DuidPtr& duid,
         boost::shared_ptr<Option6IA> ia_rsp(new Option6IA(D6O_IA_NA, ia->getIAID()));
 
         // Insert status code NoAddrsAvail.
-        ia_rsp->addOption(createStatusCode(STATUS_NoAddrsAvail, "Sorry, no subnet available."));
+        ia_rsp->addOption(createStatusCode(STATUS_NoAddrsAvail,
+                                           "Sorry, no subnet available."));
         return (ia_rsp);
     }
 
@@ -655,7 +663,8 @@ Dhcpv6Srv::assignIA_NA(const Subnet6Ptr& subnet, const DuidPtr& duid,
     // will try to honour the hint, but it is just a hint - some other address
     // may be used instead. If fake_allocation is set to false, the lease will
     // be inserted into the LeaseMgr as well.
-    Lease6Ptr lease = alloc_engine_->allocateAddress6(subnet, duid, ia->getIAID(),
+    Lease6Ptr lease = alloc_engine_->allocateAddress6(Pool6::TYPE_IA,
+                                                      subnet, duid, ia->getIAID(),
                                                       hint, fake_allocation);
 
     // Create IA_NA that we will put in the response.
@@ -812,6 +821,14 @@ Dhcpv6Srv::renewLeases(const Pkt6Ptr& renew, Pkt6Ptr& reply) {
             }
             break;
         }
+        case D6O_IA_PD: {
+            OptionPtr answer_opt = renewIA_PD(subnet, duid, renew,
+                                   boost::dynamic_pointer_cast<Option6IA>(opt->second));
+            if (answer_opt) {
+                reply->addOption(answer_opt);
+            }
+            break;
+        }
         default:
             break;
         }
@@ -860,7 +877,14 @@ Dhcpv6Srv::releaseLeases(const Pkt6Ptr& release, Pkt6Ptr& reply) {
             }
             break;
         }
-        // @todo: add support for IA_PD
+        case D6O_IA_PD: {
+            OptionPtr answer_opt = releaseIA_PD(duid, release, general_status,
+                                   boost::dynamic_pointer_cast<Option6IA>(opt->second));
+            if (answer_opt) {
+                reply->addOption(answer_opt);
+            }
+            break;
+        }
         // @todo: add support for IA_TA
         default:
             // remaining options are stateless and thus ignored in this context
@@ -985,6 +1009,289 @@ Dhcpv6Srv::releaseIA_NA(const DuidPtr& duid, Pkt6Ptr /* question */,
         return (ia_rsp);
     }
 }
+
+
+OptionPtr
+Dhcpv6Srv::assignIA_PD(const Subnet6Ptr& subnet, const DuidPtr& duid,
+                       Pkt6Ptr question, boost::shared_ptr<Option6IA> ia) {
+    // If there is no subnet selected for handling this IA_NA, the only thing to do left is
+    // to say that we are sorry, but the user won't get an address. As a convenience, we
+    // use a different status text to indicate that (compare to the same status code,
+    // but different wording below)
+    if (!subnet) {
+        // Create empty IA_NA option with IAID matching the request.
+        // Note that we don't use OptionDefinition class to create this option.
+        // This is because we prefer using a constructor of Option6IA that
+        // initializes IAID. Otherwise we would have to use setIAID() after
+        // creation of the option which has some performance implications.
+        boost::shared_ptr<Option6IA> ia_rsp(new Option6IA(D6O_IA_PD, ia->getIAID()));
+
+        // Insert status code NoAddrsAvail.
+        ia_rsp->addOption(createStatusCode(STATUS_NoPrefixAvail,
+                                           "Sorry, no subnet available."));
+        return (ia_rsp);
+    }
+
+    // Check if the client sent us a hint in his IA_NA. Clients may send an
+    // address in their IA_NA options as a suggestion (e.g. the last address
+    // they used before).
+    boost::shared_ptr<Option6IAPrefix> hintOpt = boost::dynamic_pointer_cast<Option6IAPrefix>
+        (ia->getOption(D6O_IAPREFIX));
+    IOAddress hint("::");
+    if (hintOpt) {
+        hint = hintOpt->getAddress();
+    }
+
+    LOG_DEBUG(dhcp6_logger, DBG_DHCP6_DETAIL, DHCP6_PROCESS_IA_PD_REQUEST)
+        .arg(duid?duid->toText():"(no-duid)").arg(ia->getIAID())
+        .arg(hintOpt?hint.toText():"(no hint)");
+
+    // "Fake" allocation is processing of SOLICIT message. We pretend to do an
+    // allocation, but we do not put the lease in the database. That is ok,
+    // because we do not guarantee that the user will get that exact lease. If
+    // the user selects this server to do actual allocation (i.e. sends REQUEST)
+    // it should include this hint. That will help us during the actual lease
+    // allocation.
+    bool fake_allocation = false;
+    if (question->getType() == DHCPV6_SOLICIT) {
+        /// @todo: Check if we support rapid commit
+        fake_allocation = true;
+    }
+
+    // Use allocation engine to pick a lease for this client. Allocation engine
+    // will try to honour the hint, but it is just a hint - some other address
+    // may be used instead. If fake_allocation is set to false, the lease will
+    // be inserted into the LeaseMgr as well.
+    Lease6Ptr lease = alloc_engine_->allocateAddress6(Pool6::TYPE_PD,
+                                                      subnet, duid, ia->getIAID(),
+                                                      hint, fake_allocation);
+
+    // Create IA_NA that we will put in the response.
+    // Do not use OptionDefinition to create option's instance so
+    // as we can initialize IAID using a constructor.
+    boost::shared_ptr<Option6IA> ia_rsp(new Option6IA(D6O_IA_PD, ia->getIAID()));
+
+    if (lease) {
+        // We have a lease! Let's wrap its content into IA_NA option
+        // with IAADDR suboption.
+        LOG_DEBUG(dhcp6_logger, DBG_DHCP6_DETAIL, fake_allocation?
+                  DHCP6_LEASE_ADVERT:DHCP6_LEASE_ALLOC)
+            .arg(lease->addr_.toText())
+            .arg(duid?duid->toText():"(no-duid)")
+            .arg(ia->getIAID());
+
+        ia_rsp->setT1(subnet->getT1());
+        ia_rsp->setT2(subnet->getT2());
+
+        boost::shared_ptr<Option6IAAddr>
+            addr(new Option6IAPrefix(D6O_IAPREFIX,
+                                   lease->addr_,
+                                   lease->prefixlen_,
+                                   lease->preferred_lft_,
+                                   lease->valid_lft_));
+        ia_rsp->addOption(addr);
+
+        // It would be possible to insert status code=0(success) as well,
+        // but this is considered waste of bandwidth as absence of status
+        // code is considered a success.
+    } else {
+        // Allocation engine did not allocate a lease. The engine logged
+        // cause of that failure. The only thing left is to insert
+        // status code to pass the sad news to the client.
+
+        LOG_DEBUG(dhcp6_logger, DBG_DHCP6_DETAIL, fake_allocation ?
+                  DHCP6_LEASE_ADVERT_FAIL : DHCP6_LEASE_ALLOC_FAIL)
+            .arg(duid?duid->toText():"(no-duid)")
+            .arg(ia->getIAID());
+
+        ia_rsp->addOption(createStatusCode(STATUS_NoPrefixAvail,
+                          "Sorry, no prefix could be allocated."));
+    }
+    return (ia_rsp);
+}
+
+OptionPtr
+Dhcpv6Srv::renewIA_PD(const Subnet6Ptr& subnet, const DuidPtr& duid,
+                      Pkt6Ptr /* question */, boost::shared_ptr<Option6IA> ia) {
+    if (!subnet) {
+        // There's no subnet select for this client. There's nothing to renew.
+        boost::shared_ptr<Option6IA> ia_rsp(new Option6IA(D6O_IA_PD, ia->getIAID()));
+
+        // Insert status code NoAddrsAvail.
+        ia_rsp->addOption(createStatusCode(STATUS_NoBinding,
+                          "Sorry, no known leases for this duid/iaid."));
+
+        LOG_DEBUG(dhcp6_logger, DBG_DHCP6_DETAIL, DHCP6_RENEW_UNKNOWN_SUBNET)
+            .arg(duid->toText())
+            .arg(ia->getIAID());
+
+        return (ia_rsp);
+    }
+
+    Lease6Ptr lease = LeaseMgrFactory::instance().getLease6(*duid, ia->getIAID(),
+                                                            subnet->getID());
+
+    if (!lease) {
+        // client renewing a lease that we don't know about.
+
+        // Create empty IA_PD option with IAID matching the request.
+        boost::shared_ptr<Option6IA> ia_rsp(new Option6IA(D6O_IA_PD, ia->getIAID()));
+
+        // Insert status code NoAddrsAvail.
+        ia_rsp->addOption(createStatusCode(STATUS_NoBinding,
+                          "Sorry, no known leases for this duid/iaid."));
+
+        LOG_DEBUG(dhcp6_logger, DBG_DHCP6_DETAIL, DHCP6_UNKNOWN_RENEW)
+            .arg(duid->toText())
+            .arg(ia->getIAID())
+            .arg(subnet->toText());
+
+        return (ia_rsp);
+    }
+
+    if (lease->type_ != Lease6::LEASE_IA_PD) {
+        LOG_ERROR(dhcp6_logger, DHCP6_LEASE_WRONG_TYPE)
+            .arg(lease->addr_.toText())
+            .arg(lease->type_)
+            .arg(Lease6::LEASE_IA_PD);
+        return ( OptionPtr() );
+    }
+
+    lease->preferred_lft_ = subnet->getPreferred();
+    lease->valid_lft_ = subnet->getValid();
+    lease->prefixlen_ = subnet->getDelegatedPrefixLength();
+    lease->t1_ = subnet->getT1();
+    lease->t2_ = subnet->getT2();
+    lease->cltt_ = time(NULL);
+
+    LeaseMgrFactory::instance().updateLease6(lease);
+
+    // Create empty IA_NA option with IAID matching the request.
+    boost::shared_ptr<Option6IA> ia_rsp(new Option6IA(D6O_IA_PD, ia->getIAID()));
+
+    ia_rsp->setT1(subnet->getT1());
+    ia_rsp->setT2(subnet->getT2());
+
+    boost::shared_ptr<Option6IAPrefix> addr(new Option6IAPrefix(D6O_IAPREFIX,
+                                            lease->addr_, lease->prefixlen_, 
+                                            lease->preferred_lft_,
+                                            lease->valid_lft_));
+    ia_rsp->addOption(addr);
+    return (ia_rsp);
+}
+
+
+OptionPtr
+Dhcpv6Srv::releaseIA_PD(const DuidPtr& duid, Pkt6Ptr /* question */,
+                        int& general_status, boost::shared_ptr<Option6IA> ia) {
+    // Release can be done in one of two ways:
+    // Approach 1: extract address from client's IA_NA and see if it belongs
+    // to this particular client.
+    // Approach 2: find a subnet for this client, get a lease for
+    // this subnet/duid/iaid and check if its content matches to what the
+    // client is asking us to release.
+    //
+    // This method implements approach 1.
+
+    // That's our response
+    boost::shared_ptr<Option6IA> ia_rsp(new Option6IA(D6O_IA_PD, ia->getIAID()));
+
+    boost::shared_ptr<Option6IAPrefix> release_addr = boost::dynamic_pointer_cast<Option6IAPrefix>
+        (ia->getOption(D6O_IAPREFIX));
+    if (!release_addr) {
+        ia_rsp->addOption(createStatusCode(STATUS_NoBinding,
+                                           "You did not include prefix in your RELEASE"));
+        general_status = STATUS_NoBinding;
+        return (ia_rsp);
+    }
+
+    Lease6Ptr lease = LeaseMgrFactory::instance().getLease6(release_addr->getAddress());
+
+    if (!lease) {
+        // client releasing a lease that we don't know about.
+
+        // Insert status code NoAddrsAvail.
+        ia_rsp->addOption(createStatusCode(STATUS_NoBinding,
+                          "Sorry, no known leases for this duid/iaid, can't release."));
+        general_status = STATUS_NoBinding;
+
+        LOG_INFO(dhcp6_logger, DHCP6_UNKNOWN_RELEASE)
+            .arg(duid->toText())
+            .arg(ia->getIAID());
+
+        return (ia_rsp);
+    }
+
+    if (!lease->duid_) {
+        // Something is gravely wrong here. We do have a lease, but it does not
+        // have mandatory DUID information attached. Someone was messing with our
+        // database.
+
+        LOG_ERROR(dhcp6_logger, DHCP6_LEASE_WITHOUT_DUID)
+            .arg(release_addr->getAddress().toText());
+
+        general_status = STATUS_UnspecFail;
+        ia_rsp->addOption(createStatusCode(STATUS_UnspecFail,
+                          "Database consistency check failed when trying to RELEASE"));
+        return (ia_rsp);
+    }
+
+    if (*duid != *(lease->duid_)) {
+        // Sorry, it's not your address. You can't release it.
+
+        LOG_INFO(dhcp6_logger, DHCP6_RELEASE_FAIL_WRONG_DUID)
+            .arg(duid->toText())
+            .arg(release_addr->getAddress().toText())
+            .arg(lease->duid_->toText());
+
+        general_status = STATUS_NoBinding;
+        ia_rsp->addOption(createStatusCode(STATUS_NoBinding,
+                          "This prefix does not belong to you, you can't release it"));
+        return (ia_rsp);
+    }
+
+    if (ia->getIAID() != lease->iaid_) {
+        // This address belongs to this client, but to a different IA
+        LOG_WARN(dhcp6_logger, DHCP6_RELEASE_FAIL_WRONG_IAID)
+            .arg(duid->toText())
+            .arg(release_addr->getAddress().toText())
+            .arg(lease->iaid_)
+            .arg(ia->getIAID());
+        ia_rsp->addOption(createStatusCode(STATUS_NoBinding,
+                          "This is your address, but you used wrong IAID"));
+        general_status = STATUS_NoBinding;
+        return (ia_rsp);
+    }
+
+    // It is not necessary to check if the address matches as we used
+    // getLease6(addr) method that is supposed to return a proper lease.
+
+    // Ok, we've passed all checks. Let's release this address.
+
+    if (!LeaseMgrFactory::instance().deleteLease(lease->addr_)) {
+        ia_rsp->addOption(createStatusCode(STATUS_UnspecFail,
+                          "Server failed to release a lease"));
+
+        LOG_ERROR(dhcp6_logger, DHCP6_RELEASE_FAIL)
+            .arg(lease->addr_.toText())
+            .arg(duid->toText())
+            .arg(lease->iaid_);
+        general_status = STATUS_UnspecFail;
+
+        return (ia_rsp);
+    } else {
+        LOG_DEBUG(dhcp6_logger, DBG_DHCP6_DETAIL, DHCP6_RELEASE)
+            .arg(lease->addr_.toText())
+            .arg(duid->toText())
+            .arg(lease->iaid_);
+
+        ia_rsp->addOption(createStatusCode(STATUS_Success,
+                          "Prefix released. Thank you, please come again."));
+
+        return (ia_rsp);
+    }
+}
+
 
 Pkt6Ptr
 Dhcpv6Srv::processSolicit(const Pkt6Ptr& solicit) {

@@ -25,8 +25,8 @@ using namespace isc::asiolink;
 namespace isc {
 namespace dhcp {
 
-AllocEngine::IterativeAllocator::IterativeAllocator()
-    :Allocator() {
+AllocEngine::IterativeAllocator::IterativeAllocator(Pool6::Pool6Type lease_type)
+    :Allocator(lease_type) {
 }
 
 isc::asiolink::IOAddress
@@ -66,7 +66,7 @@ AllocEngine::IterativeAllocator::pickAddress(const SubnetPtr& subnet,
     // Let's get the last allocated address. It is usually set correctly,
     // but there are times when it won't be (like after removing a pool or
     // perhaps restaring the server).
-    IOAddress last = subnet->getLastAllocated();
+    IOAddress last = subnet->getLastAllocated(lease_type_);
 
     const PoolCollection& pools = subnet->getPools();
 
@@ -89,7 +89,7 @@ AllocEngine::IterativeAllocator::pickAddress(const SubnetPtr& subnet,
     if (it == pools.end()) {
         // ok to access first element directly. We checked that pools is non-empty
         IOAddress next = pools[0]->getFirstAddress();
-        subnet->setLastAllocated(next);
+        subnet->setLastAllocated(next, lease_type_);
         return (next);
     }
 
@@ -98,7 +98,7 @@ AllocEngine::IterativeAllocator::pickAddress(const SubnetPtr& subnet,
     IOAddress next = increaseAddress(last); // basically addr++
     if ((*it)->inRange(next)) {
         // the next one is in the pool as well, so we haven't hit pool boundary yet
-        subnet->setLastAllocated(next);
+        subnet->setLastAllocated(next, lease_type_);
         return (next);
     }
 
@@ -108,18 +108,121 @@ AllocEngine::IterativeAllocator::pickAddress(const SubnetPtr& subnet,
         // Really out of luck today. That was the last pool. Let's rewind
         // to the beginning.
         next = pools[0]->getFirstAddress();
-        subnet->setLastAllocated(next);
+        subnet->setLastAllocated(next, lease_type_);
         return (next);
     }
 
     // there is a next pool, let's try first adddress from it
     next = (*it)->getFirstAddress();
-    subnet->setLastAllocated(next);
+    subnet->setLastAllocated(next, lease_type_);
     return (next);
 }
 
-AllocEngine::HashedAllocator::HashedAllocator()
-    :Allocator() {
+isc::asiolink::IOAddress
+AllocEngine::IterativeAllocator::increasePrefix(const isc::asiolink::IOAddress& prefix,
+                                                uint8_t prefix_len) {
+    // Get a buffer holding an address.
+    const std::vector<uint8_t>& vec = prefix.toBytes();
+
+    if (prefix_len < 1 || prefix_len > 128) {
+        isc_throw(BadValue, "Cannot increase prefix: invalid prefix length: "
+                  << prefix_len);
+    }
+
+    uint8_t n_bytes = (prefix_len - 1)/8;
+    uint8_t n_bits = 8 - (prefix_len - n_bytes*8); // magic happens here
+    uint8_t mask = 1 << n_bits;
+
+    uint8_t packed[V6ADDRESS_LEN];
+
+    // Copy the address. It can be either V4 or V6.
+    std::memcpy(packed, &vec[0], V6ADDRESS_LEN);
+
+    // Increase last byte that is in prefix
+    if (packed[n_bytes] + uint16_t(mask) < 256) {
+        packed[n_bytes] += mask;
+        return (IOAddress::fromBytes(AF_INET6, packed));
+    }
+
+    // overflow
+    packed[n_bytes] += mask;
+
+    // Start increasing the least significant byte
+    for (int i = n_bytes - 1; i >= 0; --i) {
+        ++packed[i];
+        // if we haven't overflowed (0xff -> 0x0), than we are done
+        if (packed[i] != 0) {
+            break;
+        }
+    }
+
+    return (IOAddress::fromBytes(AF_INET6, packed));
+}
+
+
+isc::asiolink::IOAddress
+AllocEngine::IterativeAllocator::pickPrefix(const Subnet6Ptr& subnet,
+                                            const DuidPtr&,
+                                            const IOAddress&) {
+
+    // Let's get the last allocated prefix. It is usually set correctly,
+    // but there are times when it won't be (like after removing a pool or
+    // perhaps restaring the server).
+    IOAddress last = subnet->getLastAllocated(Pool6::TYPE_PD);
+
+    const Pool6Collection& pools = subnet->getPools(Pool6::TYPE_PD);
+
+    if (pools.empty()) {
+        isc_throw(AllocFailed, "No pools defined in selected subnet");
+    }
+
+    // first we need to find a pool the last address belongs to.
+    Pool6Collection::const_iterator it;
+    for (it = pools.begin(); it != pools.end(); ++it) {
+        if ((*it)->inRange(last)) {
+            break;
+        }
+    }
+
+    // last one was bogus for one of several reasons:
+    // - we just booted up and that's the first address we're allocating
+    // - a subnet was removed or other reconfiguration just completed
+    // - perhaps allocation algorithm was changed
+    if (it == pools.end()) {
+        // ok to access first element directly. We checked that pools is non-empty
+        IOAddress next = pools[0]->getFirstAddress();
+        subnet->setLastAllocated(next, Pool6::TYPE_PD);
+        return (next);
+    }
+
+    // Ok, we have a pool that the last address belonged to, let's use it.
+
+    // basically prefix++
+    IOAddress next = increasePrefix(last, subnet->getDelegatedPrefixLength());
+    if ((*it)->inRange(next)) {
+        // the next one is in the pool as well, so we haven't hit pool boundary yet
+        subnet->setLastAllocated(next, Pool6::TYPE_PD);
+        return (next);
+    }
+
+    // We hit pool boundary, let's try to jump to the next pool and try again
+    ++it;
+    if (it == pools.end()) {
+        // Really out of luck today. That was the last pool. Let's rewind
+        // to the beginning.
+        next = pools[0]->getFirstAddress();
+        subnet->setLastAllocated(next, Pool6::TYPE_PD);
+        return (next);
+    }
+
+    // there is a next pool, let's try first adddress from it
+    next = (*it)->getFirstAddress();
+    subnet->setLastAllocated(next, Pool6::TYPE_PD);
+    return (next);
+}
+
+AllocEngine::HashedAllocator::HashedAllocator(Pool6::Pool6Type lease_type)
+    :Allocator(lease_type) {
     isc_throw(NotImplemented, "Hashed allocator is not implemented");
 }
 
@@ -131,8 +234,8 @@ AllocEngine::HashedAllocator::pickAddress(const SubnetPtr&,
     isc_throw(NotImplemented, "Hashed allocator is not implemented");
 }
 
-AllocEngine::RandomAllocator::RandomAllocator()
-    :Allocator() {
+AllocEngine::RandomAllocator::RandomAllocator(Pool6::Pool6Type lease_type)
+    :Allocator(lease_type) {
     isc_throw(NotImplemented, "Random allocator is not implemented");
 }
 
@@ -149,13 +252,19 @@ AllocEngine::AllocEngine(AllocType engine_type, unsigned int attempts)
     :attempts_(attempts) {
     switch (engine_type) {
     case ALLOC_ITERATIVE:
-        allocator_ = boost::shared_ptr<Allocator>(new IterativeAllocator());
+        allocator_ia_ = boost::shared_ptr<Allocator>(new IterativeAllocator(Pool6::TYPE_IA));
+        allocator_ta_ = boost::shared_ptr<Allocator>(new RandomAllocator(Pool6::TYPE_TA));
+        allocator_pd_ = boost::shared_ptr<Allocator>(new IterativeAllocator(Pool6::TYPE_PD));
         break;
     case ALLOC_HASHED:
-        allocator_ = boost::shared_ptr<Allocator>(new HashedAllocator());
+        allocator_ia_ = boost::shared_ptr<Allocator>(new HashedAllocator(Pool6::TYPE_IA));
+        allocator_ta_ = boost::shared_ptr<Allocator>(new RandomAllocator(Pool6::TYPE_TA));
+        allocator_pd_ = boost::shared_ptr<Allocator>(new HashedAllocator(Pool6::TYPE_PD));
         break;
     case ALLOC_RANDOM:
-        allocator_ = boost::shared_ptr<Allocator>(new RandomAllocator());
+        allocator_ia_ = boost::shared_ptr<Allocator>(new RandomAllocator(Pool6::TYPE_IA));
+        allocator_ta_ = boost::shared_ptr<Allocator>(new RandomAllocator(Pool6::TYPE_TA));
+        allocator_pd_ = boost::shared_ptr<Allocator>(new RandomAllocator(Pool6::TYPE_PD));
         break;
 
     default:
@@ -164,16 +273,31 @@ AllocEngine::AllocEngine(AllocType engine_type, unsigned int attempts)
 }
 
 Lease6Ptr
-AllocEngine::allocateAddress6(const Subnet6Ptr& subnet,
+AllocEngine::allocateAddress6(Pool6::Pool6Type type,
+                              const Subnet6Ptr& subnet,
                               const DuidPtr& duid,
                               uint32_t iaid,
                               const IOAddress& hint,
                               bool fake_allocation /* = false */ ) {
+    AllocatorPtr allocator;
+    switch (type) {
+    case Pool6::TYPE_V4:
+    case Pool6::TYPE_IA:
+        allocator = allocator_ia_;
+        break;
+    case Pool6::TYPE_TA:
+        allocator = allocator_ta_;
+        break;
+    case Pool6::TYPE_PD:
+        allocator = allocator_pd_;
+        break;
+    }
+
 
     try {
         // That check is not necessary. We create allocator in AllocEngine
         // constructor
-        if (!allocator_) {
+        if (allocator) {
             isc_throw(InvalidOperation, "No allocator selected");
         }
 
@@ -201,7 +325,7 @@ AllocEngine::allocateAddress6(const Subnet6Ptr& subnet,
                 /// implemented
 
                 // the hint is valid and not currently used, let's create a lease for it
-                Lease6Ptr lease = createLease6(subnet, duid, iaid, hint, fake_allocation);
+                Lease6Ptr lease = createLease6(type, subnet, duid, iaid, hint, fake_allocation);
 
                 // It can happen that the lease allocation failed (we could have lost
                 // the race condition. That means that the hint is lo longer usable and
@@ -211,7 +335,7 @@ AllocEngine::allocateAddress6(const Subnet6Ptr& subnet,
                 }
             } else {
                 if (existing->expired()) {
-                    return (reuseExpiredLease(existing, subnet, duid, iaid,
+                    return (reuseExpiredLease(type, existing, subnet, duid, iaid,
                                               fake_allocation));
                 }
 
@@ -236,7 +360,7 @@ AllocEngine::allocateAddress6(const Subnet6Ptr& subnet,
 
         unsigned int i = attempts_;
         do {
-            IOAddress candidate = allocator_->pickAddress(subnet, duid, hint);
+            IOAddress candidate = allocator->pickAddress(subnet, duid, hint);
 
             /// @todo: check if the address is reserved once we have host support
             /// implemented
@@ -245,7 +369,7 @@ AllocEngine::allocateAddress6(const Subnet6Ptr& subnet,
             if (!existing) {
                 // there's no existing lease for selected candidate, so it is
                 // free. Let's allocate it.
-                Lease6Ptr lease = createLease6(subnet, duid, iaid, candidate,
+                Lease6Ptr lease = createLease6(type, subnet, duid, iaid, candidate,
                                               fake_allocation);
                 if (lease) {
                     return (lease);
@@ -256,7 +380,7 @@ AllocEngine::allocateAddress6(const Subnet6Ptr& subnet,
                 // allocation attempts.
             } else {
                 if (existing->expired()) {
-                    return (reuseExpiredLease(existing, subnet, duid, iaid,
+                    return (reuseExpiredLease(type, existing, subnet, duid, iaid,
                                               fake_allocation));
                 }
             }
@@ -288,7 +412,7 @@ AllocEngine::allocateAddress4(const SubnetPtr& subnet,
     try {
         // Allocator is always created in AllocEngine constructor and there is
         // currently no other way to set it, so that check is not really necessary.
-        if (!allocator_) {
+        if (!allocator_ia_) {
             isc_throw(InvalidOperation, "No allocator selected");
         }
 
@@ -371,7 +495,7 @@ AllocEngine::allocateAddress4(const SubnetPtr& subnet,
 
         unsigned int i = attempts_;
         do {
-            IOAddress candidate = allocator_->pickAddress(subnet, clientid, hint);
+            IOAddress candidate = allocator_ia_->pickAddress(subnet, clientid, hint);
 
             /// @todo: check if the address is reserved once we have host support
             /// implemented
@@ -434,7 +558,8 @@ Lease4Ptr AllocEngine::renewLease4(const SubnetPtr& subnet,
     return (lease);
 }
 
-Lease6Ptr AllocEngine::reuseExpiredLease(Lease6Ptr& expired,
+Lease6Ptr AllocEngine::reuseExpiredLease(Pool6::Pool6Type type,
+                                         Lease6Ptr& expired,
                                          const Subnet6Ptr& subnet,
                                          const DuidPtr& duid,
                                          uint32_t iaid,
@@ -442,6 +567,11 @@ Lease6Ptr AllocEngine::reuseExpiredLease(Lease6Ptr& expired,
 
     if (!expired->expired()) {
         isc_throw(BadValue, "Attempt to recycle lease that is still valid");
+    }
+
+    if (poolTypeToLeaseType(type) != expired->type_) {
+        isc_throw(BadValue, "Attempt to reuse expired lease of wrong type: expected="
+                  << type << ", actual type=" << expired->type_);
     }
 
     // address, lease type and prefixlen (0) stay the same
@@ -513,13 +643,32 @@ Lease4Ptr AllocEngine::reuseExpiredLease(Lease4Ptr& expired,
     return (expired);
 }
 
-Lease6Ptr AllocEngine::createLease6(const Subnet6Ptr& subnet,
+Lease6::LeaseType AllocEngine::poolTypeToLeaseType(Pool6::Pool6Type pool_type) {
+    /// @todo: extract Lease6::type and Pool6::Pool6Type to one location
+
+    switch (pool_type) {
+    case Pool6::TYPE_IA:
+        return (Lease6::LEASE_IA_NA);
+        break;
+    case Pool6::TYPE_TA:
+        return (Lease6::LEASE_IA_TA);
+        break;
+    case Pool6::TYPE_PD:
+        return (Lease6::LEASE_IA_PD);
+    default:
+        isc_throw(BadValue, "Invalid Lease6 type: " << pool_type);
+    }
+}
+
+Lease6Ptr AllocEngine::createLease6(Pool6::Pool6Type pool_type,
+                                    const Subnet6Ptr& subnet,
                                     const DuidPtr& duid,
                                     uint32_t iaid,
                                     const IOAddress& addr,
                                     bool fake_allocation /*= false */ ) {
 
-    Lease6Ptr lease(new Lease6(Lease6::LEASE_IA_NA, addr, duid, iaid,
+
+    Lease6Ptr lease(new Lease6(poolTypeToLeaseType(pool_type), addr, duid, iaid,
                                subnet->getPreferred(), subnet->getValid(),
                                subnet->getT1(), subnet->getT2(), subnet->getID()));
 

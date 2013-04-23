@@ -93,6 +93,10 @@ but the lease does not contain any client identification. This is most
 likely due to a software error: please raise a bug report. As a temporary
 workaround, manually remove the lease entry from the database.
 
+% DHCP6_LEASE_WRONG_TYPE lease for address %1 has wrong type (got %2, expected %3)
+This error message indicates that the database contains errors. In
+particular lease has type other than expected.
+
 % DHCP6_NOT_RUNNING IPv6 DHCP server is not running
 A warning message is issued when an attempt is made to shut down the
 IPv6 DHCP server but it is not running.
@@ -175,6 +179,12 @@ failure is given in the message.
 This is a debug message that indicates a processing of received IA_NA
 option. It may optionally contain an address that may be used by the server
 as a hint for possible requested address.
+
+% DHCP6_PROCESS_IA_PD_REQUEST server is processing IA_PD option (duid=%1, iaid=%2, hint=%3)
+This is a debug message that indicates a processing of received IA_PD
+option. It may optionally contain an address that may be used by the server
+as a hint for possible requested prefix
+.
 
 % DHCP6_QUERY_DATA received packet length %1, data length %2, data is %3
 A debug message listing the data received from the client or relay.

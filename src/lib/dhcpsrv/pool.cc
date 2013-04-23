@@ -88,14 +88,14 @@ Pool6::Pool6(Pool6Type type, const isc::asiolink::IOAddress& first,
     // parameters are for IA and TA only. There is another dedicated
     // constructor for that (it uses prefix/length)
     if ((type != TYPE_IA) && (type != TYPE_TA)) {
-        isc_throw(BadValue, "Invalid Pool6 type specified");
+        isc_throw(BadValue, "Invalid Pool6 type specified:" << type);
     }
 }
 
 Pool6::Pool6(Pool6Type type, const isc::asiolink::IOAddress& prefix,
              uint8_t prefix_len)
     :Pool(prefix, IOAddress("::")),
-     type_(type) {
+     type_(type), prefix_len_(prefix_len) {
 
     // check if the prefix is sane
     if (!prefix.isV6()) {

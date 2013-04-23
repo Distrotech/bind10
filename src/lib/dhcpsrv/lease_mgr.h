@@ -112,6 +112,7 @@ public:
 ///
 /// This structure holds all information that is common between IPv4 and IPv6
 /// leases.
+/// @todo: move lease structures to separate file
 struct Lease {
 
     /// @brief Constructor

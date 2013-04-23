@@ -482,9 +482,18 @@ class PoolParser : public DhcpConfigParser {
 public:
 
     /// @brief constructor.
-    PoolParser(const std::string& /*param_name*/)
+    PoolParser(const std::string& param_name)
         : pools_(NULL) {
-        // ignore parameter name, it is always Dhcp6/subnet6[X]/pool
+        if (param_name == "pool") {
+            type_ = Pool6::TYPE_IA;
+        } else if (param_name == "ta-pool") {
+            type_ = Pool6::TYPE_TA;
+        } else if (param_name == "pd-pool") {
+            type_ = Pool6::TYPE_PD;
+        } else {
+            isc_throw(InvalidOperation, "invalid parameter name for PoolParser: "
+                      << param_name << " (expected pool, ta-pool or pd-pool)");
+        }
     }
 
     /// @brief parses the actual list
@@ -539,7 +548,7 @@ public:
                               "definition: " << text_pool->stringValue());
                 }
 
-                Pool6Ptr pool(new Pool6(Pool6::TYPE_IA, addr, len));
+                Pool6Ptr pool(new Pool6(type_, addr, len));
                 local_pools_.push_back(pool);
                 continue;
             }
@@ -600,6 +609,8 @@ private:
     /// A temporary storage for pools configuration. It is a
     /// storage where pools are stored by build function.
     PoolStorage local_pools_;
+
+    Pool6::Pool6Type type_;
 };
 
 
@@ -1496,6 +1507,9 @@ private:
         // Create a new subnet.
         subnet_.reset(new Subnet6(addr, len, t1, t2, pref, valid));
 
+        // set up delegated prefix length
+        subnet_->setDelegatedPrefixLength(getParam("pd-length"));
+
         // Add pools to it.
         for (PoolStorage::iterator it = pools_.begin(); it != pools_.end(); ++it) {
             subnet_->addPool(*it);
@@ -1589,6 +1603,9 @@ private:
         factories["rebind-timer"] = Uint32Parser::factory;
         factories["subnet"] = StringParser::factory;
         factories["pool"] = PoolParser::factory;
+        factories["ta-pool"] = PoolParser::factory;
+        factories["pd-pool"] = PoolParser::factory;
+        factories["pd-length"] = Uint32Parser::factory;
         factories["option-data"] = OptionDataListParser::factory;
         factories["interface"] = StringParser::factory;
 

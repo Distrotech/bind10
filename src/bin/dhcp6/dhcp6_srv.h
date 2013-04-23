@@ -226,6 +226,54 @@ protected:
                            int& general_status,
                            boost::shared_ptr<Option6IA> ia);
 
+    /// @brief Processes IA_PD option (and assigns prefixes if necessary).
+    ///
+    /// Generates response to IA_PD. This typically includes selecting (and
+    /// allocating a lease in case of REQUEST) a lease and creating
+    /// IAPREFIX option. In case of allocation failure, it may contain
+    /// status code option with non-zero status, denoting cause of the
+    /// allocation failure.
+    ///
+    /// @param subnet subnet the client is connected to
+    /// @param duid client's duid
+    /// @param question client's message (typically SOLICIT or REQUEST)
+    /// @param ia pointer to client's IA_PD option (client's request)
+    /// @return IA_PD option (server's response)
+    OptionPtr assignIA_PD(const isc::dhcp::Subnet6Ptr& subnet,
+                          const isc::dhcp::DuidPtr& duid,
+                          isc::dhcp::Pkt6Ptr question,
+                          boost::shared_ptr<Option6IA> ia);
+
+    /// @brief Renews specific IA_PD option
+    ///
+    /// Generates response to IA_PD in Renew. This typically includes finding a
+    /// lease that corresponds to the received prefix. If no such lease is
+    /// found, an IA_PD response is generated with an appropriate status code.
+    ///
+    /// @param subnet subnet the sender belongs to
+    /// @param duid client's duid
+    /// @param question client's message
+    /// @param ia IA_PD option that is being renewed
+    /// @return IA_PD option (server's response)
+    OptionPtr renewIA_PD(const Subnet6Ptr& subnet, const DuidPtr& duid,
+                         Pkt6Ptr question, boost::shared_ptr<Option6IA> ia);
+
+    /// @brief Releases specific IA_PD option
+    ///
+    /// Generates response to IA_PD in Release message. This covers finding and
+    /// removal of a lease that corresponds to the received prefix. If no such
+    /// lease is found, an IA_PD response is generated with an appropriate
+    /// status code.
+    ///
+    /// @param duid client's duid
+    /// @param question client's message
+    /// @param general_status a global status (it may be updated in case of errors)
+    /// @param ia IA_PD option that is being renewed
+    /// @return IA_PD option (server's response)
+    OptionPtr releaseIA_PD(const DuidPtr& duid, Pkt6Ptr question,
+                           int& general_status,
+                           boost::shared_ptr<Option6IA> ia);
+
     /// @brief Copies required options from client message to server answer.
     ///
     /// Copies options that must appear in any server response (ADVERTISE, REPLY)

@@ -58,6 +58,8 @@ public:
     /// @return true, if the address is in pool
     bool inRange(const isc::asiolink::IOAddress& addr) const;
 
+    virtual ~Pool() { }
+
 protected:
 
     /// @brief protected constructor
@@ -136,6 +138,7 @@ public:
     /// There is a new one being worked on (IA_PA, see draft-ietf-dhc-host-gen-id), but
     /// support for it is not planned for now.
     typedef enum {
+        TYPE_V4,
         TYPE_IA,
         TYPE_TA,
         TYPE_PD
@@ -164,10 +167,15 @@ public:
         return (type_);
     }
 
+    uint8_t getPrefixLength() {
+        return (prefix_len_);
+    }
+
 private:
     /// @brief defines a pool type
     Pool6Type type_;
 
+    uint8_t prefix_len_;
 };
 
 /// @brief a pointer an IPv6 Pool

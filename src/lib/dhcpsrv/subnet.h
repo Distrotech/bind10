@@ -240,9 +240,20 @@ public:
     /// @todo: Define map<SubnetID, IOAddress> somewhere in the
     ///        AllocEngine::IterativeAllocator and keep the data there
     ///
+    /// @param type
     /// @return address that was last tried from this pool
-    isc::asiolink::IOAddress getLastAllocated() const {
-        return (last_allocated_);
+    isc::asiolink::IOAddress getLastAllocated(Pool6::Pool6Type type) const {
+        switch (type) {
+        case Pool6::TYPE_V4:
+        case Pool6::TYPE_IA:
+            return last_allocated_ia_;
+        case Pool6::TYPE_TA:
+            return last_allocated_ta_;
+        case Pool6::TYPE_PD:
+            return last_allocated_pd_;
+        default:
+            isc_throw(BadValue, "Pool type " << type << " not supported");
+        }
     }
 
     /// @brief sets the last address that was tried from this pool
@@ -253,8 +264,22 @@ public:
     ///
     /// @todo: Define map<SubnetID, IOAddress> somewhere in the
     ///        AllocEngine::IterativeAllocator and keep the data there
-    void setLastAllocated(const isc::asiolink::IOAddress& addr) {
-        last_allocated_ = addr;
+    void setLastAllocated(const isc::asiolink::IOAddress& addr,
+                          Pool6::Pool6Type type) {
+        switch (type) {
+        case Pool6::TYPE_V4:
+        case Pool6::TYPE_IA:
+            last_allocated_ia_ = addr;
+            return;
+        case Pool6::TYPE_TA:
+            last_allocated_ta_ = addr;
+            return;
+        case Pool6::TYPE_PD:
+            last_allocated_pd_ = addr;
+            return;
+        default:
+            isc_throw(BadValue, "Pool type " << type << " not supported");
+        }
     }
 
     /// @brief returns unique ID for that subnet
@@ -270,7 +295,7 @@ public:
 
     /// @brief Adds a new pool.
     /// @param pool pool to be added
-    void addPool(const PoolPtr& pool);
+    virtual void addPool(const PoolPtr& pool);
 
     /// @brief Returns a pool that specified address belongs to
     ///
@@ -278,9 +303,12 @@ public:
     /// @return Pointer to found Pool4 or Pool6 (or NULL)
     PoolPtr getPool(isc::asiolink::IOAddress addr);
 
+    virtual PoolPtr getPool(isc::asiolink::IOAddress addr,
+                            Pool6::Pool6Type pool6_type) = 0;
+
     /// @brief Returns a pool without any address specified
     /// @return returns one of the pools defined
-    PoolPtr getPool() {
+    PoolPtr getAnyPool() {
         return (getPool(default_pool()));
     }
 
@@ -295,9 +323,14 @@ public:
     /// The reference is only valid as long as the object that returned it.
     ///
     /// @return a collection of all pools
-    const PoolCollection& getPools() const {
-        return pools_;
-    }
+    const PoolCollection& getPools() const;
+
+    /// @brief returns pools of specified type
+    ///
+    /// The reference is only valid as long as the object that returned it.
+    ///
+    /// @return a collection of all pools
+    virtual const Pool6Collection& getPools(Pool6::Pool6Type pool6_type) const = 0;
 
     /// @brief returns textual representation of the subnet (e.g. "2001:db8::/64")
     ///
@@ -366,7 +399,11 @@ protected:
     /// removing a pool, restarting or changing allocation algorithms. For
     /// that purpose it should be only considered a help that should not be
     /// fully trusted.
-    isc::asiolink::IOAddress last_allocated_;
+    isc::asiolink::IOAddress last_allocated_ia_;
+
+    isc::asiolink::IOAddress last_allocated_ta_;
+
+    isc::asiolink::IOAddress last_allocated_pd_;
 
     /// @brief Name of the network interface (if connected directly)
     std::string iface_;
@@ -400,6 +437,11 @@ public:
             const Triplet<uint32_t>& t1,
             const Triplet<uint32_t>& t2,
             const Triplet<uint32_t>& valid_lifetime);
+
+    virtual PoolPtr getPool(isc::asiolink::IOAddress addr,
+                            Pool6::Pool6Type pool6_type);
+
+    const Pool6Collection& getPools(Pool6::Pool6Type) const;
 
 protected:
 
@@ -451,6 +493,12 @@ public:
         return (preferred_);
     }
 
+    virtual PoolPtr getPool(isc::asiolink::IOAddress addr, Pool6::Pool6Type pool6_type);
+
+    const Pool6Collection& getPools(Pool6::Pool6Type pool6_type) const;
+
+    void addPool(const PoolPtr& pool);
+
     /// @brief sets name of the network interface for directly attached networks
     ///
     /// A subnet may be reachable directly (not via relays). In DHCPv6 it is not
@@ -462,6 +510,10 @@ public:
     /// @brief network interface name used to reach subnet (or "" for remote subnets)
     /// @return network interface name for directly attached subnets or ""
     std::string getIface() const;
+
+    void setDelegatedPrefixLength(uint8_t pd_length);
+
+    uint8_t getDelegatedPrefixLength();
 
 protected:
 
@@ -478,11 +530,20 @@ protected:
         return (isc::asiolink::IOAddress("::"));
     }
 
-    /// @brief collection of pools in that list
-    Pool6Collection pools_;
+   /// @brief collection of pools for non-temporary addresses
+   Pool6Collection pools_;
+
+    /// @brief collection of pools for temporary adresses
+    Pool6Collection pools_ta_;
+
+    /// @brief collection of pools for prefix delegation
+    Pool6Collection pools_pd_;
 
     /// @brief a triplet with preferred lifetime (in seconds)
     Triplet<uint32_t> preferred_;
+
+    /// @brief delegated prefix length
+    uint8_t pd_length_;
 };
 
 /// @brief A pointer to a Subnet6 object

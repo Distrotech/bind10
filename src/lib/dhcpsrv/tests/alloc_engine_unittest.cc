@@ -202,8 +202,8 @@ TEST_F(AllocEngine6Test, simpleAlloc6) {
     ASSERT_NO_THROW(engine.reset(new AllocEngine(AllocEngine::ALLOC_ITERATIVE, 100)));
     ASSERT_TRUE(engine);
 
-    Lease6Ptr lease = engine->allocateAddress6(subnet_, duid_, iaid_, IOAddress("::"),
-                                               false);
+    Lease6Ptr lease = engine->allocateAddress6(Pool6::TYPE_IA, subnet_, duid_, iaid_,
+                                               IOAddress("::"), false);
 
     // check that we got a lease
     ASSERT_TRUE(lease);
@@ -225,8 +225,8 @@ TEST_F(AllocEngine6Test, fakeAlloc6) {
     ASSERT_NO_THROW(engine.reset(new AllocEngine(AllocEngine::ALLOC_ITERATIVE, 100)));
     ASSERT_TRUE(engine);
 
-    Lease6Ptr lease = engine->allocateAddress6(subnet_, duid_, iaid_, IOAddress("::"),
-                                               true);
+    Lease6Ptr lease = engine->allocateAddress6(Pool6::TYPE_IA, subnet_, duid_, iaid_,
+                                               IOAddress("::"), true);
 
     // check that we got a lease
     ASSERT_TRUE(lease);
@@ -246,7 +246,7 @@ TEST_F(AllocEngine6Test, allocWithValidHint6) {
     ASSERT_NO_THROW(engine.reset(new AllocEngine(AllocEngine::ALLOC_ITERATIVE, 100)));
     ASSERT_TRUE(engine);
 
-    Lease6Ptr lease = engine->allocateAddress6(subnet_, duid_, iaid_,
+    Lease6Ptr lease = engine->allocateAddress6(Pool6::TYPE_IA, subnet_, duid_, iaid_,
                                                IOAddress("2001:db8:1::15"),
                                                false);
 
@@ -284,7 +284,7 @@ TEST_F(AllocEngine6Test, allocWithUsedHint6) {
     // another client comes in and request an address that is in pool, but
     // unfortunately it is used already. The same address must not be allocated
     // twice.
-    Lease6Ptr lease = engine->allocateAddress6(subnet_, duid_, iaid_,
+    Lease6Ptr lease = engine->allocateAddress6(Pool6::TYPE_IA, subnet_, duid_, iaid_,
                                                IOAddress("2001:db8:1::1f"),
                                                false);
     // check that we got a lease
@@ -317,7 +317,7 @@ TEST_F(AllocEngine6Test, allocBogusHint6) {
     // Client would like to get a 3000::abc lease, which does not belong to any
     // supported lease. Allocation engine should ignore it and carry on
     // with the normal allocation
-    Lease6Ptr lease = engine->allocateAddress6(subnet_, duid_, iaid_,
+    Lease6Ptr lease = engine->allocateAddress6(Pool6::TYPE_IA, subnet_, duid_, iaid_,
                                                IOAddress("3000::abc"),
                                                false);
     // check that we got a lease
@@ -344,12 +344,12 @@ TEST_F(AllocEngine6Test, allocateAddress6Nulls) {
     ASSERT_TRUE(engine);
 
     // Allocations without subnet are not allowed
-    Lease6Ptr lease = engine->allocateAddress6(Subnet6Ptr(), duid_, iaid_,
-                                               IOAddress("::"), false);
+    Lease6Ptr lease = engine->allocateAddress6(Pool6::TYPE_IA, Subnet6Ptr(), duid_,
+                                               iaid_, IOAddress("::"), false);
     ASSERT_FALSE(lease);
 
     // Allocations without DUID are not allowed either
-    lease = engine->allocateAddress6(subnet_, DuidPtr(), iaid_,
+    lease = engine->allocateAddress6(Pool6::TYPE_IA, subnet_, DuidPtr(), iaid_,
                                      IOAddress("::"), false);
     ASSERT_FALSE(lease);
 }
@@ -359,7 +359,7 @@ TEST_F(AllocEngine6Test, allocateAddress6Nulls) {
 // pool
 TEST_F(AllocEngine6Test, IterativeAllocator) {
     boost::scoped_ptr<NakedAllocEngine::Allocator>
-        alloc(new NakedAllocEngine::IterativeAllocator());
+        alloc(new NakedAllocEngine::IterativeAllocator(Pool6::TYPE_IA));
 
     for (int i = 0; i < 1000; ++i) {
         IOAddress candidate = alloc->pickAddress(subnet_, duid_, IOAddress("::"));
@@ -372,7 +372,7 @@ TEST_F(AllocEngine6Test, IterativeAllocator) {
 // in all pools in specified subnet. It also must not pick the same address twice
 // unless it runs out of pool space and must start over.
 TEST_F(AllocEngine6Test, IterativeAllocator_manyPools6) {
-    NakedAllocEngine::IterativeAllocator* alloc = new NakedAllocEngine::IterativeAllocator();
+    NakedAllocEngine::IterativeAllocator* alloc = new NakedAllocEngine::IterativeAllocator(Pool6::TYPE_IA);
 
     // let's start from 2, as there is 2001:db8:1::10 - 2001:db8:1::20 pool already.
     for (int i = 2; i < 10; ++i) {
@@ -441,8 +441,8 @@ TEST_F(AllocEngine6Test, smallPool6) {
     subnet_->addPool(pool_);
     cfg_mgr.addSubnet6(subnet_);
 
-    Lease6Ptr lease = engine->allocateAddress6(subnet_, duid_, iaid_, IOAddress("::"),
-                                               false);
+    Lease6Ptr lease = engine->allocateAddress6(Pool6::TYPE_IA, subnet_, duid_, iaid_,
+                                               IOAddress("::"), false);
 
     // Check that we got that single lease
     ASSERT_TRUE(lease);
@@ -487,7 +487,7 @@ TEST_F(AllocEngine6Test, outOfAddresses6) {
 
     // There is just a single address in the pool and allocated it to someone
     // else, so the allocation should fail
-    Lease6Ptr lease2 = engine->allocateAddress6(subnet_, duid_, iaid_,
+    Lease6Ptr lease2 = engine->allocateAddress6(Pool6::TYPE_IA, subnet_, duid_, iaid_,
                                                 IOAddress("::"), false);
     EXPECT_FALSE(lease2);
 }
@@ -521,8 +521,8 @@ TEST_F(AllocEngine6Test, solicitReuseExpiredLease6) {
     ASSERT_TRUE(lease->expired());
 
     // CASE 1: Asking for any address
-    lease = engine->allocateAddress6(subnet_, duid_, iaid_, IOAddress("::"),
-                                     true);
+    lease = engine->allocateAddress6(Pool6::TYPE_IA, subnet_, duid_, iaid_,
+                                     IOAddress("::"), true);
     // Check that we got that single lease
     ASSERT_TRUE(lease);
     EXPECT_EQ(addr.toText(), lease->addr_.toText());
@@ -531,8 +531,8 @@ TEST_F(AllocEngine6Test, solicitReuseExpiredLease6) {
     checkLease6(lease);
 
     // CASE 2: Asking specifically for this address
-    lease = engine->allocateAddress6(subnet_, duid_, iaid_, IOAddress(addr.toText()),
-                                     true);
+    lease = engine->allocateAddress6(Pool6::TYPE_IA, subnet_, duid_, iaid_,
+                                     IOAddress(addr.toText()), true);
     // Check that we got that single lease
     ASSERT_TRUE(lease);
     EXPECT_EQ(addr.toText(), lease->addr_.toText());
@@ -565,7 +565,7 @@ TEST_F(AllocEngine6Test, requestReuseExpiredLease6) {
     ASSERT_TRUE(LeaseMgrFactory::instance().addLease(lease));
 
     // A client comes along, asking specifically for this address
-    lease = engine->allocateAddress6(subnet_, duid_, iaid_,
+    lease = engine->allocateAddress6(Pool6::TYPE_IA, subnet_, duid_, iaid_,
                                      IOAddress(addr.toText()), false);
 
     // Check that he got that single lease
@@ -768,7 +768,7 @@ TEST_F(AllocEngine4Test, allocateAddress4Nulls) {
 // pool
 TEST_F(AllocEngine4Test, IterativeAllocator) {
     boost::scoped_ptr<NakedAllocEngine::Allocator>
-        alloc(new NakedAllocEngine::IterativeAllocator());
+        alloc(new NakedAllocEngine::IterativeAllocator(Pool6::TYPE_IA));
 
     for (int i = 0; i < 1000; ++i) {
         IOAddress candidate = alloc->pickAddress(subnet_, clientid_,
@@ -782,7 +782,7 @@ TEST_F(AllocEngine4Test, IterativeAllocator) {
 // in all pools in specified subnet. It also must not pick the same address twice
 // unless it runs out of pool space and must start over.
 TEST_F(AllocEngine4Test, IterativeAllocator_manyPools4) {
-    NakedAllocEngine::IterativeAllocator* alloc = new NakedAllocEngine::IterativeAllocator();
+    NakedAllocEngine::IterativeAllocator* alloc = new NakedAllocEngine::IterativeAllocator(Pool6::TYPE_IA);
 
     // Let's start from 2, as there is 2001:db8:1::10 - 2001:db8:1::20 pool already.
     for (int i = 2; i < 10; ++i) {
