@@ -1039,6 +1039,22 @@ if test "x$HAVE_PKG_CONFIG" = "xno" ; then
 fi
 PKG_CHECK_MODULES(SQLITE, sqlite3 >= 3.3.9, enable_features="$enable_features SQLite3")
 
+dnl Check for GTK+ for gbindctl
+PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.24.0, have_gtk="yes"; enable_features="$enable_features gbindctl", have_gtk="no")
+AM_CONDITIONAL(HAVE_GTK, test "x$have_gtk" = xyes)
+AC_SUBST(GTK_CFLAGS)
+AC_SUBST(GTK_LIBS)
+
+# gettext i18n support
+AM_GNU_GETTEXT_VERSION(0.14)
+GETTEXT_PACKAGE=bind10
+AC_SUBST(GETTEXT_PACKAGE)
+AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, "$GETTEXT_PACKAGE",
+                   [The prefix for our gettext translation domains.])
+
+b10localedir="$datadir/locale"
+AC_SUBST(b10localedir)
+
 #
 # ASIO: we extensively use it as the C++ event management module.
 #
@@ -1165,6 +1181,7 @@ AC_CONFIG_FILES([Makefile
                  src/bin/cmdctl/tests/Makefile
                  src/bin/bindctl/Makefile
                  src/bin/bindctl/tests/Makefile
+                 src/bin/gbindctl/Makefile
                  src/bin/cfgmgr/Makefile
                  src/bin/cfgmgr/local_plugins/Makefile
                  src/bin/cfgmgr/plugins/Makefile
