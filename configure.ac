@@ -1327,6 +1327,7 @@ AC_CONFIG_FILES([Makefile
                  tests/tools/perfdhcp/tests/testdata/Makefile
                  m4macros/Makefile
                  dns++.pc
+                 dhcp++.pc
                ])
 AC_OUTPUT([doc/version.ent
            src/bin/cfgmgr/b10-cfgmgr.py
