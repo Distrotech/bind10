@@ -175,7 +175,7 @@ public:
     /// read-only mode; in that case MemorySegmentError will be thrown.
     virtual void deallocate(void* ptr, size_t size);
 
-    virtual bool allMemoryDeallocated();
+    virtual bool allMemoryDeallocated() const;
 
     /// \brief Mapped segment version of setNamedAddress.
     ///
@@ -249,6 +249,7 @@ public:
 private:
     struct Impl;
     Impl* impl_;
+    size_t allocated_size_;
 };
 
 } // namespace util

@@ -230,7 +230,8 @@ private:
 };
 
 MemorySegmentMapped::MemorySegmentMapped(const std::string& filename) :
-    impl_(NULL)
+    impl_(NULL),
+    allocated_size_(0)
 {
     try {
         impl_ = new Impl(filename, true);
@@ -243,7 +244,8 @@ MemorySegmentMapped::MemorySegmentMapped(const std::string& filename) :
 
 MemorySegmentMapped::MemorySegmentMapped(const std::string& filename,
                                          OpenMode mode, size_t initial_size) :
-    impl_(NULL)
+    impl_(NULL),
+    allocated_size_(0)
 {
     try {
         switch (mode) {
@@ -287,6 +289,7 @@ MemorySegmentMapped::allocate(size_t size) {
     if (impl_->base_sgmt_->get_free_memory() >= size) {
         void* ptr = impl_->base_sgmt_->allocate(size, std::nothrow);
         if (ptr) {
+            allocated_size_ += size;
             return (ptr);
         }
     }
@@ -302,7 +305,7 @@ MemorySegmentMapped::allocate(size_t size) {
 }
 
 void
-MemorySegmentMapped::deallocate(void* ptr, size_t) {
+MemorySegmentMapped::deallocate(void* ptr, size_t size) {
     if (impl_->read_only_) {
         isc_throw(MemorySegmentError,
                   "deallocate attempt on read-only segment");
@@ -315,15 +318,15 @@ MemorySegmentMapped::deallocate(void* ptr, size_t) {
     }
 
     impl_->base_sgmt_->deallocate(ptr);
+    allocated_size_ -= size;
 }
 
 bool
-MemorySegmentMapped::allMemoryDeallocated() {
-    impl_->freeReservedMemory();
-    const bool result = impl_->base_sgmt_->all_memory_deallocated();
-    impl_->reserveMemory();
-
-    return (result);
+MemorySegmentMapped::allMemoryDeallocated() const {
+     const size_t expected_num_named_objs = impl_->read_only_ ? 0 : 1;
+     const size_t num_named_objs = impl_->base_sgmt_->get_num_named_objects();
+     return ((allocated_size_ == 0) &&
+             (num_named_objs == expected_num_named_objs));
 }
 
 MemorySegment::NamedAddressResult
