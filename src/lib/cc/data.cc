@@ -30,6 +30,8 @@
 #include <boost/algorithm/string.hpp> // for iequals
 
 #include <cmath>
+#include <cerrno>
+// #include <cstdint>
 
 using namespace std;
 
@@ -60,7 +62,12 @@ Element::toWire(std::ostream& ss) const {
 }
 
 bool
-Element::getValue(long int&) const {
+Element::getValue(long long int&) const {
+    return (false);
+}
+
+bool
+Element::getValue(unsigned long long int&) const {
     return (false);
 }
 
@@ -90,7 +97,12 @@ Element::getValue(std::map<std::string, ConstElementPtr>&) const {
 }
 
 bool
-Element::setValue(const long int) {
+Element::setValue(const long long int) {
+    return (false);
+}
+
+bool
+Element::setValue(const unsigned long long int) {
     return (false);
 }
 
@@ -208,8 +220,13 @@ Element::create() {
 }
 
 ElementPtr
-Element::create(const long int i) {
+Element::create(const long long int i) {
     return (ElementPtr(new IntElement(i)));
+}
+
+ElementPtr
+Element::create(const unsigned long long int u) {
+    return (ElementPtr(new Uint64Element(u)));
 }
 
 ElementPtr
@@ -393,38 +410,35 @@ numberFromStringstream(std::istream& in, int& pos) {
 // value is larger than an int can handle)
 ElementPtr
 fromStringstreamNumber(std::istream& in, int& pos) {
-    long int i;
+    long long int i;
+    unsigned long long int u;
     double d = 0.0;
-    bool is_double = false;
     char* endptr;
 
     std::string number = numberFromStringstream(in, pos);
+    const char* ptr = number.c_str();
 
     errno = 0;
-    i = strtol(number.c_str(), &endptr, 10);
-    if (*endptr != '\0') {
-        const char* ptr;
+    i = strtoll(ptr, &endptr, 10);
+    if (*endptr == '\0') {
+        if ((i != LLONG_MAX && i != LLONG_MIN) || errno == 0) {
+            return (Element::create(i));
+        }
         errno = 0;
-        d = strtod(ptr = number.c_str(), &endptr);
-        is_double = true;
-        if (*endptr != '\0' || ptr == endptr) {
-            isc_throw(JSONError, std::string("Bad number: ") + number);
-        } else {
-            if (errno != 0) {
-                isc_throw(JSONError, std::string("Number overflow: ") + number);
-            }
-        }
-    } else {
-        if ((i == LONG_MAX || i == LONG_MIN) && errno != 0) {
-            isc_throw(JSONError, std::string("Number overflow: ") + number);
+        u = strtoull(ptr, &endptr, 10);
+        if (*endptr == '\0' && (u != ULLONG_MAX || errno == 0)) {
+            return (Element::create(u));
         }
     }
-
-    if (is_double) {
-        return (Element::create(d));
-    } else {
-        return (Element::create(i));
+    errno = 0;
+    d = strtod(ptr, &endptr);
+    if (*endptr != '\0' || ptr == endptr) {
+        isc_throw(JSONError, std::string("Bad number: ") + number);
     }
+    if (errno != 0) {
+        isc_throw(JSONError, std::string("Number overflow: ") + number);
+    }
+    return (Element::create(d));
 }
 
 ElementPtr
@@ -672,6 +686,11 @@ IntElement::toJSON(std::ostream& ss) const {
 }
 
 void
+Uint64Element::toJSON(std::ostream& ss) const {
+    ss << uint64Value();
+}
+
+void
 DoubleElement::toJSON(std::ostream& ss) const {
     ss << doubleValue();
 }
@@ -833,6 +852,12 @@ MapElement::find(const std::string& id, ConstElementPtr& t) const {
 
 bool
 IntElement::equals(const Element& other) const {
+    return (other.getType() == Element::integer) &&
+           (i == other.intValue());
+}
+
+bool
+Uint64Element::equals(const Element& other) const {
     return (other.getType() == Element::integer) &&
            (i == other.intValue());
 }

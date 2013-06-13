@@ -28,7 +28,7 @@ namespace statistics {
 class Counter : boost::noncopyable {
 public:
     typedef unsigned int Type;
-    typedef unsigned int Value;
+    typedef unsigned long long int Value;
 
 private:
     std::vector<Counter::Value> counters_;
@@ -42,8 +42,8 @@ public:
     /// \param items A number of counter items to hold (greater than 0)
     ///
     /// \throw isc::InvalidParameter \a items is 0
-    explicit Counter(const size_t items) :
-        counters_(items, 0)
+    explicit Counter(const size_t items, Value init = 0) :
+        counters_(items, init)
     {
         if (items == 0) {
             isc_throw(isc::InvalidParameter, "Items must not be 0");

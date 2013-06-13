@@ -21,6 +21,7 @@
 #include <boost/shared_ptr.hpp>
 #include <stdexcept>
 #include <exceptions/exceptions.h>
+// #include <cstdint>
 
 namespace isc { namespace data {
 
@@ -124,8 +125,10 @@ public:
     /// If you want an exception-safe getter method, use
     /// getValue() below
     //@{
-    virtual long int intValue() const
+    virtual long long int intValue() const
     { isc_throw(TypeError, "intValue() called on non-integer Element"); };
+    virtual unsigned long long int uint64Value() const
+    { isc_throw(TypeError, "uint64Value() called on non-integer Element"); };
     virtual double doubleValue() const
     { isc_throw(TypeError, "doubleValue() called on non-double Element"); };
     virtual bool boolValue() const
@@ -151,7 +154,8 @@ public:
     /// data to the given reference and returning true
     ///
     //@{
-    virtual bool getValue(long int& t) const;
+    virtual bool getValue(long long int& t) const;
+    virtual bool getValue(unsigned long long int& t) const;
     virtual bool getValue(double& t) const;
     virtual bool getValue(bool& t) const;
     virtual bool getValue(std::string& t) const;
@@ -167,7 +171,8 @@ public:
     /// is of the correct type
     ///
     //@{
-    virtual bool setValue(const long int v);
+    virtual bool setValue(const long long int v);
+    virtual bool setValue(const unsigned long long int v);
     virtual bool setValue(const double v);
     virtual bool setValue(const bool t);
     virtual bool setValue(const std::string& v);
@@ -273,8 +278,10 @@ public:
     /// represents an empty value, and is created with Element::create())
     //@{
     static ElementPtr create();
-    static ElementPtr create(const long int i);
-    static ElementPtr create(const int i) { return (create(static_cast<long int>(i))); };
+    static ElementPtr create(const long long int i);
+    static ElementPtr create(const unsigned long long int u);
+    static ElementPtr create(const long int i) { return (create(static_cast<long long int>(i))); };
+    static ElementPtr create(const int i) { return (create(static_cast<long long int>(i))); };
     static ElementPtr create(const double d);
     static ElementPtr create(const bool b);
     static ElementPtr create(const std::string& s);
@@ -371,15 +378,29 @@ public:
 };
 
 class IntElement : public Element {
-    long int i;
+    long long int i;
 
 public:
-    IntElement(long int v) : Element(integer), i(v) { }
-    long int intValue() const { return (i); }
+    IntElement(long long int v) : Element(integer), i(v) { }
+    long long int intValue() const { return (i); }
     using Element::getValue;
-    bool getValue(long int& t) const { t = i; return (true); }
+    bool getValue(long long int& t) const { t = i; return (true); }
     using Element::setValue;
-    bool setValue(const long int v) { i = v; return (true); }
+    bool setValue(const long long int v) { i = v; return (true); }
+    void toJSON(std::ostream& ss) const;
+    bool equals(const Element& other) const;
+};
+
+class Uint64Element : public Element {
+    unsigned long long int i;
+
+public:
+    Uint64Element(unsigned long long int v) : Element(integer), i(v) { }
+    unsigned long long int uint64Value() const { return (i); }
+    using Element::getValue;
+    bool getValue(unsigned long long int& t) const { t = i; return (true); }
+    using Element::setValue;
+    bool setValue(const unsigned long long int v) { i = v; return (true); }
     void toJSON(std::ostream& ss) const;
     bool equals(const Element& other) const;
 };
