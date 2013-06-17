@@ -21,7 +21,7 @@
 
 namespace {
 void
-flatten(std::map<std::string, int>& flat_map, const std::string& prefix,
+flatten(std::map<std::string, unsigned long long int>& flat_map, const std::string& prefix,
         const isc::data::ConstElementPtr map_element)
 {
     std::map<std::string, isc::data::ConstElementPtr> map =
@@ -38,6 +38,9 @@ flatten(std::map<std::string, int>& flat_map, const std::string& prefix,
             case isc::data::Element::integer:
                 flat_map[prefix + i->first] = i->second->intValue();
                 break;
+            case isc::data::Element::uint64:
+                flat_map[prefix + i->first] = i->second->uint64Value();
+                break;
             default:
                 FAIL() << "Element Parse Error";
         }
@@ -51,17 +54,17 @@ namespace unittest {
 
 void
 checkStatisticsCounters(const isc::data::ConstElementPtr counters,
-                        const std::map<std::string, int>& expect)
+                        const std::map<std::string, unsigned long long int>& expect)
 {
-    std::map<std::string, int> stats_map;
+    std::map<std::string, unsigned long long int> stats_map;
     flatten(stats_map, "", counters);
 
-    for (std::map<std::string, int>::const_iterator
+    for (std::map<std::string, unsigned long long int>::const_iterator
             i = stats_map.begin(), e = stats_map.end();
             i != e;
             ++i)
     {
-        const int value =
+        const unsigned long long int value =
             expect.find(i->first) == expect.end() ?
                 0 : expect.find(i->first)->second;
         EXPECT_EQ(value, i->second) << "Expected counter "

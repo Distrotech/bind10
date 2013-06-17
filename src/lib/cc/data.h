@@ -280,7 +280,7 @@ public:
     static ElementPtr create();
     static ElementPtr create(const int64_t i);
     static ElementPtr create(const uint64_t u);
-    static ElementPtr create(const long int i) { return (create(static_cast<int64_t>(i))); };
+    // static ElementPtr create(const long int i) { return (create(static_cast<int64_t>(i))); };
     static ElementPtr create(const int i) { return (create(static_cast<int64_t>(i))); };
     static ElementPtr create(const double d);
     static ElementPtr create(const bool b);
