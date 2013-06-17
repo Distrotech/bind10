@@ -157,9 +157,9 @@ protected:
              ++i)
         {
             if (i->first.compare(target_rcode_name) == 0) {
-                checkRcodeCounter(i->first, i->second->uint64Value(), value);
+                checkRcodeCounter(i->first, i->second->intValue(), value);
             } else {
-                checkRcodeCounter(i->first, i->second->uint64Value(), 0);
+                checkRcodeCounter(i->first, i->second->intValue(), 0);
             }
         }
     }
@@ -1455,7 +1455,7 @@ TEST_F(AuthSrvTest, queryCounterOpcodes) {
         // The counter should be initialized to expected value.
         EXPECT_EQ(expected - (i + 1),
                   server.getStatistics()->get("zones")->get("_SERVER_")->
-                  get("opcode")->get(item_name)->uint64Value());
+                  get("opcode")->get(item_name)->intValue());
 
         // For each possible opcode, create a request message and send it
         UnitTestUtil::createRequestMessage(request_message, Opcode(i),
@@ -1477,7 +1477,7 @@ TEST_F(AuthSrvTest, queryCounterOpcodes) {
         // depends on the opcode.
         EXPECT_EQ(expected,
                   server.getStatistics()->get("zones")->get("_SERVER_")->
-                  get("opcode")->get(item_name)->uint64Value());
+                  get("opcode")->get(item_name)->intValue());
     }
 }
 

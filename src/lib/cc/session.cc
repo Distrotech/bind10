@@ -479,7 +479,7 @@ Session::group_sendmsg(ConstElementPtr msg, std::string group,
     LOG_DEBUG(logger, DBG_TRACE_DETAILED, CC_GROUP_SEND).arg(msg->str()).
         arg(group);
     ElementPtr env = Element::createMap();
-    const long long int nseq = ++impl_->sequence_;
+    const int64_t nseq = ++impl_->sequence_;
 
     env->set(CC_HEADER_TYPE,
              Element::create(CC_COMMAND_SEND));
@@ -514,7 +514,7 @@ Session::reply(ConstElementPtr envelope, ConstElementPtr newmsg) {
     LOG_DEBUG(logger, DBG_TRACE_DETAILED, CC_REPLY).arg(envelope->str()).
         arg(newmsg->str());
     ElementPtr env = Element::createMap();
-    long long int nseq = ++impl_->sequence_;
+    int64_t nseq = ++impl_->sequence_;
 
     env->set(CC_HEADER_TYPE, Element::create(CC_COMMAND_SEND));
     env->set(CC_HEADER_FROM, Element::create(impl_->lname_));
