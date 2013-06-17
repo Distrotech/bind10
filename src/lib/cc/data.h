@@ -21,7 +21,7 @@
 #include <boost/shared_ptr.hpp>
 #include <stdexcept>
 #include <exceptions/exceptions.h>
-// #include <cstdint>
+#include <stdint.h>
 
 namespace isc { namespace data {
 
@@ -85,7 +85,7 @@ protected:
 public:
     // any is a special type used in list specifications, specifying
     // that the elements can be of any type
-    enum types { integer, real, boolean, null, string, list, map, any };
+    enum types { integer, uint64, real, boolean, null, string, list, map, any };
     // base class; make dtor virtual
     virtual ~Element() {};
 
@@ -125,10 +125,10 @@ public:
     /// If you want an exception-safe getter method, use
     /// getValue() below
     //@{
-    virtual long long int intValue() const
+    virtual int64_t intValue() const
     { isc_throw(TypeError, "intValue() called on non-integer Element"); };
-    virtual unsigned long long int uint64Value() const
-    { isc_throw(TypeError, "uint64Value() called on non-integer Element"); };
+    virtual uint64_t uint64Value() const
+    { isc_throw(TypeError, "uint64Value() called on non-uint64 Element"); };
     virtual double doubleValue() const
     { isc_throw(TypeError, "doubleValue() called on non-double Element"); };
     virtual bool boolValue() const
@@ -154,8 +154,8 @@ public:
     /// data to the given reference and returning true
     ///
     //@{
-    virtual bool getValue(long long int& t) const;
-    virtual bool getValue(unsigned long long int& t) const;
+    virtual bool getValue(int64_t& t) const;
+    virtual bool getValue(uint64_t& t) const;
     virtual bool getValue(double& t) const;
     virtual bool getValue(bool& t) const;
     virtual bool getValue(std::string& t) const;
@@ -171,8 +171,8 @@ public:
     /// is of the correct type
     ///
     //@{
-    virtual bool setValue(const long long int v);
-    virtual bool setValue(const unsigned long long int v);
+    virtual bool setValue(const int64_t v);
+    virtual bool setValue(const uint64_t v);
     virtual bool setValue(const double v);
     virtual bool setValue(const bool t);
     virtual bool setValue(const std::string& v);
@@ -278,10 +278,10 @@ public:
     /// represents an empty value, and is created with Element::create())
     //@{
     static ElementPtr create();
-    static ElementPtr create(const long long int i);
-    static ElementPtr create(const unsigned long long int u);
-    static ElementPtr create(const long int i) { return (create(static_cast<long long int>(i))); };
-    static ElementPtr create(const int i) { return (create(static_cast<long long int>(i))); };
+    static ElementPtr create(const int64_t i);
+    static ElementPtr create(const uint64_t u);
+    static ElementPtr create(const long int i) { return (create(static_cast<int64_t>(i))); };
+    static ElementPtr create(const int i) { return (create(static_cast<int64_t>(i))); };
     static ElementPtr create(const double d);
     static ElementPtr create(const bool b);
     static ElementPtr create(const std::string& s);
@@ -378,29 +378,29 @@ public:
 };
 
 class IntElement : public Element {
-    long long int i;
+    int64_t i;
 
 public:
-    IntElement(long long int v) : Element(integer), i(v) { }
-    long long int intValue() const { return (i); }
+    IntElement(int64_t v) : Element(integer), i(v) { }
+    int64_t intValue() const { return (i); }
     using Element::getValue;
-    bool getValue(long long int& t) const { t = i; return (true); }
+    bool getValue(int64_t& t) const { t = i; return (true); }
     using Element::setValue;
-    bool setValue(const long long int v) { i = v; return (true); }
+    bool setValue(const int64_t v) { i = v; return (true); }
     void toJSON(std::ostream& ss) const;
     bool equals(const Element& other) const;
 };
 
 class Uint64Element : public Element {
-    unsigned long long int i;
+    uint64_t i;
 
 public:
-    Uint64Element(unsigned long long int v) : Element(integer), i(v) { }
-    unsigned long long int uint64Value() const { return (i); }
+    Uint64Element(uint64_t v) : Element(uint64), i(v) { }
+    uint64_t uint64Value() const { return (i); }
     using Element::getValue;
-    bool getValue(unsigned long long int& t) const { t = i; return (true); }
+    bool getValue(uint64_t& t) const { t = i; return (true); }
     using Element::setValue;
-    bool setValue(const unsigned long long int v) { i = v; return (true); }
+    bool setValue(const uint64_t v) { i = v; return (true); }
     void toJSON(std::ostream& ss) const;
     bool equals(const Element& other) const;
 };

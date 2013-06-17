@@ -167,13 +167,13 @@ TEST_F(DhcpParserTest, uint32ParserTest) {
     // 64-bit platform. 
     if (sizeof(long) > sizeof(uint32_t)) {
         long max = (long)(std::numeric_limits<uint32_t>::max()) + 1;
-        int_element->setValue(max);
+        int_element->setValue((int64_t)max);
         EXPECT_THROW(parser.build(int_element), isc::BadValue);
     }
 
     // Verify that parser will build with value of zero.
     int test_value = 0;
-    int_element->setValue((long)test_value);
+    int_element->setValue((int64_t)test_value);
     ASSERT_NO_THROW(parser.build(int_element));
 
     // Verify that commit updates storage.
@@ -184,7 +184,7 @@ TEST_F(DhcpParserTest, uint32ParserTest) {
 
     // Verify that parser will build with a valid positive value.
     test_value = 77;
-    int_element->setValue((long)test_value);
+    int_element->setValue((int64_t)test_value);
     ASSERT_NO_THROW(parser.build(int_element));
 
     // Verify that commit updates storage.

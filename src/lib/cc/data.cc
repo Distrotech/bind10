@@ -26,12 +26,10 @@
 #include <sstream>
 #include <cerrno>
 #include <climits>
-
-#include <boost/algorithm/string.hpp> // for iequals
-
 #include <cmath>
 #include <cerrno>
-// #include <cstdint>
+
+#include <boost/algorithm/string.hpp> // for iequals
 
 using namespace std;
 
@@ -62,12 +60,12 @@ Element::toWire(std::ostream& ss) const {
 }
 
 bool
-Element::getValue(long long int&) const {
+Element::getValue(int64_t&) const {
     return (false);
 }
 
 bool
-Element::getValue(unsigned long long int&) const {
+Element::getValue(uint64_t&) const {
     return (false);
 }
 
@@ -97,12 +95,12 @@ Element::getValue(std::map<std::string, ConstElementPtr>&) const {
 }
 
 bool
-Element::setValue(const long long int) {
+Element::setValue(const int64_t) {
     return (false);
 }
 
 bool
-Element::setValue(const unsigned long long int) {
+Element::setValue(const uint64_t) {
     return (false);
 }
 
@@ -220,12 +218,12 @@ Element::create() {
 }
 
 ElementPtr
-Element::create(const long long int i) {
+Element::create(const int64_t i) {
     return (ElementPtr(new IntElement(i)));
 }
 
 ElementPtr
-Element::create(const unsigned long long int u) {
+Element::create(const uint64_t u) {
     return (ElementPtr(new Uint64Element(u)));
 }
 
@@ -410,8 +408,8 @@ numberFromStringstream(std::istream& in, int& pos) {
 // value is larger than an int can handle)
 ElementPtr
 fromStringstreamNumber(std::istream& in, int& pos) {
-    long long int i;
-    unsigned long long int u;
+    int64_t i;
+    uint64_t u;
     double d = 0.0;
     char* endptr;
 
@@ -536,6 +534,8 @@ Element::typeToName(Element::types type) {
     switch (type) {
     case Element::integer:
         return (std::string("integer"));
+    case Element::uint64:
+        return (std::string("uint64"));
     case Element::real:
         return (std::string("real"));
     case Element::boolean:
@@ -559,6 +559,8 @@ Element::types
 Element::nameToType(const std::string& type_name) {
     if (type_name == "integer") {
         return (Element::integer);
+    } else if (type_name == "uint64") {
+        return (Element::uint64);
     } else if (type_name == "real") {
         return (Element::real);
     } else if (type_name == "boolean") {
@@ -858,7 +860,7 @@ IntElement::equals(const Element& other) const {
 
 bool
 Uint64Element::equals(const Element& other) const {
-    return (other.getType() == Element::integer) &&
+    return (other.getType() == Element::uint64) &&
            (i == other.intValue());
 }
 

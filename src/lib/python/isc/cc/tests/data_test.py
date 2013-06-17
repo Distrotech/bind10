@@ -223,6 +223,10 @@ class TestData(unittest.TestCase):
         
     def test_parse_value_str(self):
         self.assertEqual(data.parse_value_str("1"), 1)
+        self.assertEqual(data.parse_value_str("9223372036854775807"), 9223372036854775807)
+        self.assertEqual(data.parse_value_str("-9223372036854775807"), -9223372036854775807)
+        self.assertEqual(data.parse_value_str("-9223372036854775808"), -9223372036854775808)
+        self.assertEqual(data.parse_value_str("18446744073709551615"), 18446744073709551615)
         self.assertEqual(data.parse_value_str("true"), True)
         self.assertEqual(data.parse_value_str("null"), None)
         self.assertEqual(data.parse_value_str("1.1"), 1.1)

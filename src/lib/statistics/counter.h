@@ -21,6 +21,7 @@
 #include <boost/scoped_ptr.hpp>
 
 #include <vector>
+#include <stdint.h>
 
 namespace isc {
 namespace statistics {
@@ -28,7 +29,7 @@ namespace statistics {
 class Counter : boost::noncopyable {
 public:
     typedef unsigned int Type;
-    typedef unsigned long long int Value;
+    typedef uint64_t Value;
 
 private:
     std::vector<Counter::Value> counters_;

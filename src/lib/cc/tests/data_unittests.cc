@@ -192,7 +192,7 @@ template <typename T>
 void
 testGetValueInt() {
     T el;
-    long long int i;
+    int64_t i;
     double d;
     bool b;
     std::string s;
@@ -219,7 +219,7 @@ template <typename T>
 void
 testGetValueDouble() {
     T el;
-    long long int i;
+    int64_t i;
     double d;
     bool b;
     std::string s;
@@ -246,7 +246,7 @@ template <typename T>
 void
 testGetValueBool() {
     T el;
-    long long int i;
+    int64_t i;
     double d;
     bool b;
     std::string s;
@@ -273,7 +273,7 @@ template <typename T>
 void
 testGetValueString() {
     T el;
-    long long int i;
+    int64_t i;
     double d;
     bool b;
     std::string s;
@@ -300,7 +300,7 @@ template <typename T>
 void
 testGetValueList() {
     T el;
-    long long int i;
+    int64_t i;
     double d;
     bool b;
     std::string s;
@@ -327,7 +327,7 @@ template <typename T>
 void
 testGetValueMap() {
     T el;
-    long long int i;
+    int64_t i;
     double d;
     bool b;
     std::string s;
@@ -355,7 +355,7 @@ TEST(Element, create_and_value_throws) {
     // incorrect type is requested
     ElementPtr el;
     ConstElementPtr cel;
-    long long int i = 0;
+    int64_t i = 0;
     double d = 0.0;
     bool b = false;
     std::string s("asdf");
