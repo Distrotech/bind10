@@ -21,6 +21,7 @@
 #include <boost/shared_ptr.hpp>
 #include <stdexcept>
 #include <exceptions/exceptions.h>
+#include <climits>
 #include <stdint.h>
 
 namespace isc { namespace data {
@@ -383,6 +384,13 @@ class IntElement : public Element {
 public:
     IntElement(int64_t v) : Element(integer), i(v) { }
     int64_t intValue() const { return (i); }
+    uint64_t uint64Value() const {
+        if (i >= 0) {
+            return (i);
+        } else {
+            isc_throw(TypeError, "uint64Value() called on negative integer Element");
+        }
+    };
     using Element::getValue;
     bool getValue(int64_t& t) const { t = i; return (true); }
     using Element::setValue;
@@ -397,6 +405,13 @@ class Uint64Element : public Element {
 public:
     Uint64Element(uint64_t v) : Element(uint64), i(v) { }
     uint64_t uint64Value() const { return (i); }
+    int64_t intValue() const {
+        if (i <= LLONG_MAX) {
+            return (i);
+        } else {
+            isc_throw(TypeError, "intValue() called on uint64 Element");
+        }
+    };
     using Element::getValue;
     bool getValue(uint64_t& t) const { t = i; return (true); }
     using Element::setValue;

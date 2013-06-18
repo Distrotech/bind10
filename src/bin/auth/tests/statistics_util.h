@@ -25,7 +25,7 @@ namespace unittest {
 // are zero.
 void
 checkStatisticsCounters(const isc::data::ConstElementPtr counters,
-                        const std::map<std::string, unsigned long long int>& expect);
+                        const std::map<std::string, uint64_t>& expect);
 
 } // end of unittest
 } // end of auth

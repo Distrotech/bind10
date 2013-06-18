@@ -18,10 +18,11 @@
 
 #include <string>
 #include <map>
+#include <sys/types.h>
 
 namespace {
 void
-flatten(std::map<std::string, unsigned long long int>& flat_map, const std::string& prefix,
+flatten(std::map<std::string, uint64_t>& flat_map, const std::string& prefix,
         const isc::data::ConstElementPtr map_element)
 {
     std::map<std::string, isc::data::ConstElementPtr> map =
@@ -54,17 +55,17 @@ namespace unittest {
 
 void
 checkStatisticsCounters(const isc::data::ConstElementPtr counters,
-                        const std::map<std::string, unsigned long long int>& expect)
+                        const std::map<std::string, uint64_t>& expect)
 {
-    std::map<std::string, unsigned long long int> stats_map;
+    std::map<std::string, uint64_t> stats_map;
     flatten(stats_map, "", counters);
 
-    for (std::map<std::string, unsigned long long int>::const_iterator
+    for (std::map<std::string, uint64_t>::const_iterator
             i = stats_map.begin(), e = stats_map.end();
             i != e;
             ++i)
     {
-        const unsigned long long int value =
+        const uint64_t value =
             expect.find(i->first) == expect.end() ?
                 0 : expect.find(i->first)->second;
         EXPECT_EQ(value, i->second) << "Expected counter "

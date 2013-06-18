@@ -142,7 +142,7 @@ protected:
 
     // Checks whether all Rcode counters are set to zero except the given
     // rcode (it is checked to be set to 'value')
-    void checkAllRcodeCountersZeroExcept(const Rcode& rcode, unsigned long long value) const {
+    void checkAllRcodeCountersZeroExcept(const Rcode& rcode, uint64_t value) const {
         std::string target_rcode_name = rcode.toText();
         std::transform(target_rcode_name.begin(), target_rcode_name.end(),
                        target_rcode_name.begin(), ::tolower);
@@ -197,7 +197,7 @@ protected:
     // Check if the counters exist and are initialized to 0.
     void
     checkCountersAreInitialized() {
-        const std::map<std::string, unsigned long long int> expect;
+        const std::map<std::string, uint64_t> expect;
         ConstElementPtr stats = server.getStatistics()->
             get("zones")->get("_SERVER_");
         checkStatisticsCounters(stats, expect);
@@ -314,7 +314,7 @@ TEST_F(AuthSrvTest, noClientList) {
 
     ConstElementPtr stats_after = server.getStatistics()->get("zones")->
         get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.udp"] = 1;
     expect["opcode.query"] = 1;
@@ -345,7 +345,7 @@ TEST_F(AuthSrvTest, shortMessage) {
 
     ConstElementPtr stats_after = server.getStatistics()->get("zones")->
         get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.udp"] = 1;
     checkStatisticsCounters(stats_after, expect);
@@ -359,7 +359,7 @@ TEST_F(AuthSrvTest, response) {
 
     ConstElementPtr stats_after = server.getStatistics()->get("zones")->
         get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 3;
     expect["request.udp"] = 3;
     checkStatisticsCounters(stats_after, expect);
@@ -370,7 +370,7 @@ TEST_F(AuthSrvTest, shortQuestion) {
     shortQuestion();
     ConstElementPtr stats_after = server.getStatistics()->get("zones")->
         get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.udp"] = 1;
     expect["opcode.query"] = 1;
@@ -385,7 +385,7 @@ TEST_F(AuthSrvTest, shortAnswer) {
     shortAnswer();
     ConstElementPtr stats_after = server.getStatistics()->get("zones")->
         get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.udp"] = 1;
     expect["opcode.query"] = 1;
@@ -401,7 +401,7 @@ TEST_F(AuthSrvTest, ednsBadVers) {
 
     ConstElementPtr stats_after = server.getStatistics()->get("zones")->
         get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.badednsver"] = 1;
     expect["request.udp"] = 1;
@@ -431,7 +431,7 @@ TEST_F(AuthSrvTest, AXFRSuccess) {
 
     ConstElementPtr stats_after = server.getStatistics()->get("zones")->
         get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.tcp"] = 1;
     expect["opcode.query"] = 1;
@@ -473,7 +473,7 @@ TEST_F(AuthSrvTest, TSIGSignedBadKey) {
     checkAllRcodeCountersZeroExcept(Rcode::NOTAUTH(), 1);
     ConstElementPtr stats_after = server.getStatistics()->get("zones")->
         get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.tsig"] = 1;
     expect["request.badsig"] = 1;
@@ -519,7 +519,7 @@ TEST_F(AuthSrvTest, TSIGBadSig) {
 
     ConstElementPtr stats_after = server.getStatistics()->get("zones")->
         get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.tsig"] = 1;
     expect["request.badsig"] = 1;
@@ -568,7 +568,7 @@ TEST_F(AuthSrvTest, TSIGCheckFirst) {
 
     ConstElementPtr stats_after = server.getStatistics()->get("zones")->
         get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.tsig"] = 1;
     expect["request.badsig"] = 1;
@@ -738,7 +738,7 @@ TEST_F(AuthSrvTest, notify) {
 
     ConstElementPtr stats_after = server.getStatistics()->get("zones")->
         get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.udp"] = 1;
     expect["opcode.notify"] = 1;
@@ -769,7 +769,7 @@ TEST_F(AuthSrvTest, notifyForCHClass) {
 
     ConstElementPtr stats_after = server.getStatistics()->get("zones")->
         get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.udp"] = 1;
     expect["opcode.notify"] = 1;
@@ -794,7 +794,7 @@ TEST_F(AuthSrvTest, notifyEmptyQuestion) {
 
     ConstElementPtr stats_after = server.getStatistics()->get("zones")->
         get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.udp"] = 1;
     expect["opcode.notify"] = 1;
@@ -1032,7 +1032,7 @@ TEST_F(AuthSrvTest, TSIGSigned) {
     checkAllRcodeCountersZeroExcept(Rcode::NOERROR(), 1);
     ConstElementPtr stats_after = server.getStatistics()->get("zones")->
         get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.tsig"] = 1;
     expect["request.udp"] = 1;
@@ -1156,7 +1156,7 @@ TEST_F(AuthSrvTest, datasourceFail) {
     checkAllRcodeCountersZeroExcept(Rcode::SERVFAIL(), 1);
     ConstElementPtr stats = server.getStatistics()->get("zones")->
         get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.udp"] = 1;
     expect["opcode.query"] = 1;
@@ -1232,7 +1232,7 @@ TEST_F(AuthSrvTest, emptyZone) {
     checkAllRcodeCountersZeroExcept(Rcode::SERVFAIL(), 1);
     ConstElementPtr stats = server.getStatistics()->get("zones")->
         get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.udp"] = 1;
     expect["opcode.query"] = 1;
@@ -1309,7 +1309,7 @@ TEST_F(AuthSrvTest, queryCounterTruncTest) {
 
     ConstElementPtr stats_after = server.getStatistics()->
         get("zones")->get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.udp"] = 1;
     expect["opcode.query"] = 1;
@@ -1332,7 +1332,7 @@ TEST_F(AuthSrvTest, queryCounterUDPNormal) {
 
     ConstElementPtr stats_after = server.getStatistics()->
         get("zones")->get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.udp"] = 1;
     expect["opcode.query"] = 1;
@@ -1355,7 +1355,7 @@ TEST_F(AuthSrvTest, queryCounterUDPNormalWithDNSSEC) {
 
     ConstElementPtr stats_after = server.getStatistics()->
         get("zones")->get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.edns0"] = 1;
     expect["request.udp"] = 1;
@@ -1383,7 +1383,7 @@ TEST_F(AuthSrvTest, queryCounterTCPNormal) {
 
     ConstElementPtr stats_after = server.getStatistics()->
         get("zones")->get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.tcp"] = 1;
     expect["opcode.query"] = 1;
@@ -1407,7 +1407,7 @@ TEST_F(AuthSrvTest, queryCounterTCPAXFR) {
 
     ConstElementPtr stats_after = server.getStatistics()->
         get("zones")->get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.tcp"] = 1;
     expect["opcode.query"] = 1;
@@ -1427,7 +1427,7 @@ TEST_F(AuthSrvTest, queryCounterTCPIXFR) {
 
     ConstElementPtr stats_after = server.getStatistics()->
         get("zones")->get("_SERVER_");
-    std::map<std::string, unsigned long long int> expect;
+    std::map<std::string, uint64_t> expect;
     expect["request.v4"] = 1;
     expect["request.tcp"] = 1;
     expect["opcode.query"] = 1;
