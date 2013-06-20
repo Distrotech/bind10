@@ -391,8 +391,20 @@ public:
             isc_throw(TypeError, "uint64Value() called on negative integer Element");
         }
     };
+    double doubleValue() const {
+        return (i);
+    }
     using Element::getValue;
     bool getValue(int64_t& t) const { t = i; return (true); }
+    bool getValue(uint64_t& t) const {
+        if (i >= 0) {
+            t = i;
+            return (true);
+        } else {
+            isc_throw(TypeError, "uint64Value() called on negative integer Element");
+        }
+    }
+    bool getValue(double& t) const { t = i; return (true); }
     using Element::setValue;
     bool setValue(const int64_t v) { i = v; return (true); }
     void toJSON(std::ostream& ss) const;
@@ -412,8 +424,20 @@ public:
             isc_throw(TypeError, "intValue() called on uint64 Element");
         }
     };
+    double doubleValue() const {
+        return (i);
+    }
     using Element::getValue;
     bool getValue(uint64_t& t) const { t = i; return (true); }
+    bool getValue(int64_t& t) const {
+        if (i <= LLONG_MAX) {
+            t = i;
+            return (true);
+        } else {
+            isc_throw(TypeError, "getValue(int64_t&) called on uint64 Element");
+        }
+    }
+    bool getValue(double& t) const { t = i; return (true); }
     using Element::setValue;
     bool setValue(const uint64_t v) { i = v; return (true); }
     void toJSON(std::ostream& ss) const;
@@ -426,8 +450,36 @@ class DoubleElement : public Element {
 public:
     DoubleElement(double v) : Element(real), d(v) {};
     double doubleValue() const { return (d); }
+    int64_t intValue() const {
+        if (d <= LLONG_MAX && d >= LLONG_MIN) {
+            return d;
+        }
+        isc_throw(TypeError, "intValue() called on double Element");
+    }
+    uint64_t uint64Value() const {
+        if (d <= ULLONG_MAX && d >= 0) {
+            return d;
+        }
+        isc_throw(TypeError, "uint64Value() called on double Element");
+    }
     using Element::getValue;
     bool getValue(double& t) const { t = d; return (true); }
+    bool getValue(int64_t& t) const {
+        if (d <= LLONG_MAX) {
+            t = d;
+            return (true);
+        } else {
+            isc_throw(TypeError, "getValue(int64_t&) called on double Element");
+        }
+    }
+    bool getValue(uint64_t& t) const {
+        if (d >= 0) {
+            t = d;
+            return (true);
+        } else {
+            isc_throw(TypeError, "uint64Value() called on negative double Element");
+        }
+    }
     using Element::setValue;
     bool setValue(const double v) { d = v; return (true); }
     void toJSON(std::ostream& ss) const;

@@ -201,18 +201,19 @@ testGetValueInt() {
 
     el = Element::create(1);
     EXPECT_NO_THROW(el->intValue());
-    EXPECT_THROW(el->doubleValue(), TypeError);
+    // EXPECT_THROW(el->doubleValue(), TypeError);
     EXPECT_THROW(el->boolValue(), TypeError);
     EXPECT_THROW(el->stringValue(), TypeError);
     EXPECT_THROW(el->listValue(), TypeError);
     EXPECT_THROW(el->mapValue(), TypeError);
     EXPECT_TRUE(el->getValue(i));
-    EXPECT_FALSE(el->getValue(d));
+    EXPECT_TRUE(el->getValue(d));
     EXPECT_FALSE(el->getValue(b));
     EXPECT_FALSE(el->getValue(s));
     EXPECT_FALSE(el->getValue(v));
     EXPECT_FALSE(el->getValue(m));
     EXPECT_EQ(1, i);
+    EXPECT_EQ(1, d);
 }
 
 template <typename T>
@@ -227,19 +228,20 @@ testGetValueDouble() {
     std::map<std::string, ConstElementPtr> m;
 
     el = Element::create(1.1);
-    EXPECT_THROW(el->intValue(), TypeError);
+    // EXPECT_THROW(el->intValue(), TypeError);
     EXPECT_NO_THROW(el->doubleValue());
     EXPECT_THROW(el->boolValue(), TypeError);
     EXPECT_THROW(el->stringValue(), TypeError);
     EXPECT_THROW(el->listValue(), TypeError);
     EXPECT_THROW(el->mapValue(), TypeError);
-    EXPECT_FALSE(el->getValue(i));
+    EXPECT_TRUE(el->getValue(i));
     EXPECT_TRUE(el->getValue(d));
     EXPECT_FALSE(el->getValue(b));
     EXPECT_FALSE(el->getValue(s));
     EXPECT_FALSE(el->getValue(v));
     EXPECT_FALSE(el->getValue(m));
     EXPECT_EQ(1.1, d);
+    EXPECT_EQ(1, i);
 }
 
 template <typename T>
