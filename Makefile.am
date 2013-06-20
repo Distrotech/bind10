@@ -430,6 +430,25 @@ EXTRA_DIST += ext/asio/asio/deadline_timer.hpp
 EXTRA_DIST += ext/asio/asio/stream_socket_service.hpp
 EXTRA_DIST += ext/coroutine/coroutine.h
 
+# include the examples in the main tarball
+EXTRA_DIST += examples/AUTHORS
+EXTRA_DIST += examples/COPYING
+EXTRA_DIST += examples/ChangeLog
+EXTRA_DIST += examples/INSTALL
+EXTRA_DIST += examples/Makefile.am
+EXTRA_DIST += examples/NEWS
+EXTRA_DIST += examples/README
+EXTRA_DIST += examples/aclocal.m4
+EXTRA_DIST += examples/config.h.in
+EXTRA_DIST += examples/configure.ac
+EXTRA_DIST += examples/host/Makefile.am
+EXTRA_DIST += examples/host/README
+EXTRA_DIST += examples/host/b10-host.xml
+EXTRA_DIST += examples/host/host.cc
+EXTRA_DIST += examples/m4/ax_boost_include.m4
+EXTRA_DIST += examples/m4/ax_isc_bind10.m4
+EXTRA_DIST += examples/m4/ax_isc_rpath.m4
+
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = dns++.pc
 
