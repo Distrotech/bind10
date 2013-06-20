@@ -121,7 +121,7 @@ TEST_F(CountersTest, invalidParameterForSetRequestTSIG) {
 TEST_F(CountersTest, incrementResponse) {
     Message response(Message::RENDER);
     MessageAttributes msgattrs;
-    std::map<std::string, int> expect;
+    std::map<std::string, uint64_t> expect;
 
     // Test response counters are incremented only if responded == true.
     for (int i = 0; i < 2; ++i) {
@@ -155,7 +155,7 @@ TEST_F(CountersTest, incrementResponse) {
 TEST_F(CountersTest, incrementProtocolType) {
     Message response(Message::RENDER);
     MessageAttributes msgattrs;
-    std::map<std::string, int> expect;
+    std::map<std::string, uint64_t> expect;
 
     // Test these patterns:
     //      af     proto
@@ -164,7 +164,7 @@ TEST_F(CountersTest, incrementProtocolType) {
     //      ipv4   tcp
     //      ipv6   udp
     //      ipv4   udp
-    int count_v4 = 0, count_v6 = 0, count_udp = 0, count_tcp = 0;
+    uint64_t count_v4 = 0, count_v6 = 0, count_udp = 0, count_tcp = 0;
     for (int i = 0; i < 4; ++i) {
         const int af = i & 1 ? AF_INET : AF_INET6;
         const int proto = i & 2 ? IPPROTO_UDP : IPPROTO_TCP;
@@ -212,7 +212,7 @@ TEST_F(CountersTest, incrementProtocolType) {
 TEST_F(CountersTest, incrementDO) {
     Message response(Message::RENDER);
     MessageAttributes msgattrs;
-    std::map<std::string, int> expect;
+    std::map<std::string, uint64_t> expect;
 
     // Test these patterns:
     //     DNSSEC OK
@@ -250,7 +250,7 @@ TEST_F(CountersTest, incrementDO) {
 TEST_F(CountersTest, incrementEDNS) {
     Message response(Message::RENDER);
     MessageAttributes msgattrs;
-    std::map<std::string, int> expect;
+    std::map<std::string, uint64_t> expect;
 
     // Test these patterns:
     //     request edns0   response edns0
@@ -304,7 +304,7 @@ TEST_F(CountersTest, incrementEDNS) {
 TEST_F(CountersTest, incrementTSIG) {
     Message response(Message::RENDER);
     MessageAttributes msgattrs;
-    std::map<std::string, int> expect;
+    std::map<std::string, uint64_t> expect;
 
     // Test these patterns:
     //      request signature  badsig   response signature
@@ -314,7 +314,7 @@ TEST_F(CountersTest, incrementTSIG) {
     //      TSIG               true     (none)
     //
     // badsig can't be true if the message does not have signature.
-    int count_req_tsig = 0, count_res_tsig = 0, count_badsig = 0;
+    uint64_t count_req_tsig = 0, count_res_tsig = 0, count_badsig = 0;
     for (int i = 0; i < 3; ++i) {
         const bool is_req_tsig = (i == 2) ? true : (i & 1) != 0;
         const bool is_res_tsig = (i & 1) != 0;
@@ -364,7 +364,7 @@ TEST_F(CountersTest, incrementTSIG) {
 TEST_F(CountersTest, incrementRD) {
     Message response(Message::RENDER);
     MessageAttributes msgattrs;
-    std::map<std::string, int> expect;
+    std::map<std::string, uint64_t> expect;
 
     // Test these patterns:
     //     OpCode         Recursion Desired
@@ -375,8 +375,8 @@ TEST_F(CountersTest, incrementRD) {
     //     2 (Status)     true
     //  Make sure the counter will be incremented only for the requests with
     //  OpCode=Query and Recursion Desired (RD) bit=1.
-    int count_opcode_query = 0;
-    int count_opcode_status = 0;
+    uint64_t count_opcode_query = 0;
+    uint64_t count_opcode_status = 0;
     for (int i = 0; i < 4; ++i) {
         const bool is_recursion_desired = i & 1;
         const uint8_t opcode_code = i & 0x2;
@@ -422,10 +422,10 @@ TEST_F(CountersTest, incrementRD) {
 TEST_F(CountersTest, incrementOpcode) {
     Message response(Message::RENDER);
     MessageAttributes msgattrs;
-    std::map<std::string, int> expect;
+    std::map<std::string, uint64_t> expect;
 
     // Test all opcodes (QUERY..RESERVED15)
-    int count_all = 0, count_opcode_other = 0;
+    uint64_t count_all = 0, count_opcode_other = 0;
     for (uint8_t i = Opcode::QUERY().getCode(),
                  e = Opcode::RESERVED15().getCode();
          i <= e;
@@ -478,10 +478,10 @@ TEST_F(CountersTest, incrementOpcode) {
 TEST_F(CountersTest, incrementRcode) {
     Message response(Message::RENDER);
     MessageAttributes msgattrs;
-    std::map<std::string, int> expect;
+    std::map<std::string, uint64_t> expect;
 
     // Test all rcodes (NOERROR..BADVERS)
-    int count_all = 0, count_rcode_other = 0, count_ednsbadver = 0;
+    uint64_t count_all = 0, count_rcode_other = 0, count_ednsbadver = 0;
     for (uint16_t i = Rcode::NOERROR().getCode(),
                   e = Rcode::BADVERS().getCode();
          i <= e;
@@ -538,14 +538,14 @@ TEST_F(CountersTest, incrementRcode) {
 TEST_F(CountersTest, incrementTruncated) {
     Message response(Message::RENDER);
     MessageAttributes msgattrs;
-    std::map<std::string, int> expect;
+    std::map<std::string, uint64_t> expect;
 
     // Test these patterns:
     //      truncated
     //     -----------
     //      false
     //      true
-    int count_truncated = 0;
+    uint64_t count_truncated = 0;
     for (int i = 0; i < 2; ++i) {
         const bool is_truncated = i & 1;
         buildSkeletonMessage(msgattrs);
@@ -581,7 +581,7 @@ TEST_F(CountersTest, incrementTruncated) {
 TEST_F(CountersTest, incrementQryAuthAnsAndNoAuthAns) {
     Message response(Message::RENDER);
     MessageAttributes msgattrs;
-    std::map<std::string, int> expect;
+    std::map<std::string, uint64_t> expect;
 
     // Opcode = QUERY, ANCOUNT = 0 (don't care), Rcode = SERVFAIL (don't care)
     // Test these patterns:
@@ -589,7 +589,7 @@ TEST_F(CountersTest, incrementQryAuthAnsAndNoAuthAns) {
     //     -----------------------
     //      false -> QryNoAuthAns
     //      true  -> QryAuthAns
-    int count_authans = 0, count_noauthans = 0;
+    uint64_t count_authans = 0, count_noauthans = 0;
     for (int i = 0; i < 2; ++i) {
         const bool is_aa_set = i & 1;
         buildSkeletonMessage(msgattrs);
@@ -626,7 +626,7 @@ TEST_F(CountersTest, incrementQryAuthAnsAndNoAuthAns) {
 TEST_F(CountersTest, incrementQrySuccess) {
     Message response(Message::RENDER);
     MessageAttributes msgattrs;
-    std::map<std::string, int> expect;
+    std::map<std::string, uint64_t> expect;
 
     // Opcode = QUERY, Rcode = NOERROR, ANCOUNT > 0
     msgattrs.setRequestIPVersion(AF_INET);
@@ -668,7 +668,7 @@ TEST_F(CountersTest, incrementQrySuccess) {
 TEST_F(CountersTest, incrementQryReferralAndNxrrset) {
     Message response(Message::RENDER);
     MessageAttributes msgattrs;
-    std::map<std::string, int> expect;
+    std::map<std::string, uint64_t> expect;
 
     // Opcode = QUERY, Rcode = NOERROR, ANCOUNT = 0
     // Test these patterns:
@@ -676,7 +676,7 @@ TEST_F(CountersTest, incrementQryReferralAndNxrrset) {
     //     ----------------------
     //      false -> QryReferral
     //      true  -> QryNxrrset
-    int count_referral = 0, count_nxrrset = 0;
+    uint64_t count_referral = 0, count_nxrrset = 0;
     for (int i = 0; i < 2; ++i) {
         const bool is_aa_set = i & 1;
         msgattrs.setRequestIPVersion(AF_INET);
@@ -720,7 +720,7 @@ TEST_F(CountersTest, incrementQryReferralAndNxrrset) {
 TEST_F(CountersTest, incrementAuthQryRej) {
     Message response(Message::RENDER);
     MessageAttributes msgattrs;
-    std::map<std::string, int> expect;
+    std::map<std::string, uint64_t> expect;
 
     // Opcode = QUERY, Rcode = REFUSED, ANCOUNT = 0 (don't care)
     msgattrs.setRequestIPVersion(AF_INET);

@@ -53,8 +53,7 @@ fillNodes(const Counter& counter,
             fillNodes(counter, type_tree[i].sub_counters, sub_counters);
         } else {
             trees->set(type_tree[i].name,
-                       Element::create(static_cast<long int>(
-                           counter.get(type_tree[i].counter_id)))
+                       Element::create(counter.get(type_tree[i].counter_id))
                        );
         }
     }
