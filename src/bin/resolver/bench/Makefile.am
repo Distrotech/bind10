@@ -18,6 +18,7 @@ resolver_bench_SOURCES = main.cc
 resolver_bench_SOURCES += fake_resolution.h fake_resolution.cc
 resolver_bench_SOURCES += dummy_work.h dummy_work.cc
 resolver_bench_SOURCES += naive_resolver.h naive_resolver.cc
+resolver_bench_SOURCES += landlord.h landlord.cc
 
 resolver_bench_LDADD = $(top_builddir)/src/lib/exceptions/libb10-exceptions.la
 resolver_bench_LDADD += $(top_builddir)/src/lib/asiolink/libb10-asiolink.la
