@@ -255,6 +255,15 @@ CondVar::signal() {
     assert(result == 0);
 }
 
+void
+CondVar::broadcast() {
+    const int result = pthread_cond_broadcast(&impl_->cond_);
+
+    // pthread_cond_signal() can only fail when if cond_ is invalid.  It
+    //should be impossible as long as this is a valid CondVar object.
+    assert(result == 0);
+}
+
 }
 }
 }

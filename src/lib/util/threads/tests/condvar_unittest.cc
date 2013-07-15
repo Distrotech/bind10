@@ -133,6 +133,34 @@ TEST_F(CondVarTest, multiWaits) {
     EXPECT_EQ(4, shared_var);
 }
 
+// Just like above, but wake up both at once.
+TEST_F(CondVarTest, broadcast) {
+    boost::scoped_ptr<Mutex::Locker> locker(new Mutex::Locker(mutex_));
+    CondVar condvar2; // separate cond var for initial synchronization
+    int shared_var = 0; // let the other thread increment this
+    Thread t1(boost::bind(&signalAndWait, &condvar_, &condvar2, &mutex_,
+                          &shared_var));
+    Thread t2(boost::bind(&signalAndWait, &condvar_, &condvar2, &mutex_,
+                          &shared_var));
+
+    // Wait until both threads are waiting on condvar_.
+    while (shared_var < 2 && !do_exit) {
+        condvar2.wait(mutex_);
+    }
+    // Check we exited from the loop successfully.
+    ASSERT_FALSE(do_exit);
+    ASSERT_EQ(2, shared_var);
+
+    // release the lock, wake up both threads, wait for them to die, and
+    // confirm they successfully woke up.
+    locker.reset();
+    condvar_.broadcast();
+    t1.wait();
+    t2.wait();
+    EXPECT_EQ(4, shared_var);
+
+}
+
 // Similar to the previous version of the same function, but just do
 // condvar operations.  It will never wake up.
 void

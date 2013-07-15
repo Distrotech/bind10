@@ -248,6 +248,9 @@ public:
     /// This method never throws; if some unexpected low level error happens
     /// it terminates the program.
     void signal();
+
+    /// \brief Like signal, but wakes all the threads.
+    void broadcast();
 private:
     class Impl;
     Impl* impl_;
