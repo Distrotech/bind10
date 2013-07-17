@@ -30,6 +30,8 @@ dnl                             compile managed_mapped_file (can be empty).
 dnl                             It is of no use if "WOULDFAIL" is yes.
 dnl   BOOST_STATIC_ASSERT_WOULDFAIL set to "yes" if BOOST_STATIC_ASSERT would
 dnl                                 cause build error; otherwise set to "no"
+dnl   BOOST_COROUTINES set to "yes" if the boost coroutines are available,
+dnl                    no otherwise.
 
 AC_DEFUN([AX_BOOST_FOR_BIND10], [
 AC_LANG_SAVE
@@ -159,6 +161,15 @@ void testfn(void) { BOOST_STATIC_ASSERT(true); }
  BOOST_STATIC_ASSERT_WOULDFAIL=no],
 [AC_MSG_RESULT(no)
  BOOST_STATIC_ASSERT_WOULDFAIL=yes])
+
+AC_MSG_CHECKING([BOOST_COROUTINES compiles])
+AC_TRY_COMPILE([
+#include <boost/coroutine/all.hpp>
+],,
+[AC_MSG_RESULT(yes)
+ BOOST_COROUTINES=yes],
+[AC_MSG_RESULT(no)
+ BOOST_COROUTINES=no])
 
 CXXFLAGS="$CXXFLAGS_SAVED"
 

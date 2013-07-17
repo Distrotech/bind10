@@ -898,6 +898,13 @@ if test "$BOOST_NUMERIC_CAST_WOULDFAIL" = "yes" -a X"$werror_ok" = X1 -a $CLANGP
     AC_MSG_ERROR([Failed to compile a required header file.  If you are using FreeBSD and Boost installed via ports, retry with specifying --without-werror.  See the ChangeLog entry for Trac no. 1991 for more details.])
 fi
 
+# Some systems are missing boost coroutines. We don't fail for that, as they are
+# used just in some internal benchmark for now.
+AM_CONDITIONAL([BOOST_COROUTINES], [test "$BOOST_COROUTINES" = "yes"])
+if test "$BOOST_COROUTINES" = "yes" ; then
+    AC_DEFINE(BOOST_COROUTINES, 1, [Define to 1 if boost::coroutine library works])
+fi
+
 use_shared_memory=yes
 AC_ARG_WITH(shared-memory,
     AC_HELP_STRING([--with-shared-memory],
