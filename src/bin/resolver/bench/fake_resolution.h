@@ -17,6 +17,7 @@
 
 #include <exceptions/exceptions.h>
 #include <asiolink/io_service.h>
+#include <asiolink/local_socket.h>
 
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
@@ -189,6 +190,8 @@ public:
     /// Initiarile the interface and create query_count queries for the
     /// benchmark. They will be handed out one by one with receiveQuery().
     FakeInterface(size_t query_count);
+    /// \brief Destructor
+    ~FakeInterface();
     /// \brief Wait for answers from upstream servers.
     ///
     /// Wait until at least one "answer" comes from the remote server. This
@@ -211,14 +214,26 @@ public:
     /// This returns a NULL pointer when there are no more queries to answer
     /// (the number designated for the benchmark was reached).
     FakeQueryPtr receiveQuery();
+    /// \brief Wake up from other thread.
+    ///
+    /// Make sure that processEvents() terminates now and won't block any more.
+    /// It may or may not produce some callbacks.
+    ///
+    /// This may be called from a different thread.
+    void wakeup();
 private:
     class UpstreamQuery;
     friend class FakeQuery;
     void scheduleUpstreamAnswer(FakeQuery* query,
                                 const FakeQuery::StepCallback& callback,
                                 size_t msec);
+    int initSockets();
+    void readWakeup(const std::string& error);
     asiolink::IOService service_;
     std::vector<FakeQueryPtr> queries_;
+    int read_pipe_, write_pipe_;
+    asiolink::LocalSocket wake_socket_;
+    char wake_buffer_;
 };
 
 }

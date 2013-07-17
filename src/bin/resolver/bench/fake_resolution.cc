@@ -21,6 +21,9 @@
 #include <boost/foreach.hpp>
 #include <algorithm>
 #include <stdlib.h> // not cstdlib, which doesn't officially have random()
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <errno.h>
 
 namespace isc {
 namespace resolver {
@@ -89,11 +92,22 @@ FakeQuery::performTask(const StepCallback& callback) {
 }
 
 FakeInterface::FakeInterface(size_t query_count) :
-    queries_(query_count)
+    queries_(query_count),
+    // This initialization of the file descriptors is not exactly exception
+    // safe, but this is a benchmark only, so we don't complicate the code.
+    read_pipe_(-1), write_pipe_(-1),
+    wake_socket_(service_, initSockets())
 {
     BOOST_FOREACH(FakeQueryPtr& query, queries_) {
         query = FakeQueryPtr(new FakeQuery(*this));
     }
+    // Call it on empty socket now, to register next async read.
+    readWakeup("");
+}
+
+FakeInterface::~ FakeInterface() {
+    close(read_pipe_);
+    close(write_pipe_);
 }
 
 void
@@ -165,6 +179,44 @@ FakeInterface::scheduleUpstreamAnswer(FakeQuery* query,
         timer(new asiolink::IntervalTimer(service_));
     UpstreamQuery* q(new UpstreamQuery(query, callback, timer));
     timer->setup(boost::bind(&UpstreamQuery::trigger, q), msec);
+}
+
+int
+FakeInterface::initSockets() {
+    int socks[2];
+    int result = socketpair(AF_UNIX, SOCK_STREAM, 0, socks);
+    assert(result == 0);
+    read_pipe_ = socks[0];
+    write_pipe_ = socks[1];
+    return read_pipe_;
+}
+
+void
+FakeInterface::wakeup() {
+    // We write a small bit of data to the wakeup socket. It'll generate an
+    // event in the mainloop of processEvents.
+    ssize_t result = send(write_pipe_, "w", 1, MSG_DONTWAIT);
+    // No errors, please.
+    // But blocking (full socket) is not considered an error. If it's full,
+    // the other side will wake up anyway, so that's OK.
+    assert(result == 1 || (errno == EAGAIN || errno == EWOULDBLOCK));
+}
+
+void
+FakeInterface::readWakeup(const std::string& error) {
+    assert(error.empty());
+    // Read some amount of data from the socket. May be more than the 1 byte
+    // we already read, batching some wakeups together.
+    const size_t batch_size = 1024;
+    uint8_t buffer[batch_size];
+    ssize_t result = recv(read_pipe_, buffer, batch_size,
+                          MSG_DONTWAIT /* Make sure we don't block even if
+                                          there's nothing (startup, spurious
+                                          select wakeup)*/);
+    assert(result > 0 || (errno == EAGAIN || errno == EWOULDBLOCK));
+    // Schedule next wakeup event
+    wake_socket_.asyncRead(boost::bind(&FakeInterface::readWakeup, this, _1),
+                           &wake_buffer_, 1);
 }
 
 }
