@@ -17,6 +17,8 @@
 
 #include <resolver/bench/fake_resolution.h>
 
+#include <boost/noncopyable.hpp>
+
 #include <vector>
 
 namespace isc {
@@ -27,15 +29,19 @@ namespace bench {
 ///
 /// Paralelism of waiting for upstream queries is done by executing
 /// coroutines. The cache is RCU-based.
-class CoroutineResolver {
+class CoroutineResolver : boost::noncopyable {
 public:
     /// \brief Constructor.
     ///
     /// Initializes the interfaces and queries in them.
     CoroutineResolver(size_t query_count, size_t thread_count);
+    /// \brief Destructor
+    ~CoroutineResolver();
     /// \brief Run the benchmark.
     size_t run();
 private:
+    // Run one thread on given interface.
+    void run_instance(FakeInterface* interface);
     std::vector<FakeInterface*> interfaces_;
     const size_t thread_count_;
     const size_t total_count_;
