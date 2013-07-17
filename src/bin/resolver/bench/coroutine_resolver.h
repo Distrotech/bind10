@@ -29,6 +29,11 @@ namespace bench {
 ///
 /// Paralelism of waiting for upstream queries is done by executing
 /// coroutines. The cache is RCU-based.
+///
+/// \note Many a method here is not exception safe. It can leak
+///    or leave things in inconsistent state. But as we don't expect
+///    any exceptions and terminate if we meet one, we prefer simpler
+///    code for benchmarks.
 class CoroutineResolver : boost::noncopyable {
 public:
     /// \brief Constructor.
