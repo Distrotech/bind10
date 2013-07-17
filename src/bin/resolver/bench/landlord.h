@@ -17,6 +17,8 @@
 
 #include <resolver/bench/fake_resolution.h>
 
+#include <boost/scoped_ptr.hpp>
+
 namespace isc {
 namespace resolver {
 namespace bench {
@@ -29,16 +31,35 @@ namespace bench {
 class LandlordResolver {
 public:
     /// \brief Constructor. Initializes the data.
-    LandlordResolver(size_t query_count);
+    LandlordResolver(size_t query_count, size_t batch_size,
+                     size_t worker_count);
+    ~ LandlordResolver();
     /// \brief Run the resolution.
     size_t run();
 private:
+    void read_iface();
+    void work();
+    void cache();
+    void send();
+    bool checkUpstream(bool block);
+    void completedUpstream(FakeQueryPtr query);
+
     FakeInterface interface_;
+
+    template<class T, class Container = std::vector<T> > class Queue;
+    typedef Queue<FakeQueryPtr> FQueue;
+    boost::scoped_ptr<FQueue> peasants_queue_, cache_queue_,
+        send_queue_, upstream_queue_;
+    std::vector<FakeQueryPtr> downstream_queue_;
+
+    const size_t read_batch_size_, worker_batch_;
+    const size_t worker_count_;
+    const size_t total_count_;
+    size_t outstanding_;
 };
 
 }
 }
 }
-
 
 #endif
