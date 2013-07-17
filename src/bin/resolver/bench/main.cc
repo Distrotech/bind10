@@ -13,14 +13,28 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <resolver/bench/naive_resolver.h>
+#include <resolver/bench/landlord.h>
 
 #include <bench/benchmark.h>
 
+#include <iostream>
+
 const size_t count = 1000; // TODO: We may want to read this from argv.
 
+using namespace std;
+
 int main(int, const char**) {
+    for (size_t i = 1; i < 10; i ++) {
+        for (size_t j = 1; j < 10; j ++) {
+            size_t size = j * 10;
+            cout << "Landlord with " << i << " workers and " << size << " batch size " << endl;
+            isc::resolver::bench::LandlordResolver landlord(::count, size, i);
+            isc::bench::BenchMark<isc::resolver::bench::LandlordResolver>
+                (1, landlord, true);
+        }
+    }
     // Run the naive implementation
-    isc::resolver::bench::NaiveResolver naive_resolver(count);
+    isc::resolver::bench::NaiveResolver naive_resolver(::count);
     isc::bench::BenchMark<isc::resolver::bench::NaiveResolver>
         (1, naive_resolver, true);
     return 0;
