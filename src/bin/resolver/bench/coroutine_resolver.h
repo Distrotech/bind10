@@ -17,6 +17,8 @@
 
 #include <resolver/bench/fake_resolution.h>
 
+#include <util/threads/sync.h>
+
 #include <boost/noncopyable.hpp>
 
 #include <vector>
@@ -47,6 +49,9 @@ public:
 private:
     // Run one thread on given interface.
     void run_instance(FakeInterface* interface);
+    // Mutex for locking write access to the cache and the upstream
+    // communication.
+    isc::util::thread::Mutex cache_mutex_, upstream_mutex_;
     std::vector<FakeInterface*> interfaces_;
     const size_t thread_count_;
     const size_t total_count_;

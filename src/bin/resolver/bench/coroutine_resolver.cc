@@ -18,8 +18,10 @@
 
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
+#include <boost/coroutine/all.hpp>
 
 using isc::util::thread::Thread;
+using isc::util::thread::Mutex;
 
 namespace isc {
 namespace resolver {
@@ -42,9 +44,72 @@ CoroutineResolver::~CoroutineResolver() {
     }
 }
 
+namespace {
+
+// This is the callback passed to the AsyncWork. It'll be provided by
+// the scheduler and it will restore the coroutine.
+typedef boost::function<void()> SimpleCallback;
+// A bit of asynchronous work to be performed. The coroutine will
+// return this functor to the scheduler. The scheduler will execute
+// it and pass it a callback that should be executed once the work
+// is done, to reschedule.
+typedef boost::function<void(SimpleCallback)> AsyncWork;
+// A single coroutine, doing some work.
+typedef boost::coroutines::coroutine<AsyncWork()> Coroutine;
+
+void
+doneTask(bool* flag) {
+    *flag = true;
+}
+
+void
+performUpstream(const FakeQueryPtr& query, Mutex* mutex,
+                const SimpleCallback& callback)
+{
+    Mutex::Locker locker(*mutex);
+    query->performTask(callback);
+}
+
+// Handle one query on the given interface. The cache is locked
+// by the cache mutex (for write), sending of the upstream query
+// by the upstream_mutex.
+void handleQuery(FakeQueryPtr query, Mutex& cache_mutex, Mutex& upstream_mutex,
+                 Coroutine::caller_type& scheduler)
+{
+    while (!query->done()) {
+        switch (query->nextTask()) {
+            case CacheWrite: {
+                // We need to lock the cache when writing (but not for reading)
+                Mutex::Locker locker(cache_mutex);
+                bool done = false;
+                query->performTask(boost::bind(&doneTask, &done));
+                assert(done); // Write to cache is synchronous.
+                break;
+            }
+            case Upstream:
+                // Schedule sending to upstream and get resumed afterwards.
+
+                // This could probably be done with nested boost::bind, but
+                // that'd get close to unreadable, so we are more conservative
+                // and use a function.
+                scheduler(boost::bind(&performUpstream, query, &upstream_mutex,
+                                      _1));
+                // Good, answer returned now. Continue processing.
+                break;
+            default:
+                // Nothing special here. We just perform the task.
+                bool done = false;
+                query->performTask(boost::bind(&doneTask, &done));
+                assert(done);
+                break;
+        }
+    }
+}
+
+}
+
 void
 CoroutineResolver::run_instance(FakeInterface*) {
-
 }
 
 size_t
