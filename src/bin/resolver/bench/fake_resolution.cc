@@ -38,6 +38,8 @@ const size_t cache_write_size = 10000;
 // queries are found in the cache directly. Half of the rest needs just one
 // upstream query. Etc.
 const float chance_complete = 0.5;
+// How large a chance is that the answer is in this level of cache?
+const float cache_level = 0.5;
 // Number of milliseconds an upstream query can take. It picks a random number
 // in between.
 const size_t upstream_time_min = 2;
@@ -45,14 +47,22 @@ const size_t upstream_time_max = 50;
 
 FakeQuery::FakeQuery(FakeInterface& interface) :
     interface_(&interface),
-    outstanding_(false)
+    outstanding_(false),
+    cache_depth_(1)
 {
     // Schedule what tasks are needed.
     // First, parse the query
     steps_.push_back(Step(Compute, parse_size));
     // Look into the cache if it is there
     steps_.push_back(Step(CacheRead, cache_read_size));
+    while (cache_depth_ < interface.layers() &&
+           (1.0 * random()) / RAND_MAX > cache_level) {
+        ++cache_depth_;
+    }
     while ((1.0 * random()) / RAND_MAX > chance_complete) {
+        // If we need to go upstream, it was not in the cache. So need to
+        // read through all the levels to know for sure.
+        cache_depth_ = interface.layers();
         // Needs another step of recursion. Render the upstream query.
         steps_.push_back(Step(Compute, render_size));
         // Send it and wait for the answer.
@@ -88,8 +98,9 @@ FakeQuery::performTask(const StepCallback& callback) {
     }
 }
 
-FakeInterface::FakeInterface(size_t query_count) :
-    queries_(query_count)
+FakeInterface::FakeInterface(size_t query_count, size_t layers) :
+    queries_(query_count),
+    layers_(layers)
 {
     BOOST_FOREACH(FakeQueryPtr& query, queries_) {
         query = FakeQueryPtr(new FakeQuery(*this));

@@ -124,6 +124,15 @@ public:
         }
         return (steps_.back().first);
     }
+    /// \brief Task size of the next step.
+    ///
+    /// This is used for sending the task to remote end.
+    size_t nextTaskSize() const {
+        if (done()) {
+            isc_throw(isc::InvalidOperation, "We are done, no more tasks");
+        }
+        return (steps_.back().second);
+    }
     /// \brief Move network communication to different interface.
     ///
     /// By default, a query does all the "communication" on the interface
@@ -149,6 +158,10 @@ public:
     void answerReceived() {
         outstanding_ = false;
     }
+    /// \brief How deep in the cache we need to go for cache read.
+    size_t cacheDepth() const {
+        return cache_depth_;
+    }
 private:
     // The scheduled steps for this task.
     typedef std::pair<Task, size_t> Step;
@@ -159,6 +172,8 @@ private:
     FakeInterface* interface_;
     // Is an upstream query outstanding?
     bool outstanding_;
+    // How deep in the cache we need to go for read.
+    size_t cache_depth_;
 };
 
 typedef boost::shared_ptr<FakeQuery> FakeQueryPtr;
@@ -188,7 +203,10 @@ public:
     ///
     /// Initiarile the interface and create query_count queries for the
     /// benchmark. They will be handed out one by one with receiveQuery().
-    FakeInterface(size_t query_count);
+    /// The layers say how many layers the cache has, therefore how many
+    /// cache reads might be needed and how deep an update needs to be
+    /// sent.
+    FakeInterface(size_t query_count, size_t layers = 1);
     /// \brief Wait for answers from upstream servers.
     ///
     /// Wait until at least one "answer" comes from the remote server. This
@@ -211,6 +229,9 @@ public:
     /// This returns a NULL pointer when there are no more queries to answer
     /// (the number designated for the benchmark was reached).
     FakeQueryPtr receiveQuery();
+    size_t layers() const {
+        return layers_;
+    }
 private:
     class UpstreamQuery;
     friend class FakeQuery;
@@ -219,6 +240,7 @@ private:
                                 size_t msec);
     asiolink::IOService service_;
     std::vector<FakeQueryPtr> queries_;
+    const size_t layers_;
 };
 
 }
