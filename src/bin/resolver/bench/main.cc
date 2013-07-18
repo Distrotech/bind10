@@ -12,15 +12,30 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#ifdef BOOST_COROUTINES
+#include <resolver/bench/coroutine_resolver.h>
+#endif
 #include <resolver/bench/naive_resolver.h>
 
 #include <bench/benchmark.h>
 
+#include <iostream>
+
+using namespace std;
+
 const size_t count = 1000; // TODO: We may want to read this from argv.
 
 int main(int, const char**) {
+#ifdef BOOST_COROUTINES
+    for (size_t i = 1; i < 10; ++i) {
+        cout << "Coroutine resolver with " << i << " threads" << endl;
+        isc::resolver::bench::CoroutineResolver coroutine_resolver(::count, i);
+        isc::bench::BenchMark<isc::resolver::bench::CoroutineResolver>
+            (1, coroutine_resolver, true);
+    }
+#endif
     // Run the naive implementation
-    isc::resolver::bench::NaiveResolver naive_resolver(count);
+    isc::resolver::bench::NaiveResolver naive_resolver(::count);
     isc::bench::BenchMark<isc::resolver::bench::NaiveResolver>
         (1, naive_resolver, true);
     return 0;
