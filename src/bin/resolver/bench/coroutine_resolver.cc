@@ -73,14 +73,14 @@ performUpstream(const FakeQueryPtr& query, Mutex* mutex,
 // Handle one query on the given interface. The cache is locked
 // by the cache mutex (for write), sending of the upstream query
 // by the upstream_mutex.
-void handleQuery(FakeQueryPtr query, Mutex& cache_mutex, Mutex& upstream_mutex,
+void handleQuery(FakeQueryPtr query, Mutex* cache_mutex, Mutex* upstream_mutex,
                  Coroutine::caller_type& scheduler)
 {
     while (!query->done()) {
         switch (query->nextTask()) {
             case CacheWrite: {
                 // We need to lock the cache when writing (but not for reading)
-                Mutex::Locker locker(cache_mutex);
+                Mutex::Locker locker(*cache_mutex);
                 bool done = false;
                 query->performTask(boost::bind(&doneTask, &done));
                 assert(done); // Write to cache is synchronous.
@@ -92,7 +92,7 @@ void handleQuery(FakeQueryPtr query, Mutex& cache_mutex, Mutex& upstream_mutex,
                 // This could probably be done with nested boost::bind, but
                 // that'd get close to unreadable, so we are more conservative
                 // and use a function.
-                scheduler(boost::bind(&performUpstream, query, &upstream_mutex,
+                scheduler(boost::bind(&performUpstream, query, upstream_mutex,
                                       _1));
                 // Good, answer returned now. Continue processing.
                 break;
@@ -106,10 +106,60 @@ void handleQuery(FakeQueryPtr query, Mutex& cache_mutex, Mutex& upstream_mutex,
     }
 }
 
+void
+handleCoroutine(Coroutine* cor, size_t* outstanding);
+
+void
+resumeCoroutine(Coroutine* cor, size_t* outstanding)
+{
+    // The coroutine is ready to run again. So do so.
+    (*cor)();
+    // Coroutine returned to us again. Check if it is still alive.
+    // This is not true recursion (with handleCoroutine) -- we call
+    // handleCoroutine, but that one does not call us directly, it
+    // schedules it trought the main loop. So the handleCoroutine
+    // that scheduled us is no longer on stack, so there's no risk
+    // of stack overflow.
+    handleCoroutine(cor, outstanding);
 }
 
 void
-CoroutineResolver::run_instance(FakeInterface*) {
+handleCoroutine(Coroutine* cor, size_t* outstanding)
+{
+    if (*cor) {
+        // The coroutine is still alive. That means it returned some
+        // work to be done asynchronously, we need to schedule it.
+
+        // The return value of get() is a functor to be called with
+        // a callback to reschedule the coroutine once the work is done.
+        cor->get()(boost::bind(&resumeCoroutine, cor, outstanding));
+    } else {
+        // The coroutine terminated, the query is handled.
+        delete cor;
+        --*outstanding;
+    }
+}
+
+}
+
+void
+CoroutineResolver::run_instance(FakeInterface* interface) {
+    FakeQueryPtr query;
+    size_t outstanding = 0;
+    // Receive the queries and create coroutines for them.
+    while ((query = interface->receiveQuery())) {
+        ++outstanding;
+        // Create the coroutine and run the first part.
+        Coroutine *cor = new Coroutine(boost::bind(&handleQuery, query,
+                                                   &cache_mutex_,
+                                                   &upstream_mutex_, _1));
+        // Returned from the coroutine.
+        handleCoroutine(cor, &outstanding);
+    }
+    // Wait for all the queries to complete
+    while (outstanding > 0) {
+        interface->processEvents();
+    }
 }
 
 size_t
