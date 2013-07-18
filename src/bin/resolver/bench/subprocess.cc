@@ -19,6 +19,7 @@
 #include <sys/wait.h>
 #include <cstdlib>
 #include <iostream>
+#include <cerrno>
 
 using namespace std;
 
@@ -60,6 +61,41 @@ Subprocess::Subprocess(const boost::function<void(int)>& main) :
 Subprocess::~Subprocess() {
     int result = waitpid(pid, NULL, 0);
     assert(result != -1);
+}
+
+void
+Subprocess::send(const void* data, size_t size) {
+    const uint8_t* buffer = (const uint8_t*) data;
+    while (size > 0) {
+        ssize_t result = ::send(channel(), buffer, size, 0);
+        if (result == -1) {
+            assert(errno == EINTR);
+        } else {
+            size -= result;
+            buffer += result;
+        }
+    }
+}
+
+std::string
+Subprocess::read(size_t size) {
+    char target[size + 1];
+    target[size] = '\0';
+    char* position = target;
+    while (size > 0) {
+        ssize_t result = recv(channel(), position, size, 0);
+        if (result == -1) {
+            assert(errno == EINTR);
+        } else if (result == 0) {
+            // EOF. Terminate sting.
+            *position = 0;
+            break;
+        } else {
+            position += result;
+            size -= result;
+        }
+    }
+    return (target); // Convert from char* to string
 }
 
 }

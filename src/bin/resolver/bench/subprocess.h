@@ -41,6 +41,10 @@ public:
     int channel() const {
         return (channel_);
     }
+    /// \brief Send some data, abort on error.
+    void send(const void* data, size_t amount);
+    /// \brief Read that amount of data (or to EOF). Aborts on error.
+    std::string read(size_t amount);
 private:
     int channel_;
     pid_t pid;
