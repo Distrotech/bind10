@@ -13,12 +13,12 @@
 // PERFORMANCE OF THIS SOFTWARE.
 
 #include <resolver/bench/coroutine_resolver.h>
+#include <resolver/bench/scheduler.h>
 
 #include <util/threads/thread.h>
 
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
-#include <boost/coroutine/all.hpp>
 
 using isc::util::thread::Thread;
 using isc::util::thread::Mutex;
@@ -45,17 +45,6 @@ CoroutineResolver::~CoroutineResolver() {
 }
 
 namespace {
-
-// This is the callback passed to the AsyncWork. It'll be provided by
-// the scheduler and it will restore the coroutine.
-typedef boost::function<void()> SimpleCallback;
-// A bit of asynchronous work to be performed. The coroutine will
-// return this functor to the scheduler. The scheduler will execute
-// it and pass it a callback that should be executed once the work
-// is done, to reschedule.
-typedef boost::function<void(SimpleCallback)> AsyncWork;
-// A single coroutine, doing some work.
-typedef boost::coroutines::coroutine<AsyncWork()> Coroutine;
 
 void
 doneTask(bool* flag) {
@@ -106,60 +95,12 @@ void handleQuery(FakeQueryPtr query, Mutex* cache_mutex, Mutex* upstream_mutex,
     }
 }
 
-void
-handleCoroutine(Coroutine* cor, size_t* outstanding);
-
-void
-resumeCoroutine(Coroutine* cor, size_t* outstanding)
-{
-    // The coroutine is ready to run again. So do so.
-    (*cor)();
-    // Coroutine returned to us again. Check if it is still alive.
-    // This is not true recursion (with handleCoroutine) -- we call
-    // handleCoroutine, but that one does not call us directly, it
-    // schedules it trought the main loop. So the handleCoroutine
-    // that scheduled us is no longer on stack, so there's no risk
-    // of stack overflow.
-    handleCoroutine(cor, outstanding);
-}
-
-void
-handleCoroutine(Coroutine* cor, size_t* outstanding)
-{
-    if (*cor) {
-        // The coroutine is still alive. That means it returned some
-        // work to be done asynchronously, we need to schedule it.
-
-        // The return value of get() is a functor to be called with
-        // a callback to reschedule the coroutine once the work is done.
-        cor->get()(boost::bind(&resumeCoroutine, cor, outstanding));
-    } else {
-        // The coroutine terminated, the query is handled.
-        delete cor;
-        --*outstanding;
-    }
-}
-
 }
 
 void
 CoroutineResolver::run_instance(FakeInterface* interface) {
-    FakeQueryPtr query;
-    size_t outstanding = 0;
-    // Receive the queries and create coroutines for them.
-    while ((query = interface->receiveQuery())) {
-        ++outstanding;
-        // Create the coroutine and run the first part.
-        Coroutine *cor = new Coroutine(boost::bind(&handleQuery, query,
-                                                   &cache_mutex_,
-                                                   &upstream_mutex_, _1));
-        // Returned from the coroutine.
-        handleCoroutine(cor, &outstanding);
-    }
-    // Wait for all the queries to complete
-    while (outstanding > 0) {
-        interface->processEvents();
-    }
+    coroutineScheduler(boost::bind(&handleQuery, _1, &cache_mutex_,
+                                   &upstream_mutex_, _2), *interface);
 }
 
 size_t

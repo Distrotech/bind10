@@ -27,6 +27,7 @@ resolver_bench_LDADD += $(top_builddir)/src/lib/asiolink/libb10-asiolink.la
 if BOOST_COROUTINES
 # The coroutine resolver needs the boost coroutines. Enable it only if available.
 resolver_bench_SOURCES += coroutine_resolver.h coroutine_resolver.cc
+resolver_bench_SOURCES += scheduler.h scheduler.cc
 resolver_bench_LDADD += -lboost_context
 AM_CPPFLAGS += -DBOOST_COROUTINES
 endif
