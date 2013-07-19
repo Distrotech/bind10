@@ -32,8 +32,9 @@ public:
     size_t run();
 private:
     void spawn(size_t count, size_t worker_count, size_t fanout, int channel);
-    Subprocess* top;
+    void worker(size_t count, int channel);
     size_t total_count_;
+    Subprocess* top;
 };
 
 }
