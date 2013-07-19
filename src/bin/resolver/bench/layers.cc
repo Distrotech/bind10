@@ -15,6 +15,7 @@
 #include <resolver/bench/layers.h>
 #include <resolver/bench/subprocess.h>
 #include <resolver/bench/dummy_work.h>
+#include <resolver/bench/scheduler.h>
 
 #include <asiolink/local_socket.h>
 
@@ -43,9 +44,81 @@ LayerResolver::~LayerResolver() {
     delete top;
 }
 
+namespace {
+
+struct Command {
+    size_t levels;
+    size_t workload;
+};
+
+void
+sendQuery(const FakeQueryPtr& query, int cache_comm, int cache_depth) {
+    if (cache_depth == 0) {
+        // No caches to send to, ignore
+        return;
+    }
+    // Fill in the command
+    Command command;
+    command.levels = cache_depth;
+    command.workload = query->nextTaskSize();
+    // Prepare the buffer
+    uint8_t buffer[sizeof command + 1];
+    buffer[0] = 'W';
+    memcpy(buffer + 1, &command, sizeof command);
+    // A blocking write, please. We assume it is written at one go.
+    // If that proved false, the below assert would catch it and we
+    // would then fix the code.
+    ssize_t result = send(cache_comm, buffer, sizeof buffer, 0);
+    assert(result == sizeof buffer);
+}
+
+void
+doneTask(bool* done) {
+    *done = true;
+}
+
+// Handle one query
+void
+handleQuery(FakeQueryPtr query, Coroutine::caller_type& scheduler,
+            int cache_comm, size_t cache_depth)
+{
+    while (!query->done()) {
+        Task task = query->nextTask();
+        switch (task) {
+            case CacheWrite:
+            case CacheRead:
+            {
+                // Send to the upper layers, if any
+                sendQuery(query, cache_comm,
+                          task == CacheWrite ? cache_depth :
+                          query->cacheDepth());
+                // Perform the local write
+                bool done = false;
+                query->performTask(boost::bind(&doneTask, &done));
+                assert(done); // Write to cache is synchronous.
+                break;
+            }
+            case Upstream:
+                // Schedule sending to upstream and get resumed afterwards.
+                scheduler(boost::bind(&FakeQuery::performTask, query.get(),
+                                      _1));
+                // Good, answer returned now. Continue processing.
+                break;
+            default:
+                // Nothing special here. We just perform the task.
+                bool done = false;
+                query->performTask(boost::bind(&doneTask, &done));
+                assert(done);
+                break;
+        }
+    }
+}
+
+}
+
 void
 LayerResolver::worker(size_t count, int channel) {
-    FakeInterface interface(count);
+    FakeInterface interface(count); // TODO Initialize the cache depth.
     // We are ready
     ssize_t result = send(channel, "R", 1, 0);
     assert(result == 1);
@@ -54,19 +127,16 @@ LayerResolver::worker(size_t count, int channel) {
     result = recv(channel, &buffer, 1, 0);
     assert(result == 1);
     assert(buffer == 'R');
+    // Run the handling of queries
+    coroutineScheduler(boost::bind(&handleQuery, _1, _2, channel,
+                                   interface.layers()), interface);
 
-    // TODO: Do the work
     // Signal we are finished
     result = send(channel, "F", 1, 0);
     assert(result == 1);
 }
 
 namespace {
-
-struct Command {
-    size_t levels;
-    size_t workload;
-};
 
 // Single child subprocess. May be a smaller cache or a worker.
 // We don't really care about private/public here, this is to make
