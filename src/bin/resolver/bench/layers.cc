@@ -14,8 +14,12 @@
 
 #include <resolver/bench/layers.h>
 #include <resolver/bench/subprocess.h>
+#include <resolver/bench/dummy_work.h>
+
+#include <asiolink/local_socket.h>
 
 #include <boost/bind.hpp>
+#include <boost/foreach.hpp>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -59,15 +63,67 @@ LayerResolver::worker(size_t count, int channel) {
 
 namespace {
 
+struct Command {
+    size_t levels;
+    size_t workload;
+};
+
 // Single child subprocess. May be a smaller cache or a worker.
 // We don't really care about private/public here, this is to make
 // it hold together.
 class Child : boost::noncopyable {
 public:
-    Child(const boost::function<void(int)>& main) :
-        subprocess_(main)
+    Child(const boost::function<void(int)>& main,
+          isc::asiolink::IOService& service, int parent) :
+        subprocess_(main),
+        socket_(service, subprocess_.channel()),
+        parent_(parent),
+        signal_buffer_('\0')
     {}
     Subprocess subprocess_;
+    asiolink::LocalSocket socket_;
+    int parent_;
+    char signal_buffer_;
+    Command command_buffer_;
+    // Read signal from the child (eg. command header)
+    void signalRead(const std::string& error) {
+        assert(error == "");
+        if (signal_buffer_ == 'F') {
+            // The child finished it's work. Don't re-schedule
+            // read.
+            return;
+        } else if (signal_buffer_ == 'W') {
+            // Write to cache. Read parameters.
+            socket_.asyncRead(boost::bind(&Child::commandRead, this, _1),
+                              &command_buffer_, sizeof command_buffer_);
+        } else {
+            assert(0); // Unknown command
+        }
+    }
+    // Read the command itself and perform it.
+    void commandRead(const std::string& error) {
+        assert(error == "");
+        for (size_t i = 0; i < command_buffer_.workload; ++i) {
+            dummy_work();
+        }
+        // Send the command to upper cache, if it should go there.
+        if (-- command_buffer_.levels > 0) {
+            const size_t bufsize = sizeof signal_buffer_ +
+                sizeof command_buffer_;
+            uint8_t sendbuf[bufsize];
+            memcpy(sendbuf, "W", sizeof signal_buffer_);
+            memcpy(sendbuf + sizeof signal_buffer_, &command_buffer_,
+                   sizeof command_buffer_);
+            // We expect this is small enough and will fit all at once.
+            // If this assumption is not met, assert will catch it and
+            // we can fix that code.
+            ssize_t result = send(parent_, sendbuf, bufsize, 0);
+            assert(result == bufsize);
+        }
+        // Schedule next command
+        socket_.asyncRead(boost::bind(&Child::signalRead, this, _1),
+                          &signal_buffer_, sizeof signal_buffer_);
+    }
 };
 
 }
@@ -85,6 +141,7 @@ LayerResolver::spawn(size_t count, size_t worker_count, size_t fanout,
             fanout = worker_count;
         }
         std::vector<Child*> children;
+        isc::asiolink::IOService service;
         // How much of these was satisfied
         size_t count_handled = 0;
         size_t workers_handled = 0;
@@ -95,10 +152,17 @@ LayerResolver::spawn(size_t count, size_t worker_count, size_t fanout,
             // Initialize the child and make sure it is ready
             Child* child = new Child(boost::bind(&LayerResolver::spawn, this,
                                                  count_local, workers_local,
-                                                 fanout, _1));
+                                                 fanout, _1), service,
+                                     channel);
             children.push_back(child);
             const std::string& ready = child->subprocess_.read(1);
             assert(ready == "R");
+
+            // Schedule reading of command from the child
+            child->socket_.asyncRead(boost::bind(&Child::signalRead, child,
+                                                 _1),
+                                     &child->signal_buffer_,
+                                     sizeof child->signal_buffer_);
 
             count_handled += count_local;
             workers_handled += workers_local;
@@ -111,6 +175,15 @@ LayerResolver::spawn(size_t count, size_t worker_count, size_t fanout,
         result = recv(channel, &buffer, 1, 0);
         assert(result == 1);
         assert(buffer == 'R');
+        // Signal all the children to start
+        BOOST_FOREACH(Child* c, children) {
+            result = send(c->subprocess_.channel(), "R", 1, 0);
+            assert(result == 1);
+        }
+        service.run(); // Run until all the children finish.
+        // Signal we finished
+        result = send(channel, "F", 1, 0);
+        assert(result == 1);
     }
 }
 
