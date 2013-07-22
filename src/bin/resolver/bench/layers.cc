@@ -227,7 +227,8 @@ LayerResolver::spawn(size_t count, size_t worker_count, size_t fanout,
         for (size_t i = 0; i < fanout; ++i) {
             // How many to assign to this child
             size_t count_local = (count * (i+1)) / fanout - count_handled;
-            size_t workers_local = (count * (i+1)) / fanout - workers_handled;
+            size_t workers_local = (worker_count * (i+1)) / fanout -
+                workers_handled;
             // Initialize the child and make sure it is ready
             Child* child = new Child(boost::bind(&LayerResolver::spawn, this,
                                                  count_local, workers_local,
