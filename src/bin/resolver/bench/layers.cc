@@ -33,7 +33,7 @@ LayerResolver::LayerResolver(size_t count, size_t worker_count,
                              size_t fanout) :
     total_count_(count),
     top(new Subprocess(boost::bind(&LayerResolver::spawn, this, count,
-                                   worker_count, fanout, _1)))
+                                   worker_count, fanout, _1, 1)))
 {
     // Wait for the subprocess to become ready
     const std::string& ready = top->read(1);
@@ -53,8 +53,8 @@ struct Command {
 
 void
 sendQuery(const FakeQueryPtr& query, int cache_comm, int cache_depth) {
-    if (cache_depth == 0) {
-        // No caches to send to, ignore
+    if (cache_depth <= 1) {
+        // No caches to send to, ignore (local cache handled this one)
         return;
     }
     // Fill in the command
@@ -117,8 +117,8 @@ handleQuery(FakeQueryPtr query, Coroutine::caller_type& scheduler,
 }
 
 void
-LayerResolver::worker(size_t count, int channel) {
-    FakeInterface interface(count); // TODO Initialize the cache depth.
+LayerResolver::worker(size_t count, int channel, size_t depth) {
+    FakeInterface interface(count, depth);
     // We are ready
     ssize_t result = send(channel, "R", 1, 0);
     assert(result == 1);
@@ -177,7 +177,7 @@ public:
             dummy_work();
         }
         // Send the command to upper cache, if it should go there.
-        if (-- command_buffer_.levels > 0) {
+        if (-- command_buffer_.levels > 1) {
             const size_t bufsize = sizeof signal_buffer_ +
                 sizeof command_buffer_;
             uint8_t sendbuf[bufsize];
@@ -200,11 +200,11 @@ public:
 
 void
 LayerResolver::spawn(size_t count, size_t worker_count, size_t fanout,
-                     int channel)
+                     int channel, size_t depth)
 {
     if (worker_count == 1) {
         // We are the single worker
-        worker(count, channel);
+        worker(count, channel, depth);
     } else {
         if (fanout > worker_count) {
             // Just correction, so we don't spawn more children than needed
@@ -222,7 +222,7 @@ LayerResolver::spawn(size_t count, size_t worker_count, size_t fanout,
             // Initialize the child and make sure it is ready
             Child* child = new Child(boost::bind(&LayerResolver::spawn, this,
                                                  count_local, workers_local,
-                                                 fanout, _1), service,
+                                                 fanout, _1, depth + 1),
                                      channel);
             children.push_back(child);
             const std::string& ready = child->subprocess_.read(1);

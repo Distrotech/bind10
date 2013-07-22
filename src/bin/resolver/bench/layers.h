@@ -31,8 +31,9 @@ public:
     ~LayerResolver();
     size_t run();
 private:
-    void spawn(size_t count, size_t worker_count, size_t fanout, int channel);
-    void worker(size_t count, int channel);
+    void spawn(size_t count, size_t worker_count, size_t fanout, int channel,
+               size_t depth);
+    void worker(size_t count, int channel, size_t depth);
     size_t total_count_;
     Subprocess* top;
 };
