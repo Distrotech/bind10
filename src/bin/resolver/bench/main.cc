@@ -29,7 +29,7 @@ const size_t count = 1000; // TODO: We may want to read this from argv.
 int main(int, const char**) {
 #ifdef BOOST_COROUTINES
     for (size_t i = 2; i < 5; ++i) { //fanout
-        for (size_t j = 1; j < 10; ++j) { // Number of workers
+        for (size_t j = 1; j <= 10; ++j) { // Number of workers
             cout << "Layered cache with " << j << " work processes and " <<
                 "fanout of " << i << endl;
             isc::resolver::bench::LayerResolver layer_resolver(::count, j, i);
@@ -37,7 +37,7 @@ int main(int, const char**) {
                 (1, layer_resolver, true);
         }
     }
-    for (size_t i = 1; i < 10; ++i) {
+    for (size_t i = 1; i <= 10; ++i) {
         cout << "Coroutine resolver with " << i << " threads" << endl;
         isc::resolver::bench::CoroutineResolver coroutine_resolver(::count, i);
         isc::bench::BenchMark<isc::resolver::bench::CoroutineResolver>
