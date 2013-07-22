@@ -144,15 +144,20 @@ namespace {
 class Child : boost::noncopyable {
 public:
     Child(const boost::function<void(int)>& main,
-          isc::asiolink::IOService& service, int parent) :
+          isc::asiolink::IOService& service, int parent,
+          size_t& child_count) :
         subprocess_(main),
+        service_(service),
         socket_(service, subprocess_.channel()),
         parent_(parent),
+        child_count_(child_count),
         signal_buffer_('\0')
     {}
     Subprocess subprocess_;
+    asiolink::IOService& service_;
     asiolink::LocalSocket socket_;
     int parent_;
+    size_t& child_count_;
     char signal_buffer_;
     Command command_buffer_;
     // Read signal from the child (eg. command header)
@@ -161,6 +166,9 @@ public:
         if (signal_buffer_ == 'F') {
             // The child finished it's work. Don't re-schedule
             // read.
+            if (-- child_count_ == 0) { // It's the last child.
+                service_.stop();
+            }
             return;
         } else if (signal_buffer_ == 'W') {
             // Write to cache. Read parameters.
@@ -215,6 +223,7 @@ LayerResolver::spawn(size_t count, size_t worker_count, size_t fanout,
         // How much of these was satisfied
         size_t count_handled = 0;
         size_t workers_handled = 0;
+        size_t child_count = 0;
         for (size_t i = 0; i < fanout; ++i) {
             // How many to assign to this child
             size_t count_local = (count * (i+1)) / fanout - count_handled;
@@ -223,7 +232,8 @@ LayerResolver::spawn(size_t count, size_t worker_count, size_t fanout,
             Child* child = new Child(boost::bind(&LayerResolver::spawn, this,
                                                  count_local, workers_local,
                                                  fanout, _1, depth + 1),
-                                     channel);
+                                     service, channel, child_count);
+            ++child_count;
             children.push_back(child);
             const std::string& ready = child->subprocess_.read(1);
             assert(ready == "R");
