@@ -53,7 +53,7 @@ _BAD_OPCODE = 3
 _BAD_QR = 4
 _BAD_REPLY_PACKET = 5
 
-SOCK_DATA = b's'
+SHUTDOWN_DATA = b's'
 
 # borrowed from xfrin.py @ #1298.  We should eventually unify it.
 def format_zone_str(zone_name, zone_class):
@@ -258,7 +258,7 @@ class NotifyOut:
         if not self._nonblock_event.isSet():
             # set self._nonblock_event to stop waiting for new notifying zones.
             self._nonblock_event.set()
-        self._write_sock.send(SOCK_DATA) # make self._read_sock be readable.
+        self._write_sock.send(SHUTDOWN_DATA) # make self._read_sock be readable.
 
         # Wait for it
         self._thread.join()
@@ -404,7 +404,8 @@ class NotifyOut:
         if self._read_sock in r_fds: # user has called shutdown()
             try:
                 # Noone should write anything else than shutdown
-                assert self._read_sock.recv(len(SOCK_DATA)) == SOCK_DATA
+                assert self._read_sock.recv(len(SHUTDOWN_DATA)) == \
+                    SHUTDOWN_DATA
                 return {}, {}
             except socket.error as e: # Workaround around rare linux bug
                 if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:

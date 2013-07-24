@@ -19,7 +19,7 @@ import os
 import tempfile
 import time
 import socket
-from isc.notify import notify_out, SOCK_DATA
+from isc.notify import notify_out, SHUTDOWN_DATA
 import isc.log
 from isc.dns import *
 
@@ -241,7 +241,7 @@ class TestNotifyOut(unittest.TestCase):
         if self._notify._write_sock is not None:
             self._notify._write_sock.close()
         self._notify._read_sock, self._notify._write_sock = socket.socketpair()
-        self._notify._write_sock.send(SOCK_DATA)
+        self._notify._write_sock.send(SHUTDOWN_DATA)
         replied_zones, timeout_zones = self._notify._wait_for_notify_reply()
         self.assertEqual(0, len(replied_zones))
         self.assertEqual(0, len(timeout_zones))
