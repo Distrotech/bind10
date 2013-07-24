@@ -20,8 +20,9 @@ import socket
 import threading
 import time
 import errno
+import json
 from isc.datasrc import sqlite3_ds
-from isc.datasrc import DataSourceClient
+from isc.datasrc import DataSourceClient, ConfigurableClientList
 from isc.net import addr
 import isc
 from isc.log_messages.notify_out_messages import *
@@ -129,7 +130,7 @@ class NotifyOut:
     notify message to its slaves). notify service can be started by
     calling  dispatcher(), and it can be stopped by calling shutdown()
     in another thread. '''
-    def __init__(self, datasrc_file, verbose=True):
+    def __init__(self, initial_config, verbose=True):
         self._notify_infos = {} # key is (zone_name, zone_class)
         self._waiting_zones = []
         self._notifying_zones = []
@@ -139,8 +140,6 @@ class NotifyOut:
         self.notify_num = 0  # the count of in progress notifies
         self._verbose = verbose
         self._lock = threading.Lock()
-        self._db_file = datasrc_file
-        self._init_notify_out(datasrc_file)
         # Use nonblock event to eliminate busy loop
         # If there are no notifying zones, clear the event bit and wait.
         self._nonblock_event = threading.Event()
@@ -148,6 +147,8 @@ class NotifyOut:
         # For passing the datasource configuration to the right thread
         self._datasource_config = None
         self._datasource_config_mutex = threading.Lock()
+        self._datasources = {}
+        self._reconfigure_datasrc(initial_config)
 
     def _init_notify_out(self, datasrc_file):
         '''Get all the zones name and its notify target's address.
@@ -157,8 +158,9 @@ class NotifyOut:
         and also the setting 'also_notify', and there should be one
         mechanism to cover the changed datasrc.
 
+        TODO: Remove, replace, etc.
+
         '''
-        self._db_file = datasrc_file
         for zone_name, zone_class in sqlite3_ds.get_zones_info(datasrc_file):
             zone_id = (zone_name, zone_class)
             self._notify_infos[zone_id] = ZoneNotifyInfo(zone_name, zone_class)
@@ -451,8 +453,23 @@ class NotifyOut:
     def _reconfigure_datasrc(self, new_config):
         """
         Rebuild the data source lists from the new configuration.
+
+        This does not use the isc.server_common.DataSrcClientsMgr, since
+        that thing does extra thread synchronization we don't need and it
+        requires two strange parameters for reconfiguration, while we have
+        only the config. It would be possible to pass both the config
+        and the config_data object, but the config_data comes from different
+        thread and is likely not thread safe.
         """
-        assert 0
+        # TODO: Catch exceptions.
+        lists = {}
+        for rrclass_cfg, class_cfg in new_config.items():
+            rrclass = isc.dns.RRClass(rrclass_cfg)
+            new_client_list = isc.datasrc.ConfigurableClientList(rrclass)
+            new_client_list.configure(json.dumps(class_cfg), False)
+            lists[rrclass] = new_client_list
+        # Once all is done, replace the old map
+        self._datasources = lists
 
     def _check_datasrc(self):
         """

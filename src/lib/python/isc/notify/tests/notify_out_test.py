@@ -128,7 +128,15 @@ class TestZoneNotifyInfo(unittest.TestCase):
 class TestNotifyOut(unittest.TestCase):
     def setUp(self):
         self._db_file = TESTDATA_SRCDIR + '/test.sqlite3'
-        self._notify = notify_out.NotifyOut(self._db_file)
+        self._config = {
+            'IN': [{
+                'type': 'sqlite3',
+                'params': {
+                    'database_file': self._db_file
+                }
+            }]
+        }
+        self._notify = notify_out.NotifyOut(self._config)
         self._notify._notify_infos[('example.com.', 'IN')] = MockZoneNotifyInfo('example.com.', 'IN')
         self._notify._notify_infos[('example.com.', 'CH')] = MockZoneNotifyInfo('example.com.', 'CH')
         self._notify._notify_infos[('example.net.', 'IN')] = MockZoneNotifyInfo('example.net.', 'IN')
@@ -571,6 +579,21 @@ class TestNotifyOut(unittest.TestCase):
         # nonblock_event should have been setted to stop waiting.
         self.assertTrue(self._notify._nonblock_event.isSet())
         self.assertFalse(thread.is_alive())
+
+    def test_datasrc_reconfigure(self):
+        self.assertEqual([isc.dns.RRClass.IN],
+                         list(self._notify._datasources.keys()))
+        self.assertTrue(
+            isinstance(self._notify._datasources[isc.dns.RRClass.IN],
+            isc.datasrc.ConfigurableClientList))
+        self._notify._reconfigure_datasrc({})
+        self.assertEqual({}, self._notify._datasources)
+        self._notify._reconfigure_datasrc(self._config)
+        self.assertEqual([isc.dns.RRClass.IN],
+                         list(self._notify._datasources.keys()))
+        self.assertTrue(
+            isinstance(self._notify._datasources[isc.dns.RRClass.IN],
+            isc.datasrc.ConfigurableClientList))
 
 if __name__== "__main__":
     isc.log.init("bind10")
