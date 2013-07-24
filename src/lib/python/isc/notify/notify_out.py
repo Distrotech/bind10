@@ -54,6 +54,7 @@ _BAD_QR = 4
 _BAD_REPLY_PACKET = 5
 
 SHUTDOWN_DATA = b's'
+CONFIG_DATA = b'c'
 
 # borrowed from xfrin.py @ #1298.  We should eventually unify it.
 def format_zone_str(zone_name, zone_class):
@@ -144,6 +145,9 @@ class NotifyOut:
         # If there are no notifying zones, clear the event bit and wait.
         self._nonblock_event = threading.Event()
         self._counters = Counters()
+        # For passing the datasource configuration to the right thread
+        self._datasource_config = None
+        self._datasource_config_mutex = threading.Lock()
 
     def _init_notify_out(self, datasrc_file):
         '''Get all the zones name and its notify target's address.
@@ -270,6 +274,24 @@ class NotifyOut:
         self._read_sock = None
         self._thread = None
 
+    def datasource_update(self, config):
+        """
+        Update the configuration of the data sources used by the notification
+        thread.
+
+        This only posts the update to the thread. The method may return before
+        the update is applied.
+        """
+        # Place the configuration there to be picked up.
+        with self._datasource_config_mutex:
+            self._datasource_config = config
+
+        if not self._nonblock_event.isSet():
+            # set self._nonblock_event to stop waiting for new notifying zones.
+            self._nonblock_event.set()
+        # Send a wake-up signal
+        self._write_sock.send(CONFIG_DATA)
+
     def _get_rdata_data(self, rr):
         return rr[7].strip()
 
@@ -390,6 +412,9 @@ class NotifyOut:
 
         # Currently, there is no notifying zones, waiting for zones to send notify
         if block_timeout is None:
+            # FIXME: This use does indeed look like a race contition. If shutdown
+            # or reconfiguration of data source is called before the clear(), we'll
+            # block for a long time on the wait()
             self._nonblock_event.clear()
             self._nonblock_event.wait()
             # has new notifying zone, check immediately
@@ -404,9 +429,11 @@ class NotifyOut:
         if self._read_sock in r_fds: # user has called shutdown()
             try:
                 # Noone should write anything else than shutdown
-                assert self._read_sock.recv(len(SHUTDOWN_DATA)) == \
-                    SHUTDOWN_DATA
-                return {}, {}
+                data = self._read_sock.recv(len(SHUTDOWN_DATA))
+                if data == SHUTDOWN_DATA:
+                    return {}, {}
+                else:
+                    assert data == CONFIG_DATA
             except socket.error as e: # Workaround around rare linux bug
                 if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
                     raise
@@ -420,6 +447,26 @@ class NotifyOut:
                 not_replied_zones[info] = notifying_zones[info]
 
         return replied_zones, not_replied_zones
+
+    def _reconfigure_datasrc(self, new_config):
+        """
+        Rebuild the data source lists from the new configuration.
+        """
+        assert 0
+
+    def _check_datasrc(self):
+        """
+        Check (in thread-safe) manner if there's new configuration
+        for the data sources and update it if there is.
+        """
+        # First extract the config, inside a mutex
+        config = None
+        with self._datasource_config_mutex:
+            config = self._datasource_config
+            self._datasource_config = None
+        # Do the reconfiguration
+        if config is not None:
+            self._reconfigure_datasrc(config)
 
     def _zone_notify_handler(self, zone_notify_info, event_type):
         """Notify handler for one zone.

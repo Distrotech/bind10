@@ -510,6 +510,37 @@ class TestNotifyOut(unittest.TestCase):
         self.assertIn(1, valid_fds)
         self.assertIn(2, valid_fds)
 
+    def test_send_config(self):
+        """
+        Test sending the configuration data to the thread.
+
+        The thread is not actually running in this test.
+        """
+        self._notify.datasource_update('Just some data')
+        self.assertEqual('Just some data', self._notify._datasource_config)
+        # We disable the clearing of the event, as we are unable to synchronize
+        # that properly without the second thread.
+        self._notify._nonblock_event.clear = lambda: None
+        # This should terminate right away.
+        rep, nrep = self._notify._wait_for_notify_reply()
+        self.assertEqual({}, rep)
+        self.assertEqual({}, nrep)
+        # Check that checking for the data uses that config
+        self.__param = None
+        self.__called = False
+        def reconfigure(config):
+            self.__param = config
+            self.__called = True
+        self._notify._reconfigure_datasrc = reconfigure
+        self._notify._check_datasrc()
+        self.assertEqual('Just some data', self.__param)
+        self.assertTrue(self.__called)
+        self.assertEqual(None, self._notify._datasource_config)
+        # Calling again does nothing
+        self.__called = False
+        self._notify._check_datasrc()
+        self.assertFalse(self.__called)
+
     def test_shutdown(self):
         thread = self._notify.dispatcher()
         self.assertTrue(thread.is_alive())
