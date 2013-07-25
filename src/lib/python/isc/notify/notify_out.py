@@ -147,7 +147,7 @@ class NotifyOut:
         self._counters = Counters()
         # For passing the datasource configuration to the right thread
         self._datasource_config = None
-        self._datasource_config_mutex = threading.Lock()
+        self._datasource_mutex = threading.Lock()
         self._datasources = {}
         self._reconfigure_datasrc(initial_config)
 
@@ -196,16 +196,16 @@ class NotifyOut:
         if zone_name[len(zone_name) - 1] != '.':
             zone_name += '.'
 
-        self._ensure_zone(zone_name, zone_class)
-        zone_id = (zone_name, zone_class)
-        if zone_id not in self._notify_infos:
-            return False
-
-        # Has no slave servers, skip it.
-        if not self._notify_infos[zone_id].notify_slaves:
-            return True
-
         with self._lock:
+            self._ensure_zone(zone_name, zone_class)
+            zone_id = (zone_name, zone_class)
+            if zone_id not in self._notify_infos:
+                return False
+
+            # Has no slave servers, skip it.
+            if not self._notify_infos[zone_id].notify_slaves:
+                return True
+
             if (self.notify_num >= _MAX_NOTIFY_NUM) or (zone_id in self._notifying_zones):
                 if zone_id not in self._waiting_zones:
                     self._waiting_zones.append(zone_id)
@@ -215,7 +215,7 @@ class NotifyOut:
                 self._notifying_zones.append(zone_id)
                 if not self._nonblock_event.isSet():
                     self._nonblock_event.set()
-        return True
+            return True
 
     def _dispatcher(self, started_event):
         started_event.set() # Let the master know we are alive already
@@ -296,7 +296,7 @@ class NotifyOut:
         the update is applied.
         """
         # Place the configuration there to be picked up.
-        with self._datasource_config_mutex:
+        with self._datasource_mutex:
             self._datasource_config = config
 
         if not self._nonblock_event.isSet():
@@ -319,49 +319,50 @@ class NotifyOut:
         TODO. the function should be provided by one library.
 
         '''
-        if zone_class in self._datasources:
-            client_list = self._datasources[zone_class]
-        else:
-            logger.error(NOTIFY_OUT_DATASRC_CLASS_NOT_FOUND,
-                         zone_class)
-            return [], False
+        with self._datasource_mutex:
+            if zone_class in self._datasources:
+                client_list = self._datasources[zone_class]
+            else:
+                logger.error(NOTIFY_OUT_DATASRC_CLASS_NOT_FOUND,
+                             zone_class)
+                return [], False
 
-        client, finder, _ = client_list.find(zone_name, True)
-        if finder is None:
-            logger.error(NOTIFY_OUT_DATASRC_ZONE_NOT_FOUND,
-                         format_zone_str(zone_name, zone_class))
-            return [], False
+            client, finder, _ = client_list.find(zone_name, True)
+            if finder is None:
+                logger.error(NOTIFY_OUT_DATASRC_ZONE_NOT_FOUND,
+                             format_zone_str(zone_name, zone_class))
+                return [], False
 
-        result, ns_rrset, _ = finder.find(zone_name, RRType.NS)
-        if result is not finder.SUCCESS or ns_rrset is None:
-            logger.warn(NOTIFY_OUT_ZONE_NO_NS,
-                        format_zone_str(zone_name, zone_class))
-            return [], True
-        result, soa_rrset, _ = finder.find(zone_name, RRType.SOA)
-        if result is not finder.SUCCESS or soa_rrset is None or \
-                soa_rrset.get_rdata_count() != 1:
-            logger.warn(NOTIFY_OUT_ZONE_BAD_SOA,
-                        format_zone_str(zone_name, zone_class))
-            return [], True           # broken zone anyway, stop here.
-        soa_mname = Name(soa_rrset.get_rdata()[0].to_text().split(' ')[0])
+            result, ns_rrset, _ = finder.find(zone_name, RRType.NS)
+            if result is not finder.SUCCESS or ns_rrset is None:
+                logger.warn(NOTIFY_OUT_ZONE_NO_NS,
+                            format_zone_str(zone_name, zone_class))
+                return [], True
+            result, soa_rrset, _ = finder.find(zone_name, RRType.SOA)
+            if result is not finder.SUCCESS or soa_rrset is None or \
+                    soa_rrset.get_rdata_count() != 1:
+                logger.warn(NOTIFY_OUT_ZONE_BAD_SOA,
+                            format_zone_str(zone_name, zone_class))
+                return [], True           # broken zone anyway, stop here.
+            soa_mname = Name(soa_rrset.get_rdata()[0].to_text().split(' ')[0])
 
-        addrs = []
-        for ns_rdata in ns_rrset.get_rdata():
-            ns_name = Name(ns_rdata.to_text())
-            if soa_mname == ns_name:
-                continue
-            ns_client, ns_finder, _ = client_list.find(ns_name)
-            if ns_finder is not None:
-                result, rrset, _ = ns_finder.find(ns_name, RRType.A)
-                if result is ns_finder.SUCCESS and rrset is not None:
-                    addrs.extend([a.to_text() for a in rrset.get_rdata()])
+            addrs = []
+            for ns_rdata in ns_rrset.get_rdata():
+                ns_name = Name(ns_rdata.to_text())
+                if soa_mname == ns_name:
+                    continue
+                ns_client, ns_finder, _ = client_list.find(ns_name)
+                if ns_finder is not None:
+                    result, rrset, _ = ns_finder.find(ns_name, RRType.A)
+                    if result is ns_finder.SUCCESS and rrset is not None:
+                        addrs.extend([a.to_text() for a in rrset.get_rdata()])
 
-                result, rrset, _ = ns_finder.find(ns_name, RRType.AAAA)
-                if result is ns_finder.SUCCESS and rrset is not None:
-                    addrs.extend([aaaa.to_text()
-                                    for aaaa in rrset.get_rdata()])
+                    result, rrset, _ = ns_finder.find(ns_name, RRType.AAAA)
+                    if result is ns_finder.SUCCESS and rrset is not None:
+                        addrs.extend([aaaa.to_text()
+                                        for aaaa in rrset.get_rdata()])
 
-        return addrs, True
+            return addrs, True
 
     def _prepare_select_info(self):
         '''
@@ -476,7 +477,8 @@ class NotifyOut:
             new_client_list.configure(json.dumps(class_cfg), False)
             lists[rrclass] = new_client_list
         # Once all is done, replace the old map
-        self._datasources = lists
+        with self._datasource_mutex:
+            self._datasources = lists
 
     def _check_datasrc(self):
         """
@@ -485,7 +487,7 @@ class NotifyOut:
         """
         # First extract the config, inside a mutex
         config = None
-        with self._datasource_config_mutex:
+        with self._datasource_mutex:
             config = self._datasource_config
             self._datasource_config = None
         # Do the reconfiguration
@@ -550,12 +552,12 @@ class NotifyOut:
     def _notify_next_target(self, zone_notify_info):
         '''Notify next address for the same zone. If all the targets
         has been notified, notify the first zone in waiting list. '''
-        zone_notify_info.notify_try_num = 0
-        zone_notify_info.set_next_notify_target()
-        tgt = zone_notify_info.get_current_notify_target()
-        if not tgt:
-            zone_notify_info.finish_notify_out()
-            with self._lock:
+        with self._lock:
+            zone_notify_info.notify_try_num = 0
+            zone_notify_info.set_next_notify_target()
+            tgt = zone_notify_info.get_current_notify_target()
+            if not tgt:
+                zone_notify_info.finish_notify_out()
                 self.notify_num -= 1
                 self._notifying_zones.remove((zone_notify_info.zone_name,
                                               zone_notify_info.zone_class))
@@ -615,27 +617,29 @@ class NotifyOut:
         return msg, qid
 
     def _get_zone_soa(self, zone_name, zone_class):
-        if zone_class in self._datasources:
-            client_list = self._datasources[zone_class]
-        else:
-            raise NotifyOutDataSourceError('_get_zone_soa: Zone class ' +
-                                           zone_class.to_text() + ' not found')
+        with self._datasource_mutex:
+            if zone_class in self._datasources:
+                client_list = self._datasources[zone_class]
+            else:
+                raise NotifyOutDataSourceError('_get_zone_soa: Zone class ' +
+                                               zone_class.to_text() + ' not found')
 
-        _, finder, _ = client_list.find(zone_name, True)
-        if finder is None:
-            raise NotifyOutDataSourceError('_get_zone_soa: Zone ' +
-                                           zone_name.to_text() + '/' +
-                                           zone_class.to_text() + ' not found')
+            _, finder, _ = client_list.find(zone_name, True)
+            if finder is None:
+                raise NotifyOutDataSourceError('_get_zone_soa: Zone ' +
+                                               zone_name.to_text() + '/' +
+                                               zone_class.to_text() + ' not found')
 
-        result, soa_rrset, _ = finder.find(zone_name, RRType.SOA)
-        if result is not finder.SUCCESS or soa_rrset is None or \
-                soa_rrset.get_rdata_count() != 1:
-            raise NotifyOutDataSourceError('_get_zone_soa: Zone ' +
-                                           zone_name.to_text() + '/' +
-                                           zone_class.to_text() +
-                                           ' is broken: no valid SOA found')
+            result, soa_rrset, _ = finder.find(zone_name, RRType.SOA)
+            if result is not finder.SUCCESS or soa_rrset is None or \
+                    soa_rrset.get_rdata_count() != 1:
+                raise NotifyOutDataSourceError('_get_zone_soa: Zone ' +
+                                               zone_name.to_text() + '/' +
+                                               zone_class.to_text() +
+                                               ' is broken: no valid SOA ' +
+                                               'found')
 
-        return soa_rrset
+            return soa_rrset
 
     def _handle_notify_reply(self, zone_notify_info, msg_data, from_addr):
         """Parse the notify reply message.
