@@ -21,7 +21,6 @@ import threading
 import time
 import errno
 import json
-from isc.datasrc import sqlite3_ds
 from isc.datasrc import DataSourceClient, ConfigurableClientList
 from isc.net import addr
 import isc
