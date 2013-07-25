@@ -15,12 +15,11 @@
 # No namespace declaration - these constants go in the global namespace
 # of the notify_out_messages python module.
 
-% NOTIFY_OUT_DATASRC_ACCESS_FAILURE failed to get access to data source: %1
-notify_out failed to get access to one of configured data sources.
-Detailed error is shown in the log message.  This can be either a
-configuration error or installation setup failure.
+% NOTIFY_OUT_DATASRC_CLASS_NOT_FOUND class %1 not found
+notify_out attempted to get slave information of a zone, but the
+zone class is not found in the configuration.
 
-% NOTIFY_OUT_DATASRC_ZONE_NOT_FOUND Zone %1 is not found
+% NOTIFY_OUT_DATASRC_ZONE_NOT_FOUND zone %1 is not found
 notify_out attempted to get slave information of a zone but the zone
 isn't found in the expected data source.  This shouldn't happen,
 because notify_out first identifies a list of available zones before

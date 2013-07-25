@@ -308,18 +308,15 @@ class NotifyOut:
         TODO. the function should be provided by one library.
 
         '''
-        # Prepare data source client.  This should eventually be moved to
-        # an earlier stage of initialization and also support multiple
-        # data sources.
-        datasrc_config = '{ "database_file": "' + self._db_file + '"}'
-        try:
-            ds_client = DataSourceClient('sqlite3', datasrc_config)
-        except isc.datasrc.Error as ex:
-            logger.error(NOTIFY_OUT_DATASRC_ACCESS_FAILURE, ex)
+        if zone_class in self._datasources:
+            client_list = self._datasources[zone_class]
+        else:
+            logger.error(NOTIFY_OUT_DATASRC_CLASS_NOT_FOUND,
+                         zone_class)
             return []
 
-        result, finder = ds_client.find_zone(zone_name)
-        if result is not DataSourceClient.SUCCESS:
+        client, finder, _ = client_list.find(zone_name, True)
+        if finder is None:
             logger.error(NOTIFY_OUT_DATASRC_ZONE_NOT_FOUND,
                          format_zone_str(zone_name, zone_class))
             return []
@@ -342,9 +339,8 @@ class NotifyOut:
             ns_name = Name(ns_rdata.to_text())
             if soa_mname == ns_name:
                 continue
-            ns_result, ns_finder = ds_client.find_zone(ns_name)
-            if ns_result is DataSourceClient.SUCCESS or \
-               ns_result is DataSourceClient.PARTIALMATCH:
+            ns_client, ns_finder, _ = client_list.find(ns_name)
+            if ns_finder is not None:
                 result, rrset, _ = ns_finder.find(ns_name, RRType.A)
                 if result is ns_finder.SUCCESS and rrset is not None:
                     addrs.extend([a.to_text() for a in rrset.get_rdata()])
@@ -608,15 +604,14 @@ class NotifyOut:
         return msg, qid
 
     def _get_zone_soa(self, zone_name, zone_class):
-        # We create (and soon drop) the data source client here because
-        # clients should be thread specific.  We could let the main thread
-        # loop (_dispatcher) create and retain the client in order to avoid
-        # the overhead when we generalize the interface (and we may also
-        # revisit the design of notify_out more substantially anyway).
-        datasrc_config = '{ "database_file": "' + self._db_file + '"}'
-        result, finder = DataSourceClient('sqlite3',
-                                          datasrc_config).find_zone(zone_name)
-        if result is not DataSourceClient.SUCCESS:
+        if zone_class in self._datasources:
+            client_list = self._datasources[zone_class]
+        else:
+            raise NotifyOutDataSourceError('_get_zone_soa: Zone class ' +
+                                           zone_class.to_text() + ' not found')
+
+        _, finder, _ = client_list.find(zone_name, True)
+        if finder is None:
             raise NotifyOutDataSourceError('_get_zone_soa: Zone ' +
                                            zone_name.to_text() + '/' +
                                            zone_class.to_text() + ' not found')
