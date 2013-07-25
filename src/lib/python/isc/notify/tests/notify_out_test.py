@@ -130,6 +130,7 @@ class TestNotifyOut(unittest.TestCase):
         self._db_file = TESTDATA_SRCDIR + '/test.sqlite3'
         self._config = self.get_dsrc_config(self._db_file)
         self._notify = notify_out.NotifyOut(self._config)
+        self.assertEqual({}, self._notify._notify_infos)
         self._notify._notify_infos[('example.com.', 'IN')] = MockZoneNotifyInfo('example.com.', 'IN')
         self._notify._notify_infos[('example.com.', 'CH')] = MockZoneNotifyInfo('example.com.', 'CH')
         self._notify._notify_infos[('example.net.', 'IN')] = MockZoneNotifyInfo('example.net.', 'IN')
@@ -170,6 +171,21 @@ class TestNotifyOut(unittest.TestCase):
         """
         self._notify._datasource_config = config
         self._notify._check_datasrc()
+
+    def test_ensure_zone(self):
+        # Drop the mocked-up zones
+        self._notify._notify_infos = {}
+        # Add a zone info
+        self.assertTrue(self._notify._ensure_zone('example.net', 'IN'))
+        self.assertTrue(('example.net', 'IN') in self._notify._notify_infos)
+        info = self._notify._notify_infos[('example.net', 'IN')]
+        # Adding again has no effect
+        self.assertTrue(self._notify._ensure_zone('example.net', 'IN'))
+        self.assertEqual(info,
+                         self._notify._notify_infos[('example.net', 'IN')])
+        # Zone not found
+        self.assertFalse(self._notify._ensure_zone('example.org', 'IN'))
+        self.assertFalse(('example.org', 'IN') in self._notify._notify_infos)
 
     def test_send_notify(self):
         notify_out._MAX_NOTIFY_NUM = 2
@@ -219,6 +235,18 @@ class TestNotifyOut(unittest.TestCase):
         self.assertFalse(self._notify.send_notify('example.net.', 'CH'))
         self.assertEqual(self._notify.notify_num, 2)
         self.assertEqual(2, len(self._notify._waiting_zones))
+
+    def test_send_notify_clean(self):
+        """
+        Sending notifications, but without pre-filled zones.
+        """
+        self._notify._notify_infos = {}
+
+        self._notify._nonblock_event.clear()
+        self.assertTrue(self._notify.send_notify('example.net'))
+        self.assertTrue(self._notify._nonblock_event.isSet())
+        self.assertEqual(self._notify.notify_num, 1)
+        self.assertEqual(self._notify._notifying_zones[0], ('example.net.', 'IN'))
 
     def test_wait_for_notify_reply(self):
         self._notify.send_notify('example.net.')
@@ -467,8 +495,10 @@ class TestNotifyOut(unittest.TestCase):
         self.assertEqual(('192.0.2.1', 5353), example_net_info._notify_current)
 
     def test_get_notify_slaves_from_ns(self):
-        records = self._notify._get_notify_slaves_from_ns(Name('example.net.'),
-                                                          RRClass.IN)
+        records, found = \
+            self._notify._get_notify_slaves_from_ns(Name('example.net.'),
+                                                    RRClass.IN)
+        self.assertTrue(found)
         self.assertEqual(6, len(records))
         self.assertEqual('8:8::8:8', records[5])
         self.assertEqual('7.7.7.7', records[4])
@@ -477,24 +507,37 @@ class TestNotifyOut(unittest.TestCase):
         self.assertEqual('4:4::4:4', records[1])
         self.assertEqual('3.3.3.3', records[0])
 
-        records = self._notify._get_notify_slaves_from_ns(Name('example.com.'),
-                                                          RRClass.IN)
+        records, found = \
+            self._notify._get_notify_slaves_from_ns(Name('example.com.'),
+                                                    RRClass.IN)
         self.assertEqual(3, len(records))
         self.assertEqual('5:5::5:5', records[2])
         self.assertEqual('4:4::4:4', records[1])
         self.assertEqual('3.3.3.3', records[0])
 
+        records, found = \
+            self._notify._get_notify_slaves_from_ns(Name('notexist.com.'),
+                                                    RRClass.IN)
+        self.assertFalse(found)
+        self.assertEqual([], records)
+
+        records, found = \
+            self._notify._get_notify_slaves_from_ns(Name('example.com.'),
+                                                    RRClass.CH)
+        self.assertFalse(found)
+        self.assertEqual([], records)
+
     def test_get_notify_slaves_from_ns_unusual(self):
         self.configure_dsrc(self.get_dsrc_config(TESTDATA_SRCDIR +
                                                  '/brokentest.sqlite3'))
-        self.assertEqual([], self._notify._get_notify_slaves_from_ns(
+        self.assertEqual(([], True), self._notify._get_notify_slaves_from_ns(
                 Name('nons.example'), RRClass.IN))
-        self.assertEqual([], self._notify._get_notify_slaves_from_ns(
+        self.assertEqual(([], True), self._notify._get_notify_slaves_from_ns(
                 Name('nosoa.example'), RRClass.IN))
-        self.assertEqual([], self._notify._get_notify_slaves_from_ns(
+        self.assertEqual(([], True), self._notify._get_notify_slaves_from_ns(
                 Name('multisoa.example'), RRClass.IN))
 
-        self.assertEqual([], self._notify._get_notify_slaves_from_ns(
+        self.assertEqual(([], False), self._notify._get_notify_slaves_from_ns(
                 Name('nosuchzone.example'), RRClass.IN))
 
         return # TODO: The rest does not work now.
@@ -503,11 +546,6 @@ class TestNotifyOut(unittest.TestCase):
                                                  '/nodir/error.sqlite3'))
         self.assertEqual([], self._notify._get_notify_slaves_from_ns(
                 Name('example.com'), RRClass.IN))
-
-    def test_init_notify_out(self):
-        self._notify._init_notify_out(self._db_file)
-        self.assertListEqual([('3.3.3.3', 53), ('4:4::4:4', 53), ('5:5::5:5', 53)],
-                             self._notify._notify_infos[('example.com.', 'IN')].notify_slaves)
 
     def test_prepare_select_info(self):
         timeout, valid_fds, notifying_zones = self._notify._prepare_select_info()

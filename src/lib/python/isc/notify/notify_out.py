@@ -132,6 +132,7 @@ class NotifyOut:
     in another thread. '''
     def __init__(self, initial_config, verbose=True):
         self._notify_infos = {} # key is (zone_name, zone_class)
+        self._additional_slaves = []
         self._waiting_zones = []
         self._notifying_zones = []
         self._serving = False
@@ -150,30 +151,39 @@ class NotifyOut:
         self._datasources = {}
         self._reconfigure_datasrc(initial_config)
 
-    def _init_notify_out(self, datasrc_file):
-        '''Get all the zones name and its notify target's address.
+    def _ensure_zone(self, zone_name, zone_class):
+        """
+        Ensure the given zone is available in the _notify_infos.
 
-        TODO, currently the zones are got by going through the zone
-        table in database. There should be a better way to get them
-        and also the setting 'also_notify', and there should be one
-        mechanism to cover the changed datasrc.
+        If it is not there yet, try to add it based on information
+        from the currently configured data sources.
 
-        TODO: Remove, replace, etc.
+        Return true if the zone is there at the end of the function,
+        false if not (in case it was not there and was not found in
+        any data source.
+        """
+        zone_id = (zone_name, zone_class)
+        if zone_id in self._notify_infos:
+            return True # Already there.
 
-        '''
-        for zone_name, zone_class in sqlite3_ds.get_zones_info(datasrc_file):
-            zone_id = (zone_name, zone_class)
-            self._notify_infos[zone_id] = ZoneNotifyInfo(zone_name, zone_class)
-            slaves = self._get_notify_slaves_from_ns(Name(zone_name),
-                                                     RRClass(zone_class))
-            for item in slaves:
-                self._notify_infos[zone_id].notify_slaves.append((item, 53))
+        slaves, found = self._get_notify_slaves_from_ns(Name(zone_name),
+                                                        RRClass(zone_class))
+        if not found:
+            return False
+
+        self._notify_infos[zone_id] = ZoneNotifyInfo(zone_name, zone_class)
+        for item in slaves:
+            self._notify_infos[zone_id].notify_slaves.append((item, 53))
+        for item in self._additional_slaves:
+            self._notify_infos[zone_id].notify_slaves.append(item)
+
+        return True # Just added
 
     def add_slave(self, address, port):
-        for zone_name, zone_class in sqlite3_ds.get_zones_info(self._db_file):
-            zone_id = (zone_name, zone_class)
-            if zone_id in self._notify_infos:
-                self._notify_infos[zone_id].notify_slaves.append((address, port))
+        slave = (address, port)
+        self._additional_slaves.append(slave)
+        for info in self._notify_infos:
+            info.notify_slaves.append(slave)
 
     def send_notify(self, zone_name, zone_class='IN'):
         '''Send notify to one zone's slaves, this function is
@@ -186,12 +196,13 @@ class NotifyOut:
         if zone_name[len(zone_name) - 1] != '.':
             zone_name += '.'
 
+        self._ensure_zone(zone_name, zone_class)
         zone_id = (zone_name, zone_class)
         if zone_id not in self._notify_infos:
             return False
 
         # Has no slave servers, skip it.
-        if (len(self._notify_infos[zone_id].notify_slaves) <= 0):
+        if not self._notify_infos[zone_id].notify_slaves:
             return True
 
         with self._lock:
@@ -313,25 +324,25 @@ class NotifyOut:
         else:
             logger.error(NOTIFY_OUT_DATASRC_CLASS_NOT_FOUND,
                          zone_class)
-            return []
+            return [], False
 
         client, finder, _ = client_list.find(zone_name, True)
         if finder is None:
             logger.error(NOTIFY_OUT_DATASRC_ZONE_NOT_FOUND,
                          format_zone_str(zone_name, zone_class))
-            return []
+            return [], False
 
         result, ns_rrset, _ = finder.find(zone_name, RRType.NS)
         if result is not finder.SUCCESS or ns_rrset is None:
             logger.warn(NOTIFY_OUT_ZONE_NO_NS,
                         format_zone_str(zone_name, zone_class))
-            return []
+            return [], True
         result, soa_rrset, _ = finder.find(zone_name, RRType.SOA)
         if result is not finder.SUCCESS or soa_rrset is None or \
                 soa_rrset.get_rdata_count() != 1:
             logger.warn(NOTIFY_OUT_ZONE_BAD_SOA,
                         format_zone_str(zone_name, zone_class))
-            return []           # broken zone anyway, stop here.
+            return [], True           # broken zone anyway, stop here.
         soa_mname = Name(soa_rrset.get_rdata()[0].to_text().split(' ')[0])
 
         addrs = []
@@ -350,7 +361,7 @@ class NotifyOut:
                     addrs.extend([aaaa.to_text()
                                     for aaaa in rrset.get_rdata()])
 
-        return addrs
+        return addrs, True
 
     def _prepare_select_info(self):
         '''

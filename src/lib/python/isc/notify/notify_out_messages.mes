@@ -21,10 +21,9 @@ zone class is not found in the configuration.
 
 % NOTIFY_OUT_DATASRC_ZONE_NOT_FOUND zone %1 is not found
 notify_out attempted to get slave information of a zone but the zone
-isn't found in the expected data source.  This shouldn't happen,
-because notify_out first identifies a list of available zones before
-this process.  So this means some critical inconsistency in the data
-source or software bug.
+isn't found in the expected data source. It can happen when manually
+asked to notify a zone that does not exist. If it happens in other
+circumstances, it's likely a software bug.
 
 % NOTIFY_OUT_INVALID_ADDRESS invalid address %1: %2
 The notify_out library tried to send a notify message to the given
