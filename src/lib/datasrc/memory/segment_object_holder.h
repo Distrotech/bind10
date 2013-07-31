@@ -18,6 +18,9 @@
 #include <util/memory_segment.h>
 #include <string>
 #include <cassert>
+#include <iostream>
+
+using namespace std;
 
 namespace isc {
 namespace datasrc {
@@ -60,6 +63,7 @@ public:
         mem_sgmt_(mem_sgmt), arg_(arg),
         holder_name_(getNextHolderName()), holding_(true)
     {
+        cout << "Created segment holder " << holder_name_ << endl;
         if (mem_sgmt_.setNamedAddress(holder_name_.c_str(), NULL)) {
             // OK. We've grown. The caller might need to be informed, so
             // we throw. But then, we don't get our destructor, so we
@@ -70,15 +74,18 @@ public:
         }
     }
     ~SegmentObjectHolder() {
+        cout << "Deleted segment holder" << endl;
         if (holding_) {
             // Use release, as it removes the stored address from segment
             T* obj = release();
             if (obj) { // May be NULL if set wasn't called
                 T::destroy(mem_sgmt_, obj, arg_);
+                cout << "Destroyed object " << obj << endl;
             }
         }
     }
     void set(T* obj) {
+        cout << "Set holder " << obj << endl;
         const bool grown = mem_sgmt_.setNamedAddress(holder_name_.c_str(),
                                                      obj);
         // We reserve the space in the constructor, should not grow now
@@ -96,6 +103,7 @@ public:
     }
     T* release() {
         if (holding_) {
+            cout << "Clear object holder" << endl;
             T* obj = get();
             mem_sgmt_.clearNamedAddress(holder_name_.c_str());
             holding_ = false;

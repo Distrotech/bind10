@@ -25,6 +25,9 @@
 
 #include <gtest/gtest.h>
 
+#include <iostream>
+
+using namespace std;
 using namespace isc::util;
 using namespace isc::datasrc::memory;
 using namespace isc::datasrc::memory::detail;
@@ -97,9 +100,13 @@ allocateUntilGrows(MemorySegment& segment, size_t& current_size) {
     TestObject* object = new(object_memory) TestObject;
     SegmentObjectHolder<TestObject, int> holder(segment, TEST_ARG_VAL);
     holder.set(object);
+    cout << "Set holder object" << endl;
     while (true) {
+        cout << "Going to allocate " << current_size << endl;
         void* data = segment.allocate(current_size);
+        cout << "Allocated" << endl;
         segment.deallocate(data, current_size);
+        cout << "Returned" << endl;
         current_size *= 2;
     }
 }
@@ -112,6 +119,7 @@ TEST(SegmentObjectHolderTest, grow) {
     // Allocate a bit of memory, to get a unique address
     void* mark = segment.allocate(1);
     segment.setNamedAddress("mark", mark);
+    cout << "Mark is " << mark << endl;
 
     // We'd like to cause 'mark' will be mapped at a different address on
     // MemorySegmentGrown; there doesn't seem to be a reliable and safe way
@@ -126,14 +134,18 @@ TEST(SegmentObjectHolderTest, grow) {
     // actually relocates
     size_t alloc_size = 1024;
     EXPECT_THROW(allocateUntilGrows(segment, alloc_size), MemorySegmentGrown);
+    cout << "Allocated" << endl;
     // Confirm it's now mapped at a different address.
     EXPECT_NE(mark, segment.getNamedAddress("mark").second)
         << "portability assumption for the test doesn't hold; "
         "disable the test by setting env variable GTEST_FILTER to "
         "'-SegmentObjectHolderTest.grow'";
     mark = segment.getNamedAddress("mark").second;
+    cout << "Changed mark to " << mark << endl;
     segment.clearNamedAddress("mark");
+    cout << "Removed mark " << mark << endl;
     segment.deallocate(mark, 1);
+    cout << "Deallocated" << endl;
     EXPECT_TRUE(segment.allMemoryDeallocated());
     // Remove the file
     EXPECT_EQ(0, unlink(mapped_file));

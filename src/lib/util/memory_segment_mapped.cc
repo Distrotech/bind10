@@ -30,6 +30,8 @@
 
 #include <stdint.h>
 
+#include <iostream>
+
 // boost::interprocess namespace is big and can cause unexpected import
 // (e.g., it has "read_only"), so it's safer to be specific for shortcuts.
 using boost::interprocess::basic_managed_mapped_file;
@@ -43,6 +45,7 @@ using boost::interprocess::open_or_create;
 using boost::interprocess::open_read_only;
 using boost::interprocess::open_only;
 using boost::interprocess::offset_ptr;
+using namespace std;
 
 namespace isc {
 namespace util {
@@ -172,6 +175,7 @@ struct MemorySegmentMapped::Impl {
 
     // Internal helper to grow the underlying mapped segment.
     void growSegment() {
+        cout << "Grow segment" << endl;
         // We first need to unmap it before calling grow().
         const size_t prev_size = base_sgmt_->get_size();
         base_sgmt_->flush();
@@ -202,6 +206,7 @@ struct MemorySegmentMapped::Impl {
         if (!grown) {
             throw std::bad_alloc();
         }
+        cout << "Grown: " << base_sgmt_ << endl;
     }
 
     // remember if the segment is opened read-only or not
@@ -286,6 +291,7 @@ MemorySegmentMapped::~MemorySegmentMapped() {
 
 void*
 MemorySegmentMapped::allocate(size_t size) {
+    cout << "Allocate segment " << size << endl;
     if (impl_->read_only_) {
         isc_throw(MemorySegmentError, "allocate attempt on read-only segment");
     }
@@ -312,6 +318,7 @@ MemorySegmentMapped::allocate(size_t size) {
 
 void
 MemorySegmentMapped::deallocate(void* ptr, size_t) {
+    cout << "deallocate" << ptr << endl;
     if (impl_->read_only_) {
         isc_throw(MemorySegmentError,
                   "deallocate attempt on read-only segment");
@@ -355,6 +362,7 @@ MemorySegmentMapped::getNamedAddressImpl(const char* name) const {
 
 bool
 MemorySegmentMapped::setNamedAddressImpl(const char* name, void* addr) {
+    cout << "Set named address " << name << " " << addr << endl;
     if (impl_->read_only_) {
         isc_throw(MemorySegmentError, "setNamedAddress on read-only segment");
     }
@@ -394,6 +402,7 @@ MemorySegmentMapped::setNamedAddressImpl(const char* name, void* addr) {
 
 bool
 MemorySegmentMapped::clearNamedAddressImpl(const char* name) {
+    cout << "Clear " << name << endl;
     if (impl_->read_only_) {
         isc_throw(MemorySegmentError,
                   "clearNamedAddress on read-only segment");
