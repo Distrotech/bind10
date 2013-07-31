@@ -20,7 +20,7 @@ export GTEST_FILTER=SegmentObjectHolderTest.grow
     echo end
     echo c
 
-    bt
-    info locals
-    echo exit
+    echo bt
+    echo info locals
+    echo quit
 ) | libtool --mode=execute gdb ./run_unittests >gdb.log 2>&1
