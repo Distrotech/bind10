@@ -392,9 +392,10 @@ MemorySegmentMapped::setNamedAddressImpl(const char* name, void* addr) {
                     RESERVED_NAMED_ADDRESS_STORAGE_NAME).first;
             assert(reserved_storage);
             *storage = *reserved_storage;
+            cout << "Set done" << endl;
             return (grown);
         }
-
+        cout << "Grown while setting" << endl;
         impl_->growSegment();
         grown = true;
     }

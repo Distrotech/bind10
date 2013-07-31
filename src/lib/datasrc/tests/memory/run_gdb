@@ -1,0 +1,21 @@
+#!/bin/sh
+
+export GTEST_FILTER=SegmentObjectHolderTest.grow
+
+(
+    echo 'b main'
+    echo r
+    for i in isc::util::MemorySegmentMapped::Impl::growSegment isc::util::MemorySegmentMapped::allocate isc::util::MemorySegmentMapped::deallocate isc::util::MemorySegmentMapped::setNamedAddressImpl isc::util::MemorySegmentMapped::clearNamedAddressImpl ; do
+        echo "b '$i'"
+        echo "commands"
+        echo 'info locals'
+        echo "bt"
+        echo "c"
+        echo "end"
+    done
+    echo c
+
+    bt
+    info locals
+    echo exit
+) | libtool --mode=execute gdb ./run_unittests
