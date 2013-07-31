@@ -65,6 +65,7 @@ public:
     {
         cout << "Created segment holder " << holder_name_ << endl;
         if (mem_sgmt_.setNamedAddress(holder_name_.c_str(), NULL)) {
+            cout << "Grown while allocating holder" << endl;
             // OK. We've grown. The caller might need to be informed, so
             // we throw. But then, we don't get our destructor, so we
             // release the memory right away.

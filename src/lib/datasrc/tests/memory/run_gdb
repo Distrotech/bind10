@@ -13,9 +13,14 @@ export GTEST_FILTER=SegmentObjectHolderTest.grow
         echo "c"
         echo "end"
     done
+    echo catch catch
+    echo 'info locals'
+    echo "bt"
+    echo "c"
+    echo end
     echo c
 
     bt
     info locals
     echo exit
-) | libtool --mode=execute gdb ./run_unittests
+) | libtool --mode=execute gdb ./run_unittests >gdb.log 2>&1
