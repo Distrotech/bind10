@@ -1,0 +1,2 @@
+#!/bin/sh
+grep -vn '^2013-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9] FATAL \[b10-init.init/[0-9]*\] BIND10_COMPONENT_START_EXCEPTION component Hello failed to start: 42$' file.log

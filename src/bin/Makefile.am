@@ -1,5 +1,5 @@
 SUBDIRS = bind10 bindctl cfgmgr ddns loadzone msgq cmdctl auth xfrin \
 	xfrout usermgr zonemgr stats tests resolver sockcreator dhcp4 dhcp6 d2\
-	dbutil sysinfo memmgr
+	dbutil sysinfo memmgr mixer
 
 check-recursive: all-recursive
