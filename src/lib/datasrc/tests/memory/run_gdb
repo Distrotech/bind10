@@ -14,6 +14,7 @@ export GTEST_FILTER=SegmentObjectHolderTest.grow
         echo "end"
     done
     echo catch catch
+    echo commands
     echo 'info locals'
     echo "bt"
     echo "c"
