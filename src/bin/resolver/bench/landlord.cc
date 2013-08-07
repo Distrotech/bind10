@@ -59,7 +59,7 @@ public:
         // Wake all threads waiting on new data
         condvar_.broadcast();
     }
-    // Signal that we are expected to shutdown. This is out of baund.
+    // Signal that we are expected to shutdown. This is out of band.
     void shutdown() {
         Mutex::Locker locker(mutex_);
         shutdown_ = true;
