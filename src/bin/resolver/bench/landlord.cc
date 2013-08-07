@@ -65,16 +65,17 @@ public:
         shutdown_ = true;
         condvar_.broadcast();
     }
-    // Get some values from the queue. The values are put into where.
-    // It gets maximum of max values, but there may be less. If there
-    // are no values and wait is true, it blocks until some values appear.
-    bool pop(Values &where, size_t max, bool wait = true) {
+    // Get some values from the queue. The values are returned in the
+    // ret argument.  It returns a maximum of max values, but there may
+    // be less. If there are no values and wait is true, it blocks until
+    // some values appear.
+    bool pop(Values &ret, size_t max, bool wait = true) {
         Mutex::Locker locker(mutex_);
         while (values_.empty() && wait && !shutdown_) {
             condvar_.wait(mutex_);
         }
         size_t amount = std::min(max, values_.size());
-        where.insert(where.end(), values_.begin(), values_.begin() + amount);
+        ret.insert(ret.end(), values_.begin(), values_.begin() + amount);
         values_.erase(values_.begin(), values_.begin() + amount);
         return !shutdown_;
     }
