@@ -1260,7 +1260,7 @@ Dhcpv6Srv::releaseIA_NA(const DuidPtr& duid, const Pkt6Ptr& query,
     }
 
     // Ok, we've passed all checks. Let's release this address.
-    bool success = false; // was the removal operation succeessful?
+    bool success = false; // Was the removal operation successful?
 
     if (!skip) {
         success = LeaseMgrFactory::instance().deleteLease(lease->addr_);
