@@ -55,7 +55,7 @@ NaiveResolver::run() {
                 interface_.processEvents();
             }
         }
-        count ++;
+        ++ count;
     }
     processed_ = true;
     return (count);

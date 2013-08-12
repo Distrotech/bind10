@@ -24,8 +24,8 @@ const size_t count = 10000; // TODO: We may want to read this from argv.
 using namespace std;
 
 int main(int, const char**) {
-    for (size_t i = 1; i < 10; i ++) {
-        for (size_t j = 1; j < 10; j ++) {
+    for (size_t i = 1; i < 10; ++ i) {
+        for (size_t j = 1; j < 10; ++ j) {
             size_t size = j * 25;
             cout << "Landlord with " << i << " workers and " << size << " batch size " << endl;
             isc::resolver::bench::LandlordResolver landlord(::count, size, i);
