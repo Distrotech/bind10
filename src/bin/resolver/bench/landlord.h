@@ -23,11 +23,10 @@ namespace isc {
 namespace resolver {
 namespace bench {
 
-/// \brief Naive implementation of resolver for the benchmark
+/// \brief Landlord implementation of the resolver
 ///
-/// This is here mostly to show how to implement the other benchmark
-/// implementations. Look at the code inside how to use the fake
-/// resolution.
+/// A shared resource is maintained by separate process with input and
+/// output queues. Cache is RCU.
 class LandlordResolver {
 public:
     /// \brief Constructor. Initializes the data.
