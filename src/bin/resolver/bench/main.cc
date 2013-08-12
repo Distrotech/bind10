@@ -24,6 +24,7 @@ const size_t count = 10000; // TODO: We may want to read this from argv.
 using namespace std;
 
 int main(int, const char**) {
+    cout << "Runnig the landlord resolver" << endl;
     for (size_t i = 1; i < 10; ++ i) {
         for (size_t j = 1; j < 10; ++ j) {
             size_t size = j * 25;
@@ -34,6 +35,7 @@ int main(int, const char**) {
         }
     }
     // Run the naive implementation
+    cout << "Running the naive implementation" << endl;
     isc::resolver::bench::NaiveResolver naive_resolver(::count);
     isc::bench::BenchMark<isc::resolver::bench::NaiveResolver>
         (1, naive_resolver, true);
