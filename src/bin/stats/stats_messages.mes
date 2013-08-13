@@ -29,7 +29,7 @@ The stats module process is exiting.
 
 % STATS_RECEIVED_INVALID_INIT_STATISTICS_DATA received invalid statistics data from %1
 Invalid statistics data has been received from the module while
-init and it has been discarded.
+initializing and it has been discarded.
 
 % STATS_RECEIVED_INVALID_POLLING_ACCUM_STATISTICS_DATA received invalid statistics data from %1
 Invalid statistics data has been received from the module while
