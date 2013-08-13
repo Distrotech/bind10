@@ -249,7 +249,7 @@ class Stats:
             {'lname': self.cc_session.lname,
              'boot_time': get_datetime(_BASETIME),
              'last_update_time': get_datetime()}):
-            logger.warn(STATS_RECEIVED_INVALID_STATISTICS_DATA,
+            logger.warn(STATS_RECEIVED_INVALID_INIT_STATISTICS_DATA,
                         self.module_name)
         # define the variable of the last time of polling
         self._lasttime_poll = 0.0
@@ -348,7 +348,7 @@ class Stats:
             (_module_name, _lname, _args) = _statistics_data.pop(0)
             if self.update_statistics_data(_module_name, _lname, _args):
                 logger.warn(
-                STATS_RECEIVED_INVALID_STATISTICS_DATA,
+                STATS_RECEIVED_INVALID_POLLING_ACCUM_STATISTICS_DATA,
                 _module_name)
             else:
                 if self.update_statistics_data(
@@ -356,7 +356,7 @@ class Stats:
                     self.cc_session.lname,
                     {'last_update_time': get_datetime()}):
                     logger.warn(
-                        STATS_RECEIVED_INVALID_STATISTICS_DATA,
+                        STATS_RECEIVED_INVALID_POLLING_SELF_STATISTICS_DATA,
                         self.module_name)
         # if successfully done, set the last time of polling
         self._lasttime_poll = get_timestamp()
