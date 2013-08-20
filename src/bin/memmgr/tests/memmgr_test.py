@@ -34,6 +34,7 @@ class MyCCSession(MockModuleCCSession, isc.config.ConfigData):
         isc.config.ConfigData.__init__(self, module_spec)
         self.add_remote_params = [] # for inspection
         self.add_remote_exception = None # to raise exception from the method
+        self.notifications = []
 
     def start(self):
         pass
@@ -42,6 +43,10 @@ class MyCCSession(MockModuleCCSession, isc.config.ConfigData):
         if self.add_remote_exception is not None:
             raise self.add_remote_exception
         self.add_remote_params.append((mod_name, handler))
+
+    def subscribe_notification(self, group, callback):
+        self.notifications.append((group, callback))
+        return 42
 
 class MockMemmgr(memmgr.Memmgr):
     def _setup_ccsession(self):
@@ -171,6 +176,8 @@ class TestMemmgr(unittest.TestCase):
         self.assertEqual([('data_sources',
                            self.__mgr._datasrc_config_handler)],
                          self.__mgr.mod_ccsession.add_remote_params)
+        self.assertEqual([('cc_members', self.__mgr._group_notification)],
+                         self.__mgr.mod_ccsession.notifications)
 
         # If data source isn't configured it's considered fatal (checking the
         # same scenario with two possible exception types)
