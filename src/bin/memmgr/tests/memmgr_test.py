@@ -302,6 +302,42 @@ class TestMemmgr(unittest.TestCase):
         self.assertEqual([command], self.__mgr._builder_command_queue)
         del self.__mgr._builder_command_queue[:]
 
+    def test_group_notification(self):
+        """
+        Test the callback which watches over changes to group membership.
+        """
+        # Mock up the actual functions that do work.
+        self.__events = []
+        def event(what, reader):
+            self.__events.append((what, reader))
+        self.__mgr._subscribe_reader = \
+            lambda reader: event('subscribe', reader)
+        self.__mgr._unsubscribe_reader = \
+            lambda reader: event('unsubscribe', reader)
+
+        # Few things that should be ignored. Different groups and unknown
+        # events.
+
+        # No params -> no group
+        self.__mgr._group_notification('subscribed', None)
+        self.__mgr._group_notification('subscribed', {'group': 'Other',
+                                                      'client': 'c123'})
+        self.__mgr._group_notification('unsubscribed', {'group': # No client
+                                                        'SegmentReader'})
+        # Unknown event
+        self.__mgr._group_notification('event', {'group': 'SegmentReader',
+                                                 'client': 'c123'})
+
+        self.assertEqual(self.__events, [])
+        # We subscribe and unsubscribe
+        self.__mgr._group_notification('subscribed', {'group': 'SegmentReader',
+                                                      'client': 'c123'})
+        self.__mgr._group_notification('unsubscribed',
+                                       {'group': 'SegmentReader',
+                                        'client': 'c123'})
+        self.assertEqual(self.__events, [('subscribe', 'c123'),
+                                         ('unsubscribe', 'c123')])
+
     def test_notify_from_builder(self):
         """
         Check the notify from builder thing eats the notifications and
