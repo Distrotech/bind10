@@ -199,10 +199,14 @@ class Memmgr(BIND10Server):
         self._builder_sock.close()
 
     def _subscribe_reader(self, reader):
-        pass
+        for dsrc_info in self._datasrc_info_list:
+            for sgmt_info in dsrc_info.segment_info_map.values():
+                sgmt_info.add_reader(reader)
 
     def _unsubscribe_reader(self, reader):
-        pass
+        for dsrc_info in self._datasrc_info_list:
+            for sgmt_info in dsrc_info.segment_info_map.values():
+                sgmt_info.remove_reader(reader)
 
     def _group_notification(self, event, params):
         """

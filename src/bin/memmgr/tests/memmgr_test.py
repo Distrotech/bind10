@@ -338,6 +338,29 @@ class TestMemmgr(unittest.TestCase):
         self.assertEqual(self.__events, [('subscribe', 'c123'),
                                          ('unsubscribe', 'c123')])
 
+    def test_reader_updates(self):
+        """
+        Check the updating of reader sets work sane.
+        """
+        class SgmtInfo:
+            def __init__(self):
+                self.actions = []
+            def remove_reader(self, reader):
+                self.actions.append(('remove', reader))
+            def add_reader(self, reader):
+                self.actions.append(('add', reader))
+        sgmt_info = SgmtInfo()
+        class DataSrcInfo:
+            def __init__(self):
+                self.segment_info_map = \
+                    {(isc.dns.RRClass.IN, "name"): sgmt_info}
+        dsrc_info = DataSrcInfo()
+        self.__mgr._datasrc_info_list.append(dsrc_info)
+        self.__mgr._subscribe_reader('reader1')
+        self.__mgr._unsubscribe_reader('reader2')
+        self.assertEqual(sgmt_info.actions, [('add', 'reader1'),
+                                             ('remove', 'reader2')])
+
     def test_notify_from_builder(self):
         """
         Check the notify from builder thing eats the notifications and
