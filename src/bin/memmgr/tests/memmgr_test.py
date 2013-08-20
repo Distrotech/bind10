@@ -48,6 +48,17 @@ class MyCCSession(MockModuleCCSession, isc.config.ConfigData):
         self.notifications.append((group, callback))
         return 42
 
+    def rpc_call(self, command, remote, params):
+        """
+        The RPC call method. Curretly, we use it at one place in the main
+        code only, so we hardcode the values. But if it is needed elsewhere,
+        we may need some more systemic solution.
+        """
+        assert command == 'members'
+        assert remote == 'Msgq'
+        assert params == {'group': 'SegmentReader'}
+        return ['reader1', 'reader2']
+
 class MockMemmgr(memmgr.Memmgr):
     def _setup_ccsession(self):
         orig_cls = isc.config.ModuleCCSession
@@ -254,11 +265,15 @@ class TestMemmgr(unittest.TestCase):
         class SgmtInfo:
             def __init__(self):
                 self.events = []
+                self.readers = []
                 self.__state = None
 
             def add_event(self, cmd):
                 self.events.append(cmd)
                 self.__state = SegmentInfo.UPDATING
+
+            def add_reader(self, reader):
+                self.readers.append(reader)
 
             def start_update(self):
                 return self.events[0]
@@ -272,6 +287,7 @@ class TestMemmgr(unittest.TestCase):
                 self.segment_info_map = \
                     {(isc.dns.RRClass.IN, "name"): sgmt_info}
         dsrc_info = DataSrcInfo()
+        self.__mgr._setup_ccsession()
 
         # Pretend to have the builder thread
         self.__mgr._builder_cv = threading.Condition()
@@ -282,6 +298,7 @@ class TestMemmgr(unittest.TestCase):
         # The event was pushed into the segment info
         command = ('load', None, dsrc_info, isc.dns.RRClass.IN, 'name')
         self.assertEqual([command], sgmt_info.events)
+        self.assertEqual(['reader1', 'reader2'], sgmt_info.readers)
         self.assertEqual([command], self.__mgr._builder_command_queue)
         del self.__mgr._builder_command_queue[:]
 
