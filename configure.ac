@@ -1563,6 +1563,12 @@ cat >> config.report << END
 END
 fi
 
+echo >> config.report
+echo Components: >> config.report
+for i in $components_list; do
+  echo "  $i"
+done >> config.report
+
 cat >> config.report << END
 
 Features:
