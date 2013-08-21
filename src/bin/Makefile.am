@@ -1,5 +1,5 @@
 SUBDIRS = bind10 bindctl cfgmgr ddns loadzone msgq cmdctl auth xfrin \
-	xfrout usermgr zonemgr stats tests \
+	xfrout usermgr zonemgr tests \
 	sockcreator dbutil sysinfo
 
 if ENABLE_DHCP
@@ -9,6 +9,10 @@ endif
 if ENABLE_RESOLVER
 # Build resolver only with --enable-experimental-resolver
 SUBDIRS += resolver
+endif
+
+if ENABLE_STATISTICS
+SUBDIRS += stats
 endif
 
 if USE_SHARED_MEMORY

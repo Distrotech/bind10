@@ -65,4 +65,18 @@ if test "x$enable_resolver" = "xyes" ; then
   components_list="$components_list resolver"
 fi
 
+AC_ARG_ENABLE(statistics,
+ AC_HELP_STRING(--enable-statistics,Build and install stats components),
+  [enable_statistics=$enableval], [
+   if test "$components_selection" = "all" -o \
+            "$components_selection" = "reallyall" ; then
+     enable_statistics=yes
+   fi
+])
+AM_CONDITIONAL(ENABLE_STATISTICS, [test "$enable_statistics" = "yes"])
+AC_SUBST(ENABLE_STATISTICS)
+if test "x$enable_statistics" = "xyes" ; then
+  components_list="$components_list statistics"
+fi
+
 ])dnl AX_BIND10_COMPONENTS
