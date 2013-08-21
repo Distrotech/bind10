@@ -2,20 +2,67 @@ dnl @synopsis AX_BIND10_COMPONENTS
 dnl
 dnl Select what BIND10 components to build and install.
 dnl
-dnl This macro possibly sets:
+dnl reallyall includes experimental components
 
 AC_DEFUN([AX_BIND10_COMPONENTS], [
 
-build_experimental_resolver=no
-AC_ARG_ENABLE(experimental-resolver,
-  [AC_HELP_STRING([--enable-experimental-resolver],
-  [enable building of the experimental resolver [default=no]])],
-  [build_experimental_resolver=$enableval])
-AM_CONDITIONAL([BUILD_EXPERIMENTAL_RESOLVER], [test "$build_experimental_resolver" = "yes"])
-if test "$build_experimental_resolver" = "yes"; then
-   BUILD_EXPERIMENTAL_RESOLVER=yes
-else
-   BUILD_EXPERIMENTAL_RESOLVER=no
+AC_ARG_ENABLE(components,
+  AC_HELP_STRING(--enable-components=FEATURES-LIST,Space-separated
+list of components to enable | "all" | "reallyall"),[
+    for i in $enableval; do
+      if test "$i" = "all" -o "$i" = "reallyall" ; then
+        components_selection=$i
+      else
+        i=`echo $i | sed 's/-/_/g'`
+        eval "enable_$i=yes"
+      fi
+    done
+  ])
+
+AC_ARG_ENABLE(dhcp,
+ AC_HELP_STRING(--enable-dhcp,Build and install the DHCP components),
+  [enable_dhcp=$enableval], [
+   if test "$components_selection" = "all" -o \
+            "$components_selection" = "reallyall" ; then
+     enable_dhcp=yes
+     enable_libdhcp=yes
+   fi
+])
+
+AM_CONDITIONAL(ENABLE_DHCP, [test "$enable_dhcp" = "yes"])
+AC_SUBST(ENABLE_DHCP)
+if test "x$enable_dhcp" = "xyes" ; then
+  enable_libdhcp=yes
+  components_list="$components_list dhcp"
 fi
-AC_SUBST(BUILD_EXPERIMENTAL_RESOLVER)
+
+AC_ARG_ENABLE(libdhcp,
+ AC_HELP_STRING(--enable-libdhcp,Build and install the dhcp libraries),
+  [enable_libdhcp=$enableval], [
+   if test "$components_selection" = "all" -o \
+            "$components_selection" = "reallyall" ; then
+     enable_libdhcp=yes
+   fi
+])
+AM_CONDITIONAL(ENABLE_LIBDHCP, [test "$enable_libdhcp" = "yes"])
+AC_SUBST(ENABLE_LIBDHCP)
+if test "x$enable_libdhcp" = "xyes" ; then
+  components_list="$components_list libdhcp"
+fi
+
+AC_ARG_ENABLE(resolver,
+  [AC_HELP_STRING([--enable-experimental-resolver],
+  [Build and install the experimental resolver [default=no]])],
+  [enable_resolver=$enableval], [
+   if test "$components_selection" = "reallyall" ; then
+     enable_resolver=yes
+   fi
+])
+
+AM_CONDITIONAL([ENABLE_RESOLVER], [test "$enable_resolver" = "yes"])
+AC_SUBST(ENABLE_RESOLVER)
+if test "x$enable_resolver" = "xyes" ; then
+  components_list="$components_list resolver"
+fi
+
 ])dnl AX_BIND10_COMPONENTS
