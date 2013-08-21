@@ -342,6 +342,7 @@ class TestMemmgr(unittest.TestCase):
         """
         Check the updating of reader sets work sane.
         """
+        obj = self
         class SgmtInfo:
             def __init__(self):
                 self.actions = []
@@ -356,6 +357,10 @@ class TestMemmgr(unittest.TestCase):
                     {(isc.dns.RRClass.IN, "name"): sgmt_info}
         dsrc_info = DataSrcInfo()
         self.__mgr._datasrc_info_list.append(dsrc_info)
+        sent_updates = []
+        def send_update(info):
+            sent_updates.append(info)
+        self.__mgr._send_update_to_readers = send_update
         self.__mgr._subscribe_reader('reader1')
         self.__mgr._unsubscribe_reader('reader2')
         self.assertEqual(sgmt_info.actions, [('add', 'reader1'),
@@ -384,6 +389,10 @@ class TestMemmgr(unittest.TestCase):
         def mock_cmd_to_builder(cmd):
             commands.append(cmd)
         self.__mgr._cmd_to_builder = mock_cmd_to_builder
+        updates = []
+        def send_update(info):
+            updates.append(info)
+        self.__mgr._send_update_to_readers = send_update
 
         self.__mgr._builder_lock = threading.Lock()
         # Extract the reference for the queue. We get a copy of the reference
@@ -395,6 +404,7 @@ class TestMemmgr(unittest.TestCase):
         self.__mgr._notify_from_builder()
         # All notifications are now eaten
         self.assertEqual([], notif_ref)
+        self.assertEqual([], updates)
         self.assertEqual(['command'], commands)
         del commands[:]
         # The new command is sent
@@ -409,6 +419,7 @@ class TestMemmgr(unittest.TestCase):
         notif_ref.append(('unhandled',))
         self.assertRaises(ValueError, self.__mgr._notify_from_builder)
         self.assertEqual([], notif_ref)
+        self.assertEqual([sgmt_info], updates)
 
     def test_send_to_builder(self):
         """

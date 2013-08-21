@@ -132,6 +132,14 @@ class Memmgr(BIND10Server):
             self._builder_command_queue.append(cmd)
             self._builder_cv.notify_all()
 
+    def _send_update_to_readers(self, sgmt_info):
+        """
+        Send update command to all the readers in the segment info.
+
+        The sending might get skipped if there's no info to send with it yet.
+        """
+        pass
+
     def _notify_from_builder(self):
         """
         Read the notifications from the builder thread.
@@ -156,8 +164,7 @@ class Memmgr(BIND10Server):
                 if cmd is not None:
                     self._cmd_to_builder(cmd)
                 else:
-                    pass
-                    # TODO: Send to the readers, #2858
+                    self._send_update_to_readers(sgmt_info)
             else:
                 raise ValueError('Unknown notification name: ' + notif_name)
 
@@ -202,6 +209,7 @@ class Memmgr(BIND10Server):
         for dsrc_info in self._datasrc_info_list:
             for sgmt_info in dsrc_info.segment_info_map.values():
                 sgmt_info.add_reader(reader)
+                self._send_update_to_readers(sgmt_info)
 
     def _unsubscribe_reader(self, reader):
         for dsrc_info in self._datasrc_info_list:
