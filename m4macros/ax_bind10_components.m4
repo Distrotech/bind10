@@ -50,6 +50,24 @@ if test "x$enable_libdhcp" = "xyes" ; then
   components_list="$components_list libdhcp"
 fi
 
+dnl except the experimental
+AC_ARG_ENABLE(dns,
+ AC_HELP_STRING(--enable-dns,Build and install the DNS components),
+  [enable_dns=$enableval], [
+   if test "$components_selection" = "all" -o \
+            "$components_selection" = "reallyall" ; then
+     enable_dns=yes
+   fi
+])
+if test "x$enable_dns" = "xyes" ; then
+  enable_auth=yes
+  enable_libdns=yes
+  enable_ddns=yes
+  enable_xfrin=yes
+  enable_xfrout=yes
+  enable_zonemgr=yes
+fi
+
 AC_ARG_ENABLE(resolver,
   [AC_HELP_STRING([--enable-experimental-resolver],
   [Build and install the experimental resolver [default=no]])],
@@ -63,6 +81,42 @@ AM_CONDITIONAL([ENABLE_RESOLVER], [test "$enable_resolver" = "yes"])
 AC_SUBST(ENABLE_RESOLVER)
 if test "x$enable_resolver" = "xyes" ; then
   components_list="$components_list resolver"
+fi
+
+AM_CONDITIONAL([ENABLE_AUTH], [test "$enable_auth" = "yes"])
+AC_SUBST(ENABLE_AUTH)
+if test "x$enable_auth" = "xyes" ; then
+  components_list="$components_list auth"
+fi
+
+AM_CONDITIONAL([ENABLE_DDNS], [test "$enable_ddns" = "yes"])
+AC_SUBST(ENABLE_DDNS)
+if test "x$enable_ddns" = "xyes" ; then
+  components_list="$components_list ddns"
+fi
+
+AM_CONDITIONAL([ENABLE_LIBDNS], [test "$enable_libdns" = "yes"])
+AC_SUBST(ENABLE_LIBDNS)
+if test "x$enable_libdns" = "xyes" ; then
+  components_list="$components_list libdns"
+fi
+
+AM_CONDITIONAL([ENABLE_XFRIN], [test "$enable_xfrin" = "yes"])
+AC_SUBST(ENABLE_XFRIN)
+if test "x$enable_xfrin" = "xyes" ; then
+  components_list="$components_list xfrin"
+fi
+
+AM_CONDITIONAL([ENABLE_XFROUT], [test "$enable_xfrout" = "yes"])
+AC_SUBST(ENABLE_XFROUT)
+if test "x$enable_xfrout" = "xyes" ; then
+  components_list="$components_list xfrout"
+fi
+
+AM_CONDITIONAL([ENABLE_ZONEMGR], [test "$enable_zonemgr" = "yes"])
+AC_SUBST(ENABLE_ZONEMGR)
+if test "x$enable_zonemgr" = "xyes" ; then
+  components_list="$components_list zonemgr"
 fi
 
 ])dnl AX_BIND10_COMPONENTS

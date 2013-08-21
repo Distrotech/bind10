@@ -1,11 +1,20 @@
-SUBDIRS = exceptions util log hooks cryptolink dns cc config acl xfr bench \
-          asiolink asiodns nsas cache testutils \
-          datasrc server_common python statistics
+SUBDIRS = exceptions util log hooks cryptolink cc config acl xfr bench \
+          asiolink testutils \
+          server_common python statistics
+
+if ENABLE_LIBDNS
+SUBDIRS += dns asiodns cache datasrc
+endif
 
 if ENABLE_LIBDHCP
 SUBDIRS += dhcp dhcp_ddns dhcpsrv
 endif
 
+# xfrout also?
+if ENABLE_XFRIN
+SUBDIRS += xfr
+endif
+
 if ENABLE_RESOLVER
-SUBDIRS += resolve
+SUBDIRS += nsas resolve
 endif

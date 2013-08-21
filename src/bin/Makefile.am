@@ -1,9 +1,33 @@
-SUBDIRS = bind10 bindctl cfgmgr ddns loadzone msgq cmdctl auth xfrin \
-	xfrout usermgr zonemgr stats tests \
+SUBDIRS = bind10 bindctl cfgmgr loadzone msgq cmdctl \
+	usermgr tests \
 	sockcreator dbutil sysinfo
 
 if ENABLE_DHCP
 SUBDIRS += dhcp4 dhcp6 d2
+endif
+
+if ENABLE_AUTH
+SUBDIRS += auth
+endif
+
+if ENABLE_DDNS
+SUBDIRS += ddns
+endif
+
+if ENABLE_STATISTICS
+SUBDIRS += stats
+endif
+
+if ENABLE_XFRIN
+SUBDIRS += xfrin
+endif
+
+if ENABLE_XFROUT
+SUBDIRS += xfrout
+endif
+
+if ENABLE_ZONEMGR
+SUBDIRS += zonemgr
 endif
 
 if ENABLE_RESOLVER
