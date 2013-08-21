@@ -1564,7 +1564,7 @@ END
 fi
 
 echo >> config.report
-echo Components: >> config.report
+echo Extra Components: >> config.report
 for i in $components_list; do
   echo "  $i"
 done >> config.report

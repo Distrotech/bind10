@@ -35,6 +35,10 @@ if ENABLE_RESOLVER
 SUBDIRS += resolver
 endif
 
+if ENABLE_STATISTICS
+SUBDIRS += stats
+endif
+
 if USE_SHARED_MEMORY
 # Build the memory manager only if we have shared memory.
 # It is useless without it.

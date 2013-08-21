@@ -18,3 +18,7 @@ endif
 if ENABLE_RESOLVER
 SUBDIRS += nsas resolve
 endif
+
+if ENABLE_STATISTICS
+SUBDIRS += statistics
+endif
