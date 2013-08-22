@@ -62,7 +62,10 @@ AC_ARG_ENABLE(dns,
 if test "x$enable_dns" = "xyes" ; then
   enable_auth=yes
   enable_libdns=yes
+dnl  enable_dns_libraries is for various server libraries
+  enable_dns_libraries=yes
   enable_ddns=yes
+  enable_loadzone=yes
   enable_xfrin=yes
   enable_xfrout=yes
   enable_zonemgr=yes
@@ -99,6 +102,18 @@ AM_CONDITIONAL([ENABLE_LIBDNS], [test "$enable_libdns" = "yes"])
 AC_SUBST(ENABLE_LIBDNS)
 if test "x$enable_libdns" = "xyes" ; then
   components_list="$components_list libdns"
+fi
+
+AM_CONDITIONAL([ENABLE_DNS_LIBRARIES], [test "$enable_dns_libraries" = "yes"])
+AC_SUBST(ENABLE_DNS_LIBRARIES)
+if test "x$enable_dns_libraries" = "xyes" ; then
+  components_list="$components_list dns_libraries"
+fi
+
+AM_CONDITIONAL([ENABLE_LOADZONE], [test "$enable_loadzone" = "yes"])
+AC_SUBST(ENABLE_LOADZONE)
+if test "x$enable_loadzone" = "xyes" ; then
+  components_list="$components_list loadzone"
 fi
 
 AM_CONDITIONAL([ENABLE_XFRIN], [test "$enable_xfrin" = "yes"])

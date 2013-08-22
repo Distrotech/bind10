@@ -1,9 +1,13 @@
-SUBDIRS = exceptions util log hooks cryptolink cc config acl xfr bench \
+SUBDIRS = exceptions util log hooks cryptolink cc config \
           asiolink testutils \
-          server_common python statistics
+          python statistics
 
 if ENABLE_LIBDNS
-SUBDIRS += dns asiodns cache datasrc
+SUBDIRS += dns
+endif
+
+if ENABLE_DNS_LIBRARIES
+SUBDIRS += acl bench asiodns cache datasrc server_common
 endif
 
 if ENABLE_LIBDHCP

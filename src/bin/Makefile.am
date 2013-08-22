@@ -1,4 +1,4 @@
-SUBDIRS = bind10 bindctl cfgmgr loadzone msgq cmdctl \
+SUBDIRS = bind10 bindctl cfgmgr msgq cmdctl \
 	usermgr tests \
 	sockcreator dbutil sysinfo
 
@@ -12,6 +12,10 @@ endif
 
 if ENABLE_DDNS
 SUBDIRS += ddns
+endif
+
+if ENABLE_LOADZONE
+SUBDIRS += loadzone
 endif
 
 if ENABLE_STATISTICS
