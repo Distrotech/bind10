@@ -1096,12 +1096,6 @@ if test "x$have_sqlite" = "xyes" ; then
 fi
 
 #
-# ASIO: we extensively use it as the C++ event management module.
-#
-# Use local ASIO headers from ext
-#
-CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/ext/asio"
-#
 # Use our 'coroutine' header from ext
 CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/ext/coroutine"
 #
@@ -1226,9 +1220,6 @@ AC_CONFIG_FILES([Makefile
                  doc/guide/Makefile
                  doc/design/Makefile
                  doc/design/datasrc/Makefile
-                 ext/Makefile
-                 ext/asio/Makefile
-                 ext/asio/asio/Makefile
                  compatcheck/Makefile
                  src/Makefile
                  src/bin/Makefile
