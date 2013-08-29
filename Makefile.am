@@ -121,6 +121,7 @@ cppcheck:
 EXTRA_DIST = tools/system_messages.py
 
 #### include external sources in the distributed tarball:
+EXTRA_DIST += ext/coroutine/LICENSE_1_0.txt
 EXTRA_DIST += ext/coroutine/coroutine.h
 
 pkgconfigdir = $(libdir)/pkgconfig
