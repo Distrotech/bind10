@@ -617,8 +617,10 @@ $ <userinput>./configure</userinput></screen>
 
         <para>
           Building from source code requires the Boost
-          build-time headers
-          (<ulink url="http://www.boost.org/"/>).
+          (<ulink url="http://www.boost.org/"/>)
+          and Asio
+          (<ulink url="http://think-async.com/"/>)
+          C++ build-time headers.
           At least Boost version 1.35 is required.
   <!-- TODO: we don't check for this version -->
   <!-- NOTE: jreed has tested with 1.34, 1.38, and 1.41. -->
@@ -749,6 +751,14 @@ as a dependency earlier -->
             <listitem>
               <simpara>Define the installation location (the
                 default is <filename>/usr/local/</filename>).
+              </simpara>
+            </listitem>
+          </varlistentry>
+
+          <varlistentry>
+            <term>--with-asio-include</term>
+            <listitem>
+              <simpara>Define the path to find the Asio headers.
               </simpara>
             </listitem>
           </varlistentry>
