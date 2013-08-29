@@ -11,7 +11,8 @@ SUBDIRS += dns
 endif
 
 if ENABLE_DNS_LIBRARIES
-SUBDIRS += acl datasrc ddns notify server_common
+# ddns module uses xfrin
+SUBDIRS += acl datasrc xfrin ddns notify server_common
 endif
 
 if ENABLE_STATISTICS

@@ -48,7 +48,18 @@ AM_CONDITIONAL(ENABLE_LIBDHCP, [test "$enable_libdhcp" = "yes"])
 AC_SUBST(ENABLE_LIBDHCP)
 if test "x$enable_libdhcp" = "xyes" ; then
   components_list="$components_list libdhcp"
+  # uses libdns++
+  enable_libdns=yes
 fi
+
+AC_ARG_ENABLE(auth,
+ AC_HELP_STRING(--enable-auth,Build and install the authoritative DNS server),
+  [enable_auth=$enableval], [
+   if test "$components_selection" = "all" -o \
+            "$components_selection" = "reallyall" ; then
+     enable_auth=yes
+   fi
+])
 
 dnl except the experimental
 AC_ARG_ENABLE(dns,
@@ -71,7 +82,7 @@ dnl  enable_dns_libraries is for various server libraries
   enable_zonemgr=yes
 fi
 
-AC_ARG_ENABLE(resolver,
+AC_ARG_ENABLE(experimental-resolver,
   [AC_HELP_STRING([--enable-experimental-resolver],
   [Build and install the experimental resolver [default=no]])],
   [enable_resolver=$enableval], [
@@ -84,12 +95,15 @@ AM_CONDITIONAL([ENABLE_RESOLVER], [test "$enable_resolver" = "yes"])
 AC_SUBST(ENABLE_RESOLVER)
 if test "x$enable_resolver" = "xyes" ; then
   components_list="$components_list resolver"
+  enable_libdns=yes
 fi
 
 AM_CONDITIONAL([ENABLE_AUTH], [test "$enable_auth" = "yes"])
 AC_SUBST(ENABLE_AUTH)
 if test "x$enable_auth" = "xyes" ; then
   components_list="$components_list auth"
+  enable_libdns=yes
+  enable_dns_libraries=yes
 fi
 
 AM_CONDITIONAL([ENABLE_DDNS], [test "$enable_ddns" = "yes"])
