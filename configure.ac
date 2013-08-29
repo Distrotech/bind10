@@ -1096,11 +1096,16 @@ if test "x$have_sqlite" = "xyes" ; then
 fi
 
 #
-# Use our 'coroutine' header from ext
-CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/ext/coroutine"
+# ASIO: we extensively use it as the C++ event management module.
+#
+AX_ASIO_FOR_BIND10
 #
 # Disable threads: Currently we don't use them.
 CPPFLAGS="$CPPFLAGS -DASIO_DISABLE_THREADS=1"
+# TODO: if using boost.asio -DBOOST_ASIO_DISABLE_THREADS=1
+
+# Use our 'coroutine' header from ext
+CPPFLAGS="$CPPFLAGS -I\$(top_srcdir)/ext/coroutine"
 
 # Check for functions that are not available on all platforms
 AC_CHECK_FUNCS([pselect])
@@ -1543,6 +1548,7 @@ dnl includes too
                  ${PYTHON_CXXFLAGS}
                  ${PYTHON_LDFLAGS}
                  ${PYTHON_LIB}
+  Asio:          ${ASIO_INCLUDES}
   Boost:         ${BOOST_INCLUDES}
   Botan:         ${BOTAN_INCLUDES}
                  ${BOTAN_LDFLAGS}
