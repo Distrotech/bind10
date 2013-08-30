@@ -26,8 +26,10 @@ AC_ARG_WITH([asio-include],
   AC_HELP_STRING([--with-asio-include=PATH],
     [specify exact directory for Asio headers]),
     [asio_include_path="$withval"])
+
 # If not specified, try some common paths.
 if test -z "$with_asio_include"; then
+AC_MSG_CHECKING([for asio headers])
 	asiodirs="/usr/local /usr/pkg /opt /opt/local"
 	for d in $asiodirs
 	do
@@ -37,6 +39,7 @@ if test -z "$with_asio_include"; then
 		fi
 	done
 fi
+AC_MSG_RESULT($asio_include_path)
 
 # TODO: this does not work, since Boost does not provide error_code.h
 #AC_ARG_WITH([boost-asio],
