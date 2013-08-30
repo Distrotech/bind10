@@ -14,6 +14,7 @@
 
 #include <config.h>
 
+#include <cstring>             // asio/impl/error_code.ipp uses strerror_r
 // This must be included before udp_endpoint.h
 #include <asio.hpp>
 

@@ -23,6 +23,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 
+#include <cstring>             // asio/impl/error_code.ipp uses strerror_r
 #include <asio.hpp>
 #include <asio/deadline_timer.hpp>
 

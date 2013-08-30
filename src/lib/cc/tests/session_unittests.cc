@@ -16,6 +16,7 @@
 
 // for some IPC/network system calls in asio/detail/pipe_select_interrupter.hpp 
 #include <unistd.h>
+#include <cstring>             // asio/impl/error_code.ipp uses strerror_r
 // XXX: the ASIO header must be included before others.  See session.cc.
 #include <asio.hpp>
 

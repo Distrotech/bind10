@@ -21,6 +21,7 @@
 
 #include <config.h>
 
+#include <cstring>             // asio/impl/error_code.ipp uses strerror_r
 #include <asio.hpp>
 #include <asio/error.hpp>
 #include <asiolink/dummy_io_cb.h>

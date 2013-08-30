@@ -14,6 +14,7 @@
 
 #include <config.h>
 
+#include <cstring>             // asio/impl/error_code.ipp uses strerror_r
 #include <asiolink/io_endpoint.h>
 #include <asiolink/io_error.h>
 

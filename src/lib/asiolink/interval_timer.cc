@@ -20,6 +20,7 @@
 
 #include <exceptions/exceptions.h>
 
+#include <cstring>             // asio/impl/error_code.ipp uses strerror_r
 #include <asio.hpp>
 #include <asiolink/interval_timer.h>
 #include <asiolink/io_service.h>

@@ -20,6 +20,7 @@
 // See the description of the namespace below.
 #include <unistd.h>             // for some network system calls
 #include <stdint.h>             // for uint32_t
+#include <cstring>              // asio/impl/error_code.ipp uses strerror_r
 #include <asio/ip/address.hpp>
 
 #include <functional>

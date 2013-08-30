@@ -19,6 +19,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include <cstring>             // asio/impl/error_code.ipp uses strerror_r
 #include <asio.hpp>
 
 #include <exceptions/exceptions.h>
