@@ -53,8 +53,14 @@ usage() {
 int
 main(int argc, char* argv[]) {
     int ch;
-    int port_number = DHCP4_SERVER_PORT; // The default. any other values are
+    int port_number;
+    if (getenv("B10_DHCP4_PORT")) {
+        port_number = boost::lexical_cast<uint16_t>(getenv("B10_DHCP4_PORT"));
+    } else {
+        port_number = DHCP4_SERVER_PORT; // The default. any other values are
                                          // useful for testing only.
+    }
+
     bool stand_alone = false;  // Should be connect to BIND10 msgq?
     bool verbose_mode = false; // Should server be verbose?
 
