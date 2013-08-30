@@ -1,47 +1,46 @@
-SUBDIRS = bind10 bindctl cfgmgr msgq cmdctl \
-	usermgr tests \
-	sockcreator dbutil sysinfo
-
 if ENABLE_DHCP
-SUBDIRS += dhcp4 dhcp6 d2
+dhcp = dhcp4 dhcp6 d2
 endif
 
 if ENABLE_AUTH
-SUBDIRS += auth
+auth = auth
+# loadzone is used for generating test files for auth
+loadzone = loadzone
 endif
 
 if ENABLE_DDNS
-SUBDIRS += ddns
+ddns = ddns
 endif
 
 if ENABLE_LOADZONE
-SUBDIRS += loadzone
-endif
-
-if ENABLE_STATISTICS
-SUBDIRS += stats
-endif
-
-if ENABLE_XFRIN
-SUBDIRS += xfrin
-endif
-
-if ENABLE_XFROUT
-SUBDIRS += xfrout
-endif
-
-if ENABLE_ZONEMGR
-SUBDIRS += zonemgr
+loadzone = loadzone
 endif
 
 if ENABLE_RESOLVER
 # Build resolver only with --enable-experimental-resolver
-SUBDIRS += resolver
+resolver = resolver
 endif
 
 if ENABLE_STATISTICS
-SUBDIRS += stats
+stats = stats
 endif
+
+if ENABLE_XFRIN
+xfrin = xfrin
+endif
+
+if ENABLE_XFROUT
+xfrout = xfrout
+endif
+
+if ENABLE_ZONEMGR
+zonemgr = zonemgr
+endif
+
+SUBDIRS = bind10 bindctl cfgmgr $(ddns) $(loadzone) msgq cmdctl \
+        $(auth) $(xfrin) \
+        $(xfrout) usermgr $(zonemgr) $(stats) tests $(resolver) \
+	sockcreator $(dhcp) dbutil sysinfo
 
 if USE_SHARED_MEMORY
 # Build the memory manager only if we have shared memory.

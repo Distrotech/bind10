@@ -1,24 +1,43 @@
-SUBDIRS = exceptions util log hooks cryptolink cc config \
-          asiolink testutils \
-          python statistics
-
 if ENABLE_LIBDNS
-SUBDIRS += dns
+libdns = dns
 endif
 
 if ENABLE_AUTH
+asiodns = asiodns
 # nsas is used by query_bench
-SUBDIRS += dns acl nsas bench asiodns datasrc server_common xfr
+nsas = nsas
+acl = acl
+auth = bench xfr
+datasrc = datasrc
+server_common = server_common
 endif
 
 if ENABLE_LIBDHCP
 # asiodns is used by b10-dhcp-ddns
-SUBDIRS += asiodns dhcp dhcp_ddns dhcpsrv
+asiodns = asiodns
+libdhcp = dhcp dhcp_ddns dhcpsrv
 endif
 
 if ENABLE_RESOLVER
-SUBDIRS += nsas asiodns acl server_common cache resolve
+asiodns = asiodns
+nsas = nsas
+acl = acl
+server_common = server_common
+resolver = cache resolve
 endif
+
+if ENABLE_XFRIN
+datasrc = datasrc
+endif
+
+if ENABLE_XFRIN
+acl = acl
+endif
+
+SUBDIRS = exceptions util log hooks cryptolink dns cc config \
+          $(acl) $(auth) \
+          asiolink $(asiodns) $(nsas) $(resolver) testutils \
+          $(datasrc) $(server_common) python $(libdhcp)
 
 if ENABLE_STATISTICS
 SUBDIRS += statistics

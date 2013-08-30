@@ -58,6 +58,8 @@ AC_ARG_ENABLE(auth,
    if test "$components_selection" = "all" -o \
             "$components_selection" = "reallyall" ; then
      enable_auth=yes
+     # loadzone is used for auth test files
+     enable_loadzone=yes
    fi
 ])
 

@@ -1,4 +1,27 @@
-SUBDIRS = util cc config log net testutils bind10
+
+if ENABLE_DNS_LIBRARIES
+# ddns module uses xfrin
+acl = acl
+ddns = acl ddns
+datasrc = datasrc
+notify = notify
+server_common = server_common
+xfrin = xfrin
+endif
+
+if ENABLE_XFRIN
+datasrc = datasrc
+notify = notify
+server_common = server_common
+xfrin = xfrin
+endif
+
+if ENABLE_XFROUT
+acl = acl
+endif
+
+SUBDIRS = util cc config log net testutils bind10 $(datasrc) $(xfrin)
+SUBDIRS += $(acl) $(ddns) $(server_common) $(notify)
 SUBDIRS += log_messages sysinfo
 
 if USE_SHARED_MEMORY
@@ -10,17 +33,8 @@ if ENABLE_LIBDNS
 SUBDIRS += dns
 endif
 
-if ENABLE_DNS_LIBRARIES
-# ddns module uses xfrin
-SUBDIRS += acl datasrc xfrin ddns notify server_common
-endif
-
 if ENABLE_STATISTICS
 SUBDIRS += statistics
-endif
-
-if ENABLE_XFRIN
-SUBDIRS += xfrin
 endif
 
 python_PYTHON = __init__.py
