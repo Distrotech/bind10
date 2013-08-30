@@ -4,6 +4,10 @@ if ENABLE_DNS_LIBRARIES
 acl = acl
 ddns = acl ddns
 datasrc = datasrc
+if USE_SHARED_MEMORY
+# The memory manager is useless without shared memory support
+memmgr = memmgr
+endif
 notify = notify
 server_common = server_common
 xfrin = xfrin
@@ -11,6 +15,10 @@ endif
 
 if ENABLE_XFRIN
 datasrc = datasrc
+if USE_SHARED_MEMORY
+# The memory manager is useless without shared memory support
+memmgr = memmgr
+endif
 notify = notify
 server_common = server_common
 xfrin = xfrin
@@ -21,13 +29,8 @@ acl = acl
 endif
 
 SUBDIRS = util cc config log net testutils bind10 $(datasrc) $(xfrin)
-SUBDIRS += $(acl) $(ddns) $(server_common) $(notify)
-SUBDIRS += log_messages sysinfo
-
-if USE_SHARED_MEMORY
-# The memory manager is useless without shared memory support
-SUBDIRS += memmgr
-endif
+SUBDIRS += $(acl) $(ddns) $(server_common) $(notify) $(memmgr)
+SUBDIRS += log_messages sysinfo 
 
 if ENABLE_LIBDNS
 SUBDIRS += dns
