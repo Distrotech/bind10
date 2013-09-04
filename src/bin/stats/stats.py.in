@@ -627,9 +627,12 @@ class Stats:
                         _accum_bymodule(self.statistics_data_bymid[m]))
 
         if errors:
-            logger.warn(
-                STATS_RECEIVED_INVALID_STATISTICS_DATA, owner)
+            logger.warn(STATS_RECEIVED_INVALID_STATISTICS_DATA, owner)
             return errors
+        elif owner != self.module_name:
+            # debug updating statistics from modules other than 'Stats'
+            logger.debug(DBG_STATS_MESSAGING, STATS_UPDATED_STATISTICS_DATA,
+                         owner)
 
     def command_status(self):
         """

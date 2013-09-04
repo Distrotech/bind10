@@ -92,3 +92,7 @@ is unknown in the implementation. The most likely cause is an
 installation problem, where the specification file stats.spec is
 from a different version of BIND 10 than the stats module itself.
 Please check your installation.
+
+% STATS_UPDATED_STATISTICS_DATA updated statistics data from %1
+This debug message is printed when statistics data from the module has been
+successfully updated by the stats daemon while polling
