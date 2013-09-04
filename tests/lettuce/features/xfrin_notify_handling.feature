@@ -72,6 +72,7 @@ Feature: Xfrin incoming notify handling
     # statistics.  But there doesn't seem to be a better log message that
     # suggests this event.
     wait for new master stderr message XFROUT_RECEIVED_GETSTATS_COMMAND
+    wait 3 times for new master stderr message STATS_UPDATED_STATISTICS_DATA
     last bindctl output should not contain "error"
 
     When I query statistics zones of bind10 module Xfrout with cmdctl port 47804
@@ -97,6 +98,7 @@ Feature: Xfrin incoming notify handling
     # wait until the last stats requesting is finished
     When I query statistics zones of bind10 module Xfrin with cmdctl
     wait for new bind10 stderr message XFRIN_RECEIVED_COMMAND
+    wait 3 times for new bind10 stderr message STATS_UPDATED_STATISTICS_DATA
     last bindctl output should not contain "error"
 
     When I query statistics zones of bind10 module Xfrin with cmdctl
@@ -174,6 +176,7 @@ Feature: Xfrin incoming notify handling
     # statistics.  But there doesn't seem to be a better log message that
     # suggests this event.
     wait for new master stderr message XFROUT_RECEIVED_GETSTATS_COMMAND
+    wait 3 times for new master stderr message STATS_UPDATED_STATISTICS_DATA
     last bindctl output should not contain "error"
 
     When I query statistics zones of bind10 module Xfrout with cmdctl port 47804
@@ -199,6 +202,7 @@ Feature: Xfrin incoming notify handling
     # wait until the last stats requesting is finished
     When I query statistics zones of bind10 module Xfrin with cmdctl
     wait for new bind10 stderr message XFRIN_RECEIVED_COMMAND
+    wait 3 times for new bind10 stderr message STATS_UPDATED_STATISTICS_DATA
     last bindctl output should not contain "error"
 
     When I query statistics zones of bind10 module Xfrin with cmdctl
@@ -279,6 +283,7 @@ Feature: Xfrin incoming notify handling
     # wait until the last stats requesting is finished
     When I query statistics zones of bind10 module Xfrout with cmdctl port 47804
     wait for new master stderr message XFROUT_RECEIVED_GETSTATS_COMMAND
+    wait 3 times for new master stderr message STATS_UPDATED_STATISTICS_DATA
     last bindctl output should not contain "error"
 
     When I query statistics zones of bind10 module Xfrout with cmdctl port 47804
@@ -307,6 +312,7 @@ Feature: Xfrin incoming notify handling
     # wait until the last stats requesting is finished
     When I query statistics zones of bind10 module Xfrin with cmdctl
     wait for new bind10 stderr message XFRIN_RECEIVED_COMMAND
+    wait 3 times for new bind10 stderr message STATS_UPDATED_STATISTICS_DATA
     last bindctl output should not contain "error"
 
     When I query statistics zones of bind10 module Xfrin with cmdctl
@@ -385,6 +391,7 @@ Feature: Xfrin incoming notify handling
     When I query statistics zones of bind10 module Xfrout with cmdctl port 47804
     # wait until stats request at least after NOTIFY_OUT_REPLY_RECEIVED
     wait for new master stderr message XFROUT_RECEIVED_GETSTATS_COMMAND
+    wait 3 times for new master stderr message STATS_UPDATED_STATISTICS_DATA
     last bindctl output should not contain "error"
 
     When I query statistics zones of bind10 module Xfrout with cmdctl port 47804
@@ -413,6 +420,7 @@ Feature: Xfrin incoming notify handling
     # wait until the last stats requesting is finished
     When I query statistics zones of bind10 module Xfrin with cmdctl
     wait for new bind10 stderr message XFRIN_RECEIVED_COMMAND
+    wait 3 times for new bind10 stderr message STATS_UPDATED_STATISTICS_DATA
     last bindctl output should not contain "error"
 
     When I query statistics zones of bind10 module Xfrin with cmdctl
@@ -451,6 +459,7 @@ Feature: Xfrin incoming notify handling
     When I query statistics zones of bind10 module Xfrout with cmdctl port 47804
     # wait until stats request at least after NOTIFY_OUT_TIMEOUT
     wait for new master stderr message XFROUT_RECEIVED_GETSTATS_COMMAND
+    wait 3 times for new master stderr message STATS_UPDATED_STATISTICS_DATA
     last bindctl output should not contain "error"
 
     When I query statistics zones of bind10 module Xfrout with cmdctl port 47804
