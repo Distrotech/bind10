@@ -996,7 +996,7 @@ InMemoryZoneFinder::findNSEC3(const isc::dns::Name& name, bool recursive) {
 
             LOG_DEBUG(logger, DBG_TRACE_BASIC,
                       DATASRC_MEMORY_FINDNSEC3_MATCH).arg(name).arg(labels).
-                arg(*closest);
+                arg(closest->toText());
 
             return (FindNSEC3Result(true, labels, closest, next));
         } else {
@@ -1015,7 +1015,7 @@ InMemoryZoneFinder::findNSEC3(const isc::dns::Name& name, bool recursive) {
 
                     LOG_DEBUG(logger, DBG_TRACE_BASIC,
                               DATASRC_MEMORY_FINDNSEC3_COVER).
-                        arg(name).arg(*closest);
+                        arg(name).arg(closest->toText());
                 }
 
                 return (FindNSEC3Result(false, labels,
