@@ -718,11 +718,11 @@ DatabaseClient::Finder::logAndCreateResult(
         if (wildname == NULL) {
             LOG_DEBUG(logger, DBG_TRACE_DETAILED, log_id).
                 arg(accessor_->getDBName()).arg(name).arg(type).
-                arg(getClass()).arg(*rrset);
+                arg(getClass()).arg(rrset->toText());
         } else {
             LOG_DEBUG(logger, DBG_TRACE_DETAILED, log_id).
                 arg(accessor_->getDBName()).arg(name).arg(type).
-                arg(getClass()).arg(*wildname).arg(*rrset);
+                arg(getClass()).arg(*wildname).arg(rrset->toText());
         }
     } else {
         if (wildname == NULL) {
@@ -929,11 +929,11 @@ DatabaseClient::Finder::findOnNameResult(const Name& name,
                 LOG_DEBUG(logger, DBG_TRACE_DETAILED,
                           DATASRC_DATABASE_WILDCARD_MATCH).
                     arg(accessor_->getDBName()).arg(*wildname).
-                    arg(wti->second);
+                    arg(wti->second->toText());
             } else {
                 LOG_DEBUG(logger, DBG_TRACE_DETAILED,
                           DATASRC_DATABASE_FOUND_RRSET).
-                    arg(accessor_->getDBName()).arg(*wti->second);
+                    arg(accessor_->getDBName()).arg(wti->second->toText());
             }
         }
         // Found an RR matching the query, so return it.  (Note that this
@@ -1139,7 +1139,7 @@ DatabaseClient::Finder::findNSEC3(const Name& name, bool recursive) {
 
             LOG_DEBUG(logger, DBG_TRACE_BASIC,
                       DATASRC_DATABASE_FINDNSEC3_MATCH).arg(name).arg(labels).
-                arg(*it->second);
+                arg(it->second->toText());
             // Yes, we win
             return (FindNSEC3Result(true, labels, it->second, covering_proof));
         } else {
@@ -1174,7 +1174,7 @@ DatabaseClient::Finder::findNSEC3(const Name& name, bool recursive) {
             if (!recursive) {
                 LOG_DEBUG(logger, DBG_TRACE_BASIC,
                           DATASRC_DATABASE_FINDNSEC3_COVER).arg(name).
-                    arg(labels).arg(*covering_proof);
+                    arg(labels).arg(covering_proof->toText());
                 return (FindNSEC3Result(false, labels, covering_proof,
                                         ConstRRsetPtr()));
             }
