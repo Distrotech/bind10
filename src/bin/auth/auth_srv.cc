@@ -449,7 +449,7 @@ makeErrorMessage(MessageRenderer& renderer, Message& message,
         message.toWire(renderer);
     }
     LOG_DEBUG(auth_logger, DBG_AUTH_MESSAGES, AUTH_SEND_ERROR_RESPONSE)
-              .arg(renderer.getLength()).arg(message);
+        .arg(renderer.getLength()).arg(message.toText());
 }
 }
 
@@ -535,7 +535,7 @@ AuthSrv::processMessage(const IOMessage& io_message, Message& message,
     } // other exceptions will be handled at a higher layer.
 
     LOG_DEBUG(auth_logger, DBG_AUTH_MESSAGES, AUTH_PACKET_RECEIVED)
-              .arg(message);
+        .arg(message.toText());
 
     // Perform further protocol-level validation.
     // TSIG first
@@ -680,7 +680,7 @@ AuthSrvImpl::processNormalQuery(const IOMessage& io_message,
         message.toWire(renderer_);
     }
     LOG_DEBUG(auth_logger, DBG_AUTH_MESSAGES, AUTH_SEND_NORMAL_RESPONSE)
-              .arg(renderer_.getLength()).arg(message);
+        .arg(renderer_.getLength()).arg(message.toText());
     return (true);
     // The message can contain some data from the locked resource. But outside
     // this method, we touch only the RCode of it, so it should be safe.
