@@ -773,14 +773,16 @@ AuthSrvImpl::processNotify(const IOMessage& io_message, Message& message,
     }
     if (!is_auth) {
         LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_RECEIVED_NOTIFY_NOTAUTH)
-            .arg(question->getName()).arg(question->getClass()).arg(remote_ep);
+            .arg(question->getName()).arg(question->getClass())
+            .arg(remote_ep.toText());
         makeErrorMessage(renderer_, message, buffer, Rcode::NOTAUTH(),
                          stats_attrs, tsig_context);
         return (true);
     }
 
     LOG_DEBUG(auth_logger, DBG_AUTH_DETAIL, AUTH_RECEIVED_NOTIFY)
-        .arg(question->getName()).arg(question->getClass()).arg(remote_ep);
+        .arg(question->getName()).arg(question->getClass())
+        .arg(remote_ep.toText());
 
     // xfrin_session_ should have been set and never be replaced except in
     // tests; otherwise it's an internal bug.  assert() may be too strong,
