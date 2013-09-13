@@ -260,6 +260,16 @@ class TestIOEndpoint : public IOEndpoint {
     }
 };
 
+TEST(IOEndpointTest, toText) {
+    // UDP/IPv4
+    ConstIOEndpointPtr ep(IOEndpoint::create(IPPROTO_UDP,
+                                             IOAddress("192.0.2.1"), 53210));
+    EXPECT_EQ("192.0.2.1:53210", ep->toText());
+
+    // More thorough tests are done in operator<< test below, which
+    // wraps around toText().
+}
+
 void
 checkEndpointText(const std::string& expected, const IOEndpoint& ep) {
     std::ostringstream oss;

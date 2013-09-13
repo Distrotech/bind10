@@ -95,6 +95,9 @@ public:
     /// \brief Returns the address family of the endpoint.
     virtual short getFamily() const = 0;
 
+    /// \brief Convert the IOEndpoint to a string.
+    std::string toText() const;
+
     /// \brief Returns the address of the endpoint in the form of sockaddr
     /// structure.
     ///

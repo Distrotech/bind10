@@ -61,17 +61,24 @@ IOEndpoint::operator!=(const IOEndpoint& other) const {
     return (!operator==(other));
 }
 
-ostream&
-operator<<(ostream& os, const IOEndpoint& endpoint) {
-    if (endpoint.getFamily() == AF_INET6) {
-        os << "[" << endpoint.getAddress().toText() << "]";
+std::string
+IOEndpoint::toText() const {
+    std::string str;
+    if (getFamily() == AF_INET6) {
+        str.append("[" + getAddress().toText() + "]");
     } else {
         // In practice this should be AF_INET, but it's not guaranteed by
         // the interface.  We'll use the result of textual address
         // representation opaquely.
-        os << endpoint.getAddress().toText();
+        str.append(getAddress().toText());
     }
-    os << ":" << boost::lexical_cast<string>(endpoint.getPort());
+    str.append(":" + boost::lexical_cast<string>(getPort()));
+    return (str);
+}
+
+ostream&
+operator<<(ostream& os, const IOEndpoint& endpoint) {
+    os << endpoint.toText();
     return (os);
 }
 } // namespace asiolink
