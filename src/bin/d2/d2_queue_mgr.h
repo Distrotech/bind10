@@ -151,7 +151,7 @@ public:
       STOPPING,
       STOPPED_QUEUE_FULL,
       STOPPED_RECV_ERROR,
-      STOPPED,
+      STOPPED
     };
 
     /// @brief Constructor
