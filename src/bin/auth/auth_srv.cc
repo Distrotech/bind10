@@ -196,7 +196,7 @@ public:
                             io_message.getData(), io_message.getDataSize());
         } catch (const SocketSessionError& ex) {
             LOG_ERROR(auth_logger, AUTH_MESSAGE_FORWARD_ERROR).
-                arg(message_name_).arg(remote_ep).arg(ex.what());
+                arg(message_name_).arg(remote_ep.toText()).arg(ex.what());
             close();
             throw;
         }
