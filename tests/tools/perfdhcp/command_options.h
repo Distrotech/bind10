@@ -155,6 +155,11 @@ public:
     /// \return exchange rate per second.
     int getRate() const { return rate_; }
 
+    /// \brief Returns a rate at which Release messages are sent.
+    ///
+    /// \return A rate at which Release messages are sent.
+    int getReleaseRate() const { return (release_rate_); }
+
     /// \brief Returns delay between two performance reports.
     ///
     /// \return delay between two consecutive performance reports.
@@ -461,6 +466,8 @@ private:
     LeaseType lease_type_;
     /// Rate in exchange per second
     int rate_;
+    /// A rate at which Release messages are sent.
+    int release_rate_;
     /// Delay between generation of two consecutive
     /// performance reports
     int report_delay_;

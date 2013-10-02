@@ -111,6 +111,7 @@ CommandOptions::reset() {
     exchange_mode_ = DORA_SARR;
     lease_type_.set(LeaseType::ADDRESS);
     rate_ = 0;
+    release_rate_ = 0;
     report_delay_ = 0;
     clients_num_ = 0;
     mac_template_.assign(mac, mac + 6);
@@ -208,7 +209,7 @@ CommandOptions::initialize(int argc, char** argv, bool print_cmd_line) {
     // In this section we collect argument values from command line
     // they will be tuned and validated elsewhere
     while((opt = getopt(argc, argv, "hv46r:t:R:b:n:p:d:D:l:P:a:L:"
-                        "s:iBc1T:X:O:E:S:I:x:w:e:")) != -1) {
+                        "s:iBc1T:X:O:E:S:I:x:w:e:F:")) != -1) {
         stream << " -" << static_cast<char>(opt);
         if (optarg) {
             stream << " " << optarg;
@@ -297,6 +298,13 @@ CommandOptions::initialize(int argc, char** argv, bool print_cmd_line) {
         case 'E':
             elp_offset_ = nonNegativeInteger("value of time-offset: -E<value>"
                                              " must not be a negative integer");
+            break;
+
+        // Pick capital 'F' for releases because 'f' will be used to specify the
+        // rate of renewals.
+        case 'F':
+            release_rate_ = positiveInteger("value of the release rate: -F<relese-rate>"
+                                            " must be a positive integer");
             break;
 
         case 'h':
@@ -680,6 +688,8 @@ CommandOptions::validate() const {
           "-B is not compatible with IPv6 (-6)");
     check((getIpVersion() != 6) && (isRapidCommit() != 0),
           "-6 (IPv6) must be set to use -c");
+    check ((getIpVersion() != 6) && (getReleaseRate() != 0),
+           "-F<release-rate> may be used with -6 (IPv6) only");
     check((getExchangeMode() == DO_SA) && (getNumRequests().size() > 1),
           "second -n<num-request> is not compatible with -i");
     check((getIpVersion() == 4) && !getLeaseType().is(LeaseType::ADDRESS),
@@ -718,6 +728,12 @@ CommandOptions::validate() const {
     check((getRate() == 0) &&
           ((getMaxDrop().size() > 0) || getMaxDropPercentage().size() > 0),
           "-r<rate> must be set to use -D<max-drop>\n");
+    check((getRate() != 0) && (getReleaseRate() > getRate()),
+          "Release rate specified as -F<release-rate> must not be greater than"
+          " the rate specified as -r<rate>");
+    check((getRate() == 0) && (getReleaseRate() != 0),
+          "Release rate specified as -F<release-rate> must not be specified"
+          " when -r<rate> parameter is not specified");
     check((getTemplateFiles().size() < getTransactionIdOffset().size()),
           "-T<template-file> must be set to use -X<xid-offset>\n");
     check((getTemplateFiles().size() < getRandomOffset().size()),
@@ -792,6 +808,9 @@ CommandOptions::printCommandLine() const {
     std::cout << "lease-type=" << getLeaseType().toText() << std::endl;
     if (rate_ != 0) {
         std::cout << "rate[1/s]=" << rate_ <<  std::endl;
+    }
+    if (release_rate_ != 0) {
+        std::cout << "release-rate[1/s]=" << release_rate_ << std::endl;
     }
     if (report_delay_ != 0) {
         std::cout << "report[s]=" << report_delay_ << std::endl;
@@ -875,13 +894,14 @@ CommandOptions::printCommandLine() const {
 void
 CommandOptions::usage() const {
     std::cout <<
-        "perfdhcp [-hv] [-4|-6] [-e<lease-type>] [-r<rate>] [-t<report>]\n"
-        "    [-R<range>] [-b<base>] [-n<num-request>] [-p<test-period>]\n"
-        "    [-d<drop-time>] [-D<max-drop>] [-l<local-addr|interface>]\n"
-        "    [-P<preload>] [-a<aggressivity>] [-L<local-port>] [-s<seed>]\n"
-        "    [-i] [-B] [-c] [-1] [-T<template-file>] [-X<xid-offset>]\n"
-        "    [-O<random-offset] [-E<time-offset>] [-S<srvid-offset>]\n"
-        "    [-I<ip-offset>] [-x<diagnostic-selector>] [-w<wrapped>] [server]\n"
+        "perfdhcp [-hv] [-4|-6] [-e<lease-type>] [-r<rate>] [-F<release-rate>]\n"
+        "         [-t<report>] [-R<range>] [-b<base>] [-n<num-request>]\n"
+        "         [-p<test-period>] [-d<drop-time>] [-D<max-drop>]\n"
+        "         [-l<local-addr|interface>] [-P<preload>] [-a<aggressivity>]\n"
+        "         [-L<local-port>] [-s<seed>] [-i] [-B] [-c] [-1]\n"
+        "         [-T<template-file>] [-X<xid-offset>] [-O<random-offset]\n"
+        "         [-E<time-offset>] [-S<srvid-offset>] [-I<ip-offset>]\n"
+        "         [-x<diagnostic-selector>] [-w<wrapped>] [server]\n"
         "\n"
         "The [server] argument is the name/address of the DHCP server to\n"
         "contact.  For DHCPv4 operation, exchanges are initiated by\n"
@@ -924,6 +944,10 @@ CommandOptions::usage() const {
         "-E<time-offset>: Offset of the (DHCPv4) secs field / (DHCPv6)\n"
         "    elapsed-time option in the (second/request) template.\n"
         "    The value 0 disables it.\n"
+        "-F<release-rate>: A rate at which IPv6 Release requests are sent to\n"
+        "    a server. This value must be equal or lower of the rate\n"
+        "    specified as -r<rate>. If -r<rate> is not specified this\n"
+        "    this parameter must not be specified too.\n"
         "-h: Print this help.\n"
         "-i: Do only the initial part of an exchange: DO or SA, depending on\n"
         "    whether -6 is given.\n"

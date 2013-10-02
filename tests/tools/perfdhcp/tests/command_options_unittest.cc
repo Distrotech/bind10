@@ -168,6 +168,7 @@ protected:
         EXPECT_EQ(CommandOptions::DORA_SARR, opt.getExchangeMode());
         EXPECT_TRUE(opt.getLeaseType().is(CommandOptions::LeaseType::ADDRESS));
         EXPECT_EQ(0, opt.getRate());
+        EXPECT_EQ(0, opt.getReleaseRate());
         EXPECT_EQ(0, opt.getReportDelay());
         EXPECT_EQ(0, opt.getClientsNum());
 
@@ -331,6 +332,33 @@ TEST_F(CommandOptionsTest, Rate) {
     EXPECT_THROW(process("perfdhcp -6 -p 120 -l ethx all"),
                  isc::InvalidParameter);
     EXPECT_THROW(process("perfdhcp -4 -D 1400 -l ethx all"),
+                 isc::InvalidParameter);
+}
+
+TEST_F(CommandOptionsTest, ReleaseRate) {
+    CommandOptions& opt = CommandOptions::instance();
+    // If -F is specified together with -r the command line should
+    // be accepted and the release reate should be set.
+    EXPECT_NO_THROW(process("perfdhcp -6 -r 10 -F 10 -l ethx all"));
+    EXPECT_EQ(10, opt.getReleaseRate());
+    // Check that release rate can be set to a different value than
+    // rate specified as -r<rate>. Also swap -F and -r to make sure
+    // that order doesn't matter.
+    EXPECT_NO_THROW(process("perfdhcp -6 -F 5 -r 10 -l ethx all"));
+    EXPECT_EQ(5, opt.getReleaseRate());
+    // The releas-rate of 0 is invalid.
+    EXPECT_THROW(process("perfdhcp -6 -r 10 -F 0 -l ethx all"),
+                 isc::InvalidParameter);
+    // If -r<rate> is not specified the -F<release-rate> should
+    // not be accepted.
+    EXPECT_THROW(process("perfdhcp -6 -F 10 -l ethx all"),
+                 isc::InvalidParameter);
+    // Currently the -F<release-rate> can be specified for IPv6 mode
+    // only.
+    EXPECT_THROW(process("perfdhcp -4 -r 10 -F 10 -l ethx all"),
+                 isc::InvalidParameter);
+    // Release rate should be specified.
+    EXPECT_THROW(process("perfdhcp -6 -r 10 -F -l ethx all"),
                  isc::InvalidParameter);
 }
 
