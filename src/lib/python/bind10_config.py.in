@@ -45,15 +45,14 @@ def get_specfile_location(module_name):
 def reload():
     # In a function, for testing purposes
     global BIND10_MSGQ_SOCKET_FILE
+    global BIND10_SOCKET_DIRECTORY
     global DATA_PATH
     global PLUGIN_PATHS
     global PREFIX
     global LIBEXECPATH
     global SYSCONFPATH
-    BIND10_MSGQ_SOCKET_FILE = os.path.join("@localstatedir@",
-                                           "@PACKAGE_NAME@",
-                                           "msgq_socket").replace("${prefix}",
-                                                                  "@prefix@")
+    BIND10_SOCKET_DIRECTORY = "@SOCKPATHDIR@"
+    BIND10_MSGQ_SOCKET_FILE = os.path.join(BIND10_SOCKET_DIRECTORY, "msgq_socket")
     PREFIX = "@prefix@"
     SYSCONFPATH="@sysconfdir@/@PACKAGE@".replace('${prefix}', PREFIX)
 
@@ -79,6 +78,8 @@ def reload():
     # SYSCONFPATH: Path where the system-wide configuration files are
     # stored (e.g. <prefix>/var/<package name>). This value is *not*
     # overwritten if B10_FROM_SOURCE is specified.
+    # BIND10_SOCKET_DIRECTORY: Path where the UNIX-domain socket enpoint for
+    #  communicating with the message queue daemon is created.
     #
     # B10_FROM_SOURCE_LOCALSTATEDIR is specifically intended to be used for
     # tests where we want to use various types of configuration within the test

@@ -156,11 +156,7 @@ class SubscriptionManager:
 
 class MsgQ:
     """Message Queue class."""
-    # did we find a better way to do this?
-    SOCKET_FILE = os.path.join("@localstatedir@",
-                               "@PACKAGE_NAME@",
-                               "msgq_socket").replace("${prefix}",
-                                                      "@prefix@")
+    SOCKET_FILE = os.path.join("@SOCKPATHDIR@", "msgq_socket")
 
     def __init__(self, socket_file=None, verbose=False):
         """Initialize the MsgQ master.
@@ -169,9 +165,8 @@ class MsgQ:
         that the msgq process listens on. If it is None, the
         environment variable BIND10_MSGQ_SOCKET_FILE is used. If that
         is not set, it will default to
-        @localstatedir@/@PACKAGE_NAME@/msg_socket.
-        If verbose is True, then the MsgQ reports
-        what it is doing.
+        @SOCKPATHDIR@/msgq_socket.
+        If verbose is True, then the MsgQ reports what it is doing.
         """
 
         if socket_file is None:

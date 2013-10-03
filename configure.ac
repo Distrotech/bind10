@@ -40,6 +40,48 @@ if [ test `echo $PWD | grep -c ' '` != "0"  ]; then
     AC_MSG_ERROR([BIND 10 cannot be built in a directory that contains spaces, because of libtool limitations. Please change the directory name, or use a symbolic link that does not contain spaces.])
 fi
 
+# Check to ensure that the total path length of the various sockets will not
+# be too long, which will cause runtime failures. On Linux the maximum is
+# 108 characters, on FreeBSD / NetBSD it is 104. These include the terminating
+# NUL character. The message queue socket name is msgq_socket, which means
+# that the path leading up to that name can be at most 92 characters long.
+# We check the default location and see if it excedes this length. If it does
+# we abort with an error message and instruct the user to specify an alternate
+# path using the --with-socket-directory option.
+#
+# Rather than assuming that msgq_socket is the only socket thus affected we
+# add in a bit of "slop" and limit the socket path to 85 characters, thus
+# leaving  19 characters (18 usable) for any potential socket file name.
+#
+# We do this early to prevent a bunch of configure stuff from running if we
+# are just going to error out.
+
+dflt_loc=`eval echo "${localstatedir}/${PACKAGE_NAME}"`
+dflt_len=`echo "${dflt_loc}" | wc -c 2> /dev/null`
+if test ${dflt_len} -gt 85; then
+AC_MSG_ERROR([The installation prefix you have chosen:
+
+   ${prefix}
+
+would result in a path that is too long for the default socket names. This is
+a limitation imposed by the operating system, not a limitation of BIND. Please
+use the --with-socket-directory option to specify an alternate location and
+note that this location can not be longer than 85 characters.
+
+])
+fi
+
+AC_ARG_WITH(socket-directory,
+[  --with-socket-directory=PATH  sets the directory in which socket endpoints will be created to PATH (max 85 characters)], [
+  SOCKPATHDIR="$withval"
+  len=`echo "${withval}" | wc -c 2> /dev/null`
+  if test ${len} -gt 85; then
+    AC_MSG_ERROR([--with-socket-directory path too long ($len > 85 characters)])
+  fi
+], [SOCKPATHDIR="${dflt_loc}"])
+
+AC_SUBST(SOCKPATHDIR)
+
 # On FreeBSD (and probably some others), clang++ does not meet an autoconf
 # assumption in identifying libtool configuration regarding shared library:
 # the configure script will execute "$CC -shared $CFLAGS/$CXXFLAGS -v" and
