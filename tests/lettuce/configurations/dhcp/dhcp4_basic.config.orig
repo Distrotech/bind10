@@ -12,6 +12,7 @@
     "Init": {
         "components": {
             "b10-dhcp4": {
+                "address": "Dhcp4",
                 "kind": "needed"
             },
             "b10-cmdctl": {

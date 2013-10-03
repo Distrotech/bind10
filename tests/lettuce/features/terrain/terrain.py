@@ -66,6 +66,8 @@ copylist = [
      "configurations/ddns/ddns.config"],
     ["configurations/ddns/noddns.config.orig",
      "configurations/ddns/noddns.config"],
+    ["configurations/dhcp/dhcp4_basic.config.orig",
+     "configurations/dhcp/dhcp4_basic.config"],
     ["configurations/xfrin/retransfer_master.conf.orig",
      "configurations/xfrin/retransfer_master.conf"],
     ["configurations/xfrin/retransfer_master_v4.conf.orig",
