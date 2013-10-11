@@ -149,18 +149,18 @@ public:
                                       uint16_t type,
                                       Option::Factory * factory);
 
-    const OptionDefContainer*
+    static const OptionDefContainer*
     getVendorOption4Defs(uint32_t vendor_id);
 
-    const OptionDefContainer*
+    static const OptionDefContainer*
     getVendorOption6Defs(uint32_t vendor_id);
 
-    size_t unpackVendorOptions6(uint32_t vendor_id,
-                                const OptionBuffer& buf,
-                                isc::dhcp::OptionCollection& options);
+    static size_t unpackVendorOptions6(uint32_t vendor_id,
+                                       const OptionBuffer& buf,
+                                       isc::dhcp::OptionCollection& options);
 
-    size_t unpackVendorOptions4(uint32_t vendor_id, const OptionBuffer& buf,
-                                isc::dhcp::OptionCollection& options);
+    static size_t unpackVendorOptions4(uint32_t vendor_id, const OptionBuffer& buf,
+                                       isc::dhcp::OptionCollection& options);
 
 private:
 

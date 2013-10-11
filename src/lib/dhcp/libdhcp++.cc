@@ -18,6 +18,7 @@
 #include <dhcp/dhcp6.h>
 #include <dhcp/libdhcp++.h>
 #include <dhcp/option.h>
+#include <dhcp/option_vendor.h>
 #include <dhcp/option6_ia.h>
 #include <dhcp/option6_iaaddr.h>
 #include <dhcp/option_definition.h>
@@ -189,6 +190,23 @@ size_t LibDHCP::unpackOptions6(const OptionBuffer& buf,
             offset += opt_len;
             continue;
         }
+
+        if (opt_type == D6O_VENDOR_OPTS) {
+            if (offset + 4 > length) {
+                // Truncated vendor-option. There is expected at least 4 bytes
+                // long enterprise-id field
+                return (offset);
+            }
+
+            // Parse this as vendor option
+            OptionPtr vendor_opt(new OptionVendor(Option::V6, buf.begin() + offset,
+                                                  buf.begin() + offset + opt_len));
+            options.insert(std::make_pair(opt_type, vendor_opt));
+
+            offset += opt_len;
+            continue;
+        }
+
 
         // Get all definitions with the particular option code. Note that option
         // code is non-unique within this container however at this point we
