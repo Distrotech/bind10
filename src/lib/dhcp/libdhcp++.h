@@ -155,6 +155,13 @@ public:
     const OptionDefContainer*
     getVendorOption6Defs(uint32_t vendor_id);
 
+    size_t unpackVendorOptions6(uint32_t vendor_id,
+                                const OptionBuffer& buf,
+                                isc::dhcp::OptionCollection& options);
+
+    size_t unpackVendorOptions4(uint32_t vendor_id, const OptionBuffer& buf,
+                                isc::dhcp::OptionCollection& options);
+
 private:
 
     /// Initialize standard DHCPv4 option definitions.
