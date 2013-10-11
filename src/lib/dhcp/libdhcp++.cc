@@ -23,8 +23,10 @@
 #include <dhcp/option_definition.h>
 #include <dhcp/option_int_array.h>
 #include <dhcp/std_option_defs.h>
+#include <dhcp/docsis3_option_defs.h>
 #include <exceptions/exceptions.h>
 #include <util/buffer.h>
+#include <dhcp/option_definition.h>
 
 #include <boost/shared_array.hpp>
 #include <boost/shared_ptr.hpp>
@@ -45,6 +47,10 @@ OptionDefContainer LibDHCP::v4option_defs_;
 // Static container with DHCPv6 option definitions.
 OptionDefContainer LibDHCP::v6option_defs_;
 
+VendorOptionDefContainers LibDHCP::vendor4_defs_;
+
+VendorOptionDefContainers LibDHCP::vendor6_defs_;
+
 const OptionDefContainer&
 LibDHCP::getOptionDefs(const Option::Universe u) {
     switch (u) {
@@ -61,6 +67,26 @@ LibDHCP::getOptionDefs(const Option::Universe u) {
     default:
         isc_throw(isc::BadValue, "invalid universe " << u << " specified");
     }
+}
+
+const OptionDefContainer*
+LibDHCP::getVendorOption4Defs(uint32_t vendor_id) {
+    VendorOptionDefContainers::const_iterator def = vendor4_defs_.find(vendor_id);
+    if (def == vendor4_defs_.end()) {
+        // No such vendor-id space
+        return (NULL);
+    }
+    return (&(def->second));
+}
+
+const OptionDefContainer*
+LibDHCP::getVendorOption6Defs(uint32_t vendor_id) {
+    VendorOptionDefContainers::const_iterator def = vendor6_defs_.find(vendor_id);
+    if (def == vendor6_defs_.end()) {
+        // No such vendor-id space
+        return (NULL);
+    }
+    return (&(def->second));
 }
 
 OptionDefinitionPtr

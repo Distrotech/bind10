@@ -149,6 +149,12 @@ public:
                                       uint16_t type,
                                       Option::Factory * factory);
 
+    const OptionDefContainer*
+    getVendorOption4Defs(uint32_t vendor_id);
+
+    const OptionDefContainer*
+    getVendorOption6Defs(uint32_t vendor_id);
+
 private:
 
     /// Initialize standard DHCPv4 option definitions.
@@ -181,6 +187,10 @@ private:
 
     /// Container with DHCPv6 option definitions.
     static OptionDefContainer v6option_defs_;
+
+    static VendorOptionDefContainers vendor4_defs_;
+
+    static VendorOptionDefContainers vendor6_defs_;
 };
 
 }
