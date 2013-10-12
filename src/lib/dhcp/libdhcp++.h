@@ -183,6 +183,8 @@ private:
     /// is incorrect. This is a programming error.
     static void initStdOptionDefs6();
 
+    static void initVendorOptsDocsis6();
+
     /// pointers to factories that produce DHCPv6 options
     static FactoryMap v4factories_;
 

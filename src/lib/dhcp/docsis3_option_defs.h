@@ -20,6 +20,8 @@
 
 namespace {
 
+#define VENDOR_ID_CABLE_LABS 4491
+
 #define DOCSIS3_V4_TFTP_SERVERS 125
 
 /// @brief Definitions of standard DHCPv4 options.

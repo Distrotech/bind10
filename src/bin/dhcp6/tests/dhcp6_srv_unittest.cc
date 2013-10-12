@@ -2052,6 +2052,29 @@ TEST_F(Dhcpv6SrvTest, docsisVendorOptionsParse) {
     EXPECT_FALSE(vendor->getOption(17));
 }
 
+// Checks if server is able to parse incoming docsis option and extract suboption 1 (docsis ORO)
+TEST_F(Dhcpv6SrvTest, docsisVendorORO) {
+
+    NakedDhcpv6Srv srv(0);
+
+    // Let's get a traffic capture from DOCSIS3.0 modem
+    Pkt6Ptr sol = captureDocsisRelayedSolicit();
+    EXPECT_NO_THROW(sol->unpack());
+
+    // Check if the packet contain
+    OptionPtr opt = sol->getOption(D6O_VENDOR_OPTS);
+    ASSERT_TRUE(opt);
+
+    boost::shared_ptr<OptionVendor> vendor = boost::dynamic_pointer_cast<OptionVendor>(opt);
+    ASSERT_TRUE(vendor);
+
+    opt = vendor->getOption(DOCSIS3_V6_ORO);
+    ASSERT_TRUE(opt);
+
+    OptionUint16ArrayPtr oro = boost::dynamic_pointer_cast<OptionUint16Array>(opt);
+    EXPECT_TRUE(oro);
+}
+
 // This test verifies that the following option structure can be parsed:
 // - option (option space 'foobar')
 //   - sub option (option space 'foo')

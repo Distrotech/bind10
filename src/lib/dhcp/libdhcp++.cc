@@ -52,6 +52,12 @@ VendorOptionDefContainers LibDHCP::vendor4_defs_;
 
 VendorOptionDefContainers LibDHCP::vendor6_defs_;
 
+// Let's keep it in .cc file. Moving it to .h would require including optionDefParams
+// definitions there
+void initOptionSpace6(OptionDefContainer& defs,
+                      const OptionDefParams* params,
+                      size_t params_size);
+
 const OptionDefContainer&
 LibDHCP::getOptionDefs(const Option::Universe u) {
     switch (u) {
@@ -82,6 +88,12 @@ LibDHCP::getVendorOption4Defs(uint32_t vendor_id) {
 
 const OptionDefContainer*
 LibDHCP::getVendorOption6Defs(uint32_t vendor_id) {
+
+    if (vendor_id == VENDOR_ID_CABLE_LABS &&
+        vendor6_defs_.find(VENDOR_ID_CABLE_LABS) == vendor6_defs_.end()) {
+        initVendorOptsDocsis6();
+    }
+
     VendorOptionDefContainers::const_iterator def = vendor6_defs_.find(vendor_id);
     if (def == vendor6_defs_.end()) {
         // No such vendor-id space
@@ -596,13 +608,25 @@ LibDHCP::initStdOptionDefs4() {
 
 void
 LibDHCP::initStdOptionDefs6() {
-    v6option_defs_.clear();
+    initOptionSpace6(v6option_defs_, OPTION_DEF_PARAMS6, OPTION_DEF_PARAMS_SIZE6);
+}
 
-    for (int i = 0; i < OPTION_DEF_PARAMS_SIZE6; ++i) {
-        std::string encapsulates(OPTION_DEF_PARAMS6[i].encapsulates);
-        if (!encapsulates.empty() && OPTION_DEF_PARAMS6[i].array) {
+void
+LibDHCP::initVendorOptsDocsis6() {
+    vendor6_defs_[VENDOR_ID_CABLE_LABS] = OptionDefContainer();
+    initOptionSpace6(vendor6_defs_[VENDOR_ID_CABLE_LABS], DOCSIS3_V6_DEFS, DOCSIS3_V6_DEFS_SIZE);
+}
+
+void initOptionSpace6(OptionDefContainer& defs,
+                      const OptionDefParams* params,
+                      size_t params_size) {
+    defs.clear();
+
+    for (int i = 0; i < params_size; ++i) {
+        std::string encapsulates(params[i].encapsulates);
+        if (!encapsulates.empty() && params[i].array) {
             isc_throw(isc::BadValue, "invalid standard option definition: "
-                      << "option with code '" << OPTION_DEF_PARAMS6[i].code
+                      << "option with code '" << params[i].code
                       << "' may not encapsulate option space '"
                       << encapsulates << "' because the definition"
                       << " indicates that this option comprises an array"
@@ -615,33 +639,33 @@ LibDHCP::initStdOptionDefs6() {
         OptionDefinitionPtr definition;
         if (encapsulates.empty()) {
             // Option does not encapsulate any option space.
-            definition.reset(new OptionDefinition(OPTION_DEF_PARAMS6[i].name,
-                                                  OPTION_DEF_PARAMS6[i].code,
-                                                  OPTION_DEF_PARAMS6[i].type,
-                                                  OPTION_DEF_PARAMS6[i].array));
+            definition.reset(new OptionDefinition(params[i].name,
+                                                  params[i].code,
+                                                  params[i].type,
+                                                  params[i].array));
         } else {
             // Option does encapsulate an option space.
-            definition.reset(new OptionDefinition(OPTION_DEF_PARAMS6[i].name,
-                                                  OPTION_DEF_PARAMS6[i].code,
-                                                  OPTION_DEF_PARAMS6[i].type,
-                                                  OPTION_DEF_PARAMS6[i].encapsulates));
+            definition.reset(new OptionDefinition(params[i].name,
+                                                  params[i].code,
+                                                  params[i].type,
+                                                  params[i].encapsulates));
 
         }
 
-        for (int rec = 0; rec < OPTION_DEF_PARAMS6[i].records_size; ++rec) {
-            definition->addRecordField(OPTION_DEF_PARAMS6[i].records[rec]);
+        for (int rec = 0; rec < params[i].records_size; ++rec) {
+            definition->addRecordField(params[i].records[rec]);
         }
 
         try {
             definition->validate();
-        } catch (const Exception& ex) {
+        } catch (const isc::Exception& ex) {
             // This is unlikely event that validation fails and may
             // be only caused by programming error. To guarantee the
             // data consistency we clear all option definitions that
             // have been added so far and pass the exception forward.
-            v6option_defs_.clear();
+            defs.clear();
             throw;
         }
-        v6option_defs_.push_back(definition);
+        defs.push_back(definition);
     }
 }
