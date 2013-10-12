@@ -2108,7 +2108,7 @@ TEST_F(Dhcp6ParserTest, vendorOptionsHex) {
 
 // This test checks if vendor options can be specified in the config file,
 // (in csv format), and later retrieved from configured subnet
-TEST_F(Dhcp6ParserTest, DISABLED_vendorOptionsCsv) {
+TEST_F(Dhcp6ParserTest, vendorOptionsCsv) {
 
     // This configuration string is to configure two options
     // sharing the code 1 and belonging to the different vendor spaces.
@@ -2117,18 +2117,20 @@ TEST_F(Dhcp6ParserTest, DISABLED_vendorOptionsCsv) {
         "\"rebind-timer\": 2000,"
         "\"renew-timer\": 1000,"
         "\"option-data\": [ {"
-        "    \"name\": \"option-one\","
+        "    \"name\": \"foo\","
         "    \"space\": \"vendor-4491\","
         "    \"code\": 1,"
-        "    \"data\": \"AB CDEF0105\","
+        "    \"data\": \"this is a string vendor-opt\","
         "    \"csv-format\": True"
-        " },"
-        " {"
-        "    \"name\": \"option-two\","
-        "    \"space\": \"vendor-1234\","
+        " } ],"
+        "\"option-def\": [ {"
+        "    \"name\": \"foo\","
         "    \"code\": 1,"
-        "    \"data\": \"1234\","
-        "    \"csv-format\": True"
+        "    \"type\": \"string\","
+        "    \"array\": False,"
+        "    \"record-types\": \"\","
+        "    \"space\": \"vendor-4491\","
+        "    \"encapsulate\": \"\""
         " } ],"
         "\"subnet6\": [ { "
         "    \"pool\": [ \"2001:db8:1::/80\" ],"
@@ -2152,15 +2154,11 @@ TEST_F(Dhcp6ParserTest, DISABLED_vendorOptionsCsv) {
     Subnet::OptionDescriptor desc1 = subnet->getVendorOptionDescriptor(4491, 1);
     ASSERT_TRUE(desc1.option);
     EXPECT_EQ(1, desc1.option->getType());
-    // Try to get the option from the vendor space 1234
-    Subnet::OptionDescriptor desc2 = subnet->getVendorOptionDescriptor(1234, 1);
-    ASSERT_TRUE(desc2.option);
-    EXPECT_EQ(1, desc1.option->getType());
 
     // Try to get the non-existing option from the non-existing
     // option space and  expect that option is not returned.
-    Subnet::OptionDescriptor desc3 = subnet->getVendorOptionDescriptor(5678, 38);
-    ASSERT_FALSE(desc3.option);
+    Subnet::OptionDescriptor desc2 = subnet->getVendorOptionDescriptor(5678, 38);
+    ASSERT_FALSE(desc2.option);
 }
 
 // The goal of this test is to verify that the standard option can

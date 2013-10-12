@@ -27,6 +27,7 @@
 #include <dhcp/option_int.h>
 #include <dhcp/option_vendor.h>
 #include <dhcp/option_int_array.h>
+#include <dhcp/option_string.h>
 #include <dhcp/iface_mgr.h>
 #include <dhcp6/config_parser.h>
 #include <dhcp/dhcp6.h>
@@ -2084,23 +2085,31 @@ TEST_F(Dhcpv6SrvTest, vendorOptionsORO) {
         "\"preferred-lifetime\": 3000,"
         "\"rebind-timer\": 2000, "
         "\"renew-timer\": 1000, "
+        "    \"option-def\": [ {"
+        "        \"name\": \"config-file\","
+        "        \"code\": 33,"
+        "        \"type\": \"string\","
+        "        \"array\": False,"
+        "        \"record-types\": \"\","
+        "        \"space\": \"vendor-4491\","
+        "        \"encapsulate\": \"\""
+        "     } ],"
+        "    \"option-data\": [ {"
+        "          \"name\": \"config-file\","
+        "          \"space\": \"vendor-4491\","
+        "          \"code\": 33,"
+        "          \"data\": \"normal_erouter_v6.cm\","
+        "          \"csv-format\": True"
+        "        }],"
         "\"subnet6\": [ { "
         "    \"pool\": [ \"2001:db8:1::/64\" ],"
         "    \"subnet\": \"2001:db8:1::/48\", "
-        "    \"option-data\": [ {"
-        "          \"name\": \"dns-servers\","
-        "          \"space\": \"vendor-4491\","
-        "          \"code\": 5,"
-        "          \"data\": \"1234567890\","
-        "          \"csv-format\": False"
-        "        },"
-        "        {"
-        "          \"name\": \"subscriber-id\","
-        "          \"space\": \"vendor-4491\","
-        "          \"code\": 6,"
-        "          \"data\": \"abcdef\","
-        "          \"csv-format\": False"
-        "        } ]"
+        "    \"renew-timer\": 1000, "
+        "    \"rebind-timer\": 1000, "
+        "    \"preferred-lifetime\": 3000,"
+        "    \"valid-lifetime\": 4000,"
+        "    \"interface-id\": \"\","
+        "    \"interface\": \"\""
         " } ],"
         "\"valid-lifetime\": 4000 }";
 
@@ -2134,7 +2143,7 @@ TEST_F(Dhcpv6SrvTest, vendorOptionsORO) {
     // That suboption has code 1 and is a docsis ORO option.
     boost::shared_ptr<OptionUint16Array> vendor_oro(new OptionUint16Array(Option::V6,
                                                                           DOCSIS3_V6_ORO));
-    vendor_oro->addValue(5); // Request option 5
+    vendor_oro->addValue(DOCSIS3_V6_CONFIG_FILE); // Request option 33
     OptionPtr vendor(new OptionVendor(Option::V6, 4491));
     vendor->addOption(vendor_oro);
     sol->addOption(vendor);
@@ -2152,8 +2161,12 @@ TEST_F(Dhcpv6SrvTest, vendorOptionsORO) {
         boost::dynamic_pointer_cast<OptionVendor>(tmp);
     ASSERT_TRUE(vendor_resp);
 
-    ASSERT_TRUE(vendor_resp->getOption(5)); // We requested it
-    ASSERT_FALSE(vendor_resp->getOption(6)); // We did not request it
+    OptionPtr docsis33 = vendor_resp->getOption(33);
+    ASSERT_TRUE(docsis33);
+
+    OptionStringPtr config_file = boost::dynamic_pointer_cast<OptionString>(docsis33);
+    ASSERT_TRUE(config_file);
+    EXPECT_EQ("normal_erouter_v6.cm", config_file->getValue());
 }
 
 // This test verifies that the following option structure can be parsed:
