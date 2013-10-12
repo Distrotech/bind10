@@ -828,6 +828,14 @@ protected:
     /// @throw DhcpConfigError when requested parameter is not present
     isc::dhcp::Triplet<uint32_t> getParam(const std::string& name);
 
+    /// @brief tries to convert option_space string to numeric vendor_id
+    ///
+    /// This will work if the option_space has format "vendor-1234".
+    /// This is used to detect whether a given option-space is a vendor
+    /// space or not. Returns 0 if the format is different.
+    /// @return numeric vendor-id (or 0 if the format does not match)
+    uint32_t optionSpaceToVendorId(const std::string& option_space);
+
 private:
 
     /// @brief Append sub-options to an option.

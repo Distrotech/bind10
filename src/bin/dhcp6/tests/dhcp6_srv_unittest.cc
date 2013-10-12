@@ -30,6 +30,7 @@
 #include <dhcp/iface_mgr.h>
 #include <dhcp6/config_parser.h>
 #include <dhcp/dhcp6.h>
+#include <dhcp/docsis3_option_defs.h>
 #include <dhcpsrv/cfgmgr.h>
 #include <dhcpsrv/lease_mgr.h>
 #include <dhcpsrv/lease_mgr_factory.h>
