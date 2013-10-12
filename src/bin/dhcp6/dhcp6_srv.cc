@@ -26,6 +26,7 @@
 #include <dhcp/option6_iaaddr.h>
 #include <dhcp/option6_iaprefix.h>
 #include <dhcp/option_custom.h>
+#include <dhcp/option_vendor.h>
 #include <dhcp/option_int_array.h>
 #include <dhcp/pkt6.h>
 #include <dhcp6/dhcp6_log.h>
@@ -2297,6 +2298,22 @@ Dhcpv6Srv::unpackOptions(const OptionBuffer& buf,
             *relay_msg_len = opt_len;
 
             // do not create that relay-msg option
+            offset += opt_len;
+            continue;
+        }
+
+        if (opt_type == D6O_VENDOR_OPTS) {
+            if (offset + 4 > length) {
+                // Truncated vendor-option. There is expected at least 4 bytes
+                // long enterprise-id field
+                return (offset);
+            }
+
+            // Parse this as vendor option
+            OptionPtr vendor_opt(new OptionVendor(Option::V6, buf.begin() + offset,
+                                                  buf.begin() + offset + opt_len));
+            options.insert(std::make_pair(opt_type, vendor_opt));
+
             offset += opt_len;
             continue;
         }

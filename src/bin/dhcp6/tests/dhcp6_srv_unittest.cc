@@ -25,6 +25,7 @@
 #include <dhcp/option6_ia.h>
 #include <dhcp/option6_iaaddr.h>
 #include <dhcp/option_int.h>
+#include <dhcp/option_vendor.h>
 #include <dhcp/option_int_array.h>
 #include <dhcp/iface_mgr.h>
 #include <dhcp6/config_parser.h>
@@ -2014,9 +2015,41 @@ TEST_F(Dhcpv6SrvTest, docsisTraffic) {
     ASSERT_FALSE(srv.fake_sent_.empty());
     Pkt6Ptr adv = srv.fake_sent_.front();
     ASSERT_TRUE(adv);
+}
 
-    /// @todo Check that the ADVERTISE is ok, that it includes all options,
-    /// that is relayed properly, etc.
+// Checks if server is able to handle a relayed traffic from DOCSIS3.0 modems
+TEST_F(Dhcpv6SrvTest, docsisVendorOptionsParse) {
+
+    NakedDhcpv6Srv srv(0);
+
+    // Let's get a traffic capture from DOCSIS3.0 modem
+    Pkt6Ptr sol = captureDocsisRelayedSolicit();
+    EXPECT_NO_THROW(sol->unpack());
+
+    // Check if the packet contain
+    OptionPtr opt = sol->getOption(D6O_VENDOR_OPTS);
+    ASSERT_TRUE(opt);
+
+    boost::shared_ptr<OptionVendor> vendor = boost::dynamic_pointer_cast<OptionVendor>(opt);
+    ASSERT_TRUE(vendor);
+
+    EXPECT_TRUE(vendor->getOption(1));
+    EXPECT_TRUE(vendor->getOption(36));
+    EXPECT_TRUE(vendor->getOption(35));
+    EXPECT_TRUE(vendor->getOption(2));
+    EXPECT_TRUE(vendor->getOption(3));
+    EXPECT_TRUE(vendor->getOption(4));
+    EXPECT_TRUE(vendor->getOption(5));
+    EXPECT_TRUE(vendor->getOption(6));
+    EXPECT_TRUE(vendor->getOption(7));
+    EXPECT_TRUE(vendor->getOption(8));
+    EXPECT_TRUE(vendor->getOption(9));
+    EXPECT_TRUE(vendor->getOption(10));
+    EXPECT_TRUE(vendor->getOption(15));
+
+    EXPECT_FALSE(vendor->getOption(20));
+    EXPECT_FALSE(vendor->getOption(11));
+    EXPECT_FALSE(vendor->getOption(17));
 }
 
 // This test verifies that the following option structure can be parsed:
