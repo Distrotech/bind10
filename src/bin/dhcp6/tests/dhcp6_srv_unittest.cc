@@ -2076,6 +2076,86 @@ TEST_F(Dhcpv6SrvTest, docsisVendorORO) {
     EXPECT_TRUE(oro);
 }
 
+// This test checks if Option Request Option (ORO) in docsis (vendor-id=4491)
+// vendor options is parsed correctly and the requested options are actually assigned.
+TEST_F(Dhcpv6SrvTest, vendorOptionsORO) {
+    ConstElementPtr x;
+    string config = "{ \"interfaces\": [ \"all\" ],"
+        "\"preferred-lifetime\": 3000,"
+        "\"rebind-timer\": 2000, "
+        "\"renew-timer\": 1000, "
+        "\"subnet6\": [ { "
+        "    \"pool\": [ \"2001:db8:1::/64\" ],"
+        "    \"subnet\": \"2001:db8:1::/48\", "
+        "    \"option-data\": [ {"
+        "          \"name\": \"dns-servers\","
+        "          \"space\": \"vendor-4491\","
+        "          \"code\": 5,"
+        "          \"data\": \"1234567890\","
+        "          \"csv-format\": False"
+        "        },"
+        "        {"
+        "          \"name\": \"subscriber-id\","
+        "          \"space\": \"vendor-4491\","
+        "          \"code\": 6,"
+        "          \"data\": \"abcdef\","
+        "          \"csv-format\": False"
+        "        } ]"
+        " } ],"
+        "\"valid-lifetime\": 4000 }";
+
+    ElementPtr json = Element::fromJSON(config);
+
+    NakedDhcpv6Srv srv(0);
+
+    EXPECT_NO_THROW(x = configureDhcp6Server(srv, json));
+    ASSERT_TRUE(x);
+    comment_ = parseAnswer(rcode_, x);
+
+    ASSERT_EQ(0, rcode_);
+
+    Pkt6Ptr sol = Pkt6Ptr(new Pkt6(DHCPV6_SOLICIT, 1234));
+    sol->setRemoteAddr(IOAddress("fe80::abcd"));
+    sol->addOption(generateIA(D6O_IA_NA, 234, 1500, 3000));
+    OptionPtr clientid = generateClientId();
+    sol->addOption(clientid);
+
+    // Pass it to the server and get an advertise
+    Pkt6Ptr adv = srv.processSolicit(sol);
+
+    // check if we get response at all
+    ASSERT_TRUE(adv);
+
+    // We did not include any vendor opts in SOLCIT, so there should be none
+    // in ADVERTISE.
+    ASSERT_FALSE(adv->getOption(D6O_VENDOR_OPTS));
+
+    // Let's add a vendor-option (vendor-id=4491) with a single sub-option.
+    // That suboption has code 1 and is a docsis ORO option.
+    boost::shared_ptr<OptionUint16Array> vendor_oro(new OptionUint16Array(Option::V6,
+                                                                          DOCSIS3_V6_ORO));
+    vendor_oro->addValue(5); // Request option 5
+    OptionPtr vendor(new OptionVendor(Option::V6, 4491));
+    vendor->addOption(vendor_oro);
+    sol->addOption(vendor);
+
+    // Need to process SOLICIT again after requesting new option.
+    adv = srv.processSolicit(sol);
+    ASSERT_TRUE(adv);
+
+    // Check if thre is vendor option response
+    OptionPtr tmp = adv->getOption(D6O_VENDOR_OPTS);
+    ASSERT_TRUE(tmp);
+
+    // The response should be OptionVendor object
+    boost::shared_ptr<OptionVendor> vendor_resp =
+        boost::dynamic_pointer_cast<OptionVendor>(tmp);
+    ASSERT_TRUE(vendor_resp);
+
+    ASSERT_TRUE(vendor_resp->getOption(5)); // We requested it
+    ASSERT_FALSE(vendor_resp->getOption(6)); // We did not request it
+}
+
 // This test verifies that the following option structure can be parsed:
 // - option (option space 'foobar')
 //   - sub option (option space 'foo')
