@@ -34,14 +34,14 @@ namespace dhcp {
 
 /// @brief Storage for option definitions.
 typedef OptionSpaceContainer<OptionDefContainer,
-                             OptionDefinitionPtr> OptionDefStorage;
+    OptionDefinitionPtr, std::string> OptionDefStorage;
 /// @brief Shared pointer to option definitions storage.
 typedef boost::shared_ptr<OptionDefStorage> OptionDefStoragePtr;
 
 /// Collection of containers holding option spaces. Each container within
 /// a particular option space holds so-called option descriptors.
 typedef OptionSpaceContainer<Subnet::OptionContainer,
-                             Subnet::OptionDescriptor> OptionStorage;
+    Subnet::OptionDescriptor, std::string> OptionStorage;
 /// @brief Shared pointer to option storage.
 typedef boost::shared_ptr<OptionStorage> OptionStoragePtr;
 
