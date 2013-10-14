@@ -55,6 +55,11 @@ public:
     static OptionDefinitionPtr getOptionDef(const Option::Universe u,
                                             const uint16_t code);
 
+
+    static OptionDefinitionPtr getVendorOptionDef(const Option::Universe u,
+                                                  const uint32_t vendor_id,
+                                                  const uint16_t code);
+
     /// @brief Check if the specified option is a standard option.
     ///
     /// @param u universe (V4 or V6)
@@ -182,6 +187,8 @@ private:
     /// @throw MalformedOptionDefinition if any of the definitions
     /// is incorrect. This is a programming error.
     static void initStdOptionDefs6();
+
+    static void initVendorOptsDocsis4();
 
     static void initVendorOptsDocsis6();
 

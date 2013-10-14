@@ -736,7 +736,6 @@ Dhcpv6Srv::appendRequestedVendorOptions(const Pkt6Ptr& question, Pkt6Ptr& answer
     }
 }
 
-
 OptionPtr
 Dhcpv6Srv::createStatusCode(uint16_t code, const std::string& text) {
     // @todo This function uses OptionCustom class to manage contents

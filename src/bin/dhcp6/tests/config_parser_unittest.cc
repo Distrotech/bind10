@@ -2062,14 +2062,14 @@ TEST_F(Dhcp6ParserTest, vendorOptionsHex) {
         "\"option-data\": [ {"
         "    \"name\": \"option-one\","
         "    \"space\": \"vendor-4491\","
-        "    \"code\": 1,"
+        "    \"code\": 100,"
         "    \"data\": \"AB CDEF0105\","
         "    \"csv-format\": False"
         " },"
         " {"
         "    \"name\": \"option-two\","
         "    \"space\": \"vendor-1234\","
-        "    \"code\": 1,"
+        "    \"code\": 100,"
         "    \"data\": \"1234\","
         "    \"csv-format\": False"
         " } ],"
@@ -2092,13 +2092,13 @@ TEST_F(Dhcp6ParserTest, vendorOptionsHex) {
     ASSERT_TRUE(subnet);
 
     // Try to get the option from the vendor space 4491
-    Subnet::OptionDescriptor desc1 = subnet->getVendorOptionDescriptor(4491, 1);
+    Subnet::OptionDescriptor desc1 = subnet->getVendorOptionDescriptor(4491, 100);
     ASSERT_TRUE(desc1.option);
-    EXPECT_EQ(1, desc1.option->getType());
+    EXPECT_EQ(100, desc1.option->getType());
     // Try to get the option from the vendor space 1234
-    Subnet::OptionDescriptor desc2 = subnet->getVendorOptionDescriptor(1234, 1);
+    Subnet::OptionDescriptor desc2 = subnet->getVendorOptionDescriptor(1234, 100);
     ASSERT_TRUE(desc2.option);
-    EXPECT_EQ(1, desc1.option->getType());
+    EXPECT_EQ(100, desc1.option->getType());
 
     // Try to get the non-existing option from the non-existing
     // option space and  expect that option is not returned.
@@ -2119,13 +2119,13 @@ TEST_F(Dhcp6ParserTest, vendorOptionsCsv) {
         "\"option-data\": [ {"
         "    \"name\": \"foo\","
         "    \"space\": \"vendor-4491\","
-        "    \"code\": 1,"
+        "    \"code\": 100,"
         "    \"data\": \"this is a string vendor-opt\","
         "    \"csv-format\": True"
         " } ],"
         "\"option-def\": [ {"
         "    \"name\": \"foo\","
-        "    \"code\": 1,"
+        "    \"code\": 100,"
         "    \"type\": \"string\","
         "    \"array\": False,"
         "    \"record-types\": \"\","
@@ -2151,9 +2151,9 @@ TEST_F(Dhcp6ParserTest, vendorOptionsCsv) {
     ASSERT_TRUE(subnet);
 
     // Try to get the option from the vendor space 4491
-    Subnet::OptionDescriptor desc1 = subnet->getVendorOptionDescriptor(4491, 1);
+    Subnet::OptionDescriptor desc1 = subnet->getVendorOptionDescriptor(4491, 100);
     ASSERT_TRUE(desc1.option);
-    EXPECT_EQ(1, desc1.option->getType());
+    EXPECT_EQ(100, desc1.option->getType());
 
     // Try to get the non-existing option from the non-existing
     // option space and  expect that option is not returned.

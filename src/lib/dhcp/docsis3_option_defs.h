@@ -18,14 +18,17 @@
 #include <dhcp/std_option_defs.h>
 #include <dhcp/option_data_types.h>
 
+
 namespace {
 
 #define VENDOR_ID_CABLE_LABS 4491
 
-#define DOCSIS3_V4_TFTP_SERVERS 125
+#define DOCSIS3_V4_ORO 1
+#define DOCSIS3_V4_TFTP_SERVERS 2
 
 /// @brief Definitions of standard DHCPv4 options.
 const OptionDefParams DOCSIS3_V4_DEFS[] = {
+    { "oro", DOCSIS3_V4_ORO, OPT_UINT8_TYPE, true, NO_RECORD_DEF, "" },
     { "tftp-servers", DOCSIS3_V4_TFTP_SERVERS, OPT_IPV4_ADDRESS_TYPE, true, NO_RECORD_DEF, "" }
 };
 

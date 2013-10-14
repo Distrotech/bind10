@@ -54,9 +54,9 @@ VendorOptionDefContainers LibDHCP::vendor6_defs_;
 
 // Let's keep it in .cc file. Moving it to .h would require including optionDefParams
 // definitions there
-void initOptionSpace6(OptionDefContainer& defs,
-                      const OptionDefParams* params,
-                      size_t params_size);
+void initOptionSpace(OptionDefContainer& defs,
+                     const OptionDefParams* params,
+                     size_t params_size);
 
 const OptionDefContainer&
 LibDHCP::getOptionDefs(const Option::Universe u) {
@@ -64,11 +64,13 @@ LibDHCP::getOptionDefs(const Option::Universe u) {
     case Option::V4:
         if (v4option_defs_.empty()) {
             initStdOptionDefs4();
+            initVendorOptsDocsis4();
         }
         return (v4option_defs_);
     case Option::V6:
         if (v6option_defs_.empty()) {
             initStdOptionDefs6();
+            initVendorOptsDocsis6();
         }
         return (v6option_defs_);
     default:
@@ -106,6 +108,31 @@ OptionDefinitionPtr
 LibDHCP::getOptionDef(const Option::Universe u, const uint16_t code) {
     const OptionDefContainer& defs = getOptionDefs(u);
     const OptionDefContainerTypeIndex& idx = defs.get<1>();
+    const OptionDefContainerTypeRange& range = idx.equal_range(code);
+    if (range.first != range.second) {
+        return (*range.first);
+    }
+    return (OptionDefinitionPtr());
+}
+
+OptionDefinitionPtr
+LibDHCP::getVendorOptionDef(const Option::Universe u, const uint32_t vendor_id,
+                            const uint16_t code) {
+    const OptionDefContainer* defs = NULL;
+    if (u == Option::V4) {
+        defs = getVendorOption4Defs(vendor_id);
+    } else if (u == Option::V6) {
+        defs = getVendorOption6Defs(vendor_id);
+    }
+
+    if (!defs) {
+        // Weird universe or unknown vendor_id. We don't care. No definitions
+        // one way or another
+        // What is it anyway?
+        return (OptionDefinitionPtr());
+    }
+
+    const OptionDefContainerTypeIndex& idx = defs->get<1>();
     const OptionDefContainerTypeRange& range = idx.equal_range(code);
     if (range.first != range.second) {
         return (*range.first);
@@ -608,18 +635,23 @@ LibDHCP::initStdOptionDefs4() {
 
 void
 LibDHCP::initStdOptionDefs6() {
-    initOptionSpace6(v6option_defs_, OPTION_DEF_PARAMS6, OPTION_DEF_PARAMS_SIZE6);
+    initOptionSpace(v6option_defs_, OPTION_DEF_PARAMS6, OPTION_DEF_PARAMS_SIZE6);
+}
+
+void
+LibDHCP::initVendorOptsDocsis4() {
+    initOptionSpace(vendor6_defs_[VENDOR_ID_CABLE_LABS], DOCSIS3_V4_DEFS, DOCSIS3_V4_DEFS_SIZE);
 }
 
 void
 LibDHCP::initVendorOptsDocsis6() {
     vendor6_defs_[VENDOR_ID_CABLE_LABS] = OptionDefContainer();
-    initOptionSpace6(vendor6_defs_[VENDOR_ID_CABLE_LABS], DOCSIS3_V6_DEFS, DOCSIS3_V6_DEFS_SIZE);
+    initOptionSpace(vendor6_defs_[VENDOR_ID_CABLE_LABS], DOCSIS3_V6_DEFS, DOCSIS3_V6_DEFS_SIZE);
 }
 
-void initOptionSpace6(OptionDefContainer& defs,
-                      const OptionDefParams* params,
-                      size_t params_size) {
+void initOptionSpace(OptionDefContainer& defs,
+                     const OptionDefParams* params,
+                     size_t params_size) {
     defs.clear();
 
     for (int i = 0; i < params_size; ++i) {
