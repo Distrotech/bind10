@@ -42,7 +42,7 @@ void OptionVendor::unpack(OptionBufferConstIter begin, OptionBufferConstIter end
         isc_throw(OutOfRange, "Truncated vendor-specific information option");
     }
 
-    uint32_t vendor_id_ = isc::util::readUint32(&(*begin));
+    vendor_id_ = isc::util::readUint32(&(*begin));
 
     OptionBuffer vendor_buffer(begin +4, end);
     
