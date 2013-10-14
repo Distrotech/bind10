@@ -2169,6 +2169,60 @@ TEST_F(Dhcpv6SrvTest, vendorOptionsORO) {
     EXPECT_EQ("normal_erouter_v6.cm", config_file->getValue());
 }
 
+// Test checks whether it is possible to use option definitions defined in
+// src/lib/dhcp/docsis3_option_defs.h.
+TEST_F(Dhcpv6SrvTest, vendorOptionsDocsisDefinitions) {
+    ConstElementPtr x;
+    string config_prefix = "{ \"interfaces\": [ \"all\" ],"
+        "\"preferred-lifetime\": 3000,"
+        "\"rebind-timer\": 2000, "
+        "\"renew-timer\": 1000, "
+        "    \"option-data\": [ {"
+        "          \"name\": \"config-file\","
+        "          \"space\": \"vendor-4491\","
+        "          \"code\": ";
+    string config_postfix = ","
+        "          \"data\": \"normal_erouter_v6.cm\","
+        "          \"csv-format\": True"
+        "        }],"
+        "\"subnet6\": [ { "
+        "    \"pool\": [ \"2001:db8:1::/64\" ],"
+        "    \"subnet\": \"2001:db8:1::/48\", "
+        "    \"renew-timer\": 1000, "
+        "    \"rebind-timer\": 1000, "
+        "    \"preferred-lifetime\": 3000,"
+        "    \"valid-lifetime\": 4000,"
+        "    \"interface-id\": \"\","
+        "    \"interface\": \"\""
+        " } ],"
+        "\"valid-lifetime\": 4000 }";
+
+    // There is docsis3 (vendor-id=4491) vendor option 33, which is a
+    // config-file. Its format is a single string.
+    string config_valid = config_prefix + "33" + config_postfix;
+
+    // There is no option 99 defined in vendor-id=4491. As there is no
+    // definition, the config should fail.
+    string config_bogus = config_prefix + "99" + config_postfix;
+
+    ElementPtr json_bogus = Element::fromJSON(config_bogus);
+    ElementPtr json_valid = Element::fromJSON(config_valid);
+
+    NakedDhcpv6Srv srv(0);
+
+    // This should fail (missing option definition)
+    EXPECT_NO_THROW(x = configureDhcp6Server(srv, json_bogus));
+    ASSERT_TRUE(x);
+    comment_ = parseAnswer(rcode_, x);
+    ASSERT_EQ(1, rcode_);
+
+    // This should work (option definition present)
+    EXPECT_NO_THROW(x = configureDhcp6Server(srv, json_valid));
+    ASSERT_TRUE(x);
+    comment_ = parseAnswer(rcode_, x);
+    ASSERT_EQ(0, rcode_);
+}
+
 // This test verifies that the following option structure can be parsed:
 // - option (option space 'foobar')
 //   - sub option (option space 'foo')
