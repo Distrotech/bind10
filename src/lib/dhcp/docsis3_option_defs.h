@@ -50,7 +50,7 @@ const OptionDefParams DOCSIS3_V6_DEFS[] = {
     { "device-type",    DOCSIS3_V6_DEVICE_TYPE, OPT_STRING_TYPE, false, NO_RECORD_DEF, "" },
     { "vendor-type",    DOCSIS3_V6_VENDOR_NAME, OPT_STRING_TYPE, false, NO_RECORD_DEF, "" },
     { "tftp-servers",   DOCSIS3_V6_TFTP_SERVERS, OPT_IPV6_ADDRESS_TYPE, true, NO_RECORD_DEF, "" },
-    { "time-servers",   DOCSIS3_V6_TFTP_SERVERS, OPT_IPV6_ADDRESS_TYPE, true, NO_RECORD_DEF, "" },
+    { "time-servers",   DOCSIS3_V6_TIME_SERVERS, OPT_IPV6_ADDRESS_TYPE, true, NO_RECORD_DEF, "" },
     { "config-file",    DOCSIS3_V6_CONFIG_FILE, OPT_STRING_TYPE, false, NO_RECORD_DEF, "" },
     { "syslog-servers", DOCSIS3_V6_SYSLOG_SERVERS, OPT_IPV6_ADDRESS_TYPE, true, NO_RECORD_DEF, "" },
     { "time-offset",    DOCSIS3_V6_TIME_OFFSET, OPT_INT32_TYPE, false, NO_RECORD_DEF, "" }
