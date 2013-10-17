@@ -200,6 +200,7 @@ LibDHCP::optionFactory(Option::Universe u,
 
 
 size_t LibDHCP::unpackOptions6(const OptionBuffer& buf,
+                               const std::string& option_space,
                                isc::dhcp::OptionCollection& options,
                                size_t* relay_msg_offset /* = 0 */,
                                size_t* relay_msg_len /* = 0 */) {
@@ -207,7 +208,14 @@ size_t LibDHCP::unpackOptions6(const OptionBuffer& buf,
     size_t length = buf.size();
 
     // Get the list of stdandard option definitions.
-    const OptionDefContainer& option_defs = LibDHCP::getOptionDefs(Option::V6);
+    OptionDefContainer option_defs;
+    if (option_space == "dhcp6") {
+        option_defs = LibDHCP::getOptionDefs(Option::V6);
+    }
+    // @todo Once we implement other option spaces we should add else clause
+    // here and gather option definitions for them. For now leaving option_defs
+    // empty will imply creation of generic Option.
+
     // Get the search index #1. It allows to search for option definitions
     // using option code.
     const OptionDefContainerTypeIndex& idx = option_defs.get<1>();
@@ -295,11 +303,19 @@ size_t LibDHCP::unpackOptions6(const OptionBuffer& buf,
 }
 
 size_t LibDHCP::unpackOptions4(const OptionBuffer& buf,
+                               const std::string& option_space,
                                isc::dhcp::OptionCollection& options) {
     size_t offset = 0;
 
     // Get the list of stdandard option definitions.
-    const OptionDefContainer& option_defs = LibDHCP::getOptionDefs(Option::V4);
+    OptionDefContainer option_defs;
+    if (option_space == "dhcp4") {
+        option_defs = LibDHCP::getOptionDefs(Option::V4);
+    }
+    // @todo Once we implement other option spaces we should add else clause
+    // here and gather option definitions for them. For now leaving option_defs
+    // empty will imply creation of generic Option.
+
     // Get the search index #1. It allows to search for option definitions
     // using option code.
     const OptionDefContainerTypeIndex& idx = option_defs.get<1>();
@@ -454,7 +470,7 @@ size_t LibDHCP::unpackVendorOptions4(uint32_t vendor_id, const OptionBuffer& buf
                                      isc::dhcp::OptionCollection& options) {
     size_t offset = 0;
 
-    // Get the list of stdandard option definitions.
+    // Get the list of standard option definitions.
     const OptionDefContainer* option_defs = LibDHCP::getVendorOption4Defs(vendor_id);
     // Get the search index #1. It allows to search for option definitions
     // using option code.
@@ -515,7 +531,7 @@ size_t LibDHCP::unpackVendorOptions4(uint32_t vendor_id, const OptionBuffer& buf
                 // to get one option definition with the particular code. If more are
                 // returned we report an error.
                 const OptionDefContainerTypeRange& range = idx->equal_range(opt_type);
-            // Get the number of returned option definitions for the option code.
+                // Get the number of returned option definitions for the option code.
                 size_t num_defs = distance(range.first, range.second);
 
                 if (num_defs > 1) {

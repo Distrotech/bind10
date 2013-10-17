@@ -105,6 +105,33 @@ public:
         testStdOptionDefs(Option::V6, code, begin, end, expected_type,
                           encapsulates);
     }
+
+    /// @brief Create a sample DHCPv4 option 43 with suboptions.
+    static OptionBuffer createVendorOption() {
+        const uint8_t opt_data[] = {
+            0x2B, 0x0D,  // Vendor-Specific Information (CableLabs)
+            // Suboptions start here...
+            0x02, 0x05,  // Device Type Option (length = 5)
+            'D', 'u', 'm', 'm', 'y',
+            0x04, 0x04,   // Serial Number Option (length = 4)
+            0x42, 0x52, 0x32, 0x32 // Serial number
+        };
+        return (OptionBuffer(opt_data, opt_data + sizeof(opt_data)));
+    }
+
+    /// @brief Create a sample DHCPv4 option 82 with suboptions.
+    static OptionBuffer createAgentInformationOption() {
+        const uint8_t opt_data[] = {
+            0x52, 0x0E, // Agent Information Option (length = 14)
+            // Suboptions start here...
+            0x01, 0x04, // Agent Circuit ID (length = 4)
+            0x20, 0x00, 0x00, 0x02, // ID
+            0x02, 0x06, // Agent Remote ID
+            0x20, 0xE5, 0x2A, 0xB8, 0x15, 0x14 // ID
+        };
+        return (OptionBuffer(opt_data, opt_data + sizeof(opt_data)));
+    }
+
 private:
 
     /// @brief Test DHCPv4 or DHCPv6 option definition.
@@ -159,8 +186,13 @@ private:
         EXPECT_EQ(encapsulates, def->getEncapsulatedSpace());
         OptionPtr option;
         // Create the option.
-        ASSERT_NO_THROW(option = def->optionFactory(u, code, begin, end))
-            << "Option creation failed for option code " << code;
+        try {
+            option = def->optionFactory(u, code, begin, end);
+        } catch (const Exception &ex) {
+            std::cout << ex.what() <<  ": " << code << std::endl;
+        }
+        //        ASSERT_NO_THROW(option = def->optionFactory(u, code, begin, end))
+        //            << "Option creation failed for option code " << code;
         // Make sure it is not NULL.
         ASSERT_TRUE(option);
         // And the actual object type is the one that we expect.
@@ -293,7 +325,7 @@ TEST_F(LibDhcpTest, unpackOptions6) {
 
     EXPECT_NO_THROW ({
             LibDHCP::unpackOptions6(OptionBuffer(buf.begin(), buf.begin() + sizeof(v6packed)),
-                                    options);
+                                    "dhcp6", options);
     });
 
     EXPECT_EQ(options.size(), 5); // there should be 5 options
@@ -421,7 +453,7 @@ TEST_F(LibDhcpTest, unpackOptions4) {
     isc::dhcp::OptionCollection options; // list of options
 
     ASSERT_NO_THROW(
-        LibDHCP::unpackOptions4(v4packed, options);
+        LibDHCP::unpackOptions4(v4packed, "dhcp4", options);
     );
 
     isc::dhcp::OptionCollection::const_iterator x = options.find(12);
@@ -653,8 +685,8 @@ TEST_F(LibDhcpTest, stdOptionDefs4) {
     LibDhcpTest::testStdOptionDefs4(DHO_DEFAULT_TCP_TTL, begin, begin + 1,
                                     typeid(OptionInt<uint8_t>));
 
-    LibDhcpTest::testStdOptionDefs4(DHO_TCP_KEEPALIVE_INTERVAL, begin, begin + 4,
-                                    typeid(OptionInt<uint32_t>));
+    LibDhcpTest::testStdOptionDefs4(DHO_TCP_KEEPALIVE_INTERVAL, begin,
+                                    begin + 4, typeid(OptionInt<uint32_t>));
 
     LibDhcpTest::testStdOptionDefs4(DHO_TCP_KEEPALIVE_GARBAGE, begin, begin + 1,
                                     typeid(OptionCustom));
@@ -668,8 +700,13 @@ TEST_F(LibDhcpTest, stdOptionDefs4) {
     LibDhcpTest::testStdOptionDefs4(DHO_NTP_SERVERS, begin, end,
                                     typeid(Option4AddrLst));
 
-    LibDhcpTest::testStdOptionDefs4(DHO_VENDOR_ENCAPSULATED_OPTIONS, begin, end,
-                                    typeid(Option),
+    // The following option requires well formed buffer to be created from.
+    // Not just a dummy one. This buffer includes some suboptions.
+    OptionBuffer vendor_opts_buf = createVendorOption();
+    LibDhcpTest::testStdOptionDefs4(DHO_VENDOR_ENCAPSULATED_OPTIONS,
+                                    vendor_opts_buf.begin(),
+                                    vendor_opts_buf.end(),
+                                    typeid(OptionCustom),
                                     "vendor-encapsulated-options-space");
 
     LibDhcpTest::testStdOptionDefs4(DHO_NETBIOS_NAME_SERVERS, begin, end,
@@ -744,8 +781,14 @@ TEST_F(LibDhcpTest, stdOptionDefs4) {
     LibDhcpTest::testStdOptionDefs4(DHO_FQDN, begin, begin + 3,
                                     typeid(Option4ClientFqdn));
 
-    LibDhcpTest::testStdOptionDefs4(DHO_DHCP_AGENT_OPTIONS, begin, end,
-                                    typeid(Option), "dhcp-agent-options-space");
+    // The following option requires well formed buffer to be created from.
+    // Not just a dummy one. This buffer includes some suboptions.
+    OptionBuffer agent_info_buf = createAgentInformationOption();
+    LibDhcpTest::testStdOptionDefs4(DHO_DHCP_AGENT_OPTIONS,
+                                    agent_info_buf.begin(),
+                                    agent_info_buf.end(),
+                                    typeid(OptionCustom),
+                                    "dhcp-agent-options-space");
 
     LibDhcpTest::testStdOptionDefs4(DHO_AUTHENTICATE, begin, end,
                                     typeid(Option));

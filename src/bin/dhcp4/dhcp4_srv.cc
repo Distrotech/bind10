@@ -671,7 +671,8 @@ Dhcpv4Srv::appendRequestedVendorOptions(const Pkt4Ptr& question, Pkt4Ptr& answer
     // Let's try to get ORO within that vendor-option
     /// @todo This is very specific to vendor-id=4491 (Cable Labs). Other vendors
     /// may have different policies.
-    OptionPtr oro = vendor_req->getOption(DOCSIS3_V4_ORO);
+    OptionUint8ArrayPtr oro = boost::dynamic_pointer_cast<
+        OptionUint8Array>(vendor_req->getOption(DOCSIS3_V4_ORO));
 
     /// @todo: see OPT_UINT8_TYPE definition in OptionDefinition::optionFactory().
     /// I think it should be OptionUint8Array, not OptionGeneric
@@ -685,7 +686,7 @@ Dhcpv4Srv::appendRequestedVendorOptions(const Pkt4Ptr& question, Pkt4Ptr& answer
 
     // Get the list of options that client requested.
     bool added = false;
-    const OptionBuffer& requested_opts = oro->getData();
+    const std::vector<uint8_t>& requested_opts = oro->getValues();
 
     for (OptionBuffer::const_iterator code = requested_opts.begin();
          code != requested_opts.end(); ++code) {
@@ -813,13 +814,6 @@ Dhcpv4Srv::assignLease(const Pkt4Ptr& question, Pkt4Ptr& answer) {
         opt->setUint32(lease->valid_lft_);
         answer->addOption(opt);
 
-        // Router (type 3)
-        Subnet::OptionDescriptor opt_routers =
-            subnet->getOptionDescriptor("dhcp4", DHO_ROUTERS);
-        if (opt_routers.option) {
-            answer->addOption(opt_routers.option);
-        }
-
         // Subnet mask (type 1)
         answer->addOption(getNetmaskOption(subnet));
 
@@ -916,15 +910,18 @@ Dhcpv4Srv::processDiscover(Pkt4Ptr& discover) {
 
     copyDefaultFields(discover, offer);
     appendDefaultOptions(offer, DHCPOFFER);
-    appendRequestedOptions(discover, offer);
-    appendRequestedVendorOptions(discover, offer);
 
     assignLease(discover, offer);
 
-    // There are a few basic options that we always want to
-    // include in the response. If client did not request
-    // them we append them for him.
-    appendBasicOptions(discover, offer);
+    // Adding any other options makes sense only when we got the lease.
+    if (offer->getYiaddr() != IOAddress("0.0.0.0")) {
+        appendRequestedOptions(discover, offer);
+        appendRequestedVendorOptions(discover, offer);
+        // There are a few basic options that we always want to
+        // include in the response. If client did not request
+        // them we append them for him.
+        appendBasicOptions(discover, offer);
+    }
 
     return (offer);
 }
@@ -940,18 +937,21 @@ Dhcpv4Srv::processRequest(Pkt4Ptr& request) {
 
     copyDefaultFields(request, ack);
     appendDefaultOptions(ack, DHCPACK);
-    appendRequestedOptions(request, ack);
-    appendRequestedVendorOptions(request, ack);
 
     // Note that we treat REQUEST message uniformly, regardless if this is a
     // first request (requesting for new address), renewing existing address
     // or even rebinding.
     assignLease(request, ack);
 
-    // There are a few basic options that we always want to
-    // include in the response. If client did not request
-    // them we append them for him.
-    appendBasicOptions(request, ack);
+    // Adding any other options makes sense only when we got the lease.
+    if (ack->getYiaddr() != IOAddress("0.0.0.0")) {
+        appendRequestedOptions(request, ack);
+        appendRequestedVendorOptions(request, ack);
+        // There are a few basic options that we always want to
+        // include in the response. If client did not request
+        // them we append them for him.
+        appendBasicOptions(request, ack);
+    }
 
     return (ack);
 }
@@ -1281,8 +1281,7 @@ Dhcpv4Srv::unpackOptions(const OptionBuffer& buf,
         }
 
         uint8_t opt_len =  buf[offset++];
-        if (offset + opt_len > buf.size()) {
-            isc_throw(OutOfRange, "Option parse failed. Tried to parse "
+        if (offset + opt_len > buf.size()) {isc_throw(OutOfRange, "Option parse failed. Tried to parse "
                       << offset + opt_len << " bytes from " << buf.size()
                       << "-byte long buffer.");
         }
