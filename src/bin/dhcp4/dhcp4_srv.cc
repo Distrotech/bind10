@@ -354,7 +354,9 @@ Dhcpv4Srv::run() {
 
         adjustRemoteAddr(query, rsp);
 
-        if (!rsp->getHops()) {
+        // If not client's query wasn't relayed, send response to the
+        // DHCP client's port. Otherwise, to server/relay port.
+        if (!query->getHops()) {
             rsp->setRemotePort(DHCP4_CLIENT_PORT);
         } else {
             rsp->setRemotePort(DHCP4_SERVER_PORT);
@@ -558,7 +560,9 @@ Dhcpv4Srv::copyDefaultFields(const Pkt4Ptr& question, Pkt4Ptr& answer) {
     answer->setCiaddr(question->getCiaddr());
 
     answer->setSiaddr(IOAddress("0.0.0.0")); // explicitly set this to 0
-    answer->setHops(question->getHops());
+    // According to RFC2131, the hops value in server's response is always
+    // equal to 0.
+    answer->setHops(0);
 
     // copy MAC address
     answer->setHWAddr(question->getHWAddr());
