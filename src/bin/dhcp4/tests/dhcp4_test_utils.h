@@ -199,7 +199,8 @@ public:
 
     /// @brief returns captured DISCOVER that went through a relay
     ///
-    /// See method code for a detailed explanation.
+    /// See method code for a detailed explanation. This is a discover from
+    /// docsis3.0 device (Cable Modem)
     ///
     /// @return relayed DISCOVER
     Pkt4Ptr captureRelayedDiscover();
@@ -229,6 +230,14 @@ public:
     static ::testing::AssertionResult
     createPacketFromBuffer(const Pkt4Ptr& src_pkt,
                            Pkt4Ptr& dst_pkt);
+
+    /// @brief returns captured DISCOVER that went through a relay
+    ///
+    /// See method code for a detailed explanation. This is a discover from
+    /// eRouter1.0 device (CPE device integrated with cable modem)
+    ///
+    /// @return relayed DISCOVER
+    Pkt4Ptr captureRelayedDiscover2();
 
     /// @brief generates a DHCPv4 packet based on provided hex string
     ///
@@ -363,6 +372,7 @@ public:
     using Dhcpv4Srv::sanityCheck;
     using Dhcpv4Srv::srvidToString;
     using Dhcpv4Srv::unpackOptions;
+    using Dhcpv4Srv::classifyPacket;
 };
 
 }; // end of isc::dhcp::test namespace
