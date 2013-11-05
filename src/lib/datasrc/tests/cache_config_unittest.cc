@@ -12,6 +12,8 @@
 // OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
 
+#include <dns/name.h>
+
 #include <datasrc/cache_config.h>
 #include <datasrc/exceptions.h>
 #include <datasrc/memory/load_action.h>
@@ -20,7 +22,6 @@
 
 #include <cc/data.h>
 #include <util/memory_segment_local.h>
-#include <dns/name.h>
 #include <dns/rrclass.h>
 
 #include <gtest/gtest.h>

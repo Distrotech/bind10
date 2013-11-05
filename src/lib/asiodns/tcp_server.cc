@@ -1,4 +1,4 @@
-// Copyright (C) 2011  Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2011,2013  Internet Systems Consortium, Inc. ("ISC")
 //
 // Permission to use, copy, modify, and/or distribute this software for any
 // purpose with or without fee is hereby granted, provided that the above
@@ -107,7 +107,7 @@ TCPServer::operator()(asio::error_code ec, size_t length) {
                 CORO_YIELD acceptor_->async_accept(*socket_, *this);
                 if (ec) {
                     using namespace asio::error;
-                    const error_code::value_type err_val = ec.value();
+                    const asio::error_code::value_type err_val = ec.value();
                     // The following two cases can happen when this server is
                     // stopped: operation_aborted in case it's stopped after
                     // starting accept().  bad_descriptor in case it's stopped

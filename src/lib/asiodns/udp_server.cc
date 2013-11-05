@@ -1,4 +1,4 @@
-// Copyright (C) 2011  Internet Systems Consortium, Inc. ("ISC")
+// Copyright (C) 2011,2013  Internet Systems Consortium, Inc. ("ISC")
 //
 // Permission to use, copy, modify, and/or distribute this software for any
 // purpose with or without fee is hereby granted, provided that the above
@@ -210,7 +210,7 @@ UDPServer::operator()(asio::error_code ec, size_t length) {
                 // See TCPServer::operator() for details on error handling.
                 if (ec) {
                     using namespace asio::error;
-                    const error_code::value_type err_val = ec.value();
+                    const asio::error_code::value_type err_val = ec.value();
                     if (err_val == operation_aborted ||
                         err_val == bad_descriptor) {
                         return;

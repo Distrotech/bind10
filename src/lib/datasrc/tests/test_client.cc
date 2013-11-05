@@ -48,7 +48,7 @@ addRRset(ZoneUpdaterPtr updater, ConstRRsetPtr rrset) {
 }
 }
 
-shared_ptr<DataSourceClient>
+boost::shared_ptr<DataSourceClient>
 createSQLite3Client(RRClass zclass, const Name& zname,
                     const char* const db_file, const char* const zone_file)
 {
@@ -60,7 +60,7 @@ createSQLite3Client(RRClass zclass, const Name& zname,
     return (createSQLite3Client(zclass, zname, db_file, ifs));
 }
 
-shared_ptr<DataSourceClient>
+boost::shared_ptr<DataSourceClient>
 createSQLite3Client(RRClass zclass, const Name& zname,
                     const char* const db_file, istream& rr_stream)
 {
@@ -75,9 +75,9 @@ createSQLite3Client(RRClass zclass, const Name& zname,
                   "Error setting up; command failed: " << install_cmd);
     }
 
-    shared_ptr<SQLite3Accessor> accessor(
+    boost::shared_ptr<SQLite3Accessor> accessor(
         new SQLite3Accessor(db_file, zclass.toText()));
-    shared_ptr<DatabaseClient> client(new DatabaseClient(zclass, accessor));
+    boost::shared_ptr<DatabaseClient> client(new DatabaseClient(zclass, accessor));
 
     ZoneUpdaterPtr updater = client->getUpdater(zname, true);
     masterLoad(rr_stream, zname, zclass, boost::bind(addRRset, updater, _1));
