@@ -366,6 +366,15 @@ public:
     /// @return textual representation
     virtual std::string toText() const;
 
+    /// @brief resets subnet-id counter to its initial value
+    ///
+    /// This should be called during reconfiguration, before any new
+    /// subnet objects are created. It will ensure that the subnet_id will
+    /// be consistent between reconfigures.
+    static void resetSubnetID() {
+        static_id_ = 1;
+    }
+
 protected:
     /// @brief Returns all pools (non-const variant)
     ///
@@ -390,12 +399,13 @@ protected:
     /// derive from this class.
     virtual ~Subnet() { };
 
+    static SubnetID static_id_;
+
     /// @brief returns the next unique Subnet-ID
     ///
     /// @return the next unique Subnet-ID
     static SubnetID getNextID() {
-        static SubnetID id = 0;
-        return (id++);
+        return (static_id_++);
     }
 
     /// @brief Checks if used pool type is valid

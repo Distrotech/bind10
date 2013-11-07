@@ -643,6 +643,8 @@ configureDhcp6Server(Dhcpv6Srv&, isc::data::ConstElementPtr config_set) {
     /// @todo: Append most essential info here (like "2 new subnets configured")
     string config_details;
 
+    Subnet::resetSubnetID();
+
     LOG_DEBUG(dhcp6_logger, DBG_DHCP6_COMMAND,
               DHCP6_CONFIG_START).arg(config_set->str());
 
