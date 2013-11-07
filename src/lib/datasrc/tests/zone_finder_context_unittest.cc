@@ -59,7 +59,7 @@ namespace {
 const char* const TEST_ZONE_FILE = TEST_DATA_DIR "/contexttest.zone";
 
 // Convenient shortcut
-typedef shared_ptr<DataSourceClient> DataSourceClientPtr;
+typedef boost::shared_ptr<DataSourceClient> DataSourceClientPtr;
 
 // This is the type used as the test parameter.  Note that this is
 // intentionally a plain old type (i.e. a function pointer), not a class;
@@ -75,7 +75,7 @@ createInMemoryClient(RRClass zclass, const Name& zname) {
             " \"params\":"
             "  {\"" + zname.toText() + "\": \"" +
             string(TEST_ZONE_FILE) + "\"}}"), true);
-    shared_ptr<ZoneTableSegment> ztable_segment(
+    boost::shared_ptr<ZoneTableSegment> ztable_segment(
         ZoneTableSegment::create(zclass, cache_conf.getSegmentType()));
     memory::ZoneWriter writer(*ztable_segment,
                               cache_conf.getLoadAction(zclass, zname),
@@ -83,7 +83,7 @@ createInMemoryClient(RRClass zclass, const Name& zname) {
     writer.load();
     writer.install();
     writer.cleanup();
-    shared_ptr<InMemoryClient> client(new InMemoryClient(ztable_segment,
+    boost::shared_ptr<InMemoryClient> client(new InMemoryClient(ztable_segment,
                                                          zclass));
 
     return (client);

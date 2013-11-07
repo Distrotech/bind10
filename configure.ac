@@ -66,6 +66,7 @@ AC_LANG([C++])
 AM_CONDITIONAL(USE_GXX, test "X${GXX}" = "Xyes")
 AC_CHECK_DECL([__SUNPRO_CC], [SUNCXX="yes"], [SUNCXX="no"])
 AC_CHECK_DECL([__clang__], [CLANGPP="yes"], [CLANGPP="no"])
+AC_CHECK_DECL([__apple_build_version__], [APPLE_CLANG="yes"], [APPLE_CLANG="no"])
 AM_CONDITIONAL(USE_CLANGPP, test "X${CLANGPP}" = "Xyes")
 
 # Linker options
@@ -120,6 +121,13 @@ fi
 # we suppress this particular warning.  Note that it doesn't weaken checks
 # on the source code.
 if test "$CLANGPP" = "yes"; then
+	B10_CXXFLAGS="$B10_CXXFLAGS -Qunused-arguments"
+fi
+
+# Apple LLVM 5.0 (shipped with Mac OS X 10.9) has the same problem as above.
+# Since it is unclear if the behavior will be consistent between upstream
+# clang and Apple version, there is a separate check for it here:
+if test "$APPLE_CLANG" = "yes"; then
 	B10_CXXFLAGS="$B10_CXXFLAGS -Qunused-arguments"
 fi
 

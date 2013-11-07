@@ -277,7 +277,7 @@ public:
     AddressList listen_addresses_;
 
     /// The TSIG keyring
-    const shared_ptr<TSIGKeyRing>* keyring_;
+    const boost::shared_ptr<TSIGKeyRing>* keyring_;
 
     /// The data source client list manager
     auth::DataSrcClientsMgr datasrc_clients_mgr_;
@@ -651,7 +651,7 @@ AuthSrvImpl::processNormalQuery(const IOMessage& io_message,
 
     try {
         const ConstQuestionPtr question = *message.beginQuestion();
-        const shared_ptr<datasrc::ClientList>
+        const boost::shared_ptr<datasrc::ClientList>
             list(datasrc_holder.findClientList(question->getClass()));
         if (list) {
             const RRType& qtype = question->getType();
@@ -766,7 +766,7 @@ AuthSrvImpl::processNotify(const IOMessage& io_message, Message& message,
     bool is_auth = false;
     {
         auth::DataSrcClientsMgr::Holder datasrc_holder(datasrc_clients_mgr_);
-        const shared_ptr<datasrc::ClientList> dsrc_clients =
+        const boost::shared_ptr<datasrc::ClientList> dsrc_clients =
             datasrc_holder.findClientList(question->getClass());
         is_auth = dsrc_clients &&
             dsrc_clients->find(question->getName(), true, false).exact_match_;
@@ -900,7 +900,7 @@ AuthSrv::setDNSService(isc::asiodns::DNSServiceBase& dnss) {
 }
 
 void
-AuthSrv::setTSIGKeyRing(const shared_ptr<TSIGKeyRing>* keyring) {
+AuthSrv::setTSIGKeyRing(const boost::shared_ptr<TSIGKeyRing>* keyring) {
     impl_->keyring_ = keyring;
 }
 
