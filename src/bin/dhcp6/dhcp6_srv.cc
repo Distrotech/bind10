@@ -2219,7 +2219,7 @@ Dhcpv6Srv::processRenew(const Pkt6Ptr& renew) {
 }
 
 Pkt6Ptr
-Dhcpv6Srv::processRebind(const Pkt6Ptr& rebind) {
+Dhcpv6Srv::processRebind(const Pkt6Ptr& /*rebind*/) {
 
     /// @todo: Implement this
     // Pkt6Ptr reply(new Pkt6(DHCPV6_REPLY, rebind->getTransid()));
@@ -2227,7 +2227,7 @@ Dhcpv6Srv::processRebind(const Pkt6Ptr& rebind) {
 }
 
 Pkt6Ptr
-Dhcpv6Srv::processConfirm(const Pkt6Ptr& confirm) {
+Dhcpv6Srv::processConfirm(const Pkt6Ptr& /*confirm*/) {
     /// @todo: Implement this
     //Pkt6Ptr reply(new Pkt6(DHCPV6_REPLY, confirm->getTransid()));
 
