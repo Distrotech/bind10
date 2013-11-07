@@ -2222,15 +2222,16 @@ Pkt6Ptr
 Dhcpv6Srv::processRebind(const Pkt6Ptr& rebind) {
 
     /// @todo: Implement this
-    Pkt6Ptr reply(new Pkt6(DHCPV6_REPLY, rebind->getTransid()));
-    return reply;
+    // Pkt6Ptr reply(new Pkt6(DHCPV6_REPLY, rebind->getTransid()));
+    return (Pkt6Ptr());
 }
 
 Pkt6Ptr
 Dhcpv6Srv::processConfirm(const Pkt6Ptr& confirm) {
     /// @todo: Implement this
-    Pkt6Ptr reply(new Pkt6(DHCPV6_REPLY, confirm->getTransid()));
-    return reply;
+    //Pkt6Ptr reply(new Pkt6(DHCPV6_REPLY, confirm->getTransid()));
+
+    return (Pkt6Ptr());
 }
 
 Pkt6Ptr
@@ -2255,6 +2256,11 @@ Pkt6Ptr
 Dhcpv6Srv::processDecline(const Pkt6Ptr& decline) {
     /// @todo: Implement this
     Pkt6Ptr reply(new Pkt6(DHCPV6_REPLY, decline->getTransid()));
+
+    reply->addOption(createStatusCode(STATUS_UnspecFail,
+                                      "Sorry, DECLINE is not supported yet."));
+
+    copyDefaultOptions(decline, reply);
     return reply;
 }
 
