@@ -22,4 +22,5 @@ resolver_bench_SOURCES += landlord.h landlord.cc
 
 resolver_bench_LDADD = $(top_builddir)/src/lib/exceptions/libb10-exceptions.la
 resolver_bench_LDADD += $(top_builddir)/src/lib/asiolink/libb10-asiolink.la
+resolver_bench_LDADD += $(top_builddir)/src/lib/util/threads/libb10-threads.la
 
