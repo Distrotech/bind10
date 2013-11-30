@@ -22,12 +22,13 @@ resolver_bench_SOURCES += subprocess.h subprocess.cc
 
 resolver_bench_LDADD = $(top_builddir)/src/lib/exceptions/libb10-exceptions.la
 resolver_bench_LDADD += $(top_builddir)/src/lib/asiolink/libb10-asiolink.la
+resolver_bench_LDADD += $(top_builddir)/src/lib/util/threads/libb10-threads.la
 
 if BOOST_COROUTINES
 # The coroutine resolver needs the boost coroutines. Enable it only if available.
 resolver_bench_SOURCES += coroutine_resolver.h coroutine_resolver.cc
 resolver_bench_SOURCES += scheduler.h scheduler.cc
 resolver_bench_SOURCES += layers.h layers.cc
-resolver_bench_LDADD += -lboost_context
+resolver_bench_LDADD += -lboost_context -lboost_coroutine
 AM_CPPFLAGS += -DBOOST_COROUTINES
 endif
