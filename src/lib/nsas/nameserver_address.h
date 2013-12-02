@@ -74,7 +74,7 @@ public:
     }
 
     /// \brief Default Constructor
-    NameserverAddress() : address_(asiolink::IOAddress("::1")) { }
+    NameserverAddress() : address_(asiolink::IOAddress("127.0.0.1")) { }
 
     /// \brief Return address
     ///

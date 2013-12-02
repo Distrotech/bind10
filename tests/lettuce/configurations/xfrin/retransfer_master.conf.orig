@@ -10,8 +10,8 @@
     "Auth": {
         "database_file": "data/example.org.sqlite3",
         "listen_on": [ {
-            "address": "::1",
-            "port": 47807
+            "address": "127.0.0.1",
+            "port": 56177
         } ]
     },
     "data_sources": {
@@ -29,8 +29,8 @@
             "origin": "example.org"
         } ],
         "also_notify": [ {
-            "address": "::1",
-            "port": 47806
+            "address": "127.0.0.1",
+            "port": 56176
         } ]
     },
     "Init": {

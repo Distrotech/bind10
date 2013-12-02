@@ -42,7 +42,7 @@
               "item_name": "address",
               "item_type": "string",
               "item_optional": false,
-              "item_default": "::1"
+              "item_default": "127.0.0.1"
             },
             {
               "item_name": "port",
@@ -68,7 +68,7 @@
               "item_name": "address",
               "item_type": "string",
               "item_optional": false,
-              "item_default": "::1"
+              "item_default": "127.0.0.1"
             },
             {
               "item_name": "port",
@@ -103,7 +103,7 @@
               "item_name": "address",
               "item_type": "string",
               "item_optional": false,
-              "item_default": "::1"
+              "item_default": "127.0.0.1"
             },
             {
               "item_name": "port",
