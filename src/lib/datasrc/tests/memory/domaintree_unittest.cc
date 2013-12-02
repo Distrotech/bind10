@@ -934,7 +934,7 @@ TEST_F(DomainTreeTest, callbackLabelSequence) {
 
 TEST_F(DomainTreeTest, findInSubTree) {
     // For the version that takes a node chain, the chain must be empty.
-    DomainTreeNodeChain<int> chain;
+    TestDomainTreeNodeChain chain;
     bool flag;
 
     // Searching for a non-absolute (right-stripped) label sequence when
@@ -949,10 +949,10 @@ TEST_F(DomainTreeTest, findInSubTree) {
     // First, find a sub-tree node
     chain.clear();
     const LabelSequence ls1(n0);
-    DomainTree<int>::Result result =
+    TestDomainTree::Result result =
         dtree_expose_empty_node.find(ls1, &cdtnode, chain,
                                      testCallback, &flag);
-    EXPECT_EQ(DomainTree<int>::EXACTMATCH, result);
+    EXPECT_EQ(TestDomainTree::EXACTMATCH, result);
     EXPECT_EQ(n0, chain.getAbsoluteName());
 
     // Searching for an absolute label sequence when chain is already
@@ -972,7 +972,7 @@ TEST_F(DomainTreeTest, findInSubTree) {
 
     result = dtree_expose_empty_node.find(ls2, &cdtnode, chain,
                                           testCallback, &flag);
-    EXPECT_EQ(DomainTree<int>::EXACTMATCH, result);
+    EXPECT_EQ(TestDomainTree::EXACTMATCH, result);
     EXPECT_EQ(n2, chain.getAbsoluteName());
 
     // Another test. Start with "d.e.f." node.
@@ -982,7 +982,7 @@ TEST_F(DomainTreeTest, findInSubTree) {
     result =
         dtree_expose_empty_node.find(ls3, &cdtnode, chain,
                                      testCallback, &flag);
-    EXPECT_EQ(DomainTree<int>::EXACTMATCH, result);
+    EXPECT_EQ(TestDomainTree::EXACTMATCH, result);
     EXPECT_EQ(n3, chain.getAbsoluteName());
 
     // Now, find "o.w.y.d.e.f." by right-stripping the "w.y.d.e.f."
@@ -994,7 +994,7 @@ TEST_F(DomainTreeTest, findInSubTree) {
 
     result = dtree_expose_empty_node.find(ls4, &cdtnode, chain,
                                           testCallback, &flag);
-    EXPECT_EQ(DomainTree<int>::EXACTMATCH, result);
+    EXPECT_EQ(TestDomainTree::EXACTMATCH, result);
     EXPECT_EQ(n4, chain.getAbsoluteName());
 }
 
@@ -1037,17 +1037,17 @@ TEST_F(DomainTreeTest, findInSubTreeSameLabelSequence) {
     // First, find "g.h."
     const Name n2("g.h");
     const LabelSequence ls2(n2);
-    DomainTree<int>::Result result =
+    TestDomainTree::Result result =
         dtree_expose_empty_node.find(ls2, &cdtnode, chain,
                                      testCallback, &flag);
-    EXPECT_EQ(DomainTree<int>::EXACTMATCH, result);
+    EXPECT_EQ(TestDomainTree::EXACTMATCH, result);
     EXPECT_EQ(n2, chain.getAbsoluteName());
 
     // Now, find "c.g.h." by searching just the non-absolute ls1 label
     // sequence.
     result = dtree_expose_empty_node.find(ls1, &cdtnode, chain,
                                           testCallback, &flag);
-    EXPECT_EQ(DomainTree<int>::EXACTMATCH, result);
+    EXPECT_EQ(TestDomainTree::EXACTMATCH, result);
     EXPECT_EQ(n1, chain.getAbsoluteName());
 
     // Now, find "." (the root node)
@@ -1057,14 +1057,14 @@ TEST_F(DomainTreeTest, findInSubTreeSameLabelSequence) {
     result =
         dtree_expose_empty_node.find(ls3, &cdtnode, chain,
                                      testCallback, &flag);
-    EXPECT_EQ(DomainTree<int>::EXACTMATCH, result);
+    EXPECT_EQ(TestDomainTree::EXACTMATCH, result);
     EXPECT_EQ(n3, chain.getAbsoluteName());
 
     // Now, find "c." by searching just the non-absolute ls1 label
     // sequence.
     result = dtree_expose_empty_node.find(ls1, &cdtnode, chain,
                                           testCallback, &flag);
-    EXPECT_EQ(DomainTree<int>::EXACTMATCH, result);
+    EXPECT_EQ(TestDomainTree::EXACTMATCH, result);
     EXPECT_EQ(Name("c."), chain.getAbsoluteName());
 }
 
