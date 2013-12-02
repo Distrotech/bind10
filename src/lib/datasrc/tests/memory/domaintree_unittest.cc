@@ -709,6 +709,55 @@ TEST_F(DomainTreeTest, insertAndRemove) {
     checkTree(tree, names);
 }
 
+TEST_F(DomainTreeTest, removeDoesntRemoveRoot) {
+    // Check that when we remove nodes up the tree (because they are
+    // empty), we don't end up deleting the root node (.) of the
+    // DomainTree. The root node must always exist in the DomainTree.
+    TreeHolder holder(mem_sgmt_, TestDomainTree::create(mem_sgmt_, true));
+    TestDomainTree& tree(*holder.get());
+
+    // The DomainTree does not contain root (.) node by construction.
+    TestDomainTreeNodeChain node_path;
+    const TestDomainTreeNode* cnode;
+    EXPECT_EQ(TestDomainTree::NOTFOUND,
+              tree.find(Name("."), &cnode, node_path));
+
+    TestDomainTreeNode* node1;
+    ASSERT_EQ(TestDomainTree::SUCCESS,
+              tree.insert(mem_sgmt_, Name("example.org"), &node1));
+
+
+    /* The tree now looks like
+     *
+     *         example.org.
+     */
+
+    TestDomainTreeNode* node2;
+    ASSERT_EQ(TestDomainTree::SUCCESS,
+              tree.insert(mem_sgmt_, Name("example.com"), &node2));
+
+    /* The tree now looks like
+     *
+     *             .
+     *             |
+     *         example.org
+     *           /
+     *      example.com
+     */
+
+    // Now delete the "example.com" and "example.org" nodes. This should
+    // leave the root (.) node in the DomainTree.
+
+    tree.remove(mem_sgmt_, node1, deleteData);
+    tree.remove(mem_sgmt_, node2, deleteData);
+
+    // The DomainTree does not contain root (.) node by construction.
+    node_path.clear();
+    const TestDomainTreeNode* cnode2;
+    EXPECT_EQ(TestDomainTree::EXACTMATCH,
+              tree.find(Name("."), &cnode2, node_path));
+}
+
 TEST_F(DomainTreeTest, subTreeRoot) {
     // This is a testcase for a particular issue that went unchecked in
     // #2089's implementation, but was fixed in #2092. The issue was
