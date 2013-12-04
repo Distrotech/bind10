@@ -305,10 +305,13 @@ skipTo(std::istream& in, const std::string& file, int& line,
             }
             return (c);
         } else {
-            throwJSONError(std::string("'") + std::string(1, c) + "' read, one of \"" + chars + "\" expected", file, line, pos);
+            throwJSONError(std::string("'") + std::string(1, c) +
+                           "' read, one of \"" + chars + "\" expected",
+                           file, line, pos);
         }
     }
-    throwJSONError(std::string("EOF read, one of \"") + chars + "\" expected", file, line, pos);
+    throwJSONError(std::string("EOF read, one of \"") + chars + "\" expected",
+                   file, line, pos);
     return (c); // shouldn't reach here, but some compilers require it
 }
 
@@ -427,7 +430,8 @@ fromStringstreamBool(std::istream& in, const std::string& file,
     } else if (boost::iequals(word, "False")) {
         return (Element::create(false));
     } else {
-        throwJSONError(std::string("Bad boolean value: ") + word, file, line, pos);
+        throwJSONError(std::string("Bad boolean value: ") + word,
+                       file, line, pos);
         // above is a throw shortcurt, return empty is never reached
         return (ElementPtr());
     }
@@ -483,7 +487,8 @@ fromStringstreamMap(std::istream& in, const std::string& file, int& line,
     skipChars(in, WHITESPACE, line, pos);
     int c = in.peek();
     if (c == EOF) {
-        throwJSONError(std::string("Unterminated map, <string> or } expected"), file, line, pos);
+        throwJSONError(std::string("Unterminated map, <string> or } expected"),
+                       file, line, pos);
     } else if (c == '}') {
         // empty map, skip closing curly
         in.ignore();
@@ -630,7 +635,9 @@ Element::fromJSON(std::istream& in, const std::string& file, int& line,
             case EOF:
                 break;
             default:
-                throwJSONError(std::string("error: unexpected character ") + std::string(1, c), file, line, pos);
+                throwJSONError(std::string("error: unexpected character ") +
+                               std::string(1, c),
+                               file, line, pos);
                 break;
         }
     }
