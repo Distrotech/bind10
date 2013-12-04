@@ -157,13 +157,16 @@ TEST(Element, from_and_to_json) {
     EXPECT_EQ("-100", Element::fromJSON("-1e2")->str());
 
     EXPECT_NO_THROW({
-       EXPECT_EQ("9223372036854775807", Element::fromJSON("9223372036854775807")->str());
+       EXPECT_EQ("9223372036854775807",
+                 Element::fromJSON("9223372036854775807")->str());
     });
     EXPECT_NO_THROW({
-       EXPECT_EQ("-9223372036854775808", Element::fromJSON("-9223372036854775808")->str());
+       EXPECT_EQ("-9223372036854775808",
+                 Element::fromJSON("-9223372036854775808")->str());
     });
     EXPECT_THROW({
-       EXPECT_NE("9223372036854775808", Element::fromJSON("9223372036854775808")->str());
+       EXPECT_NE("9223372036854775808",
+                 Element::fromJSON("9223372036854775808")->str());
     }, JSONError);
 
     EXPECT_EQ("0.01", Element::fromJSON("1e-2")->str());
@@ -183,19 +186,22 @@ TEST(Element, from_and_to_json) {
     EXPECT_EQ("false", Element::fromJSON("FALSE")->str());
     EXPECT_EQ("true", Element::fromJSON("True")->str());
     EXPECT_EQ("true", Element::fromJSON("TRUE")->str());
-    EXPECT_EQ("\"\"", Element::fromJSON("  \n \t \r \f \b \"\" \n \f \t \r \b")->str());
+    EXPECT_EQ("\"\"",
+              Element::fromJSON("  \n \t \r \f \b \"\" \n \f \t \r \b")->str());
     EXPECT_EQ("{  }", Element::fromJSON("{  \n  \r \t  \b \f }")->str());
     EXPECT_EQ("[  ]", Element::fromJSON("[  \n  \r \f \t  \b  ]")->str());
 
     // number overflows
     EXPECT_THROW(Element::fromJSON("12345678901234567890")->str(), JSONError);
-    EXPECT_THROW(Element::fromJSON("1.1e12345678901234567890")->str(), JSONError);
-    EXPECT_THROW(Element::fromJSON("-1.1e12345678901234567890")->str(), JSONError);
+    EXPECT_THROW(Element::fromJSON("1.1e12345678901234567890")->str(),
+                 JSONError);
+    EXPECT_THROW(Element::fromJSON("-1.1e12345678901234567890")->str(),
+                 JSONError);
     EXPECT_THROW(Element::fromJSON("1e12345678901234567890")->str(), JSONError);
     EXPECT_THROW(Element::fromJSON("1e50000")->str(), JSONError);
     // number underflow
-    // EXPECT_THROW(Element::fromJSON("1.1e-12345678901234567890")->str(), JSONError);
-
+    // EXPECT_THROW(Element::fromJSON("1.1e-12345678901234567890")->str(),
+    //              JSONError);
 }
 
 template <typename T>
@@ -592,7 +598,9 @@ TEST(Element, ListElement) {
 
 TEST(Element, MapElement) {
     // this function checks the specific functions for ListElements
-    ElementPtr el = Element::fromJSON("{ \"name\": \"foo\", \"value1\": \"bar\", \"value2\": { \"number\": 42 } }");
+    ElementPtr el = Element::fromJSON("{ \"name\": \"foo\", "
+                                      "\"value1\": \"bar\", "
+                                      "\"value2\": { \"number\": 42 } }");
     ConstElementPtr el2;
 
     EXPECT_EQ(el->get("name")->stringValue(), "foo");
@@ -648,8 +656,10 @@ TEST(Element, to_and_from_wire) {
     EXPECT_EQ("false", Element::create(false)->toWire());
     EXPECT_EQ("null", Element::create()->toWire());
     EXPECT_EQ("\"a string\"", Element::create("a string")->toWire());
-    EXPECT_EQ("[ \"a\", \"list\" ]", Element::fromJSON("[ \"a\", \"list\" ]")->toWire());
-    EXPECT_EQ("{ \"a\": \"map\" }", Element::fromJSON("{ \"a\": \"map\" }")->toWire());
+    EXPECT_EQ("[ \"a\", \"list\" ]",
+              Element::fromJSON("[ \"a\", \"list\" ]")->toWire());
+    EXPECT_EQ("{ \"a\": \"map\" }",
+              Element::fromJSON("{ \"a\": \"map\" }")->toWire());
 
     EXPECT_EQ("1", Element::fromWire("1")->str());
 
@@ -715,8 +725,10 @@ TEST(Element, equals) {
 
     EXPECT_EQ(*efs("[]"), *efs("[]"));
     EXPECT_EQ(*efs("[ 1, 2, 3 ]"), *efs("[ 1, 2, 3 ]"));
-    EXPECT_EQ(*efs("[ \"a\", [ True, 1], 2.2 ]"), *efs("[ \"a\", [ True, 1], 2.2 ]"));
-    EXPECT_NE(*efs("[ \"a\", [ True, 1], 2.2 ]"), *efs("[ \"a\", [ True, 2], 2.2 ]"));
+    EXPECT_EQ(*efs("[ \"a\", [ True, 1], 2.2 ]"),
+              *efs("[ \"a\", [ True, 1], 2.2 ]"));
+    EXPECT_NE(*efs("[ \"a\", [ True, 1], 2.2 ]"),
+              *efs("[ \"a\", [ True, 2], 2.2 ]"));
     EXPECT_NE(*efs("[]"), *efs("[1]"));
     EXPECT_NE(*efs("[]"), *efs("1"));
     EXPECT_NE(*efs("[]"), *efs("\"1\""));
@@ -724,14 +736,24 @@ TEST(Element, equals) {
 
     EXPECT_EQ(*efs("{}"), *efs("{}"));
     EXPECT_EQ(*efs("{ \"foo\": \"bar\" }"), *efs("{ \"foo\": \"bar\" }"));
-    EXPECT_EQ(*efs("{ \"item1\": 1, \"item2\": [ \"a\", \"list\" ], \"item3\": { \"foo\": \"bar\" } }"), *efs("{ \"item1\": 1, \"item2\": [ \"a\", \"list\" ], \"item3\": { \"foo\": \"bar\" } }"));
-    EXPECT_NE(*efs("{ \"item1\": 1, \"item2\": [ \"a\", \"list\" ], \"item3\": { \"foo\": \"bar\" } }"), *efs("{ \"item1\": 1, \"item2\": [ \"a\", \"list\" ], \"item3\": { \"foo\": \"bar2\" } }"));
-    EXPECT_NE(*efs("{ \"item1\": 1, \"item2\": [ \"a\", \"list\" ], \"item3\": { \"foo\": \"bar\" } }"), *efs("{ \"item1\": 1, \"item2\": [ \"a\", \"list\", 1 ], \"item3\": { \"foo\": \"bar\" } }"));
+    EXPECT_EQ(*efs("{ \"item1\": 1, \"item2\": [ \"a\", \"list\" ], "
+                   "\"item3\": { \"foo\": \"bar\" } }"),
+              *efs("{ \"item1\": 1, \"item2\": [ \"a\", \"list\" ], "
+                   "\"item3\": { \"foo\": \"bar\" } }"));
+    EXPECT_NE(*efs("{ \"item1\": 1, \"item2\": [ \"a\", \"list\" ], "
+                   "\"item3\": { \"foo\": \"bar\" } }"),
+              *efs("{ \"item1\": 1, \"item2\": [ \"a\", \"list\" ], "
+                   "\"item3\": { \"foo\": \"bar2\" } }"));
+    EXPECT_NE(*efs("{ \"item1\": 1, \"item2\": [ \"a\", \"list\" ], "
+                   "\"item3\": { \"foo\": \"bar\" } }"),
+              *efs("{ \"item1\": 1, \"item2\": [ \"a\", \"list\", 1 ], "
+                   "\"item3\": { \"foo\": \"bar\" } }"));
     EXPECT_NE(*efs("{ \"foo\": \"bar\" }"), *efs("1"));
     EXPECT_NE(*efs("{ \"foo\": \"bar\" }"), *efs("\"1\""));
     EXPECT_NE(*efs("{ \"foo\": \"bar\" }"), *efs("[]"));
     EXPECT_NE(*efs("{ \"foo\": \"bar\" }"), *efs("{}"));
-    EXPECT_NE(*efs("{ \"foo\": \"bar\" }"), *efs("{ \"something\": \"different\" }"));
+    EXPECT_NE(*efs("{ \"foo\": \"bar\" }"),
+              *efs("{ \"something\": \"different\" }"));
 
     EXPECT_EQ(*efs("null"), *Element::create());
 }
@@ -791,7 +813,8 @@ TEST(Element, removeIdentical) {
     removeIdentical(a, b);
     EXPECT_EQ(*a, *c);
 
-    EXPECT_THROW(removeIdentical(Element::create(1), Element::create(2)), TypeError);
+    EXPECT_THROW(removeIdentical(Element::create(1), Element::create(2)),
+                 TypeError);
 }
 
 TEST(Element, constRemoveIdentical) {
