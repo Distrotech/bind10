@@ -696,7 +696,7 @@ efs(const std::string& str) {
 TEST(Element, equals) {
     EXPECT_EQ(*efs("1"), *efs("1"));
     EXPECT_NE(*efs("1"), *efs("2"));
-    EXPECT_NE(*efs("1"), *efs("\"1\""));
+    EXPECT_EQ(*efs("1"), *efs("\"1\""));
     EXPECT_NE(*efs("1"), *efs("[]"));
     EXPECT_NE(*efs("1"), *efs("True"));
     EXPECT_NE(*efs("1"), *efs("{}"));
@@ -756,6 +756,25 @@ TEST(Element, equals) {
               *efs("{ \"something\": \"different\" }"));
 
     EXPECT_EQ(*efs("null"), *Element::create());
+}
+
+TEST(Element, stringContainingInteger) {
+    // String literals like "42" are meant to be handled as
+    // integers. This is not strictly JSON, but it has been requested as
+    // a usability feature (see #3239).
+    EXPECT_EQ(*efs("42"), *efs("42"));
+    EXPECT_EQ(*efs("42"), *efs("\"42\""));
+    EXPECT_NE(*efs("42"), *efs("\"42trailingchars\""));
+
+    // Check types
+    EXPECT_EQ(Element::integer, efs("42")->getType());
+    EXPECT_EQ(Element::integer, efs("\"42\"")->getType());
+    EXPECT_EQ(Element::string, efs("\"42trailingchars\"")->getType());
+
+    // "42e10" is a string literal containing a floating-point
+    // representation. It won't be automatically converted from string
+    // to real for now.
+    EXPECT_EQ(Element::string, efs("\"42e10\"")->getType());
 }
 
 TEST(Element, removeIdentical) {

@@ -454,7 +454,16 @@ ElementPtr
 fromStringstreamString(std::istream& in, const std::string& file, int& line,
                        int& pos)
 {
-    return (Element::create(strFromStringstream(in, file, line, pos)));
+    const std::string& str = strFromStringstream(in, file, line, pos);
+    // Try to parse the string as an integer (that was quoted), so that
+    // literals like "600" are handled as integers. This is not strictly
+    // JSON, but it has been requested as a usability feature (see
+    // #3239).
+    try {
+        return (Element::create(boost::lexical_cast<int64_t>(str)));
+    } catch (const boost::bad_lexical_cast&) {
+        return (Element::create(str));
+    }
 }
 
 ElementPtr
