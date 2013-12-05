@@ -65,7 +65,10 @@ def check_type(spec_part, value):
 
     if data_type == "integer":
         if type(value) != int:
-            raise isc.cc.data.DataTypeError(str(value) + " is not an integer")
+            try:
+                value = int(value)
+            except (ValueError, TypeError) as e:
+                raise isc.cc.data.DataTypeError(str(value) + " is not an integer")
         if value > sys.maxsize:
             raise isc.cc.data.DataTypeError(str(value) + " is too large an integer")
     elif data_type == "real":

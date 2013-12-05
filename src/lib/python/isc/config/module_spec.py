@@ -343,9 +343,13 @@ def _validate_type(spec, value, errors):
        specification"""
     data_type = spec['item_type']
     if data_type == "integer" and type(value) != int:
-        if errors is not None:
-            errors.append(str(value) + " should be an integer")
-        return False
+        try:
+            v = int(value)
+            return True
+        except (ValueError, TypeError) as e:
+            if errors is not None:
+                errors.append(str(value) + " should be an integer")
+            return False
     elif data_type == "real" and type(value) != float:
         if errors is not None:
             errors.append(str(value) + " should be a real")
