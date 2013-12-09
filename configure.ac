@@ -620,6 +620,7 @@ AC_DEFUN([ACX_CHECK_PROG_NONCACHE], [
     IFS="$IFS_SAVED"
 ])
 
+if test "x$need_botan_conf" = "xyes"; then
 # Botan helper test function
 # Tries to compile a botan program, given the output of the given
 # config tool
@@ -839,6 +840,8 @@ AC_LINK_IFELSE(
 )
 CPPFLAGS=$CPPFLAGS_SAVED
 LIBS=$LIBS_SAVED
+
+fi # if test "x$need_botan_conf" = "xyes"
 
 # Check for MySql.  The path to the mysql_config program is given with
 # the --with-mysql-config (default to /usr/bin/mysql-config).  By default,
@@ -1637,12 +1640,20 @@ Boost:
   BOOST_VERSION:   ${BOOST_VERSION}
   BOOST_INCLUDES:  ${BOOST_INCLUDES}
 
+END
+
+if test "x$need_botan_conf" = "xyes"; then
+    cat >> config.report << END
 Botan:
   BOTAN_VERSION:   ${BOTAN_VERSION}
   BOTAN_INCLUDES:  ${BOTAN_INCLUDES}
   BOTAN_LDFLAGS:   ${BOTAN_LDFLAGS}
   BOTAN_LIBS:      ${BOTAN_LIBS}
 
+END
+fi
+
+cat >> config.report << END
 Log4cplus:
   LOG4CPLUS_VERSION: ${LOG4CPLUS_VERSION}
   LOG4CPLUS_INCLUDES: ${LOG4CPLUS_INCLUDES}

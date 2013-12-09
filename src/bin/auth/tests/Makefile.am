@@ -58,7 +58,9 @@ run_unittests_SOURCES += query_unittest.cc
 run_unittests_SOURCES += test_datasrc_clients_mgr.h test_datasrc_clients_mgr.cc
 run_unittests_SOURCES += datasrc_clients_builder_unittest.cc
 run_unittests_SOURCES += datasrc_clients_mgr_unittest.cc
+if ENABLE_auth
 run_unittests_SOURCES += datasrc_config_unittest.cc
+endif
 run_unittests_SOURCES += run_unittests.cc
 
 nodist_run_unittests_SOURCES = ../auth_messages.h ../auth_messages.cc

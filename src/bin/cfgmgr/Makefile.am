@@ -1,7 +1,18 @@
-SUBDIRS = . plugins local_plugins tests
+if ENABLE_auth
+plugins = plugins
+endif
+
+if ENABLE_cfgmgr
+plugins = plugins
+localplugs = local_plugins
+tests = tests
+dotdir = .
+endif
+SUBDIRS = $(dotdir) $(plugins) $(localplugs) $(tests)
 
 pkglibexecdir = $(libexecdir)/@PACKAGE@
 
+if ENABLE_cfgmgr
 pkglibexec_SCRIPTS = b10-cfgmgr
 
 CLEANFILES = b10-cfgmgr b10-cfgmgr.pyc
@@ -41,3 +52,4 @@ CLEANDIRS = __pycache__
 
 clean-local:
 	rm -rf $(CLEANDIRS)
+endif

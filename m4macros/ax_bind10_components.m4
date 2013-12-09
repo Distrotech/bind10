@@ -3,6 +3,8 @@ dnl
 dnl Select what BIND10 components to build and install.
 dnl
 dnl reallyall includes experimental components
+dnl
+dnl Will set need_botan_conf if any of the selected components requires Botan
 
 dnl
 dnl Helper macro to ensure all --enable-component options behave the same way.
@@ -17,7 +19,7 @@ dnl    AC_SUBST(ENABLE_$1)
 ])
 
 AC_DEFUN([AX_BIND10_COMPONENTS], [
-
+need_botan_conf=no
 dnl Please keep these options to single words or if you must use multiple
 dnl words seperate each one with underscores, not hyphens.
 dns_components="auth libdns dnslibs ddns loadzone xfrin xfrout zonemgr memmgr"
@@ -233,6 +235,12 @@ dnl libdns can be enabled by libdhcp and the resolver
 AX_BIND10_COMPONENT(libdns,[Build and install the DNS API library],[
     selected_components="${selected_components} libdns"
 ])
+
+if test "x$enable_libdns" = "xyes" ; then
+    need_botan_conf=yes
+fi
+
+AM_CONDITIONAL(ENABLE_botan,[test "x$need_botan_conf" = "xyes"])
 
 dnl If no options were given default to "all"
 if test -z "$selected_components" ; then
