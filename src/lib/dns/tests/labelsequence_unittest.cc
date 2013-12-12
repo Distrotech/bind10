@@ -716,6 +716,62 @@ TEST_F(LabelSequenceTest, getHash) {
     hashDistributionCheck(ca_servers);
 }
 
+// A helper function used in the getFullHash test below.
+void
+fullHashDistributionCheck(const char* const* servers, unsigned int seed) {
+    const size_t BUCKETS = 64;  // constant used in the MessageRenderer
+    set<Name> names;
+    vector<size_t> hash_counts(BUCKETS);
+
+    // Store all test names and their super domain names (excluding the
+    // "root" label) in the set, calculates their hash values, and increments
+    // the counter for the corresponding hash "bucket".
+    for (size_t i = 0; servers[i] != NULL; ++i) {
+        const Name name(servers[i]);
+        for (size_t l = 0; l < name.getLabelCount() - 1; ++l) {
+            pair<set<Name>::const_iterator, bool> ret =
+                names.insert(name.split(l));
+            if (ret.second) {
+                hash_counts[LabelSequence((*ret.first)).getFullHash(false, seed)
+                            % BUCKETS]++;
+            }
+        }
+    }
+
+    // See how many conflicts we have in the buckets.  For the testing purpose
+    // we expect there's at most 2 conflicts in each set, which is an
+    // arbitrary choice (it should happen to succeed with the hash function
+    // and data we are using; if it's not the case, maybe with an update to
+    // the hash implementation, we should revise the test).
+    for (size_t i = 0; i < BUCKETS; ++i) {
+        EXPECT_GE(3, hash_counts[i]);
+    }
+}
+
+TEST_F(LabelSequenceTest, getFullHash) {
+    // Trivial case.  The same sequence should have the same hash. 42 is
+    // a seed for this test.
+    EXPECT_EQ(ls1.getFullHash(true, 42), ls1.getFullHash(true, 42));
+
+    // Check the case-insensitive mode behavior. 12712 is a seed for
+    // this test.
+    EXPECT_EQ(ls1.getFullHash(false, 12712), ls5.getFullHash(false, 12712));
+
+    // Case-sensitive mismatched seeds test.
+    EXPECT_NE(ls1.getFullHash(true, 42), ls1.getFullHash(true, 41));
+
+    // Case-insensitive mismatched seeds test.
+    EXPECT_NE(ls1.getFullHash(false, 12712), ls5.getFullHash(false, 12711));
+
+    // Check that the distribution of hash values is "not too bad" (such as
+    // everything has the same hash value due to a stupid bug).  It's
+    // difficult to check such things reliably.  We do some ad hoc tests here.
+    fullHashDistributionCheck(root_servers, 973019);
+    fullHashDistributionCheck(jp_servers, 502212);
+    fullHashDistributionCheck(cn_servers, 778132);
+    fullHashDistributionCheck(ca_servers, 184305);
+}
+
 // test operator<<.  We simply confirm it appends the result of toText().
 TEST_F(LabelSequenceTest, LeftShiftOperator) {
     ostringstream oss;
