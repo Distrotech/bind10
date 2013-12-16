@@ -73,7 +73,6 @@ RRLKey::RRLKey(const IOEndpoint& client_addr, const dns::RRType& qtype,
     }
 }
 
-
 } // namespace detail
 } // namespace rrl
 } // namespace auth
