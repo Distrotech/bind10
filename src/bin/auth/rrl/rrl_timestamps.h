@@ -107,6 +107,8 @@ public:
         return (0);
     }
 private:
+    // Note that bases_ is a boost::array on purpose so that
+    // getBaseByGen() throws if a request is made out of bounds.
     boost::array<std::time_t, BASES_COUNT> bases_;
     size_t current_;
     const BaseChangeCallback callback_;
