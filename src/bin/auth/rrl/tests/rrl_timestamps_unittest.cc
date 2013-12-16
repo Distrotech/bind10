@@ -35,7 +35,7 @@ protected:
 
     size_t callback_param_;     // remember parameter of the latest callback
 
-    typedef RRLTimeStampBases<4, 4096> TestBases; 
+    typedef RRLTimeStampBases<4, 4096> TestBases;
     TestBases ts_bases_;
 
     void callback(size_t gen) { callback_param_ = gen; }
@@ -45,13 +45,15 @@ protected:
 TEST_F(RRLTimestampsTest, deltaTime) {
     // Normal case: now > recorded timestamp
     EXPECT_EQ(10, TestBases::deltaTime(10, 20));
+
     // Same if now == timestamp
     EXPECT_EQ(0, TestBases::deltaTime(10, 10));
 
-    // timestamp is "near future".  diff is considered 0.
+    // timestamp is "near future".  diff should be considered 0.
     EXPECT_EQ(0, TestBases::deltaTime(11, 10));
 
-    // timestamp in "distant future" is considered clock changes.
+    // timestamp in "distant future" (from clock changes). The
+    // difference should be "forever" here.
     EXPECT_EQ(4096, TestBases::deltaTime(16, 10));
 }
 
@@ -66,8 +68,8 @@ TEST_F(RRLTimestampsTest, getCurrentBase) {
     EXPECT_EQ(0, result.second);
     EXPECT_EQ(65536, callback_param_); // callback shouldn't be called
 
-    // If the current base is in "future", the given 'now' is basically
-    // re-interpreted as if it's that future value.
+    // If the current base is in "near-future", the given 'now' is
+    // basically re-interpreted as if it's that future value.
     result = ts_bases_.getCurrentBase(now - 1);
     EXPECT_EQ(100, result.first);
     EXPECT_EQ(0, result.second);
@@ -80,8 +82,8 @@ TEST_F(RRLTimestampsTest, getCurrentBase) {
     EXPECT_EQ(1, result.second);
     EXPECT_EQ(1, callback_param_); // callback should be called for 1st gen
 
-    // If the current base is in "far future", it's assumed to result from
-    // clock change and the base is updated, too.
+    // If the current base is in "far-future", it's assumed to result
+    // from clock change and the base is updated, too.
     now -= 6;
     result = ts_bases_.getCurrentBase(now);
     EXPECT_EQ(now, result.first);
@@ -97,6 +99,7 @@ TEST_F(RRLTimestampsTest, getCurrentBase) {
     EXPECT_EQ(4195, ts_bases_.getBaseByGen(1));
     EXPECT_EQ(4195 - 6, ts_bases_.getBaseByGen(2));
     EXPECT_EQ(4195 - 6 + 4095, ts_bases_.getBaseByGen(3));
+
     // out-of-range generation will result in an exception
     EXPECT_THROW(ts_bases_.getBaseByGen(4), std::out_of_range);
 }
