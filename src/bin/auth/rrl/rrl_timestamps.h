@@ -26,8 +26,10 @@ namespace auth {
 namespace rrl {
 namespace detail {
 
-/// This class maintains a set of reasonably recent value of absolute
-/// timestamps in a form of a ring buffer.
+/// This class maintains a set of timestamp bases in a form of a ring
+/// buffer. A "timestamp base" is a reasonably recent value of an
+/// absolute time that is used as a base time. A "generation ID" is the
+/// index into this ring buffer.
 ///
 /// Template parameter BASES_COUNT is the buffer size.
 /// TIMESTAMP_FOREVER specifies the range of time while a base is considered
@@ -44,6 +46,11 @@ public:
     /// Its parameter is the generation ID of the base to be updated.
     typedef boost::function<void(size_t)> BaseChangeCallback;
 
+    /// \brief Constructor.
+    ///
+    /// \param initial_ts The initial timestamp to use.
+    /// \param callback This callback is invoked when a subsequent
+    /// generation ID is set in the ring buffer to a new base timestamp.
     RRLTimeStampBases(std::time_t initial_ts, BaseChangeCallback callback) :
         current_(0), callback_(callback)
     {
@@ -55,7 +62,7 @@ public:
     /// \brief Returns the timestamp base appropriate for the given time.
     ///
     /// It basically returns the current base timestamp.  But if it's too old
-    /// or if it's in the "distant future" (see deltaTime()), make a new
+    /// or if it's in the "distant future" (see \c deltaTime()), make a new
     /// timestamp base and return it.  In the latter case it calls the callback
     /// given on construction with the generation ID of the base to be updated.
     ///
@@ -79,13 +86,14 @@ public:
         return (std::pair<std::time_t, size_t>(bases_[current_], current_));
     }
 
+    /// \brief Returns the timestamp base for the passed generation ID.
     std::time_t getBaseByGen(size_t gen) const {
         return (bases_.at(gen));
     }
 
-    // Utility for calculating difference between times.  The algorithm is
-    // independent from this class, but refers to its constants, so defined
-    // here as a static member function.
+    // Utility for calculating difference between times.  The algorithm
+    // is independent from this class, but refers to its constants, so
+    // it is defined here as a static member function.
     static int
     deltaTime(std::time_t timestamp, std::time_t now) {
         const int delta = now - timestamp;

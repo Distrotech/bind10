@@ -102,6 +102,7 @@ public:
     /// or not, rather than to get the absolute balance value.
     int getResponseBalance(const RRLRate& rates, int age) const;
 
+    /// \brief Returns the \c RRLKey corresponding to this entry.
     const RRLKey& getKey() const { return (key_); }
 
     /// \brief Return true iff the entry is "free".
