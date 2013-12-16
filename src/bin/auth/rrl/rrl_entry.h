@@ -83,9 +83,9 @@ public:
     void setAge(TimestampBases& bases, std::time_t now) {
         const std::pair<std::time_t, size_t> base_result =
             bases.getCurrentBase(now);
-        const int diff = now - base_result.first;
         timestamp_gen_ = base_result.second;
-        timestamp_ = diff >= 0 ? diff : 0;
+        const int diff = now - base_result.first;
+        timestamp_ = diff > 0 ? diff : 0;
         timestamp_valid_ = TIMESTAMP_VALID;
     }
 
