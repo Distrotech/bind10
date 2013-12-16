@@ -69,7 +69,7 @@ public:
     /// Its template parameters highly depend on the internal constraints of
     /// the RRLEntry class, so it's defined here.
     typedef RRLTimeStampBases<TIMESTAMP_BASES_COUNT, TIMESTAMP_FOREVER>
-    TimestampBases;
+        TimestampBases;
 
     int getAge(const TimestampBases& bases, std::time_t now) const {
         if (!timestamp_valid_) {
