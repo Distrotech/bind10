@@ -66,8 +66,7 @@ public:
     /// timestamp base and return it.  In the latter case it calls the callback
     /// given on construction with the generation ID of the base to be updated.
     ///
-    /// This method returns a pair of the timestamp base and of its generation
-    /// ID.
+    /// \return pair of the timestamp base and of its generation ID.
     std::pair<std::time_t, size_t>
     getCurrentBase(std::time_t now) {
         const int ts = now - bases_[current_];
