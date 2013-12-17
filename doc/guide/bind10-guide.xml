@@ -714,17 +714,19 @@ as a dependency earlier -->
 
         <para>
           When checking out the code from
-          the code version control system, it doesn't include the
+          the version control system, it doesn't include the
           generated configure script, Makefile.in files, nor their
           related build files.
-          They can be created by running <command>autoreconf</command>
-          with the <option>--install</option> switch.
-          This will run <command>autoconf</command>,
-          <command>aclocal</command>,
-          <command>libtoolize</command>,
-          <command>autoheader</command>,
-          <command>automake</command>,
-          and related commands.
+          They can be created by running <command>bootstrap.sh</command>
+          in the top level directory. By default, if the version of
+          Automake on your system supports it, the files generated will use
+          the parallel test harness. This sends the output of all tests to
+          individual log files. If you want to use the older serial test
+          harness which sends all output to your terminal (which may be
+          desirable when doing automated builds so there is only one log
+          file that needs to be examined for failures) you can invoke the
+          <command>bootstrap.sh</command> script with the
+          <option>serial</option> option.
         </para>
 
       </section>
