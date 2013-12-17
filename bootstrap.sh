@@ -32,4 +32,3 @@ esac > m4macros/b10_automake.m4
 echo "Bootstrapping using the ${mode} test harness"
 
 ${AUTORECONF-autoreconf} -fvi
-rm -f m4macros/b10_automake.m4
