@@ -1,3 +1,5 @@
+config.h.in~
+m4macros/b10_automake.m4
 *.gcda
 *.gcno
 *.gcov

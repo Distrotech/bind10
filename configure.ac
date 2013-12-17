@@ -4,12 +4,10 @@
 AC_PREREQ([2.59])
 AC_INIT(bind10, 20130529, bind10-dev@isc.org)
 AC_CONFIG_SRCDIR(README)
-# serial-tests is not available in automake version before 1.13. In
-# automake 1.13 and higher, AM_PROG_INSTALL is undefined, so we'll check
-# that and conditionally use serial-tests.
+m4_include([m4macros/b10_automake.m4])
 AM_INIT_AUTOMAKE(
-	[foreign]
-	m4_ifndef([AM_PROG_INSTALL], [serial-tests])
+        [foreign]
+        m4_ifdef([B10_TEST_HARNESS_AM], B10_TEST_HARNESS_AM)
 )
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])dnl be backward compatible
 AC_CONFIG_HEADERS([config.h])
