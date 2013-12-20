@@ -77,6 +77,24 @@ public:
 // Argument is the same as that for close(2).
 typedef int (*close_t)(int);
 
+/// \short Create a raw socket and bind it.
+///
+/// This is just a bundle of socket() and bind() calls. The sa_family of
+/// bind_addr is used to determine the domain of the socket.
+///
+/// \param port The port to filter on.
+/// \param iface The interface index to filter on.
+/// \param close_fun The function used to close a socket if there's an error
+///     after the creation.
+///
+/// \return The file descriptor of the newly created socket, if everything
+///         goes well. A negative number is returned if an error occurs -
+///         -1 if the socket() call fails or -2 if bind() fails. In case of
+///         error, errno is set (or left intact from socket() or bind()).
+int
+getFilterSock(const unsigned short port, const int iface,
+              const close_t close_fun);
+
 /// \short Create a socket and bind it.
 ///
 /// This is just a bundle of socket() and bind() calls. The sa_family of
@@ -99,6 +117,11 @@ getSock(const int type, struct sockaddr* bind_addr, const socklen_t addr_len,
 // Define some types for functions used to perform socket-related operations.
 // These are typedefed so that alternatives can be passed through to the
 // main functions for testing purposes.
+
+// Type of the function to get a filter raw socket and to pass it as parameter.
+// Arguments are those described above for getFilterSock().
+typedef int (*get_filter_sock_t)(const unsigned short, const int,
+                                 const close_t close_fun);
 
 // Type of the function to get a socket and to pass it as parameter.
 // Arguments are those described above for getSock().
@@ -124,12 +147,11 @@ typedef int (*send_fd_t)(const int, const int);
 /// \param output_fd File number of the stream to which the response is
 ///        written.  The socket is sent as part of a control message associated
 ///        with that stream.
+/// \param get_filter_sock_fun The function that is used to create the
+///        filter sockets.
 /// \param get_sock_fun The function that is used to create the sockets.
-///        This should be left on the default value, the parameter is here
-///        for testing purposes.
 /// \param send_fd_fun The function that is used to send the socket over
-///        a file descriptor. This should be left on the default value, it is
-///        here for testing purposes.
+///        a file descriptor.
 /// \param close_fun The close function used to close sockets, coming from
 ///        unistd.h. It can be overriden in tests.
 ///
@@ -138,7 +160,8 @@ typedef int (*send_fd_t)(const int, const int);
 /// \exception isc::socket_creator::ProtocolError Unrecognised command received
 /// \exception isc::socket_creator::InternalError Other error
 void
-run(const int input_fd, const int output_fd, get_sock_t get_sock_fun,
+run(const int input_fd, const int output_fd,
+    get_filter_sock_t get_filter_sock_fun, get_sock_t get_sock_fun,
     send_fd_t send_fd_fun, close_t close_fun);
 
 }   // namespace socket_creator

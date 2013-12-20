@@ -17,6 +17,8 @@
 #include <util/io/fd.h>
 #include <util/io/sockaddr_util.h>
 
+#include <dhcp/protocol_util.h>
+
 #include <cerrno>
 #include <string.h>
 
@@ -25,9 +27,15 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include <linux/filter.h>
+#include <linux/if_ether.h>
+#include <linux/if_packet.h>
+#include <net/ethernet.h>
+
 using namespace isc::util::io;
 using namespace isc::util::io::internal;
 using namespace isc::socket_creator;
+using namespace isc::dhcp;
 
 namespace {
 
@@ -100,8 +108,55 @@ getErrorCode(const int status) {
     return (error_code);
 }
 
+// Handle the filter request from the client.
+//
+// Reads the filter port and iface required, creates the raw socket and
+// returns it to the client.
+//
+// The arguments passed (and the exceptions thrown) are the same as
+// those for run().
+void
+handleFilterSocketRequest(const int input_fd, const int output_fd,
+                          const get_filter_sock_t get_filter_sock,
+                          const send_fd_t send_fd_fun,
+                          const close_t close_fun)
+{
+    unsigned short port;
+    readMessage(input_fd, &port, sizeof(port));
 
-// Handle the request from the client.
+    int iface;
+    readMessage(input_fd, &iface, sizeof(iface));
+
+    const int result = get_filter_sock(port, iface, close_fun);
+    if (result >= 0) {
+        // Got the socket, send it to the client.
+        writeMessage(output_fd, "S", 1);
+        if (send_fd_fun(output_fd, result) != 0) {
+            // Error.  Close the socket (ignore any error from that operation)
+            // and abort.
+            close_fun(result);
+            isc_throw(InternalError, "Error sending descriptor");
+        }
+
+        // Successfully sent the socket, so free up resources we still hold
+        // for it.
+        if (close_fun(result) == -1) {
+            isc_throw(InternalError, "Error closing socket");
+        }
+    } else {
+        // Error.  Tell the client.
+        char error_message[2];
+        error_message[0] = 'E';
+        error_message[1] = getErrorCode(result);
+        writeMessage(output_fd, error_message, sizeof(error_message));
+
+        // ...and append the reason code to the error message
+        const int error_number = errno;
+        writeMessage(output_fd, &error_number, sizeof(error_number));
+    }
+}
+
+// Handle the socket request from the client.
 //
 // Reads the type and family of socket required, creates the socket and returns
 // it to the client.
@@ -109,9 +164,9 @@ getErrorCode(const int status) {
 // The arguments passed (and the exceptions thrown) are the same as those for
 // run().
 void
-handleRequest(const int input_fd, const int output_fd,
-              const get_sock_t get_sock, const send_fd_t send_fd_fun,
-              const close_t close_fun)
+handleSocketRequest(const int input_fd, const int output_fd,
+                    const get_sock_t get_sock, const send_fd_t send_fd_fun,
+                    const close_t close_fun)
 {
     // Read the message from the client
     char type[2];
@@ -237,6 +292,117 @@ int maybeClose(const int result, const int socket, const close_t close_fun) {
 namespace isc {
 namespace socket_creator {
 
+/// The following structure defines a Berkely Packet Filter program to perform
+/// packet filtering. The program operates on Ethernet packets.  To help with
+/// interpretation of the program, for the types of Ethernet packets we are
+/// interested in, the header layout is:
+///
+///   6 bytes  Destination Ethernet Address
+///   6 bytes  Source Ethernet Address
+///   2 bytes  Ethernet packet type
+///
+///  20 bytes  Fixed part of IP header
+///  variable  Variable part of IP header
+///
+///   2 bytes  UDP Source port
+///   2 bytes  UDP destination port
+///   4 bytes  Rest of UDP header
+///
+/// @todo We may want to extend the filter to receive packets sent
+/// to the particular IP address assigned to the interface or
+/// broadcast address.
+struct sock_filter dhcp_sock_filter [] = {
+    // Make sure this is an IP packet: check the half-word (two bytes)
+    // at offset 12 in the packet (the Ethernet packet type).  If it
+    // is, advance to the next instruction.  If not, advance 8
+    // instructions (which takes execution to the last instruction in
+    // the sequence: "drop it").
+    BPF_STMT(BPF_LD + BPF_H + BPF_ABS, ETHERNET_PACKET_TYPE_OFFSET),
+    BPF_JUMP(BPF_JMP + BPF_JEQ + BPF_K, ETHERTYPE_IP, 0, 8),
+
+    // Make sure it's a UDP packet.  The IP protocol is at offset
+    // 9 in the IP header so, adding the Ethernet packet header size
+    // of 14 bytes gives an absolute byte offset in the packet of 23.
+    BPF_STMT(BPF_LD + BPF_B + BPF_ABS,
+             ETHERNET_HEADER_LEN + IP_PROTO_TYPE_OFFSET),
+    BPF_JUMP(BPF_JMP + BPF_JEQ + BPF_K, IPPROTO_UDP, 0, 6),
+
+    // Make sure this isn't a fragment by checking that the fragment
+    // offset field in the IP header is zero.  This field is the
+    // least-significant 13 bits in the bytes at offsets 6 and 7 in
+    // the IP header, so the half-word at offset 20 (6 + size of
+    // Ethernet header) is loaded and an appropriate mask applied.
+    BPF_STMT(BPF_LD + BPF_H + BPF_ABS, ETHERNET_HEADER_LEN + IP_FLAGS_OFFSET),
+    BPF_JUMP(BPF_JMP + BPF_JSET + BPF_K, 0x1fff, 4, 0),
+
+    // Get the IP header length.  This is achieved by the following
+    // (special) instruction that, given the offset of the start
+    // of the IP header (offset 14) loads the IP header length.
+    BPF_STMT(BPF_LDX + BPF_B + BPF_MSH, ETHERNET_HEADER_LEN),
+
+    // Make sure it's to the right port.  The following instruction
+    // adds the previously extracted IP header length to the given
+    // offset to locate the correct byte.  The given offset of 16
+    // comprises the length of the Ethernet header (14) plus the offset
+    // of the UDP destination port (2) within the UDP header.
+    BPF_STMT(BPF_LD + BPF_H + BPF_IND, ETHERNET_HEADER_LEN + UDP_DEST_PORT),
+    // The following instruction tests against the default DHCP server port,
+    // but the action port is actually set in PktFilterLPF::openSocket().
+    // N.B. The code in that method assumes that this instruction is at
+    // offset 8 in the program.  If this is changed, openSocket() must be
+    // updated.
+    BPF_JUMP(BPF_JMP + BPF_JEQ + BPF_K, DHCP4_SERVER_PORT, 0, 1),
+
+    // If we passed all the tests, ask for the whole packet.
+    BPF_STMT(BPF_RET + BPF_K, (u_int)-1),
+
+    // Otherwise, drop it.
+    BPF_STMT(BPF_RET + BPF_K, 0),
+};
+
+// Get the socket and bind to it.
+int
+getFilterSock(const unsigned short port, const int iface,
+              const close_t close_fun) {
+    const int sock = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    if (sock == -1) {
+        return (-1);
+    }
+
+    // Create socket filter program. This program will only allow incoming UDP
+    // traffic which arrives on the specific (DHCP) port). It will also filter
+    // out all fragmented packets.
+    struct sock_fprog filter_program;
+    memset(&filter_program, 0, sizeof(filter_program));
+
+    filter_program.filter = dhcp_sock_filter;
+    filter_program.len = sizeof(dhcp_sock_filter) / sizeof(struct sock_filter);
+    // Override the default port value.
+    dhcp_sock_filter[8].k = port;
+    // Apply the filter.
+    if (setsockopt(sock, SOL_SOCKET, SO_ATTACH_FILTER, &filter_program,
+                   sizeof(filter_program)) < 0) {
+        // This is part of the binding process, so it's a bind error
+        return (maybeClose(-2, sock, close_fun));
+    }
+
+    struct sockaddr_ll sa;
+    memset(&sa, 0, sizeof(sockaddr_ll));
+    sa.sll_family = AF_PACKET;
+    sa.sll_ifindex = iface;
+
+    // For raw sockets we construct IP headers on our own, so we don't bind
+    // socket to IP address but to the interface. We will later use the
+    // Linux Packet Filtering to filter out these packets that we are
+    // interested in.
+    if (bind(sock, reinterpret_cast<const struct sockaddr*>(&sa),
+             sizeof(sa)) < 0) {
+        return (maybeClose(-2, sock, close_fun));
+    }
+
+    return (sock);
+}
+
 // Get the socket and bind to it.
 int
 getSock(const int type, struct sockaddr* bind_addr, const socklen_t addr_len,
@@ -267,16 +433,22 @@ getSock(const int type, struct sockaddr* bind_addr, const socklen_t addr_len,
 
 // Main run loop.
 void
-run(const int input_fd, const int output_fd, get_sock_t get_sock,
+run(const int input_fd, const int output_fd,
+    get_filter_sock_t get_filter_sock, get_sock_t get_sock,
     send_fd_t send_fd_fun, close_t close_fun)
 {
     for (;;) {
         char command;
         readMessage(input_fd, &command, sizeof(command));
         switch (command) {
+            case 'F':   // The "get filter socket" command
+                handleFilterSocketRequest(input_fd, output_fd, get_filter_sock,
+                                          send_fd_fun, close_fun);
+                break;
+
             case 'S':   // The "get socket" command
-                handleRequest(input_fd, output_fd, get_sock,
-                              send_fd_fun, close_fun);
+                handleSocketRequest(input_fd, output_fd, get_sock,
+                                    send_fd_fun, close_fun);
                 break;
 
             case 'T':   // The "terminate" command

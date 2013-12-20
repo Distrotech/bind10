@@ -344,10 +344,10 @@ void runTest(const char* input_data, const size_t input_size,
 
     // Run the body
     if (should_succeed) {
-        EXPECT_NO_THROW(run(input_fd, output_fd, getSockDummy, send_fd,
+        EXPECT_NO_THROW(run(input_fd, output_fd, NULL, getSockDummy, send_fd,
                             test_close));
     } else {
-        EXPECT_THROW(run(input_fd, output_fd, getSockDummy, send_fd,
+        EXPECT_THROW(run(input_fd, output_fd, NULL, getSockDummy, send_fd,
                          test_close), isc::socket_creator::SocketCreatorError);
     }
 
