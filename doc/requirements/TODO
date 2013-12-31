@@ -11,3 +11,8 @@
 - add unique test numbers to lettuce Scenario descriptive titles
 
 - script to parse lettuce output to generate report
+
+- how to identify RFC entry like
+1. All RRs in the file should have the same class.
+in RFC1035:5.2
+(it is the not the first paragraph)?
