@@ -185,8 +185,8 @@
 3000670	The DS Algorithm field is an unsigned decimal integer or algorithm mnemonic.	TODO: complete this, see A.1	RFC4034:5.3	validator dnssec-server	-	-	-
 3000680	The DS digest type field is unsigned decimal number.	-	RFC4034:5.3	validator dnssec-server	-	-	-
 3000690	The DS digest field is represented in case-insensitive hexadecimal (and whitespace is allowed).	-	RFC4034:5.3	validator dnssec-server	-	-	-
-3000700	Canonical name ordering is required for NSEC chain. Uppercase US-ASCII latters are treated as if they are lowercase.	-	 RFC4034:6	server	-	-	-
-3000710	In resource record sorting, uppercase US-ASCII letters are treated as if they are lowercase.	-	RFC4034:6.1 RFC4034:6.2	server	-	-	-
+3000700	Canonical name ordering is required for NSEC chain. Uppercase US-ASCII latters are treated as if they are lowercase.	-	 RFC4034:6	dnssec-server	-	-	-
+3000710	In resource record sorting, uppercase US-ASCII letters are treated as if they are lowercase.	-	RFC4034:6.1 RFC4034:6.2	dnssec-server	-	-	-
 3000720	 The US-ASCII DNS names in the RDATA are made lowercase for A6, AFSDB, CNAME, DNAME, HINFO, HINFO, KX, MB, MD, MF, MG, MINFO, MR, MX, NAPTR, NS, NSEC, NXT, PTR, PX, RP, RRSIG, RT, SIG, SOA, and SRV.	-	RFC4034:6.2	validator dnssec-server	-	-	-
 3000730	RRset cannot contain multiple records with same name, class, type and RDATA. It is a protocol error. It may remove the duplicates (and leave one).	 TODO: see RFC2181	RFC4034:6.3	validator dnssec-server	-	-	-
 3000740	Two different DNSKEY records may have same name, algorithm and key tag. So do not use key tag to select DNSKEY record.	-	RFC4034:8, RFC4034:B	validator dnssec-server	-	-	-
