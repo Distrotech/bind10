@@ -5,7 +5,7 @@
 1001000	Recommend rejecting obsolete MD RRs	-	RFC1035:3.3.4/5	master-file	-	-	-
 1001010	Optionally convert MD RRs to MX with preference 0	-	RFC1035:3.3.4/5	master-file	-	-	-
 1001020	Recommend rejecting obsolete MF RRs	-	RFC1035:3.3.5/5	master-file	-	-	-
-1001030	Optionally convert MF RRs to MX with preference 10	BUG: The RFC has an content mistake here.	RFC1035:3.3.5/5	master-file	-	-	-
+1001030	Optionally convert MF RRs to MX with preference 10	BUG: The RFC has a content mistake here.	RFC1035:3.3.5/5	master-file	-	-	-
 1001040	NULL RRs are not allowed in master files.	-	RFC1035:3.3.10/3	master-file	-	-	-
 1001050	WKS RR ports and protocols may be defined using decimal numbers or mnemonics as defined in RFC1010.	-	RFC1035:3.4.2/6,RFC1035:3.4.2/10	master-file	-	-	-
 1001060	Multiple values for a type are defined using multiple resource records.	-	RFC1035:3.6.5	master-file	-		-
@@ -34,7 +34,7 @@
 10011270	The RR contents contain type and RDATA fields; the RDATA is appropriate to the type and optional class.	-	RFC1035:5.1/14	master-file	-		-
 10011280	The TTL field is a decimal integer.	TODO: this changed	RFC1035:5.1/14	master-file	-	-	-
 10011300	Quoting conventions may be used for domain names.	-	RFC1035:5.1/15	master-file	-		-
-10011310	A domain name without an ending dot '.' is relative and has the origin appended to it; the origin may be from a $ORIGIN or $INCLUDE control entry, or defined by an master file loading routine argument.	-	RFC1035:5.1/15	master-file	-		-
+10011310	A domain name without an ending dot '.' is relative and has the origin appended to it; the origin may be from a $ORIGIN or $INCLUDE control entry, or defined by a master file loading routine argument.	-	RFC1035:5.1/15	master-file	-		-
 10011320	If there is no origin (to use for a relative name), it is an error.	-	RFC1035:5.1/15	master-file	-		-
 10011330	If there is no origin (to use for a relative name), it is an issue that is usually interpreted as an error; if treated as a warning, the domain name is considered absolute.	TODO: conflicts with 10011320	?	master-file	-	-	-
 10011340	Quoted strings (starting and ending with '"' characters) may contain any character including spaces, except a quote; a quote '"' may be used with a '\"'.	-	RFC1035:5.1/16	master-file	-		-
@@ -111,7 +111,7 @@
 2000460	The server probably should not send an IXFR if the total length of an IXFR response would be greater than the length of an AXFR. 	Per the purpose of IXFR, but this is not a stated rule. Anyways this can't happen if server already removed it per RFC1995:5/2/a. TODO: what does BIND 9 do?	RFC1995:5/2/b	ixfr	-	-	-
 2000470	The server may get rid of versions of the zone older than the SOA expire time. 	This requirement is optional.	RFC1995:5/3	ixfr-server	-	-	-
 2000480	The server may condense multiple difference sequences into a single difference sequence by dropping intermediate versions. This requirement is optional.	-	RFC1995:6/1,RFC1995:6/4,RFC1995:7/7	ixfr-server	-	-	-
-2000490	If a server receives a request containing an SOA for which it holds no difference information, it should attempt to perform an full zone transfer (i.e. return the entire zone in a packet if possible, or return a single SOA to indicate that an AXFR over TCP should be tried (as in requirement 2/6/e)).	-	RFC1995:6/5	ixfr	-	-	-
+2000490	If a server receives a request containing an SOA for which it holds no difference information, it should attempt to perform a full zone transfer (i.e. return the entire zone in a packet if possible, or return a single SOA to indicate that an AXFR over TCP should be tried (as in requirement 2/6/e)).	-	RFC1995:6/5	ixfr	-	-	-
 2000500	When the SOA refresh time is reached, the client sends an IXFR request to the server.	-	RFC1995:2/1	ixfr-client	-	-	-
 2000510	When a NOTIFY is received by a client, it sends an IXFR request to the server.	-	RFC1995:2/1	ixfr-client	-	-	-
 2000520	If an IXFR packet is received that includes one or more deletions of records that are not in the zone, the entire IXFR update should be rejected. 	Such a situation would imply that the version of the zone in the IXFR client is not the same as the same version of that zone in the IXFR server. As a result, applying the IXFR could corrupt the zone further.	RFC1995	ixfr	-	-	-
