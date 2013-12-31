@@ -104,7 +104,7 @@
 2000390	If an RR is part of an RRset, only the RR that changed is included in the difference sequence (not the entire RRset).	-	RFC1995:4/6	ixfr	-	-	-
 2000400	When processing difference sequences, the client must remove the RRs to be deleted before adding the new RRs.	-	RFC1995:4/4	ixfr-client	-	-	-
 2000410	Difference sequences in the response must be ordered in order of oldest first to newest/current last.	-	RFC1995:4/5	ixfr	-	-	-
-2000420	Difference sequences in the response must be ordered in order of ascending SOA.	-	RFC1995:4/5	ixfr	-	-	-
+2000420	Difference sequences in the response must be ordered in order of ascending SOA.	TODO: it is not worded that way	RFC1995:4/5	ixfr	-	-	-
 2000430	The application of the IXFR received by the client should be atomic. Either all differences specified in an IXFR must be applied to the zone or none of them must be applied.	-	RFC1995:4/7	ixfr	-	-	-
 2000440	The server may remove previous zone versions at any time.	-	RFC1995:5/1	ixfr-server	-	-	-
 2000450	The server should remove old versions of the zone if the total length of an IXFR response (from that version of the zone) would be greater than the length of an AXFR.	TODO: what does BIND 9 do?	RFC1995:5/2/a	ixfr	-	-	-
@@ -112,8 +112,8 @@
 2000470	The server may get rid of versions of the zone older than the SOA expire time. 	This requirement is optional.	RFC1995:5/3	ixfr-server	-	-	-
 2000480	The server may condense multiple difference sequences into a single difference sequence by dropping intermediate versions. This requirement is optional.	-	RFC1995:6/1,RFC1995:6/4,RFC1995:7/7	ixfr-server	-	-	-
 2000490	If a server receives a request containing an SOA for which it holds no difference information, it should attempt to perform a full zone transfer (i.e. return the entire zone in a packet if possible, or return a single SOA to indicate that an AXFR over TCP should be tried (as in requirement 2/6/e)).	-	RFC1995:6/5	ixfr	-	-	-
-2000500	When the SOA refresh time is reached, the client sends an IXFR request to the server.	-	RFC1995:2/1	ixfr-client	-	-	-
-2000510	When a NOTIFY is received by a client, it sends an IXFR request to the server.	-	RFC1995:2/1	ixfr-client	-	-	-
+2000500	When the SOA refresh time is reached, the client sends an IXFR request to the server.	IXFR is optional	RFC1995:2/1	ixfr-client	-	-	-
+2000510	When a NOTIFY is received by a client, it sends an IXFR request to the server.	IXFR is optional	RFC1995:2/1	ixfr-client	-	-	-
 2000520	If an IXFR packet is received that includes one or more deletions of records that are not in the zone, the entire IXFR update should be rejected. 	Such a situation would imply that the version of the zone in the IXFR client is not the same as the same version of that zone in the IXFR server. As a result, applying the IXFR could corrupt the zone further.	RFC1995	ixfr	-	-	-
 2000530	 An incremental difference response indicates a record is removed by listing the previous record in the previous section (started with older SOA) and not listing it in the current section (started with current SOA).	-	RFC1995:7/6	ixfr	-	-	-
 3000010	 Enable/disable validation per view.	-	-	validator	bind9/bin/named/server.c	-	-
