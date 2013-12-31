@@ -138,56 +138,56 @@
 3000200	 Don't compress names nor convert rdataset to wire format.	-	-	validator	bind9/lib/dns/ncache.c	-	-
 3000210	-	-	-	?	 bind9/lib/dns/ncache.c	-	-
 3000220	DLV RRset algorithm must be SHA256 or SHA1 (or GOST if built with GOST).	-	-	validator	 bind9/lib/dns/validator.c	-	-
-3000230	 If a DNSKEY is a zone key (flag bit 7 is 1), the DNSKEY owner name must be same as the zone name.	-	RFC4034:2.1.1	validator or server	-	-	-
-3000240	If a DNSKEY is not a zone key (i.e. flag bit 7 is 0), the DNSKEY must not be used to verify a RRSIG and must not be used for validation.	-	RFC4034:2.1.1, RFC4034:5.2	validator or server	-	-	-
-3000250	 DNSKEY Flag bits 0-6 and 8-14 must be ignored.	-	RFC4034:2.1.1	validator or server	-	-	-
-3000260	When creating DNSKEY, flag bits 0-6 and 8-14 must be set to zero.	-	RFC4034:2.1.1	validator or server	-	-	-
-3000270	DNSKEY is invalid if the protocol is not 3.	-	RFC4034:2.1.2	validator or server	-	-	-
-3000280	The DNSSEC flag field can only be 0, 256, or 257.	-	RFC4034:2.2	validator or server	-	-	-
-3000290	The DNSKEY Algorithm field is an unsigned decimal integer or algorithm mnemonic.	TODO: complete this, see A.1	RFC4034:2.2	validator or server	-	-	-
-3000300	DNSKEY Public key must be in Base64 (and whitespace allowed).	-	RFC4034:2.2	validator or server	-	-	-
-3000310	RRSIG and NSEC are the only allowed RR for a name that has a CNAME. Supercedes:RFC1034.	TODO: updated in RFC... for NSEC3 too.	RFC4034:3, RFC4034:4	validator or server	-	-	-
-3000320	RRSIG class must be same as the class for the RRset it is the signature for.	-	RFC4034:3, RFC4034:3.1.8.1	validator or server	-	-	-
-3000330	RRSIG TTL must be same as the TTL for the RRset it is the signature for. If the RRset has different TTLs, then there will be individual RRSIG RRs for each different TTL value.	TODO: confirm this?	RFC4034:3	validator or server	-	-	-
+3000230	 If a DNSKEY is a zone key (flag bit 7 is 1), the DNSKEY owner name must be same as the zone name.	-	RFC4034:2.1.1	validator dnssec-server	-	-	-
+3000240	If a DNSKEY is not a zone key (i.e. flag bit 7 is 0), the DNSKEY must not be used to verify a RRSIG and must not be used for validation.	-	RFC4034:2.1.1, RFC4034:5.2	validator dnssec-server	-	-	-
+3000250	 DNSKEY Flag bits 0-6 and 8-14 must be ignored.	-	RFC4034:2.1.1	validator dnssec-server	-	-	-
+3000260	When creating DNSKEY, flag bits 0-6 and 8-14 must be set to zero.	-	RFC4034:2.1.1	validator dnssec-server	-	-	-
+3000270	DNSKEY is invalid if the protocol is not 3.	-	RFC4034:2.1.2	validator dnssec-server	-	-	-
+3000280	The DNSSEC flag field can only be 0, 256, or 257.	-	RFC4034:2.2	validator dnssec-server	-	-	-
+3000290	The DNSKEY Algorithm field is an unsigned decimal integer or algorithm mnemonic.	TODO: complete this, see A.1	RFC4034:2.2	validator dnssec-server	-	-	-
+3000300	DNSKEY Public key must be in Base64 (and whitespace allowed).	-	RFC4034:2.2	validator dnssec-server	-	-	-
+3000310	RRSIG and NSEC are the only allowed RR for a name that has a CNAME. Supercedes:RFC1034.	TODO: updated in RFC... for NSEC3 too.	RFC4034:3, RFC4034:4	validator dnssec-server	-	-	-
+3000320	RRSIG class must be same as the class for the RRset it is the signature for.	-	RFC4034:3, RFC4034:3.1.8.1	validator dnssec-server	-	-	-
+3000330	RRSIG TTL must be same as the TTL for the RRset it is the signature for. If the RRset has different TTLs, then there will be individual RRSIG RRs for each different TTL value.	TODO: confirm this?	RFC4034:3	validator dnssec-server	-	-	-
 3000340	The RRSIG labels field must not count wildcard (*) or root (.) label.	-	 RFC4034:3.1.3	signer	-	-	-
-3000350	A wildcard label (*) is included in the owner name of the corresponding RRSIG.	-	 RFC4034:3.1.3, RFC4034:3.1.8.1	validator or server or signer	-	-	-
+3000350	A wildcard label (*) is included in the owner name of the corresponding RRSIG.	-	 RFC4034:3.1.3, RFC4034:3.1.8.1	validator dnssec-server or signer	-	-	-
 3000360	RRSIG must not be used for authentication before the RRSIG inception.	-	 RFC4034:3.1.5	validator	-	-	-
 3000370	RRSIG must not be used for authentication after the RRSIG expiration.	-	 RFC4034:3.1.5	validator	-	-	-
 3000380	 RRSIG inception/expiration comparisons must use RFC1982 serial number arithmetic.	TODO	 RFC4034:3.1.5	validator	-	-	-
 3000390	RRSIG "signer's name" field must contain the name of the zone covered by the signature.	-	 RFC4034:3.1.7	signer AND validator	-	-	-
 3000400	Do not use DNS name compression on RRSIG signer's name field when transmitting.	TODO: why? Should this be checked on validator side too?	RFC4034:3.1.7	auth	-	-	-
-3000410	RRSIG owner name is the same as the owner name of the RRset it covers.	-	RFC4034:3.1.8.1	validator or server	-	-	-
-3000420	All the RR types in the RRset must be listed in corresponding RRSIGs's type covered field.	-	RFC4034:3.1.8.1	validator or server	-	-	-
-3000430	DNS names in each RR RDATA must be in canonical form.	TODO: why?	RFC4034:3.1.8.1	validator or server	-	-	-
-3000440	Each TTL in the covered RRset is checked to be the same as the RRSIG's original TTL field.	-	RFC4034:3.1.8.1	validator or server	-	-	-
-3000450	In a signed zone, the RRset must be sorted in canonical order.	-	RFC4034:3.1.8.1	validator or server	-	-	-
-3000460	The RRSIG type covered field is a RR Type or a TYPEnumber representation (see RFC3597:5).	-	RFC4034:3.2	validator or server	-	-	-
-3000470	The RRSIG Algorithm field is an unsigned decimal integer or algorithm mnemonic.	TODO: complete this, see A.1	RFC4034:3.2	validator or server	-	-	-
-3000480	The RRSIG labels field is unsigned decimal number.	-	RFC4034:3.2	validator or server	-	-	-
-3000490	The RRSIG Original TTL field is unsigned decimal number.	-	RFC4034:3.2	validator or server	-	-	-
-3000500	The representation of the RRSIG expiration or inception field is either a 14 digit YYYYMMDDHHmmSS format or unsigned decimal integer of 1 to 10 digits.	-	RFC4034:3.2	validator or server	-	-	-
-3000510	The RRSIG key tag field is unsigned decimal number.	-	RFC4034:3.2	validator or server	-	-	-
-3000520	RRSIG signature field must be in Base64 (and whitespace allowed).	-	RFC4034:3.2	validator or server	-	-	-
-3000530	Every authoritative name (so not glue) in a zone must be part of the NSEC chain. Or in other words, if zone only contains glue records, then don't include any NSEC.	-	RFC4034:4, RFC4034:4.1.1, RFC4034:4.1.2	validator or server	-	-	-
+3000410	RRSIG owner name is the same as the owner name of the RRset it covers.	-	RFC4034:3.1.8.1	validator dnssec-server	-	-	-
+3000420	All the RR types in the RRset must be listed in corresponding RRSIGs's type covered field.	-	RFC4034:3.1.8.1	validator dnssec-server	-	-	-
+3000430	DNS names in each RR RDATA must be in canonical form.	TODO: why?	RFC4034:3.1.8.1	validator dnssec-server	-	-	-
+3000440	Each TTL in the covered RRset is checked to be the same as the RRSIG's original TTL field.	-	RFC4034:3.1.8.1	validator dnssec-server	-	-	-
+3000450	In a signed zone, the RRset must be sorted in canonical order.	-	RFC4034:3.1.8.1	validator dnssec-server	-	-	-
+3000460	The RRSIG type covered field is a RR Type or a TYPEnumber representation (see RFC3597:5).	-	RFC4034:3.2	validator dnssec-server	-	-	-
+3000470	The RRSIG Algorithm field is an unsigned decimal integer or algorithm mnemonic.	TODO: complete this, see A.1	RFC4034:3.2	validator dnssec-server	-	-	-
+3000480	The RRSIG labels field is unsigned decimal number.	-	RFC4034:3.2	validator dnssec-server	-	-	-
+3000490	The RRSIG Original TTL field is unsigned decimal number.	-	RFC4034:3.2	validator dnssec-server	-	-	-
+3000500	The representation of the RRSIG expiration or inception field is either a 14 digit YYYYMMDDHHmmSS format or unsigned decimal integer of 1 to 10 digits.	-	RFC4034:3.2	validator dnssec-server	-	-	-
+3000510	The RRSIG key tag field is unsigned decimal number.	-	RFC4034:3.2	validator dnssec-server	-	-	-
+3000520	RRSIG signature field must be in Base64 (and whitespace allowed).	-	RFC4034:3.2	validator dnssec-server	-	-	-
+3000530	Every authoritative name (so not glue) in a zone must be part of the NSEC chain. Or in other words, if zone only contains glue records, then don't include any NSEC.	-	RFC4034:4, RFC4034:4.1.1, RFC4034:4.1.2	validator dnssec-server	-	-	-
 3000540	NSEC TTL should be the same as the SOA minimum TTL to help negative caching.	-	 RFC4034:4	signer	-	-	-
-3000550	Do not use DNS name compression on NSEC next Domain name field when transmitting.	TODO: why? Should this be checked on validator side too?	RFC4034:4.1.1	validator or server	-	-	-
-3000560	Do not list glue records or other non-authoritative owner names in the NSEC Next Domain name unless an authoritative owner name is at same name.	TODO: What is an example of a non-authoritative record in zone that is not a glue record?	RFC4034:4.1.1	validator or server	-	-	-
-3000570	NSEC Type Bit Maps field that represent pseudo-types must be clear.	TODO: what is a pseudo-type?	RFC4034:4.1.2	validator or server	-	-	-
+3000550	Do not use DNS name compression on NSEC next Domain name field when transmitting.	TODO: why? Should this be checked on validator side too?	RFC4034:4.1.1	validator dnssec-server	-	-	-
+3000560	Do not list glue records or other non-authoritative owner names in the NSEC Next Domain name unless an authoritative owner name is at same name.	TODO: What is an example of a non-authoritative record in zone that is not a glue record?	RFC4034:4.1.1	validator dnssec-server	-	-	-
+3000570	NSEC Type Bit Maps field that represent pseudo-types must be clear.	TODO: what is a pseudo-type?	RFC4034:4.1.2	validator dnssec-server	-	-	-
 3000580	Pseudo-types must be ignored.	TODO: what does this mean in context of NSEC? TODO: what is a pseudo-type?	RFC4034:4.1.2	validator	-	-	-
-3000590	NSEC type bit map blocks must not be included when no types present. -OR does it mean- NSEC should not exist if no types present.	TODO: what does this mean?	RFC4034:4.1.2	validator or server	-	-	-
-3000600	NSEC type bit map must omit any trailing zero octets. If missing, then thet are interpreted as zero octets.	TODO: example?	RFC4034:4.1.2	validator or server	-	-	-
-3000610	-	 TODO: ``Bits corresponding to the delegation NS RRset and the RR types for which the parent zone has authoritative data MUST be set; bits corresponding to any non-NS RRset for which the parent is not authoritative MUST be clear.'' TODO: explain and example?	RFC4034:4.1.2	validator or server	-	-	-
-3000620	The NSEC Type Bits Maps field is represented by a RR Type or a TYPEnumber representation (see RFC3597:5).	-	RFC4034:4.2	validator or server	-	-	-
-3000630	DS record is authoritative in the parent.	-	RFC4034:5	validator or server	-	-	-
-3000640	The only digest algorithm for DS is SHA-1.	TODO: what updates this?	RFC4034:5.1.4	validator or server	-	-	-
-3000650	A DS must not be used for validation, if it refers to a DNSKEY that does not have Flags bit 7 (zone key) set.	-	RFC4034:5.2	validator or server	-	-	-
-3000660	The DS key tag field is unsigned decimal number.	-	RFC4034:5.3	validator or server	-	-	-
-3000670	The DS Algorithm field is an unsigned decimal integer or algorithm mnemonic.	TODO: complete this, see A.1	RFC4034:5.3	validator or server	-	-	-
-3000680	The DS digest type field is unsigned decimal number.	-	RFC4034:5.3	validator or server	-	-	-
-3000690	The DS digest field is represented in case-insensitive hexadecimal (and whitespace is allowed).	-	RFC4034:5.3	validator or server	-	-	-
+3000590	NSEC type bit map blocks must not be included when no types present. -OR does it mean- NSEC should not exist if no types present.	TODO: what does this mean?	RFC4034:4.1.2	validator dnssec-server	-	-	-
+3000600	NSEC type bit map must omit any trailing zero octets. If missing, then thet are interpreted as zero octets.	TODO: example?	RFC4034:4.1.2	validator dnssec-server	-	-	-
+3000610	-	 TODO: ``Bits corresponding to the delegation NS RRset and the RR types for which the parent zone has authoritative data MUST be set; bits corresponding to any non-NS RRset for which the parent is not authoritative MUST be clear.'' TODO: explain and example?	RFC4034:4.1.2	validator dnssec-server	-	-	-
+3000620	The NSEC Type Bits Maps field is represented by a RR Type or a TYPEnumber representation (see RFC3597:5).	-	RFC4034:4.2	validator dnssec-server	-	-	-
+3000630	DS record is authoritative in the parent.	-	RFC4034:5	validator dnssec-server	-	-	-
+3000640	The only digest algorithm for DS is SHA-1.	TODO: what updates this?	RFC4034:5.1.4	validator dnssec-server	-	-	-
+3000650	A DS must not be used for validation, if it refers to a DNSKEY that does not have Flags bit 7 (zone key) set.	-	RFC4034:5.2	validator dnssec-server	-	-	-
+3000660	The DS key tag field is unsigned decimal number.	-	RFC4034:5.3	validator dnssec-server	-	-	-
+3000670	The DS Algorithm field is an unsigned decimal integer or algorithm mnemonic.	TODO: complete this, see A.1	RFC4034:5.3	validator dnssec-server	-	-	-
+3000680	The DS digest type field is unsigned decimal number.	-	RFC4034:5.3	validator dnssec-server	-	-	-
+3000690	The DS digest field is represented in case-insensitive hexadecimal (and whitespace is allowed).	-	RFC4034:5.3	validator dnssec-server	-	-	-
 3000700	Canonical name ordering is required for NSEC chain. Uppercase US-ASCII latters are treated as if they are lowercase.	-	 RFC4034:6	server	-	-	-
 3000710	In resource record sorting, uppercase US-ASCII letters are treated as if they are lowercase.	-	RFC4034:6.1 RFC4034:6.2	server	-	-	-
-3000720	 The US-ASCII DNS names in the RDATA are made lowercase for A6, AFSDB, CNAME, DNAME, HINFO, HINFO, KX, MB, MD, MF, MG, MINFO, MR, MX, NAPTR, NS, NSEC, NXT, PTR, PX, RP, RRSIG, RT, SIG, SOA, and SRV.	-	RFC4034:6.2	validator or server	-	-	-
-3000730	RRset cannot contain multiple records with same name, class, type and RDATA. It is a protocol error. It may remove the duplicates (and leave one).	 TODO: see RFC2181	RFC4034:6.3	validator or server	-	-	-
-3000740	Two different DNSKEY records may have same name, algorithm and key tag. So do not use key tag to select DNSKEY record.	-	RFC4034:8, RFC4034:B	validator or server	-	-	-
-3000750	Server must implement all mandatory algorithms.	TODO: what are they?	RFC4034:A	validator or server	-	-	-
+3000720	 The US-ASCII DNS names in the RDATA are made lowercase for A6, AFSDB, CNAME, DNAME, HINFO, HINFO, KX, MB, MD, MF, MG, MINFO, MR, MX, NAPTR, NS, NSEC, NXT, PTR, PX, RP, RRSIG, RT, SIG, SOA, and SRV.	-	RFC4034:6.2	validator dnssec-server	-	-	-
+3000730	RRset cannot contain multiple records with same name, class, type and RDATA. It is a protocol error. It may remove the duplicates (and leave one).	 TODO: see RFC2181	RFC4034:6.3	validator dnssec-server	-	-	-
+3000740	Two different DNSKEY records may have same name, algorithm and key tag. So do not use key tag to select DNSKEY record.	-	RFC4034:8, RFC4034:B	validator dnssec-server	-	-	-
+3000750	Server must implement all mandatory algorithms.	TODO: what are they?	RFC4034:A	validator dnssec-server	-	-	-
