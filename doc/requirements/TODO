@@ -1,0 +1,13 @@
+
+- get ixfr and ddns details from wiki and provide list of problems
+  with those
+
+- create script to generate HTML output of specifications
+
+- script to verify that ID numbers are not reused.
+- script verify that entries are sane (not too long, correct amount of
+  fields, etc)
+
+- add unique test numbers to lettuce Scenario descriptive titles
+
+- script to parse lettuce output to generate report

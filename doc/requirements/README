@@ -1,0 +1,101 @@
+Requirements
+============
+
+This directory contains compliance and conformance requirements,
+based on protocol specifications (such as RFCs) and real-world
+code implementations. These documented requirements are written
+and stored in a consistent and organized structured data so they
+may be reused or converted for other needs easily, such as:
+
+* Checklists for validating software capabilities/features
+* Checklists for identifying software development needs
+* Feature statements or descriptions for reuse for testing definitions
+  and/or output
+* Generating documentation
+* Generating cross-references
+
+Customers and end-users may use the generated reports to see how
+well our software conforms to known specifications.
+
+Requirements Document Contents
+------------------------------
+
+Each item in the requirements document is a single explanation or
+short statement. The meta data to help attribute and define it
+include:
+
+ID -- unique identifier for the specific item. This is not an RFC
+reference since one specific statement may be defined in multiple
+official protocol documents, for example. Test cases will reference
+these IDs.
+
+description -- a short clearly understandable statement describing
+the feature or behavior. This is usually a single complete sentence,
+but may be multiple sentences. The maximum is around 25 words and
+a common length is around ten words. If it takes a longer statement
+to describe it or the requirement cannot be easily defined in one
+succinct sentence, then consider splitting it up into multiple
+requirements.
+
+notes -- optional extra notes or explanation. For example, this
+may identify where some specifications are unclear or wrong.
+
+attribution -- the source of the requirement, e.g. a reference to
+an RFC or other official specifications document. This would be
+precise for the section, sub-section, paragraph number, etc. There
+may be multiple references for the same item. An example format is:
+RFC1035:3.2.1/2 for the RFC number, section and sub-sections identified
+in that document, and then a optional precise sentence or paragraph
+counter that is not enumerated in the document.
+
+The above fields will typically be included in every requirements
+document, although only "ID" and "description" are mandatory. Other
+information that may be useful is:
+
+context tags -- a keyword or few keywords to describe use at a high
+level, such as validator, signer, or authoritative (server), etc.
+
+source-code -- point to the source code implementation of this,
+such as a specific BIND 9 or other open source implementation's
+source file. This is useful if no outside official specification
+documents this behavior.
+
+dependency -- list of the IDs of pre-requisite requirements.
+
+test -- list of tests for this specified item. This may define:
+the type (e.g. Gtest, Lettuce etc.), source filename of the test
+code if applicable, and the specific name of the test. There may
+be multiple tests for a single item. This would be used to generate
+a report if the specifications are covered by tests and if they
+pass or not. It will also be useful to know if a test disappears.
+This field likely will not be used.
+
+Note that the document as currently organized does not include
+lengthy or multi-step higher level processes or use cases.
+Nevertheless, multiple single items could be referenced and ordered
+to define use case scenarios.
+
+Requirements Document Format
+----------------------------
+
+The requirements document is created as a tab-delimited spreadsheet
+with a single line per requirement: this makesit easier to organize
+and allows the sorting the requirements as desired.  Storing the
+document as as a text file with tab-delimited fields allows it to
+be maintained directly in the source code repository and differences
+between versions easily seen using standard tools.
+
+The per-entry format is:
+
+ID     description     notes   attribution     context-tags    source-code    dependency      test
+
+Lines beginning with a pound sign (#) will be ignored.
+
+Requirements Document Revision and Approval
+-------------------------------------------
+
+All requirements documents must be reviewed before use.  Prior to
+adding any new feature or changing behavior of software, the
+appropriate requirements document must be updated. The revision
+should be reviewed before being used as the basis of implementation.
+Even minor updates to requirement entries should be reviewed.
