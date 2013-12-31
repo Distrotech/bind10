@@ -18,30 +18,30 @@
 10011130	An $INCLUDE control entry definition line may have a comment.	-	RFC1035:5.1/5,RFC1035:5.1/9	master-file	-		-
 10011140	An $INCLUDE control entry definition line may optionally define the relative domain origin with an optional second argument.	-	RFC1035:5.1/5,RFC1035:5.1/9	master-file	-		-
 10011150	Blank lines are allowed anywhere.	-	RFC1035:5.1/8	master-file	-		-
-10011160	The $ORIGIN control entry sets the current origin for relative domain names to the value set in its first (and only) argument.	-	RFC1035:5.1.2,RFC1035:5.1.4	master-file	-		-
-10011170	The $INCLUDE control entry inserts the file (filename is first argument) into the current file.	-	RFC1035:5.1.2,RFC1035:5.1.4	master-file	-		-
-10011180	The $INCLUDE control entry canno change the origin of the parent file.	-	RFC1035:5.1.4	master-file	-		-
+10011160	The $ORIGIN control entry sets the current origin for relative domain names to the value set in its first (and only) argument.	-	RFC1035:5.1/4,RFC1035:5.1/9	master-file	-		-
+10011170	The $INCLUDE control entry inserts the file (filename is first argument) into the current file.	-	RFC1035:5.1/5,RFC1035:5.1/9	master-file	-		-
+10011180	The $INCLUDE control entry cannot change the origin of the parent file.	-	RFC1035:5.1/9	master-file	-		-
 10011190	$ORIGIN names that do not end with a dot are usually interpreted as a warning, and should be reported.	-	?	master-file	-		-
 10011200	$ORIGIN names that do not end with a dot are interpreted as a normal name, relative to the current origin.	-	?	master-file	-		-
 10011200	If the $INCLUDE named file cannot be loaded it is an issue, and usually treated as an error; if treated as a warning, it is ignored for processing.	TODO: what is usually? when to choose?	?	master-file	-	-	-
-10011190	A line that is not a $ control entry is a resource record.	-	RFC1035:5.1.2,RFC1035:5.1.5	master-file	-		-
-10011200	If the RR begins with a blank, then the owner name is the last stated owner. 	-	RFC1035:5.1.5	master-file	-		-
-10011210	If the RR begins with a name, then the owner name is reset to that name.	BUG: RFC says domain-name which implies "terminated by a label with zero length" trailing period.	RFC1035:5.1.5	master-file	-	-	-
+10011190	A line that is not a $ control entry and is not a comment is a resource record.	-	RFC1035:5.1/10	master-file	-		-
+10011200	If the RR begins with a blank, then the owner name is the last stated owner. 	-	RFC1035:5.1/10	master-file	-		-
+10011210	If the RR begins with a name, then the owner name is reset to that name.	BUG: RFC says domain-name which implies "terminated by a label with zero length" trailing period.	RFC1035:5.1/10	master-file	-	-	-
 10011230	If there was no previous owner name, this is an issue and usually interpreted as an error; if treated as a warning, the RR can be checked but will not be added to the zone.	TODO	?	master-file	-	-	-
-10011240	The RR contents begin with an optional TTL, or optional class field, or optionally both; the order of the optional class and TTL fields does not matter.	TODO: need to describe when not recognized?	RFC1035:5.1.6,RFC1035:5.1.7	master-file	-	-	-
-10011250	If the optional class field is omitted, then it defaults to last explicitly defined class.	-	RFC1035:5.1.7	master-file	-		-
-10011260	The class field uses standard mnemonics.	-	RFC1035:5.1.7	master-file	-		-
-10011270	The RR contents contain type and RDATA fields; the RDATA is appropriate to the type and optional class.	-	RFC1035:5.1.7	master-file	-		-
-10011280	The TTL field is a decimal integer.	TODO: this changed	RFC1035:5.1.7	master-file	-	-	-
-10011300	Quoting conventions may be used for domain names.	-	RFC1035:5.1.8	master-file	-		-
-10011310	A domain name without an ending dot '.' is relative and has the origin appended to it; the origin may be from a $ORIGIN or $INCLUDE control entry, or defined by an master file loading routine argument.	-	RFC1035:5.1.8	master-file	-		-
-10011320	If there is no origin (to use for a relative name), it is an error.	-	RFC1035:5.1.8	master-file	-		-
-10011330	If there is no origin (to use for a relative name), it is an issue that is usually interpreted as an error; if treated as a warning, the domain name is considered absolute.	TODO: conflicts with m1132	?	master-file	-	-	-
-10011340	Quoted strings (starting and ending with '"' characters) may contain any character including spaces, except a quote; a quote '"' may be used with a '\"'.	-	RFC1035:5.1.9	master-file	-		-
+10011240	The RR contents begin with an optional TTL, or optional class field, or optionally both; the order of the optional class and TTL fields does not matter.	TODO: need to describe when not recognized?	RFC1035:5.1/12,RFC1035:5.1/14	master-file	-	-	-
+10011250	If the optional class field is omitted, then it defaults to last explicitly defined class.	-	RFC1035:5.1/14	master-file	-		-
+10011260	The class field uses standard mnemonics.	-	RFC1035:5.1/14	master-file	-		-
+10011270	The RR contents contain type and RDATA fields; the RDATA is appropriate to the type and optional class.	-	RFC1035:5.1/14	master-file	-		-
+10011280	The TTL field is a decimal integer.	TODO: this changed	RFC1035:5.1/14	master-file	-	-	-
+10011300	Quoting conventions may be used for domain names.	-	RFC1035:5.1/15	master-file	-		-
+10011310	A domain name without an ending dot '.' is relative and has the origin appended to it; the origin may be from a $ORIGIN or $INCLUDE control entry, or defined by an master file loading routine argument.	-	RFC1035:5.1/15	master-file	-		-
+10011320	If there is no origin (to use for a relative name), it is an error.	-	RFC1035:5.1/15	master-file	-		-
+10011330	If there is no origin (to use for a relative name), it is an issue that is usually interpreted as an error; if treated as a warning, the domain name is considered absolute.	TODO: conflicts with 10011320	?	master-file	-	-	-
+10011340	Quoted strings (starting and ending with '"' characters) may contain any character including spaces, except a quote; a quote '"' may be used with a '\"'.	-	RFC1035:5.1/16	master-file	-		-
 10011350	A missing closing '"' is an issue, and usually treated as an error; if treated as a warning, then the end of file is treated as the closing quote. 	-	?	master-file	-		-
-10011360	The @ by itself is treated as the origin.	-	RFC1035:5.1.10	master-file	-		-
-10011370	A backslash not followed by a digit may be used so the character as literal (and doesn't have a special meaning).	-	RFC1035:5.1.9,RFC1035:5.1.10	master-file	-		-
-10011380	A backslash followed by three digits results in its corresponding ASCII character and is used literally.	BUG: RFC says "decimal number" but really is "decimal ASCII character"	RFC1035:5.1.10	master-file	-	-	-
+10011360	The @ by itself is treated as the origin.	-	RFC1035:5.1/19	master-file	-		-
+10011370	A backslash not followed by a digit may be used so the character as literal (and doesn't have a special meaning).	-	RFC1035:5.1/20,RFC1035:5.1/21	master-file	-		-
+10011380	A backslash followed by three digits results in its corresponding ASCII character and is used literally.	BUG: RFC says "decimal number" but really is "decimal ASCII character"	RFC1035:5.1/21	master-file	-	-	-
 10011390	Parentheses do not nest; a second open parenthesis before a close parenthesis is an issue, and usually considered a warning; if treated as a warning, it is ignored.	TODO: where documented?	?	master-file	-	-	-
 10011400	A missing closing parenthesis is considered an issue, and usually interpreted as an error; If treated as a warning, the end of file is treated as the closing parenthesis.	TODO: where documented?	?	master-file	-	-	-
 10011410	A TTL is a positive number (or 0); it is stored in a signed 32 bit number; the maximum is 2147483647.	BUG: RFC1035:2.3.4 says positive but it can be zero.	RFC1035:2.3.4,RFC1035:3.2.1,RFC1035:4.1.3,RFC2181:8	master-file	-	-	-
@@ -51,7 +51,7 @@
 10011450	Only one SOA RR should exist.	BUG: the RFC is vague since has only one should be present at the top -- what about elsewhere in same master file?	RFC1035:5.2.2	master-file	-	-	-
 10011460	If a SOA appears again with the same value, it is considered an issue and usually treated as a warning; if treated as a warning then the second value is ignored.	TODO	?	master-file	-	-	-
 10011470	If a SOA appears again with a different value, it is considered an issue and usually treated as an error; if treated as a warning then the second value is ignored.	TODO	?	master-file	-	-	-
-10011480	If glue is required for delegations (NS records) then it must be present.	TODO: define how to require it	RFC1035:5.2.2.3	master-file	-	-	-
+10011480	If glue is required for delegations (NS records) then it must be present.	TODO: define how to require it	RFC1035:5.2/5#3	master-file	-	-	-
 10011490	For required glue, if neither an A nor an AAAA record is present, this is an issue and usually treated as a warning; if treated as a warning the zone is loaded without the necessary data and the delegation is broken. 	TODO	?	master-file	-	-	-
 10011500	Information outside of the authority for the zone (out-of-bailiwick data), other than glue, is an issue, and usually considered an error; if interpreted as a warning, it is ignored.	TODO:	RFC1035:5.2/2.4	master-file	-	-	RFC is vague; where to define if its a error or not?
 10011510	An $TTL control entry definition line may have a comment.	-	RFC2308:4/4	master-file	-		-
