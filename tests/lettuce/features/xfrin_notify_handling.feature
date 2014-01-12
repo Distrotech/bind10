@@ -22,7 +22,7 @@ Feature: Xfrin incoming notify handling
     And wait for bind10 stderr message XFRIN_STARTED
     And wait for bind10 stderr message ZONEMGR_STARTED
 
-    A query for www.example.org to 127.0.0.1:56176 should have rcode NXDOMAIN
+    A query for www.example.org to [::1]:56176 should have rcode NXDOMAIN
 
     #
     # Test1 for Xfrout statistics
@@ -61,7 +61,7 @@ Feature: Xfrin incoming notify handling
     Then wait for bind10 stderr message ZONEMGR_RECEIVE_XFRIN_SUCCESS
     Then wait for master stderr message NOTIFY_OUT_REPLY_RECEIVED
 
-    A query for www.example.org to 127.0.0.1:56176 should have rcode NOERROR
+    A query for www.example.org to [::1]:56176 should have rcode NOERROR
     # Make sure handling statistics command handling checked below is
     # after this query
     And wait for bind10 stderr message AUTH_SEND_NORMAL_RESPONSE
@@ -83,9 +83,9 @@ Feature: Xfrin incoming notify handling
     When I query statistics zones of bind10 module Xfrout with cmdctl port 56174
     The statistics counters are 0 in category .Xfrout.zones.IN except for the following items
       | item_name                | item_value |
-      | _SERVER_.notifyoutv4     |          1 |
+      | _SERVER_.notifyoutv6     |          1 |
       | _SERVER_.xfrreqdone      |          1 |
-      | example.org..notifyoutv4 |          1 |
+      | example.org..notifyoutv6 |          1 |
       | example.org..xfrreqdone  |          1 |
 
     When I query statistics socket of bind10 module Xfrout with cmdctl port 56174
@@ -108,20 +108,20 @@ Feature: Xfrin incoming notify handling
     When I query statistics of bind10 module Xfrin with cmdctl
     The statistics counters are 0 in category .Xfrin except for the following items
       | item_name                                | item_value | min_value |
-      | zones.IN._SERVER_.soaoutv4               |          1 |           |
-      | zones.IN._SERVER_.axfrreqv4              |          1 |           |
+      | zones.IN._SERVER_.soaoutv6               |          1 |           |
+      | zones.IN._SERVER_.axfrreqv6              |          1 |           |
       | zones.IN._SERVER_.xfrsuccess             |          1 |           |
       | zones.IN._SERVER_.last_axfr_duration     |            |       0.0 |
-      | zones.IN.example.org..soaoutv4           |          1 |           |
-      | zones.IN.example.org..axfrreqv4          |          1 |           |
+      | zones.IN.example.org..soaoutv6           |          1 |           |
+      | zones.IN.example.org..axfrreqv6          |          1 |           |
       | zones.IN.example.org..xfrsuccess         |          1 |           |
       | zones.IN.example.org..last_axfr_duration |            |       0.0 |
       | soa_in_progress                          |          0 |           |
       | axfr_running                             |          0 |           |
-      | socket.ipv4.tcp.open                     |            |         1 |
-      | socket.ipv4.tcp.close                    |            |         1 |
-      | socket.ipv4.tcp.conn                     |            |         1 |
-      | socket.ipv4.tcp.connfail                 |          0 |           |
+      | socket.ipv6.tcp.open                     |            |         1 |
+      | socket.ipv6.tcp.close                    |            |         1 |
+      | socket.ipv6.tcp.conn                     |            |         1 |
+      | socket.ipv6.tcp.connfail                 |          0 |           |
 
     #
     # Test for handling incoming notify only in IPv4
@@ -254,7 +254,7 @@ Feature: Xfrin incoming notify handling
     And wait for bind10 stderr message XFRIN_STARTED
     And wait for bind10 stderr message ZONEMGR_STARTED
 
-    A query for www.example.org to 127.0.0.1:56176 should have rcode NXDOMAIN
+    A query for www.example.org to [::1]:56176 should have rcode NXDOMAIN
 
     #
     # Test1 for Xfrout statistics
@@ -279,7 +279,7 @@ Feature: Xfrin incoming notify handling
     #
     When I send bind10 the following commands with cmdctl port 56174
     """
-    config set Xfrout/zone_config[0]/transfer_acl [{"action":  "REJECT", "from": "127.0.0.1"}]
+    config set Xfrout/zone_config[0]/transfer_acl [{"action":  "REJECT", "from": "::1"}]
     config commit
     """
     last bindctl output should not contain Error
@@ -294,7 +294,7 @@ Feature: Xfrin incoming notify handling
     Then wait for bind10 stderr message ZONEMGR_RECEIVE_XFRIN_FAILED not ZONEMGR_RECEIVE_XFRIN_SUCCESS
     Then wait for master stderr message NOTIFY_OUT_REPLY_RECEIVED
 
-    A query for www.example.org to 127.0.0.1:56176 should have rcode NXDOMAIN
+    A query for www.example.org to [::1]:56176 should have rcode NXDOMAIN
 
     #
     # Test3 for Xfrout statistics
@@ -310,9 +310,9 @@ Feature: Xfrin incoming notify handling
     When I query statistics zones of bind10 module Xfrout with cmdctl port 56174
     The statistics counters are 0 in category .Xfrout.zones.IN except for the following items
       | item_name                | item_value | min_value | max_value |
-      | _SERVER_.notifyoutv4     |          1 |           |           |
+      | _SERVER_.notifyoutv6     |          1 |           |           |
       | _SERVER_.xfrrej          |            |         1 |         3 |
-      | example.org..notifyoutv4 |          1 |           |           |
+      | example.org..notifyoutv6 |          1 |           |           |
       | example.org..xfrrej      |            |         1 |         3 |
     # Note: The above rejection counters might sometimes be increased
     # up to 3. See this for details
@@ -338,18 +338,18 @@ Feature: Xfrin incoming notify handling
     When I query statistics of bind10 module Xfrin with cmdctl
     The statistics counters are 0 in category .Xfrin except for the following items
       | item_name                       | item_value | min_value |
-      | zones.IN._SERVER_.soaoutv4      |            |         1 |
-      | zones.IN._SERVER_.axfrreqv4     |            |         1 |
+      | zones.IN._SERVER_.soaoutv6      |            |         1 |
+      | zones.IN._SERVER_.axfrreqv6     |            |         1 |
       | zones.IN._SERVER_.xfrfail       |            |         1 |
-      | zones.IN.example.org..soaoutv4  |            |         1 |
-      | zones.IN.example.org..axfrreqv4 |            |         1 |
+      | zones.IN.example.org..soaoutv6  |            |         1 |
+      | zones.IN.example.org..axfrreqv6 |            |         1 |
       | zones.IN.example.org..xfrfail   |            |         1 |
       | soa_in_progress                 |            |         0 |
       | axfr_running                    |            |         0 |
-      | socket.ipv4.tcp.open            |            |         1 |
-      | socket.ipv4.tcp.close           |            |         1 |
-      | socket.ipv4.tcp.conn            |            |         1 |
-      | socket.ipv4.tcp.connfail        |          0 |           |
+      | socket.ipv6.tcp.open            |            |         1 |
+      | socket.ipv6.tcp.close           |            |         1 |
+      | socket.ipv6.tcp.conn            |            |         1 |
+      | socket.ipv6.tcp.connfail        |          0 |           |
 
     #
     # Test for Xfr request rejected in IPv4
@@ -498,8 +498,8 @@ Feature: Xfrin incoming notify handling
     When I query statistics zones of bind10 module Xfrout with cmdctl port 56174
     The statistics counters are 0 in category .Xfrout.zones.IN except for the following items
       | item_name                | min_value | max_value |
-      | _SERVER_.notifyoutv4     |         1 |         5 |
-      | example.org..notifyoutv4 |         1 |         5 |
+      | _SERVER_.notifyoutv6     |         1 |         5 |
+      | example.org..notifyoutv6 |         1 |         5 |
 
     When I query statistics socket of bind10 module Xfrout with cmdctl port 56174
     The statistics counters are 0 in category .Xfrout.socket.unixdomain except for the following items
@@ -540,14 +540,14 @@ Feature: Xfrin incoming notify handling
     last bindctl output should not contain "error"
     And wait for new master stderr message XFROUT_STARTED
 
-    A query for www.example.com to 127.0.0.1:56176 should have rcode REFUSED
+    A query for www.example.com to [::1]:56176 should have rcode REFUSED
 
     When I send bind10 with cmdctl port 56174 the command Xfrout notify example.com IN
     Then wait for new master stderr message XFROUT_NOTIFY_COMMAND
     Then wait for new bind10 stderr message AUTH_RECEIVED_NOTIFY_NOTAUTH
     Then wait for new master stderr message NOTIFY_OUT_REPLY_RECEIVED
 
-    A query for www.example.com to 127.0.0.1:56176 should have rcode REFUSED
+    A query for www.example.com to [::1]:56176 should have rcode REFUSED
 
     #
     # Test for NOTIFY that's not in the secondaries list
@@ -580,7 +580,7 @@ Feature: Xfrin incoming notify handling
     last bindctl output should not contain "error"
     And wait for new bind10 stderr message ZONEMGR_STARTED
 
-    A query for www.example.org to 127.0.0.1:56176 should have rcode NXDOMAIN
+    A query for www.example.org to [::1]:56176 should have rcode NXDOMAIN
 
     When I send bind10 with cmdctl port 56174 the command Xfrout notify example.org IN
     Then wait for new master stderr message XFROUT_NOTIFY_COMMAND
@@ -589,7 +589,7 @@ Feature: Xfrin incoming notify handling
     Then wait for new bind10 stderr message ZONEMGR_ZONE_NOTIFY_NOT_SECONDARY
     Then wait for new master stderr message NOTIFY_OUT_REPLY_RECEIVED
 
-    A query for www.example.org to 127.0.0.1:56176 should have rcode NXDOMAIN
+    A query for www.example.org to [::1]:56176 should have rcode NXDOMAIN
 
     #
     # Test for NOTIFY when zonemgr is not running
@@ -620,7 +620,7 @@ Feature: Xfrin incoming notify handling
     last bindctl output should not contain "error"
     And wait for new bind10 stderr message BIND10_PROCESS_ENDED
 
-    A query for www.example.org to 127.0.0.1:56176 should have rcode NXDOMAIN
+    A query for www.example.org to [::1]:56176 should have rcode NXDOMAIN
 
     When I send bind10 with cmdctl port 56174 the command Xfrout notify example.org IN
     Then wait for master stderr message XFROUT_NOTIFY_COMMAND
@@ -628,7 +628,7 @@ Feature: Xfrin incoming notify handling
     Then wait for new bind10 stderr message AUTH_ZONEMGR_NOTEXIST not AUTH_ZONEMGR_ERROR
     Then wait for master stderr message NOTIFY_OUT_TIMEOUT not NOTIFY_OUT_REPLY_RECEIVED
 
-    A query for www.example.org to 127.0.0.1:56176 should have rcode NXDOMAIN
+    A query for www.example.org to [::1]:56176 should have rcode NXDOMAIN
 
     #
     # Test for unreachable master
@@ -642,7 +642,7 @@ Feature: Xfrin incoming notify handling
     And wait for bind10 stderr message XFRIN_STARTED
     And wait for bind10 stderr message ZONEMGR_STARTED
 
-    A query for www.example.org to 127.0.0.1:56176 should have rcode NXDOMAIN
+    A query for www.example.org to [::1]:56176 should have rcode NXDOMAIN
 
     #
     # Test1 for Xfrin statistics
@@ -667,7 +667,7 @@ Feature: Xfrin incoming notify handling
     wait for new bind10 stderr message XFRIN_RECEIVED_COMMAND
 
     When I query statistics socket of bind10 module Xfrin with cmdctl
-    The statistics counters are 0 in category .Xfrin.socket.ipv4.tcp except for the following items
+    The statistics counters are 0 in category .Xfrin.socket.ipv6.tcp except for the following items
       | item_name | min_value |
       | open      |         1 |
       | close     |         1 |

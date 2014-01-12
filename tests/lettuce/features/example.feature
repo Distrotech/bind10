@@ -213,13 +213,13 @@ Feature: Example feature
         And wait for bind10_two stderr message AUTH_SERVER_STARTED
 
         A query for www.example.org to 127.0.0.1:56176 should have rcode NOERROR
-        A query for www.example.org to 127.0.0.1:56177 should have rcode NOERROR
+        A query for www.example.org to [::1]:56177 should have rcode NOERROR
         The SOA serial for example.org should be 1234
         The SOA serial for example.org at 127.0.0.1:56176 should be 1234
-        The SOA serial for example.org at 127.0.0.1:56177 should be 1234
+        The SOA serial for example.org at ::1:56177 should be 1234
 
         Then set bind10 configuration data_sources/classes/IN[0]/params to {"database_file": "data/empty_db.sqlite3"}
         And wait for bind10_one stderr message DATASRC_SQLITE_CONNOPEN
 
         A query for www.example.org to 127.0.0.1:56176 should have rcode REFUSED
-        A query for www.example.org to 127.0.0.1:56177 should have rcode NOERROR
+        A query for www.example.org to [::1]:56177 should have rcode NOERROR

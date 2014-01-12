@@ -24,10 +24,10 @@ Feature: Xfrin
     # The DB currently doesn't know anything about the zone, so we install
     # an empty zone for xfrin.
     The file data/test_nonexistent_db.sqlite3 should exist
-    A query for www.example.org to 127.0.0.1:56176 should have rcode REFUSED
+    A query for www.example.org to [::1]:56176 should have rcode REFUSED
     Then make empty zone example.org in DB file data/test_nonexistent_db.sqlite3
 
-    When I send bind10 the command Xfrin retransfer example.org IN 127.0.0.1 56177
+    When I send bind10 the command Xfrin retransfer example.org IN ::1 56177
     # The data we receive contain a NS RRset that refers to three names in the
     # example.org. zone. All these three are nonexistent in the data, producing
     # 3 separate warning messages in the log.
@@ -40,7 +40,7 @@ Feature: Xfrin
     # we can't reliably use 'wait for new'.  In this case this should be the
     # only occurrence of this message, so this should be okay.
     Then wait for bind10 stderr message ZONEMGR_RECEIVE_XFRIN_SUCCESS
-    A query for www.example.org to 127.0.0.1:56176 should have rcode NOERROR
+    A query for www.example.org to [::1]:56176 should have rcode NOERROR
 
     # The transferred zone should have 11 non-NSEC3 RRs and 1 NSEC3 RR.
     # The following check will get these by AXFR, so the total # of RRs
@@ -59,12 +59,12 @@ Feature: Xfrin
     config set Auth/database_file data/example.org-nons.sqlite3
     config commit
     """
-    Then I send bind10 the command Xfrin retransfer example.org IN 127.0.0.1 56177
+    Then I send bind10 the command Xfrin retransfer example.org IN ::1 56177
     And wait for new bind10 stderr message XFRIN_ZONE_INVALID
     And wait for new bind10 stderr message XFRIN_INVALID_ZONE_DATA
     # We can't use 'wait for new' here; see above.
     Then wait for bind10 stderr message ZONEMGR_RECEIVE_XFRIN_FAILED
-    A query for example.org type NS to 127.0.0.1:56176 should have rcode NOERROR
+    A query for example.org type NS to [::1]:56176 should have rcode NOERROR
     And transfer result should have 13 rrs
 
     Scenario: Transfer with TSIG
@@ -87,7 +87,7 @@ Feature: Xfrin
     Then make empty zone example.org in DB file data/test_nonexistent_db.sqlite3
 
     # Set slave config for 'automatic' xfrin
-    When I set bind10 configuration Xfrin/zones to [{"master_port": 56176, "name": "example.org", "master_addr": "127.0.0.1"}]
+    When I set bind10 configuration Xfrin/zones to [{"master_port": 56176, "name": "example.org", "master_addr": "::1"}]
 
     # Make sure it is fully open
     When I send bind10 the command Xfrin retransfer example.org
@@ -99,7 +99,7 @@ Feature: Xfrin
     When I send bind10 the following commands with cmdctl port 56174:
     """
     config add tsig_keys/keys "example.key.:c2VjcmV0"
-    config set Xfrout/zone_config[0]/transfer_acl [{"action": "ACCEPT", "from": "127.0.0.1", "key": "example.key."}]
+    config set Xfrout/zone_config[0]/transfer_acl [{"action": "ACCEPT", "from": "::1", "key": "example.key."}]
     config commit
     """
 
@@ -144,10 +144,10 @@ Feature: Xfrin
     # Now we use the first step again to see if the file has been created,
     # then install empty zone data
     The file data/test_nonexistent_db.sqlite3 should exist
-    A query for www.example.org to 127.0.0.1:56176 should have rcode REFUSED
+    A query for www.example.org to [::1]:56176 should have rcode REFUSED
     Then make empty zone example.org in DB file data/test_nonexistent_db.sqlite3
 
-    When I send bind10 the command Xfrin retransfer example.org IN 127.0.0.1 56177
+    When I send bind10 the command Xfrin retransfer example.org IN ::1 56177
     # It should complain once about invalid data, then again that the whole
     # zone is invalid and then reject it.
     And wait for new bind10 stderr message XFRIN_ZONE_INVALID
@@ -157,7 +157,7 @@ Feature: Xfrin
     # The zone still doesn't exist as it is rejected.
     # FIXME: This step fails. Probably an empty zone is created in the data
     # source :-|. This should be REFUSED, not SERVFAIL.
-    A query for www.example.org to 127.0.0.1:56176 should have rcode SERVFAIL
+    A query for www.example.org to [::1]:56176 should have rcode SERVFAIL
 
     # TODO:
     # * IXFR - generate an sqlite db that contains the journal. Check it was
@@ -184,20 +184,20 @@ Feature: Xfrin
     And wait for bind10 stderr message XFRIN_STARTED
     And wait for bind10 stderr message ZONEMGR_STARTED
 
-    A query for example. type SOA to 127.0.0.1:56176 should have rcode NOERROR
+    A query for example. type SOA to [::1]:56176 should have rcode NOERROR
     The answer section of the last query response should be
     """
     example.    3600    IN      SOA     ns1.example. hostmaster.example. 94 3600 900 7200 300
     """
 
     # To invoke IXFR we need to use refresh command
-    When I send bind10 the command Xfrin refresh example. IN 127.0.0.1 56177
+    When I send bind10 the command Xfrin refresh example. IN ::1 56177
     Then wait for new bind10 stderr message XFRIN_GOT_INCREMENTAL_RESP
     Then wait for new bind10 stderr message XFRIN_IXFR_TRANSFER_SUCCESS not XFRIN_XFR_PROCESS_FAILURE
     # This can't be 'wait for new'
     Then wait for bind10 stderr message ZONEMGR_RECEIVE_XFRIN_SUCCESS
 
-    A query for example. type SOA to 127.0.0.1:56176 should have rcode NOERROR
+    A query for example. type SOA to [::1]:56176 should have rcode NOERROR
     The answer section of the last query response should be
     """
     example.    3600    IN      SOA     ns1.example. hostmaster.example. 100 3600 900 7200 300

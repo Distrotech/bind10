@@ -10,7 +10,7 @@
     "Auth": {
         "database_file": "data/example.org.sqlite3",
         "listen_on": [ {
-            "address": "127.0.0.1",
+            "address": "::1",
             "port": 56177
         } ]
     },
@@ -29,7 +29,7 @@
             "origin": "example.org"
         } ],
         "also_notify": [ {
-            "address": "127.0.0.1",
+            "address": "::1",
             "port": 56176
         } ]
     },

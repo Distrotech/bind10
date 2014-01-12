@@ -9,7 +9,7 @@
     },
     "Auth": {
         "listen_on": [ {
-            "address": "127.0.0.1",
+            "address": "::1",
             "port": 56176
         } ]
     },
@@ -26,7 +26,7 @@
     "Xfrin": {
         "zones": [ {
             "name": "example.org",
-            "master_addr": "127.0.0.1",
+            "master_addr": "::1",
             "master_port": 56177,
             "request_ixfr": "no"
         } ]
