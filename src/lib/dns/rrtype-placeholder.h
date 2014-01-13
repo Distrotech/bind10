@@ -259,6 +259,20 @@ public:
     { return (typecode_ < other.typecode_); }
     //@}
 
+    /// \brief Returns if the RRType is a "singleton" type (supports
+    /// maximum RDATA count of 1)
+    ///
+    /// Note: This is a static method on purpose to avoid adding to the
+    /// size of the RRType allocation. RRTypes are created and used
+    /// extensively and it's wise to leave this boolean property out of
+    /// the allocation.
+    ///
+    /// \param rrtype The \c RRType object whose singleton property is
+    /// being queried.
+    /// \return \c true if the RRType is a singleton type, \c false
+    /// otherwise.
+    static bool isSingleton(const RRType& rrtype);
+
     // BEGIN_WELL_KNOWN_TYPE_DECLARATIONS
     // END_WELL_KNOWN_TYPE_DECLARATIONS
 

@@ -60,6 +60,15 @@ RRType::toWire(AbstractMessageRenderer& renderer) const {
     renderer.writeUint16(typecode_);
 }
 
+bool
+RRType::isSingleton(const RRType& rrtype) {
+    if (rrtype == RRType::CNAME()) {
+        return (true);
+    } else {
+        return (false);
+    }
+}
+
 ostream&
 operator<<(ostream& os, const RRType& rrtype) {
     os << rrtype.toText();

@@ -139,6 +139,11 @@ TEST_F(RRTypeTest, compare) {
     EXPECT_TRUE(RRType(100) < RRType(65535));
 }
 
+TEST_F(RRTypeTest, isSingleton) {
+    EXPECT_TRUE(RRType::isSingleton(RRType::CNAME()));
+    EXPECT_FALSE(RRType::isSingleton(RRType::A()));
+}
+
 // test operator<<.  We simply confirm it appends the result of toText().
 TEST_F(RRTypeTest, LeftShiftOperator) {
     ostringstream oss;
