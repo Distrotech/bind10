@@ -172,6 +172,21 @@ TEST_F(RRsetTest, addRdataPtr) {
     EXPECT_EQ(3, rrset_a_empty.getRdataCount());
 }
 
+TEST_F(RRsetTest, addRdataPtrForSingleton) {
+    RRset rrset_cname(test_name, RRClass::IN(), RRType::CNAME(), RRTTL(3600));
+    EXPECT_EQ(0, rrset_cname.getRdataCount());
+    rrset_cname.addRdata(createRdata(rrset_cname.getType(),
+                                     rrset_cname.getClass(),
+                                     "foo.example.com."));
+    EXPECT_EQ(1, rrset_cname.getRdataCount());
+    EXPECT_THROW({
+        rrset_cname.addRdata(createRdata(rrset_cname.getType(),
+                                         rrset_cname.getClass(),
+                                         "bar.example.com."));
+    }, isc::InvalidOperation);
+    EXPECT_EQ(1, rrset_cname.getRdataCount());
+}
+
 TEST_F(RRsetTest, iterator) {
     // Iterator for an empty RRset.
     RdataIteratorPtr it = rrset_a_empty.getRdataIterator();

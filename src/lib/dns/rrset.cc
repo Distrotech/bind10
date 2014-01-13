@@ -182,6 +182,12 @@ BasicRRset::~BasicRRset() {
 
 void
 BasicRRset::addRdata(ConstRdataPtr rdata) {
+    if ((getRdataCount() != 0) && (RRType::isSingleton(getType()))) {
+        isc_throw(isc::InvalidOperation,
+                  "addRdata() called for RRset with singleton RRType with "
+                  "existing RDATA: " << toText());
+    }
+
     impl_->rdatalist_.push_back(rdata);
 }
 

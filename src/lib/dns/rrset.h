@@ -338,6 +338,8 @@ public:
     ///
     /// \param rdata A pointer (like) type of \c rdata::RdataPtr to be added
     /// to the \c RRset.
+    /// \throw isc::InvalidParameter if RRset's RRType is a singleton
+    /// and RDATA already exists.
     virtual void addRdata(rdata::ConstRdataPtr rdata) = 0;
 
     /// \brief Add an RDATA to the RRset (reference version).
