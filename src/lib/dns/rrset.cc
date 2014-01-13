@@ -33,10 +33,6 @@ using namespace isc::dns::rdata;
 
 namespace isc {
 namespace dns {
-void
-AbstractRRset::addRdata(const Rdata& rdata) {
-    addRdata(createRdata(getType(), getClass(), rdata));
-}
 
 string
 AbstractRRset::toText() const {
@@ -191,7 +187,7 @@ BasicRRset::addRdata(ConstRdataPtr rdata) {
 
 void
 BasicRRset::addRdata(const Rdata& rdata) {
-    AbstractRRset::addRdata(rdata);
+    addRdata(createRdata(getType(), getClass(), rdata));
 }
 
 unsigned int
