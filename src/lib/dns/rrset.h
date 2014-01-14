@@ -338,7 +338,7 @@ public:
     ///
     /// \param rdata A pointer (like) type of \c rdata::RdataPtr to be added
     /// to the \c RRset.
-    /// \throw isc::InvalidParameter if RRset's RRType is a singleton
+    /// \throw isc::InvalidOperation if RRset's RRType is a singleton
     /// and RDATA already exists.
     virtual void addRdata(rdata::ConstRdataPtr rdata) = 0;
 
@@ -384,8 +384,10 @@ public:
     /// Still, this version would offer a more intuitive interface and is
     /// provided as such.
     ///
-    /// \param rdata A reference to a \c rdata::RdataPtr (derived) class
+    /// \param rdata A reference to a \c rdata::Rdata (derived) class
     /// object, a copy of which is to be added to the \c RRset.
+    /// \throw isc::InvalidOperation if RRset's RRType is a singleton
+    /// and RDATA already exists.
     virtual void addRdata(const rdata::Rdata& rdata) = 0;
 
     /// \brief Return an iterator to go through all RDATA stored in the
@@ -732,18 +734,24 @@ public:
     //@{
     /// \brief Add an RDATA to the RRset (pointer version).
     ///
-    /// This method is normally expected to be exception free, but it may
-    /// involve resource allocation, and if it fails the corresponding
-    /// standard exception will be thrown.
-    ///
     /// \param rdata A pointer (like) type of \c rdata::RdataPtr to be added
     /// to the \c BasicRRset.
+    /// \throw isc::InvalidOperation if RRset's RRType is a singleton
+    /// and RDATA already exists.
     virtual void addRdata(rdata::ConstRdataPtr rdata);
 
     /// \brief Add an RDATA to the RRset (reference version).
     ///
-    /// This method simply uses the default implementation.
-    /// See \c AbstractRRset::addRdata(const rdata::Rdata&).
+    /// The default implementation simply constructs an \c rdata::RdataPtr
+    /// object from a newly allocated RDATA object copying from parameter
+    /// \c rdata, and calls the other version of
+    /// \c addRdata(const rdata::RdataPtr). So it is inherently less
+    /// efficient than the other version.
+    ///
+    /// \param rdata A reference to a \c rdata::Rdata (derived) class
+    /// object, a copy of which is to be added to the \c RRset.
+    /// \throw isc::InvalidOperation if RRset's RRType is a singleton
+    /// and RDATA already exists.
     virtual void addRdata(const rdata::Rdata& rdata);
 
     /// \brief Return an iterator to go through all RDATA stored in the
