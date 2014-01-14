@@ -196,6 +196,10 @@ void addOrCreate(isc::dns::RRsetPtr& rrset,
         isc_throw(DataSourceError,
                     "bad rdata in database for " << name << " "
                     << type << ": " << ivrt.what());
+    } catch (const isc::InvalidOperation& ivo) {
+        isc_throw(DataSourceError,
+                    "bad rdata in database for " << name << " "
+                    << type << ": " << ivo.what());
     }
 }
 

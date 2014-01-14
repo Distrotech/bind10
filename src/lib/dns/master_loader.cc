@@ -581,6 +581,9 @@ MasterLoader::MasterLoaderImpl::loadIncremental(size_t count_limit) {
             // below case. Once we restrict the below to some smaller
             // exception, we should remove this.
             throw;
+        } catch (const InvalidOperation& ex) {
+            // The AddCallback can throw an InvalidOperation.
+            isc_throw(MasterLoaderError, "Invalid RR data: " << ex.what());
         } catch (const isc::Exception& e) {
             // TODO: Once we do #2518, catch only the DNSTextError here,
             // not isc::Exception. The rest should be just simply

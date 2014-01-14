@@ -479,7 +479,7 @@ TEST_F(MemoryClientTest, loadMultipleCNAMEThrows) {
                                    zclass_,
                                    TEST_DATA_DIR
                                    "/example.org-multiple-cname.zone"),
-                 ZoneDataUpdater::AddError);
+                 isc::datasrc::ZoneLoaderException);
     // Teardown checks for memory segment leaks
 }
 
