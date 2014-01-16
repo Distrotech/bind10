@@ -1076,9 +1076,9 @@ TEST_F(Dhcpv6SrvTest, sanityCheck) {
 // Check that the server is testing if server identifier received in the
 // query, matches server identifier used by the server.
 TEST_F(Dhcpv6SrvTest, testServerID) {
-	NakedDhcpv6Srv srv(0);
+    NakedDhcpv6Srv srv(0);
 
-	Pkt6Ptr req = Pkt6Ptr(new Pkt6(DHCPV6_REQUEST, 1234));
+    Pkt6Ptr req = Pkt6Ptr(new Pkt6(DHCPV6_REQUEST, 1234));
     std::vector<uint8_t> bin;
 
     // diud_llt constructed with: time = 0, macaddress = 00:00:00:00:00:00

@@ -207,29 +207,30 @@ void Dhcpv6Srv::sendPacket(const Pkt6Ptr& packet) {
 
 bool
 Dhcpv6Srv::testServerID(const Pkt6Ptr& pkt){
-	/// @todo Currently we always check server identifier regardless if
-	/// it is allowed in the received message or not (per RFC3315).
-	/// If the server identifier is not allowed in the message, the
-	/// sanityCheck function should deal with it. We may rethink this
-	/// design if we decide that it is appropriate to check at this stage
-	/// of message processing that the server identifier must or must not
-	/// be present. In such case however, the logic checking server id
-	/// will have to be removed from sanityCheck and placed here instead,
-	/// to avoid duplicate checks.
-	OptionPtr server_id = pkt->getOption(D6O_SERVERID);
-	if (server_id){
-		// Let us test received ServerID if it is same as ServerID
-		// which is beeing used by server
-		if (getServerID()->getData() != server_id->getData()){
-			LOG_DEBUG(dhcp6_logger, DBG_DHCP6_DETAIL_DATA, DHCP6_PACKET_MISMATCH_SERVERID_DROP)
-				.arg(pkt->getName())
-				.arg(pkt->getTransid())
-				.arg(pkt->getIface());
-			return (false);
-		}
-	}
-	// retun True if: no serverid received or ServerIDs matching
-	return (true);
+    /// @todo Currently we always check server identifier regardless if
+    /// it is allowed in the received message or not (per RFC3315).
+    /// If the server identifier is not allowed in the message, the
+    /// sanityCheck function should deal with it. We may rethink this
+    /// design if we decide that it is appropriate to check at this stage
+    /// of message processing that the server identifier must or must not
+    /// be present. In such case however, the logic checking server id
+    /// will have to be removed from sanityCheck and placed here instead,
+    /// to avoid duplicate checks.
+    OptionPtr server_id = pkt->getOption(D6O_SERVERID);
+    if (server_id){
+        // Check that the server is testing if server identifier received in the
+        // query, matches server identifier used by the server.
+        if (getServerID()->getData() != server_id->getData()){
+            LOG_DEBUG(dhcp6_logger, DBG_DHCP6_DETAIL_DATA,
+                      DHCP6_PACKET_MISMATCH_SERVERID_DROP)
+                .arg(pkt->getName())
+                .arg(pkt->getTransid())
+                .arg(pkt->getIface());
+            return (false);
+        }
+    }
+    // No server id received or server ids matching.
+    return (true);
 }
 
 bool Dhcpv6Srv::run() {
@@ -306,8 +307,8 @@ bool Dhcpv6Srv::run() {
         }
         // Check if received query carries server identifier matching
         // server identifier being used by the server.
-        if (!testServerID(query)){
-        	continue;
+        if (!testServerID(query)) {
+            continue;
         }
 
         LOG_DEBUG(dhcp6_logger, DBG_DHCP6_DETAIL, DHCP6_PACKET_RECEIVED)
