@@ -173,6 +173,7 @@ TEST_F(RRsetTest, addRdataPtr) {
 }
 
 TEST_F(RRsetTest, addRdataPtrForSingleton) {
+    // CNAME can only have a single RDATA.
     RRset rrset_cname(test_name, RRClass::IN(), RRType::CNAME(), RRTTL(3600));
     EXPECT_EQ(0, rrset_cname.getRdataCount());
     rrset_cname.addRdata(createRdata(rrset_cname.getType(),
@@ -185,6 +186,23 @@ TEST_F(RRsetTest, addRdataPtrForSingleton) {
                                          "bar.example.com."));
     }, isc::InvalidOperation);
     EXPECT_EQ(1, rrset_cname.getRdataCount());
+
+    // Let's try one more with SOA. SOA can also only have a single
+    // RDATA.
+    RRset rrset_soa(test_name, RRClass::IN(), RRType::SOA(), RRTTL(3600));
+    EXPECT_EQ(0, rrset_soa.getRdataCount());
+    rrset_soa.addRdata(createRdata(rrset_soa.getType(),
+                                   rrset_soa.getClass(),
+                                   "ns.example.com. root.example.com. "
+                                   "2010012601 3600 300 3600000 1200"));
+    EXPECT_EQ(1, rrset_soa.getRdataCount());
+    EXPECT_THROW({
+        rrset_soa.addRdata(createRdata(rrset_soa.getType(),
+                                       rrset_soa.getClass(),
+                                       "ns2.example.com. root2.example.com. "
+                                       "2010012601 3600 300 3600000 1200"));
+    }, isc::InvalidOperation);
+    EXPECT_EQ(1, rrset_soa.getRdataCount());
 }
 
 TEST_F(RRsetTest, iterator) {

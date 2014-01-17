@@ -141,6 +141,8 @@ TEST_F(RRTypeTest, compare) {
 
 TEST_F(RRTypeTest, isSingleton) {
     EXPECT_TRUE(RRType::isSingleton(RRType::CNAME()));
+    EXPECT_TRUE(RRType::isSingleton(RRType::DNAME()));
+    EXPECT_TRUE(RRType::isSingleton(RRType::SOA()));
     EXPECT_FALSE(RRType::isSingleton(RRType::A()));
 }
 

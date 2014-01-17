@@ -62,7 +62,10 @@ RRType::toWire(AbstractMessageRenderer& renderer) const {
 
 bool
 RRType::isSingleton(const RRType& rrtype) {
-    if (rrtype == RRType::CNAME()) {
+    if ((rrtype == RRType::CNAME()) ||
+        (rrtype == RRType::SOA()) ||
+        (rrtype == RRType::DNAME()))
+    {
         return (true);
     } else {
         return (false);
