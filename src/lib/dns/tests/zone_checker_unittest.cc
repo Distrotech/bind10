@@ -140,15 +140,6 @@ TEST_F(ZoneCheckerTest, checkSOA) {
     EXPECT_FALSE(checkZone(zname_, zclass_, *rrsets_, noerror_callbacks));
     checkIssues();
 
-    // If there are more than 1 SOA RR, it's also an error.
-    errors_.clear();
-    soa_->addRdata(generic::SOA(soa_txt));
-    soa_->addRdata(generic::SOA("ns2.example.com. . 0 0 0 0 0"));
-    rrsets_->addRRset(soa_);
-    EXPECT_FALSE(checkZone(zname_, zclass_, *rrsets_, callbacks_));
-    expected_errors_.push_back("zone example.com/IN: has 2 SOA records");
-    checkIssues();
-
     // If the SOA RRset is "empty", it's treated as an implementation
     // (rather than operational) error and results in an exception.
     rrsets_->removeRRset(zname_, zclass_, RRType::SOA());
@@ -164,6 +155,19 @@ TEST_F(ZoneCheckerTest, checkSOA) {
     rrsets_->addRRset(soa_);
     EXPECT_THROW(checkZone(zname_, zclass_, *rrsets_, callbacks_), Unexpected);
     checkIssues();              // no error/warning should be reported
+}
+
+// Disabled by #525. This case can no longer happen as RRset does not
+// allow adding two Rdata to an RRset of type SOA.
+TEST_F(ZoneCheckerTest, DISABLED_checkSOAMultiple) {
+    // If there are more than 1 SOA RR, it's also an error.
+    errors_.clear();
+    soa_->addRdata(generic::SOA(soa_txt));
+    soa_->addRdata(generic::SOA("ns2.example.com. . 0 0 0 0 0"));
+    rrsets_->addRRset(soa_);
+    EXPECT_FALSE(checkZone(zname_, zclass_, *rrsets_, callbacks_));
+    expected_errors_.push_back("zone example.com/IN: has 2 SOA records");
+    checkIssues();
 }
 
 TEST_F(ZoneCheckerTest, checkNS) {
