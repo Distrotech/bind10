@@ -489,7 +489,7 @@ TEST_F(MemoryClientTest, loadMultipleDNAMEThrows) {
                                    zclass_,
                                    TEST_DATA_DIR
                                    "/example.org-multiple-dname.zone"),
-                 ZoneDataUpdater::AddError);
+                 isc::datasrc::ZoneLoaderException);
     // Teardown checks for memory segment leaks
 }
 

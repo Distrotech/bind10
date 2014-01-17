@@ -471,8 +471,12 @@ class TestNotifyOut(unittest.TestCase):
                 Name('nons.example'), RRClass.IN))
         self.assertEqual([], self._notify._get_notify_slaves_from_ns(
                 Name('nosoa.example'), RRClass.IN))
-        self.assertEqual([], self._notify._get_notify_slaves_from_ns(
-                Name('multisoa.example'), RRClass.IN))
+
+        # Disabled by #525. RRset does not allow adding two Rdata to an
+        # RRset of type SOA.
+
+        # self.assertEqual([], self._notify._get_notify_slaves_from_ns(
+        #         Name('multisoa.example'), RRClass.IN))
 
         self.assertEqual([], self._notify._get_notify_slaves_from_ns(
                 Name('nosuchzone.example'), RRClass.IN))

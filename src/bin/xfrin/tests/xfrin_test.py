@@ -995,12 +995,15 @@ class TestAXFR(TestXfrinConnection):
         self.assertRaises(XfrinException, self.conn._create_query,
                           RRType.IXFR)
 
-        self._set_test_zone(Name('dup-soa.example'))
-        self.conn._zone_soa = xfrin._get_zone_soa(self.conn._datasrc_client,
-                                                  self.conn._zone_name,
-                                                  self.conn._rrclass)
-        self.assertRaises(XfrinException, self.conn._create_query,
-                          RRType.IXFR)
+        # Disabled by #525. RRset does not allow adding two Rdata to an
+        # RRset of type SOA.
+
+        # self._set_test_zone(Name('dup-soa.example'))
+        # self.conn._zone_soa = xfrin._get_zone_soa(self.conn._datasrc_client,
+        #                                           self.conn._zone_name,
+        #                                           self.conn._rrclass)
+        # self.assertRaises(XfrinException, self.conn._create_query,
+        #                   RRType.IXFR)
 
     def test_send_query(self):
         def message_has_tsig(data):
