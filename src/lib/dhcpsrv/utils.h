@@ -34,6 +34,22 @@ RFCViolation(const char* file, size_t line, const char* what) :
     isc::Exception(file, line, what) {}
 };
 
+/// @brief Exception thrown when DHCID computation failed.
+///
+/// This exception is thrown by both DHCPv4 and DHCPv6 servers when
+/// creation of NameChangeRequest failed because DHCID could not be
+/// computed. Typically it occurs when client FQDN is malformed.
+class DhcidComputeError : public isc::Exception {
+public:
+    /// @brief Constructor.
+    ///
+    /// @param file name of the file, where exception occurred
+    /// @param line line of the file, where exception occurred
+    /// @param what text description of the issue that caused exception
+    DhcidComputeError(const char* file, size_t line, const char* what) :
+        isc::Exception(file, line, what) { };
+};
+
 }; // namespace isc::dhcp
 }; // namespace isc
 

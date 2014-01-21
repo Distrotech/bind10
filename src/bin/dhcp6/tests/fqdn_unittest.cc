@@ -77,6 +77,26 @@ public:
                                                            fqdn_type)));
     }
 
+    /// @brief Create an instance of the lease, being used by tests.
+    ///
+    /// @param addr IPv6 address to be assigned to a lease.
+    /// @param hostname Hostname to be associated with a lease.
+    /// @param fqdn_fwd Boolean value which indicates whether forward DNS
+    /// update has been performed for the lease.
+    /// @param fqdn_rev Boolean value which indicates whether reverse DNS
+    /// update has been performed for the lease.
+    ///
+    /// @return Instance of the lease being created.
+    Lease6Ptr createLease(const isc::asiolink::IOAddress& addr,
+                          const std::string& hostname,
+                          const bool fqdn_fwd,
+                          const bool fqdn_rev) {
+        Lease6Ptr lease(new Lease6(Lease::TYPE_NA, addr, duid_, 1, 200, 300,
+                                   60, 90, 1, fqdn_fwd, fqdn_rev,
+                                   hostname));
+        return (lease);
+    }
+
     /// @brief Create a message with or without DHCPv6 Client FQDN Option.
     ///
     /// @param msg_type A type of the DHCPv6 message to be created.
@@ -356,24 +376,42 @@ public:
     /// @param addr A string representation of the IPv6 address held in the
     /// NameChangeRequest.
     /// @param dhcid An expected DHCID value.
-    /// @param expires A timestamp when the lease associated with the
-    /// NameChangeRequest expires.
+    /// @param cltt Timestamp when the lease has been acquired. The sum of
+    /// this value and the len is compared with the lease expiration time
+    /// held in NCR.
     /// @param len A valid lifetime of the lease associated with the
     /// NameChangeRequest.
+    /// @param not_strict_expire_check Boolean value which indicates whether
+    /// cltt + valid lifetime value should be checked for equality with a
+    /// lease expiration time in the NameChangeRequest (if false) or
+    /// it should be checked that the cltt + valid lifetime is greater or
+    /// equal lease expiration time.
     void verifyNameChangeRequest(NakedDhcpv6Srv& srv,
                                  const isc::dhcp_ddns::NameChangeType type,
                                  const bool reverse, const bool forward,
                                  const std::string& addr,
                                  const std::string& dhcid,
-                                 const uint16_t expires,
-                                 const uint16_t len) {
+                                 const time_t cltt,
+                                 const uint16_t len,
+                                 const bool not_strict_expire_check = false) {
         NameChangeRequest ncr = srv.name_change_reqs_.front();
         EXPECT_EQ(type, ncr.getChangeType());
         EXPECT_EQ(forward, ncr.isForwardChange());
         EXPECT_EQ(reverse, ncr.isReverseChange());
         EXPECT_EQ(addr, ncr.getIpAddress());
         EXPECT_EQ(dhcid, ncr.getDhcid().toStr());
-        EXPECT_EQ(expires, ncr.getLeaseExpiresOn());
+
+        // In some cases, the test doesn't have access to the last transmission
+        // time for the particular client. In such cases, the test can use the
+        // current time as cltt but the it may not check the lease expiration
+        // time for equality but rather check that the lease expiration time
+        // is not greater than the current time + lease lifetime.
+        if (not_strict_expire_check) {
+            EXPECT_GE(cltt + len, ncr.getLeaseExpiresOn());
+        } else {
+            EXPECT_EQ(cltt + len, ncr.getLeaseExpiresOn());
+        }
+
         EXPECT_EQ(len, ncr.getLeaseLength());
         EXPECT_EQ(isc::dhcp_ddns::ST_NEW, ncr.getStatus());
         srv.name_change_reqs_.pop();
@@ -430,7 +468,136 @@ TEST_F(FqdnDhcpv6SrvTest, clientAAAAUpdateNotAllowed) {
              "myhost.example.com.");
 }
 
-// Test that exception is thrown if supplied NULL answer packet when
+// Test that exactly one NameChangeRequest is generated when the new lease
+// has been acquired (old lease is NULL).
+TEST_F(FqdnDhcpv6SrvTest, createNameChangeRequestsNewLease) {
+    NakedDhcpv6Srv srv(0);
+    // Create a new lease.
+    Lease6Ptr lease = createLease(IOAddress("2001:db8:1::3"),
+        "myhost.example.com", true, true);
+    // Old lease is NULL.
+    Lease6Ptr old_lease;
+    // When old lease is NULL, there should be one new NameChangeRequest
+    // created which adds DNS entry for a new lease.
+    ASSERT_NO_THROW(srv.createNameChangeRequests(lease, old_lease));
+    ASSERT_EQ(1, srv.name_change_reqs_.size());
+
+    verifyNameChangeRequest(srv, isc::dhcp_ddns::CHG_ADD, true, true,
+                            "2001:db8:1::3",
+                            "000201415AA33D1187D148275136FA30300478"
+                            "FAAAA3EBD29826B5C907B2C9268A6F52",
+                            lease->cltt_, 300);
+}
+
+// Test that no NameChangeRequest is generated when a lease is renewed and
+// the FQDN data hasn't changed.
+TEST_F(FqdnDhcpv6SrvTest, createNameChangeRequestsRenewNoChange) {
+    NakedDhcpv6Srv srv(0);
+
+    // Create new lease.
+    Lease6Ptr lease = createLease(IOAddress("2001:db8:1::3"),
+                                  "myhost.example.com", true, true);
+    // Create old lease, with the same FQDN data.
+    Lease6Ptr old_lease = createLease(IOAddress("2001:db8:1::3"),
+                                      "myhost.example.com", true, true);
+    // The new lease renews the old lease, so the cltt should be updated
+    // for the new lease.
+    lease->cltt_ += old_lease->cltt_ + 10;
+
+    ASSERT_NO_THROW(srv.createNameChangeRequests(lease, old_lease));
+    // The FQDN data hasn't changed so, there should be no NCRs generated.
+    EXPECT_TRUE(srv.name_change_reqs_.empty());
+}
+
+// Test that DNS entry is removed when forward and reverse flags are not
+// set in the lease renewing an old lease.
+TEST_F(FqdnDhcpv6SrvTest, createNameChangeRequestsNoUpdate) {
+    NakedDhcpv6Srv srv(0);
+    Lease6Ptr lease1 = createLease(IOAddress("2001:db8:1::3"),
+                                   "myhost.example.com", true, true);
+
+    Lease6Ptr lease2 = createLease(IOAddress("2001:db8:1::3"),
+                                   "myhost.example.com", false, false);
+
+    // The new lease renews the old lease, so the cltt should be updated
+    // for the new lease.
+    lease2->cltt_ += lease1->cltt_ + 10;
+
+    ASSERT_NO_THROW(srv.createNameChangeRequests(lease2, lease1));
+    // There should be exactly one NCR generated. It removes the existing
+    // DNS entries for the old lease.
+    ASSERT_EQ(1, srv.name_change_reqs_.size());
+
+    verifyNameChangeRequest(srv, isc::dhcp_ddns::CHG_REMOVE, true, true,
+                            "2001:db8:1::3",
+                            "000201415AA33D1187D148275136FA30300478"
+                            "FAAAA3EBD29826B5C907B2C9268A6F52",
+                            lease1->cltt_, 300);
+
+    // Do the same test, but this time, set the hostname to NULL.
+    lease2->hostname_ = "";
+    lease2->fqdn_rev_ = true;
+    lease2->fqdn_fwd_ = true;
+    ASSERT_NO_THROW(srv.createNameChangeRequests(lease2, lease1));
+    EXPECT_EQ(1, srv.name_change_reqs_.size());
+
+    verifyNameChangeRequest(srv, isc::dhcp_ddns::CHG_REMOVE, true, true,
+                            "2001:db8:1::3",
+                            "000201415AA33D1187D148275136FA30300478"
+                            "FAAAA3EBD29826B5C907B2C9268A6F52",
+                            lease1->cltt_, 300);
+
+}
+
+// Test that two NameChangeRequests are generated when the lease is being
+// renewed and the new lease has updated FQDN data.
+TEST_F(FqdnDhcpv6SrvTest, createNameChangeRequestsRenew) {
+    NakedDhcpv6Srv srv(0);
+    // Create two leases for the same IP address but with a different FQDNs.
+    Lease6Ptr lease1 = createLease(IOAddress("2001:db8:1::3"),
+                                   "lease1.example.com", true, true);
+
+    Lease6Ptr lease2 = createLease(IOAddress("2001:db8:1::3"),
+                                   "lease2.example.com", true, true);
+
+    // The new lease renews the old lease, so the cltt should be updated
+    // for the new lease.
+    lease2->cltt_ += lease1->cltt_ + 10;
+
+    // The FQDN is updated by the second lease, so there should be two
+    // NCRs generated: one to remove the old FQDN, and another one to
+    // add the updated FQDN.
+    ASSERT_NO_THROW(srv.createNameChangeRequests(lease2, lease1));
+    ASSERT_EQ(2, srv.name_change_reqs_.size());
+
+    verifyNameChangeRequest(srv, isc::dhcp_ddns::CHG_REMOVE, true, true,
+                            "2001:db8:1::3",
+                            "0002015EDD017663C5AFAA6F33CB096A727CAF"
+                            "0DD6BDC1A597D0AC5469AF4546204D3A",
+                            lease1->cltt_, 300);
+
+    verifyNameChangeRequest(srv, isc::dhcp_ddns::CHG_ADD, true, true,
+                            "2001:db8:1::3",
+                            "00020133924373D25BD5C5A874976AD78BCF1BD"
+                            "AC4D1D9084C2890E4800FC5E5F520E5",
+                            lease2->cltt_, 300);
+}
+
+// This test verifies that exception is thrown when leases passed to the
+// createNameChangeRequests function do not match, i.e. they comprise
+// different IP addresses.
+TEST_F(FqdnDhcpv6SrvTest, createNameChangeRequestsLeaseMismatch) {
+    NakedDhcpv6Srv srv(0);
+    Lease6Ptr lease1 = createLease(IOAddress("2001:db8:1::3"),
+                                   "lease1.example.com", true, true);
+
+    Lease6Ptr lease2 = createLease(IOAddress("2001:db8:1::4"),
+                                   "lease2.example.com", true, true);
+    EXPECT_THROW(srv.createNameChangeRequests(lease2, lease1),
+                 isc::Unexpected);
+}
+
+    /*// Test that exception is thrown if supplied NULL answer packet when
 // creating NameChangeRequests.
 TEST_F(FqdnDhcpv6SrvTest, createNameChangeRequestsNoAnswer) {
     NakedDhcpv6Srv srv(0);
@@ -630,7 +797,7 @@ TEST_F(FqdnDhcpv6SrvTest, createRemovalNameChangeRequestWrongHostname) {
 
     EXPECT_TRUE(srv.name_change_reqs_.empty());
 
-}
+    } */
 
 // Test that Advertise message generated in a response to the Solicit will
 // not result in generation if the NameChangeRequests.
@@ -660,7 +827,7 @@ TEST_F(FqdnDhcpv6SrvTest, processTwoRequests) {
                             "2001:db8:1:1::dead:beef",
                             "000201415AA33D1187D148275136FA30300478"
                             "FAAAA3EBD29826B5C907B2C9268A6F52",
-                            0, 4000);
+                            time(NULL), 4000, true);
 
     // Client may send another request message with a new domain-name. In this
     // case the same lease will be returned. The existing DNS entry needs to
@@ -675,12 +842,12 @@ TEST_F(FqdnDhcpv6SrvTest, processTwoRequests) {
                             "2001:db8:1:1::dead:beef",
                             "000201415AA33D1187D148275136FA30300478"
                             "FAAAA3EBD29826B5C907B2C9268A6F52",
-                            0, 4000);
+                            time(NULL), 4000, true);
     verifyNameChangeRequest(srv, isc::dhcp_ddns::CHG_ADD, true, true,
                             "2001:db8:1:1::dead:beef",
                             "000201D422AA463306223D269B6CB7AFE7AAD265FC"
                             "EA97F93623019B2E0D14E5323D5A",
-                            0, 4000);
+                            time(NULL), 4000, true);
 
 }
 
@@ -702,7 +869,7 @@ TEST_F(FqdnDhcpv6SrvTest, processRequestRenew) {
                             "2001:db8:1:1::dead:beef",
                             "000201415AA33D1187D148275136FA30300478"
                             "FAAAA3EBD29826B5C907B2C9268A6F52",
-                            0, 4000);
+                            time(NULL), 4000, true);
 
     // Client may send Renew message with a new domain-name. In this
     // case the same lease will be returned. The existing DNS entry needs to
@@ -717,12 +884,12 @@ TEST_F(FqdnDhcpv6SrvTest, processRequestRenew) {
                             "2001:db8:1:1::dead:beef",
                             "000201415AA33D1187D148275136FA30300478"
                             "FAAAA3EBD29826B5C907B2C9268A6F52",
-                            0, 4000);
+                            time(NULL), 4000, true);
     verifyNameChangeRequest(srv, isc::dhcp_ddns::CHG_ADD, true, true,
                             "2001:db8:1:1::dead:beef",
                             "000201D422AA463306223D269B6CB7AFE7AAD265FC"
                             "EA97F93623019B2E0D14E5323D5A",
-                            0, 4000);
+                            time(NULL), 4000, true);
 
 }
 
@@ -739,7 +906,7 @@ TEST_F(FqdnDhcpv6SrvTest, processRequestRelease) {
                             "2001:db8:1:1::dead:beef",
                             "000201415AA33D1187D148275136FA30300478"
                             "FAAAA3EBD29826B5C907B2C9268A6F52",
-                            0, 4000);
+                            time(NULL), 4000, true);
 
     // Client may send Release message. In this case the lease should be
     // removed and all existing DNS entries for this lease should be
@@ -751,7 +918,7 @@ TEST_F(FqdnDhcpv6SrvTest, processRequestRelease) {
                             "2001:db8:1:1::dead:beef",
                             "000201415AA33D1187D148275136FA30300478"
                             "FAAAA3EBD29826B5C907B2C9268A6F52",
-                            0, 4000);
+                            time(NULL), 4000, true);
 
 }
 
@@ -769,7 +936,7 @@ TEST_F(FqdnDhcpv6SrvTest, processRequestWithoutFqdn) {
                             "2001:db8:1:1::dead:beef",
                             "000201415AA33D1187D148275136FA30300478"
                             "FAAAA3EBD29826B5C907B2C9268A6F52",
-                            0, 4000);
+                            time(NULL), 4000, true);
 }
 
 }   // end of anonymous namespace

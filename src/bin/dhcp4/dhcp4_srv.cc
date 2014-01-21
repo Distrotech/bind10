@@ -32,7 +32,6 @@
 #include <dhcpsrv/lease_mgr_factory.h>
 #include <dhcpsrv/subnet.h>
 #include <dhcpsrv/utils.h>
-#include <dhcpsrv/utils.h>
 #include <hooks/callout_handle.h>
 #include <hooks/hooks_manager.h>
 #include <util/strutil.h>

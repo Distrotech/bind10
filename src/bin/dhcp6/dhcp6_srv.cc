@@ -1042,6 +1042,89 @@ Dhcpv6Srv::processClientFqdn(const Pkt6Ptr& question, const Pkt6Ptr& answer) {
 }
 
 void
+Dhcpv6Srv::createNameChangeRequests(const Lease6Ptr& lease,
+                                    const Lease6Ptr& old_lease) {
+    if (!lease) {
+        isc_throw(isc::Unexpected,
+                  "NULL lease specified when creating NameChangeRequest");
+    }
+
+    if (old_lease) {
+        if (!lease->matches(*old_lease)) {
+            isc_throw(isc::Unexpected,
+                      "there is no match between the current instance of the"
+                      " lease: " << lease->toText() << ", and the previous"
+                      " instance: " << lease->toText());
+        } else {
+            if  ((lease->hostname_ != old_lease->hostname_) ||
+                 (lease->fqdn_fwd_ != old_lease->fqdn_fwd_) ||
+                 (lease->fqdn_rev_ != old_lease->fqdn_rev_)) {
+                queueNameChangeRequest(isc::dhcp_ddns::CHG_REMOVE, old_lease);
+
+            } else if ((lease->hostname_ == old_lease->hostname_) &&
+                       (lease->fqdn_fwd_ == old_lease->fqdn_fwd_) &&
+                       (lease->fqdn_rev_ == old_lease->fqdn_rev_)) {
+                return;
+            }
+        }
+    }
+    queueNameChangeRequest(isc::dhcp_ddns::CHG_ADD, lease);
+}
+
+void
+Dhcpv6Srv::queueNameChangeRequest(isc::dhcp_ddns::NameChangeType chg_type,
+                                  const Lease6Ptr& lease) {
+    // The hostname must not be empty, and at least one type of update
+    // should be requested.
+    if (!lease || lease->hostname_.empty() ||
+        (!lease->fqdn_rev_ && !lease->fqdn_fwd_)) {
+        return;
+    }
+
+    // A lease should always have a DUID associated.
+    if (!lease->duid_) {
+        isc_throw(isc::Unexpected, "mandatory client identifier is missing"
+                  " for the lease: " << lease->toText());
+    }
+    // Convert FQDN to a canonical wire format. It will be needed to generate
+    // DHCID.
+    std::vector<uint8_t> fqdn_wire;
+    try {
+        OptionDataTypeUtil::writeFqdn(lease->hostname_, fqdn_wire, true);
+
+    } catch (const Exception& ex) {
+        isc_throw(DhcidComputeError, "unable to compute DHCID because the"
+                  " hostname: " << lease->hostname_ << " is invalid");
+    }
+
+    // Create DHCID.
+    isc::dhcp_ddns::D2Dhcid dhcid;
+    try {
+        dhcid.fromDUID(*lease->duid_, fqdn_wire);
+
+    } catch (const Exception& ex) {
+        isc_throw(DhcidComputeError, ex.what());
+    }
+
+    // Create Name Change Request. The NCR constructor shouldn't really throw an
+    // exception because parameters passed to it should have been validated
+    // already. Therefore, if the exception occurs we treat it as unexpected.
+    try {
+        NameChangeRequest ncr(chg_type, lease->fqdn_fwd_, lease->fqdn_rev_,
+                              lease->hostname_, lease->addr_.toText(),
+                              dhcid, lease->cltt_ + lease->valid_lft_,
+                              lease->valid_lft_);
+        name_change_reqs_.push(ncr);
+
+    } catch (const Exception& ex) {
+        isc_throw(Unexpected, "unable to create NameChangeRequest: "
+                  << ex.what());
+    }
+
+}
+
+
+void
 Dhcpv6Srv::createNameChangeRequests(const Pkt6Ptr& answer) {
     // The response message instance is always required. For instance it
     // holds the Client Identifier. It is a programming error if supplied

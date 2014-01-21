@@ -33,13 +33,6 @@
 namespace isc {
 namespace dhcp {
 
-/// @brief Exception thrown when DHCID computation failed.
-class DhcidComputeError : public isc::Exception {
-public:
-    DhcidComputeError(const char* file, size_t line, const char* what) :
-        isc::Exception(file, line, what) { };
-};
-
 /// @brief DHCPv4 server service.
 ///
 /// This singleton class represents DHCPv4 server. It contains all
