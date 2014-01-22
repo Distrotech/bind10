@@ -353,7 +353,7 @@ protected:
     /// @brief Creates NameChangeRequests which correspond to the lease
     /// which has been acquired.
     ///
-    /// If this function is called whe an existing lease is renewed, it
+    /// If this function is called when an existing lease is renewed, it
     /// may generate NameChangeRequest to remove existing DNS entries which
     /// correspond to the old lease instance. This function may cease to
     /// generate NameChangeRequests if the notion of the client's FQDN hasn't

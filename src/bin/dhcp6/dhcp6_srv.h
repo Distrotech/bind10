@@ -402,6 +402,38 @@ protected:
     /// Client FQDN option, this option is used to create NameChangeRequests.
     void createNameChangeRequests(const Pkt6Ptr& answer);
 
+    /// @brief Create NameChangeRequests which correspond to the lease which
+    /// has been acquired.
+    ///
+    /// This function is called when a new lease is acquired (or old lease is
+    /// renewed). If the new lease is acquired (old_lease is NULL), a single
+    /// NameChangeRequest is generated to add a corresponding DNS entry.
+    /// If the lease is renewed, the old_lease must be non-NULL. In this case,
+    /// the function will compare FQDN data between old and new lease. If the
+    /// FQDN data has changed, two NameChangeRequests are generated - first
+    /// removes DNS entry for the old lease, second adds DNS entry for a new
+    /// lease.
+    ///
+    /// @param lease Pointer to the new lease being acquired.
+    /// @param old_lease Pointer to the old lease which has been replaced by the
+    /// new lease. The NULL value indicates that the new lease has been
+    /// allocated, rather than lease being renewed.
+    ///
+    /// @throw isc::Unexpected if the lease objects hold invalid data. This
+    /// should not happen, because lease should be validated by the caller.
+    /// @throw DhcidComputeError if failed to compute DHCID for the
+    /// NameChangeRequests. This typically means that the FQDN was malformed.
+    void createNameChangeRequests(const Lease6Ptr& lease,
+                                  const Lease6Ptr& old_lease);
+
+    /// @brief Creates a NameChangeRequest and adds to the queue for processing.
+    ///
+    /// This function adds the @c isc::dhcp_ddns::NameChangeRequest to the
+    /// queue and emits a debug message which indicates whether the request
+    /// being added is to remove DNS entry or add a new entry.
+    void queueNameChangeRequest(isc::dhcp_ddns::NameChangeType chg_type,
+                                const Lease6Ptr& lease);
+
     /// @brief Creates a @c isc::dhcp_ddns::NameChangeRequest which requests
     /// removal of DNS entries for a particular lease.
     ///
