@@ -35,9 +35,10 @@ dnl string so we have to repeat the above list.
 AC_ARG_ENABLE(components,
   AS_HELP_STRING(--enable-components=FEATURES-LIST,Space-separated
 list of components to enable | all | reallyall | dns | dhcp | common |
-one or more of the following individual components: auth libdns dns_libraries
-ddns loadzone xfrin xfrout zonemgr memmgr dhcp4 dhcp6 d2 libdhcp bind10 bindctl
-cfgmgr msgq cmdctl usermgr sockcreator dbutil sysinfo statistics resolver),[
+one or more of the following individual components: auth bind10
+bindctl cfgmgr cmdctl d2 dbutil ddns dhcp4 dhcp6 dnslibs
+libdhcp libdns loadzone memmgr msgq resolver sockcreator statistics
+sysinfo usermgr xfrin xfrout zonemgr),[
     for i in $enableval; do
         if test "$i" = "yes" ; then
             i="all"
