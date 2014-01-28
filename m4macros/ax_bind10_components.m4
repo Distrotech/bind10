@@ -89,7 +89,7 @@ AX_BIND10_COMPONENT(dns,[Build and install all of the DNS components],[
 ])
 
 dnl Now for the individual DNS components
-AX_BIND10_COMPONENT(auth,[Build and install the authorotative DNS server],[
+AX_BIND10_COMPONENT(auth,[Build and install the authoritative DNS server],[
     enable_libdns=yes
     enable_loadzone=yes
     enable_memmgr=yes
