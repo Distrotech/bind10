@@ -246,8 +246,8 @@ TEST(get_sock, fail_with_bind) {
     ASSERT_TRUE(close_called); // The "socket" call should have failed already
 }
 
-// The main run() function in the socket creator takes three functions to
-// get the socket, send information to it, and close it.  These allow for
+// The main run() function in the socket creator takes four functions to
+// get the sockets, send information to it, and close it. These allow for
 // alternatives to the system functions to be used for testing.
 
 // Replacement getSock() function.
@@ -310,6 +310,30 @@ getSockDummy(const int type, struct sockaddr* addr, const socklen_t,
     return (result);
 }
 
+// Replacement getFilterSock() function.  The return value indicates the
+// result of checks: 1 means that both port and interface passed are OK.
+// Other possible return values are:
+// -1: The simulated socket() call has failed (when port=0xcccc)
+// -2: The simulated bind() call has failed (when port=0xffff)
+int
+getFilterSockDummy(const unsigned short port, const int, const close_t) {
+    int result = 1;
+    // The port should be 0xffff. If it's not, we change the result.
+    // The port of 0xbbbb means bind() should fail and 0xcccc means
+    // socket() should fail.
+    if (port != 0xffff) {
+        errno = 0;
+        if (port == 0xbbbb) {
+            result = -2;
+        } else if (port == 0xcccc) {
+            result = -1;
+        } else {
+            result = 1;
+        }
+    }
+    return (result);
+}
+
 // Dummy send function - return data (the result of getSock()) to the destination.
 int
 send_FdDummy(const int destination, const int what) {
@@ -344,11 +368,14 @@ void runTest(const char* input_data, const size_t input_size,
 
     // Run the body
     if (should_succeed) {
-        EXPECT_NO_THROW(run(input_fd, output_fd, NULL, getSockDummy, send_fd,
-                            test_close));
+        EXPECT_NO_THROW(run(input_fd, output_fd,
+                            getFilterSockDummy, getSockDummy,
+                            send_fd, test_close));
     } else {
-        EXPECT_THROW(run(input_fd, output_fd, NULL, getSockDummy, send_fd,
-                         test_close), isc::socket_creator::SocketCreatorError);
+        EXPECT_THROW(run(input_fd, output_fd,
+                         getFilterSockDummy, getSockDummy,
+                         send_fd, test_close),
+                     isc::socket_creator::SocketCreatorError);
     }
 
     // Close the pipes
@@ -387,6 +414,19 @@ TEST(run, sockets) {
         8);                     // Length of response
 }
 
+// Check it correctly parses query stream to create raw filter sockets
+// and ordinary sockets.
+TEST(run, filter_sockets) {
+    runTest(
+        // Commands:
+        "F\xff\xff\0\0\0\0"     // Raw filter socket, port 0xffff, interface 0
+        "ST4\xff\xff\0\0\0\0"   // IPv4 TCP socket, port 0xffffff, address 0.0.0.0
+        "T",                    // ... and terminate
+        7 + 9 + 1,              // Length of command string
+        "S\x01S\x05",           // Response ("S" + LS byte of
+                                // getFilterSock() and getSock() returns)
+        4);                     // Length of response
+}
 
 // Check if failures of get_socket are handled correctly.
 TEST(run, bad_sockets) {
@@ -408,6 +448,23 @@ TEST(run, bad_sockets) {
         "T",                    // Terminate
         19,                     // Length of command string
         result, sizeof(result));
+}
+
+// Check if failures of get_filter_socket are handled correctly.
+TEST(run, bad_filter_sockets) {
+    // There's no point in checking for 64-bit int size when all the
+    // platforms that we intend to support use ILP32 and LP64.
+    ASSERT_EQ(4, sizeof(int));
+
+    // Run the test
+    runTest(
+        "F\xbb\xbb\0\0\0\0"     // Port number will trigger simulated bind() fail
+        "F\xcc\xcc\0\0\0\0"     // Port number will trigger simulated socket() fail
+        "T",                    // Terminate
+        15,                     // Length of command string
+        "EB\x00\x00\x00\x00"    // Response
+        "ES\x00\x00\x00\x00",
+        12);
 }
 
 // A close that fails.  (This causes an abort.)
