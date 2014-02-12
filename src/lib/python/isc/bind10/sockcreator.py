@@ -102,6 +102,55 @@ class Parser:
         else:
             return '[' + str(address) + ']:' + str(port)
 
+    def __get_socket_helper(self, data, sock_type, log_arg):
+        try:
+            # Send the request
+            self.__socket.sendall(data)
+            answer = self.__socket.recv(1)
+            if answer == b'S':
+                # Success!
+                result = self.__socket.read_fd()
+                logger.info(BIND10_SOCKET_CREATED, result)
+                return result
+            elif answer == b'E':
+                # There was an error, read the error as well
+                error = self.__socket.recv(1)
+                rcv_errno = struct.unpack('i',
+                                          self.__read_all(len(struct.pack('i',
+                                                                          0))))
+                if error == b'S':
+                    cause = 'socket() error'
+                elif error == b'B':
+                    cause = 'bind() error'
+                else:
+                    self.__socket = None
+                    logger.fatal(BIND10_SOCKCREATOR_BAD_CAUSE, error)
+                    raise CreatorError('Unknown error cause' + str(answer), True)
+                logger.error(BIND10_SOCKET_ERROR, cause, rcv_errno[0],
+                             os.strerror(rcv_errno[0]))
+
+                # Provide as detailed information as possible on the error,
+                # as error related to socket creation is a common operation
+                # trouble.  In particular, we are intentionally very verbose
+                # if it fails due to "permission denied" so the administrator
+                # can easily identify what is wrong and how to fix it.
+                error_text = 'Error creating ' + sock_type + \
+                             ' to be bound to ' + \
+                             log_arg + ': ' + cause + ': ' + \
+                             os.strerror(rcv_errno[0])
+                if rcv_errno[0] == errno.EACCES:
+                    error_text += ' - probably need to restart BIND 10 ' + \
+                        'as a super user'
+                raise CreatorError(error_text, False, rcv_errno[0])
+            else:
+                self.__socket = None
+                logger.fatal(BIND10_SOCKCREATOR_BAD_RESPONSE, answer)
+                raise CreatorError('Unknown response ' + str(answer), True)
+        except socket.error as se:
+            self.__socket = None
+            logger.fatal(BIND10_SOCKCREATOR_TRANSPORT_ERROR, str(se))
+            raise CreatorError(str(se), True)
+
     def get_socket(self, address, port, socktype):
         """
         Asks the socket creator process to create a socket. Pass an address
@@ -132,53 +181,27 @@ class Parser:
             raise ValueError('Unknown address family in address')
         data += struct.pack('!H', port)
         data += address.addr
-        try:
-            # Send the request
-            self.__socket.sendall(data)
-            answer = self.__socket.recv(1)
-            if answer == b'S':
-                # Success!
-                result = self.__socket.read_fd()
-                logger.info(BIND10_SOCKET_CREATED, result)
-                return result
-            elif answer == b'E':
-                # There was an error, read the error as well
-                error = self.__socket.recv(1)
-                rcv_errno = struct.unpack('i',
-                                          self.__read_all(len(struct.pack('i',
-                                                                          0))))
-                if error == b'S':
-                    cause = 'socket'
-                elif error == b'B':
-                    cause = 'bind'
-                else:
-                    self.__socket = None
-                    logger.fatal(BIND10_SOCKCREATOR_BAD_CAUSE, error)
-                    raise CreatorError('Unknown error cause' + str(answer), True)
-                logger.error(BIND10_SOCKET_ERROR, cause, rcv_errno[0],
-                             os.strerror(rcv_errno[0]))
+        log_arg = self.__addrport_str(address, port)
+        return self.__get_socket_helper(data, 'socket', log_arg)
 
-                # Provide as detailed information as possible on the error,
-                # as error related to socket creation is a common operation
-                # trouble.  In particular, we are intentionally very verbose
-                # if it fails due to "permission denied" so the administrator
-                # can easily identify what is wrong and how to fix it.
-                addrport = self.__addrport_str(address, port)
-                error_text = 'Error creating socket on ' + cause + \
-                    ' to be bound to ' + addrport + ': ' + \
-                    os.strerror(rcv_errno[0])
-                if rcv_errno[0] == errno.EACCES:
-                    error_text += ' - probably need to restart BIND 10 ' + \
-                        'as a super user'
-                raise CreatorError(error_text, False, rcv_errno[0])
-            else:
-                self.__socket = None
-                logger.fatal(BIND10_SOCKCREATOR_BAD_RESPONSE, answer)
-                raise CreatorError('Unknown response ' + str(answer), True)
-        except socket.error as se:
-            self.__socket = None
-            logger.fatal(BIND10_SOCKCREATOR_TRANSPORT_ERROR, str(se))
-            raise CreatorError(str(se), True)
+    def get_filter_socket(self, port, iface):
+        """
+        Asks the socket creator process to create a raw filter socket. Pass a
+        port number and interface number.
+
+        Blocks until it is provided by the socket creator process (which
+        should be fast, as it is on localhost) and returns the file descriptor
+        number. It raises a CreatorError exception if the creation fails.
+        """
+        if self.__socket is None:
+            raise CreatorError('Socket requested on terminated creator', True)
+        # First, assemble the request from parts
+        logger.info(BIND10_GET_FILTER_SOCKET, port, iface)
+        data = b'F'
+        data += struct.pack('!H', port)
+        data += struct.pack('!I', iface)
+        log_arg = 'port=%hu interface=%u' % (port, iface)
+        return self.__get_socket_helper(data, 'raw filter socket', log_arg)
 
     def __read_all(self, length):
         """

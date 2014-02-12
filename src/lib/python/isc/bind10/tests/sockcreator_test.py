@@ -105,8 +105,8 @@ class FakeCreator:
         dlen = len(data)
         prefix, rest = planned[:dlen], planned[dlen:]
         if prefix != data:
-            raise InvalidData('Expected "' + str(prefix)+ '", got "' +
-                str(data) + '"')
+            raise self.InvalidData('Expected "' + str(prefix)+ '", got "' +
+                                   str(data) + '"')
         if len(rest) > 0:
             self.__plan[0] = ('s', rest)
         else:
@@ -252,6 +252,12 @@ class ParserTests(unittest.TestCase):
     def test_create2(self):
         self.__create('2001:db8::', socket.SOCK_STREAM,
             b'T6\0\x2A\x20\x01\x0d\xb8\0\0\0\0\0\0\0\0\0\0\0\0')
+
+    def test_create_filter(self):
+        creator = FakeCreator([('s', b'F\0\x2A\0\0\0\x01'),
+                               ('r', b'S'), ('f', 42)])
+        parser = Parser(creator)
+        self.assertEqual(42, parser.get_filter_socket(42, 1))
 
     def test_create_terminated(self):
         """

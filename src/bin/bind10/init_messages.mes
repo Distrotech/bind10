@@ -261,6 +261,9 @@ indicated OS API function with given error.
 % BIND10_SOCKET_GET requesting socket [%1]:%2 of type %3 from the creator
 The b10-init forwards a request for a socket to the socket creator.
 
+% BIND10_GET_FILTER_SOCKET requesting raw filter socket with port=%1, interface=%2 from the creator
+The b10-init forwards a request for a raw filter socket to the socket creator.
+
 % BIND10_STARTED_CC started configuration/command session
 Debug message given when BIND 10 has successfully started the object that
 handles configuration and commands.
