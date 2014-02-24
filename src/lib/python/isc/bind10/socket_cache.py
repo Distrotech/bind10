@@ -178,9 +178,18 @@ class Cache:
         # The sockets live here to be indexed by protocol, address and
         # subsequently by port
         self._sockets = {}
+        # The filter sockets live here to be indexed by interface and port
+        self._filter_sockets = {}
         # These are just the tokens actually in use, so we don't generate
         # dupes. If one is dropped, it can be potentially reclaimed.
         self._live_tokens = set()
+
+    def __make_token(self):
+        # Grab yet unused token
+        token = 't' + str(random.randint(0, 2 ** 32-1))
+        while token in self._live_tokens:
+            token = 't' + str(random.randint(0, 2 ** 32-1))
+        return token
 
     def get_token(self, protocol, address, port, share_mode, share_name):
         """
@@ -241,10 +250,69 @@ class Cache:
         if not socket.share_compatible(share_mode, share_name):
             raise ShareError("Cached socket not compatible with mode " +
                              share_mode + " and name " + share_name)
-        # Grab yet unused token
-        token = 't' + str(random.randint(0, 2 ** 32-1))
-        while token in self._live_tokens:
-            token = 't' + str(random.randint(0, 2 ** 32-1))
+        token = self.__make_token()
+        self._waiting_tokens[token] = socket
+        self._live_tokens.add(token)
+        socket.shares[token] = (share_mode, share_name)
+        socket.waiting_tokens.add(token)
+        return token
+
+    def get_filter_token(self, port, iface, share_mode, share_name):
+        """
+        This requests a token representing a raw filtering socket. The
+        socket is either found in the cache already or requested from
+        the creator at this time (and cached for later time).
+
+        The parameters are:
+        - port: integer saying which port to filter for
+        - iface: integer saying which interface to filter on
+        - share_mode: either 'NO', 'SAMEAPP' or 'ANY', specifying how the
+          socket can be shared with others. See bin/bind10/creatorapi.txt
+          for details.
+        - share_name: the name of application, in case of 'SAMEAPP' share
+          mode. Only requests with the same name can share the socket.
+
+        If the call is successful, it returns a string token which can be
+        used to pick up the socket later. The socket is created with reference
+        count zero and if it isn't picked up soon enough (the time yet has to
+        be set), it will be removed and the token is invalid.
+
+        It can fail in various ways. Explicitly listed exceptions are:
+        - SocketError: this one is thrown if the socket creator couldn't provide
+          the socket and it is not yet cached (it belongs to other application,
+          for example).
+        - ShareError: the socket is already in the cache, but it can't be
+          shared due to share_mode and share_name combination (both the request
+          restrictions and of all copies of socket handed out are considered,
+          so it can be raised even if you call it with share_mode 'ANY').
+        - isc.bind10.sockcreator.CreatorError: fatal creator errors are
+          propagated. Thay should cause b10-init to exit if ever encountered.
+
+        Note that it isn't guaranteed the tokens would be unique and they
+        should be used as an opaque handle only.
+        """
+        try:
+            socket = self._filter_sockets[iface][port]
+        except KeyError:
+            # Something in the dicts is not there, so socket is to be
+            # created
+            try:
+                fileno = self._creator.get_filter_socket(port, iface)
+            except isc.bind10.sockcreator.CreatorError as ce:
+                if ce.fatal:
+                    raise
+                else:
+                    raise SocketError(str(ce), ce.errno)
+            socket = FilterSocket(port, iface, fileno)
+            # And cache it
+            if iface not in self._filter_sockets:
+                self._filter_sockets[iface] = {}
+            self._filter_sockets[iface][port] = socket
+        # Now we get the token, check it is compatible
+        if not socket.share_compatible(share_mode, share_name):
+            raise ShareError("Cached socket not compatible with mode " +
+                             share_mode + " and name " + share_name)
+        token = self.__make_token()
         self._waiting_tokens[token] = socket
         self._live_tokens.add(token)
         socket.shares[token] = (share_mode, share_name)
@@ -306,15 +374,25 @@ class Cache:
         self._live_tokens.remove(token)
         # The socket is not used by anything now, so remove it
         if len(socket.active_tokens) == 0 and len(socket.waiting_tokens) == 0:
-            addr = str(socket.address)
-            port = socket.port
-            proto = socket.protocol
-            del self._sockets[proto][addr][port]
-            # Clean up empty branches of the structure
-            if len(self._sockets[proto][addr]) == 0:
-                del self._sockets[proto][addr]
-            if len(self._sockets[proto]) == 0:
-                del self._sockets[proto]
+            if isinstance(socket, FilterSocket):
+                port = socket.port
+                iface = socket.interface
+                del self._filter_sockets[iface][port]
+                # Clean up empty branches of the structure
+                if len(self._filter_sockets[iface]) == 0:
+                    del self._filter_sockets[iface]
+            elif isinstance(socket, Socket):
+                addr = str(socket.address)
+                port = socket.port
+                proto = socket.protocol
+                del self._sockets[proto][addr][port]
+                # Clean up empty branches of the structure
+                if len(self._sockets[proto][addr]) == 0:
+                    del self._sockets[proto][addr]
+                if len(self._sockets[proto]) == 0:
+                    del self._sockets[proto]
+            else:
+                raise
 
     def drop_application(self, application):
         """

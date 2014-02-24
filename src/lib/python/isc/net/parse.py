@@ -35,6 +35,18 @@ def port_parse(port):
             " too large, allowed range is 0-65535")
     return inted
 
+def interface_parse(iface):
+    """
+    Takes an interface as an int or string and checks if it is valid. It
+    returns the interface as int. If it is not a valid interface (the string
+    doesn't contain number or it is not in the valid range), it raises
+    ValueError.
+    """
+    inted = int(iface)
+    if inted < 0:
+        raise ValueError("Interface value " + str(inted) + " too small")
+    return inted
+
 def addr_parse(addr):
     """
     Checks and parses an IP address (either IPv4 or IPv6) and returns

@@ -374,6 +374,8 @@ class Init:
                     create_answer(0, self.get_processes())
             elif command == "get_socket":
                 answer = self._get_socket(args)
+            elif command == "get_filter_socket":
+                answer = self._get_filter_socket(args)
             elif command == "drop_socket":
                 if "token" not in args:
                     answer = isc.config.ccsession. \
@@ -968,6 +970,35 @@ class Init:
                                                       str(e))
         except isc.bind10.socket_cache.ShareError as e:
             return isc.config.ccsession.create_answer(CREATOR_SHARE_ERROR,
+                                                      str(e))
+        except Exception as e:
+            return isc.config.ccsession.create_answer(1, str(e))
+
+    def _get_filter_socket(self, args):
+        """
+        Implementation of the get_filter_socket CC command. It asks the cache
+        to provide the token and sends the information back.
+        """
+        try:
+            try:
+                port = isc.net.parse.port_parse(args['port'])
+                iface = isc.net.parse.interface_parse(args['interface'])
+            except KeyError as ke:
+                return \
+                    isc.config.ccsession.create_answer(1,
+                                                       "Missing parameter " +
+                                                       str(ke))
+
+            # FIXME: This call contains blocking IPC. It is expected to be
+            # short, but if it turns out to be problem, we'll need to do
+            # something about it.
+            token = self._socket_cache.get_filter_token(port, iface)
+            return isc.config.ccsession.create_answer(0, {
+                'token': token,
+                'path': self._socket_path
+            })
+        except isc.bind10.socket_cache.SocketError as e:
+            return isc.config.ccsession.create_answer(CREATOR_SOCKET_ERROR,
                                                       str(e))
         except Exception as e:
             return isc.config.ccsession.create_answer(1, str(e))
