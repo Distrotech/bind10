@@ -42,27 +42,12 @@ class ShareError(Exception):
     """
     pass
 
-class Socket:
+class SocketBase:
     """
-    This represents one socket cached by the cache program. This should never
-    be used directly by a user, it is used internally by the Cache. Therefore
-    many member variables are used directly instead of by a accessor method.
-
-    Be warned that this object implements the __del__ method. It closes the
-    socket held inside in it. But this poses various problems with garbage
-    collector. In short, do not make reference cycles with this and generally
-    leave this class alone to live peacefully.
+    This is a common base class to Socket and FilterSocket.
     """
-    def __init__(self, protocol, address, port, fileno):
-        """
-        Creates the socket.
-
-        The protocol, address and port are preserved for the information.
-        """
-        self.protocol = protocol
-        self.address = address
-        self.port = port
-        self.fileno = fileno
+    def __init__(self):
+        self.fileno = None
         # Mapping from token -> application
         self.active_tokens = {}
         # The tokens which were not yet picked up
@@ -74,7 +59,8 @@ class Socket:
         """
         Closes the file descriptor.
         """
-        os.close(self.fileno)
+        if self.fileno is not None:
+            os.close(self.fileno)
 
     def share_compatible(self, mode, name):
         """
@@ -100,6 +86,56 @@ class Socket:
             # else both are ANY or SAMEAPP with the same name, which is OK
         # No problem found, so we consider it OK
         return True
+
+class Socket(SocketBase):
+    """
+    This represents one socket cached by the cache program. This should never
+    be used directly by a user, it is used internally by the Cache. Therefore
+    many member variables are used directly instead of by a accessor method.
+
+    Be warned that this object's base class implements the __del__
+    method. It closes the socket held inside in it. But this poses
+    various problems with garbage collector. In short, do not make
+    reference cycles with this and generally leave this class alone to
+    live peacefully.
+    """
+    def __init__(self, protocol, address, port, fileno):
+        """
+        Creates the socket.
+
+        The protocol, address and port are preserved for the information.
+        """
+        super().__init__()
+
+        self.protocol = protocol
+        self.address = address
+        self.port = port
+        self.fileno = fileno
+
+class FilterSocket(SocketBase):
+    """
+    This represents one filtering socket cached by the cache
+    program. This should never be used directly by a user, it is used
+    internally by the Cache. Therefore many member variables are used
+    directly instead of by a accessor method.
+
+    Be warned that this object's base class implements the __del__
+    method. It closes the socket held inside in it. But this poses
+    various problems with garbage collector. In short, do not make
+    reference cycles with this and generally leave this class alone to
+    live peacefully.
+    """
+    def __init__(self, port, interface, fileno):
+        """
+        Creates the socket.
+
+        The port and interface are preserved for their information.
+        """
+        super().__init__()
+
+        self.port = port
+        self.interface = interface
+        self.fileno = fileno
 
 class Cache:
     """

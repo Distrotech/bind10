@@ -41,6 +41,54 @@ class Test(unittest.TestCase):
         """
         self._closes.append(fd)
 
+    def share_modes_test_helper(self, testsocket):
+        """
+        Test the share mode compatibility check function.
+        """
+        modes = ['NO', 'SAMEAPP', 'ANY']
+        # If there are no shares, it is compatible with everything.
+        for mode in modes:
+            self.assertTrue(testsocket.share_compatible(mode, 'anything'))
+
+        # There's an NO already, so it is incompatible with everything.
+        testsocket.shares = {'token': ('NO', 'anything')}
+        for mode in modes:
+            self.assertFalse(testsocket.share_compatible(mode, 'anything'))
+
+        # If there's SAMEAPP, it is compatible with ANY and SAMEAPP with the
+        # same name.
+        testsocket.shares = {'token': ('SAMEAPP', 'app')}
+        self.assertFalse(testsocket.share_compatible('NO', 'app'))
+        self.assertFalse(testsocket.share_compatible('SAMEAPP',
+                                                        'something'))
+        self.assertTrue(testsocket.share_compatible('SAMEAPP', 'app'))
+        self.assertTrue(testsocket.share_compatible('ANY', 'app'))
+        self.assertFalse(testsocket.share_compatible('ANY', 'something'))
+
+        # If there's ANY, then ANY and SAMEAPP with the same name is compatible
+        testsocket.shares = {'token': ('ANY', 'app')}
+        self.assertFalse(testsocket.share_compatible('NO', 'app'))
+        self.assertFalse(testsocket.share_compatible('SAMEAPP',
+                                                        'something'))
+        self.assertTrue(testsocket.share_compatible('SAMEAPP', 'app'))
+        self.assertTrue(testsocket.share_compatible('ANY', 'something'))
+
+        # In case there are multiple already inside
+        testsocket.shares = {
+            'token': ('ANY', 'app'),
+            'another': ('SAMEAPP', 'app')
+        }
+        self.assertFalse(testsocket.share_compatible('NO', 'app'))
+        self.assertFalse(testsocket.share_compatible('SAMEAPP',
+                                                        'something'))
+        self.assertTrue(testsocket.share_compatible('SAMEAPP', 'app'))
+        self.assertFalse(testsocket.share_compatible('ANY', 'something'))
+        self.assertTrue(testsocket.share_compatible('ANY', 'app'))
+
+        # Invalid inputs are rejected
+        self.assertRaises(ValueError, testsocket.share_compatible, 'bad',
+                          'bad')
+
 class SocketTest(Test):
     """
     Test for the Socket class.
@@ -81,49 +129,46 @@ class SocketTest(Test):
         """
         Test the share mode compatibility check function.
         """
-        modes = ['NO', 'SAMEAPP', 'ANY']
-        # If there are no shares, it is compatible with everything.
-        for mode in modes:
-            self.assertTrue(self.__socket.share_compatible(mode, 'anything'))
+        self.share_modes_test_helper(self.__socket)
 
-        # There's an NO already, so it is incompatible with everything.
-        self.__socket.shares = {'token': ('NO', 'anything')}
-        for mode in modes:
-            self.assertFalse(self.__socket.share_compatible(mode, 'anything'))
+class FilterSocketTest(Test):
+    """
+    Test for the FilterSocket class.
+    """
+    def setUp(self):
+        """
+        Creates the socket to be tested.
 
-        # If there's SAMEAPP, it is compatible with ANY and SAMEAPP with the
-        # same name.
-        self.__socket.shares = {'token': ('SAMEAPP', 'app')}
-        self.assertFalse(self.__socket.share_compatible('NO', 'app'))
-        self.assertFalse(self.__socket.share_compatible('SAMEAPP',
-                                                        'something'))
-        self.assertTrue(self.__socket.share_compatible('SAMEAPP', 'app'))
-        self.assertTrue(self.__socket.share_compatible('ANY', 'app'))
-        self.assertFalse(self.__socket.share_compatible('ANY', 'something'))
+        It also creates other useful test variables.
+        """
+        Test.setUp(self)
+        self.__socket = isc.bind10.socket_cache.FilterSocket(2047, 1, 43)
 
-        # If there's ANY, then ANY and SAMEAPP with the same name is compatible
-        self.__socket.shares = {'token': ('ANY', 'app')}
-        self.assertFalse(self.__socket.share_compatible('NO', 'app'))
-        self.assertFalse(self.__socket.share_compatible('SAMEAPP',
-                                                        'something'))
-        self.assertTrue(self.__socket.share_compatible('SAMEAPP', 'app'))
-        self.assertTrue(self.__socket.share_compatible('ANY', 'something'))
+    def test_init(self):
+        """
+        Checks the internals of the cache just after the creation.
+        """
+        self.assertEqual(2047, self.__socket.port)
+        self.assertEqual(1, self.__socket.interface)
+        self.assertEqual(43, self.__socket.fileno)
+        self.assertEqual({}, self.__socket.active_tokens)
+        self.assertEqual({}, self.__socket.shares)
+        self.assertEqual(set(), self.__socket.waiting_tokens)
 
-        # In case there are multiple already inside
-        self.__socket.shares = {
-            'token': ('ANY', 'app'),
-            'another': ('SAMEAPP', 'app')
-        }
-        self.assertFalse(self.__socket.share_compatible('NO', 'app'))
-        self.assertFalse(self.__socket.share_compatible('SAMEAPP',
-                                                        'something'))
-        self.assertTrue(self.__socket.share_compatible('SAMEAPP', 'app'))
-        self.assertFalse(self.__socket.share_compatible('ANY', 'something'))
-        self.assertTrue(self.__socket.share_compatible('ANY', 'app'))
+    def test_del(self):
+        """
+        Check it closes the socket when removed.
+        """
+        # This should make the refcount 0 and call the destructor
+        # right away
+        self.__socket = None
+        self.assertEqual([43], self._closes)
 
-        # Invalid inputs are rejected
-        self.assertRaises(ValueError, self.__socket.share_compatible, 'bad',
-                          'bad')
+    def test_share_modes(self):
+        """
+        Test the share mode compatibility check function.
+        """
+        self.share_modes_test_helper(self.__socket)
 
 class SocketCacheTest(Test):
     """
