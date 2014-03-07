@@ -80,6 +80,27 @@ public:
     isc::data::ConstElementPtr getValue(bool& is_default,
                                         const std::string& identifier) const;
 
+    /// Returns the "full" value for the given identifier
+    /// If the item referredt toyidentifier is not a map item, then it simply
+    /// returns the value yielded by getValue() .  If the identifier
+    /// refers to a map item, then it returns a merged map of the map
+    /// items' defaults and configured values.
+    /// The default values for the items in the map are taken from the
+    /// map's default value if not empty (i.e. not "{}").  If the map defualt
+    /// is empty, then the item default values are taken from each item spec
+    /// within the map spec.
+    ///
+    /// @todo This method should be made to recurse into maps of maps.
+    ///
+    /// Raises a DataNotFoundError if the identifier is bad.
+    /// \param is_default will be set to true if the value is taken
+    ///                   from the specifications item_default setting,
+    ///                   false otherwise
+    /// \param identifier The identifier pointing to the configuration
+    ///        value that is to be returned
+    isc::data::ConstElementPtr getFullValue(bool& is_default,
+                                            const std::string& identifier) const;
+
     /// Returns the ModuleSpec associated with this ConfigData object
     const ModuleSpec& getModuleSpec() const { return (_module_spec); }
 
@@ -116,7 +137,6 @@ public:
     /// \return An ElementPtr pointing to a MapElement containing
     ///         the top-level configuration items
     isc::data::ConstElementPtr getFullConfig() const;
-
 private:
     isc::data::ElementPtr _config;
     ModuleSpec _module_spec;

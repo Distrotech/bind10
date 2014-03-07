@@ -205,6 +205,69 @@ ConfigData::getValue(bool& is_default, const std::string& identifier) const {
     return (value);
 }
 
+typedef std::pair<std::string, isc::data::ConstElementPtr> ConfigPair;
+
+ConstElementPtr
+ConfigData::getFullValue(bool& is_default, const std::string& identifier) const {
+    // Check the item spec.
+    ConstElementPtr spec_part =
+            find_spec_part(_module_spec.getConfigSpec(), identifier);
+
+    // If the item is not a map item, then use the flat version of
+    // getValue.
+    std::string item_type = spec_part->get("item_type")->stringValue();
+    if (item_type != "map") {
+        return (getValue(is_default, identifier));
+    }
+
+    /// @todo in order to make this handle maps with maps
+    /// You would need to loop thru all the items in this map,
+    /// and call getFullValue() them, using the returned map
+    /// as its "full" value.
+
+    // The item is a map item, so we need to return a merge of the
+    // its default values and configured values.
+    boost::shared_ptr<MapElement> merged_map(new MapElement());
+
+    // Check for map-level defaults.  These are preferred over
+    // item level defaults.
+    if (spec_part->contains("item_default")) {
+        ConstElementPtr map_defaults = spec_part->get("item_default");
+        BOOST_FOREACH(ConfigPair dflt_pair, map_defaults->mapValue()) {
+            merged_map->set(dflt_pair.first, dflt_pair.second);
+        }
+    }
+
+    // If there were no map level defaults, then we need to look at
+    // item level defaults.
+    if (merged_map->mapValue().empty()) {
+        // Loop thru the map spec
+        ConstElementPtr map_item_spec = spec_part->get("map_item_spec");
+        BOOST_FOREACH(ConstElementPtr map_item, map_item_spec->listValue()) {
+            // get the next item in map's spec
+            if (map_item->contains("item_name")) {
+                std::string item_name = map_item->
+                                        get("item_name")->stringValue();
+                if (map_item->contains("item_default")) {
+                    ConstElementPtr default_value = map_item->
+                                                    get("item_default");
+                    merged_map->set(item_name, default_value);
+                }
+            }
+        }
+    }
+
+    // Get the any non-default values for the map items
+    ConstElementPtr configged_map = _config->find(identifier);
+    if (configged_map) {
+        // Merge the non-defualt map into the default map
+        merge(merged_map, configged_map);
+    }
+
+    return (merged_map);
+}
+
+
 ConstElementPtr
 ConfigData::getDefaultValue(const std::string& identifier) const {
     ConstElementPtr spec_part =
@@ -237,7 +300,9 @@ ConfigData::getFullConfig() const {
     ElementPtr result = Element::createMap();
     ConstElementPtr items = getItemList("", false);
     BOOST_FOREACH(ConstElementPtr item, items->listValue()) {
-        result->set(item->stringValue(), getValue(item->stringValue()));
+        bool fake;
+        ConstElementPtr value = getFullValue(fake, item->stringValue());
+        result->set(item->stringValue(), value);
     }
     return (result);
 }
