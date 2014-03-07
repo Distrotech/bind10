@@ -319,7 +319,7 @@
       { "item_name": "dhcp-ddns",
         "item_type": "map",
         "item_optional": false,
-        "item_default": {"enable-updates": false},
+        "item_default": {},
         "item_description" : "Contains parameters pertaining DHCP-driven DDNS updates",
         "map_item_spec": [
             {
