@@ -21,7 +21,7 @@
 #include <dhcp/iface_mgr.h>
 #include <dhcpsrv/dhcp_config_parser.h>
 #include <dhcpsrv/cfgmgr.h>
-#include <dhcp6/config_parser.h>
+#include <dhcp6/json_config_parser.h>
 #include <dhcp6/ctrl_dhcp6_srv.h>
 #include <dhcp6/dhcp6_log.h>
 #include <dhcp6/spec_config.h>
@@ -186,7 +186,9 @@ void ControlledDhcpv6Srv::sessionReader(void) {
     }
 }
 
-void ControlledDhcpv6Srv::establishSession() {
+void
+ControlledDhcpv6Srv::init(const std::string& /* config_file*/) {
+    // This is BIND10 configuration backed it does not have any notion on 
 
     string specfile;
     if (getenv("B10_FROM_BUILD")) {
@@ -244,7 +246,7 @@ void ControlledDhcpv6Srv::establishSession() {
     IfaceMgr::instance().addExternalSocket(ctrl_socket, sessionReader);
 }
 
-void ControlledDhcpv6Srv::disconnectSession() {
+void ControlledDhcpv6Srv::cleanup() {
     if (config_session_) {
         delete config_session_;
         config_session_ = NULL;
@@ -273,7 +275,7 @@ void ControlledDhcpv6Srv::shutdown() {
 }
 
 ControlledDhcpv6Srv::~ControlledDhcpv6Srv() {
-    disconnectSession();
+    cleanup();
 
     server_ = NULL; // forget this instance. There should be no callback anymore
                     // at this stage anyway.

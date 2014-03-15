@@ -52,10 +52,20 @@ BUILT_SOURCES = spec_config.h dhcp6_messages.h dhcp6_messages.cc
 pkglibexec_PROGRAMS = b10-dhcp6
 
 b10_dhcp6_SOURCES  = main.cc
-b10_dhcp6_SOURCES += ctrl_dhcp6_srv.cc ctrl_dhcp6_srv.h
-b10_dhcp6_SOURCES += config_parser.cc config_parser.h
 b10_dhcp6_SOURCES += dhcp6_log.cc dhcp6_log.h
 b10_dhcp6_SOURCES += dhcp6_srv.cc dhcp6_srv.h
+
+if CONFIG_BACKEND_BIND10
+b10_dhcp6_SOURCES += json_config_parser.cc json_config_parser.h ctrl_dhcp6_srv.cc ctrl_dhcp6_srv.h
+endif
+
+if CONFIG_BACKEND_JSON
+b10_dhcp6_SOURCES += bar.cc json_config_parser.cc json_config_parser.h
+endif
+
+if CONFIG_BACKEND_FLAT
+b10_dhcp6_SOURCES += flat_config_parser.cc flat_config_parser.h flat_config_lexer.cc
+endif
 
 nodist_b10_dhcp6_SOURCES = dhcp6_messages.h dhcp6_messages.cc
 EXTRA_DIST += dhcp6_messages.mes
@@ -70,6 +80,7 @@ b10_dhcp6_LDADD += $(top_builddir)/src/lib/exceptions/libb10-exceptions.la
 b10_dhcp6_LDADD += $(top_builddir)/src/lib/log/libb10-log.la
 b10_dhcp6_LDADD += $(top_builddir)/src/lib/util/libb10-util.la
 b10_dhcp6_LDADD += $(top_builddir)/src/lib/hooks/libb10-hooks.la
+b10_dhcp6_LDADD += $(top_builddir)/src/lib/dhcp/libb10_dhcp___la-option_custom.o
 
 b10_dhcp6dir = $(pkgdatadir)
 b10_dhcp6_DATA = dhcp6.spec

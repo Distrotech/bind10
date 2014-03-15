@@ -45,6 +45,7 @@ usage() {
     cerr << "  -s: stand-alone mode (don't connect to BIND10)" << endl;
     cerr << "  -p number: specify non-standard port number 1-65535 "
          << "(useful for testing only)" << endl;
+    cerr << "  -c file: specify configuration file" << endl;
     exit(EXIT_FAILURE);
 }
 } // end of anonymous namespace
@@ -57,17 +58,20 @@ main(int argc, char* argv[]) {
     bool stand_alone = false;  // Should be connect to BIND10 msgq?
     bool verbose_mode = false; // Should server be verbose?
 
-    while ((ch = getopt(argc, argv, "vsp:")) != -1) {
+    // The standard config file
+    std::string config_file("");
+
+    while ((ch = getopt(argc, argv, "vsp:c:")) != -1) {
         switch (ch) {
         case 'v':
             verbose_mode = true;
             break;
 
-        case 's':
+        case 's': // stand-alone
             stand_alone = true;
             break;
 
-        case 'p':
+        case 'p': // port number
             try {
                 port_number = boost::lexical_cast<int>(optarg);
             } catch (const boost::bad_lexical_cast &) {
@@ -80,6 +84,10 @@ main(int argc, char* argv[]) {
                      << "], 1-65535 allowed." << endl;
                 usage();
             }
+            break;
+
+        case 'c': // config file
+            config_file = optarg;
             break;
 
         default:
@@ -107,7 +115,7 @@ main(int argc, char* argv[]) {
         ControlledDhcpv6Srv server(port_number);
         if (!stand_alone) {
             try {
-                server.establishSession();
+                server.init(config_file);
             } catch (const std::exception& ex) {
                 LOG_ERROR(dhcp6_logger, DHCP6_SESSION_FAIL).arg(ex.what());
                 // Let's continue. It is useful to have the ability to run
