@@ -40,7 +40,7 @@ const char* const DHCP6_NAME = "b10-dhcp6";
 
 void
 usage() {
-    cerr << "Usage: " << DHCP6_NAME << " [-v] [-s] [-p number]" << endl;
+    cerr << "Usage: " << DHCP6_NAME << " [-v] [-s] [-p port_number] [-c cfgfile]" << endl;
     cerr << "  -v: verbose output" << endl;
     cerr << "  -s: stand-alone mode (don't connect to BIND10)" << endl;
     cerr << "  -p number: specify non-standard port number 1-65535 "

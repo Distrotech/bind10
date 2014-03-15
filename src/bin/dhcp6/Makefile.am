@@ -54,9 +54,10 @@ pkglibexec_PROGRAMS = b10-dhcp6
 b10_dhcp6_SOURCES  = main.cc
 b10_dhcp6_SOURCES += dhcp6_log.cc dhcp6_log.h
 b10_dhcp6_SOURCES += dhcp6_srv.cc dhcp6_srv.h
+b10_dhcp6_SOURCES += ctrl_dhcp6_srv.h
 
 if CONFIG_BACKEND_BIND10
-b10_dhcp6_SOURCES += json_config_parser.cc json_config_parser.h ctrl_dhcp6_srv.cc ctrl_dhcp6_srv.h
+b10_dhcp6_SOURCES += json_config_parser.cc json_config_parser.h ctrl_bind10_dhcp6_srv.cc
 endif
 
 if CONFIG_BACKEND_JSON
