@@ -52,7 +52,8 @@ public:
     /// or reads the 
     /// Creates session that will be used to receive commands and updated
     /// configuration from cfgmgr (or indirectly from user via bindctl).
-    void init(const std::string& config_file);
+    /// @return true if initialization was successful, false if it failed
+    bool init(const std::string& config_file);
 
     /// @brief Terminates existing msgq session.
     ///

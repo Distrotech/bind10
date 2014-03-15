@@ -20,7 +20,7 @@
 #include <dhcp/iface_mgr.h>
 #include <dhcp/option_custom.h>
 #include <dhcp/option_int.h>
-#include <dhcp6/config_parser.h>
+#include <dhcp6/json_config_parser.h>
 #include <dhcp6/dhcp6_srv.h>
 #include <dhcpsrv/addr_utilities.h>
 #include <dhcpsrv/cfgmgr.h>

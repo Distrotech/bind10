@@ -26,7 +26,7 @@
 #include <dhcp/option_string.h>
 #include <dhcp/option_vendor.h>
 #include <dhcp/iface_mgr.h>
-#include <dhcp6/config_parser.h>
+#include <dhcp6/json_config_parser.h>
 #include <dhcp/dhcp6.h>
 #include <dhcp/docsis3_option_defs.h>
 #include <dhcp/tests/iface_mgr_test_config.h>
