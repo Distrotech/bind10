@@ -23,23 +23,23 @@ import socket
 import threading
 
 sys.path.append('@@PYTHONPATH@@')
-import isc.log
-from isc.config import ModuleSpecError, ModuleCCSessionError
-from isc.log_messages.memmgr_messages import *
-from isc.server_common.bundy_server import BUNDYServer, BUNDYServerFatal
-from isc.server_common.datasrc_clients_mgr \
+import bundy.log
+from bundy.config import ModuleSpecError, ModuleCCSessionError
+from bundy.log_messages.memmgr_messages import *
+from bundy.server_common.bundy_server import BUNDYServer, BUNDYServerFatal
+from bundy.server_common.datasrc_clients_mgr \
     import DataSrcClientsMgr, ConfigError
-from isc.memmgr.datasrc_info import DataSrcInfo, SegmentInfo
-from isc.memmgr.builder import MemorySegmentBuilder
-import isc.util.process
-import isc.util.traceback_handler
+from bundy.memmgr.datasrc_info import DataSrcInfo, SegmentInfo
+from bundy.memmgr.builder import MemorySegmentBuilder
+import bundy.util.process
+import bundy.util.traceback_handler
 
 MODULE_NAME = 'memmgr'
 
-isc.log.init('bundy-memmgr', buffer=True)
-logger = isc.log.Logger(MODULE_NAME)
+bundy.log.init('bundy-memmgr', buffer=True)
+logger = bundy.log.Logger(MODULE_NAME)
 
-isc.util.process.rename()
+bundy.util.process.rename()
 
 class ConfigError(Exception):
     """An exception class raised for configuration errors of Memmgr."""
@@ -77,7 +77,7 @@ class Memmgr(BUNDYServer):
         logger.debug(logger.DBGLVL_TRACE_BASIC, MEMMGR_CONFIG_UPDATE)
 
         # Default answer:
-        answer = isc.config.create_answer(0)
+        answer = bundy.config.create_answer(0)
 
         # If this is the first time, initialize the local attributes with the
         # latest full config data, which consist of the defaults with
@@ -89,7 +89,7 @@ class Memmgr(BUNDYServer):
             self.__update_config(new_config)
         except Exception as ex:
             logger.error(MEMMGR_CONFIG_FAIL, ex)
-            answer = isc.config.create_answer(
+            answer = bundy.config.create_answer(
                 1, 'Memmgr failed to apply configuration updates: ' + str(ex))
 
         return answer
@@ -240,7 +240,7 @@ class Memmgr(BUNDYServer):
             # at the info level.
             logger.info(MEMMGR_DATASRC_RECONFIGURED, genid)
 
-        except isc.server_common.datasrc_clients_mgr.ConfigError as ex:
+        except bundy.server_common.datasrc_clients_mgr.ConfigError as ex:
             logger.error(MEMMGR_DATASRC_CONFIG_ERROR, ex)
 
     def _init_segments(self, datasrc_info):
@@ -258,4 +258,4 @@ def main():
     sys.exit(mgr.run(MODULE_NAME))
 
 if '__main__' == __name__:
-    isc.util.traceback_handler.traceback_handler(main)
+    bundy.util.traceback_handler.traceback_handler(main)

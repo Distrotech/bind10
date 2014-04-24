@@ -27,7 +27,7 @@
 
 #include <cc/data.h>
 
-namespace isc {
+namespace bundy {
 namespace dns {
 class RRClass;
 }
@@ -48,7 +48,7 @@ public:
 class IncompatibleDbVersion : public Exception {
 public:
     IncompatibleDbVersion(const char* file, size_t line, const char* what) :
-        isc::Exception(file, line, what) {}
+        bundy::Exception(file, line, what) {}
 };
 
 /// \brief Too Much Data
@@ -291,7 +291,7 @@ private:
 ///              during initialization
 /// \return An instance of the sqlite3 datasource client, or NULL if there was
 ///         an error
-extern "C" DataSourceClient* createInstance(isc::data::ConstElementPtr config,
+extern "C" DataSourceClient* createInstance(bundy::data::ConstElementPtr config,
                                             std::string& error);
 
 /// \brief Destroy the instance created by createInstance()
