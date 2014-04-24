@@ -29,7 +29,7 @@ from isc.testutils.ccsession_mock import MockModuleCCSession
 class MyCCSession(MockModuleCCSession, isc.config.ConfigData):
     def __init__(self, specfile, config_handler, command_handler):
         super().__init__()
-        specfile = os.environ['B10_FROM_BUILD'] + '/src/bin/memmgr/memmgr.spec'
+        specfile = os.environ['BUNDY_FROM_BUILD'] + '/src/bin/memmgr/memmgr.spec'
         module_spec = isc.config.module_spec_from_file(specfile)
         isc.config.ConfigData.__init__(self, module_spec)
         self.add_remote_params = [] # for inspection
@@ -65,7 +65,7 @@ class TestMemmgr(unittest.TestCase):
     def setUp(self):
         # Some tests use this directory.  Make sure it doesn't pre-exist.
         self.__test_mapped_file_dir = \
-            os.environ['B10_FROM_BUILD'] + \
+            os.environ['BUNDY_FROM_BUILD'] + \
             '/src/bin/memmgr/tests/test_mapped_files'
         if os.path.isdir(self.__test_mapped_file_dir):
             os.rmdir(self.__test_mapped_file_dir)
@@ -176,12 +176,12 @@ class TestMemmgr(unittest.TestCase):
         # same scenario with two possible exception types)
         self.__mgr.mod_ccsession.add_remote_exception = \
             isc.config.ModuleCCSessionError('faked exception')
-        self.assertRaises(isc.server_common.bind10_server.BIND10ServerFatal,
+        self.assertRaises(isc.server_common.bundy_server.BUNDYServerFatal,
                           self.__mgr._setup_module)
 
         self.__mgr.mod_ccsession.add_remote_exception = \
             isc.config.ModuleSpecError('faked exception')
-        self.assertRaises(isc.server_common.bind10_server.BIND10ServerFatal,
+        self.assertRaises(isc.server_common.bundy_server.BUNDYServerFatal,
                           self.__mgr._setup_module)
 
     def test_datasrc_config_handler(self):
